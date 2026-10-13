@@ -1,16 +1,17 @@
 # Shelf: product and UX spec
 
-- **Status:** proposed, awaiting approval
+- **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md)
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
 This document says what Shelf does and how it behaves. How it is built (versions, services,
 hosting) is Phase 3.
 
-**Visual direction.** You asked me to continue without naming one, so this spec uses my
-recommendation, **Vitrine**, as the working choice. Only sections 9 and 14 and the look of the
-shelf depend on it. Everything else holds for any direction, and the direction is not locked
-until build step 1.
+**Visual direction.** This spec was written around my first recommendation, Vitrine. That
+direction was built and rejected: it read as a library of books. The direction is now
+**Backlit**, a game room's lit display wall, and games stand with their covers toward you.
+[ADR 002](adr/002-visual-direction.md) records the change. Sections 3, 9, 13 and 14 below
+have been rewritten to match; everything else is as approved.
 
 **Lines marked "Done when"** are the acceptance checks for each feature. They become tests.
 
@@ -168,21 +169,22 @@ Phone:
 | --- | --- |
 | **Shelf** | One group of games (a platform, a status, a year), with a label and a count |
 | **Ledge** | One physical row. A long shelf wraps onto several ledges. |
-| **Box** | One game as an object. Its shape follows the platform's real case ([research, section 4](research.md#4-physical-inspiration)). |
-| **Spine** | The narrow side of a box: a platform band, the title, the studio. Generated, because IGDB has no spine art. |
-| **Face-out** | A box turned to show its cover. Used for games I mark as featured. |
+| **Box** | One game as an object: a game case. Its shape and plastic color follow the platform's real case ([research, section 4](research.md#4-physical-inspiration)). |
+| **Cover-out** | A box standing with its cover toward you. This is how games stand on the shelf ([ADR 002](adr/002-visual-direction.md)). |
+| **Compact** | The dense option: boxes stand spine-out, so more fit on a ledge. A spine shows a platform band and the title, and is generated, because IGDB has no spine art. |
+| **LED** | The light bar along the back of each ledge. Its color follows the game in focus. |
 
 **How a box shows its state.** Never by color alone:
 
 | State | On the shelf |
 | --- | --- |
-| Backlog | Stands flush in the row |
-| Playing | Pulled forward, proud of the row |
-| Completed | A small foil seal at the top of the spine |
+| Backlog | Stands in the row |
+| Playing | Stands forward of the row, and its shelf's label carries a "playing" marker |
+| Completed | A small foil seal on the cover's corner |
 | Dropped | Leans against its neighbor |
 | Wishlist | An outlined placeholder with a faint cover, not a solid box |
-| Owned only digitally | A slim clear block with the cover on its face |
-| Owned on more than one platform | A small count on the spine's foot |
+| Owned only digitally | A cover with no case around it |
+| Owned on more than one platform | A small count on the box's foot |
 
 **Which box a game shows.** Grouped by platform, each copy stands on its own platform's shelf
 in that platform's case. Otherwise the game shows one box: the copy I chose for display, or the
@@ -192,19 +194,20 @@ first one I added.
 
 Built to look best on a desktop.
 
-- **Scene.** A wall. Each shelf is a bay of ledges, and the bays run left to right. A label
-  plate on the ledge names each shelf and its count.
+- **Scene.** A game room's display wall. Each shelf is a bay of black ledges, and the bays run
+  left to right. Every ledge has an LED bar along its back edge, so the boxes in front of it
+  are backlit. A label on the ledge names each shelf and its count.
 - **Camera.** It travels sideways along the wall, as a visitor would walk. Scroll, trackpad,
   drag, arrow keys, Page Up, Page Down, Home and End all move it. It eases to a stop and cannot
   leave the wall.
 - **Index.** A column of ticks at the edge, one per shelf. Clicking a tick takes the camera
   there. It is also the keyboard and screen-reader route between shelves.
-- **Hover or focus.** The box tips forward from the top, as if hooked by a fingertip. Its light
-  brightens. A small label gives title, platform and status.
+- **Hover or focus.** The box comes toward you and glows, and its ledge's LED glides to that
+  game's color. A small label gives title, platform and status.
 - **Pull.** Click or Enter. The box slides out and turns to face you, the camera moves in a
   little, the wall behind dims, and the detail opens beside it. Escape or Back puts it back.
-- **Detail by distance.** Far boxes show spines only. Nearer ones get small covers. The
-  nearest get full covers. The pulled box gets the largest.
+- **Detail by distance.** Far boxes show a blur of their cover's colors. Nearer ones get small
+  covers. The nearest get full covers. The pulled box gets the largest.
 - **When 3D cannot run.** No WebGL, a lost graphics context, or sustained low frame rate: the
   view changes to 2D and says so in one line. Nothing is lost.
 
@@ -216,21 +219,24 @@ Built to feel best on a phone and on modest hardware. It is a design of its own,
   as the width needs. The page scrolls normally.
 - **Layout, phone.** One shelf fills the screen. Swipe sideways for the next shelf; a row of
   tabs at the top shows where you are. Scroll down through that shelf's ledges.
-- **Spines.** Stylized, not to scale: wide enough to tap (at least 24px), with height and
-  width varying by case shape so the row has a real silhouette.
+- **Boxes.** Covers toward you, each in its platform's case: real proportions, the plastic's
+  color, a band across the top. Cases differ in height and width, so the row has a real
+  silhouette. In the compact option they stand spine-out instead, each spine wide enough to
+  tap (at least 24px).
 - **Depth.** Three layers move at slightly different rates on scroll: wall, ledge and shadow,
   spines. The total shift is small, about 12px.
-- **Light.** Each ledge has its own pool of light from above. In the dark theme the brightest
-  pool follows the pointer along the ledge.
-- **Hover or focus (desktop).** The spine tips out and its neighbors move aside a few pixels.
-- **Pull (desktop).** Click or Enter. The spine slides forward, swings round its edge to show
-  the cover, and the cover grows into the detail view.
-- **Tap (phone).** The spine tips out and a sheet rises from the bottom with the cover, title,
+- **Light.** Each ledge is lit from behind by its LED bar: a line of light at the ledge, a glow
+  on the wall behind the boxes, and a halo round each box. The LED takes the color of the game
+  in focus, and returns to violet when nothing is.
+- **Hover or focus (desktop).** The box lifts toward you and its neighbors move aside a few pixels.
+- **Pull (desktop).** Click or Enter. The box comes forward and its cover grows into the
+  detail view.
+- **Tap (phone).** The box lifts and a sheet rises from the bottom with the cover, title,
   status and platforms. Drag the sheet up, or tap it, for the full detail. Swipe the sheet
   sideways for the next or previous game.
-- **Scrub (phone).** Press and slide a finger along a ledge. Each spine tips out as the finger
-  passes, with its title shown above. Lift to select. This is how a narrow spine is chosen
-  precisely.
+- **Scrub (phone, compact option).** Press and slide a finger along a ledge. Each spine tips
+  out as the finger passes, with its title shown above. Lift to select. This is how a narrow
+  spine is chosen precisely.
 
 ### 3.5 What both shelf views must do
 
@@ -261,6 +267,10 @@ Built to feel best on a phone and on modest hardware. It is a design of its own,
 
 Once I press either button, that choice is remembered on this device and overrides the default.
 
+**Covers or spines.** Beside 2D and 3D sits a second pair of buttons: Covers and Compact.
+Covers is the default everywhere. Compact stands the boxes spine-out. It is also a per-device
+choice, it is not in the address, and it works in both 2D and 3D.
+
 **The switch itself**
 
 - The game nearest the center of the view, or the focused game, is the **anchor**. After the
@@ -268,7 +278,7 @@ Once I press either button, that choice is remembered on this device and overrid
   the two views lay shelves out differently, so pixels cannot match, but the place in the
   library does.
 - Filters, sort, grouping, search and focus are untouched.
-- Going to 3D, the wall tilts back and the spines gain depth around the anchor. Going to 2D,
+- Going to 3D, the wall tilts back and the boxes gain depth around the anchor. Going to 2D,
   it flattens. About 700ms.
 - Under reduced motion: a 200ms crossfade.
 - The 3D code is downloaded the first time 3D is opened, not before.
@@ -696,20 +706,21 @@ choice is remembered, and the right theme is applied before the first paint, wit
 
 A theme is a **lighting state**, not an inversion ([research, section 4](research.md#4-physical-inspiration)):
 
-| | Light: the gallery by day | Dark: the gallery after hours |
+| | Light: room lights on | Dark: room lights off |
 | --- | --- | --- |
-| Light source | One wide, soft skylight | A narrow warm spot over each ledge |
-| Wall | Pale plaster | Deep green, falling to near black between pools |
-| Ledge | Honed limestone | Blackened steel |
-| Brass | Matte | Glowing where the light lands |
-| Shadows | Long and soft, under ledges | Short and deep, pooled under boxes |
-| Covers | Evenly lit | Brightest under the spot, dimmer at the edges |
-| Reflection | Faint, on the floor | Stronger, on the floor and ledge lip |
+| Light source | Daylight | The LED bar behind each ledge |
+| Wall | Pale cool gray | Near-black |
+| Ledge | Black, strong against the wall | Black, seen by its line of light |
+| LED | A thin line and a faint tint | Carries the room: a glow up the wall, a halo round each box |
+| Shadows | Soft, under ledges | Replaced by light spilling under ledges |
+| Covers | Evenly lit | Lit from the front as in daylight, rimmed with LED light |
+| Reflection | Faint | Stronger, on the floor and ledge top |
 
-Covers are never tinted. Light changes how bright a cover is, not its colors.
+Covers are never tinted. The LED lights the wall and the edges of a box, never the cover's
+face.
 
-**Changing theme** is itself the lighting change: about a second in which the skylight fades
-and the spots warm up, or the reverse. Under reduced motion it is immediate.
+**Changing theme** is itself the lighting change: about a second in which the room lights
+fade and the LEDs come up, or the reverse. Under reduced motion it is immediate.
 
 **Done when**
 
@@ -812,7 +823,7 @@ The target is WCAG 2.2 level AA in both themes.
 
 | Area | Requirement |
 | --- | --- |
-| **Keyboard** | Everything in 3.11. Focus is always visible: a 2px brass ring with an offset. Focus is never trapped except inside an open dialog or sheet, and returns to where it was on close. |
+| **Keyboard** | Everything in 3.11. Focus is always visible: a 2px ring in the accent color, with an offset. Focus is never trapped except inside an open dialog or sheet, and returns to where it was on close. |
 | **Shelf structure** | Each shelf is a labeled list under a heading. Each game is one item named with title, platforms, status and my rating. One Tab stop per shelf; arrows move within it. |
 | **3D** | The canvas is hidden from assistive technology. The same labeled lists exist alongside it and drive it: moving focus moves the camera. A screen-reader user gets the same shelf, in the same order, in both views. |
 | **Announcements** | Filter and sort changes announce the result: "42 games, sorted by my rating". Adding, removing and undo are announced. |
@@ -834,14 +845,15 @@ The target is WCAG 2.2 level AA in both themes.
 
 ## 14. Motion
 
-Vitrine's motion is unhurried: things glide and settle. Nothing bounces.
+Motion is quick and exact, like a console's home screen: things snap to attention and settle.
+Nothing bounces.
 
 | Name | Length | Used for |
 | --- | --- | --- |
 | Instant | 100ms | Press feedback |
 | Quick | 180ms | Hover, focus, chips |
 | Base | 280ms | Panels, sheets, menus |
-| Slow | 480ms | A box tipping, sliding, turning |
+| Slow | 480ms | A box lifting, sliding, turning; the LED changing color |
 | Cinematic | 800ms | Camera moves, the 2D and 3D switch, theme change |
 
 Only position, scale, rotation and opacity are animated.
@@ -851,11 +863,11 @@ Only position, scale, rotation and opacity are animated.
 | Animation | Full | Under reduced motion |
 | --- | --- | --- |
 | Shelf loads | Boxes arrive in a stagger | Appear together |
-| Hover or focus | Box tips forward | Outline and brighter light only |
+| Hover or focus | Box comes toward you; the LED glides to its color | Outline; the LED changes color at once |
 | Pull | Slide, turn, camera moves in | 200ms crossfade to detail |
 | Reorder | Lift, slide, settle | 150ms crossfade |
 | 2D and 3D switch | Wall tilts and gains depth | 200ms crossfade |
-| Theme change | Lights change over a second | Immediate |
+| Theme change | Room lights and LEDs trade places over a second | Immediate |
 | Camera travel | Eased glide | Jumps to the destination |
 | Depth on scroll | Layers shift | None |
 | Stat numbers | Count up | Final value shown |
@@ -953,10 +965,10 @@ Each is a default you can overturn. None blocks Phase 3.
 
 | # | Decision | Alternative |
 | --- | --- | --- |
-| 1 | Visual direction is Vitrine | Golden Hour or Locadora |
+| 1 | ~~Visual direction is Vitrine~~ Overturned: the direction is Backlit, with covers facing out ([ADR 002](adr/002-visual-direction.md)) | |
 | 2 | Ports and editions join the existing entry silently; remasters and expanded editions ask, defaulting to "same game"; remakes ask, defaulting to "separate" | Different defaults per kind |
 | 3 | Notes are private unless marked public per game | Public by default |
-| 4 | A "featured" flag puts chosen games face-out | No face-out games, or automatic (top rated) |
+| 4 | A "featured" flag keeps chosen games cover-out in the compact option, where the rest stand spine-out | No featured games, or automatic (top rated) |
 | 5 | Two extra sorts: time to beat, and color | Only the nine in the brief |
 | 6 | On a phone, a tap raises a preview sheet first; a second step opens full detail | Tap opens full detail directly |
 | 7 | A compilation box is one entry | Split into its games |

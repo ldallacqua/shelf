@@ -72,3 +72,25 @@ Files: `concepts/c-locadora-light.avif`, `.webp`, `.jpg`
 Photorealistic photograph, landscape 3:2. The wall of a small 1990s neighbourhood video game rental shop on a bright Saturday afternoon. White slatwall panels with wire shelves densely packed with video game cases: the top row face-out, the lower four rows spine-out, hundreds of cases in many saturated colours. Blank yellow plastic shelf-talker tabs (hex FFD21F) stick out between sections as category dividers; blank cobalt-blue and red signage panels hang above. Some cases carry small blank round red and yellow price stickers. Bright, even, cool fluorescent light, crisp and clean, saturated primary colours, graphic and cheerful. A laminate counter edge in the foreground. Camera at standing eye level, 28mm lens, slight perspective down the aisle, deep focus. All game case covers and spines are blank abstract placeholders: flat colours and simple geometric colour blocks only. Absolutely no text, no letters, no numbers, no logos, no characters, no real game artwork, no brand marks, no console logos anywhere in the image.
 ```
 
+## Concept images for the fourth direction, Backlit
+
+Generated 12 Oct 2026 for [`docs/adr/002-visual-direction.md`](../../docs/adr/002-visual-direction.md),
+after the first direction was rejected for reading as a library of books. Same tool and same
+optimisation as above. These are mood references and the target for the 3D shelf. They do not
+ship in the app.
+
+### D. Backlit, dark theme
+
+Files: `concepts/d-backlit-dark.avif`, `.webp`, `.jpg`
+
+```text
+Photorealistic interior photograph, landscape 3:2. A gamer's display wall at night with the room lights off. Matte near-black wall (hex 0B0D12). Four long, thin, matte black floating shelves run the full width of the wall. Each shelf has a hidden LED light bar along its back edge that washes the wall behind and above the games with saturated violet light (hex 7C5CFF), brightest at the shelf and fading upward, and spills a softer glow onto the wall just below the shelf. On each shelf about fourteen video game cases stand upright FACING OUT, front covers toward the camera, side by side with small even gaps, leaning very slightly back against the wall. The LED light bleeds through the gaps and over the tops, so every case is rimmed with a thin halo of coloured light: the covers are backlit. The cases are ordinary plastic game cases in a few sizes, with coloured plastic frames: translucent blue, red, green, white and black. In the middle shelf, one case is pulled forward toward the camera, larger and crisply lit, and the LED light on that one shelf has changed to a warm orange that matches that case, while the other shelves stay violet. Glossy shelf tops carry a faint reflection of the cases. Dark polished floor with a soft coloured reflection. Premium gaming setup, moody and cinematic, like a high-end battlestation photograph, not a bookshelf. Camera straight-on and slightly off-axis, 35mm lens, shallow depth of field, high dynamic range, subtle grain. All game case covers are blank abstract placeholders: flat colours and simple geometric colour blocks only. Absolutely no text, no letters, no numbers, no logos, no characters, no real game artwork, no brand marks, no console logos anywhere in the image.
+```
+
+### D. Backlit, light theme
+
+Files: `concepts/d-backlit-light.avif`, `.webp`, `.jpg`
+
+```text
+Photorealistic interior photograph, landscape 3:2. A gamer's display wall in the daytime with the room lights on. Cool light-grey wall (hex ECEEF2) in soft, even daylight. Four long, thin, matte graphite-black floating shelves run the full width of the wall. Each shelf has an LED light bar along its back edge; in daylight it shows as a thin bright violet line (hex 7C5CFF) and a faint violet tint on the wall directly behind the games and just under the shelf. On each shelf about fourteen video game cases stand upright FACING OUT, front covers toward the camera, side by side with small even gaps, leaning very slightly back against the wall. The cases are ordinary plastic game cases in a few sizes, with coloured plastic frames: translucent blue, red, green, white and black. In the middle shelf, one case is pulled forward toward the camera, larger and crisply lit, and the light on that one shelf has shifted to a warm orange tint that matches that case. Soft, short shadows under the shelves. Pale polished concrete floor. Clean, crisp, modern gaming setup photographed like a product display in a bright studio, not a bookshelf. Camera straight-on and slightly off-axis, 35mm lens, gentle depth of field, natural colour. All game case covers are blank abstract placeholders: flat colours and simple geometric colour blocks only. Absolutely no text, no letters, no numbers, no logos, no characters, no real game artwork, no brand marks, no console logos anywhere in the image.
+```

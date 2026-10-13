@@ -508,6 +508,10 @@ My assessment, not measurements.
 
 ## 7. Recommendation
 
+> **Superseded on 12 Oct 2026.** Vitrine was built and rejected on sight: it read as a library of
+> books. The direction is now **D. Backlit**, with covers facing out. See
+> [ADR 002](adr/002-visual-direction.md). The text below is kept as a record.
+
 **Build A, Vitrine, and borrow two things from the others.**
 
 Why Vitrine:
