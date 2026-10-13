@@ -1,0 +1,142 @@
+@import 'tailwindcss';
+
+@import '../ui/tokens/reset.css';
+@import '../ui/tokens/palette.css';
+@import '../ui/tokens/properties.css';
+@import '../ui/tokens/theme.css';
+@import '../ui/tokens/motion.css';
+@import '../ui/room.css';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+@custom-variant pointer-coarse (@media (pointer: coarse));
+
+@theme inline {
+  --color-wall: var(--wall);
+  --color-wall-deep: var(--wall-deep);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ledge: var(--ledge);
+  --color-on-ledge: var(--on-ledge);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-marker: var(--marker);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-focus: var(--focus);
+  --color-led: var(--led);
+
+  /* One family for titles and interface: a wide, heavy cut for titles. */
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo-title), ui-sans-serif, system-ui, sans-serif;
+  /* Numbers, counts and small labels: the read-out. */
+  --font-mono: var(--font-martian-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --radius-case: 3px;
+  --radius-control: 8px;
+  --radius-panel: 14px;
+
+  --shadow-panel:
+    0 1px 0 color-mix(in srgb, var(--shadow-color) 8%, transparent),
+    0 16px 40px -10px
+      color-mix(in srgb, var(--shadow-color) calc(var(--shadow-depth) * 110%), transparent);
+  /* A halo in the accent color. Strong with the lights off, faint with them on. */
+  --shadow-glow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 calc(var(--glow) * 1.75rem)
+      color-mix(in srgb, var(--accent) calc(var(--glow) * 55%), transparent);
+
+  --tracking-label: 0.06em;
+
+  --animate-fade-in: fade-in var(--motion-quick) var(--ease-settle);
+  --animate-menu-in: menu-in var(--motion-quick) var(--ease-settle);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+  }
+}
+
+/* A title: Archivo's wide, heavy cut, set tight. */
+@utility title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+/* A read-out: small mono capitals for counts, labels and key hints. */
+@utility readout {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+/* Durations by name: duration-quick, duration-base and so on. */
+@utility duration-instant {
+  transition-duration: var(--motion-instant);
+}
+@utility duration-quick {
+  transition-duration: var(--motion-quick);
+}
+@utility duration-base {
+  transition-duration: var(--motion-base);
+}
+@utility duration-slow {
+  transition-duration: var(--motion-slow);
+}
+@utility duration-cinematic {
+  transition-duration: var(--motion-cinematic);
+}
+
+@layer base {
+  html {
+    background-color: var(--wall);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    display: flex;
+    min-height: 100dvh;
+    flex-direction: column;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Focus is always visible: a 2px accent ring with an offset. */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /*
+   * Until the page is live, nothing animates. A control that remembers a
+   * choice is corrected as React starts, and that should not be seen as a
+   * fade. See features/shell/ready-mark.tsx.
+   */
+  html:not([data-ready]) *,
+  html:not([data-ready]) *::before,
+  html:not([data-ready]) *::after {
+    transition: none !important;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+}

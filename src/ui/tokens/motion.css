@@ -1,0 +1,21 @@
+/*
+ * Motion tokens. The same numbers are exported to TypeScript in motion.ts, and
+ * a unit test keeps the two files in agreement.
+ *
+ * The pace is quick and exact, like a console's home screen: things snap to
+ * attention and settle. Nothing bounces, so no curve here overshoots.
+ */
+:root {
+  --motion-instant: 100ms; /* press feedback */
+  --motion-quick: 180ms; /* hover, focus, chips */
+  --motion-base: 280ms; /* panels, sheets, menus */
+  --motion-slow: 480ms; /* a box tipping, sliding, turning */
+  --motion-cinematic: 800ms; /* camera moves, the 2D and 3D switch, theme change */
+}
+
+/* Curves live in Tailwind's theme, so `ease-glide` and `var(--ease-glide)` both exist. */
+@theme static {
+  --ease-glide: cubic-bezier(0.45, 0, 0.15, 1); /* leaves gently, arrives gently */
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1); /* snaps in and comes to rest */
+  --ease-leave: cubic-bezier(0.4, 0, 1, 1); /* something going away */
+}

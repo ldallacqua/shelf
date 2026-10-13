@@ -1,0 +1,132 @@
+/*
+ * Typed registrations for every token that changes with the theme, and for
+ * the LED color, which changes with the game in focus.
+ * A registered property can be interpolated, which is what lets a theme change
+ * play as a change of light (see the transition in theme.css) instead of a cut.
+ * The initial values are the light theme.
+ */
+@property --wall {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #eceef2;
+}
+@property --wall-deep {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #e1e4ea;
+}
+@property --surface {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f7f8fa;
+}
+@property --surface-raised {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --ledge {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1b1e27;
+}
+@property --ledge-top {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #3a4152;
+}
+@property --text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0e1014;
+}
+@property --text-muted {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #555c6b;
+}
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #5b3fe6;
+}
+@property --on-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffffff;
+}
+@property --marker {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0a6b3a;
+}
+@property --line {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #c3c8d2;
+}
+@property --line-strong {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #7a8191;
+}
+@property --focus {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #5b3fe6;
+}
+@property --shadow-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1b2030;
+}
+@property --led {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #7c5cff;
+}
+@property --ambient {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --led-strength {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.45;
+}
+@property --led-wash {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.1;
+}
+@property --shadow-depth {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.2;
+}
+@property --reflect {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.05;
+}
+@property --glow {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.25;
+}
+@property --grain {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.04;
+}
+@property --shadow-length {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 8px;
+}
+@property --shadow-blur {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 18px;
+}

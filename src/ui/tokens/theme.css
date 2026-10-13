@@ -1,0 +1,146 @@
+/*
+ * Layers 2 and 3 of 3: meaning and lighting.
+ *
+ * Meaning says what a color is for (wall, shelf, text). Lighting says how the
+ * room is lit. The room is a game room with black display shelves, each with
+ * an LED bar along its back edge. A theme is a lighting state, not an
+ * inversion: with the room lights on the LEDs are a thin line and a faint
+ * tint; with the lights off, the LEDs carry the room.
+ *
+ * `data-theme` is set on <html> before first paint by the theme script. It can
+ * also be set on any element to light one part of the page differently.
+ * Without JavaScript the page stays in the light theme.
+ */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Meaning */
+  --wall: var(--fog-100);
+  --wall-deep: var(--fog-150);
+  --surface: var(--fog-50);
+  --surface-raised: var(--fog-0);
+  --ledge: var(--ink-750);
+  --ledge-top: var(--ink-500);
+  --on-ledge: var(--fog-25);
+  --text: var(--fog-950);
+  --text-muted: var(--fog-600);
+  --accent: var(--violet-600);
+  --on-accent: var(--fog-0);
+  --marker: var(--green-700);
+  --line: var(--fog-300);
+  --line-strong: var(--fog-500);
+  --focus: var(--violet-600);
+
+  /* Lighting: room lights on */
+  --light-color: var(--daylight);
+  --ambient: 1;
+  --led-strength: 0.45;
+  --led-wash: 0.1;
+  --shadow-color: var(--shade-day);
+  --shadow-length: 8px;
+  --shadow-blur: 18px;
+  --shadow-depth: 0.2;
+  --reflect: 0.05;
+  --glow: 0.25;
+  --grain: 0.04;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Meaning */
+  --wall: var(--ink-900);
+  --wall-deep: var(--ink-950);
+  --surface: var(--ink-800);
+  --surface-raised: var(--ink-700);
+  --ledge: var(--ink-800);
+  --ledge-top: var(--ink-600);
+  --on-ledge: var(--fog-25);
+  --text: var(--fog-25);
+  --text-muted: var(--fog-400);
+  --accent: var(--violet-300);
+  --on-accent: var(--ink-900);
+  --marker: var(--green-400);
+  --line: var(--ink-600);
+  --line-strong: var(--ink-400);
+  --focus: var(--violet-300);
+
+  /* Lighting: room lights off, LEDs on */
+  --light-color: var(--daylight);
+  --ambient: 0;
+  --led-strength: 1;
+  --led-wash: 0.18;
+  --shadow-color: var(--shade-night);
+  --shadow-length: 4px;
+  --shadow-blur: 12px;
+  --shadow-depth: 0.7;
+  --reflect: 0.22;
+  --glow: 1;
+  --grain: 0.06;
+}
+
+/*
+ * The LED's color. Violet at rest. Anything may set --led on a shelf, or on
+ * the whole room, to the color of the game in focus; because the property is
+ * registered, the light glides to the new color instead of cutting.
+ */
+:root,
+[data-theme] {
+  --led: var(--violet-500);
+  transition: --led var(--motion-slow) var(--ease-glide);
+}
+
+/*
+ * Changing theme is the lighting change itself, about a second long.
+ * The theme module sets `data-theme-changing` on <html> for that second, and
+ * never sets it under reduced motion, so there the change is immediate.
+ * Going dark, the room lights fade first and the LEDs come up after them;
+ * going light is the reverse.
+ */
+html[data-theme-changing] {
+  --_room: var(--motion-cinematic) var(--ease-glide);
+  transition:
+    --wall var(--_room),
+    --wall-deep var(--_room),
+    --surface var(--_room),
+    --surface-raised var(--_room),
+    --ledge var(--_room),
+    --ledge-top var(--_room),
+    --text var(--_room),
+    --text-muted var(--_room),
+    --accent var(--_room),
+    --on-accent var(--_room),
+    --marker var(--_room),
+    --line var(--_room),
+    --line-strong var(--_room),
+    --focus var(--_room),
+    --shadow-color var(--_room),
+    --shadow-length var(--_room),
+    --shadow-blur var(--_room),
+    --shadow-depth var(--_room),
+    --reflect var(--_room),
+    --grain var(--_room),
+    --led var(--_room),
+    --ambient var(--_first-light),
+    --led-strength var(--_second-light),
+    --led-wash var(--_second-light),
+    --glow var(--_second-light);
+}
+
+html[data-theme-changing='to-dark'] {
+  --_first-light: 500ms var(--ease-glide);
+  --_second-light: 700ms var(--ease-glide) 300ms;
+}
+
+html[data-theme-changing='to-light'] {
+  --_first-light: 700ms var(--ease-glide) 300ms;
+  --_second-light: 500ms var(--ease-glide);
+}
+
+/* While the room changes, nothing else animates on top of it. */
+html[data-theme-changing] *,
+html[data-theme-changing] *::before,
+html[data-theme-changing] *::after {
+  transition: none !important;
+}

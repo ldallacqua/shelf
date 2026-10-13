@@ -1,0 +1,166 @@
+{
+  "Meta": {
+    "siteName": "Shelf",
+    "description": "Uma biblioteca pessoal de jogos, guardada em uma estante iluminada para percorrer."
+  },
+  "Shell": {
+    "skipToContent": "Pular para o conteúdo",
+    "home": "Shelf, início",
+    "mainNav": "Principal",
+    "library": "Biblioteca",
+    "trophies": "Troféus",
+    "menu": "Menu",
+    "igdbCredit": "Dados e capas dos jogos: <link>IGDB.com</link>."
+  },
+  "Theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema"
+  },
+  "Language": {
+    "label": "Idioma"
+  },
+  "Foundations": {
+    "metaTitle": "Fundamentos",
+    "eyebrow": "Etapa {step, number} de {total, number} da construção",
+    "title": "Fundamentos",
+    "lead": "Do que o Shelf é feito: luz, cor, tipografia e movimento. Estas caixas estão em branco. Os jogos de verdade e suas capas chegam na próxima etapa.",
+    "hero": {
+      "description": "Uma prateleira iluminada por trás com caixas de jogos em branco, de frente",
+      "shelfLabel": "Caixas em branco",
+      "hint": "Aponte para uma caixa, ou toque em uma. A luz da prateleira assume a cor dela."
+    },
+    "light": {
+      "title": "Luz",
+      "body": "Um tema é um estado de iluminação, não uma inversão. Luzes acesas: luz do dia, e a barra de LED de cada prateleira é uma linha fina. Luzes apagadas: os LEDs iluminam a sala.",
+      "day": "Luzes acesas",
+      "night": "Luzes apagadas",
+      "shelfLabel": "Demonstração",
+      "sceneLabel": "Uma prateleira com caixas de jogos em branco, de frente, {time, select, day {com as luzes da sala acesas} other {iluminada só pela barra de LED}}",
+      "choose": "Segue o seu aparelho até você escolher.",
+      "led": {
+        "label": "Cor do LED",
+        "hint": "Na estante de verdade, a luz acompanha o jogo em foco.",
+        "colors": {
+          "violet": "Violeta",
+          "orange": "Laranja",
+          "cyan": "Ciano",
+          "pink": "Rosa",
+          "green": "Verde"
+        }
+      }
+    },
+    "color": {
+      "title": "Cor",
+      "body": "Os jogos trazem a cor, então a sala fica neutra: quase preta ou cinza-claro, uma cor de destaque e uma luz que muda.",
+      "roles": {
+        "wall": {
+          "name": "Parede",
+          "use": "A página"
+        },
+        "surface": {
+          "name": "Superfície",
+          "use": "Painéis e menus"
+        },
+        "shelf": {
+          "name": "Prateleira",
+          "use": "Onde os jogos ficam"
+        },
+        "text": {
+          "name": "Texto",
+          "use": "Tudo o que se lê"
+        },
+        "muted": {
+          "name": "Texto secundário",
+          "use": "Contagens e legendas"
+        },
+        "accent": {
+          "name": "Destaque",
+          "use": "Botões, links, foco"
+        },
+        "marker": {
+          "name": "Marcador",
+          "use": "Jogando agora"
+        },
+        "led": {
+          "name": "LED",
+          "use": "A luz da prateleira, em repouso"
+        }
+      }
+    },
+    "type": {
+      "title": "Tipografia",
+      "body": "Duas famílias. A Archivo faz títulos e interface: um corte largo e pesado para títulos, o normal para todo o resto. A Martian Mono faz números e etiquetas.",
+      "display": "Archivo, larga e pesada, para títulos",
+      "displaySample": "Todos os jogos, de frente",
+      "sans": "Archivo, para a interface",
+      "sansSample": "Adicione jogos do IGDB e encontre qualquer um deles com filtros que você pode combinar, salvar e compartilhar.",
+      "mono": "Martian Mono, para números e etiquetas",
+      "monoSample": "214 jogos / 61 terminados / 2.340 h"
+    },
+    "motion": {
+      "title": "Movimento",
+      "body": "Rápido e exato: tudo responde na hora e assenta. Nada quica. Cinco durações dão conta de tudo.",
+      "play": "Reproduzir",
+      "reset": "Voltar",
+      "milliseconds": "{value, number} ms",
+      "calm": "Seu aparelho pede movimento reduzido, então estes saltam para o lugar.",
+      "steps": {
+        "instant": {
+          "name": "Instantâneo",
+          "use": "Resposta ao toque"
+        },
+        "quick": {
+          "name": "Rápido",
+          "use": "Passar o cursor, foco, etiquetas"
+        },
+        "base": {
+          "name": "Base",
+          "use": "Painéis, folhas, menus"
+        },
+        "slow": {
+          "name": "Lento",
+          "use": "Uma caixa subindo, deslizando, girando"
+        },
+        "cinematic": {
+          "name": "Cinematográfico",
+          "use": "Movimentos de câmera, troca de tema"
+        }
+      }
+    },
+    "controls": {
+      "title": "Controles",
+      "body": "Feitos sobre os componentes Radix e redesenhados. O foco é sempre um anel na cor de destaque.",
+      "primary": "Adicionar jogo",
+      "secondary": "Filtros",
+      "ghost": "Limpar tudo",
+      "disabled": "Indisponível",
+      "shelfLabel": "PlayStation 4",
+      "view": "Visualização",
+      "shelf": "Estante",
+      "wall": "Mural",
+      "list": "Lista"
+    }
+  },
+  "Library": {
+    "metaTitle": "Biblioteca",
+    "title": "Biblioteca",
+    "emptyTitle": "A estante está sendo abastecida.",
+    "emptyBody": "Em breve os jogos estarão aqui.",
+    "shelfLabel": "Biblioteca"
+  },
+  "Trophies": {
+    "metaTitle": "Troféus",
+    "title": "Troféus",
+    "emptyTitle": "Nenhum jogo terminado ainda.",
+    "emptyBody": "Os jogos concluídos ficarão aqui, cada um sob a própria luz.",
+    "shelfLabel": "Terminados"
+  },
+  "NotFound": {
+    "metaTitle": "Página não encontrada",
+    "title": "Esta página não está na estante.",
+    "body": "O endereço pode ter um erro de digitação, ou a página pode ter mudado de lugar.",
+    "action": "Ir para a biblioteca"
+  }
+}

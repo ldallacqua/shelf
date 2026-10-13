@@ -1,0 +1,26 @@
+name: Browsers
+description: Installs Playwright's browsers, reusing them from earlier runs.
+inputs:
+  browsers:
+    description: Which browsers to install, separated by spaces.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Read the Playwright version
+      id: playwright
+      shell: bash
+      run: echo "version=$(pnpm exec playwright --version | tr -d ' ')" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v6
+      id: cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-${{ inputs.browsers }}
+    - name: Install browsers
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: pnpm exec playwright install --with-deps ${{ inputs.browsers }}
+    - name: Install the browsers' system libraries
+      if: steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: pnpm exec playwright install-deps ${{ inputs.browsers }}

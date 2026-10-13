@@ -1,20 +1,43 @@
 # Shelf
 
-A personal game library that feels like standing in front of your own shelf.
+A personal game library that feels like standing in front of your own lit shelf.
 
 Add games from IGDB, then browse them on a shelf (2D or 3D) with filters and sorting.
 
+## Run it
+
+```sh
+pnpm install
+pnpm dev        # http://localhost:3300
+```
+
+Node 24 and pnpm 10. Everything else about working here is in [AGENTS.md](AGENTS.md), and
+how it is tested is in [`docs/testing.md`](docs/testing.md).
+
 ## Status
 
-Planning is done. No app code exists yet.
-
-| Phase | What | State |
+| | What | State |
 | --- | --- | --- |
-| 1 | Research and visual directions: [`docs/research.md`](docs/research.md) | Done |
-| 2 | Product and UX spec: [`docs/spec.md`](docs/spec.md). Data model: [`docs/adr/001-game-entry-model.md`](docs/adr/001-game-entry-model.md) | Done |
-| 3 | Architecture: [`docs/architecture.md`](docs/architecture.md). Setup checklist: [`docs/setup.md`](docs/setup.md) | Awaiting review |
-| Build | Ten build steps | Not started |
+| Phase 1 | Research and visual directions: [`docs/research.md`](docs/research.md) | Done |
+| Phase 2 | Product and UX spec: [`docs/spec.md`](docs/spec.md). Data model: [`docs/adr/001-game-entry-model.md`](docs/adr/001-game-entry-model.md) | Done |
+| Phase 3 | Architecture: [`docs/architecture.md`](docs/architecture.md). Setup checklist: [`docs/setup.md`](docs/setup.md) | Done |
+| Step 1 | Scaffold, tooling, CI, both languages, themes, design tokens. Visual direction changed: [`docs/adr/002-visual-direction.md`](docs/adr/002-visual-direction.md) | Done |
+| Step 2 | IGDB proxy, data model, seed | Not started |
+| Step 3 | 2D shelf, wall and list | Not started |
+| Step 4 | 3D shelf | Not started |
+| Step 5 | Filters, sorting, smart shelves | Not started |
+| Step 6 | Game detail | Not started |
+| Step 7 | Sign-in and adding games | Not started |
+| Step 8 | Landing page | Not started |
+| Step 9 | Phone and tablet, accessibility and speed passes | Not started |
+| Step 10 | Final review | Not started |
+
+What is on screen today is a foundations page: the light, color, type, motion and controls
+the app is built from, on a shelf of blank cases. There are no games yet.
 
 ## Credits
 
 Game data and artwork will come from [IGDB.com](https://www.igdb.com).
+Fonts: [Archivo](https://fonts.google.com/specimen/Archivo) and
+[Martian Mono](https://fonts.google.com/specimen/Martian+Mono), both under the SIL Open Font
+License.
