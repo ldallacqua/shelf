@@ -11,7 +11,26 @@ export const caseShapes = {
   keepCase: { width: 135, height: 190 }, // PlayStation 2, Xbox, Xbox 360, Wii, GameCube
   switch: { width: 105, height: 170 },
   jewel: { width: 142, height: 125 }, // PlayStation, Dreamcast, Saturn
+  ds: { width: 122, height: 135 }, // DS and 3DS
+  vita: { width: 105, height: 135 },
+  psp: { width: 99, height: 168 },
+  // Cardboard boxes and clamshells. These three are estimates, not measured.
+  boxTall: { width: 127, height: 178 }, // NES, Mega Drive, Master System
+  boxWide: { width: 178, height: 127 }, // SNES, Nintendo 64
+  boxSmall: { width: 124, height: 124 }, // Game Boy and other handhelds
 } as const
+
+/** The plastic a case is made of, as paint. */
+export const plastics = {
+  blue: 'var(--plastic-blue)',
+  red: 'var(--plastic-red)',
+  green: 'var(--plastic-green)',
+  white: 'var(--plastic-white)',
+  black: 'var(--plastic-black)',
+  clear: 'var(--plastic-clear)',
+} as const
+
+export type PlasticName = keyof typeof plastics
 
 export type CaseShape = keyof typeof caseShapes
 

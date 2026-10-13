@@ -3,6 +3,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 
+import { PreferenceScript } from '@/features/library/preference-script'
 import { Footer } from '@/features/shell/footer'
 import { Header } from '@/features/shell/header'
 import { ReadyMark } from '@/features/shell/ready-mark'
@@ -50,6 +51,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
     <html lang={locale} className={fontVariables} suppressHydrationWarning>
       <head>
         <ThemeScript />
+        <PreferenceScript />
       </head>
       <body>
         <ReadyMark />

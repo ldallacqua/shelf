@@ -1,0 +1,830 @@
+/*
+ * The shelves of the library: rows of games standing on lit boards, the
+ * dense wall of covers, and the list. Drawn with the room's lighting tokens,
+ * so both themes come from one set of rules.
+ *
+ * How a shelf is laid out. CSS decides how many games fit on a row: the boxes
+ * are items of a grid whose columns repeat to fill the width. The boards and
+ * their light are a second layer behind, one "bay" per row, placed by row
+ * number. Script only has to know which rows are near the screen.
+ */
+@layer components {
+  /*
+   * Scale: how many pixels one millimeter of a real game case takes. Every
+   * case is drawn at its real size times this, so cases keep their
+   * proportions to each other at any width.
+   */
+  .shelves {
+    --mm: 0.8px;
+    --gap: 0.75rem;
+    /* A row, top to bottom: room above the games, the games, the board, room below. */
+    --head: 1.5rem;
+    --board: 0.625rem;
+    --below: 1.75rem;
+  }
+
+  @media (min-width: 40rem) {
+    .shelves {
+      --mm: 0.9px;
+      --gap: 1rem;
+      --head: 1.75rem;
+      --below: 2rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .shelves {
+      --mm: 1px;
+      --gap: 1.25rem;
+    }
+  }
+
+  /*
+   * One shelf's games. `--slot` and `--tall` are the widest and the tallest
+   * case on this shelf, in millimeters; the component sets them.
+   */
+  .shelf-grid {
+    --pitch: calc(var(--tall, 190) * var(--mm) + var(--head) + var(--board) + var(--below));
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--slot, 135) * var(--mm)), 1fr));
+    grid-auto-rows: var(--pitch);
+    column-gap: var(--gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Spine-out: many narrow boxes to a row. */
+  .shelf-grid[data-density='compact'] {
+    grid-template-columns: repeat(auto-fill, minmax(1.75rem, 1fr));
+    column-gap: 0.1875rem;
+  }
+
+  /* Rows that are not near the screen are not in the page; these keep their place. */
+  .shelf-gap {
+    grid-column: 1 / -1;
+    pointer-events: none;
+  }
+
+  /* The boards and their light, behind the games. */
+  .shelf-bays {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    /* Light may spill past the shelf's edges; a board with nothing on it may not show. */
+    clip-path: inset(-3rem -2rem -3rem -2rem);
+  }
+
+  .shelf-bay {
+    position: absolute;
+    top: calc(var(--row) * var(--pitch));
+    right: 0;
+    left: 0;
+    height: var(--pitch);
+  }
+
+  .shelf-bay .bay-glow {
+    inset: 0 0 calc(var(--below) + var(--board));
+  }
+
+  .shelf-bay .ledge {
+    position: absolute;
+    right: -0.5rem;
+    bottom: var(--below);
+    left: -0.5rem;
+  }
+
+  /* A game's place on the row: it stands on the board, centered in its slot. */
+  .shelf-cell {
+    display: flex;
+    min-width: 0;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: calc(var(--below) + var(--board));
+  }
+
+  /*
+   * A game as an object you can pick up. The button is the box; what is
+   * inside it is the case and its marks.
+   */
+  .game-box {
+    position: relative;
+    display: block;
+    flex: none;
+    border-radius: var(--radius-case);
+    color: inherit;
+    cursor: pointer;
+    transform-origin: 50% 100%;
+    transition:
+      translate var(--motion-quick) var(--ease-settle),
+      rotate var(--motion-base) var(--ease-settle),
+      scale var(--motion-quick) var(--ease-settle),
+      opacity var(--motion-base) var(--ease-settle);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .game-box:focus-visible {
+    z-index: 2;
+    outline-offset: 4px;
+  }
+
+  /* Each game's halo glides to its row's light, as the board's LED does. */
+  .game-box .game-case,
+  .game-spine {
+    transition:
+      transform var(--motion-quick) var(--ease-settle),
+      box-shadow var(--motion-quick) var(--ease-settle),
+      --led var(--motion-slow) var(--ease-glide);
+  }
+
+  /*
+   * How a box shows its state. Never by color alone: each has a posture or a
+   * mark, and its name says the state in words.
+   */
+
+  /* Playing: stands forward of the row. */
+  .game-box[data-status='playing'] {
+    z-index: 1;
+    scale: 1.05;
+  }
+
+  /* Dropped: leans against its neighbor. */
+  .game-box[data-status='dropped'] {
+    rotate: 5deg;
+    transform-origin: 100% 100%;
+  }
+
+  /* Wishlist: an outline where a box would stand, with a faint cover. */
+  .game-box[data-status='wishlist'] .game-case {
+    background: transparent;
+    box-shadow: none;
+    outline: 1.5px dashed var(--line-strong);
+    outline-offset: -1.5px;
+  }
+
+  .game-box[data-status='wishlist'] .game-case::before,
+  .game-box[data-status='wishlist'] .game-case::after {
+    display: none;
+  }
+
+  .game-box[data-status='wishlist'] .cover {
+    opacity: 0.38;
+    filter: grayscale(0.55);
+  }
+
+  /* Owned only as a download: the cover alone, with no case around it. */
+  .game-loose {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 2px;
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 2px 3px rgb(0 0 0 / calc(var(--shadow-depth) * 0.9)),
+      0 0 calc(var(--glow) * 1.5rem)
+        color-mix(in srgb, var(--led) calc(var(--led-strength) * 45%), transparent);
+    transition:
+      transform var(--motion-quick) var(--ease-settle),
+      box-shadow var(--motion-quick) var(--ease-settle),
+      --led var(--motion-slow) var(--ease-glide);
+  }
+
+  .game-loose[data-active] {
+    z-index: 1;
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 0.5rem 1rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.9)),
+      0 0 calc(0.5rem + var(--glow) * 1.5rem)
+        color-mix(in srgb, var(--case-led, var(--led)) calc(35% + var(--glow) * 45%), transparent);
+  }
+
+  /* Completed: a foil seal on the cover's corner. */
+  .game-seal {
+    position: absolute;
+    top: -0.3125rem;
+    right: -0.3125rem;
+    z-index: 2;
+    display: grid;
+    width: 1.25rem;
+    height: 1.25rem;
+    place-items: center;
+    border-radius: 9999px;
+    background: conic-gradient(
+      from 210deg,
+      #f6e7b0,
+      #c9a24a,
+      #fff6d6,
+      #b98a2e,
+      #f1d98f,
+      #c9a24a,
+      #f6e7b0
+    );
+    color: #3b2a05;
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.35),
+      0 1px 3px rgb(0 0 0 / 0.5);
+  }
+
+  .game-seal svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    stroke-width: 3;
+  }
+
+  /* Owned on more than one platform: a small count on the box's foot. */
+  .game-count {
+    position: absolute;
+    bottom: -0.375rem;
+    left: 50%;
+    z-index: 2;
+    min-width: 1.25rem;
+    padding: 0 0.3125rem;
+    translate: -50% 0;
+    border-radius: 9999px;
+    background: var(--ledge);
+    color: var(--on-ledge);
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    line-height: 1rem;
+    text-align: center;
+    box-shadow:
+      inset 0 1px 0 var(--ledge-top),
+      0 1px 3px rgb(0 0 0 / 0.5);
+  }
+
+  /* Playing: a small live light above the box. */
+  .game-live {
+    position: absolute;
+    top: -0.625rem;
+    left: 50%;
+    z-index: 2;
+    width: 0.375rem;
+    height: 0.375rem;
+    translate: -50% 0;
+    border-radius: 9999px;
+    background: var(--marker);
+    box-shadow: 0 0 calc(2px + var(--glow) * 8px) var(--marker);
+  }
+
+  /* The cover: a wash of its colors, then a blurred preview, then the image. */
+  .cover {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--surface-raised);
+    background-position: center;
+    background-size: cover;
+  }
+
+  .cover img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity var(--motion-base) var(--ease-settle);
+  }
+
+  /* Only covers that arrive after the page is live fade in; the first ones are simply there. */
+  .cover img[data-pending] {
+    opacity: 0;
+  }
+
+  /*
+   * A cover that could not be loaded, or a game that has none: its colors,
+   * with the title set in type. Under a cover that did load, it is not shown.
+   */
+  .cover:has(img):not([data-failed]) .cover-title {
+    display: none;
+  }
+
+  .cover-title {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 8%;
+    overflow: hidden;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    line-height: 1.1;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+    overflow-wrap: anywhere;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.6), transparent 70%);
+  }
+
+  /*
+   * A spine: the box standing sideways, for the compact shelf. A band in the
+   * platform's color at the top, then the title running down it.
+   */
+  .game-spine {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-width: 1.5rem;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--spine, var(--surface-raised));
+    color: var(--spine-ink, #fff);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.3),
+      0 2px 3px rgb(0 0 0 / calc(var(--shadow-depth) * 0.9)),
+      0 0 calc(var(--glow) * 1rem)
+        color-mix(in srgb, var(--led) calc(var(--led-strength) * 40%), transparent);
+  }
+
+  .game-spine::before {
+    content: '';
+    height: 0.5rem;
+    flex: none;
+    background: var(--case-frame, var(--ledge));
+    box-shadow: inset 0 -1px 0 rgb(0 0 0 / 0.3);
+  }
+
+  /* Gloss down one edge, so it reads as plastic. */
+  .game-spine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      rgb(255 255 255 / 0.22) 0,
+      transparent 30%,
+      transparent 75%,
+      rgb(0 0 0 / 0.25) 100%
+    );
+  }
+
+  .game-spine-title {
+    min-height: 0;
+    flex: 1;
+    padding: 0.375rem 0;
+    overflow: hidden;
+    font-size: 0.625rem;
+    font-weight: 700;
+    line-height: 1.75rem;
+    letter-spacing: 0.01em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+  }
+
+  .game-spine[data-active] {
+    z-index: 1;
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.3),
+      0 0.5rem 1rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.9)),
+      0 0 calc(0.5rem + var(--glow) * 1.25rem)
+        color-mix(in srgb, var(--case-led, var(--led)) calc(35% + var(--glow) * 45%), transparent);
+  }
+
+  .game-box[data-status='wishlist'] .game-spine {
+    background: transparent;
+    color: var(--text-muted);
+    box-shadow: none;
+    outline: 1.5px dashed var(--line-strong);
+    outline-offset: -1.5px;
+  }
+
+  .game-box[data-status='wishlist'] .game-spine::before,
+  .game-box[data-status='wishlist'] .game-spine::after {
+    display: none;
+  }
+
+  /*
+   * Motion. Everything below moves something, so it applies only when
+   * motion is welcome. Without it, state changes still show: light, shadow
+   * and outline change in place.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .game-loose[data-active] {
+      transform: translateY(-4%) scale(1.05);
+    }
+
+    .game-spine[data-active] {
+      transform: translateY(-5%);
+    }
+
+    /* The neighbors of a box in focus move aside a little. */
+    @media (hover: hover) {
+      .shelf-cell:has(+ .shelf-cell .game-box:is(:hover, :focus-visible)) .game-box {
+        translate: -3px 0;
+      }
+
+      .shelf-cell:has(.game-box:is(:hover, :focus-visible)) + .shelf-cell .game-box {
+        translate: 3px 0;
+      }
+    }
+
+    /*
+     * Boxes arrive on the shelf in a short stagger: each drops the last
+     * stretch onto its board. They do not fade in. A cover that starts
+     * transparent is not counted as painted until something redraws it, which
+     * measured as a largest paint six seconds late on a slow phone.
+     */
+    .shelf-cell[data-enter] .game-box,
+    .wall-cell[data-enter] {
+      animation: box-in var(--motion-slow) var(--ease-settle) both;
+      animation-delay: calc(min(var(--i, 0), 24) * 22ms);
+    }
+
+    .game-live {
+      animation: live 2.4s var(--ease-glide) infinite;
+    }
+  }
+
+  @keyframes box-in {
+    from {
+      translate: 0 -1rem;
+    }
+  }
+
+  @keyframes live {
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  /*
+   * The wall: covers in a dense grid, with almost no chrome.
+   */
+  .wall-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--wall-cell, 6.5rem), 1fr));
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wall-grid[data-size='small'] {
+    --wall-cell: 4.5rem;
+  }
+
+  .wall-grid[data-size='large'] {
+    --wall-cell: 9.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    .wall-grid {
+      --wall-cell: 8rem;
+      gap: 0.5rem;
+    }
+
+    .wall-grid[data-size='small'] {
+      --wall-cell: 5.5rem;
+    }
+
+    .wall-grid[data-size='large'] {
+      --wall-cell: 12rem;
+    }
+  }
+
+  .wall-cell {
+    position: relative;
+    display: block;
+    aspect-ratio: 3 / 4;
+    min-width: 0;
+  }
+
+  .wall-box {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 3px;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.28);
+    transition:
+      scale var(--motion-quick) var(--ease-settle),
+      box-shadow var(--motion-quick) var(--ease-settle);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .wall-box:focus-visible {
+    z-index: 2;
+  }
+
+  .wall-box:is(:hover, :focus-visible, [data-active]) {
+    z-index: 1;
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 0.5rem 1.25rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.9)),
+      0 0 calc(0.375rem + var(--glow) * 1.5rem)
+        color-mix(in srgb, var(--case-led, var(--led)) calc(30% + var(--glow) * 45%), transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) {
+    .wall-box:is(:hover, :focus-visible, [data-active]) {
+      scale: 1.04;
+    }
+  }
+
+  .wall-box[data-status='wishlist'] .cover {
+    opacity: 0.4;
+    filter: grayscale(0.55);
+  }
+
+  .wall-box[data-status='wishlist'] {
+    box-shadow: none;
+    outline: 1.5px dashed var(--line-strong);
+    outline-offset: -1.5px;
+  }
+
+  /* Marks along the foot of a wall cover: status on the left, platforms on the right. */
+  .wall-marks {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem;
+    padding: 1.25rem 0.3125rem 0.3125rem;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.78), transparent);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    line-height: 0.875rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  .wall-marks svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    flex: none;
+  }
+
+  .wall-grid[data-size='small'] .wall-marks span {
+    display: none;
+  }
+}
+
+@layer components {
+  /*
+   * The library's frame. On a phone it fills the screen under the header:
+   * one shelf at a time, swiped sideways, with the controls at the bottom
+   * where a thumb reaches. On anything wider it is an ordinary page with the
+   * controls on top.
+   */
+  .library {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* First in the page for the keyboard; at the bottom of a phone's screen for the thumb. */
+  .library-controls {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    order: 99;
+    margin-inline: -1rem;
+    padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+    border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    background: color-mix(in srgb, var(--wall) 88%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  @media (min-width: 40rem) {
+    .library-controls {
+      position: static;
+      order: 0;
+      margin-inline: 0;
+      padding: 0;
+      border-top: 0;
+      background: none;
+      backdrop-filter: none;
+    }
+  }
+
+  @media (max-width: 39.99rem) {
+    /* The header is 3.5rem and a hairline. */
+    .library[data-view='shelf'] {
+      height: calc(100dvh - 3.5rem - 1px);
+    }
+
+    .library[data-view='shelf'] .shelves {
+      display: flex;
+      min-height: 0;
+      flex: 1;
+      flex-direction: column;
+    }
+
+    .shelf-pager {
+      display: flex;
+      min-height: 0;
+      flex: 1;
+      margin-inline: -1rem;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+
+    .shelf-pager::-webkit-scrollbar {
+      display: none;
+    }
+
+    .shelf-panel {
+      flex: 0 0 100%;
+      height: 100%;
+      padding-inline: 1rem;
+      overflow-y: auto;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+  }
+
+  /* The shelves by name, on a phone: where you are, and a way to jump. */
+  .shelf-tabs {
+    display: flex;
+    flex: none;
+    gap: 0.25rem;
+    margin-inline: -1rem;
+    padding: 0.25rem 1rem 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .shelf-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (min-width: 40rem) {
+    .shelf-tabs {
+      display: none;
+    }
+  }
+
+  .shelf-tab {
+    display: inline-flex;
+    min-height: 2.25rem;
+    flex: none;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition:
+      color var(--motion-quick) var(--ease-settle),
+      background-color var(--motion-quick) var(--ease-settle),
+      border-color var(--motion-quick) var(--ease-settle);
+  }
+
+  .shelf-tab[aria-current='true'] {
+    border-color: var(--line-strong);
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  /* The same ink as the tab's name: fainter, and it could not be read on the wall. */
+  .shelf-tab-count {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 500;
+  }
+
+  /*
+   * The list: one compact row per game.
+   */
+  .game-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    font-size: 0.875rem;
+  }
+
+  .game-table th {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .game-table td {
+    height: 3.5rem;
+    padding: 0 0.75rem;
+    overflow: hidden;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .game-table :is(th, td)[data-number] {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .game-table tbody tr[data-cell] {
+    cursor: pointer;
+    transition: background-color var(--motion-quick) var(--ease-settle);
+  }
+
+  .game-table tbody tr[data-cell]:is(:hover, :focus-within, [data-active]) {
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+  }
+
+  .game-table .game-thumb {
+    display: block;
+    width: 2.25rem;
+    height: 3rem;
+    overflow: hidden;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.28);
+  }
+
+  .game-table tbody tr[data-cell] {
+    position: relative;
+  }
+
+  /*
+   * The row's button is the title. Its hit area is stretched over the whole
+   * row, so a click anywhere on the row opens the game.
+   */
+  .game-table .game-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .game-table .game-link {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 2px;
+    font-weight: 600;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A regroup or a change of view, when motion is not welcome: a short crossfade. */
+  .library-swap {
+    animation: fade-in 150ms var(--ease-settle) both;
+  }
+}
+
+@layer components {
+  /*
+   * A visitor who chose the compact shelf must not see covers flash first.
+   * The page arrives drawn with covers; until it is live, their shelves are
+   * held back, and the control that shows the choice with them.
+   */
+  html[data-density='compact']:not([data-ready]) :is(.shelf-grid, [data-preference='density']),
+  html:is([data-wall-size='small'], [data-wall-size='large']):not([data-ready])
+    :is(.wall-grid, [data-preference='wall-size']) {
+    visibility: hidden;
+  }
+
+  /*
+   * Depth: as the page scrolls, the light on the wall behind each row drifts
+   * a little against the games in front of it, about 12 pixels over the
+   * height of the screen. Only where the browser can tie an animation to
+   * scrolling, and only when motion is welcome.
+   */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .shelf-bay .bay-glow {
+        animation: drift linear both;
+        animation-timeline: view();
+      }
+    }
+  }
+
+  @keyframes drift {
+    from {
+      translate: 0 6px;
+    }
+
+    to {
+      translate: 0 -6px;
+    }
+  }
+}

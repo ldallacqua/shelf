@@ -270,8 +270,10 @@ separate file, not inside the page:
 | Left out | Summaries, screenshots and notes (the game page fetches those). Keywords, which are large, are a second file fetched the first time a keyword filter is used. Private notes are never in any public file. |
 | Size target | 120 KB compressed per 1,000 games. A test fails the build past that. |
 
-**Address state.** `q`, `sort`, `group`, `view` and `seed` are read and written with nuqs,
-typed by the same Zod schemas the server uses. Changing a filter updates the address without
+**Address state.** `q`, `sort`, `group`, `view` and `seed` are read and written with nuqs
+(`view` and `group` since step 3; the rest arrive with filters at step 5). One function in
+`domain/` reads them for the server and falls back to the default for anything it does not
+know. Changing a filter updates the address without
 asking the server. Back and forward work because each change is a history entry.
 
 **What stays out of the server's view.** Theme, language choice and the 2D or 3D preference
@@ -504,7 +506,9 @@ One tool per job, so nothing fights:
 | Job | Tool | Loaded |
 | --- | --- | --- |
 | Hover, press, focus, simple state | CSS transitions | Always |
-| Sheets, menus, reordering after a sort, gestures | Motion | With the library |
+| Menus and sheets | CSS animations on Radix primitives | With the library |
+| Reordering after a regroup or a change of view | The Web Animations API: each box on screen slides from where it stood (`useFlip`) | With the library |
+| Gestures: dragging a sheet, scrubbing spines | Motion, when they are built (step 9). Not installed until then. | n/a |
 | A cover growing into the detail page | React `<ViewTransition>` | Built in |
 | Scroll-driven scenes | GSAP with ScrollTrigger | Landing page only |
 | Smooth scrolling | Lenis | Landing page only, and not on touch |
@@ -532,14 +536,16 @@ baseline.
 
 | Concern | Design |
 | --- | --- |
-| Boxes | Real elements. Cover-out: the cover image inside a case drawn in CSS (real proportions, the plastic's color, a band across the top), with the title as the image's text alternative. Compact: a spine with real text for the title. Either way a screen reader reads them and a browser can find text in them. |
-| Light | The LED bar is a registered CSS property per ledge. Setting it to the color of the game in focus makes the line, the glow on the wall and each box's halo glide to that color. |
-| Lift, pull, lean | CSS transforms on the box |
-| Depth | Three layers moved by scroll position, about 12 px, with a CSS scroll timeline where supported |
-| Long libraries | Ledges are rows in a virtual list (TanStack Virtual). Only rows near the screen exist in the page. |
-| First paint | The server renders the first screen of real boxes, so covers start loading with the page |
-| Phone | One shelf per screen with sideways scroll snapping; tabs for the same move |
-| Wall and List | The same data and selection through different row renderers. List is a real table. |
+| Boxes | Real elements: each is a button. Cover-out: the cover image inside a case drawn in CSS (real proportions, the plastic's color, a band across the top), with the title as the image's text alternative. Compact: a spine with real text for the title. The button's name says everything the box shows by shape: title, platform, format, status. |
+| Layout | CSS decides how many boxes fit on a row: the boxes are items of a grid whose columns repeat to fill the width, each as wide as the shelf's widest case. The boards and their light are a second layer behind, one per row, placed by row number. So the HTML the server sends is right at any width before any script runs. |
+| Light | The LED is a registered CSS property. Setting it on a row to the color of the game in focus makes the line, the glow on the wall and each box's halo glide to that color. |
+| Lift, stand forward, lean | CSS transforms on the box |
+| Depth | The light on the wall behind each row drifts about 12 px against the games as the page scrolls, with a CSS scroll timeline where supported. The wall itself is fixed to the window. |
+| Long libraries | Only rows near the screen are in the page. A small hook of our own (`useRowWindow`) reads from the browser how many columns the grid made and how tall a row is, and says which rows to draw. |
+| First paint | The server sends the first 48 boxes inside the page, and the first six covers are fetched ahead of everything else. The whole library follows as the library file. |
+| Phone | One shelf per screen with sideways scroll snapping, each shelf scrolling by itself; tabs for the same move; controls at the bottom |
+| Wall and List | The same shelves and the same open game through different renderers. List is a real table, one per shelf. |
+| A game picked up | A sheet from the bottom on a phone, a panel from the right otherwise, with what is recorded about the game and steps to its neighbors. It becomes the game page at step 6. |
 
 ---
 
@@ -725,11 +731,11 @@ CI needs **no secrets**: it builds against a SQLite file and the mocks.
 
 | Measure | Budget | Enforced by |
 | --- | --- | --- |
-| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`. | Build check |
+| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`: 206 KB for the home page, 233 KB for the library. | Build check |
 | three.js in any page's first load | None | Build check |
 | Library file per 1,000 games, compressed | 120 KB | Unit test |
 | Filter or sort, 1,000 games | 50 ms | Unit benchmark |
-| Lighthouse mobile, landing and library | 90 | CI |
+| Lighthouse mobile: home, library as a shelf, library as a wall | 90 | CI |
 | Largest contentful paint, mobile | 2.5 s | CI |
 | Layout shift | 0.1 | CI |
 | Rows in the page for a 1,000-game list | Only those near the screen | End-to-end test |
@@ -919,6 +925,13 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 3 | **Rows are kept out of the page by a hook of our own, not TanStack Virtual.** | A virtual-list library needs to be told how many items fit on a row. Here CSS decides that, so the boxes the server sends are laid out correctly at any width with no script, and nothing moves when the page comes alive. The hook is about 80 lines: it asks the browser how many columns the grid made and draws the rows near the window. With 230 games on one shelf, 54 boxes are in the page. |
+| Step 3 | **Boxes arrive by dropping the last stretch onto their board. They do not fade in.** | Measured: with a fade, Chrome did not count a cover as painted until something redrew it, and Lighthouse reported the largest paint at 8.1 s on its slow-phone profile. Without the fade it is 2.1 s. The stagger is kept. |
+| Step 3 | **Covers on the shelf never fetch the largest file, and a 180-pixel file is offered.** The first six covers are fetched early, and the connection to IGDB's image servers is opened while the page arrives. | A box is about 130 pixels wide. Twelve early covers at 264 pixels competed on a slow connection and the largest paint was 2.8 s. Measured after: library 96 and 2.1 s, wall 94 and 2.1 s, list 94 and 1.5 s. |
+| Step 3 | **Every box on a shelf stands in a slot as wide as that shelf's widest case.** A platform shelf's slot is its platform's case; a mixed shelf's is a CD case, the widest common one. | Real cases differ in width. Packing them edge to edge would make the number per row depend on which games they are, which only script could work out. Equal slots keep real proportions and let CSS do the layout. |
+| Step 3 | **The blurred cover preview is drawn only for covers that join a live page.** The boxes that come with the page show a wash of the cover's three colors until the image arrives. | Decoding a preview needs script, and putting 48 of them into the HTML would add about 50 KB to every visit. |
+| Step 3 | **The library's JavaScript is 233 KB, 34 KB over the shell.** The budget is now 240 KB. | The three views, the sheet, the address state and the preview decoder. The address-state library is loaded on the library page only; in the root layout it cost every page 4 KB. |
+| Step 3 | **Left for the steps that own them:** the status row, filters, search, sorting and smart shelves (step 5); the game page, and the cover growing into it (step 6); the 3D shelf and its switch (step 4); the trophy wall (after filters, with its stats); scrubbing along spines, dragging the sheet, swiping it sideways, and collapsing a shelf (step 9). | Each needs something that step builds. The sheet a game opens in today is the first part of step 6's game page. |
 | Step 2 | **A deployment with no database connected serves a sample file instead of failing.** The Vercel build makes `.data/shelf.db` (the sample library for a preview, empty for production) and ships it; each server instance copies it to its temporary folder and opens the copy. | So the previews for steps 2 to 6 work before the Turso databases exist, and a missing setting can never take the site down. The copy is marked as not kept, and the write services at step 7 refuse to run on it, so a library can never be saved into something that is thrown away. Connecting Turso later needs no code change. |
 | Step 2 | **Write services and the IGDB search route arrive with sign-in, at step 7.** Step 2 has the write functions themselves (`server/library/store.ts`, tested), the read services and the IGDB client. | Without sign-in there is nobody to allow. A write or an IGDB call that anyone could trigger would be worse than none. |
 | Step 2 | **The library file measures 115 KB compressed per 1,000 games** (gzip; 97 KB with Brotli, which is what Vercel sends). The sample library of 230 games is 31 KB. | Under the 120 KB budget, but close. The blurred previews are the largest part: about 25 bytes a game that do not compress. A test fails past the budget. |

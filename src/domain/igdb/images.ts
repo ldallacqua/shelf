@@ -32,14 +32,26 @@ export const imageUrl = (imageId: string, size: ImageSize): string => {
 type Sources = { src: string; srcSet: string }
 
 const sources = (imageId: string, sizes: readonly ImageSize[]): Sources => ({
-  // The middle size is what a browser without srcset support gets.
-  src: imageUrl(imageId, sizes[Math.min(1, sizes.length - 1)] ?? 'cover_big'),
+  // A browser without srcset support gets the 264-pixel cover, or the nearest to it.
+  src: imageUrl(imageId, sizes.includes('cover_big') ? 'cover_big' : (sizes.at(-1) ?? 'cover_big')),
   srcSet: sizes.map((size) => `${imageUrl(imageId, size)} ${imageSizes[size].width}w`).join(', '),
 })
 
-/** A cover at every width a shelf, wall or list can ask for. Pair it with a `sizes` attribute. */
-export const coverSources = (imageId: string): Sources =>
-  sources(imageId, ['cover_small', 'cover_big', 'cover_big_2x'])
+const COVER_SIZES = ['cover_small', 'cover_small_2x', 'cover_big', 'cover_big_2x'] as const
+
+/**
+ * A cover at every width a shelf, wall or list can ask for. Pair it with a
+ * `sizes` attribute.
+ *
+ * `largest` caps what a very sharp screen may fetch. A box on the shelf is
+ * about 130 pixels wide: the 264-pixel file is already more than twice that,
+ * and the 528-pixel one is three times the bytes for a difference nobody can
+ * see at that size.
+ */
+export const coverSources = (
+  imageId: string,
+  largest: (typeof COVER_SIZES)[number] = 'cover_big_2x',
+): Sources => sources(imageId, COVER_SIZES.slice(0, COVER_SIZES.indexOf(largest) + 1))
 
 /** A screenshot or backdrop, which IGDB crops to 16:9. */
 export const screenshotSources = (imageId: string): Sources =>

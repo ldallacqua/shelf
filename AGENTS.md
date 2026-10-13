@@ -108,6 +108,16 @@ in one transaction that ends by raising the library's version. Everything read f
 `src/server/db/schema.ts`, run `pnpm db:generate`, and commit the SQL it writes. A migration
 must be safe for the code already deployed: add first, remove in a later release.
 
+**The library's views.** The shelf, the wall and the list draw the same shelves
+(`arrangeLibrary` in `src/domain/library/view.ts`) and are given the same props. CSS decides
+how many boxes fit on a row; `useRowWindow` keeps rows that are far from the window out of
+the page. A box is a button whose name says in words everything it shows by shape
+(`describeBox`). A cover is always drawn by `Cover`. A choice that belongs to the device
+(covers or compact, cover size) goes through `preferences.ts`, which mirrors it on `<html>`
+before the first paint; a choice that belongs to the address (view, grouping) goes through
+`parseLibraryQuery`. Nothing on the shelf fades in: a cover that starts transparent is
+counted as painted late.
+
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used
 straight from IGDB's image servers, through `src/domain/igdb/images.ts`.

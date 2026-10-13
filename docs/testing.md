@@ -32,9 +32,24 @@ reasoning behind the layers is in [the architecture, section 17](architecture.md
   and fail against the real thing for being malformed.
 - **In the browser tests** the built app is started with `SHELF_MOCKS=1`, which installs the
   same doubles inside the server (`src/instrumentation.ts`). They refuse to start on Vercel.
+- **Covers are flat colors.** In the browser tests every request to IGDB's image servers is
+  answered with a color made from the image's id (`e2e/fixtures.ts`). No test depends on
+  those servers, and the repository holds no cover art. Lighthouse is the exception: it
+  loads the real covers, because their weight is what it measures.
 - **The same library every time.** `pnpm seed` builds the sample library from the fixtures,
   and invents each game's status, copies and dates from the game's own id. Two seeds give the
   same shelf, so reference screenshots stay stable.
+
+## The library in browser tests
+
+`openLibrary(page)` opens the library and waits until all of it has arrived: the page comes
+with its first boxes, the rest follow as the library file, and the first boxes take a moment
+to drop onto the shelf. Use it instead of `page.goto` for anything that reads the shelves.
+
+A box is found by its name, which says what it shows: `getByRole('button', { name: /^Astro
+Bot/ })` has the accessible name "Astro Bot (2024), PS5, Physical, Completed". Only the rows
+near the window are in the page, so a game far down a shelf is not found until it is scrolled
+or stepped to.
 
 ## Running the browser tests
 

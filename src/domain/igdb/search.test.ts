@@ -103,10 +103,22 @@ describe('image addresses', () => {
     expect(() => imageUrl('', 'cover_big')).toThrow()
   })
 
-  it('offers a cover at three widths', () => {
+  it('offers a cover at four widths', () => {
     const { src, srcSet } = coverSources('co1vcn')
     expect(src).toContain('/t_cover_big/')
-    expect(srcSet.split(', ').map((entry) => entry.split(' ')[1])).toEqual(['90w', '264w', '528w'])
+    expect(srcSet.split(', ').map((entry) => entry.split(' ')[1])).toEqual([
+      '90w',
+      '180w',
+      '264w',
+      '528w',
+    ])
+  })
+
+  it('can leave the largest file out, for covers drawn small', () => {
+    const { src, srcSet } = coverSources('co1vcn', 'cover_big')
+    expect(src).toContain('/t_cover_big/')
+    expect(srcSet).not.toContain('528w')
+    expect(coverSources('co1vcn', 'cover_small_2x').src).toContain('/t_cover_small_2x/')
   })
 
   it('offers a screenshot at three widths', () => {

@@ -13,11 +13,13 @@
 export const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3300'
 
 export const javascriptBudgets: { path: string; name: string; kilobytes: number }[] = [
-  // Step 1: measured 204.8 KB. Shell, plus the foundations demos.
+  // Step 3: measured 206.2 KB. Shell, plus the foundations demos.
   { path: '/en', name: 'Home', kilobytes: 215 },
-  // Step 1: measured 198.4 KB. Shell only.
-  { path: '/en/library', name: 'Library', kilobytes: 208 },
-  // Step 1: measured 198.4 KB. Shell only.
+  // Step 3: measured 232.9 KB. The shell (199 KB), plus 34 KB for the library
+  // itself: the shelf, the wall and the list, the sheet a game opens in, the
+  // address state, and the decoder for the blurred cover previews.
+  { path: '/en/library', name: 'Library', kilobytes: 240 },
+  // Step 3: measured 199.6 KB. Shell only.
   { path: '/en/trophies', name: 'Trophies', kilobytes: 208 },
 ]
 
@@ -29,7 +31,7 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
  * all of its JavaScript, which it does not.
  */
 export const lighthouseBudgets = {
-  paths: ['/en', '/en/library'],
+  paths: ['/en', '/en/library', '/en/library?view=wall'],
   performance: 90,
   accessibility: 100,
   largestContentfulPaintMs: 2500,

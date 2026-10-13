@@ -147,8 +147,111 @@
     "metaTitle": "Biblioteca",
     "title": "Biblioteca",
     "emptyTitle": "A estante está sendo abastecida.",
-    "emptyBody": "Em breve os jogos estarão aqui.",
-    "shelfLabel": "Biblioteca"
+    "emptyBody": "Os jogos vão ficar aqui em breve.",
+    "shelfLabel": "Biblioteca",
+    "loading": "Carregando a biblioteca…",
+    "toolbar": "Visualização da biblioteca",
+    "hours": "{count, plural, =0 {Menos de uma hora} one {# hora} other {# horas}}",
+    "hoursShort": "{count, number} h",
+    "stats": {
+      "label": "Totais da biblioteca",
+      "games": "{count, plural, one {jogo} other {jogos}}",
+      "finished": "{count, plural, one {zerado} other {zerados}}",
+      "hours": "{count, plural, one {hora} other {horas}}"
+    },
+    "view": {
+      "label": "Visualização",
+      "shelf": "Estante",
+      "wall": "Mural",
+      "list": "Lista"
+    },
+    "group": {
+      "label": "Agrupar",
+      "menu": "Agrupar por",
+      "platform": "Plataforma",
+      "status": "Status",
+      "year": "Ano",
+      "none": "Nenhum"
+    },
+    "density": {
+      "label": "Como as caixas ficam",
+      "covers": "Capas",
+      "compact": "Compacto"
+    },
+    "wallSize": {
+      "label": "Tamanho das capas",
+      "small": "Capas pequenas",
+      "medium": "Capas médias",
+      "large": "Capas grandes",
+      "short": {
+        "small": "P",
+        "medium": "M",
+        "large": "G"
+      }
+    },
+    "status": {
+      "playing": "Jogando",
+      "backlog": "Na fila",
+      "completed": "Zerado",
+      "dropped": "Abandonado",
+      "wishlist": "Lista de desejos"
+    },
+    "format": {
+      "physical": "Físico",
+      "digital": "Digital"
+    },
+    "formatShort": {
+      "physical": "Disco",
+      "digital": "Digital"
+    },
+    "shelf": {
+      "tabs": "Prateleiras",
+      "notOwned": "Não tenho",
+      "yearUnknown": "Ano desconhecido",
+      "all": "Todos os jogos",
+      "count": "{count, plural, one {# jogo} other {# jogos}}",
+      "playing": "{count} jogando",
+      "games": "Jogos na prateleira {shelf}"
+    },
+    "box": {
+      "titled": "{title} ({year})",
+      "owned": "{title}, {platform}, {format}, {status}",
+      "notOwned": "{title}, não tenho, {status}",
+      "alsoOn": "{description}, tenho em {count} plataformas"
+    },
+    "list": {
+      "cover": "Capa",
+      "title": "Título",
+      "platforms": "Plataformas",
+      "status": "Status",
+      "rating": "Minha nota",
+      "igdb": "IGDB",
+      "playtime": "Jogado",
+      "added": "Adicionado",
+      "completed": "Zerado em",
+      "none": "–"
+    },
+    "preview": {
+      "description": "O que está registrado sobre este jogo. As setas para a esquerda e para a direita vão ao jogo anterior e ao próximo.",
+      "close": "Fechar",
+      "previous": "Anterior",
+      "next": "Próximo",
+      "released": "Lançado em {year}",
+      "outOfTen": "de 10",
+      "owned": "Tenho em",
+      "copy": "{platform}, {format}",
+      "playtime": "Jogado",
+      "length": "Tempo para zerar",
+      "igdb": "Nota no IGDB",
+      "igdbValue": "{value} de 100, com {count, plural, one {# avaliação} other {# avaliações}}",
+      "added": "Adicionado",
+      "completed": "Zerado em",
+      "tags": "Tags"
+    },
+    "error": {
+      "title": "O restante da biblioteca não carregou.",
+      "retry": "Tentar de novo"
+    }
   },
   "Trophies": {
     "metaTitle": "Troféus",
