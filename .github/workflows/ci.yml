@@ -23,8 +23,16 @@ on:
         type: boolean
         default: false
 
+# A newer run cancels an older one of the same kind. The kinds are kept apart
+# (a push, marking ready, each label), so that marking a pull request ready
+# does not cancel the quick checks of the push before it, or the other way round.
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && github.event.label.name || 'push' }}
+  group: >-
+    ci-${{ github.event.pull_request.number || github.ref }}-${{
+    github.event.action == 'labeled' && github.event.label.name ||
+    github.event.action == 'ready_for_review' && 'ready' ||
+    github.event_name == 'workflow_dispatch' && 'manual' ||
+    'push' }}
   cancel-in-progress: true
 
 permissions:
