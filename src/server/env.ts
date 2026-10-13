@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { accessSync, constants, copyFileSync, existsSync } from 'node:fs'
+import { accessSync, constants, copyFileSync, existsSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 
@@ -107,7 +107,9 @@ export const databaseTarget = (): DatabaseTarget => {
     return { kind: 'file', path: file, durable: !onVercel() }
   }
 
-  const copy = join(tmpdir(), 'shelf-sample.db')
+  // Named after the file it copies, so a newer build never opens an older copy.
+  const built = statSync(/* turbopackIgnore: true */ file)
+  const copy = join(tmpdir(), `shelf-sample-${Math.round(built.mtimeMs)}-${built.size}.db`)
   if (!existsSync(/* turbopackIgnore: true */ copy)) {
     copyFileSync(/* turbopackIgnore: true */ file, copy)
   }
