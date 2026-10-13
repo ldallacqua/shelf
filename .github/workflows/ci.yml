@@ -9,7 +9,8 @@ name: CI
 #          main, and on demand (the "full-ci" label, or "Run workflow"):
 #          all nine browser projects, reference screenshots, Lighthouse, Storybook.
 #
-# No job needs a secret: everything runs against a local build.
+# No job needs a secret: everything runs against a local build, a SQLite file
+# seeded from the fixtures, and test doubles for IGDB.
 
 on:
   pull_request:

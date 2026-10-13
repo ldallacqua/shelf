@@ -1,12 +1,17 @@
 name: Build
-description: Builds the app, reusing Next.js's cache from earlier runs.
+description: Makes the sample database, then builds the app, reusing Next.js's cache from earlier runs.
 runs:
   using: composite
   steps:
+    # A fresh SQLite file with the sample library, from the fixtures in the
+    # repository. Nothing here reaches IGDB or needs a secret.
+    - name: Sample database
+      shell: bash
+      run: pnpm seed
     - uses: actions/cache@v6
       with:
         path: .next/cache
-        key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**', 'messages/**', 'next.config.ts') }}
+        key: next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**', 'messages/**', 'fixtures/**', 'drizzle/**', 'next.config.ts') }}
         restore-keys: |
           next-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
     - name: Build

@@ -8,6 +8,7 @@ Add games from IGDB, then browse them on a shelf (2D or 3D) with filters and sor
 
 ```sh
 pnpm install
+pnpm seed       # once: makes .data/shelf.db with the sample library
 pnpm dev        # http://localhost:3300
 ```
 
@@ -22,8 +23,8 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Phase 2 | Product and UX spec: [`docs/spec.md`](docs/spec.md). Data model: [`docs/adr/001-game-entry-model.md`](docs/adr/001-game-entry-model.md) | Done |
 | Phase 3 | Architecture: [`docs/architecture.md`](docs/architecture.md). Setup checklist: [`docs/setup.md`](docs/setup.md) | Done |
 | Step 1 | Scaffold, tooling, CI, both languages, themes, design tokens. Visual direction changed: [`docs/adr/002-visual-direction.md`](docs/adr/002-visual-direction.md) | Done |
-| Step 2 | IGDB proxy, data model, seed | Not started |
-| Step 3 | 2D shelf, wall and list | Not started |
+| Step 2 | IGDB client, data model, the three data sets, the library file | Done, reviewed together with step 3 |
+| Step 3 | 2D shelf, wall and list | In progress |
 | Step 4 | 3D shelf | Not started |
 | Step 5 | Filters, sorting, smart shelves | Not started |
 | Step 6 | Game detail | Not started |

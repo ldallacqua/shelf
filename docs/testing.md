@@ -7,11 +7,34 @@ reasoning behind the layers is in [the architecture, section 17](architecture.md
 
 | Layer | Where | Run with | Covers |
 | --- | --- | --- | --- |
-| Unit | `src/**/*.test.ts`, `scripts/**/*.test.ts` | `pnpm test` | Rules with no browser: the theme rules, the design tokens (contrast, motion), the list of pages, the translation check |
+| Unit | `src/**/*.test.ts`, `scripts/**/*.test.ts` | `pnpm test` | Rules with no browser: the data model's rules (grouping, the library file, platforms, cover colors), the store against a real SQLite, the IGDB client against test doubles, the seeds, the theme rules, the design tokens, the list of pages, the translation check |
 | Component | `src/**/*.test.tsx` | `pnpm test` | Components in a simulated browser, in both languages: keyboard paths, labels, state |
-| End to end | `e2e/*.spec.ts` | `pnpm e2e` | The built app in real browsers: language, theme, layout, accessibility, the lit shelf |
+| End to end | `e2e/*.spec.ts` | `pnpm e2e` | The built app in real browsers: language, theme, layout, accessibility, the lit shelf, the library file |
 | Reference screenshots | `e2e/visual.spec.ts` | CI only | Every page, both themes, both languages, phone and desktop |
 | Speed | `scripts/measure-js.ts`, `scripts/lighthouse.ts` | `pnpm perf:js`, `pnpm perf:lighthouse` | First-load JavaScript per page, and Lighthouse on the mobile profile |
+
+## Data in tests
+
+**No test reaches IGDB, or any network.**
+
+- **Fixtures.** `fixtures/` holds real IGDB records, fetched once by `pnpm fixtures:fetch`
+  and committed ([what each file is](../fixtures/README.md)).
+- **A real database.** Tests of the store and the seeds run on SQLite in memory, migrated
+  with the real migrations: `createTestDatabase()` in `src/test/database.ts`. Pass it
+  `'default'`, `'empty'` or `'stress'` to start from a data set.
+- **A closed network.** Every unit test shares one MSW server (`src/test/network.ts`) that
+  refuses any request with no test double, so a forgotten double fails the test instead of
+  reaching the internet. A test that needs IGDB adds the doubles for that test:
+  `network.use(...createHandlers(loadFixtures()))`.
+- **The IGDB double** (`src/server/mocks`) answers from the fixtures and understands the
+  queries Shelf sends: ids, name matches, search, sort, limit, multi-queries. A query it does
+  not understand gets a 400, as IGDB would give, so a query cannot pass against the double
+  and fail against the real thing for being malformed.
+- **In the browser tests** the built app is started with `SHELF_MOCKS=1`, which installs the
+  same doubles inside the server (`src/instrumentation.ts`). They refuse to start on Vercel.
+- **The same library every time.** `pnpm seed` builds the sample library from the fixtures,
+  and invents each game's status, copies and dates from the game's own id. Two seeds give the
+  same shelf, so reference screenshots stay stable.
 
 ## Running the browser tests
 

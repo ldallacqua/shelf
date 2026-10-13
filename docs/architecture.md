@@ -288,6 +288,12 @@ ADR 001 decides the model. This section decides how it is stored.
 (`.data/shelf.db`) on this machine and in CI. Both speak the same SQL through the same client
 library, so there is one schema and one set of migrations.
 
+A deployment with no Turso database connected does not fail. Its build makes the SQLite file
+and ships it, and each server instance works on a copy: a preview shows the sample library,
+production shows an empty one. Nothing written to that copy is kept, the server says so in its
+log, and anything that saves my own data refuses to run on it
+([section 25](#25-changes-since-approval)).
+
 **Conventions**
 
 | Topic | Rule |
@@ -298,6 +304,7 @@ library, so there is one schema and one set of migrations.
 | Playtime | Whole minutes |
 | Enumerations | Text with a `CHECK` constraint, and a matching Zod schema |
 | IGDB lists (genres, themes and so on) | JSON arrays of IGDB ids on the `games` row, with name tables alongside. They are read whole and filtered in memory, never joined. |
+| A game's public address | The IGDB slug of its primary version: `/game/the-elder-scrolls-v-skyrim`. It is unique, because a record belongs to one entry. Entry ids never leave the server. |
 | Deleting | Real deletes, cascading from the entry. No soft delete. |
 
 **Tables beyond ADR 001**
@@ -306,22 +313,28 @@ library, so there is one schema and one set of migrations.
 | --- | --- |
 | `vocab` | Names for IGDB ids: kind, id, name, slug |
 | `shelves` | Saved smart shelves: slug, name, query text, sort, group, position |
-| `library_meta` | The version counter |
-| `igdb_token` | The current Twitch token and its expiry |
+| `library_meta` | The version counter. One row. |
+| `igdb_token` | The current Twitch token and its expiry. One row. |
 | `user`, `session`, `account`, `verification` | Better Auth's own |
 | `oauth*` (five tables) | Better Auth's, for MCP sign-in |
 
 **Indexes** go on what is looked up one row at a time: `games.igdb_id`, `games.slug`,
 `entry_versions.game_id`, `copies.entry_id`. The library itself is always read whole.
 
+**Two columns ADR 001 did not name.** `games.lineage` holds the chain of records above a
+record in its family (the Switch port's is "port of 472"), worked out when the record is
+fetched. The grouping rule reads it, so deciding whether a new game belongs with one on the
+shelf needs no further request to IGDB. `platforms` carries our own `key` (what
+`owned:ps5` matches), a short label, and the color of the case's plastic.
+
 **Migrations.** Drizzle generates SQL files into `drizzle/`; they are committed and reviewed.
 They are applied by `pnpm db:migrate`:
 
-| Where | When |
-| --- | --- |
-| This machine | Before `pnpm dev` |
-| CI | Before the build, on a fresh file |
-| Preview and production | As the first step of the Vercel build, against that environment's database |
+| Where | When | Command |
+| --- | --- | --- |
+| This machine | Before `pnpm dev` | `pnpm seed`, or `pnpm db:migrate` to keep the data |
+| CI | Before the build, on a fresh file | `pnpm seed` |
+| Preview and production | As the first step of the Vercel build, against that environment's database | `pnpm db:prepare`, from the `vercel-build` script |
 
 A deployment that is still serving keeps running during a migration, so every migration must
 be safe for the previous version of the code: add first, remove in a later release.
@@ -330,9 +343,14 @@ be safe for the previous version of the code: add first, remove in a later relea
 
 | Name | What | Used by |
 | --- | --- | --- |
-| `default` | About 200 real, varied IGDB games with realistic statuses, copies, ratings and tags | Local work, tests, preview deployments |
+| `default` | 230 real, varied IGDB games with realistic statuses, copies, ratings and tags | Local work, tests, preview deployments |
 | `empty` | No entries | The empty-library screens |
-| `stress` | 1,000 or more games | Speed tests, virtual lists, 3D budgets |
+| `stress` | The default set and 1,050 more: 1,280 games | Speed tests, virtual lists, 3D budgets |
+
+The games are real. What "I" did with each one is invented, from the game's own id, so it
+comes out the same on every run and a screenshot does not change between seeds. Two entries
+are written by hand to exercise ADR 001: Skyrim with its Switch port (one entry, two copies),
+and Shadow of the Tomb Raider with its Definitive Edition.
 
 `pnpm fixtures:fetch` is the only thing that talks to the real IGDB. I run it by hand; it
 writes JSON into `fixtures/`, which is committed. The repository is private, and IGDB's terms
@@ -349,7 +367,7 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 | Concern | Design |
 | --- | --- |
 | Credentials | `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`, read on the server only |
-| Token | Twitch's client-credentials grant. Stored in the database with its expiry, so a cold server does not ask for a new one. Renewed a day before it expires, or at once on a 401. Concurrent callers share one renewal. |
+| Token | Twitch's client-credentials grant. The secret travels in the request body, never in the address. Stored in the database with its expiry, so a cold server does not ask for a new one. Renewed a day before it expires, or at once on a 401. Concurrent callers share one renewal. |
 | Rate | A queue that sends at most 4 requests a second with at most 4 in flight. On a 429 it waits and retries, twice. |
 | Who can trigger it | Only me. Search, add, bulk add and refresh all require my session. A visitor cannot spend the allowance. |
 | Search | `search` for the typeahead, with editions hidden and ports folded as the spec says. Results cached for a day by normalized text. |
@@ -753,7 +771,7 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | | Local | CI | Preview | Production |
 | --- | --- | --- | --- | --- |
 | Address | `http://localhost:3300` | Local to the runner | A new `*.vercel.app` per push | `https://shelf-ldallacqua.vercel.app` (proposed) |
-| Database | `.data/shelf.db` | A fresh file | Turso `shelf-preview` | Turso `shelf` |
+| Database | `.data/shelf.db` | A fresh file | Turso `shelf-preview`. Until it is connected: a sample file built with the deployment. | Turso `shelf`. Until it is connected: an empty file. |
 | Data | `default`, or any set | `default` and `stress` | `default`, loaded if empty | Mine |
 | IGDB | Live for me; mocked with `SHELF_MOCKS=1` | Mocked | Live, when I add | Live, when I add |
 | Sign-in | The local GitHub app | Mocked GitHub | Through production (OAuth Proxy) | The production GitHub app |
@@ -765,8 +783,8 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | --- | --- | --- |
 | `TWITCH_CLIENT_ID` | IGDB | Local: now, already set. Vercel: step 7. |
 | `TWITCH_CLIENT_SECRET` | IGDB | Same |
-| `TURSO_DATABASE_URL` | Database | Vercel: step 2 |
-| `TURSO_AUTH_TOKEN` | Database | Vercel: step 2 |
+| `TURSO_DATABASE_URL` | Database | Vercel: before step 7. Previews work without it. |
+| `TURSO_AUTH_TOKEN` | Database | Same |
 | `BETTER_AUTH_SECRET` | Signing sessions | Step 7 |
 | `GITHUB_CLIENT_ID` | GitHub sign-in | Step 7 |
 | `GITHUB_CLIENT_SECRET` | GitHub sign-in | Step 7 |
@@ -775,8 +793,11 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | `CRON_SECRET` | The daily refresh job | Step 9 |
 
 The site's own address comes from Vercel's built-in `VERCEL_PROJECT_PRODUCTION_URL`, so there
-is nothing to set for it, and sign-in uses the same value. At startup the server validates every setting with Zod and stops
-with a message naming what is missing (the name, never the value).
+is nothing to set for it, and sign-in uses the same value. Each group of settings is checked
+with Zod when it is first needed (the database's when the database is opened, IGDB's when
+IGDB is called), and a missing one stops that call with a message naming it: the name, never
+the value. Checking everything at startup would refuse to run a preview that has no use for
+IGDB yet.
 
 [The setup checklist](setup.md) has the click-by-click steps.
 
@@ -787,7 +808,7 @@ with a message naming what is missing (the name, never the value).
 | Step | Adds | From you ([checklist](setup.md)) |
 | --- | --- | --- |
 | **1** Scaffold ⏸ | Next.js app, strict TypeScript, lint and format, Tailwind and tokens for the chosen direction, the theme module, both languages, Storybook, the test runners, CI, `AGENTS.md` and `CLAUDE.md` | Create the Vercel project |
-| **2** IGDB and data | Drizzle schema and migrations, the IGDB client with mocks, services, the three data sets, the library file | Create two Turso databases; two settings, each with a preview and a production value |
+| **2** IGDB and data | Drizzle schema and migrations, the IGDB client with mocks, the store and read services, the three data sets, the library file | Nothing yet. Two Turso databases before step 7; earlier if you want previews to keep data. |
 | **3** 2D shelf ⏸ | Shelf, Wall and List; virtual lists; images and placeholders; motion in both themes | Nothing |
 | **4** 3D shelf ⏸ | The 3D bundle, the switch, parity tests, fallback | Nothing |
 | **5** Filters and sorting | The query language (tests first), index, facets, panel, smart shelves, public API, `docs/api.md` | Nothing |
@@ -897,6 +918,13 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 2 | **A deployment with no database connected serves a sample file instead of failing.** The Vercel build makes `.data/shelf.db` (the sample library for a preview, empty for production) and ships it; each server instance copies it to its temporary folder and opens the copy. | So the previews for steps 2 to 6 work before the Turso databases exist, and a missing setting can never take the site down. The copy is marked as not kept, and the write services at step 7 refuse to run on it, so a library can never be saved into something that is thrown away. Connecting Turso later needs no code change. |
+| Step 2 | **Write services and the IGDB search route arrive with sign-in, at step 7.** Step 2 has the write functions themselves (`server/library/store.ts`, tested), the read services and the IGDB client. | Without sign-in there is nobody to allow. A write or an IGDB call that anyone could trigger would be worse than none. |
+| Step 2 | **The library file measures 115 KB compressed per 1,000 games** (gzip; 97 KB with Brotli, which is what Vercel sends). The sample library of 230 games is 31 KB. | Under the 120 KB budget, but close. The blurred previews are the largest part: about 25 bytes a game that do not compress. A test fails past the budget. |
+| Step 2 | **The library file identifies a game by its slug, not by an id.** | Entry ids are random, do not compress, and would cost about 20 KB per 1,000 games for nothing a visitor needs. |
+| Step 2 | **A seed is a few large inserts, not one write per game.** | Against Turso every statement is a network round trip. A seed is about thirty of them this way, instead of several thousand. |
+| Step 2 | **Scripts run through `tsx`.** | The scripts import server code, which uses the `@/` path alias and `server-only`. Node runs TypeScript by itself but resolves neither. |
+| Step 2 | **Unit tests run on a closed network.** One MSW server is shared by every unit test and refuses any request that has no test double. | The first version of the IGDB tests reached Twitch's real token address with made-up credentials, because the client had kept a reference to `fetch` from before the doubles were installed. No secret was sent, and it was refused, but a test must not be able to do that. The client now looks `fetch` up on every call, and the closed network makes the mistake impossible to repeat. |
 | Step 1 | **The visual direction is Backlit, and games stand cover-out.** | Vitrine was rejected on sight as a library of books. [ADR 002](adr/002-visual-direction.md). |
 | Step 1 | **JavaScript budgets are a ratchet, not 180 KB and 130 KB.** Measured at step 1: 198 KB for the library and trophies pages, 205 KB for the home page. | I set the first numbers without measuring what the stack costs by itself. React and Next.js are about 125 KB of every page, and the Radix menu and button-group primitives the header uses are about 45 KB. A budget below what the frameworks weigh checks nothing. The ratchet still fails the build when a page grows, and loading menus only when first opened is on the list for the step 9 speed pass. |
 | Step 1 | **Lighthouse runs with throttling applied, not simulated.** Applied: largest paint 1.5 s, score 100. Simulated, same build: 2.8 s, score 96. | Simulation estimates paint times from an unthrottled run. Against a local server it assumes the page's text waits for all of its JavaScript; the text is in the HTML and does not. Applied throttling measures. The simulated figure is what PageSpeed Insights will show for the deployed site, so it is checked again there once the site is live, and a miss there counts. |

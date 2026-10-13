@@ -11,6 +11,8 @@ export default defineConfig({
     alias: {
       '@': fromRoot('./src'),
       '@messages': fromRoot('./messages'),
+      // `server-only` throws unless a bundler marks the import as server code. Tests are not bundled.
+      'server-only': fromRoot('./src/test/server-only.ts'),
     },
   },
   test: {
@@ -22,6 +24,7 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
+          setupFiles: ['./src/test/no-network.ts'],
         },
       },
       {

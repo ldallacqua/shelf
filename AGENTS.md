@@ -37,9 +37,16 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm perf:lighthouse`         | Lighthouse, mobile profile. Needs a running server.                                                             |
 | `pnpm storybook`               | The component workshop at http://localhost:6300                                                                 |
 | `pnpm i18n:check`              | Fails if the two languages disagree                                                                             |
+| `pnpm seed [set]`              | Migrates `.data/shelf.db` and fills it with a data set: `default` (230 games), `empty` or `stress` (1,280)      |
+| `pnpm db:generate`             | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`              |
+| `pnpm db:migrate`              | Applies migrations without touching the data                                                                    |
+| `pnpm fixtures:fetch`          | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff     |
 
 Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). On this Mac, run only the
 browser tests your change touches; CI runs all nine projects.
+
+A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app reads its
+library from `.data/shelf.db`, which is not committed.
 
 ## Where code goes
 
@@ -52,8 +59,10 @@ src/features/   The interface, by feature. Imports domain and ui.
 src/app/        Routes. Thin: they compose features. Imports anything.
 src/i18n/       Language setup and the list of pages.
 messages/       en.json and pt-BR.json
+fixtures/       Real IGDB records for seeds and tests. See fixtures/README.md.
+drizzle/        Database migrations, as SQL. Generated; reviewed; never edited after merging.
 e2e/            Browser tests and reference screenshots
-scripts/        Checks and measurements
+scripts/        Seeds, checks and measurements
 ```
 
 Lint enforces these imports, and that three.js is imported only inside
@@ -91,6 +100,17 @@ can do.
 **Pages are built ahead of time.** Reading a cookie, a header or the address on the server
 makes a page slower for everyone. A component that needs the address (`usePathname`,
 `useSearchParams`) goes inside `<Suspense>` with a plainer version of itself as the fallback.
+
+**Data.** ADR 001 is the model: one entry per game, a copy per platform and format, and an
+IGDB record belongs to one entry only. Every write goes through `src/server/library/store.ts`,
+in one transaction that ends by raising the library's version. Everything read from outside
+(IGDB, settings, fixtures) passes a Zod schema first. Change the schema in
+`src/server/db/schema.ts`, run `pnpm db:generate`, and commit the SQL it writes. A migration
+must be safe for the code already deployed: add first, remove in a later release.
+
+**IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
+the checking. Nothing a visitor can reach may call it. Covers and screenshots are used
+straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
 
 **Comments** say why, in plain words. They do not restate the code.
 
