@@ -30,6 +30,9 @@ I will remind you at the start of each step that has a session.
 
 ## A. Vercel project
 
+**Done on 13 Oct 2026**, by option 1. The project is `shelf-ldallacqua` under "dallacqua's
+projects", connected to `ldallacqua/shelf`.
+
 **When:** after I open the pull request for build step 1. I will say so.
 
 There are two ways. The first is less clicking.

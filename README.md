@@ -21,7 +21,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Phase 1 | Research and visual directions: [`docs/research.md`](docs/research.md) | Done |
 | Phase 2 | Product and UX spec: [`docs/spec.md`](docs/spec.md). Data model: [`docs/adr/001-game-entry-model.md`](docs/adr/001-game-entry-model.md) | Done |
 | Phase 3 | Architecture: [`docs/architecture.md`](docs/architecture.md). Setup checklist: [`docs/setup.md`](docs/setup.md) | Done |
-| Step 1 | Scaffold, tooling, CI, both languages, themes, design tokens. Visual direction changed: [`docs/adr/002-visual-direction.md`](docs/adr/002-visual-direction.md) | Awaiting review |
+| Step 1 | Scaffold, tooling, CI, both languages, themes, design tokens. Visual direction changed: [`docs/adr/002-visual-direction.md`](docs/adr/002-visual-direction.md) | Done |
 | Step 2 | IGDB proxy, data model, seed | Not started |
 | Step 3 | 2D shelf, wall and list | Not started |
 | Step 4 | 3D shelf | Not started |
