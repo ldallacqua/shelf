@@ -21,6 +21,9 @@ test.describe('reference screenshots @visual', () => {
         test(`${name}, ${theme}, ${locale}`, async ({ page }) => {
           await openWithTheme(page, `/${locale}${path}`, theme)
           await page.evaluate(() => document.fonts.ready)
+          // The wall's fine grain is noise by design. It makes each image three
+          // times larger and tells a comparison nothing, so it is switched off.
+          await page.addStyleTag({ content: 'html, [data-theme] { --grain: 0 !important; }' })
           // The wall is fixed to the window, so the window is grown to the page:
           // a stitched full-page capture would repeat the wall's light.
           const width = page.viewportSize()?.width ?? 1440

@@ -46,7 +46,8 @@ any color.
 ## Reference screenshots
 
 Text renders differently on a Mac and on Linux, so reference screenshots are made in CI on
-Linux and `e2e/visual.spec.ts` is skipped everywhere else.
+Linux and `e2e/visual.spec.ts` is skipped everywhere else. They are taken with the wall's
+grain switched off: it is noise by design, and it makes each image three times larger.
 
 **When the look changes on purpose:**
 
