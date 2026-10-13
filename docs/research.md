@@ -34,13 +34,13 @@ Screenshots of third-party sites are not stored in this repo. The links are the 
 
 | Site | What I saw | Technique worth taking |
 | --- | --- | --- |
-| [Linear](https://linear.app) | **Seen.** Near-black page. A two-line, left-aligned headline in a tight-tracked grotesque. The hero image is the product itself, in a hairline frame that runs off the bottom of the viewport. The next section opens with one long sentence whose first clause is white and the rest grey. Three columns split by hairlines, each with a wireframe drawing. | The product is the hero, not an illustration of it. Hierarchy comes from luminance steps of one colour, not from extra hues. One sentence can carry a headline and its explanation by changing tone halfway. |
+| [Linear](https://linear.app) | **Seen.** Near-black page. A two-line, left-aligned headline in a tight-tracked grotesque. The hero image is the product itself, in a hairline frame that runs off the bottom of the viewport. The next section opens with one long sentence whose first clause is white and the rest gray. Three columns split by hairlines, each with a wireframe drawing. | The product is the hero, not an illustration of it. Hierarchy comes from luminance steps of one color, not from extra hues. One sentence can carry a headline and its explanation by changing tone halfway. |
 | [Vercel](https://vercel.com) | **Seen, both themes.** Same layout in light and dark. In dark, the triangle mark is backlit by a white halo, like an eclipse. In light, the halo becomes a soft glow behind and the mark casts a drop shadow downward. Headline in a thin weight with negative tracking. | The theme switch changes where the light comes from and where the shadow falls. Nothing is merely inverted. This is the model for Shelf's themes. |
-| [Stripe](https://stripe.com) | **Seen.** Light theme. A flowing gradient ribbon crosses the hero and passes behind the headline. Faint vertical guide lines frame the content column. Copy was served in pt-BR without asking. **Source:** developers widely believe the ribbon is a WebGL canvas, and note it is heavy on battery ([GSAP forum thread](https://gsap.com/community/forums/topic/24837-animating-gradients/)). | One moving element carries all the colour while the rest of the page stays quiet. Locale detection with no prompt. The battery note is a warning: ambient WebGL needs a pause when off-screen. |
-| [Raycast](https://www.raycast.com) | **Seen.** A floating, rounded navigation capsule. Diagonal red light streaks with visible film grain behind a centred headline. | Grain over gradients hides banding and reads as light, not as a flat fill. |
+| [Stripe](https://stripe.com) | **Seen.** Light theme. A flowing gradient ribbon crosses the hero and passes behind the headline. Faint vertical guide lines frame the content column. Copy was served in pt-BR without asking. **Source:** developers widely believe the ribbon is a WebGL canvas, and note it is heavy on battery ([GSAP forum thread](https://gsap.com/community/forums/topic/24837-animating-gradients/)). | One moving element carries all the color while the rest of the page stays quiet. Locale detection with no prompt. The battery note is a warning: ambient WebGL needs a pause when off-screen. |
+| [Raycast](https://www.raycast.com) | **Seen.** A floating, rounded navigation capsule. Diagonal red light streaks with visible film grain behind a centered headline. | Grain over gradients hides banding and reads as light, not as a flat fill. |
 | [Apple, MacBook Pro](https://www.apple.com/macbook-pro/) | **Seen.** Sticky local nav with the product name and a Buy button. Very large-radius black cards. Short, heavy headlines ("Take a closer look."). **Source:** tutorials that rebuild these pages describe the scroll-scrubbed product sequences as a canvas drawing numbered frames, pinned with `position: sticky` inside a container 200 to 500vh tall ([CSS-Tricks](https://css-tricks.com/?p=308477) is the best known). Apple's own code is not public. | Pin a stage, scrub a sequence with scroll, and time each caption to the range where it is true. Native scroll stays in charge, so it reverses cleanly. |
 | [Igloo Inc](https://www.igloo.inc) | **Seen.** The whole page is one WebGL scene, pale and monochrome, with wireframe overlays. | Shows the ceiling for a 3D-first page, and its cost: nothing renders without WebGL. |
-| [Godly](https://godly.website), [Awwwards](https://www.awwwards.com/websites/sites_of_the_day/), [Land-book](https://land-book.com) | **Seen.** All three are filterable walls of tiles, which is what Shelf is. Godly's previews move (two captures showed different frames of the same tiles) and it filters with one row of chips. Awwwards filters its 6,496 Sites of the Day by award, category, tag, technology, country, font and colour. Land-book has a chip row of page types, a Filters button and a sort menu, plus separate galleries for sections, motion and headlines. **Source:** a recent Awwwards Site of the Day, the [Lando Norris site](https://www.awwwards.com/sites/lando-norris) (17 Nov 2025), lists WebGL, GSAP and Webflow, and its highest developer score is Animations/Transitions at 8.60. | The same control layout on all three: chips for common filters, a panel for the rest, sort at the right. Awwwards' colour filter suggests one for Shelf, since cover colours are extracted anyway: filter by colour, or sort the shelf into a rainbow (**Memory:** a common collector arrangement). **Source:** the usual production stack for scroll-driven 3D is Lenis for smoothed scroll, GSAP ScrollTrigger for choreography and Three.js for the scene ([Codrops case study](https://tympanus.net/codrops/2026/05/06/from-shader-uniforms-to-clip-path-wipes-how-gsap-drives-my-portfolio/)), which is the stack the brief already names. |
+| [Godly](https://godly.website), [Awwwards](https://www.awwwards.com/websites/sites_of_the_day/), [Land-book](https://land-book.com) | **Seen.** All three are filterable walls of tiles, which is what Shelf is. Godly's previews move (two captures showed different frames of the same tiles) and it filters with one row of chips. Awwwards filters its 6,496 Sites of the Day by award, category, tag, technology, country, font and color. Land-book has a chip row of page types, a Filters button and a sort menu, plus separate galleries for sections, motion and headlines. **Source:** a recent Awwwards Site of the Day, the [Lando Norris site](https://www.awwwards.com/sites/lando-norris) (17 Nov 2025), lists WebGL, GSAP and Webflow, and its highest developer score is Animations/Transitions at 8.60. | The same control layout on all three: chips for common filters, a panel for the rest, sort at the right. Awwwards' color filter suggests one for Shelf, since cover colors are extracted anyway: filter by color, or sort the shelf into a rainbow (**Memory:** a common collector arrangement). **Source:** the usual production stack for scroll-driven 3D is Lenis for smoothed scroll, GSAP ScrollTrigger for choreography and Three.js for the scene ([Codrops case study](https://tympanus.net/codrops/2026/05/06/from-shader-uniforms-to-clip-path-wipes-how-gsap-drives-my-portfolio/)), which is the stack the brief already names. |
 
 ### Techniques Shelf will use
 
@@ -63,7 +63,7 @@ library. From the [Next.js guide](https://nextjs.org/docs/app/guides/view-transi
   `share="morph"` with `default="none"` so a named element does not crossfade on unrelated
   transitions.
 - The guide uses 400ms for the morph and a 3px blur at 30% of the way through, which hides
-  interpolation artefacts.
+  interpolation artifacts.
 - Exits are fast (150ms) and enters slower (210ms, delayed until the exit ends).
 - The morph only plays when the destination renders in the same commit as the navigation. So
   the detail view must already have its data: prefetch the route, or keep the game in the query
@@ -88,20 +88,20 @@ and moves the light. Shelf treats the theme as a lighting state (section 4).
 | Product | How it shows a collection | Filtering and sorting | What makes the collection feel valuable | Take for Shelf |
 | --- | --- | --- | --- | --- |
 | **Steam Library** | **Source:** the home screen is a stack of horizontal "shelves" (Recent, custom shelves per collection) that can be added, removed and reordered ([Steam](https://store.steampowered.com/libraryupdate)). | **Source:** "dynamic collections" are saved filters (genre, player count, controller support) that update as the library grows; each shelf has its own sort order, such as alphabetical or hours played ([PC Gamer](https://pcgamer.com/steam-library-redesign-date-preview), [TechSpot](https://techspot.com/news/81750-steam-library-revamp-arrives-september-17-streamlined-interface.html)). | Shelves you arrange yourself. | "Smart shelves" are Steam's dynamic collections. A shelf is a saved filter plus a sort. |
-| **GOG Galaxy 2.0** | **Source:** one library across every launcher, in grid or list. | **Source:** filter by platform, rating, genre, your own tags and install state, then save the view as a sidebar "bookmark" ([Indie Hive review](https://indie-hive.com/gog-galaxy-2-closed-beta/)). | Everything you own in one place, whichever store sold it. | Saved filter views in the navigation. One library that is not organised by store. |
+| **GOG Galaxy 2.0** | **Source:** one library across every launcher, in grid or list. | **Source:** filter by platform, rating, genre, your own tags and install state, then save the view as a sidebar "bookmark" ([Indie Hive review](https://indie-hive.com/gog-galaxy-2-closed-beta/)). | Everything you own in one place, whichever store sold it. | Saved filter views in the navigation. One library that is not organized by store. |
 | **Playnite** | **Seen** on [playnite.link](https://playnite.link): desktop views plus a fullscreen mode with themes for controllers. Metadata comes from IGDB. **Memory:** grouping by platform, genre or completion status, and savable filter presets. | **Memory:** a filter panel covering nearly every field. | Playtime tracked per game; themes make the library your own. | Group-by as a first-class control. Completion status as a core field. |
-| **PS5 home** | **Source:** a row of small tiles in the top-left corner so the selected game's art can fill the screen; each game opens a hub of cards ([GameRevolution](https://www.gamerevolution.com/features/662656-ps5-ui-user-experience-state-of-play)). | Almost none. | The whole room changes to the game you are looking at. | Selecting a game should change the ambient light and colour of the scene. |
-| **Switch home** | **Source:** one row of large icons with very little chrome; only 12 games show before an "All Software" screen ([My Nintendo News](https://mynintendonews.com/2020/01/02/platinum-games-boss-isnt-a-fan-of-the-nintendo-switch-home-menu/)). | Almost none, which is its best-known complaint. | Big, calm, tactile. | Restraint and large touch targets. Also a warning: simplicity without organisation fails at 100+ games. |
+| **PS5 home** | **Source:** a row of small tiles in the top-left corner so the selected game's art can fill the screen; each game opens a hub of cards ([GameRevolution](https://www.gamerevolution.com/features/662656-ps5-ui-user-experience-state-of-play)). | Almost none. | The whole room changes to the game you are looking at. | Selecting a game should change the ambient light and color of the scene. |
+| **Switch home** | **Source:** one row of large icons with very little chrome; only 12 games show before an "All Software" screen ([My Nintendo News](https://mynintendonews.com/2020/01/02/platinum-games-boss-isnt-a-fan-of-the-nintendo-switch-home-menu/)). | Almost none, which is its best-known complaint. | Big, calm, tactile. | Restraint and large touch targets. Also a warning: simplicity without organization fails at 100+ games. |
 | **Backloggd** | **Seen:** covers six across on desktop, with a count ("322,374 Games"), "Apply Filters" and "Sort by" as the only controls. | **Source:** sort by popularity, rating, time to play and time to finish ([changelog 1.15.2](https://backloggd.com/changelog/1_15_2)); advanced filters are still on the [roadmap](https://backloggd.com/roadmap/). | **Memory:** a journal, half-star ratings and lists, modelled on Letterboxd. Data from IGDB. | The filter gap is real. Strong filters are where Shelf can be better than the leader. |
 | **HowLongToBeat** | **Seen:** search-first home page. **Memory:** backlog and completed lists with per-game times for main story, main plus extras, and completionist. | **Memory:** sort and filter by length. | Time as a planning tool: what can I finish this month? | IGDB has a `game_time_to_beats` endpoint (confirmed in its docs), so "time to beat" can be a filter and a sort without another data source. |
-| **Letterboxd** | **Seen:** posters twelve across on desktop and four across on mobile, each with a hairline border. One line of small, muted controls (decade, genre, service, sort). A single count line. Nothing else. | **Seen:** four dropdowns in one row. | **Source:** the co-founder calls poster art the navigation itself ([Wix Studio](https://www.wix.com/studio/blog/letterboxd-ui-is-changing-movie-reviews)). **Memory:** four favourites on the profile, a diary, lists, yearly stats. | Contemplation comes from density plus restraint: many covers, almost no chrome, and a small set of things you chose to put first. |
+| **Letterboxd** | **Seen:** posters twelve across on desktop and four across on mobile, each with a hairline border. One line of small, muted controls (decade, genre, service, sort). A single count line. Nothing else. | **Seen:** four dropdowns in one row. | **Source:** the co-founder calls poster art the navigation itself ([Wix Studio](https://www.wix.com/studio/blog/letterboxd-ui-is-changing-movie-reviews)). **Memory:** four favorites on the profile, a diary, lists, yearly stats. | Contemplation comes from density plus restraint: many covers, almost no chrome, and a small set of things you chose to put first. |
 
 ### Patterns across all of them
 
 1. **The art is the interface.** Every product that feels good shows covers large and chrome small.
 2. **A shelf is a saved question.** Steam's dynamic collections and Galaxy's bookmarks are the
    same idea: a filter and a sort with a name.
-3. **Value comes from curation and from time.** Favourites you picked, hours you spent, things
+3. **Value comes from curation and from time.** Favorites you picked, hours you spent, things
    you finished. Shelf's trophy wall and ambient stats belong here.
 4. **Nobody shows spines.** I found no game library with a spine-out shelf. CLZ Games has a
    "Cover Wall" and a tablet "Cover Flow" ([manual](https://clz.com/games/mobile/manual/ios/2.0/en/topic/choosing-view-modes));
@@ -116,9 +116,9 @@ and moves the light. Shelf treats the theme as a lighting state (section 4).
 | Reference | What it is | What to take |
 | --- | --- | --- |
 | [Stripe Press](https://press.stripe.com) | **Seen.** WebGL books as real objects with thickness, cloth and foil, lying flat so the spine and a sliver of cover show. Warm, very dark background. A column of tick marks at the left works as an index of the books. Serif type. | Believable thickness and material are what sell the object. The tick column is a scrub bar for a long shelf, and a natural keyboard and screen-reader landmark. |
-| [The Complete Shelf](https://github.com/mengto/complete-shelf) | **Source.** A single-file Three.js shelf of seven hardbacks. Pulling a volume runs a small state machine: shelf, opening, closed inspection, open book, closing, shelf. Transforms run on "deterministic eased timelines" with "exact endpoints", so moving the book between scene graphs never jumps. Cloth, foil, paper and wood are canvas textures made at runtime. HTML controls and status announcements sit over the canvas. | A state machine with exact endpoints for the pull-out. A real HTML layer over the canvas for accessibility. Procedural textures to keep downloads small. No licence is stated, so ideas only, no code. |
+| [The Complete Shelf](https://github.com/mengto/complete-shelf) | **Source.** A single-file Three.js shelf of seven hardbacks. Pulling a volume runs a small state machine: shelf, opening, closed inspection, open book, closing, shelf. Transforms run on "deterministic eased timelines" with "exact endpoints", so moving the book between scene graphs never jumps. Cloth, foil, paper and wood are canvas textures made at runtime. HTML controls and status announcements sit over the canvas. | A state machine with exact endpoints for the pull-out. A real HTML layer over the canvas for accessibility. Procedural textures to keep downloads small. No license is stated, so ideas only, no code. |
 | [MyShelves](https://myshelves.eu) | **Source** ([three.js forum](https://discourse.threejs.org/t/myshelves-a-first-person-library-you-build-book-by-book/93870)). A first-person library in react-three-fiber. The author's rule: "Draw calls, never triangles, are the budget." One book is four boxes and about 19 draw calls. `shadowMap.autoUpdate = false`, with a manual update only when something moves, was a major gain. Spine art is a strip cut from the cover's left edge. **Seen:** in my headless browser (software rendering, no GPU) its menu ran at 4 fps. | Instancing is mandatory. Shadows must not update every frame. And 3D has to be optional: with no GPU it is unusable, so detection and a first-class 2D view are requirements, not extras. |
-| [Marius Balaj's bookshelf](https://balajmarius.com/bookshelf/) | **Seen.** 486 books in plain DOM. A **Shelf / Stack toggle** switches between two physical arrangements. Each spine is a flat bar in the cover's dominant colour, with the cover inset near the top and the title running vertically. Heights vary. | The closest thing to Shelf's 2D view. Dominant-colour spines solve the missing spine art. A two-state arrangement toggle is proven to read well. 500 DOM spines is fine. |
+| [Marius Balaj's bookshelf](https://balajmarius.com/bookshelf/) | **Seen.** 486 books in plain DOM. A **Shelf / Stack toggle** switches between two physical arrangements. Each spine is a flat bar in the cover's dominant color, with the cover inset near the top and the title running vertically. Heights vary. | The closest thing to Shelf's 2D view. Dominant-color spines solve the missing spine art. A two-state arrangement toggle is proven to read well. 500 DOM spines is fine. |
 | [Petar Gyurov's bookshelf](https://petargyurov.com/bookshelf/) | **Seen.** Pure CSS spines on a thin line, grouped by year, with random widths and heights. **Slanted books are the ones he did not finish.** | Status shown as posture. A shelf line and a heading are enough to make a group. |
 | [Digging Into Hip-Hop](https://thenextweb.com/news/site-lets-dig-favorite-records-golden-era-hip-hop), [Not The Final Vinyl](https://contra.com/p/OcAM62MW-not-the-final-vinyl-record-label-as-instrument) | **Source.** Three.js record crates. Wheel, arrow keys and drag all move through the crate; pulling a record shows its detail. In the second, the record slides out of its sleeve as a separate mesh. | Wheel, keys and drag must all do the same thing. The pulled object is its own mesh. |
 
@@ -145,13 +145,13 @@ So covers load by distance:
 
 - Every response carries `access-control-allow-origin: *` and
   `cache-control: public, max-age=31536000, immutable`. WebGL can use the images as textures
-  directly, with no proxy and no load on Vercel's image optimiser.
+  directly, with no proxy and no load on Vercel's image optimizer.
 - Changing `.jpg` to `.webp` works. `.avif` returns an error. So WebP comes free from the CDN,
-  and AVIF would need Vercel's optimiser.
+  and AVIF would need Vercel's optimizer.
 
 **There is no spine art.** IGDB has covers, screenshots and artworks, and nothing for spines.
-Spines must be generated: a platform band, the title in a condensed face, and a colour taken
-from the cover. This is the same answer Balaj and MyShelves reached. The dominant colours are
+Spines must be generated: a platform band, the title in a condensed face, and a color taken
+from the cover. This is the same answer Balaj and MyShelves reached. The dominant colors are
 extracted once, when a game is added, and stored with it.
 
 **Rendering.** `frameloop="demand"` so an idle shelf costs nothing. Pixel ratio capped (1.5 on
@@ -174,7 +174,7 @@ rows are virtualised past about 1,000 games.
 Real shelves look real because the boxes differ. Dimensions from
 [Wikipedia's keep case article](https://en.wikipedia.org/wiki/Keep_case) (height × width × thickness):
 
-| Case | Size (mm) | Colour | Used by |
+| Case | Size (mm) | Color | Used by |
 | --- | --- | --- | --- |
 | DVD-size keep case | 190 × 135 × 15 | Mostly black | PS2, Xbox, Xbox 360, PC DVD, GameCube outside Japan |
 | Wii, Wii U | 190 × 135 × 14 | White; bright cerulean | Wii, Wii U |
@@ -185,7 +185,7 @@ Real shelves look real because the boxes differ. Dimensions from
 | PSP (UMD) | 168 × 99 × 14 | Clear | PSP |
 | CD jewel case | 142 × 125 × 9.9 | Clear with a dark tray | PS1, Saturn, Dreamcast, PC CD |
 
-Sizes and platform colours are from the article. Which consoles used the DVD-size, Blu-ray-size
+Sizes and platform colors are from the article. Which consoles used the DVD-size, Blu-ray-size
 and jewel cases is **Memory**: the article gives the Blu-ray size for films and does not list
 PlayStation or Xbox cases separately.
 
@@ -196,7 +196,7 @@ spec must answer (section 6 proposes one per direction).
 
 **Spine anatomy** (**Memory**, consistent across platforms): a platform band at the top, the
 title running top to bottom, the publisher's mark at the foot. Shelf's generated spine follows
-the same order with a platform colour band, the title, and the studio name. Platform names are
+the same order with a platform color band, the title, and the studio name. Platform names are
 set as text. No trademarked logos are drawn.
 
 ### How collectors arrange shelves
@@ -205,7 +205,7 @@ set as text. No trademarked logos are drawn.
 
 - Spine-out for density, face-out for the few you are proud of. Retail calls this "facing".
 - Grouped by platform first, then alphabetical or by series. Platform groups read as bands of
-  colour: a blue run, a green run, a red run.
+  color: a blue run, a green run, a red run.
 - Cube shelving, with about two dozen standard cases to a bay.
 - A light strip under each shelf, usually warm white.
 - Objects on top: a controller, a plant, a figure.
@@ -221,15 +221,15 @@ Most of these are vendor guides, so I take only the points they agree on:
 | Principle | Source figure | In Shelf |
 | --- | --- | --- |
 | Accent light dominates; ambient stays low | No ratio given | Dark theme: each shelf bay has its own pool of light and the wall between pools falls away |
-| Warm white on objects | About 3000K | The dark theme's spot colour, roughly `#FFD6A5` |
-| High colour fidelity | CRI 90 or above | Covers are never tinted by the UI. Light changes brightness, not hue. |
+| Warm white on objects | About 3000K | The dark theme's spot color, roughly `#FFD6A5` |
+| High color fidelity | CRI 90 or above | Covers are never tinted by the UI. Light changes brightness, not hue. |
 | Narrow beams for objects, wide for the room | 15 to 30° and 40°+ | Dark theme uses narrow pools. Light theme uses one wide, soft wash. |
 | Control glare | Louvres and lenses | No specular hot spots on covers; reflections stay on the ledge and floor |
 
 **The theme is a lighting state.** Light theme is a daylit room: one large soft source, long
 gentle shadows, cool fill. Dark theme is the same room at night: small warm sources, pools,
 deep falloff. Materials respond (brass glows at night and goes matte by day), and contact
-shadows change shape. Colours are not inverted.
+shadows change shape. Colors are not inverted.
 
 ---
 
@@ -243,7 +243,7 @@ Drizzle, Inngest jobs, self-hosted. Dark only, with a neon look.
 
 Accounts and public profiles. A per-user library with table, grid, banner and CSS-3D shelf
 views. Eleven statuses in four groups. A manually ordered backlog. IGDB search. Score out of
-100, hours, start and finish dates, review, favourite, private flag. Steam and PlayStation sync
+100, hours, start and finish dates, review, favorite, private flag. Steam and PlayStation sync
 for owned games, wishlist, playtime and achievements. Collections. Community reviews with votes.
 Stats and a trophy case. Public game pages. CSV export. Fourteen filter facets, three ranges and
 four flags, with include and exclude per value, all encoded in the URL and run in SQL.
@@ -252,7 +252,7 @@ four flags, with include and exclude per value, all encoded in the URL and run i
 
 | Table | Holds |
 | --- | --- |
-| `games` | The shared catalogue, one row per IGDB game (371,279 rows): uuid, `slug`, `igdb_id`, title, release date, `game_type`, cover and banner ids, ratings, `version_parent_id`. |
+| `games` | The shared catalog, one row per IGDB game (371,279 rows): uuid, `slug`, `igdb_id`, title, release date, `game_type`, cover and banner ids, ratings, `version_parent_id`. |
 | `igdb.*` | A full mirror of IGDB: 54 endpoints, about 6.2 million rows. |
 | `game_facets` | A materialised view with ten arrays per game (genres, themes, platforms, modes, perspectives, developers, publishers, franchises, DLC and expansion ids). |
 | `library_entries` | One row per user per game, `UNIQUE (user_id, game_id)`: `status`, `score`, `custom_hours`, `review`, dates, `favorite`, `is_private`, `sort_order`, `parent_entry_id`, and **`played_on text[]`**. |
@@ -261,7 +261,7 @@ four flags, with include and exclude per value, all encoded in the URL and run i
 
 ### How it uses IGDB
 
-It began as a request-time proxy that created catalogue rows on demand, and became a complete
+It began as a request-time proxy that created catalog rows on demand, and became a complete
 local mirror. A nightly delta costs about 130 requests, a monthly full re-read about 13,000.
 Search runs locally on trigrams and never calls IGDB.
 
@@ -271,7 +271,7 @@ Worth copying:
   in between, so any number of concurrent callers share one ceiling. It runs at 2.5 requests per
   second, below IGDB's limit of 4 (and 8 open requests), on purpose.
 - **One token request at a time.** Concurrent callers share a single in-flight promise.
-- **Retries back off** exponentially with jitter and honour `Retry-After`.
+- **Retries back off** exponentially with jitter and honor `Retry-After`.
 - **Images stay on IGDB's CDN.** They measured 0.24s direct against 1.20s through
   `/_next/image`. A custom loader picks a larger or smaller token within one family.
 - **Size tokens come in families that crop differently.** `cover_*` keeps the aspect ratio,
@@ -345,9 +345,9 @@ Phase 2):
 
 Rules that hold in all three:
 
-- **The games supply the colour.** Five hundred covers are loud. The chrome stays quiet.
+- **The games supply the color.** Five hundred covers are loud. The chrome stays quiet.
 - **The theme is a lighting state** (section 4).
-- **Spines are generated** from the cover's colours and the title (section 3).
+- **Spines are generated** from the cover's colors and the title (section 3).
 - **Cases keep their real shapes** (section 4), chosen by the platform I own the game on.
 - The reference app is dark-only neon, with a planned lime-on-black redesign. None of the three
   goes near either.
@@ -382,14 +382,14 @@ width axis runs from 62 to 125, so one family is condensed on a 13mm spine and n
 
 **Motion.** Museum pace. The camera dollies on long ease-in-out curves (700 to 900ms). Pulling
 a game narrows the light onto it: everything else dims and softens, the game turns to face you.
-Reordering lifts each box a few millimetres, slides it and sets it down, with a short stagger.
+Reordering lifts each box a few millimeters, slides it and sets it down, with a short stagger.
 Switching theme changes the lights over about a second: the skylight fades and the spots warm
 up. In dark theme the bay in front of you is brightest, as if the lights followed you down the
 aisle. Calm alternative: crossfades of 200ms or less, no camera travel, lights change at once.
 
 **3D shelf.** Long floating ledges on a plain wall. Brass label plates on the ledge lip name
 each group and its count. The floor takes a faint reflection. The camera tracks sideways along
-the wall; a few favourites stand face-out. A digital-only game is a slim acrylic block with the
+the wall; a few favorites stand face-out. A digital-only game is a slim acrylic block with the
 cover printed on its face: present on the shelf, clearly not a box.
 
 **2D shelf.** The same wall seen straight on. Each ledge is a strip with a top-down light
@@ -412,7 +412,7 @@ shelf. Warm, lived-in, personal. The message is that this is yours.
 
 | | Dark: lamp-lit evening | Light: sunny morning |
 | --- | --- | --- |
-| Wall | `#131A26` blue-hour navy | `#E4EAEE` pale blue-grey |
+| Wall | `#131A26` blue-hour navy | `#E4EAEE` pale blue-gray |
 | Surface | `#1C2533` | `#FFF3D6` where the sun lands |
 | Shelf | Walnut in lamplight `#5A3A22` | White oak `#D9BE94` |
 | Text | `#F3EDE2` | `#1B2430` |
@@ -420,8 +420,8 @@ shelf. Warm, lived-in, personal. The message is that this is yours.
 | Accent | Lamplight `#FFB45C` | Denim `#2B4C8C` |
 | Light | 2700K strips under each shelf, one floor lamp | Low sun through blinds, cool shadows |
 
-Text pairs pass AA on the wall colours. Secondary text does not pass on oak (3.6:1), so text on
-wood always uses the primary colour.
+Text pairs pass AA on the wall colors. Secondary text does not pass on oak (3.6:1), so text on
+wood always uses the primary color.
 
 **Type.** [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque) for
 display and spines (it has width and optical-size axes and a warm, slightly irregular voice).
@@ -450,7 +450,7 @@ attention. The light theme sits close to the warm-cream look that many current s
 
 ### C. Locadora
 
-**Mood.** *Locadora* is Brazilian Portuguese for a rental shop: the neighbourhood game rental
+**Mood.** *Locadora* is Brazilian Portuguese for a rental shop: the neighborhood game rental
 place of the 1990s. Slatwall packed to the ceiling,
 yellow shelf tabs, price stickers, a CRT on the counter. Loud, dense, nostalgic, a little
 funny. The message is abundance.
@@ -480,7 +480,7 @@ alternative: plain fades.
 marked by yellow tabs sticking out between sections. Status shows as round stickers. A
 digital-only game is a membership-card-sized sleeve hung on a peg.
 
-**2D shelf.** A flat, graphic wall: spines as bold colour bars, yellow tabs as group headers,
+**2D shelf.** A flat, graphic wall: spines as bold color bars, yellow tabs as group headers,
 stickers for status. The least 3D of the three in its 2D form, and the most poster-like.
 
 ![Locadora, dark theme: a rental shop wall of game cases under half-lit fluorescent tubes with a CRT glowing on the counter](../design/assets/concepts/c-locadora-dark.webp)
@@ -496,7 +496,7 @@ My assessment, not measurements.
 
 | | A. Vitrine | B. Golden Hour | C. Locadora |
 | --- | --- | --- | --- |
-| Feeling | Reverent | Cosy | Playful |
+| Feeling | Reverent | Cozy | Playful |
 | Chrome next to covers | Quietest | Medium | Loudest |
 | Theme change | Skylight to spotlights | Sunrise to lamplight | Tubes on to tubes half off |
 | 3D cost | Lowest: flat wall, fake light pools | Highest: wood, room, props | Medium: many decals |
@@ -525,7 +525,7 @@ Why Vitrine:
 What to borrow:
 
 - **From Golden Hour:** the fingertip tip-out as the hover and focus state, and warmth in the
-  materials (the spot colour, the brass, a stone ledge that is not grey).
+  materials (the spot color, the brass, a stone ledge that is not gray).
 - **From Locadora:** density as a virtue, and one playful status marker (a small foil seal on
   completed games) so the shelf is not solemn.
 
@@ -555,7 +555,7 @@ Defaults I have taken so far. Any of them can change before Phase 2.
 | Analytics | None |
 | Domain | The default `*.vercel.app` address until you name one |
 | Local port | 3300, since 3000 and 8000 are used by other services on this machine |
-| Generated assets | Optimised files committed; raw PNGs are not |
+| Generated assets | Optimized files committed; raw PNGs are not |
 
 ---
 

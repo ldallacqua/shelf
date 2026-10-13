@@ -6,13 +6,13 @@ Add games from IGDB, then browse them on a shelf (2D or 3D) with filters and sor
 
 ## Status
 
-Phase 1 of the plan, research, is complete. No app code exists yet.
+Planning is done. No app code exists yet.
 
 | Phase | What | State |
 | --- | --- | --- |
-| 1 | Research and visual directions: [`docs/research.md`](docs/research.md) | Done, awaiting review |
-| 2 | Product and UX spec, data model decision record | Not started |
-| 3 | Architecture and setup checklist | Not started |
+| 1 | Research and visual directions: [`docs/research.md`](docs/research.md) | Done |
+| 2 | Product and UX spec: [`docs/spec.md`](docs/spec.md). Data model: [`docs/adr/001-game-entry-model.md`](docs/adr/001-game-entry-model.md) | Done |
+| 3 | Architecture: [`docs/architecture.md`](docs/architecture.md). Setup checklist: [`docs/setup.md`](docs/setup.md) | Awaiting review |
 | Build | Ten build steps | Not started |
 
 ## Credits
