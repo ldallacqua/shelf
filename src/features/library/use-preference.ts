@@ -31,18 +31,3 @@ export function useWallSize(): [WallSize, (value: WallSize) => void] {
   )
   return [value, (next) => writePreference(wallSizePreference, next)]
 }
-
-const never = () => () => undefined
-
-/**
- * False while the page is being built on the server and while React takes it
- * over; true from then on. For things only a live page should do, such as
- * fading a cover in when it arrives.
- */
-export function useIsLive(): boolean {
-  return useSyncExternalStore(
-    never,
-    () => true,
-    () => false,
-  )
-}

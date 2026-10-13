@@ -43,6 +43,26 @@ export const arrangeLibrary = (
   locale: string,
 ): Shelf[] => groupLibrary(sortByTitle(games, locale), names, query.group)
 
+/**
+ * How many boxes are sent inside the page, and drawn before a view has
+ * measured itself: about a screenful on a desktop. Each one is hydrated on a
+ * phone too, so more is not free.
+ */
+export const FIRST_BOXES = 48
+
+/**
+ * How the first boxes are shared out: in shelf order, each shelf takes what
+ * it holds until `limit` boxes are spoken for. Later shelves get none.
+ */
+export const shareFirstBoxes = (counts: readonly number[], limit: number): number[] => {
+  let left = Math.max(0, limit)
+  return counts.map((count) => {
+    const share = Math.min(count, left)
+    left -= share
+    return share
+  })
+}
+
 /** A shelf's name tag before its games are known: enough to draw the shelf and reserve its space. */
 export type ShelfOutline = {
   key: string
@@ -76,11 +96,13 @@ export const buildFirstScreen = (
   const shelves = arrangeLibrary(library.games, library.names, query, locale)
 
   const games = new Map<string, LibraryGame>()
-  let boxes = 0
-  const outline = shelves.map((shelf): ShelfOutline => {
-    const known = Math.min(shelf.items.length, Math.max(0, limit - boxes))
+  const shares = shareFirstBoxes(
+    shelves.map((shelf) => shelf.items.length),
+    limit,
+  )
+  const outline = shelves.map((shelf, index): ShelfOutline => {
+    const known = shares[index] ?? 0
     for (const item of shelf.items.slice(0, known)) games.set(item.game.slug, item.game)
-    boxes += known
     return { key: shelf.key, count: shelf.items.length, known }
   })
 

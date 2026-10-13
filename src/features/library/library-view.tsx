@@ -20,6 +20,7 @@ import { Ledge } from '@/ui/ledge'
 
 import { GamePreview } from './game-preview'
 import { ListView } from './list-view'
+import { markPageLive } from './live'
 import { ShelfView } from './shelf-view'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
@@ -68,6 +69,8 @@ export function LibraryView({ first, firstGroup }: LibraryViewProps) {
   // Boxes arrive in a stagger once, when the page is first drawn.
   const [arriving, setArriving] = useState(true)
   useEffect(() => {
+    // From here on, whatever joins the page was added on this device.
+    markPageLive()
     const timer = setTimeout(() => setArriving(false), ARRIVAL_MS)
     return () => clearTimeout(timer)
   }, [])

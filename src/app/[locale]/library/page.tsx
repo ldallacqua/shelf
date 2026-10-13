@@ -6,7 +6,7 @@ import { preconnect } from 'react-dom'
 
 import { IMAGE_HOST } from '@/domain/igdb/images'
 import type { Library } from '@/domain/library/library'
-import { buildFirstScreen, parseLibraryQuery } from '@/domain/library/view'
+import { buildFirstScreen, FIRST_BOXES, parseLibraryQuery } from '@/domain/library/view'
 import { EmptyLibrary } from '@/features/library/empty-library'
 import { LibrarySkeleton } from '@/features/library/library-skeleton'
 import { LibraryView } from '@/features/library/library-view'
@@ -17,9 +17,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('Library')
   return { title: t('metaTitle') }
 }
-
-/** Boxes sent with the page: about a screen of them. The rest come with the library file. */
-const FIRST_BOXES = 48
 
 /**
  * The part of the page that depends on the address: which view, grouped how.

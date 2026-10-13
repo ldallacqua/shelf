@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useState } from 'react'
 
 import type { Library } from '@/domain/library/library'
 import { decodeLibrary, type SnapshotFile } from '@/domain/library/snapshot'
@@ -41,7 +41,10 @@ export function useLibrary(version: number): LibraryState {
   useEffect(() => {
     let current = true
     load(version).then(
-      (library) => current && setResult({ key, library }),
+      // The first screen is already drawn and usable. Filling in the rest is
+      // not urgent, so React may do it in small pieces between other work,
+      // and a tap that lands meanwhile is answered first.
+      (library) => current && startTransition(() => setResult({ key, library })),
       () => current && setResult({ key, failed: true }),
     )
     return () => {

@@ -66,6 +66,22 @@ The nine projects are three engines (Chromium, Firefox, WebKit) at three widths 
 tablet 820, desktop 1440). Playwright starts the server itself; if one is already running on
 port 3300 it uses that.
 
+**WebKit on Linux is not Safari.** CI runs the Linux build of WebKit, which paints with
+different code from the one on a Mac. A test can pass in WebKit on a Mac and hang on CI: the
+wall's shelf labels once had a blurred-glass background each, and a dozen of those made the
+Linux build stop answering and fill the runner's disk. To run what CI runs, use Playwright's
+own image against a server on the Mac:
+
+```sh
+pnpm build && SHELF_MOCKS=1 pnpm start &
+docker run --rm --ipc=host -e BASE_URL=http://host.docker.internal:3300 \
+  -v "$PWD":/work:ro mcr.microsoft.com/playwright:v1.64.0-noble \
+  bash -c 'cd /work && node node_modules/@playwright/test/cli.js test e2e/library.spec.ts \
+    --project=webkit-desktop --grep-invert @visual --output=/tmp/results'
+```
+
+The image's version must match `@playwright/test` in `package.json`.
+
 Every test fails if the page logs an error to the console. A test that causes an error on
 purpose, such as opening an address that answers 404, opts out with
 `test.use({ allowConsoleErrors: true })`.

@@ -6,6 +6,7 @@ import { useRef, type CSSProperties } from 'react'
 import { ledFrom } from '@/domain/color/palette'
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
+import { FIRST_BOXES, shareFirstBoxes } from '@/domain/library/view'
 
 import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
@@ -26,21 +27,30 @@ const SIZES: Record<WallSize, string> = {
   large: '(min-width: 40rem) 192px, 152px',
 }
 
-/** Covers drawn before the layout is measured. */
-const UNMEASURED = 60
-
 type WallGridProps = {
   shelf: DrawnShelf
   platforms: ReadonlyMap<number, LibraryPlatform>
   size: WallSize
   label: string
+  /** Covers drawn before the layout is measured: this shelf's share of the first screen. */
+  unmeasured: number
   open?: OpenBox
   onOpen: (box: OpenBox) => void
   enter: boolean
   eager: number
 }
 
-function WallGrid({ shelf, platforms, size, label, open, onOpen, enter, eager }: WallGridProps) {
+function WallGrid({
+  shelf,
+  platforms,
+  size,
+  label,
+  unmeasured,
+  open,
+  onOpen,
+  enter,
+  eager,
+}: WallGridProps) {
   const t = useTranslations('Library')
   const ref = useRef<HTMLUListElement>(null)
   const rowWindow = useRowWindow(ref, shelf.total)
@@ -48,7 +58,8 @@ function WallGrid({ shelf, platforms, size, label, open, onOpen, enter, eager }:
   const from = rowWindow ? rowWindow.start * rowWindow.columns : 0
   const to = rowWindow
     ? Math.min(shelf.items.length, rowWindow.end * rowWindow.columns)
-    : Math.min(shelf.items.length, UNMEASURED)
+    : // At least one: a row's height is measured from a cover.
+      Math.min(shelf.items.length, Math.max(1, unmeasured))
   const before = rowWindow ? rowWindow.start * rowWindow.pitch : 0
   const after = rowWindow ? (rowWindow.rows - rowWindow.end) * rowWindow.pitch : 0
 
@@ -126,6 +137,10 @@ type WallViewProps = ViewProps & { size: WallSize }
  */
 export function WallView({ shelves, platforms, open, onOpen, enter, size }: WallViewProps) {
   const t = useTranslations('Library')
+  const shares = shareFirstBoxes(
+    shelves.map((shelf) => shelf.items.length),
+    FIRST_BOXES,
+  )
 
   return (
     <div className="pb-6">
@@ -134,7 +149,7 @@ export function WallView({ shelves, platforms, open, onOpen, enter, size }: Wall
         const headingId = `wall-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
         return (
           <section key={shelf.key} aria-labelledby={headingId} className="mt-6 first:mt-4">
-            <header className="sticky top-14 z-20 -mx-1 flex items-baseline gap-3 bg-wall/85 px-1 py-2 backdrop-blur-md">
+            <header className="wall-label">
               <h2 id={headingId} className="title text-base sm:text-lg">
                 {name}
               </h2>
@@ -147,6 +162,7 @@ export function WallView({ shelves, platforms, open, onOpen, enter, size }: Wall
               platforms={platforms}
               size={size}
               label={t('shelf.games', { shelf: name })}
+              unmeasured={shares[index] ?? 0}
               open={open}
               onOpen={onOpen}
               enter={enter}

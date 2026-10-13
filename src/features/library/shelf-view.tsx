@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
+import { FIRST_BOXES, shareFirstBoxes } from '@/domain/library/view'
 import { caseShapes } from '@/ui/game-case'
 
 import { describeBox, shelfName } from './describe'
@@ -86,6 +87,12 @@ export function ShelfView({ shelves, platforms, open, onOpen, enter, density }: 
   const describe = (item: ShelfItem, platform: LibraryPlatform | undefined) =>
     describeBox(item, platform, t)
 
+  // Before a shelf has measured itself it draws its share of the first screen.
+  const shares = shareFirstBoxes(
+    shelves.map((shelf) => shelf.items.length),
+    FIRST_BOXES,
+  )
+
   return (
     <div className="shelves">
       {shelves.length > 1 ? (
@@ -142,6 +149,7 @@ export function ShelfView({ shelves, platforms, open, onOpen, enter, density }: 
                 shelfKey={shelf.key}
                 items={shelf.items}
                 total={shelf.total}
+                unmeasured={shares[index] ?? 0}
                 platforms={platforms}
                 density={density}
                 {...sizeOf(shelf)}

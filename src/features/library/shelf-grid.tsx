@@ -8,13 +8,11 @@ import type { LibraryPlatform } from '@/domain/library/library'
 
 import { GameBox, platformFor } from './game-box'
 import type { Density } from './preferences'
+import { boardsOf, piecesOf, runsOf } from './shelf-layout'
 import { useRowWindow } from './use-row-window'
 
 /** Fewest boxes a row can hold, at the narrowest width: enough boards are drawn for that before the width is known. */
 const FEWEST_COLUMNS = 3
-
-/** How many boxes are drawn before the layout has been measured. */
-const UNMEASURED = 48
 
 type ShelfGridProps = {
   shelfKey: string
@@ -22,6 +20,12 @@ type ShelfGridProps = {
   items: readonly ShelfItem[]
   /** How many boxes the shelf holds once the whole library has arrived. */
   total: number
+  /**
+   * How many boxes to draw before the layout has been measured: this shelf's
+   * share of the first screen. A shelf further down draws one, and the rest
+   * of its window a frame later.
+   */
+  unmeasured: number
   platforms: ReadonlyMap<number, LibraryPlatform>
   density: Density
   /** The widest and the tallest case on the shelf, in millimeters. */
@@ -41,20 +45,6 @@ type ShelfGridProps = {
   onLeave: (direction: -1 | 1) => void
 }
 
-type Range = [start: number, end: number]
-
-/** Row ranges in order, with overlaps and neighbors joined. */
-const joinRanges = (ranges: Range[]): Range[] => {
-  const sorted = ranges.filter(([start, end]) => end > start).sort((a, b) => a[0] - b[0])
-  const joined: Range[] = []
-  for (const range of sorted) {
-    const last = joined.at(-1)
-    if (last && range[0] <= last[1]) last[1] = Math.max(last[1], range[1])
-    else joined.push([...range])
-  }
-  return joined
-}
-
 /**
  * One shelf's games, standing on lit boards.
  *
@@ -69,6 +59,7 @@ export function ShelfGrid({
   shelfKey,
   items,
   total,
+  unmeasured,
   platforms,
   density,
   slot,
@@ -102,16 +93,9 @@ export function ShelfGrid({
   const columns = rowWindow?.columns
   const tabStop = Math.min(stop, Math.max(0, items.length - 1))
 
-  // Rows in the page: those near the screen, and the row of the box Tab
-  // stops at, so focus can always land on it.
-  const ranges: Range[] = rowWindow
-    ? joinRanges([
-        [rowWindow.start, rowWindow.end],
-        [Math.floor(tabStop / rowWindow.columns), Math.floor(tabStop / rowWindow.columns) + 1],
-      ])
-    : [[0, Math.ceil(Math.min(items.length, UNMEASURED) / FEWEST_COLUMNS)]]
-  const rows = rowWindow?.rows ?? ranges[0]?.[1] ?? 0
+  const runs = runsOf(rowWindow, items.length, unmeasured, tabStop)
   const perRow = columns ?? FEWEST_COLUMNS
+  const rows = rowWindow?.rows ?? Math.ceil((runs[0]?.to ?? 0) / perRow)
 
   const active = hot ?? openIndex
   const activeItem = active === undefined ? undefined : items[active]
@@ -149,84 +133,68 @@ export function ShelfGrid({
     return box ? Number(box.dataset.index) : undefined
   }
 
-  const cells = []
-  const bays = []
-  let previousEnd = 0
-  for (const [start, end] of ranges) {
-    if (start > previousEnd) {
-      cells.push(
+  const cells = piecesOf(runs, perRow, rows).map((piece) => {
+    if (piece.kind !== 'box') {
+      return (
         <li
-          key={`gap-${previousEnd}`}
+          key={`${piece.kind}-${piece.at}`}
           className="shelf-gap"
           aria-hidden="true"
-          style={{ gridRow: `span ${start - previousEnd}` }}
-        />,
-      )
-    }
-    const from = start * perRow
-    const to = columns ? Math.min(items.length, end * perRow) : Math.min(items.length, UNMEASURED)
-    for (const index of Array.from({ length: Math.max(0, to - from) }, (_, at) => from + at)) {
-      const item = items[index]
-      if (!item) continue
-      const platform = platformFor(item, platforms)
-      const inActiveRow = activeRow !== undefined && Math.floor(index / perRow) === activeRow
-      cells.push(
-        <li
-          key={`${item.game.slug}:${item.copy?.platform ?? ''}`}
-          className="shelf-cell"
-          data-cell=""
-          data-enter={enter ? '' : undefined}
-          aria-posinset={index + 1}
-          aria-setsize={total}
           style={
-            {
-              '--i': index - from,
-              // The whole row takes the color of the game in focus on it.
-              '--led': inActiveRow ? activeLed : undefined,
-            } as CSSProperties
+            piece.kind === 'rows'
+              ? { gridRow: `span ${piece.rows}` }
+              : { gridColumn: `span ${piece.places}` }
           }
-        >
-          <GameBox
-            item={item}
-            platform={platform}
-            density={density}
-            label={describe(item, platform)}
-            active={index === active}
-            tabbable={index === tabStop}
-            index={index}
-            eager={index < eager}
-            onOpen={() => onOpen(index)}
-            onKeyDown={(event) => onKeyDown(event, index)}
-          />
-        </li>,
+        />
       )
     }
-    for (const row of Array.from({ length: end - start }, (_, at) => start + at)) {
-      bays.push(
-        <div
-          key={row}
-          className="bay shelf-bay"
-          style={
-            { '--row': row, '--led': row === activeRow ? activeLed : undefined } as CSSProperties
-          }
-        >
-          <div className="bay-glow" />
-          <div className="ledge" />
-        </div>,
-      )
-    }
-    previousEnd = end
-  }
-  if (rows > previousEnd) {
-    cells.push(
+    const { index } = piece
+    const item = items[index]
+    if (!item) return null
+    const platform = platformFor(item, platforms)
+    const inActiveRow = activeRow !== undefined && Math.floor(index / perRow) === activeRow
+    return (
       <li
-        key="gap-end"
-        className="shelf-gap"
-        aria-hidden="true"
-        style={{ gridRow: `span ${rows - previousEnd}` }}
-      />,
+        key={`${item.game.slug}:${item.copy?.platform ?? ''}`}
+        className="shelf-cell"
+        data-cell=""
+        data-enter={enter ? '' : undefined}
+        aria-posinset={index + 1}
+        aria-setsize={total}
+        style={
+          {
+            '--i': piece.stagger,
+            // The whole row takes the color of the game in focus on it.
+            '--led': inActiveRow ? activeLed : undefined,
+          } as CSSProperties
+        }
+      >
+        <GameBox
+          item={item}
+          platform={platform}
+          density={density}
+          label={describe(item, platform)}
+          active={index === active}
+          tabbable={index === tabStop}
+          index={index}
+          eager={index < eager}
+          onOpen={() => onOpen(index)}
+          onKeyDown={(event) => onKeyDown(event, index)}
+        />
+      </li>
     )
-  }
+  })
+
+  const bays = boardsOf(runs, perRow).map((row) => (
+    <div
+      key={row}
+      className="bay shelf-bay"
+      style={{ '--row': row, '--led': row === activeRow ? activeLed : undefined } as CSSProperties}
+    >
+      <div className="bay-glow" />
+      <div className="ledge" />
+    </div>
+  ))
 
   return (
     // Safari stops calling a list a list once its bullets are styled away; the role says it again.

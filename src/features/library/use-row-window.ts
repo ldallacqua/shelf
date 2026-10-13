@@ -77,11 +77,13 @@ export function useRowWindow(
       let start = clamp(Math.floor((top - box.top) / pitch) - overscan, 0, rows)
       let end = clamp(Math.ceil((bottom - box.top) / pitch) + overscan, start, rows)
 
-      // A shelf more than a screen away sideways (another shelf on a phone) keeps one row ready.
+      // A shelf more than a screen away sideways (on a phone, where shelves
+      // stand side by side) has no rows in the page. The shelves next to the
+      // one in view are not that far, so a swipe always lands on a full shelf.
       const sideways = box.right < -window.innerWidth || box.left > window.innerWidth * 2
       if (sideways) {
         start = 0
-        end = Math.min(rows, 1)
+        end = 0
       }
 
       const next = { columns, pitch, rows, start, end }

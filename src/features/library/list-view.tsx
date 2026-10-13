@@ -5,6 +5,7 @@ import { useRef } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
+import { shareFirstBoxes } from '@/domain/library/view'
 
 import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
@@ -14,8 +15,8 @@ import { StatusMark } from './status-mark'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
 
-/** Rows drawn before the layout is measured. */
-const UNMEASURED = 30
+/** Rows drawn before the layout is measured, over all the tables: two screens of them. */
+const FIRST_ROWS = 30
 
 /** Columns a phone has no room for. Their content is in the game's details instead. */
 const WIDE = 'hidden lg:table-cell'
@@ -28,11 +29,13 @@ type ListTableProps = {
   shelf: DrawnShelf
   platforms: ReadonlyMap<number, LibraryPlatform>
   caption: string
+  /** Rows drawn before the layout is measured: this table's share of the first screen. */
+  unmeasured: number
   open?: OpenBox
   onOpen: (box: OpenBox) => void
 }
 
-function ListTable({ shelf, platforms, caption, open, onOpen }: ListTableProps) {
+function ListTable({ shelf, platforms, caption, unmeasured, open, onOpen }: ListTableProps) {
   const t = useTranslations('Library')
   const format = useFormatter()
   const body = useRef<HTMLTableSectionElement>(null)
@@ -41,7 +44,8 @@ function ListTable({ shelf, platforms, caption, open, onOpen }: ListTableProps) 
   const from = rowWindow ? rowWindow.start : 0
   const to = rowWindow
     ? Math.min(shelf.items.length, rowWindow.end)
-    : Math.min(shelf.items.length, UNMEASURED)
+    : // At least one: a row's height is measured from a row.
+      Math.min(shelf.items.length, Math.max(1, unmeasured))
   const before = rowWindow ? rowWindow.start * rowWindow.pitch : 0
   const after = rowWindow ? (rowWindow.rows - rowWindow.end) * rowWindow.pitch : 0
 
@@ -201,10 +205,14 @@ function ListTable({ shelf, platforms, caption, open, onOpen }: ListTableProps) 
  */
 export function ListView({ shelves, platforms, open, onOpen }: ViewProps) {
   const t = useTranslations('Library')
+  const shares = shareFirstBoxes(
+    shelves.map((shelf) => shelf.items.length),
+    FIRST_ROWS,
+  )
 
   return (
     <div className="pb-6">
-      {shelves.map((shelf) => {
+      {shelves.map((shelf, index) => {
         const name = shelfName(shelf, t)
         const headingId = `list-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
         return (
@@ -221,6 +229,7 @@ export function ListView({ shelves, platforms, open, onOpen }: ViewProps) {
               shelf={shelf}
               platforms={platforms}
               caption={t('shelf.games', { shelf: name })}
+              unmeasured={shares[index] ?? 0}
               open={open}
               onOpen={onOpen}
             />

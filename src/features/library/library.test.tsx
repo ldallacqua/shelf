@@ -1,6 +1,8 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { thumbHashToDataURL } from 'thumbhash'
 import { createTranslator } from 'next-intl'
+import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ShelfItem } from '@/domain/library/group'
@@ -12,11 +14,13 @@ import {
 import { messages, renderWithIntl } from '@/test/render'
 import { caseShapes, plastics } from '@/ui/game-case'
 
+import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
 import { EmptyLibrary } from './empty-library'
 import { dateOf, hoursOf, outOfTen } from './format'
 import { GameBox, platformFor, platformsOwned } from './game-box'
 import { GamePreview } from './game-preview'
+import { markPageLive, pageIsLive, resetPageLive } from './live'
 import {
   densityPreference,
   preferenceScript,
@@ -455,5 +459,63 @@ describe('device preferences', () => {
 
     writePreference(wallSizePreference, 'large')
     expect(readPreference(wallSizePreference)).toBe('large')
+  })
+})
+
+// The decoder is counted, not run: what matters here is when a blur is worked out.
+vi.mock('thumbhash', () => ({
+  thumbHashToDataURL: vi.fn(() => 'data:image/png;base64,AAAA'),
+}))
+
+describe('a cover, by when it joined the page', () => {
+  const cover = { cover: 'co1abc', title: 'Hades', sizes: '120px' }
+
+  afterEach(() => {
+    resetPageLive()
+    vi.mocked(thumbHashToDataURL).mockClear()
+  })
+
+  it('came with the page: shown plainly, with no blur worked out', () => {
+    expect(pageIsLive()).toBe(false)
+    renderWithIntl(<Cover {...cover} hash="AAAA" />)
+    expect(screen.getByRole('img', { name: 'Hades' })).not.toHaveAttribute('data-pending')
+    expect(thumbHashToDataURL).not.toHaveBeenCalled()
+  })
+
+  it('stays that way when the page comes alive around it', async () => {
+    function Shelf() {
+      const [drawn, setDrawn] = useState(1)
+      return (
+        <button type="button" onClick={() => setDrawn(drawn + 1)}>
+          drawn {drawn}
+          <Cover {...cover} hash="BBBB" sizes={`${120 + drawn}px`} />
+        </button>
+      )
+    }
+    renderWithIntl(<Shelf />)
+    markPageLive()
+    await userEvent.click(screen.getByRole('button'))
+    const image = screen.getByRole('img', { name: 'Hades' })
+    expect(image).toHaveAttribute('sizes', '122px')
+    expect(image).not.toHaveAttribute('data-pending')
+    expect(thumbHashToDataURL).not.toHaveBeenCalled()
+  })
+
+  it('joined a live page: fades in over a blur of itself, worked out once', () => {
+    markPageLive()
+    renderWithIntl(
+      <>
+        <Cover {...cover} hash="CCCC" />
+        <Cover {...cover} hash="CCCC" title="Hades again" />
+      </>,
+    )
+    expect(screen.getByRole('img', { name: 'Hades' })).toHaveAttribute('data-pending')
+    expect(thumbHashToDataURL).toHaveBeenCalledTimes(1)
+  })
+
+  it('one of the first covers on a live page does not wait to be shown', () => {
+    markPageLive()
+    renderWithIntl(<Cover {...cover} hash="DDDD" eager />)
+    expect(screen.getByRole('img', { name: 'Hades' })).not.toHaveAttribute('data-pending')
   })
 })

@@ -6,7 +6,7 @@ import { thumbHashToDataURL } from 'thumbhash'
 import type { Palette } from '@/domain/color/palette'
 import { coverSources } from '@/domain/igdb/images'
 
-import { useIsLive } from './use-preference'
+import { pageIsLive } from './live'
 
 type CoverProps = {
   /** IGDB image id. Without one, the title is set in type over the colors. */
@@ -48,19 +48,20 @@ const wash = ([accent, second, base]: Palette): string =>
  * If it cannot be loaded, the title is set in type over the colors.
  */
 export function Cover({ cover, colors, hash, title, sizes, eager, small }: CoverProps) {
-  // The page as the server built it shows its covers plainly. Covers that
-  // join a live page (a row scrolled into view) fade in over their blur.
-  const live = useIsLive()
-  const preview = live && hash ? previewOf(hash) : undefined
-  // Decided once, when the cover joins the page, and never revisited: a cover
-  // that was already there when the page went live must not be hidden again.
-  const [fades] = useState(live && !eager)
+  // The page as the server built it shows its covers plainly, over a wash of
+  // their colors. A cover that joins a live page (a row scrolled into view)
+  // fades in over a blur of itself. Decided once, when the cover joins the
+  // page, and never revisited: a cover that was there when the page went live
+  // is not drawn again, and its blur, which nobody would see, is not worked out.
+  const [joined] = useState(pageIsLive)
+  const preview = joined && hash ? previewOf(hash) : undefined
+  const fades = joined && !eager
 
   return (
     <span
       className="cover"
       style={{
-        backgroundImage: preview ? `url(${preview})` : colors ? wash(colors) : undefined,
+        backgroundImage: preview ? `url("${preview}")` : colors ? wash(colors) : undefined,
       }}
     >
       {cover ? (

@@ -459,6 +459,26 @@
   /*
    * The wall: covers in a dense grid, with almost no chrome.
    */
+
+  /*
+   * A shelf's label stays pinned under the top bar while its covers pass
+   * beneath. It is nearly solid wall and not blurred glass: a wall has a label
+   * for every shelf, and a dozen blur layers on one page is a dozen surfaces
+   * to redraw on every scroll. The Linux build of WebKit cannot paint that
+   * many at all; its page stops answering.
+   */
+  .wall-label {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 20;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-inline: -0.25rem;
+    padding: 0.5rem 0.25rem;
+    background: color-mix(in srgb, var(--wall) 94%, transparent);
+  }
+
   .wall-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(var(--wall-cell, 6.5rem), 1fr));

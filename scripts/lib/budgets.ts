@@ -15,7 +15,7 @@ export const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3300'
 export const javascriptBudgets: { path: string; name: string; kilobytes: number }[] = [
   // Step 3: measured 206.2 KB. Shell, plus the foundations demos.
   { path: '/en', name: 'Home', kilobytes: 215 },
-  // Step 3: measured 232.9 KB. The shell (199 KB), plus 34 KB for the library
+  // Step 3: measured 236.1 KB. The shell (200 KB), plus 36 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
   { path: '/en/library', name: 'Library', kilobytes: 240 },
@@ -29,6 +29,11 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
  * measured. Its default mode estimates them from an unthrottled run instead,
  * and against a local server that estimate assumes the page's text waits for
  * all of its JavaScript, which it does not.
+ *
+ * "Four times slower" is relative to the machine. A CI runner is already two
+ * to three times slower than a desktop, so a page that scores 96 here can
+ * score 72 there: the score is mostly lost to time the page spends blocked,
+ * which the script prints. To see what CI will see, run with ten times.
  */
 export const lighthouseBudgets = {
   paths: ['/en', '/en/library', '/en/library?view=wall'],

@@ -14,6 +14,7 @@ import {
   buildFirstScreen,
   firstScreenShelves,
   parseLibraryQuery,
+  shareFirstBoxes,
 } from '@/domain/library/view'
 
 const platform = (id: number, key: string, family: LibraryPlatform['family']): LibraryPlatform => ({
@@ -224,6 +225,21 @@ describe('parseLibraryQuery (spec 2)', () => {
       view: 'shelf',
       group: 'platform',
     })
+  })
+})
+
+describe('sharing out the first boxes', () => {
+  it('gives each shelf what it holds, in order, until the limit is spoken for', () => {
+    expect(shareFirstBoxes([10, 30, 20, 5], 48)).toEqual([10, 30, 8, 0])
+  })
+
+  it('gives everything when the library is smaller than the limit', () => {
+    expect(shareFirstBoxes([3, 4], 48)).toEqual([3, 4])
+  })
+
+  it('gives nothing for no limit, or a nonsense one', () => {
+    expect(shareFirstBoxes([3, 4], 0)).toEqual([0, 0])
+    expect(shareFirstBoxes([3, 4], -5)).toEqual([0, 0])
   })
 })
 

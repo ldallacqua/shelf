@@ -63,6 +63,19 @@ for (const path of budgets.paths) {
     console.log(`  ${name.padEnd(14)} ${value.padEnd(30)} ${passed ? 'ok' : 'MISSED'}`)
     failed ||= !passed
   }
+  // Not targets of their own, but they are what the performance score is made of.
+  const parts: [string, string, string][] = [
+    ['First paint', 'first-contentful-paint', 's'],
+    ['Speed index', 'speed-index', 's'],
+    ['Blocked', 'total-blocking-time', 'ms'],
+  ]
+  for (const [name, audit, unit] of parts) {
+    const value = audits[audit]?.numericValue
+    const score = audits[audit]?.score
+    if (value === undefined) continue
+    const shown = unit === 's' ? `${(value / 1000).toFixed(2)} s` : `${Math.round(value)} ms`
+    console.log(`  ${name.padEnd(14)} ${shown.padEnd(30)} ${Math.round((score ?? 0) * 100)}/100`)
+  }
   console.log()
 }
 
