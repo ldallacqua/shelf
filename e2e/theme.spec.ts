@@ -101,16 +101,24 @@ test.describe('changing theme', () => {
 
   test('the change plays as a change of light, then settles', async ({ page }) => {
     await page.goto('/en')
-    await page.getByRole('radio', { name: 'Dark' }).click()
 
+    // Click, and in the same breath ask the browser what it has started to
+    // animate. Watching for a half-way color instead would be a race against
+    // an 800ms fade, and a slow machine loses that race.
+    const animating = await page.getByRole('radio', { name: 'Dark' }).evaluate((radio) => {
+      ;(radio as HTMLElement).click()
+      void getComputedStyle(document.documentElement).backgroundColor
+      return document
+        .getAnimations()
+        .map((animation) => (animation as CSSTransition).transitionProperty ?? '')
+    })
+
+    // The wall, the text and both lights are all on their way to the new state.
+    expect(animating).toEqual(
+      expect.arrayContaining(['--wall', '--text', '--ambient', '--led-strength']),
+    )
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
     await expect(page.locator('html')).toHaveAttribute('data-theme-changing', 'to-dark')
-    // Part-way through, the wall is neither the day color nor the night color.
-    await expect
-      .poll(async () => {
-        const color = await wallColor(page)
-        return color !== WALL.light && color !== WALL.dark
-      })
-      .toBe(true)
 
     await expect(page.locator('html')).not.toHaveAttribute('data-theme-changing', /.+/)
     expect(await wallColor(page)).toBe(WALL.dark)
