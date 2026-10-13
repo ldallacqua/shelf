@@ -1,0 +1,15 @@
+# pnpm settings.
+
+# Only these dependencies may run install scripts.
+onlyBuiltDependencies:
+  - esbuild
+  - unrs-resolver
+
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+
+# Storybook 10.6.2 does not yet supply a router field that Next.js 16.4 reads.
+# The patch adds it. Remove this when Storybook ships the fix.
+patchedDependencies:
+  '@storybook/nextjs-vite@10.6.2': patches/@storybook__nextjs-vite@10.6.2.patch

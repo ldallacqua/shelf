@@ -1,0 +1,268 @@
+/*
+ * The room: the wall behind every page, and the shelves games stand on.
+ * Everything here is driven by the lighting tokens in tokens/theme.css, so the
+ * two themes are the same room with the lights on or off.
+ */
+@layer components {
+  /*
+   * The wall's paint, from the top layer down:
+   * the room's ceiling light, when it is on;
+   * a haze of LED light near the top of the wall;
+   * the wall itself, darkening toward the edges.
+   * Declared on every themed element, so a part of the page lit differently
+   * repaints with its own light.
+   */
+  :root,
+  [data-theme] {
+    --wall-paint:
+      radial-gradient(
+        150% 95% at 50% -25%,
+        color-mix(in srgb, var(--light-color) calc(var(--ambient) * 70%), transparent) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        90% 55% at 50% -18%,
+        color-mix(in srgb, var(--led) calc(var(--led-strength) * 13%), transparent) 0%,
+        transparent 75%
+      ),
+      radial-gradient(130% 110% at 50% 0%, var(--wall) 35%, var(--wall-deep) 100%);
+    --wall-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /*
+   * The wall behind every page: two fixed layers.
+   * ::before is the paint; ::after is a fine grain, so the wall is not flat color.
+   */
+  body::before,
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  body::before {
+    background: var(--wall-paint);
+  }
+
+  body::after {
+    background-image: var(--wall-grain);
+    opacity: var(--grain);
+  }
+
+  /*
+   * A room: a piece of wall inside the page, with its own light.
+   * Put `data-theme` on it to light it differently from the page around it.
+   */
+  .room {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: var(--wall-paint);
+    color: var(--text);
+  }
+
+  .room::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--wall-grain);
+    opacity: var(--grain);
+  }
+
+  /*
+   * A bay: one stretch of wall with a shelf at its foot.
+   * Games stand in .bay-items; the board is .ledge.
+   * Set --led on a bay to give that shelf its own light color.
+   */
+  .bay {
+    position: relative;
+    isolation: isolate;
+    transition: --led var(--motion-slow) var(--ease-glide);
+  }
+
+  /*
+   * The LED bar's light on the wall behind the games: brightest at the shelf,
+   * fading on the way up, and fading out toward both ends.
+   *
+   * Behind the games it is strong; that part is the bloom, and no text may sit
+   * in it. Above them it is the wash, capped by --led-wash: low enough that
+   * secondary text passes contrast on it whatever color the LED is.
+   */
+  .bay-glow {
+    position: absolute;
+    inset: -3rem 0 0.625rem;
+    z-index: -1;
+    pointer-events: none;
+    background-image: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--led) calc(var(--led-strength) * 62%), transparent) 0%,
+      color-mix(in srgb, var(--led) calc(var(--led-strength) * 36%), transparent) 30%,
+      color-mix(in srgb, var(--led) calc(var(--led-strength) * var(--led-wash) * 100%), transparent)
+        74%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(90deg, transparent 0, black 14%, black 86%, transparent 100%);
+  }
+
+  .bay-items {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  /* The board: black, thin, with a top edge that catches a little light. */
+  .ledge {
+    position: relative;
+    height: 0.625rem;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--ledge-top) 0, var(--ledge) 2px, var(--ledge) 100%);
+    box-shadow:
+      0 var(--shadow-length) var(--shadow-blur)
+        color-mix(in srgb, var(--shadow-color) calc(var(--shadow-depth) * 100%), transparent),
+      /* LED light spilling down the wall under the shelf */ 0 calc(var(--glow) * 1.125rem)
+        calc(var(--glow) * 3rem) calc(var(--glow) * -0.125rem)
+        color-mix(in srgb, var(--led) calc(var(--led-strength) * 58%), transparent);
+  }
+
+  /*
+   * The LED bar along the shelf's back edge. The games stand in front of it,
+   * so it shows in the gaps between them and at both ends: the covers are backlit.
+   */
+  .ledge::before {
+    content: '';
+    position: absolute;
+    inset: -2px 0 auto;
+    height: 2px;
+    border-radius: 1px;
+    background: color-mix(in srgb, var(--led) 72%, white);
+    box-shadow:
+      0 0 calc(3px + var(--glow) * 9px)
+        color-mix(in srgb, var(--led) calc(35% + var(--glow) * 55%), transparent),
+      0 calc(var(--glow) * -0.375rem) calc(var(--glow) * 1.75rem)
+        color-mix(in srgb, var(--led) calc(var(--glow) * 50%), transparent);
+  }
+
+  /* A label clipped to the front of the shelf: what the shelf holds, and how many. */
+  .shelf-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 1.375rem;
+    padding: 0.1875rem 0.5rem 0.1875rem 0.4375rem;
+    border-radius: 3px;
+    background: var(--ledge);
+    color: var(--on-ledge);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 500;
+    line-height: 1rem;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow:
+      inset 0 1px 0 var(--ledge-top),
+      0 2px 6px color-mix(in srgb, var(--shadow-color) calc(var(--shadow-depth) * 90%), transparent);
+  }
+
+  /* The label's own small LED. */
+  .shelf-label::before {
+    content: '';
+    width: 0.3125rem;
+    height: 0.3125rem;
+    flex: none;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--led) 72%, white);
+    box-shadow: 0 0 calc(2px + var(--glow) * 6px) var(--led);
+  }
+
+  .shelf-label-count {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+}
+
+@layer components {
+  /*
+   * A game case facing out: a plastic frame, a band across the top where the
+   * platform's name is printed, and the cover behind clear plastic.
+   * Everything inside is placed in percentages, so it scales with the case.
+   */
+  .game-case {
+    position: relative;
+    display: block;
+    flex: none;
+    border-radius: var(--radius-case);
+    background: var(--case-frame, var(--ledge));
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 2px 3px rgb(0 0 0 / calc(var(--shadow-depth) * 0.9)),
+      /* rim light from the LED bar behind it: a tight edge and a wide halo */ 0 0
+        calc(var(--glow) * 0.3125rem)
+        color-mix(in srgb, var(--led) calc(var(--led-strength) * 85%), transparent),
+      0 0 calc(var(--glow) * 1.75rem)
+        color-mix(in srgb, var(--led) calc(var(--led-strength) * 52%), transparent);
+    transition:
+      transform var(--motion-quick) var(--ease-settle),
+      box-shadow var(--motion-quick) var(--ease-settle);
+  }
+
+  /* The cover, inset from the frame, under the top band. */
+  .game-case-cover {
+    position: absolute;
+    inset: 8.5% 2.5% 2.5%;
+    overflow: hidden;
+    border-radius: 1.5px;
+    background: var(--surface-raised);
+  }
+
+  /* Where the platform's logo sits on the band. A blank pill: no logo is drawn. */
+  .game-case::before {
+    content: '';
+    position: absolute;
+    top: 2.9%;
+    left: 6%;
+    width: 24%;
+    height: 2.8%;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.6);
+    mix-blend-mode: overlay;
+  }
+
+  /* Gloss on the plastic, and a darker edge on the side that hinges. */
+  .game-case::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, rgb(0 0 0 / 0.28) 0, transparent 3.5%),
+      linear-gradient(
+        112deg,
+        rgb(255 255 255 / 0.2) 0%,
+        transparent 26%,
+        transparent 74%,
+        rgb(0 0 0 / 0.16) 100%
+      );
+  }
+
+  /* In focus: it comes toward you, and glows in its own color. */
+  .game-case[data-active] {
+    z-index: 1;
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 0.5rem 1rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.9)),
+      0 0 calc(0.5rem + var(--glow) * 1.5rem)
+        color-mix(in srgb, var(--case-led, var(--led)) calc(35% + var(--glow) * 45%), transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .game-case[data-active] {
+      transform: translateY(-4%) scale(1.05);
+    }
+  }
+}

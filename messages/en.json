@@ -1,0 +1,166 @@
+{
+  "Meta": {
+    "siteName": "Shelf",
+    "description": "A personal game library, kept on a lit shelf you can walk along."
+  },
+  "Shell": {
+    "skipToContent": "Skip to content",
+    "home": "Shelf, home",
+    "mainNav": "Main",
+    "library": "Library",
+    "trophies": "Trophies",
+    "menu": "Menu",
+    "igdbCredit": "Game data and covers from <link>IGDB.com</link>."
+  },
+  "Theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "Language": {
+    "label": "Language"
+  },
+  "Foundations": {
+    "metaTitle": "Foundations",
+    "eyebrow": "Build step {step, number} of {total, number}",
+    "title": "Foundations",
+    "lead": "What Shelf is built from: light, color, type and motion. These are blank cases. Real games and their covers arrive at the next step.",
+    "hero": {
+      "description": "A backlit shelf of blank game cases, facing out",
+      "shelfLabel": "Blank cases",
+      "hint": "Point at a case, or touch one. The shelf's light takes its color."
+    },
+    "light": {
+      "title": "Light",
+      "body": "A theme is a lighting state, not an inversion. Lights on: daylight, and each shelf's LED bar is a thin line. Lights off: the LEDs carry the room.",
+      "day": "Lights on",
+      "night": "Lights off",
+      "shelfLabel": "Demo",
+      "sceneLabel": "A shelf of blank game cases facing out, {time, select, day {with the room lights on} other {lit only by its LED bar}}",
+      "choose": "It follows your device until you choose.",
+      "led": {
+        "label": "LED color",
+        "hint": "On the real shelf, the light follows the game in focus.",
+        "colors": {
+          "violet": "Violet",
+          "orange": "Orange",
+          "cyan": "Cyan",
+          "pink": "Pink",
+          "green": "Green"
+        }
+      }
+    },
+    "color": {
+      "title": "Color",
+      "body": "The games supply the color, so the room stays neutral: near-black or pale gray, one accent, and a light that changes.",
+      "roles": {
+        "wall": {
+          "name": "Wall",
+          "use": "The page"
+        },
+        "surface": {
+          "name": "Surface",
+          "use": "Panels and menus"
+        },
+        "shelf": {
+          "name": "Shelf",
+          "use": "Where games stand"
+        },
+        "text": {
+          "name": "Text",
+          "use": "Everything you read"
+        },
+        "muted": {
+          "name": "Secondary text",
+          "use": "Counts and captions"
+        },
+        "accent": {
+          "name": "Accent",
+          "use": "Buttons, links, focus"
+        },
+        "marker": {
+          "name": "Marker",
+          "use": "Playing now"
+        },
+        "led": {
+          "name": "LED",
+          "use": "The shelf's light, at rest"
+        }
+      }
+    },
+    "type": {
+      "title": "Type",
+      "body": "Two families. Archivo does titles and interface: a wide, heavy cut for titles, the regular one for everything else. Martian Mono does numbers and labels.",
+      "display": "Archivo, wide and heavy, for titles",
+      "displaySample": "Every game, facing out",
+      "sans": "Archivo, for the interface",
+      "sansSample": "Add games from IGDB, then find any of them with filters you can combine, save and share.",
+      "mono": "Martian Mono, for numbers and labels",
+      "monoSample": "214 games / 61 finished / 2,340 h"
+    },
+    "motion": {
+      "title": "Motion",
+      "body": "Quick and exact: things snap to attention and settle. Nothing bounces. Five lengths cover everything.",
+      "play": "Play",
+      "reset": "Reset",
+      "milliseconds": "{value, number} ms",
+      "calm": "Your device asks for reduced motion, so these jump into place.",
+      "steps": {
+        "instant": {
+          "name": "Instant",
+          "use": "Press feedback"
+        },
+        "quick": {
+          "name": "Quick",
+          "use": "Hover, focus, chips"
+        },
+        "base": {
+          "name": "Base",
+          "use": "Panels, sheets, menus"
+        },
+        "slow": {
+          "name": "Slow",
+          "use": "A case lifting, sliding, turning"
+        },
+        "cinematic": {
+          "name": "Cinematic",
+          "use": "Camera moves, theme change"
+        }
+      }
+    },
+    "controls": {
+      "title": "Controls",
+      "body": "Built on Radix primitives and restyled. Focus is always an accent ring.",
+      "primary": "Add a game",
+      "secondary": "Filters",
+      "ghost": "Clear all",
+      "disabled": "Not available",
+      "shelfLabel": "PlayStation 4",
+      "view": "View",
+      "shelf": "Shelf",
+      "wall": "Wall",
+      "list": "List"
+    }
+  },
+  "Library": {
+    "metaTitle": "Library",
+    "title": "Library",
+    "emptyTitle": "The shelf is being stocked.",
+    "emptyBody": "Games will stand here soon.",
+    "shelfLabel": "Library"
+  },
+  "Trophies": {
+    "metaTitle": "Trophies",
+    "title": "Trophies",
+    "emptyTitle": "Nothing finished yet.",
+    "emptyBody": "Completed games will stand here, each under its own light.",
+    "shelfLabel": "Finished"
+  },
+  "NotFound": {
+    "metaTitle": "Page not found",
+    "title": "This page is not on the shelf.",
+    "body": "The address may be mistyped, or the page may have moved.",
+    "action": "Go to the library"
+  }
+}

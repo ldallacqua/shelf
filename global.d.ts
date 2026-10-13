@@ -1,0 +1,10 @@
+import type messages from './messages/en.json'
+import type { routing } from './src/i18n/routing'
+
+// Makes translation keys and locales type-checked: a misspelled key is an error.
+declare module 'next-intl' {
+  interface AppConfig {
+    Locale: (typeof routing.locales)[number]
+    Messages: typeof messages
+  }
+}

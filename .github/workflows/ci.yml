@@ -1,0 +1,174 @@
+name: CI
+
+# Two tiers, because a private repository has 2,000 free minutes a month.
+#
+#   quick  every push to a pull request: format, lint, types, translations,
+#          unit and component tests, build, JavaScript budgets, and the
+#          end-to-end smoke tests in Chromium at phone and desktop width.
+#   full   when a pull request is marked ready for review, on every push to
+#          main, and on demand (the "full-ci" label, or "Run workflow"):
+#          all nine browser projects, reference screenshots, Lighthouse, Storybook.
+#
+# No job needs a secret: everything runs against a local build.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      screenshots:
+        description: Make new reference screenshots instead of comparing
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}-${{ github.event.action == 'labeled' && github.event.label.name || 'push' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+  STORYBOOK_DISABLE_TELEMETRY: 1
+
+jobs:
+  quick:
+    name: Quick checks
+    # Adding a label re-sends the pull request; only code changes need these again.
+    if: github.event.action != 'labeled' && github.event.action != 'ready_for_review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+
+      - name: Format
+        run: pnpm format:check
+      - name: Lint
+        run: pnpm lint
+      - name: Types
+        run: pnpm typecheck
+      - name: Translations
+        run: pnpm i18n:check
+      - name: Unit and component tests
+        run: pnpm test
+
+      - uses: ./.github/actions/build
+      - uses: ./.github/actions/browsers
+        with:
+          browsers: chromium
+
+      - uses: ./.github/actions/serve
+      - name: JavaScript budgets
+        run: pnpm perf:js
+      - name: End-to-end smoke tests
+        run: pnpm e2e --project=chromium-phone --project=chromium-desktop --grep @smoke --grep-invert @visual
+        env:
+          BASE_URL: http://localhost:3300
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: quick-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  full:
+    name: Full · ${{ matrix.browser }}
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && !inputs.screenshots) ||
+      github.event.action == 'ready_for_review' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'full-ci')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/build
+      - uses: ./.github/actions/browsers
+        with:
+          browsers: ${{ matrix.browser }}
+
+      - uses: ./.github/actions/serve
+      - name: End-to-end tests at phone, tablet and desktop width
+        run: >-
+          pnpm e2e
+          --project=${{ matrix.browser }}-phone
+          --project=${{ matrix.browser }}-tablet
+          --project=${{ matrix.browser }}-desktop
+        env:
+          BASE_URL: http://localhost:3300
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: full-report-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  speed:
+    name: Full · Lighthouse and Storybook
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && !inputs.screenshots) ||
+      github.event.action == 'ready_for_review' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'full-ci')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/build
+      - uses: ./.github/actions/browsers
+        with:
+          browsers: chromium
+
+      - uses: ./.github/actions/serve
+      - name: Lighthouse, mobile profile
+        run: pnpm perf:lighthouse
+      - name: Storybook builds
+        run: pnpm storybook:build --quiet
+
+  screenshots:
+    name: Reference screenshots
+    # Makes new reference screenshots and offers them as a download. It never
+    # commits: on Vercel's free plan a commit by a bot would not deploy.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.screenshots) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'update-screenshots')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/build
+      - uses: ./.github/actions/browsers
+        with:
+          browsers: chromium
+
+      - uses: ./.github/actions/serve
+      - name: Make the screenshots
+        run: >-
+          pnpm e2e e2e/visual.spec.ts
+          --project=chromium-phone --project=chromium-desktop
+          --update-snapshots
+        env:
+          BASE_URL: http://localhost:3300
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: reference-screenshots
+          path: e2e/__screenshots__/
+          retention-days: 7

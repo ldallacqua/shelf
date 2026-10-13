@@ -1,0 +1,17 @@
+# generated
+.next/
+node_modules/
+storybook-static/
+playwright-report/
+test-results/
+coverage/
+pnpm-lock.yaml
+next-env.d.ts
+
+# hand-formatted documents: their wide tables read better unpadded
+docs/
+design/
+README.md
+
+# reference screenshots
+e2e/__screenshots__/

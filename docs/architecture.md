@@ -1,6 +1,6 @@
 # Shelf: architecture
 
-- **Status:** proposed, awaiting approval
+- **Status:** approved. Changes made while building are listed in [section 25](#25-changes-since-approval).
 - **Date:** 12 Oct 2026. Every version and limit below was checked on that day.
 - **Reads with:** [the spec](spec.md), [ADR 001](adr/001-game-entry-model.md), [the setup checklist](setup.md)
 
@@ -42,6 +42,7 @@ How to read the evidence labels:
 22. [What each build step adds](#22-what-each-build-step-adds)
 23. [Risks and fallbacks](#23-risks-and-fallbacks)
 24. [Sources](#24-sources)
+25. [Changes since approval](#25-changes-since-approval)
 
 ---
 
@@ -213,6 +214,7 @@ fixtures/      IGDB data for tests and previews
 e2e/           Playwright tests and reference screenshots
 drizzle/       Database migrations, as SQL
 scripts/       Seed, checks, measurements
+patches/       Small fixes to dependencies, each with its reason in pnpm-workspace.yaml
 design/        Tokens source, generated art and its prompts
 docs/          This folder
 ```
@@ -221,8 +223,8 @@ docs/          This folder
 | --- | --- | --- |
 | `domain/` | `library` (entries, copies, grouping rules), `query` (the filter language: parse, evaluate, write back out), `sort`, `group`, `facets`, `stats`, `spine` (colors and layout of a generated spine), `igdb` (turning IGDB records into ours) | Nothing but Zod |
 | `server/` | `db` (Drizzle schema and client), `igdb` (the client), `auth`, `services` (every read and write), `mocks` (test doubles) | `domain` |
-| `features/` | `library`, `shelf-2d`, `shelf-3d`, `wall`, `list`, `filters`, `add-game`, `game-detail`, `trophies`, `landing`, `theme`, `language` | `domain`, `ui`, and server actions |
-| `ui/` | Restyled shadcn components, icons, tokens | Nothing of ours |
+| `features/` | `shell` (header, footer, empty and not-found states), `library`, `shelf-2d`, `shelf-3d`, `wall`, `list`, `filters`, `add-game`, `game-detail`, `trophies`, `landing`, `theme`, `language` | `domain`, `ui`, and server actions |
+| `ui/` | Restyled shadcn components, the shelf and game-case parts, fonts, tokens | Nothing of ours |
 | `app/` | Pages, layouts, route handlers, server actions | Everything |
 
 Lint rules enforce the table: `domain` cannot import React, Next or `server`; nothing outside
@@ -419,6 +421,8 @@ reused by the tests that need me to be signed in.
 | Alphabetical order | `Intl.Collator` for the active language, computed once per language |
 | IGDB text | Shown as provided. Inside a Portuguese page it is wrapped in `lang="en"`. |
 | Filter keys | English in both languages. They are a syntax, not prose. |
+| The list of pages | `src/i18n/routing.ts` names every page. Links are type-checked against it, and a test fails if it and `src/app` disagree. |
+| An address with no page | `proxy.ts` answers 404 with that language's "not found" page as the body: complete HTML, right language and theme, before any JavaScript. See [section 25](#25-changes-since-approval) for why it is done there. |
 
 Two checks fail the build: `pnpm i18n:check` (a key present in one file and missing in the
 other), and a lint rule that rejects literal text inside interface components.
@@ -433,16 +437,22 @@ There are three layers:
 | Layer | Example | Changes with theme |
 | --- | --- | --- |
 | Palette | `--green-900: #17231F` | No |
-| Meaning | `--wall`, `--ledge`, `--surface`, `--text`, `--brass`, `--marker` | Yes |
-| Lighting | `--light-color`, `--light-spread`, `--shadow-length`, `--shadow-depth`, `--reflect` | Yes |
+| Meaning | `--wall`, `--ledge`, `--surface`, `--text`, `--accent`, `--marker` | Yes |
+| Lighting | `--ambient`, `--led-strength`, `--led-wash`, `--shadow-length`, `--shadow-depth`, `--glow`, `--reflect` | Yes |
+| The LED's color | `--led` | No: it follows the game in focus |
 
 The lighting layer is what makes a theme "a lighting state, not an inversion" (spec, section
 9). The 2D shelf reads it as CSS: shadows, gradients, glow. The 3D shelf reads the same
 properties from the page and feeds them to its materials and lights. So there is one source,
 and the two shelves cannot drift.
 
-Values come from the chosen direction. Vitrine's palette, type and pace are in
-[the research](research.md#6-three-visual-directions); step 1 turns them into the token file.
+Values come from the direction, Backlit: its palette, type and pace are in
+[ADR 002](adr/002-visual-direction.md), and `src/ui/tokens/` holds them.
+
+Every token that changes with the theme, and `--led`, is registered as a typed CSS property
+(`@property`). That is what lets a theme change, or the LED changing color, play as a glide
+instead of a cut. A unit test reads the token files and fails if a text pair drops below its
+contrast requirement, including text on a wall washed by an LED of any color.
 
 **The theme module** (ours, replacing next-themes):
 
@@ -460,9 +470,11 @@ for focus handling, keyboard support and screen-reader roles. Every one is resty
 tokens; none keeps its stock look. Sheets, dialogs, menus, tooltips, tabs, the command
 palette and toasts come from this set.
 
-**Type.** Newsreader (titles) and Archivo (interface and spines), as variable fonts through
-`next/font`: downloaded at build time, served from our domain, subset to Latin, preloaded,
-with fallback metrics so text does not jump when the font arrives.
+**Type.** Archivo for titles and interface, Martian Mono for numbers and labels, through
+`next/font`: served from our domain, subset to Latin, preloaded, with fallback metrics so
+text does not jump when the font arrives. Three small files, 58 KB together: Archivo at
+normal width (34 KB), one wide, heavy style cut from Archivo for titles (13 KB), and one
+weight of Martian Mono (11 KB). `src/ui/fonts/README.md` says how the title file was made.
 
 ---
 
@@ -501,8 +513,9 @@ baseline.
 
 | Concern | Design |
 | --- | --- |
-| Spines | Real elements: real text for the title, colors from the stored palette, a platform band. A screen reader reads them and a browser can find text in them. |
-| Tip-out, pull, lean | CSS 3D transforms on the box |
+| Boxes | Real elements. Cover-out: the cover image inside a case drawn in CSS (real proportions, the plastic's color, a band across the top), with the title as the image's text alternative. Compact: a spine with real text for the title. Either way a screen reader reads them and a browser can find text in them. |
+| Light | The LED bar is a registered CSS property per ledge. Setting it to the color of the game in focus makes the line, the glow on the wall and each box's halo glide to that color. |
+| Lift, pull, lean | CSS transforms on the box |
 | Depth | Three layers moved by scroll position, about 12 px, with a CSS scroll timeline where supported |
 | Long libraries | Ledges are rows in a virtual list (TanStack Virtual). Only rows near the screen exist in the page. |
 | First paint | The server renders the first screen of real boxes, so covers start loading with the page |
@@ -526,9 +539,9 @@ If the context is lost or the frame rate collapses, the page returns to 2D and s
 | --- | --- |
 | Boxes | One instanced mesh per case shape (about ten shapes). A thousand games is about ten draw calls. |
 | Per-box data | Position, tilt, state (resting, hovered, pulled, dimmed) and texture coordinates, as instance attributes |
-| Spines | Drawn at runtime on a canvas from title, colors and platform, in the same font as the 2D spines, into texture atlases built for the bays near the camera |
-| Covers | Three levels: none (spine only), `cover_small` in atlases for boxes in view, `cover_big` for the nearest dozen and the pulled box |
-| Light | No real-time shadows. Contact shadows and pools of light are textures and shader terms driven by the lighting tokens. |
+| Spines (compact option) | Drawn at runtime on a canvas from title, colors and platform, in the same font as the 2D spines, into texture atlases built for the bays near the camera |
+| Covers | Three levels: a blur of the cover's stored colors, `cover_small` in atlases for boxes in view, `cover_big` for the nearest dozen and the pulled box |
+| Light | No real-time shadows or lights. The LED glow on the wall, the halo round each box and the reflection on the ledge are shader terms driven by the lighting tokens and by one color per ledge. |
 | Frames | Drawn only when something changes. An idle shelf uses no GPU. |
 | Resolution | Capped at 1.75× and lowered automatically if frames run slow |
 | Picking | By arithmetic: boxes sit on known ledges, so a pointer ray meets the shelf plane and a search finds the box. No per-box hit testing. |
@@ -635,7 +648,7 @@ the write tools.
 | Parity | Playwright | Each library scenario runs twice, 2D and 3D, asserting the same games, order, selection and address. Plus the switch itself. | CI |
 | Visual | Playwright screenshots | Key screens × light and dark × English and Portuguese × phone and desktop | CI |
 | Accessibility | axe inside Playwright | Every page and every open sheet or dialog, both themes | CI |
-| Speed | Lighthouse 13, scripted | Landing and library on the mobile profile: 90 or more, and the Core Web Vitals in spec section 16 | CI |
+| Speed | Lighthouse 13, scripted, with its throttling applied for real | Landing and library on the mobile profile: 90 or more, and the Core Web Vitals in spec section 16 | CI |
 
 **Browser matrix:** Chromium, Firefox and WebKit, each at phone (390), tablet (820) and
 desktop (1440). Nine projects.
@@ -693,16 +706,15 @@ CI needs **no secrets**: it builds against a SQLite file and the mocks.
 
 | Measure | Budget | Enforced by |
 | --- | --- | --- |
-| Library page JavaScript, first load, compressed | 180 KB | Build check |
+| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`. | Build check |
 | three.js in any page's first load | None | Build check |
-| Landing page JavaScript before scroll scenes load | 130 KB | Build check |
 | Library file per 1,000 games, compressed | 120 KB | Unit test |
 | Filter or sort, 1,000 games | 50 ms | Unit benchmark |
 | Lighthouse mobile, landing and library | 90 | CI |
 | Largest contentful paint, mobile | 2.5 s | CI |
 | Layout shift | 0.1 | CI |
 | Rows in the page for a 1,000-game list | Only those near the screen | End-to-end test |
-| Fonts | Two families, variable, Latin subset, preloaded | Review |
+| Fonts | Two families, three files, Latin subset, preloaded, 58 KB together | Review |
 
 How the page gets fast: the frame comes from the edge with no server work; the first screen
 of boxes is in the HTML, so covers begin loading at once; the library file is cached by
@@ -875,3 +887,22 @@ Checked on 12 Oct 2026.
   [issue 385](https://github.com/pacocoursey/next-themes/issues/385),
   [issue 387](https://github.com/pacocoursey/next-themes/issues/387)
 - IGDB limits, image sizes and terms: [the research](research.md), Phase 1
+
+---
+
+## 25. Changes since approval
+
+What building has changed in this document, newest first. Each is also corrected in place
+above.
+
+| When | Change | Why |
+| --- | --- | --- |
+| Step 1 | **The visual direction is Backlit, and games stand cover-out.** | Vitrine was rejected on sight as a library of books. [ADR 002](adr/002-visual-direction.md). |
+| Step 1 | **JavaScript budgets are a ratchet, not 180 KB and 130 KB.** Measured at step 1: 198 KB for the library and trophies pages, 205 KB for the home page. | I set the first numbers without measuring what the stack costs by itself. React and Next.js are about 125 KB of every page, and the Radix menu and button-group primitives the header uses are about 45 KB. A budget below what the frameworks weigh checks nothing. The ratchet still fails the build when a page grows, and loading menus only when first opened is on the list for the step 9 speed pass. |
+| Step 1 | **Lighthouse runs with throttling applied, not simulated.** Applied: largest paint 1.5 s, score 100. Simulated, same build: 2.8 s, score 96. | Simulation estimates paint times from an unthrottled run. Against a local server it assumes the page's text waits for all of its JavaScript; the text is in the HTML and does not. Applied throttling measures. The simulated figure is what PageSpeed Insights will show for the deployed site, so it is checked again there once the site is live, and a miss there counts. |
+| Step 1 | **An address with no page is answered by `proxy.ts`,** which fetches the "not found" page and returns its HTML with a 404 status. | With pages built ahead of time (Cache Components), Next.js answers `notFound()` with an empty document and draws the "not found" page in the browser. That loses the theme, shows nothing without JavaScript, and in some arrangements answers 200. Fetching a normal, pre-built page and returning it with the right status gives a real 404 that is complete on arrival. The same limit will apply to a game page for an unknown game at step 6. |
+| Step 1 | **Fonts are three files, not two variable families.** | Archivo with its width axis is 88 KB. Titles use one width and one weight, so that style is cut out of the family (13 KB) and the interface uses Archivo at normal width (34 KB). |
+| Step 1 | **Storybook's Next.js integration carries a two-line patch** (`patches/`). | Storybook 10.6.2, the latest, does not supply a router field that Next.js 16.4 reads, and every story crashed. The patch adds the field. It is removed when Storybook ships the fix. |
+| Step 1 | **The header stays in view while the page scrolls.** | So theme and language are in reach anywhere, which is what "changes language in place, keeping the position" needs. |
+| Step 1 | **Menus do not lock the page behind them.** | A locked page hides the rest of the document from assistive technology while a menu is open, which the accessibility checks flag, and it shifts the layout when the scrollbar disappears. |
+

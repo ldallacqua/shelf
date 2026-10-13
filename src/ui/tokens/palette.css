@@ -1,0 +1,42 @@
+/*
+ * Layer 1 of 3: the palette.
+ * Raw colors with no meaning attached. They never change with the theme, and
+ * components never use them directly: they read the meaning layer (theme.css).
+ */
+:root {
+  /* Ink: the room with the lights off */
+  --ink-950: #07080c;
+  --ink-900: #0b0d12;
+  --ink-800: #14171f;
+  --ink-750: #1b1e27;
+  --ink-700: #1c202b;
+  --ink-600: #262b38;
+  --ink-500: #3a4152;
+  --ink-400: #6f7890;
+
+  /* Fog: the room with the lights on */
+  --fog-0: #ffffff;
+  --fog-25: #f2f4f8;
+  --fog-50: #f7f8fa;
+  --fog-100: #eceef2;
+  --fog-150: #e1e4ea;
+  --fog-300: #c3c8d2;
+  --fog-400: #a3abbb;
+  --fog-500: #7a8191;
+  --fog-600: #555c6b;
+  --fog-950: #0e1014;
+
+  /* Violet: the accent, and the LED's resting color */
+  --violet-300: #a796ff;
+  --violet-500: #7c5cff;
+  --violet-600: #5b3fe6;
+
+  /* Green: the "playing" marker */
+  --green-400: #4ade80;
+  --green-700: #0a6b3a;
+
+  /* Light and shadow */
+  --daylight: #ffffff;
+  --shade-day: #1b2030;
+  --shade-night: #000000;
+}

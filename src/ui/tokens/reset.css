@@ -1,0 +1,11 @@
+/*
+ * Tailwind's stock palette, fonts, radii, shadows and curves are switched off,
+ * so the only values a class can reach are Shelf's own tokens.
+ */
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --ease-*: initial;
+}
