@@ -251,6 +251,11 @@
     "error": {
       "title": "O restante da biblioteca não carregou.",
       "retry": "Tentar de novo"
+    },
+    "failed": {
+      "title": "A biblioteca não carregou.",
+      "body": "Algo deu errado no caminho até a estante. Seus jogos estão seguros.",
+      "retry": "Tentar de novo"
     }
   },
   "Trophies": {

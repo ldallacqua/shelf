@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import { preconnect } from 'react-dom'
 
 import { IMAGE_HOST } from '@/domain/igdb/images'
+import type { Library } from '@/domain/library/library'
 import { buildFirstScreen, parseLibraryQuery } from '@/domain/library/view'
 import { EmptyLibrary } from '@/features/library/empty-library'
 import { LibrarySkeleton } from '@/features/library/library-skeleton'
@@ -25,9 +26,12 @@ const FIRST_BOXES = 48
  * It is rendered per request and streamed into the frame, which was built
  * ahead of time.
  */
-async function FirstScreen({ searchParams }: Pick<PageProps<'/[locale]/library'>, 'searchParams'>) {
+async function FirstScreen({
+  searchParams,
+  library: pending,
+}: Pick<PageProps<'/[locale]/library'>, 'searchParams'> & { library: Promise<Library> }) {
   const query = parseLibraryQuery(await searchParams)
-  const [library, locale] = await Promise.all([getLibrary(), getLocale()])
+  const [library, locale] = await Promise.all([pending, getLocale()])
   if (library.games.length === 0) return <EmptyLibrary />
 
   const first = buildFirstScreen(library, query, locale, FIRST_BOXES)
@@ -45,10 +49,15 @@ export default function LibraryPage({ searchParams }: PageProps<'/[locale]/libra
   // the page is still arriving, saves the first cover about three round trips.
   preconnect(IMAGE_HOST)
 
+  // The library is read here, in the part of the page that is built ahead of
+  // time, and not awaited: the read is cached, so its answer is kept with the
+  // built page, and a visit does not wait for the database.
+  const library = getLibrary()
+
   return (
     <Page>
       <Suspense fallback={<LibrarySkeleton />}>
-        <FirstScreen searchParams={searchParams} />
+        <FirstScreen searchParams={searchParams} library={library} />
       </Suspense>
     </Page>
   )

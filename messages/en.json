@@ -251,6 +251,11 @@
     "error": {
       "title": "The rest of the library did not load.",
       "retry": "Try again"
+    },
+    "failed": {
+      "title": "The library did not load.",
+      "body": "Something went wrong on the way to the shelf. Your games are safe.",
+      "retry": "Try again"
     }
   },
   "Trophies": {
