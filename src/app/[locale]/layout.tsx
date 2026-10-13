@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 
 import { Footer } from '@/features/shell/footer'
 import { Header } from '@/features/shell/header'
+import { ReadyMark } from '@/features/shell/ready-mark'
 import { MAIN_ID, SkipLink } from '@/features/shell/skip-link'
 import { ThemeScript } from '@/features/theme/theme-script'
 import { routing } from '@/i18n/routing'
@@ -51,6 +52,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
         <ThemeScript />
       </head>
       <body>
+        <ReadyMark />
         <NextIntlClientProvider>
           <SkipLink />
           <Header />

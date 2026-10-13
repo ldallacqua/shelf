@@ -125,6 +125,17 @@
     outline-offset: 2px;
   }
 
+  /*
+   * Until the page is live, nothing animates. A control that remembers a
+   * choice is corrected as React starts, and that should not be seen as a
+   * fade. See features/shell/ready-mark.tsx.
+   */
+  html:not([data-ready]) *,
+  html:not([data-ready]) *::before,
+  html:not([data-ready]) *::after {
+    transition: none !important;
+  }
+
   ::selection {
     background-color: color-mix(in srgb, var(--accent) 35%, transparent);
   }

@@ -33,6 +33,25 @@ type Fixtures = {
 }
 
 export const test = base.extend<Fixtures>({
+  /**
+   * After opening an address, wait until the page is live (React has taken
+   * over and set `data-ready`). A click that lands before that does nothing,
+   * which on a slow machine looks like a broken control. A test that asks for
+   * an earlier moment with `waitUntil` is left alone: it is testing the page
+   * before it is live.
+   */
+  page: async ({ page }, use) => {
+    const goto = page.goto.bind(page)
+    page.goto = async (address, options) => {
+      const response = await goto(address, options)
+      if (!options?.waitUntil) {
+        await page.locator('html[data-ready]').waitFor({ state: 'attached', timeout: 15_000 })
+      }
+      return response
+    }
+    await use(page)
+  },
+
   allowConsoleErrors: [false, { option: true }],
   cleanConsole: [
     async ({ page, allowConsoleErrors }, use) => {
