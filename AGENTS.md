@@ -116,8 +116,7 @@ the page. Before a shelf has measured itself it draws only its share of the firs
 for guesses that are harmless when wrong). A box, a wall cover and a shelf's section are
 memoized; give them props that stay the same from one drawing to the next (one handler per
 shelf, never one per box), and do work that is the same for every redraw in a component of
-its own, not in a `.map()`. `pnpm perf:lighthouse` slows the processor to match the machine,
-so what it reports locally is what CI will report. Blurred glass (`backdrop-filter`) is for one or two
+its own, not in a `.map()`. `pnpm perf:lighthouse` slows the processor by an amount worked out from the machine, so a fast Mac reports about what CI reports at Lighthouse's stock setting. Blurred glass (`backdrop-filter`) is for one or two
 bars a page, never for something repeated per shelf: the Linux build of WebKit hangs on a
 dozen. A box is a button whose name says in words everything it shows by shape
 (`describeBox`). A cover is always drawn by `Cover`. A choice that belongs to the device

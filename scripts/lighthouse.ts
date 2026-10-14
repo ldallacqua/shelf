@@ -38,7 +38,9 @@ const warmUp = await lighthouse(`${BASE_URL}${budgets.paths[0]}`, {
   onlyAudits: ['first-contentful-paint'],
 })
 const benchmark = warmUp?.lhr.environment.benchmarkIndex ?? 0
-const slowdown = cpuSlowdownFor(benchmark)
+// CI names its slowdown; see the workflow for why the benchmark misleads there.
+const named = Number(process.env.LIGHTHOUSE_SLOWDOWN)
+const slowdown = named > 0 ? named : cpuSlowdownFor(benchmark)
 if (slowdown === undefined) {
   throw new Error(
     `This machine is too slow to stand in for a mid-range phone (benchmark ${Math.round(benchmark)}).`,
@@ -47,7 +49,8 @@ if (slowdown === undefined) {
 
 console.log(`Lighthouse, mobile profile, at ${BASE_URL}`)
 console.log(
-  `This machine's benchmark is ${Math.round(benchmark)}: processor slowed ${slowdown.toFixed(1)} times\n`,
+  `This machine's benchmark is ${Math.round(benchmark)}: processor slowed ${slowdown.toFixed(1)} times` +
+    (named > 0 ? ', as LIGHTHOUSE_SLOWDOWN says\n' : ', worked out from the benchmark\n'),
 )
 
 type Run = NonNullable<Awaited<ReturnType<typeof lighthouse>>>

@@ -23,6 +23,11 @@ on:
         description: Make new reference screenshots instead of comparing
         type: boolean
         default: false
+      only:
+        description: Run one part of the full tier
+        type: choice
+        options: [everything, lighthouse]
+        default: everything
 
 # A newer run cancels an older one of the same kind. The kinds are kept apart
 # (a push, marking ready, each label), so that marking a pull request ready
@@ -47,7 +52,9 @@ jobs:
   quick:
     name: Quick checks
     # Adding a label re-sends the pull request; only code changes need these again.
-    if: github.event.action != 'labeled' && github.event.action != 'ready_for_review'
+    if: >-
+      github.event.action != 'labeled' && github.event.action != 'ready_for_review' &&
+      !(github.event_name == 'workflow_dispatch' && inputs.only == 'lighthouse')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -91,7 +98,7 @@ jobs:
     name: Full · ${{ matrix.browser }}
     if: >-
       github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && !inputs.screenshots) ||
+      (github.event_name == 'workflow_dispatch' && !inputs.screenshots && inputs.only != 'lighthouse') ||
       github.event.action == 'ready_for_review' ||
       (github.event.action == 'labeled' && github.event.label.name == 'full-ci')
     runs-on: ubuntu-latest
@@ -147,6 +154,13 @@ jobs:
       - uses: ./.github/actions/serve
       - name: Lighthouse, mobile profile
         run: pnpm perf:lighthouse
+        env:
+          # Lighthouse's stock slowdown. The script would work one out from
+          # the machine's benchmark, but that times a single core, and this
+          # runner's two are shared by the server, the browser and Lighthouse:
+          # the benchmark says 8 times, which measured twice as slow as the
+          # phone the targets are for. See scripts/lib/budgets.ts.
+          LIGHTHOUSE_SLOWDOWN: 4
       - name: Storybook builds
         run: pnpm storybook:build --quiet
 

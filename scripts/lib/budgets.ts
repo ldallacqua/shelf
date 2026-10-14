@@ -53,6 +53,15 @@ export const lighthouseBudgets = {
  * The steps are those of the Lighthouse team's own calculator
  * (lighthouse-cpu-throttling-calculator.vercel.app), read from its source in
  * October 2026. A machine below 150 cannot stand in for that phone at all.
+ *
+ * The benchmark times one core doing one thing. That describes a desktop
+ * with cores to spare. It overstates a CI runner, whose two cores are shared
+ * by the server, the browser and Lighthouse itself: by its benchmark (2480)
+ * a runner should be slowed 8 times, and the home page then blocks for
+ * 468 ms, against 177 ms on a desktop slowed by its own benchmark. At
+ * Lighthouse's stock 4 times the runner gives 180 ms. So CI sets
+ * LIGHTHOUSE_SLOWDOWN=4, and the home page's blocked time, about 180 ms,
+ * is the check that the two still agree.
  */
 export const cpuSlowdownFor = (benchmarkIndex: number): number | undefined => {
   if (!Number.isFinite(benchmarkIndex) || benchmarkIndex < 150) return undefined
