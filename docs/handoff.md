@@ -36,11 +36,13 @@ step 3. This note is what the next session needs and cannot get from the code. R
 - **Checked on the last code commit:** `pnpm verify --skip-linux` passed the checks (671
   unit and component tests), the build, the JavaScript budgets (library 256.2 of 262 KB:
   the budget was raised from 240, with the reason in `scripts/lib/budgets.ts` and section
-  25) and 1,306 browser tests in all nine projects, none failed. Lighthouse failed it at
-  7.7 times, which was too harsh that day (the home page blocked 232 ms); run alone at 7.1
-  times, where the home page blocks 197 ms, it scored home 96, library 90, wall 90, largest
-  paint 2.24 s. The library is again at the edge of 90, as at steps 3 and 4. Storybook
-  builds.
+  25) and 1,306 browser tests in all nine projects, none failed. **Lighthouse is a near miss
+  on the library**, as at steps 3 and 4. At 7.7 times the home page blocked 232 ms (too
+  harsh that day). At 7.1 times, two runs: home 96 and 97 (blocked 197 and 156 ms), library
+  90 and then 87 with its largest paint 2.54 s (limit 2.5), wall 90 and 91. The library
+  blocks about 340 to 370 ms, against about 300 after step 3's speed pass: the filters add
+  work on arrival (the index, the status counts). The Storybook build passes; it was run on
+  its own, since verify stops at Lighthouse.
 - **Not checked:** the Linux pass (no Docker). The reference screenshots of every library
   page are now out of date (the search, status row and toolbar are new) and there are none
   for the shelf page; make them with `pnpm verify --update-screenshots` once Docker is here.
