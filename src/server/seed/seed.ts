@@ -6,6 +6,7 @@ import type { SQLiteTable } from 'drizzle-orm/sqlite-core'
 
 import { toGameData, type Company, type GameData } from '@/domain/igdb/game'
 import type { VocabKind } from '@/domain/igdb/schema'
+import { STARTER_SHELVES } from '@/domain/library/shelves'
 import { toPlatform } from '@/domain/platforms/platforms'
 import type { Db } from '@/server/db/client'
 import {
@@ -250,6 +251,19 @@ export const seedLibrary = async (
   await insertAll(db, playTime, timeRows, 500)
   await insertAll(db, tags, [...tagRows.values()], 500)
   await insertAll(db, entryTags, entryTagRows, 1000)
+  // Every set starts with the starter shelves, as a new library does (the migration's own list).
+  await insertAll(
+    db,
+    shelves,
+    STARTER_SHELVES.map((shelf, position) => ({
+      id: stableId('shelf', shelf.slug),
+      ...shelf,
+      position,
+      createdAt: now,
+      updatedAt: now,
+    })),
+    100,
+  )
 
   // A version no earlier seed or deployment has used. The library file is
   // cached for a year under its version, so two different libraries must

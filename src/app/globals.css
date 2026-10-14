@@ -177,3 +177,11 @@
     background-color: color-mix(in srgb, var(--accent) 35%, transparent);
   }
 }
+
+/*
+ * The header's search opens the library. On the library itself, and on a smart shelf, the
+ * library's own field filters as you type, so the header's steps aside.
+ */
+html:has(.library) .site-search {
+  display: none;
+}

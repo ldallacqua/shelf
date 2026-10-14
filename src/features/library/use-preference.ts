@@ -66,3 +66,20 @@ export function useWallSize(): [WallSize, (value: WallSize) => void] {
   )
   return [value, (next) => writePreference(wallSizePreference, next)]
 }
+
+const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
+
+const subscribeToMotion = (listener: () => void) => {
+  const query = window.matchMedia(REDUCED_MOTION)
+  query.addEventListener('change', listener)
+  return () => query.removeEventListener('change', listener)
+}
+
+/** Whether this device asks for reduced motion. The server cannot tell: it says no. */
+export function useReducedMotion(): boolean {
+  return useSyncExternalStore(
+    subscribeToMotion,
+    () => window.matchMedia(REDUCED_MOTION).matches,
+    () => false,
+  )
+}

@@ -1,0 +1,128 @@
+import { expect, test } from './fixtures'
+
+/**
+ * The public API (spec 7, docs/api.md): read-only JSON under /api/v1, open
+ * to any site, described by its own OpenAPI document. It answers the same
+ * to every browser, so it is checked once, in one project.
+ */
+
+type Game = { title: string; rating: number | null; status: string; genres: string[] }
+type Library = {
+  query: { q: string; sort: string; group: string; seed: string }
+  problems: { text: string; reason: string; from: number; to: number }[]
+  stats: { games: number }
+  shelves: { key: string; count: number }[]
+  games: Game[]
+  next: string | null
+}
+
+test.describe('the public API', () => {
+  test.skip(
+    ({ browserName, size }) => browserName !== 'chromium' || size !== 'desktop',
+    'it answers the same to every browser',
+  )
+
+  test('GET /library filters, sorts and pages, in the filter language @smoke', async ({
+    request,
+  }) => {
+    const answer = await request.get('/api/v1/library?q=genre:rpg&sort=-rating&group=none&limit=5')
+    expect(answer.status()).toBe(200)
+    expect(answer.headers()['content-type']).toContain('application/json')
+    expect(answer.headers()['access-control-allow-origin']).toBe('*')
+
+    const first = (await answer.json()) as Library
+    expect(first.query).toMatchObject({ q: 'genre:rpg', sort: '-rating', group: 'none' })
+    expect(first.stats.games).toBe(86)
+    expect(first.shelves).toEqual([{ key: 'all', count: 86 }])
+    expect(first.games).toHaveLength(5)
+    expect(first.games.every((game) => game.genres.includes('rpg'))).toBe(true)
+    const ratings = first.games.map((game) => game.rating ?? 0)
+    expect(ratings).toEqual([...ratings].sort((a, b) => b - a))
+    expect(first.next).not.toBeNull()
+
+    const second = (await (
+      await request.get(
+        `/api/v1/library?q=genre:rpg&sort=-rating&group=none&limit=5&cursor=${first.next}`,
+      )
+    ).json()) as Library
+    expect(second.games).toHaveLength(5)
+    const titles = new Set(first.games.map((game) => game.title))
+    expect(second.games.some((game) => titles.has(game.title))).toBe(false)
+  })
+
+  test('says which parts of a filter it could not understand, and answers the rest', async ({
+    request,
+  }) => {
+    const answer = (await (
+      await request.get(`/api/v1/library?q=${encodeURIComponent('halo:3 zelda')}`)
+    ).json()) as Library
+    expect(answer.problems).toEqual([{ text: 'halo:3', reason: 'unknown-key', from: 0, to: 6 }])
+    expect(answer.stats.games).toBe(9)
+  })
+
+  test('takes a bad parameter as its default, and a limit within bounds', async ({ request }) => {
+    const answer = await request.get('/api/v1/library?group=cube&limit=100000')
+    expect(answer.status()).toBe(200)
+    const body = (await answer.json()) as Library
+    expect(body.query.group).toBe('platform')
+    expect(body.games.length).toBeLessThanOrEqual(200)
+  })
+
+  test('GET /library/facets counts each value given the rest of the filter', async ({
+    request,
+  }) => {
+    const answer = (await (await request.get('/api/v1/library/facets?q=genre:rpg')).json()) as {
+      total: number
+      facets: Record<string, { value: string; count: number }[]>
+      ranges: Record<string, { min: number; max: number } | null>
+    }
+    expect(answer.total).toBe(86)
+    // Statuses split the matching games between them.
+    const statuses = answer.facets.status!.reduce((sum, value) => sum + value.count, 0)
+    expect(statuses).toBe(86)
+    // A genre's own count leaves the genre condition out: what picking it instead would give.
+    expect(answer.facets.genre!.find((value) => value.value === 'rpg')?.count).toBe(86)
+    expect(answer.facets.genre!.find((value) => value.value === 'strategy')?.count).toBe(22)
+    // Keywords are thousands: they have a file of their own.
+    expect(answer.facets.keyword).toBeUndefined()
+    expect(answer.ranges.rating).toMatchObject({ min: expect.any(Number), max: 10 })
+  })
+
+  test('GET /shelves lists the smart shelves; one that is not there is a 404', async ({
+    request,
+  }) => {
+    const list = (await (await request.get('/api/v1/shelves')).json()) as {
+      shelves: { slug: string; query: string; path: string }[]
+    }
+    expect(list.shelves).toContainEqual(
+      expect.objectContaining({
+        slug: 'short-ones',
+        query: 'status:backlog length:<10',
+        path: '/shelves/short-ones',
+      }),
+    )
+
+    const one = await request.get('/api/v1/shelves/short-ones')
+    expect(one.status()).toBe(200)
+    expect(await one.json()).toMatchObject({ name: 'Short ones', sort: 'length', group: 'none' })
+
+    const missing = await request.get('/api/v1/shelves/not-a-shelf')
+    expect(missing.status()).toBe(404)
+    expect(await missing.json()).toMatchObject({ error: { code: 'not-found' } })
+  })
+
+  test('describes itself in OpenAPI 3.1', async ({ request }) => {
+    const document = (await (await request.get('/api/v1/openapi.json')).json()) as {
+      openapi: string
+      paths: Record<string, unknown>
+      components: { schemas: Record<string, unknown> }
+    }
+    expect(document.openapi).toMatch(/^3\.1\./)
+    expect(Object.keys(document.paths)).toEqual(
+      expect.arrayContaining(['/library', '/library/facets', '/shelves', '/shelves/{slug}']),
+    )
+    expect(Object.keys(document.components.schemas)).toEqual(
+      expect.arrayContaining(['Game', 'Library', 'Facets', 'SmartShelf', 'Error']),
+    )
+  })
+})

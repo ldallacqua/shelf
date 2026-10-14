@@ -1,8 +1,8 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
+import { Suspense, type ComponentProps } from 'react'
 
 import { Link, usePathname } from '@/i18n/navigation'
 import { localeLabels, routing, type Locale, type Pathname } from '@/i18n/routing'
@@ -20,17 +20,33 @@ function isPage(pathname: string): pathname is Pathname {
 type SwitchLinkProps = {
   /** The page to open in the other language. Defaults to the home page. */
   pathname?: Pathname
+  /** The page's own part of the address, such as a shelf's slug. */
+  slug?: string
   query?: Record<string, string>
 }
 
-function SwitchLink({ pathname = '/', query }: SwitchLinkProps) {
+type Href = ComponentProps<typeof Link>['href']
+
+/** A page's address, with its slug where it has one. Without the slug, the library. */
+const hrefFor = (
+  pathname: Pathname,
+  slug: string | undefined,
+  query?: Record<string, string>,
+): Href => {
+  if (pathname === '/shelves/[slug]') {
+    return slug ? { pathname, params: { slug }, query } : { pathname: '/library', query }
+  }
+  return { pathname, query }
+}
+
+function SwitchLink({ pathname = '/', slug, query }: SwitchLinkProps) {
   const t = useTranslations('Language')
   const target = otherLocale(useLocale())
   const label = localeLabels[target]
 
   return (
     <Link
-      href={{ pathname, query }}
+      href={hrefFor(pathname, slug, query)}
       locale={target}
       // Stay where the visitor is on the page.
       scroll={false}
@@ -46,18 +62,22 @@ function SwitchLink({ pathname = '/', query }: SwitchLinkProps) {
 }
 
 /** Knows the page and its filters. */
-function SwitchLinkWithQuery({ pathname }: { pathname: Pathname }) {
-  return <SwitchLink pathname={pathname} query={Object.fromEntries(useSearchParams())} />
+function SwitchLinkWithQuery({ pathname, slug }: { pathname: Pathname; slug?: string }) {
+  return (
+    <SwitchLink pathname={pathname} slug={slug} query={Object.fromEntries(useSearchParams())} />
+  )
 }
 
 /** Knows the page. On an address that is not a page, it offers the home page. */
 function SwitchLinkForPage() {
   const current = usePathname()
+  const params = useParams<{ slug?: string }>()
   const pathname = isPage(current) ? current : '/'
+  const slug = typeof params?.slug === 'string' ? params.slug : undefined
 
   return (
-    <Suspense fallback={<SwitchLink pathname={pathname} />}>
-      <SwitchLinkWithQuery pathname={pathname} />
+    <Suspense fallback={<SwitchLink pathname={pathname} slug={slug} />}>
+      <SwitchLinkWithQuery pathname={pathname} slug={slug} />
     </Suspense>
   )
 }

@@ -9,6 +9,7 @@ import {
   type Named,
 } from '@/domain/library/library'
 import { formats, kinds, statuses, type Day } from '@/domain/library/values'
+import type { GameKeywords } from '@/domain/query/evaluate'
 import { caseShapes, families, plastics } from '@/domain/platforms/platforms'
 
 /**
@@ -257,4 +258,24 @@ export const decodeLibrary = (file: SnapshotFile): Library => {
     tag: (file.names.tag ?? []).map(([name, slug]) => ({ name, slug })),
   }
   return { version: file.version, names, games: file.games.map(decodeGame) }
+}
+
+/** The keywords file: every game's keyword ids by slug, and the keywords' names. */
+export type KeywordsFile = {
+  format: number
+  version: number
+  names: NamedRow[]
+  games: Record<string, number[]>
+}
+
+export const encodeKeywords = (version: number, keywords: GameKeywords): KeywordsFile => ({
+  format: SNAPSHOT_FORMAT,
+  version,
+  names: encodeNamed(keywords.names),
+  games: keywords.games as Record<string, number[]>,
+})
+
+export const decodeKeywords = (file: KeywordsFile): GameKeywords => {
+  if (file?.format !== SNAPSHOT_FORMAT) throw new SnapshotFormatError(file?.format)
+  return { names: decodeNamed(file.names), games: file.games ?? {} }
 }

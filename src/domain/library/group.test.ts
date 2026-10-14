@@ -207,26 +207,53 @@ describe('libraryStats', () => {
 })
 
 describe('parseLibraryQuery (spec 2)', () => {
-  it('defaults to the shelf, grouped by platform', () => {
-    expect(parseLibraryQuery({})).toEqual({ view: 'shelf', group: 'platform' })
+  const defaults = {
+    view: 'shelf',
+    group: 'platform',
+    q: '',
+    sort: { key: 'title', descending: false },
+    seed: '',
+  }
+
+  it('defaults to the shelf, grouped by platform, in title order, with no filter', () => {
+    expect(parseLibraryQuery({})).toEqual(defaults)
   })
 
-  it('reads the view and the grouping', () => {
-    expect(parseLibraryQuery({ view: 'list', group: 'year' })).toEqual({
+  it('reads the view, the grouping, the filter, the sort and the seed', () => {
+    expect(
+      parseLibraryQuery({
+        view: 'list',
+        group: 'year',
+        q: 'status:backlog genre:rpg',
+        sort: '-rating',
+        seed: 'k3x9',
+      }),
+    ).toEqual({
       view: 'list',
       group: 'year',
+      q: 'status:backlog genre:rpg',
+      sort: { key: 'rating', descending: true },
+      seed: 'k3x9',
     })
   })
 
   it('falls back to the default for anything it does not know', () => {
     expect(parseLibraryQuery({ view: 'cube', group: ['status', 'year'] })).toEqual({
-      view: 'shelf',
+      ...defaults,
       group: 'status',
     })
-    expect(parseLibraryQuery({ view: '', group: '<script>' })).toEqual({
-      view: 'shelf',
-      group: 'platform',
+    expect(
+      parseLibraryQuery({ view: '', group: '<script>', sort: '-colour', seed: 'a b' }),
+    ).toEqual(defaults)
+    expect(parseLibraryQuery({ sort: '-random' }).sort).toEqual({
+      key: 'random',
+      descending: false,
     })
+  })
+
+  it('keeps a filter it cannot read, for the page to show what was ignored', () => {
+    expect(parseLibraryQuery({ q: 'colour:red' }).q).toBe('colour:red')
+    expect(parseLibraryQuery({ q: 'x'.repeat(5000) }).q).toHaveLength(1000)
   })
 })
 
@@ -289,7 +316,7 @@ describe('the first screen', () => {
     // Hades comes for the Switch shelf. It also belongs on the PC shelf, but
     // that shelf's first box is not known yet, so it must not appear there.
     const first = buildFirstScreen(library, { group: 'platform' }, 'en', 3)
-    const shelves = firstScreenShelves(first, { group: 'platform' }, 'en')
+    const shelves = firstScreenShelves(first, 'en')
     expect(shelves.map((shelf) => [shelf.key, titles(shelf), shelf.total])).toEqual([
       ['platform:167', ['Astro Bot'], 1],
       ['platform:130', ['Celeste', 'Hades'], 2],
@@ -327,11 +354,7 @@ describe('the first screen', () => {
   it('matches the full arrangement box for box', () => {
     for (const group of ['platform', 'status', 'year', 'none'] as const) {
       const full = arrangeLibrary(all, names, { group }, 'en')
-      const first = firstScreenShelves(
-        buildFirstScreen(library, { group }, 'en', 4),
-        { group },
-        'en',
-      )
+      const first = firstScreenShelves(buildFirstScreen(library, { group }, 'en', 4), 'en')
       for (const shelf of first) {
         const whole = full.find((item) => item.key === shelf.key)
         expect(titles(shelf)).toEqual(titles(whole ?? { items: [] }).slice(0, shelf.items.length))

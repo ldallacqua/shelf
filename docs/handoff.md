@@ -4,16 +4,46 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 5, with ADR 003 accepted
+## Now: step 5 in review
 
-- **Step 4 is done.** The owner approved it at the ⏸ and it is merged
-  ([#6](https://github.com/ldallacqua/shelf/pull/6)). What it holds is below.
-- **ADR 003, syncing Steam, PlayStation, Xbox and Nintendo, is accepted**
-  ([#7](https://github.com/ldallacqua/shelf/pull/7)), with the answers it proposed: sync is
-  its own step right after step 7; the Xbox route is settled by a one-day spike, leaning to
-  a Microsoft sign-in of Shelf's own; subscription games show, marked, and never count as
-  owned.
-- **Next:** step 5, filters, sorting and smart shelves, on a branch from `main`.
+- **Step 5 is built** on `build-step-5-filters`, in pull request
+  [#8](https://github.com/ldallacqua/shelf/pull/8). Step 5 has no ⏸,
+  but it waits for the owner's approval before it is merged. **Next after merging:** step 6,
+  the game page, on a branch from `main`.
+- **Step 4 and ADR 003 are merged** ([#6](https://github.com/ldallacqua/shelf/pull/6),
+  [#7](https://github.com/ldallacqua/shelf/pull/7)). ADR 003's answers: sync is its own step
+  right after step 7; the Xbox route is settled by a one-day spike; subscription games show,
+  marked, and never count as owned.
+
+## Step 5: filters, sorting, smart shelves, the API
+
+- **Built:** the filter language (`src/domain/query/`, tests first), the search field, the
+  status row, chips, the filter panel, eleven sorts and sortable list headings, keyboard
+  shortcuts that can be turned off, six starter smart shelves at `/shelves/{slug}`, saving
+  a shelf as the owner, and the read API with its OpenAPI document (`docs/api.md`). What
+  changed from the plan, and why, is in architecture section 25.
+- **The owner is a test cookie** until sign-in at step 7: `shelf-test-owner=1`, read only
+  when the server runs with `SHELF_MOCKS=1`. On a preview nobody can save a shelf yet.
+- **Found and fixed on the way:** the phone list's title column was squeezed to one
+  letter (since step 3: spacer rows spanned nine columns, five of them hidden); Back did not
+  reach the search field while it had focus; a shelf saved after the build said it was
+  missing on its first full load (Next.js serves an unbuilt address from the route's frame
+  and the data cached with it, so a shelf is now read by its slug); the status row's counts
+  and the panel's empty values fell short of contrast over the lit 3D wall.
+- **Left open for the owner:** starter shelf names are data, so "Short ones" stays English
+  on the Portuguese site, like tags; the search field sits in the page on the library rather
+  than in the header, and the sort comes before the grouping (both in section 25).
+- **Checked on the last code commit:** `pnpm verify --skip-linux` passed the checks (671
+  unit and component tests), the build, the JavaScript budgets (library 256.2 of 262 KB:
+  the budget was raised from 240, with the reason in `scripts/lib/budgets.ts` and section
+  25) and 1,306 browser tests in all nine projects, none failed. Lighthouse failed it at
+  7.7 times, which was too harsh that day (the home page blocked 232 ms); run alone at 7.1
+  times, where the home page blocks 197 ms, it scored home 96, library 90, wall 90, largest
+  paint 2.24 s. The library is again at the edge of 90, as at steps 3 and 4. Storybook
+  builds.
+- **Not checked:** the Linux pass (no Docker). The reference screenshots of every library
+  page are now out of date (the search, status row and toolbar are new) and there are none
+  for the shelf page; make them with `pnpm verify --update-screenshots` once Docker is here.
 
 ## Step 4: the 3D shelf, as merged
 

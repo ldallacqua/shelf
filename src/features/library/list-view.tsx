@@ -1,10 +1,12 @@
 'use client'
 
+import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { useRef } from 'react'
+import { useRef, type ReactNode } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
+import { naturalSort, type Sort, type SortKey } from '@/domain/library/sort'
 import { shareFirstBoxes } from '@/domain/library/view'
 
 import { Cover } from './cover'
@@ -25,7 +27,51 @@ const MEDIUM = 'hidden md:table-cell'
 const WIDE_COLUMN = 'hidden lg:[display:table-column]'
 const MEDIUM_COLUMN = 'hidden md:[display:table-column]'
 
-type ListTableProps = {
+/** Clicking a heading sorts by it; clicking it again reverses it (spec 3.8). */
+type Sorting = { sort?: Sort; onSort?: (sort: Sort) => void }
+
+function Heading({
+  sortKey,
+  sort,
+  onSort,
+  children,
+  className,
+  number,
+}: Sorting & { sortKey: SortKey; children: ReactNode; className?: string; number?: boolean }) {
+  const active = sort?.key === sortKey
+  const direction = active ? (sort.descending ? 'descending' : 'ascending') : undefined
+  return (
+    <th
+      scope="col"
+      aria-sort={direction}
+      data-number={number ? '' : undefined}
+      className={className}
+    >
+      {onSort ? (
+        <button
+          type="button"
+          className="game-sort"
+          onClick={() =>
+            onSort(active ? { ...sort, descending: !sort.descending } : naturalSort(sortKey))
+          }
+        >
+          {children}
+          {active ? (
+            sort.descending ? (
+              <ArrowDownIcon aria-hidden="true" className="size-3" />
+            ) : (
+              <ArrowUpIcon aria-hidden="true" className="size-3" />
+            )
+          ) : null}
+        </button>
+      ) : (
+        children
+      )}
+    </th>
+  )
+}
+
+type ListTableProps = Sorting & {
   shelf: DrawnShelf
   platforms: ReadonlyMap<number, LibraryPlatform>
   caption: string
@@ -35,7 +81,16 @@ type ListTableProps = {
   onOpen: (box: OpenBox) => void
 }
 
-function ListTable({ shelf, platforms, caption, unmeasured, open, onOpen }: ListTableProps) {
+function ListTable({
+  shelf,
+  platforms,
+  caption,
+  unmeasured,
+  open,
+  onOpen,
+  sort,
+  onSort,
+}: ListTableProps) {
   const t = useTranslations('Library')
   const format = useFormatter()
   const body = useRef<HTMLTableSectionElement>(null)
@@ -76,33 +131,37 @@ function ListTable({ shelf, platforms, caption, unmeasured, open, onOpen }: List
           <th scope="col">
             <span className="sr-only">{t('list.cover')}</span>
           </th>
-          <th scope="col">{t('list.title')}</th>
+          <Heading sortKey="title" sort={sort} onSort={onSort}>
+            {t('list.title')}
+          </Heading>
           <th scope="col">{t('list.platforms')}</th>
-          <th scope="col">
+          <Heading sortKey="status" sort={sort} onSort={onSort}>
             <span className="max-sm:sr-only">{t('list.status')}</span>
-          </th>
-          <th scope="col" data-number="" className={MEDIUM}>
+          </Heading>
+          <Heading sortKey="rating" sort={sort} onSort={onSort} number className={MEDIUM}>
             {t('list.rating')}
-          </th>
-          <th scope="col" data-number="" className={MEDIUM}>
+          </Heading>
+          <Heading sortKey="igdb" sort={sort} onSort={onSort} number className={MEDIUM}>
             {t('list.igdb')}
-          </th>
-          <th scope="col" data-number="" className={MEDIUM}>
+          </Heading>
+          <Heading sortKey="hours" sort={sort} onSort={onSort} number className={MEDIUM}>
             {t('list.playtime')}
-          </th>
-          <th scope="col" className={WIDE}>
+          </Heading>
+          <Heading sortKey="added" sort={sort} onSort={onSort} className={WIDE}>
             {t('list.added')}
-          </th>
-          <th scope="col" className={WIDE}>
+          </Heading>
+          <Heading sortKey="completed" sort={sort} onSort={onSort} className={WIDE}>
             {t('list.completed')}
-          </th>
+          </Heading>
         </tr>
       </thead>
       <tbody ref={body}>
-        {/* Rows that are not near the screen are not in the page; these keep their place. */}
+        {/* Rows that are not near the screen are not in the page; these keep their place.
+            One cell each: one across all nine would make columns of those a phone hides,
+            and they would take the title's room. */}
         {before > 0 ? (
           <tr aria-hidden="true">
-            <td colSpan={9} style={{ height: before, padding: 0, border: 0 }} />
+            <td style={{ height: before, padding: 0, border: 0 }} />
           </tr>
         ) : null}
         {shelf.items.slice(from, to).map((item, offset) => {
@@ -189,7 +248,7 @@ function ListTable({ shelf, platforms, caption, unmeasured, open, onOpen }: List
         })}
         {after > 0 ? (
           <tr aria-hidden="true">
-            <td colSpan={9} style={{ height: after, padding: 0, border: 0 }} />
+            <td style={{ height: after, padding: 0, border: 0 }} />
           </tr>
         ) : null}
       </tbody>
@@ -203,7 +262,15 @@ function ListTable({ shelf, platforms, caption, unmeasured, open, onOpen }: List
  * the cover, title, platforms and status; the rest is in the game's details
  * (spec 3.8).
  */
-export function ListView({ shelves, platforms, open, onOpen, firstBoxes }: ViewProps) {
+export function ListView({
+  shelves,
+  platforms,
+  open,
+  onOpen,
+  firstBoxes,
+  sort,
+  onSort,
+}: ViewProps & Sorting) {
   const t = useTranslations('Library')
   const shares = shareFirstBoxes(
     shelves.map((shelf) => shelf.items.length),
@@ -232,6 +299,8 @@ export function ListView({ shelves, platforms, open, onOpen, firstBoxes }: ViewP
               unmeasured={shares[index] ?? 0}
               open={open}
               onOpen={onOpen}
+              sort={sort}
+              onSort={onSort}
             />
           </section>
         )

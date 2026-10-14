@@ -137,6 +137,26 @@ test.describe('the shelf in 3D', () => {
     expect(shelves3d.slice(0, 2)).toEqual(['PlayStation 5', 'PlayStation 4'])
   })
 
+  test('shows the games a filter and a sort pick, as 2D does (spec 5 and 6)', async ({ page }) => {
+    await open3d(page, '/en/library?q=genre%3Arpg&sort=-rating')
+    await expect(page.getByRole('group', { name: 'Library totals' })).toContainText('86 games')
+    const shelves3d = await shelfNames(page)
+    const games3d = await firstGames(page, 'PlayStation 5', 8)
+
+    await page.keyboard.press('d')
+    await expect(page.locator('[data-shelf-3d]')).toHaveCount(0)
+    expect(await shelfNames(page)).toEqual(shelves3d)
+    expect(await firstGames(page, 'PlayStation 5', 8)).toEqual(games3d)
+
+    // And a change made in 3D is drawn in 3D.
+    await page.keyboard.press('d')
+    await expect(page.locator('[data-shelf-phase="3d"]')).toBeVisible()
+    await page.getByRole('searchbox', { name: 'Search the library' }).fill('zelda')
+    await expect(page.getByRole('group', { name: 'Library totals' })).toContainText('9 games')
+    await expect(page.locator('[data-shelf-phase="3d"]')).toBeVisible()
+    expect((await shelfNames(page)).length).toBeGreaterThan(0)
+  })
+
   test('switching keeps the address and the game in focus, both ways', async ({ page }) => {
     await open3d(page, '/en/library?group=status')
     const backlog = page.getByRole('list', { name: 'Games on the Backlog shelf' })

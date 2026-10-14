@@ -160,11 +160,11 @@ test.describe('the address is the state (spec 2)', () => {
 
   test('the view changes the address too', async ({ page }) => {
     await openLibrary(page)
-    await page.getByRole('radio', { name: 'Wall' }).click()
+    await page.getByRole('radio', { name: 'Wall', exact: true }).click()
     await expect(page).toHaveURL(/view=wall/)
     await expect(page.locator('.wall-grid').first()).toBeVisible()
 
-    await page.getByRole('radio', { name: 'List' }).click()
+    await page.getByRole('radio', { name: 'List', exact: true }).click()
     await expect(page).toHaveURL(/view=list/)
     await expect(page.getByRole('table').first()).toBeVisible()
 
@@ -174,7 +174,7 @@ test.describe('the address is the state (spec 2)', () => {
 
   test('loading an address directly shows exactly the state it describes', async ({ page }) => {
     await openLibrary(page, '/en/library?view=list&group=year')
-    await expect(page.getByRole('radio', { name: 'List' })).toBeChecked()
+    await expect(page.getByRole('radio', { name: 'List', exact: true })).toBeChecked()
     await expect(page.getByRole('table').first()).toBeVisible()
     // Newest year first.
     const years = await page.getByRole('heading', { level: 2 }).allTextContents()
@@ -183,7 +183,7 @@ test.describe('the address is the state (spec 2)', () => {
 
   test('an unknown or malformed parameter falls back to its default', async ({ page }) => {
     await openLibrary(page, '/en/library?view=cube&group=%3Cscript%3E&sort=')
-    await expect(page.getByRole('radio', { name: 'Shelf' })).toBeChecked()
+    await expect(page.getByRole('radio', { name: 'Shelf', exact: true })).toBeChecked()
     await expect(page.getByRole('heading', { level: 2 }).first()).toHaveText('PlayStation 5')
   })
 })

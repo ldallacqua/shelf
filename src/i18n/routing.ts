@@ -13,6 +13,7 @@ export const routing = defineRouting({
   pathnames: {
     '/': '/',
     '/library': '/library',
+    '/shelves/[slug]': '/shelves/[slug]',
     '/trophies': '/trophies',
   },
 })

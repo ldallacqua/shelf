@@ -248,8 +248,8 @@ that are either cached or streamed per request. This is the default for new Next
 | Address | Built ahead | Per request | Refreshed when |
 | --- | --- | --- | --- |
 | `/en` (landing) | Whole page, including live library numbers | Nothing | The library changes |
-| `/en/library` | Header, toolbar, shelf skeleton | The first screen of boxes for this address's filters | The library changes |
-| `/en/shelves/{name}` | Whole first screen, per saved shelf | Nothing | The library or that shelf changes |
+| `/en/library` | Header, the controls' places, shelf skeleton | The first screen of boxes for this address's filter, sort and grouping, and the list of smart shelves | The library or the shelves change |
+| `/en/shelves/{name}` | The same frame, per shelf there was when the site was built. A shelf saved since gets its frame on its first visit. | The first screen for the shelf, with whatever the address changes | The library or the shelves change |
 | `/en/trophies` | Whole page | Nothing | The library changes |
 | `/en/game/{slug}` | Whole page, built on first visit and kept | Nothing for visitors. My private notes, for me only. | That game changes |
 | `/en/sign-in` | Whole page | Nothing | Never |
@@ -258,6 +258,13 @@ that are either cached or streamed per request. This is the default for new Next
 **How "the library changes" works.** Every cached read is tagged `library` (and
 `entry:{id}` for one game). Every write ends by expiring the tags: `updateTag` in a server
 action, so I see my own change at once; `revalidateTag` in an API route.
+
+**Smart shelves are the exception.** They are not in the library file, so saving one does not
+raise the library's version (which would make every visitor download the file again for
+nothing in it). Shelf reads are tagged `shelves`, and a shelf write expires only that. A
+shelf's page reads its shelf by slug (`getShelf`), cached on its own: an address Next.js did
+not build is first answered from the route's prebuilt frame and the data cached with it,
+and a list of shelves cached then would not know a shelf saved since.
 
 **The library file.** The browser needs every game to filter on the device. It gets them as a
 separate file, not inside the page:
@@ -269,14 +276,15 @@ separate file, not inside the page:
 | Caching | The address changes when the content does, so the file is cached for a year by the edge and by the browser. A return visit downloads nothing unless I changed the library. |
 | Built ahead | The current version's file is made when the site is built and served as a static file. A version that appears later, because I added a game, is made on its first request. Any other address is sent on to the current one. |
 | Contents | Per game: ids, title, status, rating, dates, playtime, year, IGDB rating, time to beat, cover id, three colors, a 25-byte blur hash, copies, and the ids of its genres, themes, modes, perspectives, platforms, franchises, series, studios and tags. Plus one name table per kind. |
-| Left out | Summaries, screenshots and notes (the game page fetches those). Keywords, which are large, are a second file fetched the first time a keyword filter is used. Private notes are never in any public file. |
+| Left out | Summaries, screenshots and notes (the game page fetches those). Keywords, which are large, are a second file, `/api/v1/library/keywords/{version}`, fetched the first time a keyword filter is used, and cached the same way. Private notes are never in any public file. |
 | Size target | 120 KB compressed per 1,000 games. A test fails the build past that. |
 
 **Address state.** `q`, `sort`, `group`, `view` and `seed` are read and written with nuqs
-(`view` and `group` since step 3; the rest arrive with filters at step 5). One function in
-`domain/` reads them for the server and falls back to the default for anything it does not
-know. Changing a filter updates the address without
-asking the server. Back and forward work because each change is a history entry.
+(`view` and `group` since step 3, the rest since step 5). One function in `domain/` reads
+them for the server and falls back to the default for anything it does not know, so a shared
+address arrives drawn. Changing a filter updates the address without asking the server. Back
+and forward work because each change is a history entry; a search being typed is one entry,
+not one per letter. On a smart shelf, a parameter the address leaves out is the shelf's.
 
 **What stays out of the server's view.** Theme, language choice and the 2D or 3D preference
 live in the browser (local storage). Reading them on the server would force every page to be
@@ -631,14 +639,16 @@ text ──parse──▶ tree ──compile──▶ predicate over an index �
 | Parser | Hand-written, recursive descent, for the language in spec section 5.3. Never throws: bad input becomes a tree plus a list of problems, each with a position, so the field can underline it. |
 | Tree | `and`, `or`, `not`, and terms: a key, an operator, values |
 | Writer | Tree back to canonical text. Parse then write then parse gives the same tree; a property test generates thousands of random queries to prove it. |
-| Index | Built once when the library file loads. For each value of each filter (each genre, each platform, each status) a bitmap with one bit per game. |
-| Evaluation | `and`, `or` and `not` become bitwise operations on whole bitmaps. Ranges (year, rating, hours) scan a typed array. |
-| Facet counts | For each visible value: count the bits it shares with the current result. A few hundred counts over a thousand games takes well under a millisecond. |
-| Sorting | Sort keys are computed once per language. Missing values sort last, ties by title. Random uses a seeded generator, so a shared address shuffles the same way. |
-| Grouping | A function from the sorted result to shelves. A game with copies on two platforms appears in both and is counted once. |
+| Index | Built once when the library file loads. For each value of each filter (each genre, each platform, each status) a bitmap with one bit per game. A second index has one bit per copy, for `owned` and `format`: inside one `and` they describe the same copy, so `owned:switch format:physical` is a Switch cartridge, not a Switch game with a disc somewhere else. Keywords join the index when their file arrives. |
+| Evaluation | `and`, `or` and `not` become bitwise operations on whole bitmaps. Ranges (year, rating, hours) scan a typed array, in the units the language uses (hours, out of ten). A year, month or day in a date filter stands for the whole of it. |
+| Facet counts | For each value: the games the filter matches with that key's own top-level conditions left out, and that value instead, so a count says what picking it would give. Copy keys are counted copy by copy. Values that match nothing sink to the bottom. |
+| Sorting | Eleven keys, each starting the way it is usually wanted (title A to Z, a rating highest first, dates newest first). Missing values sort last both ways; ties by title. Random hashes each game with the address's seed, so a shared address shuffles the same way. |
+| Grouping | A function from the sorted result to shelves. A game with copies on two platforms appears on both and is counted once. With copy conditions in the filter, a game stands only on the platforms of the copies that match. |
+| Smart shelves | A name, a filter, a sort and a grouping, in the database. The six starters come from a migration, so every database has them. Saving is a server action for the owner; the starters can be changed and removed like any other. |
 
 **Target:** a filter or sort change over 1,000 games in under 50 ms, including facet counts. A
-benchmark in the unit tests runs the stress data set and fails past the budget.
+benchmark in the unit tests (`server/library/query-speed.test.ts`) runs the stress data set
+and fails past the budget.
 
 The server runs the same code for the first screen, the API and the MCP tools.
 
@@ -651,9 +661,10 @@ generated from them, so it cannot drift from the code.
 
 | Method and path | Who | Does |
 | --- | --- | --- |
-| `GET /library?q&sort&group&limit&cursor` | Anyone | The library, filtered, sorted and grouped |
+| `GET /library?q&sort&seed&group&limit&cursor&lang` | Anyone | The library, filtered, sorted and grouped |
 | `GET /library/facets?q` | Anyone | Available filter values, with counts |
 | `GET /library/snapshot/{version}` | Anyone | The whole library file |
+| `GET /library/keywords/{version}` | Anyone | The keywords file |
 | `GET /games/{slug}` | Anyone | One game, with public notes |
 | `GET /shelves`, `GET /shelves/{slug}` | Anyone | Smart shelves |
 | `GET /openapi.json` | Anyone | The API's own description |
@@ -663,7 +674,9 @@ generated from them, so it cannot drift from the code.
 | `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Me | Save or remove a smart shelf |
 
 The interface itself uses server actions for writes; these routes are the same services with
-an HTTP face. `docs/api.md` is written alongside at step 5.
+an HTTP face. The reads are built at step 5, open to any site, and kept by the edge for a
+minute; `/games/{slug}` comes with the game page (step 6) and the writes with sign-in (step
+7). The reference for anyone calling it is [docs/api.md](api.md).
 
 **MCP**, on the current specification (2026-07-28), stateless:
 
@@ -758,7 +771,7 @@ Neither needs **secrets**: both build against a SQLite file and the mocks.
 
 | Measure | Budget | Enforced by |
 | --- | --- | --- |
-| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`: 205 KB for the home page, 240 KB for the library. | Build check |
+| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`: 205 KB for the home page, 262 KB for the library. | Build check |
 | three.js in any page's first load | None | Build check |
 | The 3D bundle, fetched when 3D first opens, compressed | 300 KB | `pnpm perf:js` |
 | 3D: draw calls, texture memory | Under 40, under 256 MB | End-to-end test |
@@ -955,6 +968,14 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 5 | **Saving a smart shelf does not raise the library's version.** Shelf reads have a tag of their own, `shelves`, and a shelf write expires only that. AGENTS.md says every write raises the version; shelves are the one exception. | Shelves are not in the library file. Raising the version would make every visitor download the whole library again for a change that is not in it. |
+| Step 5 | **A shelf's page reads its shelf by slug, cached on its own,** not by searching the cached list of shelves. | Found by the browser tests: a shelf saved after the build answered "There is no shelf at this address" on its first full load, in each language, and was right from the second. Next.js answers an address it did not build from the route's prebuilt frame and the data cached with it, which included the list of shelves from build time. A read keyed by slug has no such copy. Checked after: a new shelf, a changed one and a removed one are each right on their first load. |
+| Step 5 | **An address with no shelf behind it says so with a 200 status,** marked `noindex`. | The same limit as the step 1 row on unknown pages: `proxy.ts` answers addresses with no route, and this one has a route. The page says so and links to the library. |
+| Step 5 | **On a phone the toolbar is two rows at the bottom of the screen:** what is shown and in what order (Filters, Sort), then how it is laid out (grouping, then the view's own choices). Everywhere, the sort comes before the grouping, which the spec's sketch has the other way round. | With Filters and Sort added, one row did not fit 390 pixels: the sort key was cut to its first letter. Two rows by purpose keep every label, and the order on screen is the order Tab takes at every width. |
+| Step 5 | **The search field is the library's own first control, and the header's field is a plain form on other pages.** On the library and on a shelf the header has none; below 1,024 pixels wide no page has one in the header. | The library's field filters as you type and shows what it could not understand; one field doing that, where the results are, is clearer than two. Elsewhere the header's field opens the library with the search in its address, so it works before any script. A phone's header has room for its menu, not a field. |
+| Step 5 | **In one group, `owned:` and `format:` describe the same copy.** `owned:switch format:physical` is a Switch cartridge, not a Switch game that has a disc for some other platform. A game then stands only on the shelves of the copies that match. | It is what the words mean. The starter shelf "On the shelf" (`format:physical`, by platform) would otherwise put a game on its PC shelf because it has a PS5 disc. |
+| Step 5 | **The library's JavaScript budget is 262 KB, from 240.** It measures 256.2. | The filter language (parser, writer, the index of bitmaps, counts), the search field, the status row, the chips, the sort, the filter panel and the smart shelves: 23 KB. Fetching the panel, the shortcuts list and the save sheet only when first opened was tried and saved 2.7 KB, at the cost of a wait the first time a phone opens the panel; the rest is needed the moment the library arrives. |
+| Step 5 | **Starter shelves come from a migration,** with fixed ids, as well as from the seeds. | So a production database has them from its first day, which the spec asks for, without a seed. |
 | Step 4 | **Covers in 3D are drawn at the size they appear, from the file the 2D shelf loaded.** They were planned in three levels by distance. | Seen at the owner's first look: most boxes had the 90-pixel file across about 170 device pixels, and the 264-pixel one went to the nearest dozen only once the camera stopped, so covers came in blurred and sharpened seconds later. Now every box in view and either side of it gets the 2D shelf's file (from the cache, since 2D always draws first), redrawn into atlas cells the box's size: sharp on the first frame, and still while the camera walks. Textures went from 69 to 64 MB. |
 | Step 4 | **A phone, held either way, is never offered 3D.** The spec asked only that a phone start in 2D. | The owner's decision at the first look (14 Oct 2026): it was unusable. Measured: on a phone a box was about 30 pixels wide, the wall filled the lower half of its stage, the shelf index sat over the boxes, and on its side the stage ran below the fold. The 2D shelf does everything the 3D one does, at a size made for a phone. Tablets keep 3D as a choice. |
 | Step 4 | **The server always draws 2D, and 3D takes over after its first frame.** | 3D needs WebGL, which only the browser has. The 2D shelf is then the first paint, the fallback and what loads the covers, and the switch can carry the game in focus across. |

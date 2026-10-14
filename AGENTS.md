@@ -111,7 +111,9 @@ makes a page slower for everyone. A component that needs the address (`usePathna
 
 **Data.** ADR 001 is the model: one entry per game, a copy per platform and format, and an
 IGDB record belongs to one entry only. Every write goes through `src/server/library/store.ts`,
-in one transaction that ends by raising the library's version. Everything read from outside
+in one transaction that ends by raising the library's version. The one exception is smart
+shelves: they are not in the library file, so a shelf write leaves the version alone and
+expires the `shelves` tag instead. Everything read from outside
 (IGDB, settings, fixtures) passes a Zod schema first. Change the schema in
 `src/server/db/schema.ts`, run `pnpm db:generate`, and commit the SQL it writes. A migration
 must be safe for the code already deployed: add first, remove in a later release.
@@ -130,9 +132,20 @@ bars a page, never for something repeated per shelf: the Linux build of WebKit h
 dozen. A box is a button whose name says in words everything it shows by shape
 (`describeBox`). A cover is always drawn by `Cover`. A choice that belongs to the device
 (covers or compact, cover size, 2D or 3D) goes through `preferences.ts`, which mirrors it on `<html>`
-before the first paint; a choice that belongs to the address (view, grouping) goes through
-`parseLibraryQuery`. Nothing on the shelf fades in: a cover that starts transparent is
+before the first paint; a choice that belongs to the address (view, grouping, filter, sort,
+seed) goes through `parseLibraryQuery`. Nothing on the shelf fades in: a cover that starts transparent is
 counted as painted late.
+
+**Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
+and never throws (what it cannot read becomes a problem with a position), `write.ts` turns a
+tree back into canonical text, `evaluate.ts` runs a tree over one index of bitmaps per library
+(`indexOnce`), `facets.ts` counts, and `panel.ts` is every edit the panel and the chips make.
+The search field and the panel are two views of one tree: change the tree, never the text by
+hand. A new filter key goes in `keys.ts` and gets a test in `parse.test.ts` and
+`evaluate.test.ts` first. The public API (`src/server/api/`) parses every answer with its own
+Zod schema before sending it, and the OpenAPI document is built from those schemas: change
+the schema and the document follows. Until sign-in (step 7), the owner in tests is a cookie,
+`shelf-test-owner=1`, which the server reads only when it runs with `SHELF_MOCKS=1`.
 
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used

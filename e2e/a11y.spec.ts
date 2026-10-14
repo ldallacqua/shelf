@@ -46,6 +46,44 @@ for (const theme of themes) {
     await expectAccessible(page, '[role="dialog"]')
   })
 
+  test(`the filter panel passes axe while open, ${theme}`, async ({ page }) => {
+    await openWithTheme(page, '/en/library?q=genre%3Arpg+-theme%3Ahorror', theme)
+    await page.getByRole('button', { name: /^Filters/ }).click()
+    const panel = page.getByRole('dialog', { name: 'Filters', exact: true })
+    await panel.waitFor()
+    // A long list, with its search box and a value that matches nothing.
+    await panel.locator('details[data-filter="owned"] summary').click()
+    await expectAccessible(page, '[role="dialog"]')
+  })
+
+  test(`saving a shelf passes axe, ${theme}`, async ({ page, context, baseURL }) => {
+    // The owner, as the test doubles know them.
+    await context.addCookies([{ name: 'shelf-test-owner', value: '1', url: baseURL! }])
+    await openWithTheme(page, '/en/library?q=genre%3Arpg', theme)
+    await page.getByRole('button', { name: 'Save as a shelf' }).click()
+    await page.getByRole('dialog', { name: 'Save as a shelf' }).waitFor()
+    await expectAccessible(page, '[role="dialog"]')
+  })
+
+  test(`the sort menu passes axe while open, ${theme}`, async ({ page }) => {
+    await openWithTheme(page, '/en/library', theme)
+    await page.getByRole('button', { name: /^Sort/ }).click()
+    await page.getByRole('menu').waitFor()
+    await expectAccessible(page, '[role="menu"]')
+  })
+
+  test(`the keyboard shortcuts pass axe while open, ${theme}`, async ({ page, size }) => {
+    test.skip(size === 'phone', 'a phone has no keyboard')
+    await openWithTheme(page, '/en/library', theme)
+    // The library streams in after the page is live; its keys come with it.
+    await page.locator('.game-box').first().waitFor()
+    // WebKit sends keys to the page only once it has been clicked.
+    await page.getByRole('heading', { level: 1 }).click()
+    await page.keyboard.press('?')
+    await page.getByRole('dialog', { name: 'Keyboard shortcuts' }).waitFor()
+    await expectAccessible(page, '[role="dialog"]')
+  })
+
   test(`the grouping menu passes axe while open, ${theme}`, async ({ page }) => {
     await openWithTheme(page, '/en/library', theme)
     await page.getByRole('button', { name: /Platform/ }).click()

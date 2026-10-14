@@ -51,12 +51,22 @@ export type Shelf = ShelfId & { items: ShelfItem[] }
 /** The copy a game shows when it stands once: the one chosen for display, which is first. */
 export const displayCopy = (game: LibraryGame): LibraryCopy | undefined => game.copies[0]
 
-const standingOnce = (game: LibraryGame): ShelfItem => {
-  const copy = displayCopy(game)
+/**
+ * Which copies may stand, when a filter is about copies: with `format:digital`, only the
+ * downloads. Without one, every copy may.
+ */
+export type Stands = (copy: LibraryCopy) => boolean
+
+const standingOnce = (game: LibraryGame, stands?: Stands): ShelfItem => {
+  const copy = (stands && game.copies.find(stands)) || displayCopy(game)
   return copy ? { game, copy } : { game }
 }
 
-const byPlatform = (games: readonly LibraryGame[], names: LibraryNames): Shelf[] => {
+const byPlatform = (
+  games: readonly LibraryGame[],
+  names: LibraryNames,
+  stands?: Stands,
+): Shelf[] => {
   const shelves = new Map<number, ShelfItem[]>()
   const notOwned: ShelfItem[] = []
 
@@ -68,7 +78,7 @@ const byPlatform = (games: readonly LibraryGame[], names: LibraryNames): Shelf[]
     // A disc and a download on one platform are one box on that shelf: the first of them.
     const seen = new Set<number>()
     for (const copy of game.copies) {
-      if (seen.has(copy.platform)) continue
+      if (seen.has(copy.platform) || (stands && !stands(copy))) continue
       seen.add(copy.platform)
       const shelf = shelves.get(copy.platform)
       if (shelf) shelf.push({ game, copy })
@@ -88,23 +98,25 @@ const byPlatform = (games: readonly LibraryGame[], names: LibraryNames): Shelf[]
   return ordered
 }
 
-const byStatus = (games: readonly LibraryGame[]): Shelf[] =>
+const byStatus = (games: readonly LibraryGame[], stands?: Stands): Shelf[] =>
   statuses.flatMap((status): Shelf[] => {
-    const items = games.filter((game) => game.status === status).map(standingOnce)
+    const items = games
+      .filter((game) => game.status === status)
+      .map((game) => standingOnce(game, stands))
     return items.length > 0 ? [{ kind: 'status', key: `status:${status}`, status, items }] : []
   })
 
-const byYear = (games: readonly LibraryGame[]): Shelf[] => {
+const byYear = (games: readonly LibraryGame[], stands?: Stands): Shelf[] => {
   const years = new Map<number, ShelfItem[]>()
   const unknown: ShelfItem[] = []
   for (const game of games) {
     if (game.year === undefined) {
-      unknown.push(standingOnce(game))
+      unknown.push(standingOnce(game, stands))
       continue
     }
     const shelf = years.get(game.year)
-    if (shelf) shelf.push(standingOnce(game))
-    else years.set(game.year, [standingOnce(game)])
+    if (shelf) shelf.push(standingOnce(game, stands))
+    else years.set(game.year, [standingOnce(game, stands)])
   }
   const shelves: Shelf[] = [...years]
     .sort(([a], [b]) => b - a)
@@ -118,16 +130,19 @@ export const groupLibrary = (
   games: readonly LibraryGame[],
   names: LibraryNames,
   grouping: Grouping,
+  stands?: Stands,
 ): Shelf[] => {
   switch (grouping) {
     case 'platform':
-      return byPlatform(games, names)
+      return byPlatform(games, names, stands)
     case 'status':
-      return byStatus(games)
+      return byStatus(games, stands)
     case 'year':
-      return byYear(games)
+      return byYear(games, stands)
     case 'none':
-      return games.length > 0 ? [{ kind: 'all', key: 'all', items: games.map(standingOnce) }] : []
+      return games.length > 0
+        ? [{ kind: 'all', key: 'all', items: games.map((game) => standingOnce(game, stands)) }]
+        : []
   }
 }
 
