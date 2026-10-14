@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type RefObject } from 'react'
 
+import { pageTouched, whenTouched } from './first-touch'
+
 /**
  * Which rows of a grid are near the screen. The grid's own CSS decides how
  * many items fit on a row; this reads that, and how tall a row is, and works
@@ -23,6 +25,11 @@ export type RowWindow = {
    * side, a shelf that cannot be reached without first passing a nearer one.
    */
   away: boolean
+  /**
+   * Beside the screen, and nobody has touched the page yet: the shelf next
+   * to the one in view on a phone, before the first swipe (see first-touch.ts).
+   */
+  waiting: boolean
 }
 
 const same = (a: RowWindow | undefined, b: RowWindow): boolean =>
@@ -32,7 +39,8 @@ const same = (a: RowWindow | undefined, b: RowWindow): boolean =>
   a.rows === b.rows &&
   a.start === b.start &&
   a.end === b.end &&
-  a.away === b.away
+  a.away === b.away &&
+  a.waiting === b.waiting
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
@@ -58,6 +66,8 @@ export function useRowWindow(
     if (!element) return
 
     let frame = 0
+    /** Set while this shelf waits for the first touch to fill itself. */
+    let stopWaiting: (() => void) | undefined
     const measure = () => {
       frame = 0
       const style = getComputedStyle(element)
@@ -85,14 +95,18 @@ export function useRowWindow(
 
       // A shelf more than a screen away sideways (on a phone, where shelves
       // stand side by side) has no rows in the page. The shelves next to the
-      // one in view are not that far, so a swipe always lands on a full shelf.
+      // one in view are not that far: they fill at the first touch, which a
+      // swipe starts with, so a swipe always lands on a full shelf.
       const away = box.right < -window.innerWidth || box.left > window.innerWidth * 2
       if (away) {
         start = 0
         end = 0
       }
+      const beside = box.width > 0 && (box.right <= 0 || box.left >= window.innerWidth)
+      const waiting = beside && !away && !pageTouched()
+      if (waiting && !stopWaiting) stopWaiting = whenTouched(schedule)
 
-      const next = { columns, pitch, rows, start, end, away }
+      const next = { columns, pitch, rows, start, end, away, waiting }
       setRowWindow((current) => (same(current, next) ? current : next))
     }
 
@@ -109,6 +123,7 @@ export function useRowWindow(
     window.addEventListener('resize', schedule)
     return () => {
       if (frame) cancelAnimationFrame(frame)
+      stopWaiting?.()
       observer.disconnect()
       window.removeEventListener('scroll', schedule, { capture: true })
       window.removeEventListener('resize', schedule)

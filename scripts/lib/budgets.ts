@@ -13,14 +13,15 @@
 export const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3300'
 
 export const javascriptBudgets: { path: string; name: string; kilobytes: number }[] = [
-  // Step 3: measured 206.2 KB. Shell, plus the foundations demos.
-  { path: '/en', name: 'Home', kilobytes: 215 },
-  // Step 3: measured 238.1 KB. The shell (200 KB), plus 38 KB for the library
+  // Step 3: measured 198.0 KB. Shell, plus the foundations demos. (Messages
+  // compiled at build time took 9 KB of message parser off every page.)
+  { path: '/en', name: 'Home', kilobytes: 205 },
+  // Step 3: measured 228.9 KB. The shell (191 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
-  { path: '/en/library', name: 'Library', kilobytes: 240 },
-  // Step 3: measured 199.6 KB. Shell only.
-  { path: '/en/trophies', name: 'Trophies', kilobytes: 208 },
+  { path: '/en/library', name: 'Library', kilobytes: 234 },
+  // Step 3: measured 191.3 KB. Shell only.
+  { path: '/en/trophies', name: 'Trophies', kilobytes: 198 },
 ]
 
 /**

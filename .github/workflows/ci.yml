@@ -1,22 +1,23 @@
 name: CI
 
-# Two tiers, because a private repository has 2,000 free minutes a month.
+# Run by hand only: Actions → CI → Run workflow. Nothing here runs on a push
+# or a pull request. Actions minutes on a private repository are limited, and
+# the full set of checks took about 75 of the month's 2,000 each time, so
+# every check runs on the Mac before a push instead: `pnpm verify`
+# (docs/testing.md). This stays for the odd time a check is wanted on
+# GitHub's own Linux machines.
 #
-#   quick  every push to a pull request: format, lint, types, translations,
-#          unit and component tests, build, JavaScript budgets, and the
-#          end-to-end smoke tests in Chromium at phone and desktop width.
-#   full   when a pull request is marked ready for review, on every push to
-#          main, and on demand (the "full-ci" label, or "Run workflow"):
-#          all nine browser projects, reference screenshots, Lighthouse, Storybook.
+#   everything   format, lint, types, translations, unit and component tests,
+#                build, JavaScript budgets, the @smoke browser tests; then all
+#                nine browser projects, reference screenshots, Lighthouse and
+#                Storybook
+#   lighthouse   Lighthouse and the Storybook build only
+#   screenshots  ticked: new reference screenshots, offered as a download
 #
 # No job needs a secret: everything runs against a local build, a SQLite file
 # seeded from the fixtures, and test doubles for IGDB.
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled]
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       screenshots:
@@ -24,21 +25,13 @@ on:
         type: boolean
         default: false
       only:
-        description: Run one part of the full tier
+        description: Run one part of the checks
         type: choice
         options: [everything, lighthouse]
         default: everything
 
-# A newer run cancels an older one of the same kind. The kinds are kept apart
-# (a push, marking ready, each label), so that marking a pull request ready
-# does not cancel the quick checks of the push before it, or the other way round.
 concurrency:
-  group: >-
-    ci-${{ github.event.pull_request.number || github.ref }}-${{
-    github.event.action == 'labeled' && github.event.label.name ||
-    github.event.action == 'ready_for_review' && 'ready' ||
-    github.event_name == 'workflow_dispatch' && 'manual' ||
-    'push' }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -51,10 +44,7 @@ env:
 jobs:
   quick:
     name: Quick checks
-    # Adding a label re-sends the pull request; only code changes need these again.
-    if: >-
-      github.event.action != 'labeled' && github.event.action != 'ready_for_review' &&
-      !(github.event_name == 'workflow_dispatch' && inputs.only == 'lighthouse')
+    if: ${{ !inputs.screenshots && inputs.only == 'everything' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -96,11 +86,7 @@ jobs:
 
   full:
     name: Full · ${{ matrix.browser }}
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && !inputs.screenshots && inputs.only != 'lighthouse') ||
-      github.event.action == 'ready_for_review' ||
-      (github.event.action == 'labeled' && github.event.label.name == 'full-ci')
+    if: ${{ !inputs.screenshots && inputs.only == 'everything' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -136,11 +122,7 @@ jobs:
 
   speed:
     name: Full · Lighthouse and Storybook
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && !inputs.screenshots) ||
-      github.event.action == 'ready_for_review' ||
-      (github.event.action == 'labeled' && github.event.label.name == 'full-ci')
+    if: ${{ !inputs.screenshots }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -168,9 +150,7 @@ jobs:
     name: Reference screenshots
     # Makes new reference screenshots and offers them as a download. It never
     # commits: on Vercel's free plan a commit by a bot would not deploy.
-    if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.screenshots) ||
-      (github.event.action == 'labeled' && github.event.label.name == 'update-screenshots')
+    if: ${{ inputs.screenshots }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

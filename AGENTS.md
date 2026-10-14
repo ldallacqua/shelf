@@ -4,6 +4,10 @@ Shelf is a personal game library: add games from IGDB, then browse them on a lit
 strong filters and sorting. One owner, public to read. This file is for anyone, human or AI,
 about to change the code.
 
+**Picking up from another computer?** Read [the handoff note](docs/handoff.md) first: where
+the build stands, what is still unchecked, and the owner's rules that are not written
+anywhere else.
+
 Read first, in this order: [the spec](docs/spec.md) (what it does),
 [the architecture](docs/architecture.md) (how it is built), and the decision records in
 [`docs/adr/`](docs/adr/). The build runs in ten steps; the README says which one is current.
@@ -31,6 +35,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm dev`                     | The app at http://localhost:3300                                                                                |
 | `pnpm build` then `pnpm start` | A production build, same port                                                                                   |
 | `pnpm check`                   | Format, lint, types, translations, unit and component tests                                                     |
+| `pnpm verify`                  | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before every push.  |
 | `pnpm test`                    | Unit and component tests (Vitest)                                                                               |
 | `pnpm e2e`                     | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine. |
 | `pnpm perf:js`                 | Each page's first-load JavaScript against its budget. Needs a running server.                                   |
@@ -42,8 +47,10 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm db:migrate`              | Applies migrations without touching the data                                                                    |
 | `pnpm fixtures:fetch`          | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff     |
 
-Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). On this Mac, run only the
-browser tests your change touches; CI runs all nine projects.
+Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**
+(Actions minutes are limited): while working, run the browser tests your change touches, and
+run `pnpm verify` before every push. A build step is done when it passes on the step's last
+commit. Never start the workflow on GitHub unless the owner asks.
 
 A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app reads its
 library from `.data/shelf.db`, which is not committed.
@@ -111,12 +118,13 @@ must be safe for the code already deployed: add first, remove in a later release
 **The library's views.** The shelf, the wall and the list draw the same shelves
 (`arrangeLibrary` in `src/domain/library/view.ts`) and are given the same props. CSS decides
 how many boxes fit on a row; `useRowWindow` keeps rows that are far from the window out of
-the page. Before a shelf has measured itself it draws only its share of the first screen
-(`shareFirstBoxes`): 48 boxes, or 12 for a phone (`isPhone` reads the request; use it only
+the page. On a phone the shelves beside the one in view keep only the box Tab stops at
+until the page is first touched (`first-touch.ts`). Before a shelf has measured itself it
+draws only its share of the first screen (`shareFirstBoxes`): 48 boxes, or 12 for a phone (`isPhone` reads the request; use it only
 for guesses that are harmless when wrong). A box, a wall cover and a shelf's section are
 memoized; give them props that stay the same from one drawing to the next (one handler per
 shelf, never one per box), and do work that is the same for every redraw in a component of
-its own, not in a `.map()`. `pnpm perf:lighthouse` slows the processor by an amount worked out from the machine, so a fast Mac reports about what CI reports at Lighthouse's stock setting. Blurred glass (`backdrop-filter`) is for one or two
+its own, not in a `.map()`. `pnpm perf:lighthouse` slows the processor by an amount worked out from the machine, so a fast Mac stands in for a mid-range phone; it has read a few points kinder than GitHub's runners, so aim above 90. Messages are compiled at build time (`next.config.ts`): `t.raw` does not work. Blurred glass (`backdrop-filter`) is for one or two
 bars a page, never for something repeated per shelf: the Linux build of WebKit hangs on a
 dozen. A box is a button whose name says in words everything it shows by shape
 (`describeBox`). A cover is always drawn by `Cover`. A choice that belongs to the device

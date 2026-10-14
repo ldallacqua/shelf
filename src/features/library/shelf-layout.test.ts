@@ -10,6 +10,7 @@ const measured = (columns: number, count: number, start: number, end: number): R
   start,
   end,
   away: false,
+  waiting: false,
 })
 
 /** A compact picture of a shelf: `#` a box, `.` a place kept in a row, `=` a whole row kept. */
@@ -67,6 +68,13 @@ describe('which boxes are in the page', () => {
     expect(runsOf(away, 40, 48, 0)).toEqual([])
     expect(draw(piecesOf([], 4, 10))).toBe('==========')
     expect(boardsOf([], 4)).toEqual([])
+  })
+
+  it('keeps only the box Tab stops at on the shelf beside the screen, until the page is touched', () => {
+    const waiting = { ...measured(4, 40, 0, 5), waiting: true }
+    expect(runsOf(waiting, 40, 48, 0)).toEqual([{ from: 0, to: 1, boards: false }])
+    expect(runsOf(waiting, 40, 48, 13)).toEqual([{ from: 13, to: 14, boards: false }])
+    expect(runsOf(waiting, 0, 48, 0)).toEqual([])
   })
 })
 

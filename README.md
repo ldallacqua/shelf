@@ -23,8 +23,8 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Phase 2 | Product and UX spec: [`docs/spec.md`](docs/spec.md). Data model: [`docs/adr/001-game-entry-model.md`](docs/adr/001-game-entry-model.md) | Done |
 | Phase 3 | Architecture: [`docs/architecture.md`](docs/architecture.md). Setup checklist: [`docs/setup.md`](docs/setup.md) | Done |
 | Step 1 | Scaffold, tooling, CI, both languages, themes, design tokens. Visual direction changed: [`docs/adr/002-visual-direction.md`](docs/adr/002-visual-direction.md) | Done |
-| Step 2 | IGDB client, data model, the three data sets, the library file | Done, in the same pull request as step 3 |
-| Step 3 | 2D shelf, wall and list | Awaiting review |
+| Step 2 | IGDB client, data model, the three data sets, the library file | Done |
+| Step 3 | 2D shelf, wall and list | Done |
 | Step 4 | 3D shelf | Not started |
 | Step 5 | Filters, sorting, smart shelves | Not started |
 | Step 6 | Game detail | Not started |

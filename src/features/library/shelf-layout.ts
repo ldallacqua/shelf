@@ -17,8 +17,11 @@ export type Run = { from: number; to: number; boards: boolean }
  * hundred boxes nobody is looking at.
  *
  * A shelf that is away sideways has no boxes at all. It cannot be reached
- * without passing the shelf next to it, which is always whole, and by then
- * it is no longer away.
+ * without passing the shelf next to it, and by then it is no longer away.
+ *
+ * The shelf next to the one in view, before anyone has touched the page,
+ * keeps only the box Tab stops at: Tab, Page Down and a screen reader can
+ * still land on it, and the touch that starts a swipe fills it.
  *
  * Not yet measured: the first `unmeasured` boxes. A shelf with no share of
  * the first screen draws none, and is measured a frame later.
@@ -35,6 +38,8 @@ export const runsOf = (
     return to > 0 ? [{ from: 0, to, boards: true }] : []
   }
   if (rowWindow.away) return []
+  if (rowWindow.waiting)
+    return tabStop < count ? [{ from: tabStop, to: tabStop + 1, boards: false }] : []
   const { columns, start, end } = rowWindow
   const from = Math.min(count, start * columns)
   const to = Math.min(count, end * columns)

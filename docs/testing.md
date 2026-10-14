@@ -10,7 +10,7 @@ reasoning behind the layers is in [the architecture, section 17](architecture.md
 | Unit | `src/**/*.test.ts`, `scripts/**/*.test.ts` | `pnpm test` | Rules with no browser: the data model's rules (grouping, the library file, platforms, cover colors), the store against a real SQLite, the IGDB client against test doubles, the seeds, the theme rules, the design tokens, the list of pages, the translation check |
 | Component | `src/**/*.test.tsx` | `pnpm test` | Components in a simulated browser, in both languages: keyboard paths, labels, state |
 | End to end | `e2e/*.spec.ts` | `pnpm e2e` | The built app in real browsers: language, theme, layout, accessibility, the lit shelf, the library file |
-| Reference screenshots | `e2e/visual.spec.ts` | CI only | Every page, both themes, both languages, phone and desktop |
+| Reference screenshots | `e2e/visual.spec.ts` | `pnpm verify` (its Linux pass) | Every page, both themes, both languages, phone and desktop |
 | Speed | `scripts/measure-js.ts`, `scripts/lighthouse.ts` | `pnpm perf:js`, `pnpm perf:lighthouse` | First-load JavaScript per page, and Lighthouse on the mobile profile |
 
 ## Data in tests
@@ -51,6 +51,34 @@ Bot/ })` has the accessible name "Astro Bot (2024), PS5, Physical, Completed". O
 near the window are in the page, so a game far down a shelf is not found until it is scrolled
 or stepped to.
 
+## Before a push: `pnpm verify`
+
+**CI on GitHub runs nothing by itself.** Actions minutes on a private repository are
+limited, and the full set of checks took about 75 of the month's 2,000 each time, so every
+check runs on this Mac instead. A build step is done when `pnpm verify` passes on its last
+commit.
+
+```sh
+pnpm verify                       # everything; about 20 minutes
+pnpm verify --quick               # format to unit tests, build, JavaScript budgets, smoke tests
+pnpm verify --skip-linux          # everything but the Docker pass (say so in the summary)
+pnpm verify --update-screenshots  # the Linux pass makes new reference screenshots
+```
+
+In order, stopping at the first failure: `pnpm check` (format, lint, types, translations,
+unit and component tests); a production build, served on port 3300 with the IGDB test
+doubles; the JavaScript budgets; the browser tests in all nine projects; the Linux pass;
+Lighthouse; the Storybook build. It builds and serves its own copy, so it refuses to start
+while something else answers on port 3300.
+
+**The Linux pass** runs in Playwright's Docker image, against the server on the Mac: WebKit at
+all three widths (Linux WebKit is not Safari, see below) and the reference screenshots. Docker
+has to be running.
+
+The workflow in `.github/workflows/ci.yml` is still there, for the odd time a check is wanted
+on GitHub's own machines: Actions → CI → Run workflow, or
+`gh workflow run ci.yml --ref <branch>` (add `-f only=lighthouse` for Lighthouse alone).
+
 ## Running the browser tests
 
 They run against a production build, never the development server.
@@ -59,18 +87,18 @@ They run against a production build, never the development server.
 pnpm build
 pnpm e2e --project=chromium-desktop            # one of the nine projects
 pnpm e2e e2e/theme.spec.ts --project=webkit-phone
-pnpm e2e --grep @smoke                         # the short list CI runs on every push
+pnpm e2e --grep @smoke                         # the short list `pnpm verify --quick` runs
 ```
 
 The nine projects are three engines (Chromium, Firefox, WebKit) at three widths (phone 390,
 tablet 820, desktop 1440). Playwright starts the server itself; if one is already running on
 port 3300 it uses that.
 
-**WebKit on Linux is not Safari.** CI runs the Linux build of WebKit, which paints with
-different code from the one on a Mac. A test can pass in WebKit on a Mac and hang on CI: the
-wall's shelf labels once had a blurred-glass background each, and a dozen of those made the
-Linux build stop answering and fill the runner's disk. To run what CI runs, use Playwright's
-own image against a server on the Mac:
+**WebKit on Linux is not Safari.** The Linux build of WebKit paints with different code from
+the one on a Mac. A test can pass in WebKit on a Mac and hang on Linux: the wall's shelf
+labels once had a blurred-glass background each, and a dozen of those made the Linux build
+stop answering and fill CI's disk. `pnpm verify` runs it in its Linux pass. To run one file
+there by hand, use Playwright's own image against a server on the Mac:
 
 ```sh
 pnpm build && SHELF_MOCKS=1 pnpm start &
@@ -99,36 +127,28 @@ any color.
 
 ## Reference screenshots
 
-Text renders differently on a Mac and on Linux, so reference screenshots are made in CI on
-Linux and `e2e/visual.spec.ts` is skipped everywhere else. They are taken with the wall's
+Text renders differently on a Mac and on Linux, so reference screenshots are made on Linux,
+in the Linux pass of `pnpm verify`, and `e2e/visual.spec.ts` is skipped everywhere else. They are taken with the wall's
 grain switched off: it is noise by design, and it makes each image three times larger.
 
 **When the look changes on purpose:**
 
-1. Push the change.
-2. Add the `update-screenshots` label to the pull request (or run the CI workflow by hand
-   with "Make new reference screenshots" ticked).
-3. When the job finishes, download its `reference-screenshots` file:
-   `gh run download <run-id> --name reference-screenshots --dir e2e/__screenshots__`
-4. Look at the new images, then commit them.
+1. Run `pnpm verify --update-screenshots`. Its Linux pass writes the new images into
+   `e2e/__screenshots__/`.
+2. Look at them (`git diff --stat e2e/__screenshots__` shows which changed), then commit them.
 
-The job never commits by itself. On Vercel's free plan a commit made by a bot does not
-deploy.
-
-**When a screenshot test fails and nothing was meant to change,** the failed run's
-`full-report-chromium` file holds the expected image, the actual one and the difference.
+**When a screenshot test fails and nothing was meant to change,** the report in
+`playwright-report/` holds the expected image, the actual one and the difference. The Linux
+pass writes its own inside the container and throws it away; rerun the failing file by hand
+(the `docker run` above) with `-v "$PWD/playwright-report":/work/playwright-report` to keep it.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` has two tiers, because a private repository gets 2,000 free minutes
-a month.
-
-| Tier | Runs | When |
-| --- | --- | --- |
-| Quick | Format, lint, types, translations, unit and component tests, build, JavaScript budgets, the `@smoke` browser tests in Chromium | Every push to a pull request |
-| Full | All nine browser projects, reference screenshots, Lighthouse, the Storybook build | When a pull request is marked ready for review, on every push to `main`, on the `full-ci` label, or by hand |
-
-A build step is done when the full tier is green on its last commit.
+`.github/workflows/ci.yml` runs only by hand (Actions → CI → Run workflow). Nothing runs on a
+push or a pull request: see [Before a push](#before-a-push-pnpm-verify). By hand it can run
+everything (about 75 minutes of the month's 2,000), Lighthouse and the Storybook build alone,
+or make new reference screenshots and offer them as a download. It never commits: on
+Vercel's free plan a commit made by a bot does not deploy.
 
 ## Speed
 
@@ -138,6 +158,12 @@ fails, and raising a number is a change that has to be explained there.
 
 `pnpm perf:lighthouse` runs Lighthouse with its mobile profile and its throttling applied
 for real. The targets are a performance score of 90, largest paint within 2.5 seconds and a
-layout shift under 0.1.
+layout shift under 0.1. Each page runs three times and is judged by the middle run. The
+processor is slowed by an amount worked out from Lighthouse's benchmark of the machine (about
+15.7 times on the Mac mini), so that it stands in for a mid-range phone.
+
+The Mac and GitHub's runners do not quite agree. The last time both measured the same build
+(step 3), the Mac gave the shelf 91 and a runner, at Lighthouse's stock four times, 87. A
+score within a few points of 90 on the Mac is a near miss, not a pass to lean on.
 
 Both need the server running: `pnpm build && pnpm start`.

@@ -29,7 +29,8 @@
     "perf:lighthouse": "node scripts/lighthouse.ts",
     "storybook": "storybook dev -p 6300 --no-open",
     "storybook:build": "storybook build",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm i18n:check && pnpm test"
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm i18n:check && pnpm test",
+    "verify": "node scripts/verify.ts"
   },
   "dependencies": {
     "@libsql/client": "0.18.0",
