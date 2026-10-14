@@ -24,6 +24,8 @@ type GamePreviewProps = {
   /** To the game before or after, in the library's current order. Absent at either end. */
   onPrevious?: () => void
   onNext?: () => void
+  /** Dim the page behind. Off in 3D, where the scene dims the wall round the pulled box. */
+  scrim?: boolean
 }
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -48,6 +50,7 @@ export function GamePreview({
   onReturnFocus,
   onPrevious,
   onNext,
+  scrim,
 }: GamePreviewProps) {
   const t = useTranslations('Library')
   const format = useFormatter()
@@ -69,6 +72,7 @@ export function GamePreview({
           title={game.title}
           description={t('preview.description')}
           closeLabel={t('preview.close')}
+          scrim={scrim}
           onCloseAutoFocus={(event) => {
             // Focus goes back to the box that was picked up, not to the top of the page.
             if (onReturnFocus()) event.preventDefault()

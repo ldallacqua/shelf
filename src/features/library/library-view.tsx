@@ -2,10 +2,11 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 
 import { groupings, type Grouping } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
+import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import {
   arrangeOnce,
   DEFAULT_GROUPING,
@@ -22,11 +23,12 @@ import { Ledge } from '@/ui/ledge'
 import { GamePreview } from './game-preview'
 import { ListView } from './list-view'
 import { markPageLive } from './live'
-import { ShelfView } from './shelf-view'
+import type { Dimension } from './preferences'
+import { anchorIn2d, ShelfStage } from './shelf-stage'
 import { Toolbar } from './toolbar'
 import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
-import { useDensity, useWallSize } from './use-preference'
+import { useDensity, useDimension, useTooSmallFor3d, useWallSize } from './use-preference'
 import type { DrawnShelf, OpenBox } from './view-props'
 import { WallView } from './wall-view'
 
@@ -37,6 +39,23 @@ const viewParam = parseAsStringLiteral(views)
 const groupParam = parseAsStringLiteral(groupings)
   .withDefault(DEFAULT_GROUPING)
   .withOptions({ history: 'push' })
+
+const never = () => () => {}
+
+/** Whether this browser has no WebGL 2 at all, so 3D cannot even be tried. The server cannot tell: it says no. */
+const useNoWebGL2 = () =>
+  useSyncExternalStore(
+    never,
+    () => !('WebGL2RenderingContext' in window),
+    () => false,
+  )
+
+/** Single-letter keys are off while typing, and inside the open game. */
+const typing = (target: EventTarget | null): boolean =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable ||
+    ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+    Boolean(target.closest('[role="dialog"]')))
 
 /** How long the first boxes take to arrive on the shelf, with room to spare. */
 const ARRIVAL_MS = 1400
@@ -64,6 +83,19 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
   const [group, setGroup] = useQueryState('group', groupParam)
   const [density, setDensity] = useDensity()
   const [wallSize, setWallSize] = useWallSize()
+  const [dimension, setDimension] = useDimension()
+  /** Set when 3D gave way to 2D on this page, and why. */
+  const [fallback, setFallback] = useState<FallbackReason>()
+  /** The game a switch into 3D starts at. */
+  const [anchor, setAnchor] = useState<Anchor>()
+  const shelf3d = useRef<Shelf3DHandle | undefined>(undefined)
+  const noWebGL2 = useNoWebGL2()
+  const noThreeD = noWebGL2 || fallback === 'unsupported'
+  // On a phone the shelf is 2D, and 3D is not offered.
+  const tooSmall = useTooSmallFor3d()
+  // With no WebGL 2 at all, 3D is not even tried: the 3D button says why (spec 3.6).
+  const asked: Dimension = noWebGL2 || tooSmall ? '2d' : dimension
+  const shown: Dimension = asked === '3d' && !fallback ? '3d' : '2d'
   const [open, setOpen] = useState<OpenBox>()
   // When the library file arrives, its shelves are arranged in a turn of
   // their own, ahead of drawing them.
@@ -102,6 +134,34 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
   const tags = library?.names.tag ?? first.tags
 
   const capture = useFlip(scope, `${view}:${group}:${density}`)
+
+  /** 2D or 3D, as asked for by the buttons or the D key. Nothing else about the library changes. */
+  const switchTo = (next: Dimension) => {
+    if (next === '3d') {
+      if (noThreeD || tooSmall) return
+      setAnchor(anchorIn2d(scope.current))
+      // 3D gave way earlier on this page: asking again tries again.
+      setFallback(undefined)
+    }
+    setDimension(next)
+  }
+
+  const keys = useRef({ view, shown, tooSmall, switchTo })
+  useEffect(() => {
+    keys.current = { view, shown, tooSmall, switchTo }
+  })
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'd' && event.key !== 'D') return
+      if (event.altKey || event.ctrlKey || event.metaKey || typing(event.target)) return
+      const { view: now, shown: drawn, tooSmall: small, switchTo: go } = keys.current
+      if (now !== 'shelf' || small) return
+      event.preventDefault()
+      go(drawn === '3d' ? '2d' : '3d')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const change = <Value,>(set: (value: Value) => unknown, value: Value) => {
     capture()
     setOpen(undefined)
@@ -140,7 +200,11 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
   const returnFocus = (): boolean => {
     const key = lastOpen.current
     if (!key) return false
-    const box = scope.current?.querySelector<HTMLElement>(`[data-flip="${CSS.escape(key)}"]`)
+    const name = CSS.escape(key)
+    // A 2D box, or its button beside the 3D scene.
+    const box = scope.current?.querySelector<HTMLElement>(
+      `[data-flip="${name}"], [data-box="${name}"]`,
+    )
     box?.focus()
     return Boolean(box)
   }
@@ -170,7 +234,16 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
         onDensity={(value) => change(setDensity, value)}
         wallSize={wallSize}
         onWallSize={setWallSize}
+        dimension={shown}
+        onDimension={switchTo}
+        noThreeD={noThreeD}
       />
+
+      {view === 'shelf' && fallback ? (
+        <p role="status" className="mt-3 text-sm text-muted">
+          {t(`shelf3d.fallback.${fallback}`)}
+        </p>
+      ) : null}
 
       {state.status === 'failed' ? (
         <div
@@ -195,7 +268,17 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
         </div>
       ) : (
         <div key={`${view}:${group}`} className="motion-reduce:[&>*]:library-swap contents">
-          {view === 'shelf' ? <ShelfView {...viewProps} density={density} /> : null}
+          {view === 'shelf' ? (
+            <ShelfStage
+              {...viewProps}
+              density={density}
+              dimension={asked}
+              fallback={fallback}
+              onFallback={setFallback}
+              anchor={anchor}
+              handleRef={shelf3d}
+            />
+          ) : null}
           {view === 'wall' ? <WallView {...viewProps} size={wallSize} /> : null}
           {view === 'list' ? <ListView {...viewProps} /> : null}
         </div>
@@ -207,6 +290,7 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
         tags={tags}
         onClose={() => setOpen(undefined)}
         onReturnFocus={returnFocus}
+        scrim={!(view === 'shelf' && shown === '3d')}
         onPrevious={previous ? () => setOpen(previous) : undefined}
         onNext={next ? () => setOpen(next) : undefined}
       />

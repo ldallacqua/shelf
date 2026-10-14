@@ -19,10 +19,20 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Step 3: measured 228.9 KB. The shell (191 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
-  { path: '/en/library', name: 'Library', kilobytes: 234 },
+  // Step 4: measured 233.3 KB, 4.4 KB more: the 2D and 3D buttons, the stage
+  // that switches between them, and the loader that fetches the 3D shelf. The
+  // 3D shelf itself is not in this number; it has its own budget below.
+  { path: '/en/library', name: 'Library', kilobytes: 240 },
   // Step 3: measured 191.3 KB. Shell only.
   { path: '/en/trophies', name: 'Trophies', kilobytes: 198 },
 ]
+
+/**
+ * The 3D shelf's own bundle: what a desktop downloads when 3D opens, on top
+ * of the library page. A target set in advance (architecture, section 14),
+ * not a ratchet: three.js alone is about 130 KB of it.
+ */
+export const threeDBudget = { path: '/en/library', kilobytes: 300 }
 
 /**
  * Lighthouse, mobile profile, with its throttling really applied (a slow 4G

@@ -9,6 +9,7 @@ import {
   Rows3Icon,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useId } from 'react'
 
 import { groupings, type Grouping } from '@/domain/library/group'
 import type { View } from '@/domain/library/view'
@@ -23,7 +24,14 @@ import {
 } from '@/ui/dropdown-menu'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
 
-import { densities, wallSizes, type Density, type WallSize } from './preferences'
+import {
+  densities,
+  dimensions,
+  wallSizes,
+  type Density,
+  type Dimension,
+  type WallSize,
+} from './preferences'
 
 type ToolbarProps = {
   view: View
@@ -34,6 +42,10 @@ type ToolbarProps = {
   onDensity: (density: Density) => void
   wallSize: WallSize
   onWallSize: (size: WallSize) => void
+  dimension: Dimension
+  onDimension: (dimension: Dimension) => void
+  /** This browser cannot draw 3D: the 3D button is disabled, and says why. */
+  noThreeD?: boolean
 }
 
 const viewIcons = { shelf: Rows3Icon, wall: LayoutGridIcon, list: ListIcon } as const
@@ -53,8 +65,12 @@ export function Toolbar({
   onDensity,
   wallSize,
   onWallSize,
+  dimension,
+  onDimension,
+  noThreeD = false,
 }: ToolbarProps) {
   const t = useTranslations('Library')
+  const reasonId = useId()
 
   return (
     <div
@@ -89,6 +105,39 @@ export function Toolbar({
       </DropdownMenu>
 
       <div className="ml-auto flex flex-none items-center gap-2 sm:gap-3">
+        {view === 'shelf' ? (
+          <Segmented
+            aria-label={t('dimension.label')}
+            data-preference="shelf-mode"
+            // A phone is not offered 3D (TOO_SMALL_FOR_3D), so there is nothing to choose.
+            // Hidden by CSS, so it is right from the first paint.
+            className="too-small-for-3d:hidden"
+            value={dimension}
+            onValueChange={(value) => {
+              if (!(value === '3d' && noThreeD)) onDimension(value)
+            }}
+          >
+            {dimensions.map((value) => (
+              <SegmentedItem
+                key={value}
+                value={value}
+                // Unavailable, not disabled: it stays in reach of the keyboard, so its reason can be heard.
+                aria-disabled={value === '3d' && noThreeD ? true : undefined}
+                aria-describedby={value === '3d' && noThreeD ? reasonId : undefined}
+                title={value === '3d' && noThreeD ? t('dimension.unsupported') : undefined}
+                className="aria-disabled:opacity-50"
+              >
+                {t(`dimension.${value}`)}
+              </SegmentedItem>
+            ))}
+          </Segmented>
+        ) : null}
+        {view === 'shelf' && noThreeD ? (
+          <span id={reasonId} className="sr-only">
+            {t('dimension.unsupported')}
+          </span>
+        ) : null}
+
         {view === 'shelf' ? (
           <Segmented
             aria-label={t('density.label')}

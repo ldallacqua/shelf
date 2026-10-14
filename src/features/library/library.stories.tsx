@@ -170,6 +170,8 @@ export const Controls: Story = {
         onGroup={() => undefined}
         onDensity={() => undefined}
         onWallSize={() => undefined}
+        dimension="2d"
+        onDimension={() => undefined}
       />
     </div>
   ),

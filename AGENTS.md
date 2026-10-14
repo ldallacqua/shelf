@@ -40,6 +40,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm e2e`                     | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine. |
 | `pnpm perf:js`                 | Each page's first-load JavaScript against its budget. Needs a running server.                                   |
 | `pnpm perf:lighthouse`         | Lighthouse, mobile profile. Needs a running server.                                                             |
+| `pnpm perf:3d`                 | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.     |
 | `pnpm storybook`               | The component workshop at http://localhost:6300                                                                 |
 | `pnpm i18n:check`              | Fails if the two languages disagree                                                                             |
 | `pnpm seed [set]`              | Migrates `.data/shelf.db` and fills it with a data set: `default` (230 games), `empty` or `stress` (1,280)      |
@@ -128,7 +129,7 @@ its own, not in a `.map()`. `pnpm perf:lighthouse` slows the processor by an amo
 bars a page, never for something repeated per shelf: the Linux build of WebKit hangs on a
 dozen. A box is a button whose name says in words everything it shows by shape
 (`describeBox`). A cover is always drawn by `Cover`. A choice that belongs to the device
-(covers or compact, cover size) goes through `preferences.ts`, which mirrors it on `<html>`
+(covers or compact, cover size, 2D or 3D) goes through `preferences.ts`, which mirrors it on `<html>`
 before the first paint; a choice that belongs to the address (view, grouping) goes through
 `parseLibraryQuery`. Nothing on the shelf fades in: a cover that starts transparent is
 counted as painted late.

@@ -39,6 +39,10 @@ test.describe('the lit shelf', () => {
       name: 'A shelf of blank game cases facing out, lit only by its LED bar',
     })
 
+    // The page is live before every control on it is: in WebKit an arrow pressed in the
+    // first few milliseconds was sometimes not handled. The group marks itself settled
+    // once it has mounted, so the test waits for that, as no person could beat it.
+    await page.locator('[data-slot="segmented"][data-settled]:has([aria-label="Violet"])').waitFor()
     await page.getByRole('radio', { name: 'Violet' }).focus()
     await page.keyboard.press('ArrowRight')
     await expect(page.getByRole('radio', { name: 'Orange' })).toBeFocused()

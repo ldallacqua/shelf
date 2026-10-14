@@ -61,7 +61,7 @@ How to read the evidence labels:
 | Interface motion | Motion | 14.1 | Docs |
 | Scroll scenes | GSAP with ScrollTrigger, and Lenis | 3.15, 1.3 | Docs |
 | Page transitions | React `<ViewTransition>` | in React 19.3 | Docs |
-| 3D | three.js, React Three Fiber, drei | 0.186, 9.8, 10.7 | Docs |
+| 3D | three.js, on its own (no React Three Fiber, no drei: see section 2, row 9) | 0.186.1 | Docs |
 | Address state | nuqs | 2.10 | Docs |
 | Client data | TanStack Query, TanStack Virtual | 5.104, 3.14 | Docs |
 | Validation | Zod | 4.6 | Docs |
@@ -96,7 +96,7 @@ The throwaway project is deleted. Nothing from it is in the repository.
 
 ## 2. Where this differs from the brief
 
-The brief said to check current versions and not rely on memory. Eight checks changed the plan.
+The brief said to check current versions and not rely on memory. Eight checks changed the plan, and one measurement at step 4.
 
 | # | Brief | Decision | Why |
 | --- | --- | --- | --- |
@@ -108,9 +108,11 @@ The brief said to check current versions and not rely on memory. Eight checks ch
 | 6 | Drizzle, latest | **0.45**, not 1.0 | 1.0 is a release candidate (`1.0.0-rc.4`). 0.45 is the stable line. |
 | 7 | "Covers via IGDB CDN with srcset" | As asked, and **not** through Vercel's image optimizer | The Hobby plan includes 5,000 image transformations a month. A 1,000-game library in three sizes would spend that in one visit. IGDB's servers already resize, send WebP, allow cross-origin use and cache for a year. The reference app's own notes record 0.24s direct against 1.20s through an optimizer. |
 | 8 | CI runs everything | Everything runs, **on the Mac before each push** (`pnpm verify`); CI only by hand | A private repository gets 2,000 free minutes a month, and one full run took about 75. It began as two tiers on GitHub; at the end of step 3 the owner asked for the checks to run locally instead. See [section 18](#18-continuous-integration). |
+| 9 | React Three Fiber with drei | **three.js on its own**, driven from one React component (the owner's decision at step 4, 14 Oct 2026) | Measured, compressed, React aside: three.js with only the classes the shelf uses is 129 KB; R3F's `<Canvas>` registers all of three.js, 242 KB; R3F with `createRoot` and a chosen set, 183 KB. The scene is imperative anyway (instanced boxes, our own shaders, camera and picking, frames on demand), so R3F's 54 KB would buy little. drei was never needed. The 3D bundle is 147 KB of its 300. |
 
-Three things in the brief were confirmed as written and need no change: Tailwind 4 with
-shadcn/ui and Radix; React Three Fiber with drei (it accepts React 19.3); MSW for IGDB.
+Three things in the brief were confirmed as written at the start: Tailwind 4 with shadcn/ui
+and Radix; React Three Fiber with drei (it accepts React 19.3), later replaced (row 9); MSW
+for IGDB.
 
 One correction to my own memory: a GitHub OAuth app now accepts **up to 10** callback
 addresses, not one. That simplifies the setup, but preview deployments still get a new address
@@ -385,9 +387,11 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 
 | Use | IGDB size | Pixels |
 | --- | --- | --- |
-| List row, 3D far atlas | `cover_small` | 90 × 128 |
+| List row | `cover_small` | 90 × 128 |
 | Shelf, wall | `cover_big`, with `cover_big_2x` for sharp screens | 264 × 374 |
-| Detail, pulled box | `720p` | up to 720 high |
+| 3D shelf | Whichever the 2D shelf takes on that screen (`cover_small_2x` or `cover_big`), redrawn at the size the box appears | 180 × 256 or 264 × 374 |
+| 3D pulled box | `cover_big_2x` | 528 × 748 |
+| Detail | `720p` | up to 720 high |
 | Screenshots | `screenshot_med`, `screenshot_big`, `screenshot_huge` | 569, 889, 1280 wide |
 
 - Always WebP. IGDB's servers return an error for AVIF, so there is no AVIF step.
@@ -555,29 +559,45 @@ baseline.
 and the device can run it. A CI check fails if three.js appears in the library page's initial
 code.
 
-**When it is used.** Desktop by default; never under reduced motion; never without WebGL 2.
-If the context is lost or the frame rate collapses, the page returns to 2D and says so once.
+**When it is used.** A desktop that has never chosen starts in 3D: a fine pointer that can
+hover, a window at least 64rem wide, WebGL 2, and no request for reduced motion. Phones and
+tablets start in 2D. A phone, held either way (narrower than 40rem or shorter than 36rem,
+`TOO_SMALL_FOR_3D`), is never offered 3D; a 3D choice made in a larger window waits for one.
+Without WebGL 2 the 3D button stays in reach, marked unavailable, with its reason. A visitor
+who chooses 3D under reduced motion gets it, and the camera cuts instead of gliding. If the
+context is lost, or frames stay slow after the resolution has stepped down to its lowest,
+the page returns to 2D and says why in one line.
+
+**The switch.** The server always draws the 2D shelf: it is the first paint, the fallback, and
+what loads the covers 3D then reuses. 3D takes over after its first frame, fading in as the
+boxes come out of the wall. The game in focus stays in focus across the switch, both ways,
+and the address does not change. `D` switches, as the pair of buttons does.
 
 **Scene**
 
 | Concern | Design |
 | --- | --- |
+| Room | A display wall, read left to right in shelf order. Each shelf is a bay of three ledges (so a whole bay fits the window with cases about the size the 2D shelf draws them), and carries on into the next bay when its ledges are full. |
 | Boxes | One instanced mesh per case shape (about ten shapes). A thousand games is about ten draw calls. |
 | Per-box data | Position, tilt, state (resting, hovered, pulled, dimmed) and texture coordinates, as instance attributes |
 | Spines (compact option) | Drawn at runtime on a canvas from title, colors and platform, in the same font as the 2D spines, into texture atlases built for the bays near the camera |
-| Covers | Three levels: a blur of the cover's stored colors, `cover_small` in atlases for boxes in view, `cover_big` for the nearest dozen and the pulled box |
+| Covers | A blur of the cover's stored colors until the cover arrives. Every box in view and either side of it then gets the file the 2D shelf uses on that screen (the 2D shelf always draws first, so these come from the cache), redrawn into atlas cells the size the box appears, so the GPU reads about one texel per pixel. The pulled box gets `cover_big_2x`, alone. Spine-out, only the pulled box's cover loads. |
 | Light | No real-time shadows or lights. The LED glow on the wall, the halo round each box and the reflection on the ledge are shader terms driven by the lighting tokens and by one color per ledge. |
 | Frames | Drawn only when something changes. An idle shelf uses no GPU. |
 | Resolution | Capped at 1.75× and lowered automatically if frames run slow |
 | Picking | By arithmetic: boxes sit on known ledges, so a pointer ray meets the shelf plane and a search finds the box. No per-box hit testing. |
-| Camera | Our own rig: walks sideways along the wall, damped, driven by scroll, drag and keys |
+| Camera | Our own rig: walks sideways along the wall, damped, driven by the wheel, a drag, the keys, the shelf index and focus |
+| Pulled box | Comes out of the wall and turns to the camera, with `cover_big_2x`, while the detail opens beside it. The sheet has no scrim in 3D: the scene dims the wall itself, so the pulled box stays lit. |
 
 **Accessibility.** The canvas is hidden from assistive technology. Beside it sits the same
 library as a labeled list with the same order and selection. Focus in the list moves the
 camera; a click in the scene moves focus in the list. Keyboard and screen-reader users operate
 the list and see the scene follow.
 
-**Budgets** (checked in tests through a small debug hook that exists only in test builds)
+**Budgets.** A test reads them through `window.__shelf3dProbe`: set to an object before the
+page loads, it receives the scene's numbers after each frame. Unset, as on every real visit,
+nothing is written. The tests run against the production build, so there is no test build to
+differ from it.
 
 | Measure | Budget |
 | --- | --- |
@@ -586,9 +606,13 @@ the list and see the scene follow.
 | Frame time on the reference laptop, 500 games | Under 16.7 ms, measured by `pnpm perf:3d` |
 | 3D bundle, compressed | Under 300 KB |
 
-CI can count draw calls and textures. It cannot measure a real frame rate, because it has no
-real GPU. The 60 frames a second target is measured on this machine and reported with numbers
-at steps 4 and 9.
+The browser tests count draw calls and textures. They cannot measure a real frame rate:
+test browsers draw WebGL in software. `pnpm perf:3d` asks for the graphics card, walks the
+camera along the wall and sweeps the pointer across the boxes. Measured at step 4, on the
+Windows computer (an RTX 4090, much faster than the reference laptop): 13 draw calls and
+16.7 ms a frame with the sample library of 230 games, 14 draw calls and 16.7 ms with the
+stress set (1,280 games, 1,376 boxes), 64 MB of textures. Software rendering also held 60 frames a second.
+A mid-range laptop is measured at step 9.
 
 ---
 
@@ -670,7 +694,7 @@ the write tools.
 | Property | fast-check in Vitest | The filter language round trip; sorting is a total order | With unit |
 | Component | Vitest with jsdom and Testing Library | Components with real logic: filter panel, add-game form, sort menu, sheets. Keyboard paths and labels, in both languages. | With unit |
 | End to end | Playwright | Every "Done when" line in the spec that a browser can check | Affected files while working; all nine projects in `pnpm verify` |
-| Parity | Playwright | Each library scenario runs twice, 2D and 3D, asserting the same games, order, selection and address. Plus the switch itself. | `pnpm verify` |
+| Parity | Playwright | The same shelves and games in the same order in 2D and 3D; the switch keeping the address and the game in focus, both ways; in 3D, the keyboard paths, picking, a regroup, the budgets and the fallbacks (`e2e/shelf-3d.spec.ts`). The rest of the library tests run in 2D. | `pnpm verify` |
 | Visual | Playwright screenshots | Key screens × light and dark × English and Portuguese × phone and desktop | `pnpm verify`, in Docker on Linux |
 | Accessibility | axe inside Playwright | Every page and every open sheet or dialog, both themes | `pnpm verify` |
 | Speed | Lighthouse 13, scripted, with its throttling applied for real | Landing and library on the mobile profile: 90 or more, and the Core Web Vitals in spec section 16 | `pnpm verify` |
@@ -690,9 +714,12 @@ Playwright's Docker image, by `pnpm verify --update-screenshots`. I commit them 
 name (a bot's commit would not deploy on Vercel's Hobby plan).
 
 **3D in tests.** Parity tests assert on meaning (which games, what order, what is selected),
-not pixels. 3D screenshots use a fixed camera, no animation and a looser match. Where a CI
-browser cannot create a WebGL context, the app's own fallback to 2D runs, and the test asserts
-that fallback, which the spec requires anyway.
+not pixels. Every test starts in 2D unless it asks for 3D or for the device's default (the
+`dimension` option in `e2e/fixtures.ts`), so the tests written for 2D read 2D everywhere.
+Where a browser cannot create a WebGL context, the app's own fallback to 2D runs, and a test
+that needs 3D is skipped while the fallback has tests of its own. 3D reference screenshots
+(a fixed camera, no animation, a looser match) are still to be made: they are made in the
+Linux pass, which needs Docker, and the Windows computer has none.
 
 **On this machine** I run unit and component tests freely while working, and the Playwright
 files a change touches. The full matrix runs once before each push, in `pnpm verify`. If the
@@ -731,8 +758,11 @@ Neither needs **secrets**: both build against a SQLite file and the mocks.
 
 | Measure | Budget | Enforced by |
 | --- | --- | --- |
-| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`: 205 KB for the home page, 234 KB for the library. | Build check |
+| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`: 205 KB for the home page, 240 KB for the library. | Build check |
 | three.js in any page's first load | None | Build check |
+| The 3D bundle, fetched when 3D first opens, compressed | 300 KB | `pnpm perf:js` |
+| 3D: draw calls, texture memory | Under 40, under 256 MB | End-to-end test |
+| 3D: frame time with 500 games | 16.7 ms on a mid-range laptop | `pnpm perf:3d`, by hand |
 | Library file per 1,000 games, compressed | 120 KB | Unit test |
 | Filter or sort, 1,000 games | 50 ms | Unit benchmark |
 | Lighthouse mobile: home, library as a shelf, library as a wall | 90 | `pnpm verify` |
@@ -925,6 +955,14 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 4 | **Covers in 3D are drawn at the size they appear, from the file the 2D shelf loaded.** They were planned in three levels by distance. | Seen at the owner's first look: most boxes had the 90-pixel file across about 170 device pixels, and the 264-pixel one went to the nearest dozen only once the camera stopped, so covers came in blurred and sharpened seconds later. Now every box in view and either side of it gets the 2D shelf's file (from the cache, since 2D always draws first), redrawn into atlas cells the box's size: sharp on the first frame, and still while the camera walks. Textures went from 69 to 64 MB. |
+| Step 4 | **A phone, held either way, is never offered 3D.** The spec asked only that a phone start in 2D. | The owner's decision at the first look (14 Oct 2026): it was unusable. Measured: on a phone a box was about 30 pixels wide, the wall filled the lower half of its stage, the shelf index sat over the boxes, and on its side the stage ran below the fold. The 2D shelf does everything the 3D one does, at a size made for a phone. Tablets keep 3D as a choice. |
+| Step 4 | **The server always draws 2D, and 3D takes over after its first frame.** | 3D needs WebGL, which only the browser has. The 2D shelf is then the first paint, the fallback and what loads the covers, and the switch can carry the game in focus across. |
+| Step 4 | **A chosen 3D is honored under reduced motion.** The camera cuts instead of gliding, and the boxes do not slide. It is still never the default there. | The choice is the visitor's. Every motion in the scene has a calm version, as the motion rules ask. |
+| Step 4 | **Nothing pulses in 3D.** In 2D a small light over a game being played pulses; in 3D the game stands forward instead. | Frames are drawn only when something changes. A pulse would draw 60 frames a second for as long as the page is open. |
+| Step 4 | **The 3D budgets are read through `window.__shelf3dProbe`, which a test sets, not through a hook in a test build.** | The browser tests run against the production build. A test build would be different code. |
+| Step 4 | **The library's JavaScript budget is 240 KB, from 234.** It measures 233.4. | The 2D and 3D pair, the switch, and the loader that fetches the 3D bundle when it is first needed. three.js itself stays out of the page (147 KB, fetched on demand). |
+| Step 4 | **three.js on its own, not React Three Fiber.** | The owner's decision, measured: [section 2, row 9](#2-where-this-differs-from-the-brief). |
 | Step 3 review | **Checks run on the Mac, not on GitHub.** `pnpm verify` runs everything before each push; the CI workflow runs only by hand. | The owner's decision at the step 3 review (14 Oct 2026): a full run on GitHub took about 75 of the month's 2,000 free minutes. The Linux pass in Docker keeps the two things only Linux showed: WebKit hanging on blurred glass, and text as the reference screenshots render it. |
 | Step 3 review | **Messages are compiled when the app is built** (next-intl's `precompile`). | The browser no longer downloads or runs a message parser: 9 KB off every page, the library from 238 to 229 KB. Blocked time barely moved. `t.raw` no longer works; nothing used it. |
 | Step 3 review | **On a phone, the shelves beside the one in view wait for the first touch before they fill.** Until then they keep only the box Tab stops at, so Tab, Page Down and screen readers still reach them. | Filling them when the library file arrived was more than half of what the phone did at that moment. On the Mac at the calibrated slowdown, the shelf's blocked time went from about 305 to 270 ms and its score from 90 to 92 (middle of three runs). A swipe starts with a touch, so the next shelf fills as it slides in. |

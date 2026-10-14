@@ -24,6 +24,12 @@ type SheetContentProps = Omit<ComponentProps<typeof Dialog.Content>, 'title'> & 
   description?: ReactNode
   /** The label of the close button. */
   closeLabel: string
+  /**
+   * Whether the page behind is dimmed. Off where the page dims itself around
+   * what the sheet is about, as the 3D shelf does around a pulled box. A
+   * click outside still closes the sheet either way.
+   */
+  scrim?: boolean
 }
 
 function SheetContent({
@@ -33,6 +39,7 @@ function SheetContent({
   titleHidden,
   description,
   closeLabel,
+  scrim = true,
   ...props
 }: SheetContentProps) {
   return (
@@ -40,7 +47,8 @@ function SheetContent({
       <Dialog.Overlay
         data-slot="sheet-overlay"
         className={cn(
-          'fixed inset-0 z-40 bg-scrim',
+          'fixed inset-0 z-40',
+          scrim && 'bg-scrim',
           'data-[state=closed]:animate-sheet-fade-out data-[state=open]:animate-fade-in',
         )}
       />
