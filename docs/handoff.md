@@ -4,7 +4,35 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Where things stand
+## Update: 14 October 2026, on the Windows computer
+
+- **PR #5 is merged** (steps 2 and 3). The owner chose to merge with Lighthouse a near miss
+  on Windows (library 89, wall 88 at the slowdown that agrees with the Mac; the Mac gave
+  92). Speed work continues at step 9.
+- **Next:** step 4, the 3D shelf and the 2D/3D switch, on a branch from `main`. It ends
+  with a ⏸.
+- **The working copy is `C:\dev\shelf`.** Node 24.18 through nvm-windows, pnpm 10.34.7
+  through corepack. No Docker yet, so `pnpm verify --skip-linux` until it is installed.
+- **`pnpm verify` on Windows** passed every step but Lighthouse at step 3's last commit:
+  checks, build, JavaScript budgets, 859 browser tests in all nine projects (0 failed),
+  Storybook. Three commits made it run here: LF line endings pinned in `.gitattributes`,
+  `verify.ts` taught to start and stop processes on Windows, and the read-only-folder test
+  skipped there. See `docs/testing.md`.
+- **Lighthouse on Windows:** the slowdown from the benchmark (16.6 times) is far too harsh
+  here. Use `LIGHTHOUSE_SLOWDOWN=5.5`, where the home page blocks for about 180 ms as it
+  does on the Mac and CI. The table is in `docs/testing.md`, "Speed".
+- **A real bug found by running WebKit here:** the theme picker visibly faded from System
+  to the saved theme on every load, because Next.js hydrates a page's content after the
+  layout that sets `data-ready`. Segmented controls now hold their own transitions until
+  two frames after they mount (`src/ui/segmented.tsx`).
+- **For an AI agent on this computer:** the Claude app's Bash tool runs in a sandbox where
+  Playwright's Firefox cannot start (`spawn UNKNOWN`); Chromium and WebKit can. Run browser
+  tests that include Firefox, and `pnpm verify`, from PowerShell, with
+  `PLAYWRIGHT_BROWSERS_PATH` pointing at
+  `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\ms-playwright`, where the
+  sandbox installed the browsers. `.env.local` holds only the two Twitch values.
+
+## Where things stood on the Mac
 
 - **Branch `build-steps-2-3-library`**, pull request
   [#5](https://github.com/ldallacqua/shelf/pull/5) (open, not draft). It holds build steps 2
