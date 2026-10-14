@@ -4,6 +4,10 @@ Shelf is a personal game library: add games from IGDB, then browse them on a lit
 strong filters and sorting. One owner, public to read. This file is for anyone, human or AI,
 about to change the code.
 
+**Picking up from another computer?** Read [the handoff note](docs/handoff.md) first: where
+the build stands, what is still unchecked, and the owner's rules that are not written
+anywhere else.
+
 Read first, in this order: [the spec](docs/spec.md) (what it does),
 [the architecture](docs/architecture.md) (how it is built), and the decision records in
 [`docs/adr/`](docs/adr/). The build runs in ten steps; the README says which one is current.
@@ -31,15 +35,25 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm dev`                     | The app at http://localhost:3300                                                                                |
 | `pnpm build` then `pnpm start` | A production build, same port                                                                                   |
 | `pnpm check`                   | Format, lint, types, translations, unit and component tests                                                     |
+| `pnpm verify`                  | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before every push.  |
 | `pnpm test`                    | Unit and component tests (Vitest)                                                                               |
 | `pnpm e2e`                     | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine. |
 | `pnpm perf:js`                 | Each page's first-load JavaScript against its budget. Needs a running server.                                   |
 | `pnpm perf:lighthouse`         | Lighthouse, mobile profile. Needs a running server.                                                             |
 | `pnpm storybook`               | The component workshop at http://localhost:6300                                                                 |
 | `pnpm i18n:check`              | Fails if the two languages disagree                                                                             |
+| `pnpm seed [set]`              | Migrates `.data/shelf.db` and fills it with a data set: `default` (230 games), `empty` or `stress` (1,280)      |
+| `pnpm db:generate`             | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`              |
+| `pnpm db:migrate`              | Applies migrations without touching the data                                                                    |
+| `pnpm fixtures:fetch`          | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff     |
 
-Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). On this Mac, run only the
-browser tests your change touches; CI runs all nine projects.
+Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**
+(Actions minutes are limited): while working, run the browser tests your change touches, and
+run `pnpm verify` before every push. A build step is done when it passes on the step's last
+commit. Never start the workflow on GitHub unless the owner asks.
+
+A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app reads its
+library from `.data/shelf.db`, which is not committed.
 
 ## Where code goes
 
@@ -52,8 +66,10 @@ src/features/   The interface, by feature. Imports domain and ui.
 src/app/        Routes. Thin: they compose features. Imports anything.
 src/i18n/       Language setup and the list of pages.
 messages/       en.json and pt-BR.json
+fixtures/       Real IGDB records for seeds and tests. See fixtures/README.md.
+drizzle/        Database migrations, as SQL. Generated; reviewed; never edited after merging.
 e2e/            Browser tests and reference screenshots
-scripts/        Checks and measurements
+scripts/        Seeds, checks and measurements
 ```
 
 Lint enforces these imports, and that three.js is imported only inside
@@ -91,6 +107,35 @@ can do.
 **Pages are built ahead of time.** Reading a cookie, a header or the address on the server
 makes a page slower for everyone. A component that needs the address (`usePathname`,
 `useSearchParams`) goes inside `<Suspense>` with a plainer version of itself as the fallback.
+
+**Data.** ADR 001 is the model: one entry per game, a copy per platform and format, and an
+IGDB record belongs to one entry only. Every write goes through `src/server/library/store.ts`,
+in one transaction that ends by raising the library's version. Everything read from outside
+(IGDB, settings, fixtures) passes a Zod schema first. Change the schema in
+`src/server/db/schema.ts`, run `pnpm db:generate`, and commit the SQL it writes. A migration
+must be safe for the code already deployed: add first, remove in a later release.
+
+**The library's views.** The shelf, the wall and the list draw the same shelves
+(`arrangeLibrary` in `src/domain/library/view.ts`) and are given the same props. CSS decides
+how many boxes fit on a row; `useRowWindow` keeps rows that are far from the window out of
+the page. On a phone the shelves beside the one in view keep only the box Tab stops at
+until the page is first touched (`first-touch.ts`). Before a shelf has measured itself it
+draws only its share of the first screen (`shareFirstBoxes`): 48 boxes, or 12 for a phone (`isPhone` reads the request; use it only
+for guesses that are harmless when wrong). A box, a wall cover and a shelf's section are
+memoized; give them props that stay the same from one drawing to the next (one handler per
+shelf, never one per box), and do work that is the same for every redraw in a component of
+its own, not in a `.map()`. `pnpm perf:lighthouse` slows the processor by an amount worked out from the machine, so a fast Mac stands in for a mid-range phone; it has read a few points kinder than GitHub's runners, so aim above 90. Messages are compiled at build time (`next.config.ts`): `t.raw` does not work. Blurred glass (`backdrop-filter`) is for one or two
+bars a page, never for something repeated per shelf: the Linux build of WebKit hangs on a
+dozen. A box is a button whose name says in words everything it shows by shape
+(`describeBox`). A cover is always drawn by `Cover`. A choice that belongs to the device
+(covers or compact, cover size) goes through `preferences.ts`, which mirrors it on `<html>`
+before the first paint; a choice that belongs to the address (view, grouping) goes through
+`parseLibraryQuery`. Nothing on the shelf fades in: a cover that starts transparent is
+counted as painted late.
+
+**IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
+the checking. Nothing a visitor can reach may call it. Covers and screenshots are used
+straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
 
 **Comments** say why, in plain words. They do not restate the code.
 

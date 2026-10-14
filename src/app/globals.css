@@ -6,6 +6,7 @@
 @import '../ui/tokens/theme.css';
 @import '../ui/tokens/motion.css';
 @import '../ui/room.css';
+@import '../ui/shelf.css';
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 @custom-variant pointer-coarse (@media (pointer: coarse));
@@ -26,6 +27,8 @@
   --color-line-strong: var(--line-strong);
   --color-focus: var(--focus);
   --color-led: var(--led);
+  /* What dims the page behind a sheet. */
+  --color-scrim: color-mix(in srgb, var(--shadow-color) 55%, transparent);
 
   /* One family for titles and interface: a wide, heavy cut for titles. */
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
@@ -51,6 +54,10 @@
 
   --animate-fade-in: fade-in var(--motion-quick) var(--ease-settle);
   --animate-menu-in: menu-in var(--motion-quick) var(--ease-settle);
+  /* A sheet slides in from the edge named by --sheet-from: the bottom on a phone, the right otherwise. */
+  --animate-sheet-in: sheet-in var(--motion-base) var(--ease-settle);
+  --animate-sheet-out: sheet-out var(--motion-quick) var(--ease-leave) forwards;
+  --animate-sheet-fade-out: sheet-fade-out var(--motion-quick) var(--ease-leave) forwards;
 
   @keyframes fade-in {
     from {
@@ -62,6 +69,24 @@
     from {
       opacity: 0;
       transform: translateY(-4px) scale(0.98);
+    }
+  }
+
+  @keyframes sheet-in {
+    from {
+      translate: var(--sheet-from, 0 100%);
+    }
+  }
+
+  @keyframes sheet-out {
+    to {
+      translate: var(--sheet-from, 0 100%);
+    }
+  }
+
+  @keyframes sheet-fade-out {
+    to {
+      opacity: 0;
     }
   }
 }
@@ -126,13 +151,18 @@
   }
 
   /*
-   * Until the page is live, nothing animates. A control that remembers a
+   * Until the page is live, no control animates. A control that remembers a
    * choice is corrected as React starts, and that should not be seen as a
    * fade. See features/shell/ready-mark.tsx.
+   *
+   * Controls are named by `data-slot`, which everything in src/ui carries.
+   * The rule used to name every element, and then the browser had to restyle
+   * the whole page the moment the mark appeared: 830 elements on the library,
+   * a twentieth of a second of blocked phone for nothing.
    */
-  html:not([data-ready]) *,
-  html:not([data-ready]) *::before,
-  html:not([data-ready]) *::after {
+  html:not([data-ready]) [data-slot],
+  html:not([data-ready]) [data-slot]::before,
+  html:not([data-ready]) [data-slot]::after {
     transition: none !important;
   }
 

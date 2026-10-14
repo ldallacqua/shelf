@@ -95,13 +95,8 @@ test.describe('header and footer', () => {
 })
 
 test.describe('empty states', () => {
-  test('the library says it is being stocked', async ({ page }) => {
-    await page.goto('/en/library')
-    await expect(page.getByText('The shelf is being stocked.')).toBeVisible()
-    await page.goto('/pt-BR/library')
-    await expect(page.getByText('A estante está sendo abastecida.')).toBeVisible()
-  })
-
+  // The library's own empty state needs an empty library, which these tests
+  // do not have: it is covered by a component test instead.
   test('the trophy wall says nothing is finished yet', async ({ page }) => {
     await page.goto('/en/trophies')
     await expect(page.getByText('Nothing finished yet.')).toBeVisible()

@@ -148,7 +148,115 @@
     "title": "Library",
     "emptyTitle": "The shelf is being stocked.",
     "emptyBody": "Games will stand here soon.",
-    "shelfLabel": "Library"
+    "shelfLabel": "Library",
+    "loading": "Loading the library…",
+    "toolbar": "Library view",
+    "hours": "{count, plural, =0 {Under an hour} one {# hour} other {# hours}}",
+    "hoursShort": "{count, number} h",
+    "stats": {
+      "label": "Library totals",
+      "games": "{count, plural, one {game} other {games}}",
+      "finished": "{count, plural, other {finished}}",
+      "hours": "{count, plural, one {hour} other {hours}}"
+    },
+    "view": {
+      "label": "View",
+      "shelf": "Shelf",
+      "wall": "Wall",
+      "list": "List"
+    },
+    "group": {
+      "label": "Group",
+      "menu": "Group by",
+      "platform": "Platform",
+      "status": "Status",
+      "year": "Year",
+      "none": "None"
+    },
+    "density": {
+      "label": "How boxes stand",
+      "covers": "Covers",
+      "compact": "Compact"
+    },
+    "wallSize": {
+      "label": "Cover size",
+      "small": "Small covers",
+      "medium": "Medium covers",
+      "large": "Large covers",
+      "short": {
+        "small": "S",
+        "medium": "M",
+        "large": "L"
+      }
+    },
+    "status": {
+      "playing": "Playing",
+      "backlog": "Backlog",
+      "completed": "Completed",
+      "dropped": "Dropped",
+      "wishlist": "Wishlist"
+    },
+    "format": {
+      "physical": "Physical",
+      "digital": "Digital"
+    },
+    "formatShort": {
+      "physical": "Disc",
+      "digital": "Digital"
+    },
+    "shelf": {
+      "tabs": "Shelves",
+      "notOwned": "Not owned",
+      "yearUnknown": "Year unknown",
+      "all": "All games",
+      "count": "{count, plural, one {# game} other {# games}}",
+      "playing": "{count} playing",
+      "games": "Games on the {shelf} shelf"
+    },
+    "box": {
+      "titled": "{title} ({year})",
+      "owned": "{title}, {platform}, {format}, {status}",
+      "notOwned": "{title}, not owned, {status}",
+      "alsoOn": "{description}, owned on {count} platforms"
+    },
+    "list": {
+      "cover": "Cover",
+      "title": "Title",
+      "platforms": "Platforms",
+      "status": "Status",
+      "rating": "My rating",
+      "igdb": "IGDB",
+      "playtime": "Played",
+      "added": "Added",
+      "completed": "Completed",
+      "none": "–"
+    },
+    "preview": {
+      "description": "What is recorded about this game. Left and right arrows go to the game before and after.",
+      "close": "Close",
+      "previous": "Previous",
+      "next": "Next",
+      "released": "Released {year}",
+      "outOfTen": "out of 10",
+      "owned": "Owned on",
+      "copy": "{platform}, {format}",
+      "playtime": "Played",
+      "length": "Time to beat",
+      "igdb": "IGDB rating",
+      "igdbValue": "{value} of 100, from {count, plural, one {# rating} other {# ratings}}",
+      "added": "Added",
+      "completed": "Completed",
+      "tags": "Tags"
+    },
+    "error": {
+      "title": "The rest of the library did not load.",
+      "retry": "Try again"
+    },
+    "failed": {
+      "title": "The library did not load.",
+      "body": "Something went wrong on the way to the shelf. Your games are safe.",
+      "retry": "Try again"
+    }
   },
   "Trophies": {
     "metaTitle": "Trophies",

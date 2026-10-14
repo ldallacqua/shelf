@@ -5,6 +5,9 @@ runs:
   steps:
     - name: Start the server
       shell: bash
+      env:
+        # IGDB and Twitch are answered by test doubles inside the server.
+        SHELF_MOCKS: '1'
       run: |
         pnpm start > server.log 2>&1 &
         for attempt in $(seq 1 60); do

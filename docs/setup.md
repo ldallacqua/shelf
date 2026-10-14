@@ -18,11 +18,11 @@ Three rules I keep throughout:
 | Session | You do | Needed before | Time |
 | --- | --- | --- | --- |
 | [A](#a-vercel-project) | Create the Vercel project | Reviewing build step 1 | 5 min |
-| [B](#b-turso-databases) | Create two Turso databases, paste 2 settings | Reviewing build step 2 | 10 min |
+| [B](#b-turso-databases) | Create two Turso databases, paste 2 settings | Build step 7 (sooner if you like) | 10 min |
 | [C](#c-github-sign-in) | Create two GitHub OAuth apps, paste 7 settings | Build step 7 | 15 min |
 | [D](#d-daily-refresh) | Paste 1 setting | Build step 9 | 2 min |
 
-Steps 3, 4, 5, 6, 8 and 10 need nothing from you but review.
+Steps 2, 3, 4, 5, 6, 8 and 10 need nothing from you but review.
 
 I will remind you at the start of each step that has a session.
 
@@ -89,10 +89,15 @@ little from these):
 
 ## B. Turso databases
 
-**When:** after I open the pull request for build step 2.
+**When:** any time before I start build step 7. Nothing before that needs it.
 
 Local work and CI use a file on disk and need none of this. The databases are for the
 deployed previews and for production.
+
+**Until you do this**, previews still work: each one is built with the sample library inside
+it, and production shows an empty library. That is enough to review steps 2 to 6. It is not
+enough for step 7, because a library added through sign-in has to be kept somewhere, and
+Shelf refuses to save into the built-in sample.
 
 1. Go to [turso.tech](https://turso.tech) and sign up with GitHub. The free plan needs no
    card.
@@ -119,8 +124,8 @@ documentation, not clicked through its dashboard.
 **Why two databases:** previews get the 200 sample games and can be reset freely. Nothing a
 preview does can touch your real library.
 
-**Check it worked:** the step 2 preview loads without a database error. From step 3 on, it
-shows the sample library.
+**Check it worked:** the next preview's build log says "Migrated the Turso database" where it
+used to warn that no database is connected, and the preview still shows the sample library.
 
 ---
 
@@ -213,6 +218,7 @@ Vercel sends this value with its once-a-day call, so nobody else can trigger the
 | `TWITCH_CLIENT_SECRET` | Set already | Paste | Paste | C |
 | `TURSO_DATABASE_URL` | Not used | Paste (`shelf-preview`) | Paste (`shelf`) | B |
 | `TURSO_AUTH_TOKEN` | Not used | Paste (`shelf-preview`) | Paste (`shelf`) | B |
+| `SHELF_MOCKS` | Tests set it | Never | Never | none |
 | `GITHUB_CLIENT_ID` | Paste (App 2) | Paste (App 1) | Paste (App 1) | C |
 | `GITHUB_CLIENT_SECRET` | Paste (App 2) | Paste (App 1) | Paste (App 1) | C |
 | `BETTER_AUTH_SECRET` | I generate it | Paste, random | Paste, a different random | C |

@@ -107,7 +107,7 @@ The brief said to check current versions and not rely on memory. Eight checks ch
 | 5 | Node, latest | **24**, not 26 | Vercel offers 24 (its default) and 22. |
 | 6 | Drizzle, latest | **0.45**, not 1.0 | 1.0 is a release candidate (`1.0.0-rc.4`). 0.45 is the stable line. |
 | 7 | "Covers via IGDB CDN with srcset" | As asked, and **not** through Vercel's image optimizer | The Hobby plan includes 5,000 image transformations a month. A 1,000-game library in three sizes would spend that in one visit. IGDB's servers already resize, send WebP, allow cross-origin use and cache for a year. The reference app's own notes record 0.24s direct against 1.20s through an optimizer. |
-| 8 | CI runs everything | Everything runs, in **two tiers** | A private repository gets 2,000 free minutes a month. The full browser matrix on every push would not fit. See [section 18](#18-continuous-integration). |
+| 8 | CI runs everything | Everything runs, **on the Mac before each push** (`pnpm verify`); CI only by hand | A private repository gets 2,000 free minutes a month, and one full run took about 75. It began as two tiers on GitHub; at the end of step 3 the owner asked for the checks to run locally instead. See [section 18](#18-continuous-integration). |
 
 Three things in the brief were confirmed as written and need no change: Tailwind 4 with
 shadcn/ui and Radix; React Three Fiber with drei (it accepts React 19.3); MSW for IGDB.
@@ -265,12 +265,15 @@ separate file, not inside the page:
 | Address | `/api/v1/library/snapshot/{version}` |
 | Version | A counter in the database, raised by one inside every write |
 | Caching | The address changes when the content does, so the file is cached for a year by the edge and by the browser. A return visit downloads nothing unless I changed the library. |
+| Built ahead | The current version's file is made when the site is built and served as a static file. A version that appears later, because I added a game, is made on its first request. Any other address is sent on to the current one. |
 | Contents | Per game: ids, title, status, rating, dates, playtime, year, IGDB rating, time to beat, cover id, three colors, a 25-byte blur hash, copies, and the ids of its genres, themes, modes, perspectives, platforms, franchises, series, studios and tags. Plus one name table per kind. |
 | Left out | Summaries, screenshots and notes (the game page fetches those). Keywords, which are large, are a second file fetched the first time a keyword filter is used. Private notes are never in any public file. |
 | Size target | 120 KB compressed per 1,000 games. A test fails the build past that. |
 
-**Address state.** `q`, `sort`, `group`, `view` and `seed` are read and written with nuqs,
-typed by the same Zod schemas the server uses. Changing a filter updates the address without
+**Address state.** `q`, `sort`, `group`, `view` and `seed` are read and written with nuqs
+(`view` and `group` since step 3; the rest arrive with filters at step 5). One function in
+`domain/` reads them for the server and falls back to the default for anything it does not
+know. Changing a filter updates the address without
 asking the server. Back and forward work because each change is a history entry.
 
 **What stays out of the server's view.** Theme, language choice and the 2D or 3D preference
@@ -288,6 +291,12 @@ ADR 001 decides the model. This section decides how it is stored.
 (`.data/shelf.db`) on this machine and in CI. Both speak the same SQL through the same client
 library, so there is one schema and one set of migrations.
 
+A deployment with no Turso database connected does not fail. Its build makes the SQLite file
+and ships it, and each server instance works on a copy: a preview shows the sample library,
+production shows an empty one. Nothing written to that copy is kept, the server says so in its
+log, and anything that saves my own data refuses to run on it
+([section 25](#25-changes-since-approval)).
+
 **Conventions**
 
 | Topic | Rule |
@@ -298,6 +307,7 @@ library, so there is one schema and one set of migrations.
 | Playtime | Whole minutes |
 | Enumerations | Text with a `CHECK` constraint, and a matching Zod schema |
 | IGDB lists (genres, themes and so on) | JSON arrays of IGDB ids on the `games` row, with name tables alongside. They are read whole and filtered in memory, never joined. |
+| A game's public address | The IGDB slug of its primary version: `/game/the-elder-scrolls-v-skyrim`. It is unique, because a record belongs to one entry. Entry ids never leave the server. |
 | Deleting | Real deletes, cascading from the entry. No soft delete. |
 
 **Tables beyond ADR 001**
@@ -306,22 +316,28 @@ library, so there is one schema and one set of migrations.
 | --- | --- |
 | `vocab` | Names for IGDB ids: kind, id, name, slug |
 | `shelves` | Saved smart shelves: slug, name, query text, sort, group, position |
-| `library_meta` | The version counter |
-| `igdb_token` | The current Twitch token and its expiry |
+| `library_meta` | The version counter. One row. |
+| `igdb_token` | The current Twitch token and its expiry. One row. |
 | `user`, `session`, `account`, `verification` | Better Auth's own |
 | `oauth*` (five tables) | Better Auth's, for MCP sign-in |
 
 **Indexes** go on what is looked up one row at a time: `games.igdb_id`, `games.slug`,
 `entry_versions.game_id`, `copies.entry_id`. The library itself is always read whole.
 
+**Two columns ADR 001 did not name.** `games.lineage` holds the chain of records above a
+record in its family (the Switch port's is "port of 472"), worked out when the record is
+fetched. The grouping rule reads it, so deciding whether a new game belongs with one on the
+shelf needs no further request to IGDB. `platforms` carries our own `key` (what
+`owned:ps5` matches), a short label, and the color of the case's plastic.
+
 **Migrations.** Drizzle generates SQL files into `drizzle/`; they are committed and reviewed.
 They are applied by `pnpm db:migrate`:
 
-| Where | When |
-| --- | --- |
-| This machine | Before `pnpm dev` |
-| CI | Before the build, on a fresh file |
-| Preview and production | As the first step of the Vercel build, against that environment's database |
+| Where | When | Command |
+| --- | --- | --- |
+| This machine | Before `pnpm dev` | `pnpm seed`, or `pnpm db:migrate` to keep the data |
+| CI | Before the build, on a fresh file | `pnpm seed` |
+| Preview and production | As the first step of the Vercel build, against that environment's database | `pnpm db:prepare`, from the `vercel-build` script |
 
 A deployment that is still serving keeps running during a migration, so every migration must
 be safe for the previous version of the code: add first, remove in a later release.
@@ -330,9 +346,14 @@ be safe for the previous version of the code: add first, remove in a later relea
 
 | Name | What | Used by |
 | --- | --- | --- |
-| `default` | About 200 real, varied IGDB games with realistic statuses, copies, ratings and tags | Local work, tests, preview deployments |
+| `default` | 230 real, varied IGDB games with realistic statuses, copies, ratings and tags | Local work, tests, preview deployments |
 | `empty` | No entries | The empty-library screens |
-| `stress` | 1,000 or more games | Speed tests, virtual lists, 3D budgets |
+| `stress` | The default set and 1,050 more: 1,280 games | Speed tests, virtual lists, 3D budgets |
+
+The games are real. What "I" did with each one is invented, from the game's own id, so it
+comes out the same on every run and a screenshot does not change between seeds. Two entries
+are written by hand to exercise ADR 001: Skyrim with its Switch port (one entry, two copies),
+and Shadow of the Tomb Raider with its Definitive Edition.
 
 `pnpm fixtures:fetch` is the only thing that talks to the real IGDB. I run it by hand; it
 writes JSON into `fixtures/`, which is committed. The repository is private, and IGDB's terms
@@ -349,7 +370,7 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 | Concern | Design |
 | --- | --- |
 | Credentials | `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`, read on the server only |
-| Token | Twitch's client-credentials grant. Stored in the database with its expiry, so a cold server does not ask for a new one. Renewed a day before it expires, or at once on a 401. Concurrent callers share one renewal. |
+| Token | Twitch's client-credentials grant. The secret travels in the request body, never in the address. Stored in the database with its expiry, so a cold server does not ask for a new one. Renewed a day before it expires, or at once on a 401. Concurrent callers share one renewal. |
 | Rate | A queue that sends at most 4 requests a second with at most 4 in flight. On a 429 it waits and retries, twice. |
 | Who can trigger it | Only me. Search, add, bulk add and refresh all require my session. A visitor cannot spend the allowance. |
 | Search | `search` for the typeahead, with editions hidden and ports folded as the spec says. Results cached for a day by normalized text. |
@@ -485,7 +506,9 @@ One tool per job, so nothing fights:
 | Job | Tool | Loaded |
 | --- | --- | --- |
 | Hover, press, focus, simple state | CSS transitions | Always |
-| Sheets, menus, reordering after a sort, gestures | Motion | With the library |
+| Menus and sheets | CSS animations on Radix primitives | With the library |
+| Reordering after a regroup or a change of view | The Web Animations API: each box on screen slides from where it stood (`useFlip`) | With the library |
+| Gestures: dragging a sheet, scrubbing spines | Motion, when they are built (step 9). Not installed until then. | n/a |
 | A cover growing into the detail page | React `<ViewTransition>` | Built in |
 | Scroll-driven scenes | GSAP with ScrollTrigger | Landing page only |
 | Smooth scrolling | Lenis | Landing page only, and not on touch |
@@ -513,14 +536,16 @@ baseline.
 
 | Concern | Design |
 | --- | --- |
-| Boxes | Real elements. Cover-out: the cover image inside a case drawn in CSS (real proportions, the plastic's color, a band across the top), with the title as the image's text alternative. Compact: a spine with real text for the title. Either way a screen reader reads them and a browser can find text in them. |
-| Light | The LED bar is a registered CSS property per ledge. Setting it to the color of the game in focus makes the line, the glow on the wall and each box's halo glide to that color. |
-| Lift, pull, lean | CSS transforms on the box |
-| Depth | Three layers moved by scroll position, about 12 px, with a CSS scroll timeline where supported |
-| Long libraries | Ledges are rows in a virtual list (TanStack Virtual). Only rows near the screen exist in the page. |
-| First paint | The server renders the first screen of real boxes, so covers start loading with the page |
-| Phone | One shelf per screen with sideways scroll snapping; tabs for the same move |
-| Wall and List | The same data and selection through different row renderers. List is a real table. |
+| Boxes | Real elements: each is a button. Cover-out: the cover image inside a case drawn in CSS (real proportions, the plastic's color, a band across the top), with the title as the image's text alternative. Compact: a spine with real text for the title. The button's name says everything the box shows by shape: title, platform, format, status. |
+| Layout | CSS decides how many boxes fit on a row: the boxes are items of a grid whose columns repeat to fill the width, each as wide as the shelf's widest case. The boards and their light are a second layer behind, one per row, placed by row number. So the HTML the server sends is right at any width before any script runs. |
+| Light | The LED is a registered CSS property. Setting it on a row to the color of the game in focus makes the line, the glow on the wall and each box's halo glide to that color. |
+| Lift, stand forward, lean | CSS transforms on the box |
+| Depth | The light on the wall behind each row drifts about 12 px against the games as the page scrolls, with a CSS scroll timeline where supported. The wall itself is fixed to the window. |
+| Long libraries | Only rows near the screen are in the page. A small hook of our own (`useRowWindow`) reads from the browser how many columns the grid made and how tall a row is, and says which rows to draw. |
+| First paint | The server sends the first 48 boxes inside the page, or the first 12 to a phone, and the first six covers are fetched ahead of everything else. The whole library follows as the library file. |
+| Phone | One shelf per screen with sideways scroll snapping, each shelf scrolling by itself; tabs for the same move; controls at the bottom |
+| Wall and List | The same shelves and the same open game through different renderers. List is a real table, one per shelf. |
+| A game picked up | A sheet from the bottom on a phone, a panel from the right otherwise, with what is recorded about the game and steps to its neighbors. It becomes the game page at step 6. |
 
 ---
 
@@ -641,14 +666,14 @@ the write tools.
 
 | Layer | Tool | Covers | Runs |
 | --- | --- | --- | --- |
-| Unit | Vitest, Node | All of `domain`: parser, evaluator, sort, group, facets, grouping rules, spine colors, IGDB mapping. Services against an in-memory SQLite. The IGDB client against MSW. | Locally and in CI, in seconds |
+| Unit | Vitest, Node | All of `domain`: parser, evaluator, sort, group, facets, grouping rules, spine colors, IGDB mapping. Services against an in-memory SQLite. The IGDB client against MSW. | Locally, in seconds |
 | Property | fast-check in Vitest | The filter language round trip; sorting is a total order | With unit |
 | Component | Vitest with jsdom and Testing Library | Components with real logic: filter panel, add-game form, sort menu, sheets. Keyboard paths and labels, in both languages. | With unit |
-| End to end | Playwright | Every "Done when" line in the spec that a browser can check | CI; affected files locally |
-| Parity | Playwright | Each library scenario runs twice, 2D and 3D, asserting the same games, order, selection and address. Plus the switch itself. | CI |
-| Visual | Playwright screenshots | Key screens × light and dark × English and Portuguese × phone and desktop | CI |
-| Accessibility | axe inside Playwright | Every page and every open sheet or dialog, both themes | CI |
-| Speed | Lighthouse 13, scripted, with its throttling applied for real | Landing and library on the mobile profile: 90 or more, and the Core Web Vitals in spec section 16 | CI |
+| End to end | Playwright | Every "Done when" line in the spec that a browser can check | Affected files while working; all nine projects in `pnpm verify` |
+| Parity | Playwright | Each library scenario runs twice, 2D and 3D, asserting the same games, order, selection and address. Plus the switch itself. | `pnpm verify` |
+| Visual | Playwright screenshots | Key screens × light and dark × English and Portuguese × phone and desktop | `pnpm verify`, in Docker on Linux |
+| Accessibility | axe inside Playwright | Every page and every open sheet or dialog, both themes | `pnpm verify` |
+| Speed | Lighthouse 13, scripted, with its throttling applied for real | Landing and library on the mobile profile: 90 or more, and the Core Web Vitals in spec section 16 | `pnpm verify` |
 
 **Browser matrix:** Chromium, Firefox and WebKit, each at phone (390), tablet (820) and
 desktop (1440). Nine projects.
@@ -660,8 +685,8 @@ In the browser, Playwright answers requests to `images.igdb.com` with small gene
 (a color field and the title), so no test depends on IGDB's image servers and the repository
 holds no real cover art.
 
-**Reference screenshots** are made on Linux in CI, because fonts render differently on a Mac.
-A manual workflow renders new ones and offers them as a download; I commit them under my own
+**Reference screenshots** are made on Linux, because fonts render differently on a Mac: in
+Playwright's Docker image, by `pnpm verify --update-screenshots`. I commit them under my own
 name (a bot's commit would not deploy on Vercel's Hobby plan).
 
 **3D in tests.** Parity tests assert on meaning (which games, what order, what is selected),
@@ -669,9 +694,10 @@ not pixels. 3D screenshots use a fixed camera, no animation and a looser match. 
 browser cannot create a WebGL context, the app's own fallback to 2D runs, and the test asserts
 that fallback, which the spec requires anyway.
 
-**On this machine** I run unit and component tests freely, and only the Playwright files a
-change touches, one project at a time. The full matrix runs in CI. That is because of this
-Mac's load problem, not a shortcut on coverage.
+**On this machine** I run unit and component tests freely while working, and the Playwright
+files a change touches. The full matrix runs once before each push, in `pnpm verify`. If the
+Mac's load problem comes back (load averages of 70 and more), that run waits for a reboot
+rather than being cut short.
 
 **Storybook** holds every `ui` component and the main feature components in their states,
 with toolbar switches for theme and language and the accessibility panel on.
@@ -680,25 +706,24 @@ with toolbar switches for theme and language and the accessibility panel on.
 
 ## 18. Continuous integration
 
-Free minutes are finite (2,000 a month while the repository is private), so the pipeline has
-two tiers. Both run before anything merges.
+Free minutes are finite (2,000 a month while the repository is private), and one full run on
+GitHub took about 75. So **nothing runs on GitHub by itself**: every check runs on the Mac
+before a push, with `pnpm verify`, and GitHub's workflow is kept for running by hand.
 
-| Tier | When | Jobs | About |
+| What | When | Steps | About |
 | --- | --- | --- | --- |
-| **Every push** | Each push to a pull request | Format, lint, typecheck, translation check, unit and component tests, build, bundle checks. End-to-end smoke: Chromium at phone and desktop. | 10 min |
-| **Full** | When a pull request is marked ready for review, on every push to `main`, and on demand | All nine browser projects, split across three runners. Visual, accessibility and parity suites. Lighthouse. Storybook build. | 40 min |
+| `pnpm verify --quick` | While working, as often as useful | Format, lint, typecheck, translation check, unit and component tests, build, bundle checks. End-to-end smoke: Chromium at phone and desktop. | 4 min |
+| `pnpm verify` | Before every push | All of the above; all nine browser projects; a Linux pass in Playwright's Docker image (WebKit at three widths, reference screenshots); Lighthouse; Storybook build | 20 min |
+| CI workflow | Only by hand (Actions → CI → Run workflow) | Everything, Lighthouse alone, or new reference screenshots | 75 min for everything |
 
-A newer push cancels the run before it. Dependencies, the Next.js build cache and Playwright's
-browsers are cached between runs.
+**Why a Linux pass.** The Linux build of WebKit, which GitHub's runners use, is not Safari: in
+step 3 a dozen blurred-glass labels hung it while Safari was fine. Text also renders
+differently on Linux, so the reference screenshots are made and compared there.
 
-**Budget.** Ten pull requests, each with about six pushes and two full runs: 10 × (6 × 10 + 2
-× 40) = 1,400 minutes, with room for reruns. If the repository became public, minutes would be
-unlimited and the full tier could run on every push.
-
-**"Done" for a build step** means the full tier is green on the step's last commit, and the
+**"Done" for a build step** means `pnpm verify` passes on the step's last commit, and the
 summary carries screenshots at phone and desktop in both themes, taken by Playwright.
 
-CI needs **no secrets**: it builds against a SQLite file and the mocks.
+Neither needs **secrets**: both build against a SQLite file and the mocks.
 
 ---
 
@@ -706,13 +731,13 @@ CI needs **no secrets**: it builds against a SQLite file and the mocks.
 
 | Measure | Budget | Enforced by |
 | --- | --- | --- |
-| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`. | Build check |
+| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`: 205 KB for the home page, 234 KB for the library. | Build check |
 | three.js in any page's first load | None | Build check |
 | Library file per 1,000 games, compressed | 120 KB | Unit test |
 | Filter or sort, 1,000 games | 50 ms | Unit benchmark |
-| Lighthouse mobile, landing and library | 90 | CI |
-| Largest contentful paint, mobile | 2.5 s | CI |
-| Layout shift | 0.1 | CI |
+| Lighthouse mobile: home, library as a shelf, library as a wall | 90 | `pnpm verify` |
+| Largest contentful paint, mobile | 2.5 s | `pnpm verify` |
+| Layout shift | 0.1 | `pnpm verify` |
 | Rows in the page for a 1,000-game list | Only those near the screen | End-to-end test |
 | Fonts | Two families, three files, Latin subset, preloaded, 58 KB together | Review |
 
@@ -753,7 +778,7 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | | Local | CI | Preview | Production |
 | --- | --- | --- | --- | --- |
 | Address | `http://localhost:3300` | Local to the runner | A new `*.vercel.app` per push | `https://shelf-ldallacqua.vercel.app` (proposed) |
-| Database | `.data/shelf.db` | A fresh file | Turso `shelf-preview` | Turso `shelf` |
+| Database | `.data/shelf.db` | A fresh file | Turso `shelf-preview`. Until it is connected: a sample file built with the deployment. | Turso `shelf`. Until it is connected: an empty file. |
 | Data | `default`, or any set | `default` and `stress` | `default`, loaded if empty | Mine |
 | IGDB | Live for me; mocked with `SHELF_MOCKS=1` | Mocked | Live, when I add | Live, when I add |
 | Sign-in | The local GitHub app | Mocked GitHub | Through production (OAuth Proxy) | The production GitHub app |
@@ -765,8 +790,8 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | --- | --- | --- |
 | `TWITCH_CLIENT_ID` | IGDB | Local: now, already set. Vercel: step 7. |
 | `TWITCH_CLIENT_SECRET` | IGDB | Same |
-| `TURSO_DATABASE_URL` | Database | Vercel: step 2 |
-| `TURSO_AUTH_TOKEN` | Database | Vercel: step 2 |
+| `TURSO_DATABASE_URL` | Database | Vercel: before step 7. Previews work without it. |
+| `TURSO_AUTH_TOKEN` | Database | Same |
 | `BETTER_AUTH_SECRET` | Signing sessions | Step 7 |
 | `GITHUB_CLIENT_ID` | GitHub sign-in | Step 7 |
 | `GITHUB_CLIENT_SECRET` | GitHub sign-in | Step 7 |
@@ -775,8 +800,11 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | `CRON_SECRET` | The daily refresh job | Step 9 |
 
 The site's own address comes from Vercel's built-in `VERCEL_PROJECT_PRODUCTION_URL`, so there
-is nothing to set for it, and sign-in uses the same value. At startup the server validates every setting with Zod and stops
-with a message naming what is missing (the name, never the value).
+is nothing to set for it, and sign-in uses the same value. Each group of settings is checked
+with Zod when it is first needed (the database's when the database is opened, IGDB's when
+IGDB is called), and a missing one stops that call with a message naming it: the name, never
+the value. Checking everything at startup would refuse to run a preview that has no use for
+IGDB yet.
 
 [The setup checklist](setup.md) has the click-by-click steps.
 
@@ -787,7 +815,7 @@ with a message naming what is missing (the name, never the value).
 | Step | Adds | From you ([checklist](setup.md)) |
 | --- | --- | --- |
 | **1** Scaffold ⏸ | Next.js app, strict TypeScript, lint and format, Tailwind and tokens for the chosen direction, the theme module, both languages, Storybook, the test runners, CI, `AGENTS.md` and `CLAUDE.md` | Create the Vercel project |
-| **2** IGDB and data | Drizzle schema and migrations, the IGDB client with mocks, services, the three data sets, the library file | Create two Turso databases; two settings, each with a preview and a production value |
+| **2** IGDB and data | Drizzle schema and migrations, the IGDB client with mocks, the store and read services, the three data sets, the library file | Nothing yet. Two Turso databases before step 7; earlier if you want previews to keep data. |
 | **3** 2D shelf ⏸ | Shelf, Wall and List; virtual lists; images and placeholders; motion in both themes | Nothing |
 | **4** 3D shelf ⏸ | The 3D bundle, the switch, parity tests, fallback | Nothing |
 | **5** Filters and sorting | The query language (tests first), index, facets, panel, smart shelves, public API, `docs/api.md` | Nothing |
@@ -897,6 +925,27 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 3 review | **Checks run on the Mac, not on GitHub.** `pnpm verify` runs everything before each push; the CI workflow runs only by hand. | The owner's decision at the step 3 review (14 Oct 2026): a full run on GitHub took about 75 of the month's 2,000 free minutes. The Linux pass in Docker keeps the two things only Linux showed: WebKit hanging on blurred glass, and text as the reference screenshots render it. |
+| Step 3 review | **Messages are compiled when the app is built** (next-intl's `precompile`). | The browser no longer downloads or runs a message parser: 9 KB off every page, the library from 238 to 229 KB. Blocked time barely moved. `t.raw` no longer works; nothing used it. |
+| Step 3 review | **On a phone, the shelves beside the one in view wait for the first touch before they fill.** Until then they keep only the box Tab stops at, so Tab, Page Down and screen readers still reach them. | Filling them when the library file arrived was more than half of what the phone did at that moment. On the Mac at the calibrated slowdown, the shelf's blocked time went from about 305 to 270 ms and its score from 90 to 92 (middle of three runs). A swipe starts with a touch, so the next shelf fills as it slides in. |
+| Step 3 | **Rows are kept out of the page by a hook of our own, not TanStack Virtual.** | A virtual-list library needs to be told how many items fit on a row. Here CSS decides that, so the boxes the server sends are laid out correctly at any width with no script, and nothing moves when the page comes alive. The hook is about 80 lines: it asks the browser how many columns the grid made and draws the rows near the window. With 230 games on one shelf, 54 boxes are in the page. |
+| Step 3 | **Boxes arrive by dropping the last stretch onto their board. They do not fade in.** | Measured: with a fade, Chrome did not count a cover as painted until something redrew it, and Lighthouse reported the largest paint at 8.1 s on its slow-phone profile. Without the fade it is 2.1 s. The stagger is kept. |
+| Step 3 | **Covers on the shelf never fetch the largest file, and a 180-pixel file is offered.** The first six covers are fetched early, and the connection to IGDB's image servers is opened while the page arrives. | A box is about 130 pixels wide. Twelve early covers at 264 pixels competed on a slow connection and the largest paint was 2.8 s. Measured after: library 96 and 2.1 s, wall 94 and 2.1 s, list 94 and 1.5 s. |
+| Step 3 | **Every box on a shelf stands in a slot as wide as that shelf's widest case.** A platform shelf's slot is its platform's case; a mixed shelf's is a CD case, the widest common one. | Real cases differ in width. Packing them edge to edge would make the number per row depend on which games they are, which only script could work out. Equal slots keep real proportions and let CSS do the layout. |
+| Step 3 | **The blurred cover preview is drawn only for covers that join a live page.** The boxes that come with the page show a wash of the cover's three colors until the image arrives. | Decoding a preview needs script, and putting 48 of them into the HTML would add about 50 KB to every visit. |
+| Step 3 | **Lighthouse slows the processor by an amount worked out from the machine, and judges the middle of three runs.** | Its default, four times, assumes a fast desktop, and its own documentation says to calibrate for anything else. A Mac mini is nearly three times faster than that desktop, so the same build scored 96 here and 72 on CI. Locally the slowdown is now taken from Lighthouse's benchmark of the machine (15.7 times on the Mac mini). CI keeps Lighthouse's stock four times: the benchmark times one core, and a runner's two are shared by the server, the browser and Lighthouse, so by its benchmark it would be slowed 8 times and measure twice as slow. The check that both agree is the home page's blocked time: 177 ms here, 180 ms on CI. |
+| Step 3 | **The library's blocked time on a mid-range phone went from about 680 ms to about 300 ms.** A shelf that has not measured itself draws only its share of the first screen. A phone is sent 12 boxes, not 48. A shelf away from the screen keeps one box (the one Tab stops at), and one away sideways keeps none. A box, a wall cover and a shelf's heading are each drawn again only when something about them changed. The library file's arrival is a low-priority update, with its shelves arranged in a turn of their own. Cover blurs are decoded when the browser is idle. The totals line is drawn on the server. | Each was found by profiling at the calibrated speed, and each was work nobody saw: 48 boxes drawn and removed again per shelf when the file arrived; 36 boxes hydrated on a phone and taken off the page a moment later; every cover on the first screen redrawn when the page came alive; thirty blurs decoded while drawing, at 4 ms each; a dozen shelves re-worded through the translator on every redraw. Measured after: on the Mac mini, shelf 91 and wall 93; on CI, wall 92 and shelf 87, which is **still three short of the target of 90** (its largest paint, 2.3 s, and layout shift, 0, pass). About 150 to 180 ms of what remains is React and Next.js starting up, the same on every page. What is known to be left on the shelf, on a phone: styling the first twelve boxes (about 70 ms in one step), and filling in the shelf beside the one in view when the library file arrives. Tried at the step 3 review: compiled messages and waiting neighbor shelves (rows above). Not yet tried: a lighter header menu. |
+| Step 3 | **"Until the page is live, nothing animates" names controls only.** It was a rule for every element. | When the mark appeared the browser restyled the whole page: 830 elements on the library, on every visit, for a rule that only matters to a handful of controls. |
+| Step 3 | **The wall's pinned shelf labels are nearly solid, not blurred glass.** | A wall has a label per shelf. A dozen `backdrop-filter` surfaces on one page made the Linux build of WebKit stop answering (its page process grew by 180 MB a second), which failed every wall test on CI and filled the runner's disk. Safari on a Mac was unaffected, and at rest the label looks the same. |
+| Step 3 | **The library's JavaScript is 229 KB, 38 KB over the shell.** The budget is now 234 KB. | The three views, the sheet, the address state and the preview decoder. The address-state library is loaded on the library page only; in the root layout it cost every page 4 KB. |
+| Step 3 | **Left for the steps that own them:** the status row, filters, search, sorting and smart shelves (step 5); the game page, and the cover growing into it (step 6); the 3D shelf and its switch (step 4); the trophy wall (after filters, with its stats); scrubbing along spines, dragging the sheet, swiping it sideways, and collapsing a shelf (step 9). | Each needs something that step builds. The sheet a game opens in today is the first part of step 6's game page. |
+| Step 2 | **A deployment with no database connected serves a sample file instead of failing.** The Vercel build makes `.data/shelf.db` (the sample library for a preview, empty for production) and ships it; each server instance copies it to its temporary folder and opens the copy. | So the previews for steps 2 to 6 work before the Turso databases exist, and a missing setting can never take the site down. The copy is marked as not kept, and the write services at step 7 refuse to run on it, so a library can never be saved into something that is thrown away. Connecting Turso later needs no code change. |
+| Step 2 | **Write services and the IGDB search route arrive with sign-in, at step 7.** Step 2 has the write functions themselves (`server/library/store.ts`, tested), the read services and the IGDB client. | Without sign-in there is nobody to allow. A write or an IGDB call that anyone could trigger would be worse than none. |
+| Step 2 | **The library file measures 115 KB compressed per 1,000 games** (gzip; 97 KB with Brotli, which is what Vercel sends). The sample library of 230 games is 31 KB. | Under the 120 KB budget, but close. The blurred previews are the largest part: about 25 bytes a game that do not compress. A test fails past the budget. |
+| Step 2 | **The library file identifies a game by its slug, not by an id.** | Entry ids are random, do not compress, and would cost about 20 KB per 1,000 games for nothing a visitor needs. |
+| Step 2 | **A seed is a few large inserts, not one write per game.** | Against Turso every statement is a network round trip. A seed is about thirty of them this way, instead of several thousand. |
+| Step 2 | **Scripts run through `tsx`.** | The scripts import server code, which uses the `@/` path alias and `server-only`. Node runs TypeScript by itself but resolves neither. |
+| Step 2 | **Unit tests run on a closed network.** One MSW server is shared by every unit test and refuses any request that has no test double. | The first version of the IGDB tests reached Twitch's real token address with made-up credentials, because the client had kept a reference to `fetch` from before the doubles were installed. No secret was sent, and it was refused, but a test must not be able to do that. The client now looks `fetch` up on every call, and the closed network makes the mistake impossible to repeat. |
 | Step 1 | **The visual direction is Backlit, and games stand cover-out.** | Vitrine was rejected on sight as a library of books. [ADR 002](adr/002-visual-direction.md). |
 | Step 1 | **JavaScript budgets are a ratchet, not 180 KB and 130 KB.** Measured at step 1: 198 KB for the library and trophies pages, 205 KB for the home page. | I set the first numbers without measuring what the stack costs by itself. React and Next.js are about 125 KB of every page, and the Radix menu and button-group primitives the header uses are about 45 KB. A budget below what the frameworks weigh checks nothing. The ratchet still fails the build when a page grows, and loading menus only when first opened is on the list for the step 9 speed pass. |
 | Step 1 | **Lighthouse runs with throttling applied, not simulated.** Applied: largest paint 1.5 s, score 100. Simulated, same build: 2.8 s, score 96. | Simulation estimates paint times from an unthrottled run. Against a local server it assumes the page's text waits for all of its JavaScript; the text is in the HTML and does not. Applied throttling measures. The simulated figure is what PageSpeed Insights will show for the deployed site, so it is checked again there once the site is live, and a miss there counts. |

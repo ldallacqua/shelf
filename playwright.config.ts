@@ -47,6 +47,8 @@ export default defineConfig({
     : {
         // Tests run against a production build: `pnpm build` first.
         command: `pnpm start`,
+        // IGDB and Twitch are answered by test doubles inside the server.
+        env: { SHELF_MOCKS: '1' },
         url: `${baseURL}/en`,
         reuseExistingServer: !process.env.CI,
         timeout: 60_000,

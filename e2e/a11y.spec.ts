@@ -1,4 +1,12 @@
-import { expectAccessible, locales, openWithTheme, pages, test, themes } from './fixtures'
+import {
+  expectAccessible,
+  libraryViews,
+  locales,
+  openWithTheme,
+  pages,
+  test,
+  themes,
+} from './fixtures'
 
 /**
  * Automated accessibility checks (axe, WCAG 2.2 A and AA) on every page, in
@@ -13,6 +21,37 @@ for (const { name, path } of pages) {
       })
     }
   }
+}
+
+for (const { name, path } of libraryViews) {
+  for (const theme of themes) {
+    test(`${name} passes axe in ${theme}`, async ({ page }) => {
+      await openWithTheme(page, `/en${path}`, theme)
+      await expectAccessible(page)
+    })
+  }
+}
+
+for (const theme of themes) {
+  test(`the compact shelf passes axe in ${theme}`, async ({ page }) => {
+    await openWithTheme(page, '/en/library', theme)
+    await page.getByRole('radio', { name: 'Compact' }).click()
+    await expectAccessible(page)
+  })
+
+  test(`a game's details pass axe while open, ${theme}`, async ({ page }) => {
+    await openWithTheme(page, '/en/library', theme)
+    await page.getByRole('button', { name: /^Astro Bot/ }).click()
+    await page.getByRole('dialog').waitFor()
+    await expectAccessible(page, '[role="dialog"]')
+  })
+
+  test(`the grouping menu passes axe while open, ${theme}`, async ({ page }) => {
+    await openWithTheme(page, '/en/library', theme)
+    await page.getByRole('button', { name: /Platform/ }).click()
+    await page.getByRole('menu').waitFor()
+    await expectAccessible(page, '[role="menu"]')
+  })
 }
 
 for (const theme of themes) {
