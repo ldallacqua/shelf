@@ -216,9 +216,12 @@ on Windows:
 | 4 (CI's) | 99 | 96 | 95 | 82 ms |
 
 The home page's blocked time is the check that two machines agree (`scripts/lib/budgets.ts`):
-about 180 ms on the Mac and on CI. On Windows that is about 5.5 times, so run
-`LIGHTHOUSE_SLOWDOWN=5.5 pnpm verify` there and check the home page's blocked time in the
-output before reading the scores.
+about 180 ms on the Mac and on CI. On Windows that was about 5.5 times at step 3, so start
+with `LIGHTHOUSE_SLOWDOWN=5.5 pnpm verify` there and check the home page's blocked time in
+the output before reading the scores. It drifts with how busy the machine is: at step 4 the
+benchmark read 5,140, not 4,470, and the home page blocked 85 ms at 5.5 times, 160 ms at 7.5
+and 226 ms at 8. Raise or lower the number until it blocks about 180 ms, and read the
+scores there.
 
 **`pnpm perf:3d`** measures the 3D shelf on this machine's graphics card, since the test
 browsers draw WebGL in software. It walks the camera along the wall and back, sweeps the

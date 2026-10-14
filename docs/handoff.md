@@ -4,36 +4,40 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Step 4 in progress (branch `build-step-4-3d-shelf`, no PR yet)
+## Step 4: built, waiting at the ⏸ (branch `build-step-4-3d-shelf`, pull request open)
 
-- **Built and working:** the 3D shelf in plain three.js (owner's choice over R3F, measured:
-  architecture section 2, row 9), the 2D/3D pair and the `D` key, defaults per device, the
-  switch with its anchor, fallbacks (no WebGL 2, lost context, slow frames), the lists beside
-  the canvas, `pnpm perf:3d`, the 3D bundle budget in `pnpm perf:js` (147 of 300 KB; library
-  233.3, budget raised to 240 with its reason).
+- **Built:** the 3D shelf in plain three.js (owner's choice over R3F, measured: architecture
+  section 2, row 9), the 2D/3D pair and the `D` key, defaults per device, the switch with its
+  anchor, fallbacks (no WebGL 2, lost context, slow frames), the lists beside the canvas,
+  `pnpm perf:3d`, the 3D bundle budget in `pnpm perf:js`. What changed from the plan, and
+  why, is in architecture section 25.
 - **The owner's first look (14 October) found two things, both fixed:** covers came in
-  blurred and sharpened seconds later (most boxes had the 90-pixel file, stretched twice over;
-  the 264-pixel one went to the nearest dozen only once the camera stopped), and 3D was
-  unusable on a phone. Now every box in view gets the file the 2D shelf already loaded on
-  that screen, redrawn at the size it appears, so covers are sharp on the first frame and
-  mostly come from the cache. And a phone, held either way, is never offered 3D (owner's
+  blurred and sharpened seconds later, and 3D was unusable on a phone. Covers are now the
+  2D shelf's own file, redrawn at the size each box appears, so they are sharp on the first
+  frame and come from the cache. A phone, held either way, is never offered 3D (owner's
   call: "if not possible to make a good experience in mobile just not show this view").
   Tablets keep 3D as a choice; in portrait the wall is small and sits low with empty space
-  above, worth a look later.
-- **Checked:** unit tests; `e2e/shelf-3d.spec.ts` in all nine projects; the whole browser
-  suite in Chromium (308 passed). perf:3d: 60 fps, 13 draws at 247 boxes, 14 at 1,376 (stress
-  set), 69 MB of textures, also in software rendering. This machine has an RTX 4090, not a
-  mid-range laptop: say so in the summary.
-- **Left before the ⏸:** finish the docs (architecture sections 14, 17, 19 and 25; testing.md
-  on the 3D tests, the probe and perf:3d; AGENTS.md commands; README status); a full
-  `pnpm verify --skip-linux` from PowerShell with `LIGHTHOUSE_SLOWDOWN=5.5`; open the PR;
-  summary with screenshots (desktop light and dark in 3D, phone light and dark in 2D).
-  No 3D reference screenshots: the Linux pass needs Docker.
-- **Decisions to list in section 25:** the server always draws 2D and 3D takes over after its
-  first frame; a chosen 3D is honored under reduced motion (it cuts); a phone, held either
-  way (narrower than 40rem or shorter than 36rem, `TOO_SMALL_FOR_3D`), is never offered 3D,
-  and a 3D choice made in a larger window waits for one; the budget hook is `window.__shelf3dProbe`, set by a test, not a test build; bays
-  have three ledges; no pulsing light in 3D (idle draws nothing); the sheet has no scrim in 3D.
+  above, worth a look at step 9.
+- **Checked on the last code commit:** `pnpm verify --skip-linux` passed every step: checks
+  (536 unit and component tests), build, JavaScript budgets (library 233.4 of 240 KB, 3D
+  147 of 300), 928 browser tests in all nine projects with 0 failed, Lighthouse, Storybook.
+  The home page's keyboard test was flaky in WebKit (an arrow pressed before the picker had
+  hydrated) and now waits for it. perf:3d on this machine: 60 fps, 13 draw calls, 64 MB.
+- **Lighthouse needs a fresh calibration each time on Windows.** At 5.5 times the home page
+  blocked only 85 ms this time (the benchmark read 5,140, against 4,470 at step 3), so the
+  scores were kinder than the Mac's. Where it blocks about 180 ms, between 7.5 times (160 ms)
+  and 8 times (226 ms), the library scores 87 to 91 and the wall 89 to 91: the same near
+  miss as step 3. Step 4 did not make the 2D page slower.
+- **Not checked:** the Linux pass (no Docker), so there are no 3D reference screenshots; the
+  frame rate on a mid-range laptop (this one has an RTX 4090), at step 9.
+- **Waiting on the owner:** the review at the ⏸, then merging the pull request.
+- **Raised by the owner, not scheduled:** syncing owned games from Steam, PlayStation, Xbox
+  and Nintendo, each matched to the right IGDB record. The reference app did Steam and
+  PlayStation through IGDB's store ids, not Xbox or Nintendo. Sync is out of scope in spec
+  section 18, and ADR 001 left room for it on copies. What the fixtures show: of the 232
+  sample games, IGDB carries a Steam id on 121, a Microsoft Store id on 106 and a PlayStation
+  Store id on 102; no Nintendo store id at all. Proposed: an ADR on sync and matching before
+  step 7, so adding games and sync share one way to resolve a store's id to an entry.
 
 ## Update: 14 October 2026, on the Windows computer
 
@@ -50,8 +54,9 @@ step 3. This note is what the next session needs and cannot get from the code. R
   `verify.ts` taught to start and stop processes on Windows, and the read-only-folder test
   skipped there. See `docs/testing.md`.
 - **Lighthouse on Windows:** the slowdown from the benchmark (16.6 times) is far too harsh
-  here. Use `LIGHTHOUSE_SLOWDOWN=5.5`, where the home page blocks for about 180 ms as it
-  does on the Mac and CI. The table is in `docs/testing.md`, "Speed".
+  here. At step 3, `LIGHTHOUSE_SLOWDOWN=5.5` made the home page block for about 180 ms as it
+  does on the Mac and CI; at step 4 that took about 7.7 (see above). The table is in
+  `docs/testing.md`, "Speed".
 - **A real bug found by running WebKit here:** the theme picker visibly faded from System
   to the saved theme on every load, because Next.js hydrates a page's content after the
   layout that sets `data-ready`. Segmented controls now hold their own transitions until
