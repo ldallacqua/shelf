@@ -1,6 +1,6 @@
 # ADR 003: Syncing owned games from Steam, PlayStation, Xbox and Nintendo
 
-- **Status:** proposed, awaiting approval
+- **Status:** accepted, 14 Oct 2026, with the proposals in its last section
 - **Date:** 14 Oct 2026
 - **Decides:** how a game reported by a store or a console becomes the right copy of the right
   entry, for each of the four sources, and what a sync may and may not change
@@ -187,13 +187,15 @@ transaction that raises the library's version, like every other write.
 | A library aggregator as the source (Playnite and similar) | A desktop app on one computer, not a service a website can read on a schedule. An export from one could still feed the import. |
 | Scraping Nintendo's account pages | Needs my Nintendo password on the server, and breaks whenever a page changes |
 
-## To settle before building
+## Settled at approval
 
-1. **Where it goes in the plan.** Proposed: its own step right after step 7, which builds
-   sign-in and the resolver's rungs 3 and 4 for adding games by hand. Sources in order of
-   certainty: Steam, then PlayStation, then Xbox after its spike, then the Nintendo import.
-2. **How Xbox is read.** A Microsoft sign-in through an app registered for Shelf (no third
-   party, more to set up), or OpenXBL (a key and done, but a third party sees the token and
-   its free tier is limited). The spike decides; my leaning is the first.
-3. **Subscriptions on the shelf.** Proposed: shown, marked, not counted as owned. Or not shown
-   at all.
+The owner approved this record as proposed on 14 Oct 2026, so its three open questions take
+the proposed answers:
+
+1. **Where it goes in the plan:** its own step right after step 7, which builds sign-in and
+   the resolver's rungs 3 and 4 for adding games by hand. Sources in order of certainty:
+   Steam, then PlayStation, then Xbox after its spike, then the Nintendo import.
+2. **How Xbox is read:** the spike decides, between a Microsoft sign-in through an app
+   registered for Shelf (no third party, more to set up) and OpenXBL (a key and done, but a
+   third party sees the token and its free tier is limited). The leaning is the first.
+3. **Subscriptions on the shelf:** shown, marked, not counted as owned.

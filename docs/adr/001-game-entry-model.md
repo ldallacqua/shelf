@@ -139,7 +139,7 @@ import. Exact column types are an architecture detail for Phase 3.
 ## Room for sync (designed, not built)
 
 Nothing below exists yet. It shows that it fits without changing the tables above.
-[ADR 003](003-platform-sync.md) (proposed) takes it further: how each source is matched, and
+[ADR 003](003-platform-sync.md) takes it further: how each source is matched, and
 one `source_items` table in place of `copy_links`.
 
 | Future need | Where it attaches |

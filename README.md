@@ -29,6 +29,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 5 | Filters, sorting, smart shelves | Not started |
 | Step 6 | Game detail | Not started |
 | Step 7 | Sign-in and adding games | Not started |
+| Sync | Steam, PlayStation and Xbox sync, and a Nintendo import: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Not started; after step 7 |
 | Step 8 | Landing page | Not started |
 | Step 9 | Phone and tablet, accessibility and speed passes | Not started |
 | Step 10 | Final review | Not started |

@@ -4,16 +4,16 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 4 is merged; ADR 003 waits for approval
+## Now: step 5, with ADR 003 accepted
 
 - **Step 4 is done.** The owner approved it at the ⏸ and it is merged
   ([#6](https://github.com/ldallacqua/shelf/pull/6)). What it holds is below.
-- **ADR 003, syncing Steam, PlayStation, Xbox and Nintendo, is proposed** on the branch
-  `adr-003-platform-sync`, with its pull request. It answers three questions at its end
-  (where it goes in the plan, how Xbox is read, whether subscriptions show) that the owner
-  has not decided yet.
-- **Next:** step 5, filters and sorting, on a branch from `main`, unless the owner places
-  sync earlier.
+- **ADR 003, syncing Steam, PlayStation, Xbox and Nintendo, is accepted**
+  ([#7](https://github.com/ldallacqua/shelf/pull/7)), with the answers it proposed: sync is
+  its own step right after step 7; the Xbox route is settled by a one-day spike, leaning to
+  a Microsoft sign-in of Shelf's own; subscription games show, marked, and never count as
+  owned.
+- **Next:** step 5, filters, sorting and smart shelves, on a branch from `main`.
 
 ## Step 4: the 3D shelf, as merged
 
