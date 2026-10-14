@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -68,5 +68,25 @@ describe('Segmented', () => {
 
     await userEvent.tab()
     expect(document.body).toHaveFocus()
+  })
+
+  // A group that remembers a choice is drawn by the server in its default
+  // state and corrected as it hydrates, which on the home page comes after the
+  // page is marked live. That correction must not be seen as a fade.
+  it('does not animate until two frames after it mounts', () => {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] })
+    try {
+      render(<Views />)
+      const group = screen.getByRole('radiogroup', { name: 'View' })
+      expect(group).not.toHaveAttribute('data-settled')
+
+      act(() => vi.advanceTimersToNextFrame())
+      expect(group).not.toHaveAttribute('data-settled')
+
+      act(() => vi.advanceTimersToNextFrame())
+      expect(group).toHaveAttribute('data-settled')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
