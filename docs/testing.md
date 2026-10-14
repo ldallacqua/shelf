@@ -9,9 +9,9 @@ reasoning behind the layers is in [the architecture, section 17](architecture.md
 | --- | --- | --- | --- |
 | Unit | `src/**/*.test.ts`, `scripts/**/*.test.ts` | `pnpm test` | Rules with no browser: the data model's rules (grouping, the library file, platforms, cover colors), the store against a real SQLite, the IGDB client against test doubles, the seeds, the theme rules, the design tokens, the list of pages, the translation check |
 | Component | `src/**/*.test.tsx` | `pnpm test` | Components in a simulated browser, in both languages: keyboard paths, labels, state |
-| End to end | `e2e/*.spec.ts` | `pnpm e2e` | The built app in real browsers: language, theme, layout, accessibility, the lit shelf, the library file |
+| End to end | `e2e/*.spec.ts` | `pnpm e2e` | The built app in real browsers: language, theme, layout, accessibility, the lit shelf, the library file, the 3D shelf and its switch |
 | Reference screenshots | `e2e/visual.spec.ts` | `pnpm verify` (its Linux pass) | Every page, both themes, both languages, phone and desktop |
-| Speed | `scripts/measure-js.ts`, `scripts/lighthouse.ts` | `pnpm perf:js`, `pnpm perf:lighthouse` | First-load JavaScript per page, and Lighthouse on the mobile profile |
+| Speed | `scripts/measure-js.ts`, `scripts/lighthouse.ts`, `scripts/perf-3d.ts` | `pnpm perf:js`, `pnpm perf:lighthouse`, `pnpm perf:3d` | First-load JavaScript per page and the 3D bundle, Lighthouse on the mobile profile, and the 3D shelf's frame time on this machine's graphics card |
 
 ## Data in tests
 
@@ -50,6 +50,34 @@ A box is found by its name, which says what it shows: `getByRole('button', { nam
 Bot/ })` has the accessible name "Astro Bot (2024), PS5, Physical, Completed". Only the rows
 near the window are in the page, so a game far down a shelf is not found until it is scrolled
 or stepped to.
+
+## The 3D shelf in browser tests
+
+**Every test starts in 2D**, whatever the device would choose: the `dimension` option in
+`e2e/fixtures.ts` stores 2D before the page loads. A test about 3D asks for it with
+`test.use({ dimension: '3d' })`, or for the device's own default with `'device'`.
+
+**`shelfSettled(page)` waits for the shelf to finish deciding.** It reads the pair of buttons:
+if 3D is pressed, it waits until the 3D shelf has taken over (`[data-shelf-phase="3d"]`) or
+said why it could not, and returns `'3d'`, `'fallback'` or `'2d'`. `openLibrary` calls it.
+
+**Where a browser cannot draw 3D, the test is skipped, not failed.** Test browsers draw WebGL
+in software, and some cannot make a context at all. Then the app's own fallback runs, and
+the fallback has tests of its own (no WebGL 2, a lost context). The tests about the scene
+itself run at desktop width, where 3D is the default; a phone is checked for having no 3D.
+
+**The scene's numbers** (draw calls, texture memory, which box is pulled, where the camera
+is) are read through `window.__shelf3dProbe`. Set it to `{}` in an init script and the scene
+writes its numbers there after each frame:
+
+```ts
+await page.addInitScript(() => {
+  window.__shelf3dProbe = {}
+})
+```
+
+The scene's lists beside the canvas are what a test drives: the same names and order as the
+2D boxes, as buttons with `data-box`. The canvas itself is hidden from assistive technology.
 
 ## Before a push: `pnpm verify`
 
@@ -192,4 +220,16 @@ about 180 ms on the Mac and on CI. On Windows that is about 5.5 times, so run
 `LIGHTHOUSE_SLOWDOWN=5.5 pnpm verify` there and check the home page's blocked time in the
 output before reading the scores.
 
-Both need the server running: `pnpm build && pnpm start`.
+**`pnpm perf:3d`** measures the 3D shelf on this machine's graphics card, since the test
+browsers draw WebGL in software. It walks the camera along the wall and back, sweeps the
+pointer across the boxes, and reports the middle and 95th-percentile frame times, the draw
+calls and the texture memory. The target is a middle frame within 16.7 ms with 500 games on a
+mid-range laptop, so measure the stress set:
+
+```sh
+pnpm seed stress && pnpm build && pnpm start
+pnpm perf:3d
+pnpm seed && pnpm build        # back to the sample library
+```
+
+All three need the server running: `pnpm build && pnpm start`.

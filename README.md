@@ -25,7 +25,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 1 | Scaffold, tooling, CI, both languages, themes, design tokens. Visual direction changed: [`docs/adr/002-visual-direction.md`](docs/adr/002-visual-direction.md) | Done |
 | Step 2 | IGDB client, data model, the three data sets, the library file | Done |
 | Step 3 | 2D shelf, wall and list | Done |
-| Step 4 | 3D shelf | Not started |
+| Step 4 | 3D shelf, and the switch between 2D and 3D | In review |
 | Step 5 | Filters, sorting, smart shelves | Not started |
 | Step 6 | Game detail | Not started |
 | Step 7 | Sign-in and adding games | Not started |
@@ -34,9 +34,10 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 10 | Final review | Not started |
 
 What is on screen today: the library, with a sample of 230 real games, as a lit shelf, a wall
-of covers or a list, grouped by platform, status or year. The home page is still the
-foundations page from step 1 (light, color, type, motion, controls) until the landing page
-replaces it at step 8. There is no sign-in yet, so nothing can be added.
+of covers or a list, grouped by platform, status or year. On a desktop the shelf is a lit
+wall in 3D, walked sideways, and `D` switches between 2D and 3D (a phone has 2D only). The
+home page is still the foundations page from step 1 (light, color, type, motion, controls)
+until the landing page replaces it at step 8. There is no sign-in yet, so nothing can be added.
 
 ## Credits
 
