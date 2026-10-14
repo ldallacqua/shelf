@@ -173,4 +173,23 @@ The Mac and GitHub's runners do not quite agree. The last time both measured the
 (step 3), the Mac gave the shelf 91 and a runner, at Lighthouse's stock four times, 87. A
 score within a few points of 90 on the Mac is a near miss, not a pass to lean on.
 
+**On Windows the slowdown worked out from the benchmark is wrong.** Chrome slows a Windows
+processor much more coarsely than a Mac's, and the cost grows faster than the number: on
+the Windows computer (benchmark about 4,470, so 16.6 times) the home page blocked for
+2,262 ms, against about 177 ms on the Mac at 15.7 times. Measured at step 3's last commit
+on Windows:
+
+| Slowdown | Home | Library | Wall | Home blocked |
+| --- | --- | --- | --- | --- |
+| 16.6 (from the benchmark) | 69 | 58 | 58 | 2,262 ms |
+| 8 | 85 | 77 | 78 | 557 ms |
+| 6 | 95 | 88 | 87 | 216 ms |
+| 5.5 | 95 | 89 | 88 | 201 ms |
+| 4 (CI's) | 99 | 96 | 95 | 82 ms |
+
+The home page's blocked time is the check that two machines agree (`scripts/lib/budgets.ts`):
+about 180 ms on the Mac and on CI. On Windows that is about 5.5 times, so run
+`LIGHTHOUSE_SLOWDOWN=5.5 pnpm verify` there and check the home page's blocked time in the
+output before reading the scores.
+
 Both need the server running: `pnpm build && pnpm start`.
