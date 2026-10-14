@@ -34,7 +34,7 @@ import {
   visibleWidth,
   type Rig,
 } from './camera-rig'
-import { BIG_SLOTS, blankTexture, CoverAtlas } from './covers'
+import { blankTexture, CoverAtlas } from './covers'
 import {
   drawDigits,
   drawLabels,
@@ -72,7 +72,7 @@ import {
   PART_UPRIGHT,
   partMaterial,
   roomUniforms,
-  SMALL_PAGES,
+  COVER_PAGES,
   SPINE_PAGES,
   wallMaterial,
   writeLedge,
@@ -138,6 +138,8 @@ const JUDGE_FRAMES = 45
 
 /** A box in focus comes this far toward you, and a playing one stands this far forward. */
 const FORWARD = { hot: 44, playing: 16 }
+/** The most a box grows on screen: a game being played and the one under the pointer stand larger, and nearer. */
+const HOT_GROWTH = 1.1
 /** Lean of a dropped game, in radians: 5 degrees, against its neighbor to the right. */
 const LEAN = (-5 * Math.PI) / 180
 /** The pulled box comes this far out of the wall. */
@@ -243,7 +245,6 @@ export class ShelfScene {
   private slowFrames = 0
   private recent: number[] = []
   private coversAt = Number.NaN
-  private coversSettledAt = 0
   private disposed = false
 
   constructor(canvas: HTMLCanvasElement, options: Options) {
@@ -516,10 +517,8 @@ export class ShelfScene {
 
   private textures(): BoxTextures {
     return {
-      small: Array.from({ length: SMALL_PAGES }, (_, at) => this.covers.small[at] ?? this.blank),
-      smallCell: this.covers.smallCell,
-      big: this.covers.big,
-      bigCell: this.covers.bigCell,
+      covers: Array.from({ length: COVER_PAGES }, (_, at) => this.covers.pages[at] ?? this.blank),
+      coverCell: this.covers.cell,
       own: this.blank,
       spines: Array.from({ length: SPINE_PAGES }, (_, at) => this.spines[at] ?? this.blank),
       spineCell: [SPINE.width / 2048, SPINE.height / 2048],
@@ -665,7 +664,7 @@ export class ShelfScene {
     const place = game.cover ? this.covers.place(game.cover) : undefined
     entry.attributes.cover.setXYZW(
       where.instance,
-      place?.source ?? 0,
+      place ? 1 : 0,
       place?.page ?? 0,
       place?.u ?? 0,
       place?.v ?? 0,
@@ -761,6 +760,8 @@ export class ShelfScene {
       if (ledge !== undefined) this.setLed(ledge, this.restingLed)
     }
     this.hot = box
+    // Spine-out, the box under the pointer is the one whose cover may be wanted.
+    if (this.standing === 'compact') this.coversAt = Number.NaN
     if (box !== undefined && this.games[box]) {
       this.forwardTarget[box] = FORWARD.hot
       this.moving.add(box)
@@ -817,12 +818,7 @@ export class ShelfScene {
     }
     const place = game.cover ? this.covers.place(game.cover) : undefined
     if (place)
-      (geometry.getAttribute('aCover').array as Float32Array).set([
-        place.source,
-        place.page,
-        place.u,
-        place.v,
-      ])
+      (geometry.getAttribute('aCover').array as Float32Array).set([1, place.page, place.u, place.v])
     const material = boxMaterial(this.uniforms, this.textures(), [width, height, depth], false)
     const mesh = new InstancedMesh(geometry, material, 1)
     mesh.frustumCulled = false
@@ -838,7 +834,7 @@ export class ShelfScene {
         }
         this.pullMesh.own = texture
         material.uniforms.uOwn!.value = texture
-        ;(geometry.getAttribute('aCover').array as Float32Array)[0] = 3
+        ;(geometry.getAttribute('aCover').array as Float32Array)[0] = 2
         geometry.getAttribute('aCover').needsUpdate = true
         this.invalidate()
       })
@@ -909,6 +905,7 @@ export class ShelfScene {
     const { min, max } = limits(layout.x0, layout.x1, seen, 200)
     if (this.rig.min === 0 && this.rig.max === 0) this.rig = createRig(min, min, max)
     else relimit(this.rig, min, max)
+    this.fitCovers()
   }
 
   resize(width: number, height: number): void {
@@ -1156,7 +1153,7 @@ export class ShelfScene {
     }
 
     this.placeCamera()
-    this.wantCovers(now, moving)
+    this.wantCovers()
     this.renderer.render(this.scene, this.camera)
     this.frames += 1
     this.judge(elapsed, moving)
@@ -1168,17 +1165,20 @@ export class ShelfScene {
     else this.last = 0
   }
 
-  /** Which covers to have: small ones near the camera, large ones for the nearest dozen once it stops. */
-  private wantCovers(now: number, moving: boolean): void {
+  /**
+   * Which covers to have: those of the boxes in view and either side of it,
+   * nearest the middle first. Spine-out, only the box under the pointer
+   * shows its cover, and only once it is pulled out and turned.
+   */
+  private wantCovers(): void {
     const x = this.rig.x
-    if (!moving && !this.coversSettledAt) this.coversSettledAt = now
-    if (moving) this.coversSettledAt = 0
-    if (
-      Math.abs(x - this.coversAt) < 120 &&
-      !(this.coversSettledAt && this.coversSettledAt === now)
-    )
-      return
+    if (Math.abs(x - this.coversAt) < 120) return
     this.coversAt = x
+    if (this.standing === 'compact') {
+      const cover = this.hot === undefined ? undefined : this.games[this.hot]?.cover
+      this.covers.want(cover ? [cover] : [])
+      return
+    }
     const seen = visibleWidth(this.distance, this.width / this.height)
     const near: { id: string; d: number }[] = []
     for (const [at, box] of this.layout.boxes.entries()) {
@@ -1187,9 +1187,26 @@ export class ShelfScene {
       if (id && d < seen * 1.25) near.push({ id, d })
     }
     near.sort((a, b) => a.d - b.d)
-    const ids = [...new Set(near.map((entry) => entry.id))]
-    const big = this.coversSettledAt ? ids.slice(0, BIG_SLOTS) : []
-    this.covers.want(ids, big)
+    this.covers.want([...new Set(near.map((entry) => entry.id))])
+  }
+
+  /**
+   * Sizes the atlas's cells to the covers as they appear: the widest case
+   * front in the room, a little more for a box that comes forward, in the
+   * pixels the canvas draws. The file is chosen at the screen's own density,
+   * as the 2D shelf chooses it.
+   */
+  private fitCovers(): void {
+    let widest = 0
+    for (const game of this.games) {
+      const { width } = caseShapes[game.shape]
+      widest = Math.max(widest, game.coverOnly ? width * COVER_ONLY_SCALE.width : width)
+    }
+    if (!widest) return
+    const seen = visibleWidth(this.distance, this.width / this.height)
+    const across = ((widest * this.width) / seen) * HOT_GROWTH
+    this.covers.fit(across * this.pixelRatio, across * (window.devicePixelRatio || 1))
+    this.coversAt = Number.NaN
   }
 
   /**

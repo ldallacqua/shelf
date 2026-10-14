@@ -387,9 +387,11 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 
 | Use | IGDB size | Pixels |
 | --- | --- | --- |
-| List row, 3D far atlas | `cover_small` | 90 × 128 |
+| List row | `cover_small` | 90 × 128 |
 | Shelf, wall | `cover_big`, with `cover_big_2x` for sharp screens | 264 × 374 |
-| Detail, pulled box | `720p` | up to 720 high |
+| 3D shelf | Whichever the 2D shelf takes on that screen (`cover_small_2x` or `cover_big`), redrawn at the size the box appears | 180 × 256 or 264 × 374 |
+| 3D pulled box | `cover_big_2x` | 528 × 748 |
+| Detail | `720p` | up to 720 high |
 | Screenshots | `screenshot_med`, `screenshot_big`, `screenshot_huge` | 569, 889, 1280 wide |
 
 - Always WebP. IGDB's servers return an error for AVIF, so there is no AVIF step.
@@ -567,7 +569,7 @@ If the context is lost or the frame rate collapses, the page returns to 2D and s
 | Boxes | One instanced mesh per case shape (about ten shapes). A thousand games is about ten draw calls. |
 | Per-box data | Position, tilt, state (resting, hovered, pulled, dimmed) and texture coordinates, as instance attributes |
 | Spines (compact option) | Drawn at runtime on a canvas from title, colors and platform, in the same font as the 2D spines, into texture atlases built for the bays near the camera |
-| Covers | Three levels: a blur of the cover's stored colors, `cover_small` in atlases for boxes in view, `cover_big` for the nearest dozen and the pulled box |
+| Covers | A blur of the cover's stored colors until the cover arrives. Every box in view and either side of it then gets the file the 2D shelf uses on that screen (the 2D shelf always draws first, so these come from the cache), redrawn into atlas cells the size the box appears, so the GPU reads about one texel per pixel. The pulled box gets `cover_big_2x`, alone. Spine-out, only the pulled box's cover loads. |
 | Light | No real-time shadows or lights. The LED glow on the wall, the halo round each box and the reflection on the ledge are shader terms driven by the lighting tokens and by one color per ledge. |
 | Frames | Drawn only when something changes. An idle shelf uses no GPU. |
 | Resolution | Capped at 1.75× and lowered automatically if frames run slow |

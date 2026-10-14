@@ -109,9 +109,9 @@ export function Toolbar({
           <Segmented
             aria-label={t('dimension.label')}
             data-preference="shelf-mode"
-            // A phone is offered 2D only: there is no room, and 3D is for wider screens.
-            // Once in 3D, the way back stays in reach.
-            className={dimension === '2d' ? 'max-sm:hidden' : undefined}
+            // A phone is not offered 3D (TOO_SMALL_FOR_3D), so there is nothing to choose.
+            // Hidden by CSS, so it is right from the first paint.
+            className="too-small-for-3d:hidden"
             value={dimension}
             onValueChange={(value) => {
               if (!(value === '3d' && noThreeD)) onDimension(value)

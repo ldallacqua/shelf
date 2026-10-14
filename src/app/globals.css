@@ -10,6 +10,13 @@
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 @custom-variant pointer-coarse (@media (pointer: coarse));
+/* A window too small for the 3D shelf: TOO_SMALL_FOR_3D in features/library/preferences.ts. */
+@custom-variant too-small-for-3d {
+  /* The shorthand form would split this list at its comma. */
+  @media (width < 40rem), (height < 36rem) {
+    @slot;
+  }
+}
 
 @theme inline {
   --color-wall: var(--wall);

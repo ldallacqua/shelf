@@ -11,6 +11,15 @@ step 3. This note is what the next session needs and cannot get from the code. R
   switch with its anchor, fallbacks (no WebGL 2, lost context, slow frames), the lists beside
   the canvas, `pnpm perf:3d`, the 3D bundle budget in `pnpm perf:js` (147 of 300 KB; library
   233.3, budget raised to 240 with its reason).
+- **The owner's first look (14 October) found two things, both fixed:** covers came in
+  blurred and sharpened seconds later (most boxes had the 90-pixel file, stretched twice over;
+  the 264-pixel one went to the nearest dozen only once the camera stopped), and 3D was
+  unusable on a phone. Now every box in view gets the file the 2D shelf already loaded on
+  that screen, redrawn at the size it appears, so covers are sharp on the first frame and
+  mostly come from the cache. And a phone, held either way, is never offered 3D (owner's
+  call: "if not possible to make a good experience in mobile just not show this view").
+  Tablets keep 3D as a choice; in portrait the wall is small and sits low with empty space
+  above, worth a look later.
 - **Checked:** unit tests; `e2e/shelf-3d.spec.ts` in all nine projects; the whole browser
   suite in Chromium (308 passed). perf:3d: 60 fps, 13 draws at 247 boxes, 14 at 1,376 (stress
   set), 69 MB of textures, also in software rendering. This machine has an RTX 4090, not a
@@ -21,8 +30,9 @@ step 3. This note is what the next session needs and cannot get from the code. R
   summary with screenshots (desktop light and dark in 3D, phone light and dark in 2D).
   No 3D reference screenshots: the Linux pass needs Docker.
 - **Decisions to list in section 25:** the server always draws 2D and 3D takes over after its
-  first frame; a chosen 3D is honored under reduced motion (it cuts); phone widths are offered
-  2D only; the budget hook is `window.__shelf3dProbe`, set by a test, not a test build; bays
+  first frame; a chosen 3D is honored under reduced motion (it cuts); a phone, held either
+  way (narrower than 40rem or shorter than 36rem, `TOO_SMALL_FOR_3D`), is never offered 3D,
+  and a 3D choice made in a larger window waits for one; the budget hook is `window.__shelf3dProbe`, set by a test, not a test build; bays
   have three ledges; no pulsing light in 3D (idle draws nothing); the sheet has no scrim in 3D.
 
 ## Update: 14 October 2026, on the Windows computer
@@ -126,7 +136,7 @@ happens again, run macOS WebKit with `--workers=1`, or leave WebKit to the Linux
   (wheel, trackpad, drag, arrows, Page Up/Down, Home/End), eased and clamped; an index of
   ticks, one per shelf; hover or focus brings a box forward and glides its ledge's LED to
   the game's color, with a small label; pull on click or Enter, with the detail beside it;
-  covers by distance (color blur, small atlas, big); fall back to 2D on no WebGL 2, a lost
+  covers at the size they appear (color blur until they arrive); fall back to 2D on no WebGL 2, a lost
   context, or a sustained low frame rate, saying so in one line; the canvas hidden from
   assistive technology, with the same labeled lists beside it driving the camera.
 - **Defaults:** 3D on a desktop with WebGL 2 and no reduced motion; 2D on phones, tablets and

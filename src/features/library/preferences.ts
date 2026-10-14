@@ -63,6 +63,16 @@ export const dimensionPreference: Preference<Dimension> = {
     "'WebGL2RenderingContext' in window?'3d':'2d'",
 }
 
+/**
+ * A window too small for the 3D shelf: a phone, held either way. The boxes
+ * there would be too small to read or to tap, and the 2D shelf is made for
+ * it, so 3D is not offered at all. A choice of 3D made in a larger window is
+ * kept, and applies again when there is room. The `too-small-for-3d` variant
+ * in `globals.css` is the same query, for what must be right before the
+ * first paint.
+ */
+export const TOO_SMALL_FOR_3D = '(width < 40rem), (height < 36rem)'
+
 const preferences = [densityPreference, wallSizePreference, dimensionPreference] as const
 
 const parse = <Value extends string>(preference: Preference<Value>, value: unknown): Value =>

@@ -28,7 +28,7 @@ import { anchorIn2d, ShelfStage } from './shelf-stage'
 import { Toolbar } from './toolbar'
 import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
-import { useDensity, useDimension, useWallSize } from './use-preference'
+import { useDensity, useDimension, useTooSmallFor3d, useWallSize } from './use-preference'
 import type { DrawnShelf, OpenBox } from './view-props'
 import { WallView } from './wall-view'
 
@@ -91,8 +91,10 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
   const shelf3d = useRef<Shelf3DHandle | undefined>(undefined)
   const noWebGL2 = useNoWebGL2()
   const noThreeD = noWebGL2 || fallback === 'unsupported'
+  // On a phone the shelf is 2D, and 3D is not offered.
+  const tooSmall = useTooSmallFor3d()
   // With no WebGL 2 at all, 3D is not even tried: the 3D button says why (spec 3.6).
-  const asked: Dimension = noWebGL2 ? '2d' : dimension
+  const asked: Dimension = noWebGL2 || tooSmall ? '2d' : dimension
   const shown: Dimension = asked === '3d' && !fallback ? '3d' : '2d'
   const [open, setOpen] = useState<OpenBox>()
   // When the library file arrives, its shelves are arranged in a turn of
@@ -136,7 +138,7 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
   /** 2D or 3D, as asked for by the buttons or the D key. Nothing else about the library changes. */
   const switchTo = (next: Dimension) => {
     if (next === '3d') {
-      if (noThreeD) return
+      if (noThreeD || tooSmall) return
       setAnchor(anchorIn2d(scope.current))
       // 3D gave way earlier on this page: asking again tries again.
       setFallback(undefined)
@@ -144,16 +146,16 @@ export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
     setDimension(next)
   }
 
-  const keys = useRef({ view, shown, switchTo })
+  const keys = useRef({ view, shown, tooSmall, switchTo })
   useEffect(() => {
-    keys.current = { view, shown, switchTo }
+    keys.current = { view, shown, tooSmall, switchTo }
   })
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'd' && event.key !== 'D') return
       if (event.altKey || event.ctrlKey || event.metaKey || typing(event.target)) return
-      const { view: now, shown: drawn, switchTo: go } = keys.current
-      if (now !== 'shelf') return
+      const { view: now, shown: drawn, tooSmall: small, switchTo: go } = keys.current
+      if (now !== 'shelf' || small) return
       event.preventDefault()
       go(drawn === '3d' ? '2d' : '3d')
     }

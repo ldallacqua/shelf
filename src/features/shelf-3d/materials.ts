@@ -21,8 +21,8 @@ import type { Lighting, Rgb } from './tokens'
  * `texelFetch` are available, and `gl_FragColor` is its output.
  */
 
-/** How many atlas pages of small covers, and of generated spines, the box shader can read. */
-export const SMALL_PAGES = 4
+/** How many atlas pages of covers, and of generated spines, the box shader can read. */
+export const COVER_PAGES = 4
 export const SPINE_PAGES = 2
 
 /** Shared by every material, so one change of light reaches the whole room. */
@@ -175,13 +175,11 @@ const BOX_FRAGMENT = /* glsl */ `
   ${ROOM}
 
   uniform vec3 uSize;
-  uniform sampler2D uSmall0;
-  uniform sampler2D uSmall1;
-  uniform sampler2D uSmall2;
-  uniform sampler2D uSmall3;
-  uniform vec2 uSmallCell;
-  uniform sampler2D uBig;
-  uniform vec2 uBigCell;
+  uniform sampler2D uCover0;
+  uniform sampler2D uCover1;
+  uniform sampler2D uCover2;
+  uniform sampler2D uCover3;
+  uniform vec2 uCoverCell;
   uniform sampler2D uOwn;
   uniform sampler2D uSpine0;
   uniform sampler2D uSpine1;
@@ -218,11 +216,11 @@ const BOX_FRAGMENT = /* glsl */ `
     return mix(color, vWash0, a);
   }
 
-  vec3 smallCover(float page, vec2 uv) {
-    if (page < 0.5) return texture(uSmall0, uv).rgb;
-    if (page < 1.5) return texture(uSmall1, uv).rgb;
-    if (page < 2.5) return texture(uSmall2, uv).rgb;
-    return texture(uSmall3, uv).rgb;
+  vec3 atlasCover(float page, vec2 uv) {
+    if (page < 0.5) return texture(uCover0, uv).rgb;
+    if (page < 1.5) return texture(uCover1, uv).rgb;
+    if (page < 2.5) return texture(uCover2, uv).rgb;
+    return texture(uCover3, uv).rgb;
   }
 
   // The cover on a face of the given aspect, filling it as object-fit: cover does.
@@ -235,9 +233,8 @@ const BOX_FRAGMENT = /* glsl */ `
     vec2 cell = vCover.zw;
     // Image rows run top down.
     vec2 inCell = vec2(fit.x, 1.0 - fit.y);
-    if (source > 2.5) return texture(uOwn, inCell).rgb;
-    if (source > 1.5) return texture(uBig, cell + inCell * uBigCell).rgb;
-    if (source > 0.5) return smallCover(vCover.y, cell + inCell * uSmallCell);
+    if (source > 1.5) return texture(uOwn, inCell).rgb;
+    if (source > 0.5) return atlasCover(vCover.y, cell + inCell * uCoverCell);
     return wash(uv);
   }
 
@@ -354,10 +351,8 @@ const BOX_FRAGMENT = /* glsl */ `
 
 /** Textures the box shader reads. Any missing page is a single texel. */
 export type BoxTextures = {
-  small: Texture[]
-  smallCell: [number, number]
-  big: Texture
-  bigCell: [number, number]
+  covers: Texture[]
+  coverCell: [number, number]
   own: Texture
   spines: Texture[]
   spineCell: [number, number]
@@ -376,13 +371,11 @@ export const boxMaterial = (
     uniforms: {
       ...room,
       uSize: { value: size },
-      uSmall0: { value: textures.small[0] },
-      uSmall1: { value: textures.small[1] },
-      uSmall2: { value: textures.small[2] },
-      uSmall3: { value: textures.small[3] },
-      uSmallCell: { value: textures.smallCell },
-      uBig: { value: textures.big },
-      uBigCell: { value: textures.bigCell },
+      uCover0: { value: textures.covers[0] },
+      uCover1: { value: textures.covers[1] },
+      uCover2: { value: textures.covers[2] },
+      uCover3: { value: textures.covers[3] },
+      uCoverCell: { value: textures.coverCell },
       uOwn: { value: textures.own },
       uSpine0: { value: textures.spines[0] },
       uSpine1: { value: textures.spines[1] },

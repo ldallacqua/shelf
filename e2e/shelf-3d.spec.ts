@@ -82,6 +82,34 @@ test.describe('which the shelf starts in (spec 3.6)', () => {
   })
 })
 
+test.describe('on a phone, held either way', () => {
+  test.use({ dimension: '3d' })
+  test.beforeEach(({ size }) => {
+    test.skip(size !== 'phone', 'a phone is checked at its own size')
+  })
+
+  test('the shelf is 2D with nothing to choose, even when 3D was chosen in a larger window', async ({
+    page,
+  }) => {
+    await openLibrary(page)
+    expect(await shelfSettled(page)).toBe('2d')
+    await expect(pair(page)).toBeHidden()
+    await page.keyboard.press('d')
+    await expect(page.locator('.game-box').first()).toBeVisible()
+    await expect(page.locator('[data-shelf-3d]')).toHaveCount(0)
+    // The choice waits for a window with room.
+    expect(await page.evaluate(() => localStorage.getItem('shelf:dimension'))).toBe('3d')
+  })
+
+  test('on its side, too', async ({ page }) => {
+    await page.setViewportSize({ width: 844, height: 390 })
+    await openLibrary(page)
+    expect(await shelfSettled(page)).toBe('2d')
+    await expect(pair(page)).toBeHidden()
+    await expect(page.locator('[data-shelf-3d]')).toHaveCount(0)
+  })
+})
+
 test.describe('the shelf in 3D', () => {
   test.use({ dimension: '3d' })
   test.beforeEach(({ size }) => {
@@ -190,6 +218,19 @@ test.describe('the shelf in 3D', () => {
       'Dropped',
       'Wishlist',
     ])
+  })
+
+  test('gives way to 2D in a window made too small for it, and comes back when there is room', async ({
+    page,
+  }) => {
+    await open3d(page)
+    await page.setViewportSize({ width: 1000, height: 500 })
+    await expect(page.locator('.game-box').first()).toBeVisible()
+    await expect(page.locator('[data-shelf-3d]')).toHaveCount(0)
+    await expect(pair(page)).toBeHidden()
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await expect(page.locator('[data-shelf-phase="3d"]')).toBeVisible()
+    await expect(pair(page).getByRole('radio', { name: '3D' })).toBeChecked()
   })
 
   test('stays within its draw-call and texture budgets (architecture, section 14)', async ({
