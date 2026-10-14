@@ -25,7 +25,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 1 | Scaffold, tooling, CI, both languages, themes, design tokens. Visual direction changed: [`docs/adr/002-visual-direction.md`](docs/adr/002-visual-direction.md) | Done |
 | Step 2 | IGDB client, data model, the three data sets, the library file | Done |
 | Step 3 | 2D shelf, wall and list | Done |
-| Step 4 | 3D shelf, and the switch between 2D and 3D | In review |
+| Step 4 | 3D shelf, and the switch between 2D and 3D | Done |
 | Step 5 | Filters, sorting, smart shelves | Not started |
 | Step 6 | Game detail | Not started |
 | Step 7 | Sign-in and adding games | Not started |
