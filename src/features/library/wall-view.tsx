@@ -1,12 +1,12 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useRef, type CSSProperties } from 'react'
+import { memo, useRef, type CSSProperties } from 'react'
 
 import { ledFrom } from '@/domain/color/palette'
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
-import { FIRST_BOXES, shareFirstBoxes } from '@/domain/library/view'
+import { shareFirstBoxes } from '@/domain/library/view'
 
 import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
@@ -26,6 +26,84 @@ const SIZES: Record<WallSize, string> = {
   medium: '(min-width: 40rem) 128px, 100px',
   large: '(min-width: 40rem) 192px, 152px',
 }
+
+type WallCellProps = {
+  item: ShelfItem
+  /** Position on its shelf, from 0. */
+  index: number
+  /** Its turn in the arrival stagger. */
+  stagger: number
+  shelfKey: string
+  total: number
+  platforms: ReadonlyMap<number, LibraryPlatform>
+  size: WallSize
+  active: boolean
+  enter: boolean
+  eager: boolean
+  onOpen: (box: OpenBox) => void
+}
+
+/**
+ * One cover on the wall. A component of its own, drawn again only when
+ * something about it changes: its name is worded through the translator, and
+ * a wall redraws every time a row scrolls into view.
+ */
+const WallCell = memo(function WallCell({
+  item,
+  index,
+  stagger,
+  shelfKey,
+  total,
+  platforms,
+  size,
+  active,
+  enter,
+  eager,
+  onOpen,
+}: WallCellProps) {
+  const t = useTranslations('Library')
+  const { game, copy } = item
+  const platform = platformFor(item, platforms)
+  const owned = [...new Set(game.copies.map((held) => held.platform))]
+    .map((id) => platforms.get(id)?.short)
+    .filter((short) => short !== undefined)
+
+  return (
+    <li
+      className="wall-cell"
+      data-cell=""
+      data-enter={enter ? '' : undefined}
+      aria-posinset={index + 1}
+      aria-setsize={total}
+      style={{ '--i': stagger } as CSSProperties}
+    >
+      <button
+        type="button"
+        className="wall-box"
+        data-status={game.status}
+        data-flip={copy ? `${game.slug}:${copy.platform}` : game.slug}
+        data-active={active ? 'true' : undefined}
+        aria-label={describeBox(item, platform, t)}
+        onClick={() => onOpen({ key: shelfKey, index })}
+        style={{ '--case-led': game.colors ? ledFrom(game.colors[0]) : undefined } as CSSProperties}
+      >
+        <Cover
+          cover={copy?.cover ?? game.cover}
+          colors={game.colors}
+          hash={game.hash}
+          title={game.title}
+          sizes={SIZES[size]}
+          eager={eager}
+          small={size !== 'large'}
+        />
+        <span className="wall-marks" aria-hidden="true">
+          <StatusMark status={game.status} label={t(`status.${game.status}`)} iconOnly />
+          <span className="truncate">{owned.join(' · ')}</span>
+        </span>
+      </button>
+    </li>
+  )
+})
 
 type WallGridProps = {
   shelf: DrawnShelf
@@ -51,7 +129,6 @@ function WallGrid({
   enter,
   eager,
 }: WallGridProps) {
-  const t = useTranslations('Library')
   const ref = useRef<HTMLUListElement>(null)
   const rowWindow = useRowWindow(ref, shelf.total)
 
@@ -62,9 +139,6 @@ function WallGrid({
       Math.min(shelf.items.length, Math.max(1, unmeasured))
   const before = rowWindow ? rowWindow.start * rowWindow.pitch : 0
   const after = rowWindow ? (rowWindow.rows - rowWindow.end) * rowWindow.pitch : 0
-
-  const describe = (item: ShelfItem, platform: LibraryPlatform | undefined) =>
-    describeBox(item, platform, t)
 
   return (
     // Safari stops calling a list a list once its bullets are styled away; the role says it again.
@@ -80,48 +154,21 @@ function WallGrid({
     >
       {shelf.items.slice(from, to).map((item, offset) => {
         const index = from + offset
-        const { game, copy } = item
-        const platform = platformFor(item, platforms)
-        const owned = [...new Set(game.copies.map((held) => held.platform))]
-          .map((id) => platforms.get(id)?.short)
-          .filter((short) => short !== undefined)
         return (
-          <li
-            key={`${game.slug}:${copy?.platform ?? ''}`}
-            className="wall-cell"
-            data-cell=""
-            data-enter={enter ? '' : undefined}
-            aria-posinset={index + 1}
-            aria-setsize={shelf.total}
-            style={{ '--i': offset } as CSSProperties}
-          >
-            <button
-              type="button"
-              className="wall-box"
-              data-status={game.status}
-              data-flip={copy ? `${game.slug}:${copy.platform}` : game.slug}
-              data-active={open?.key === shelf.key && open.index === index ? 'true' : undefined}
-              aria-label={describe(item, platform)}
-              onClick={() => onOpen({ key: shelf.key, index })}
-              style={
-                { '--case-led': game.colors ? ledFrom(game.colors[0]) : undefined } as CSSProperties
-              }
-            >
-              <Cover
-                cover={copy?.cover ?? game.cover}
-                colors={game.colors}
-                hash={game.hash}
-                title={game.title}
-                sizes={SIZES[size]}
-                eager={index < eager}
-                small={size !== 'large'}
-              />
-              <span className="wall-marks" aria-hidden="true">
-                <StatusMark status={game.status} label={t(`status.${game.status}`)} iconOnly />
-                <span className="truncate">{owned.join(' · ')}</span>
-              </span>
-            </button>
-          </li>
+          <WallCell
+            key={`${item.game.slug}:${item.copy?.platform ?? ''}`}
+            item={item}
+            index={index}
+            stagger={offset}
+            shelfKey={shelf.key}
+            total={shelf.total}
+            platforms={platforms}
+            size={size}
+            active={open?.key === shelf.key && open.index === index}
+            enter={enter}
+            eager={index < eager}
+            onOpen={onOpen}
+          />
         )
       })}
     </ul>
@@ -130,47 +177,61 @@ function WallGrid({
 
 type WallViewProps = ViewProps & { size: WallSize }
 
+/** One shelf on the wall: its pinned label and its covers. Its words are worked out once. */
+function WallSection({ shelf, ...grid }: Omit<WallGridProps, 'label'>) {
+  const t = useTranslations('Library')
+  const name = shelfName(shelf, t)
+  const headingId = `wall-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
+
+  return (
+    <section aria-labelledby={headingId} className="mt-6 first:mt-4">
+      <header className="wall-label">
+        <h2 id={headingId} className="title text-base sm:text-lg">
+          {name}
+        </h2>
+        <span className="readout text-[0.6875rem] text-muted">
+          {t('shelf.count', { count: shelf.total })}
+        </span>
+      </header>
+      <WallGrid shelf={shelf} label={t('shelf.games', { shelf: name })} {...grid} />
+    </section>
+  )
+}
+
 /**
  * The wall: covers in a dense grid with almost no chrome, the Letterboxd
  * way. A status mark and platform marks sit on each cover, and each shelf's
  * label stays pinned while its games scroll past (spec 3.8).
  */
-export function WallView({ shelves, platforms, open, onOpen, enter, size }: WallViewProps) {
-  const t = useTranslations('Library')
+export function WallView({
+  shelves,
+  platforms,
+  open,
+  onOpen,
+  enter,
+  firstBoxes,
+  size,
+}: WallViewProps) {
   const shares = shareFirstBoxes(
     shelves.map((shelf) => shelf.items.length),
-    FIRST_BOXES,
+    firstBoxes,
   )
 
   return (
     <div className="pb-6">
-      {shelves.map((shelf, index) => {
-        const name = shelfName(shelf, t)
-        const headingId = `wall-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
-        return (
-          <section key={shelf.key} aria-labelledby={headingId} className="mt-6 first:mt-4">
-            <header className="wall-label">
-              <h2 id={headingId} className="title text-base sm:text-lg">
-                {name}
-              </h2>
-              <span className="readout text-[0.6875rem] text-muted">
-                {t('shelf.count', { count: shelf.total })}
-              </span>
-            </header>
-            <WallGrid
-              shelf={shelf}
-              platforms={platforms}
-              size={size}
-              label={t('shelf.games', { shelf: name })}
-              unmeasured={shares[index] ?? 0}
-              open={open}
-              onOpen={onOpen}
-              enter={enter}
-              eager={index === 0 ? 6 : 0}
-            />
-          </section>
-        )
-      })}
+      {shelves.map((shelf, index) => (
+        <WallSection
+          key={shelf.key}
+          shelf={shelf}
+          platforms={platforms}
+          size={size}
+          unmeasured={shares[index] ?? 0}
+          open={open?.key === shelf.key ? open : undefined}
+          onOpen={onOpen}
+          enter={enter}
+          eager={index === 0 ? 6 : 0}
+        />
+      ))}
     </div>
   )
 }

@@ -1,58 +1,31 @@
-'use client'
-
-import { useFormatter, useTranslations } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useFormatter, useLocale, useTranslations } from 'next-intl'
 
 import type { LibraryStats } from '@/domain/library/stats'
-import { duration } from '@/ui/tokens/motion'
 
-/**
- * A number that settles into place once, when first seen: the last stretch
- * of a count-up. The page arrives with the final number already in it, so
- * nothing is wrong before, without, or instead of the animation; with
- * reduced motion it does not run.
- */
-function useSettled(value: number): number {
-  const [shown, setShown] = useState(value)
-
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const from = Math.round(value * 0.85)
-    if (from === value) return
-    let frame = 0
-    const started = performance.now()
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - started) / duration.cinematic)
-      // Ease out: quick at first, slowing into the final figure.
-      const eased = 1 - (1 - progress) ** 3
-      setShown(Math.round(from + (value - from) * eased))
-      if (progress < 1) frame = requestAnimationFrame(tick)
-    }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
-    // Once, for the number the page arrived with. A later change shows at once.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  return shown
-}
+import { SettlingNumber } from './settling-number'
 
 function Stat({ value, unit }: { value: number; unit: string }) {
   const format = useFormatter()
-  const shown = useSettled(value)
+  const locale = useLocale()
+  const text = format.number(value)
   // The settling figure is decoration. The true one is what is read out.
   return (
     <span className="flex items-baseline gap-1.5">
-      <span className="sr-only">{`${format.number(value)} ${unit}`}</span>
-      <span aria-hidden="true" className="title text-base text-text tabular-nums sm:text-lg">
-        {format.number(shown)}
-      </span>
+      <span className="sr-only">{`${text} ${unit}`}</span>
+      <SettlingNumber value={value} text={text} locale={locale} />
       <span aria-hidden="true">{unit}</span>
     </span>
   )
 }
 
-/** Games, finished, hours: the line above the shelves (spec 3.9). */
+/**
+ * Games, finished, hours: the line above the shelves (spec 3.9).
+ *
+ * Drawn on the server and handed to the library as it is. Its words and
+ * figures never change on the device, so the device does not work them out
+ * again: wording three plurals and a number format was 44 ms of a slow
+ * phone's first second.
+ */
 export function StatsLine({ stats }: { stats: LibraryStats }) {
   const t = useTranslations('Library')
 

@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { thumbHashToDataURL } from 'thumbhash'
 import { createTranslator } from 'next-intl'
@@ -21,6 +21,7 @@ import { dateOf, hoursOf, outOfTen } from './format'
 import { GameBox, platformFor, platformsOwned } from './game-box'
 import { GamePreview } from './game-preview'
 import { markPageLive, pageIsLive, resetPageLive } from './live'
+import { resetPreviews } from './preview-queue'
 import {
   densityPreference,
   preferenceScript,
@@ -472,6 +473,7 @@ describe('a cover, by when it joined the page', () => {
 
   afterEach(() => {
     resetPageLive()
+    resetPreviews()
     vi.mocked(thumbHashToDataURL).mockClear()
   })
 
@@ -501,7 +503,7 @@ describe('a cover, by when it joined the page', () => {
     expect(thumbHashToDataURL).not.toHaveBeenCalled()
   })
 
-  it('joined a live page: fades in over a blur of itself, worked out once', () => {
+  it('joined a live page: fades in at once, and its blur is worked out later, once', async () => {
     markPageLive()
     renderWithIntl(
       <>
@@ -510,7 +512,17 @@ describe('a cover, by when it joined the page', () => {
       </>,
     )
     expect(screen.getByRole('img', { name: 'Hades' })).toHaveAttribute('data-pending')
-    expect(thumbHashToDataURL).toHaveBeenCalledTimes(1)
+    // Not while drawing: that is what kept a slow phone from answering.
+    expect(thumbHashToDataURL).not.toHaveBeenCalled()
+    await waitFor(() => expect(thumbHashToDataURL).toHaveBeenCalledTimes(1))
+  })
+
+  it('does not work out a blur for a cover whose image has already arrived', async () => {
+    markPageLive()
+    renderWithIntl(<Cover {...cover} hash="EEEE" />)
+    fireEvent.load(screen.getByRole('img', { name: 'Hades' }))
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    expect(thumbHashToDataURL).not.toHaveBeenCalled()
   })
 
   it('one of the first covers on a live page does not wait to be shown', () => {

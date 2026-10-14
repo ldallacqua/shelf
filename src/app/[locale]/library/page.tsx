@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { Suspense } from 'react'
@@ -6,11 +7,18 @@ import { preconnect } from 'react-dom'
 
 import { IMAGE_HOST } from '@/domain/igdb/images'
 import type { Library } from '@/domain/library/library'
-import { buildFirstScreen, FIRST_BOXES, parseLibraryQuery } from '@/domain/library/view'
+import {
+  buildFirstScreen,
+  FIRST_BOXES,
+  FIRST_BOXES_PHONE,
+  parseLibraryQuery,
+} from '@/domain/library/view'
 import { EmptyLibrary } from '@/features/library/empty-library'
 import { LibrarySkeleton } from '@/features/library/library-skeleton'
 import { LibraryView } from '@/features/library/library-view'
+import { StatsLine } from '@/features/library/stats-line'
 import { Page } from '@/features/shell/page'
+import { isPhone } from '@/server/device'
 import { getLibrary } from '@/server/services/library'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,15 +36,22 @@ async function FirstScreen({
   library: pending,
 }: Pick<PageProps<'/[locale]/library'>, 'searchParams'> & { library: Promise<Library> }) {
   const query = parseLibraryQuery(await searchParams)
-  const [library, locale] = await Promise.all([pending, getLocale()])
+  const [library, locale, request] = await Promise.all([pending, getLocale(), headers()])
   if (library.games.length === 0) return <EmptyLibrary />
 
-  const first = buildFirstScreen(library, query, locale, FIRST_BOXES)
+  // A phone shows fewer boxes at once, so it is sent fewer. A wrong guess
+  // costs nothing but a moment: the rest arrive with the library file.
+  const boxes = isPhone(request) ? FIRST_BOXES_PHONE : FIRST_BOXES
+  const first = buildFirstScreen(library, query, locale, boxes)
   return (
     // Lets the library keep its view and grouping in the address. Only this
     // page needs it, so only this page carries its code.
     <NuqsAdapter>
-      <LibraryView first={first} firstGroup={query.group} />
+      <LibraryView
+        first={first}
+        firstGroup={query.group}
+        stats={<StatsLine stats={first.stats} />}
+      />
     </NuqsAdapter>
   )
 }

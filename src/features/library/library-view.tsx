@@ -2,15 +2,16 @@
 
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsStringLiteral, useQueryState } from 'nuqs'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { groupings, type Grouping } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 import {
-  arrangeLibrary,
+  arrangeOnce,
   DEFAULT_GROUPING,
   DEFAULT_VIEW,
   firstScreenShelves,
+  keepFirstScreen,
   views,
   type FirstScreen,
   type View,
@@ -22,7 +23,6 @@ import { GamePreview } from './game-preview'
 import { ListView } from './list-view'
 import { markPageLive } from './live'
 import { ShelfView } from './shelf-view'
-import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
@@ -46,6 +46,8 @@ type LibraryViewProps = {
   first: FirstScreen
   /** The grouping the first screen was built for. */
   firstGroup: Grouping
+  /** The line of totals beside the title, drawn on the server. */
+  stats: ReactNode
 }
 
 /**
@@ -55,7 +57,7 @@ type LibraryViewProps = {
  * follows as one cached file, and from then on every regroup happens here,
  * on the device, with no request.
  */
-export function LibraryView({ first, firstGroup }: LibraryViewProps) {
+export function LibraryView({ first, firstGroup, stats }: LibraryViewProps) {
   const t = useTranslations('Library')
   const locale = useLocale()
   const [view, setView] = useQueryState('view', viewParam)
@@ -63,7 +65,12 @@ export function LibraryView({ first, firstGroup }: LibraryViewProps) {
   const [density, setDensity] = useDensity()
   const [wallSize, setWallSize] = useWallSize()
   const [open, setOpen] = useState<OpenBox>()
-  const state = useLibrary(first.version)
+  // When the library file arrives, its shelves are arranged in a turn of
+  // their own, ahead of drawing them.
+  const state = useLibrary(first.version, (whole) => {
+    const library = keepFirstScreen(whole, first)
+    arrangeOnce(library.games, library.names, { group }, locale)
+  })
   const scope = useRef<HTMLDivElement>(null)
 
   // Boxes arrive in a stagger once, when the page is first drawn.
@@ -75,13 +82,13 @@ export function LibraryView({ first, firstGroup }: LibraryViewProps) {
     return () => clearTimeout(timer)
   }, [])
 
-  const library = state.status === 'ready' ? state.library : undefined
+  const library = state.status === 'ready' ? keepFirstScreen(state.library, first) : undefined
 
   // Until the library file arrives there are only the boxes that came with
   // the page, and only for the grouping they were chosen for.
   let shelves: DrawnShelf[] = []
   if (library) {
-    shelves = arrangeLibrary(library.games, library.names, { group }, locale).map((shelf) => ({
+    shelves = arrangeOnce(library.games, library.names, { group }, locale).map((shelf) => ({
       ...shelf,
       total: shelf.items.length,
     }))
@@ -138,13 +145,20 @@ export function LibraryView({ first, firstGroup }: LibraryViewProps) {
     return Boolean(box)
   }
 
-  const viewProps = { shelves, platforms, open, onOpen: setOpen, enter: arriving }
+  const viewProps = {
+    shelves,
+    platforms,
+    open,
+    onOpen: setOpen,
+    enter: arriving,
+    firstBoxes: first.boxes,
+  }
 
   return (
     <div ref={scope} className="library" data-view={view}>
       <div className="flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5">
         <h1 className="title text-2xl sm:text-5xl">{t('title')}</h1>
-        <StatsLine stats={first.stats} />
+        {stats}
       </div>
 
       <Toolbar

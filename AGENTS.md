@@ -111,9 +111,13 @@ must be safe for the code already deployed: add first, remove in a later release
 **The library's views.** The shelf, the wall and the list draw the same shelves
 (`arrangeLibrary` in `src/domain/library/view.ts`) and are given the same props. CSS decides
 how many boxes fit on a row; `useRowWindow` keeps rows that are far from the window out of
-the page. Before a shelf has measured itself it draws only its share of the first 48 boxes
-(`shareFirstBoxes`), the same rule the server uses, so a library arriving does not draw
-hundreds of boxes and throw them away. Blurred glass (`backdrop-filter`) is for one or two
+the page. Before a shelf has measured itself it draws only its share of the first screen
+(`shareFirstBoxes`): 48 boxes, or 12 for a phone (`isPhone` reads the request; use it only
+for guesses that are harmless when wrong). A box, a wall cover and a shelf's section are
+memoized; give them props that stay the same from one drawing to the next (one handler per
+shelf, never one per box), and do work that is the same for every redraw in a component of
+its own, not in a `.map()`. `pnpm perf:lighthouse` slows the processor to match the machine,
+so what it reports locally is what CI will report. Blurred glass (`backdrop-filter`) is for one or two
 bars a page, never for something repeated per shelf: the Linux build of WebKit hangs on a
 dozen. A box is a button whose name says in words everything it shows by shape
 (`describeBox`). A cover is always drawn by `Cover`. A choice that belongs to the device

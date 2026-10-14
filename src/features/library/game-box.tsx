@@ -1,7 +1,7 @@
 'use client'
 
 import { CheckIcon } from 'lucide-react'
-import type { CSSProperties, KeyboardEvent } from 'react'
+import { memo, type CSSProperties, type KeyboardEvent } from 'react'
 
 import { fromHex, ledFrom } from '@/domain/color/palette'
 import type { ShelfItem } from '@/domain/library/group'
@@ -48,8 +48,12 @@ export type GameBoxProps = {
   item: ShelfItem
   platform?: LibraryPlatform
   density: Density
-  /** The whole description, for assistive technology: title, platform, format, status. */
-  label: string
+  /**
+   * The whole description, for assistive technology: title, platform, format,
+   * status. Given as the words, or as the function that words it, which is
+   * then only called when the box is drawn.
+   */
+  label: string | ((item: ShelfItem, platform: LibraryPlatform | undefined) => string)
   /** Lifted and lit in its own color: under the pointer, in focus, or open. */
   active: boolean
   /** Whether Tab stops here. One box per shelf does; arrow keys reach the rest. */
@@ -58,10 +62,29 @@ export type GameBoxProps = {
   index: number
   /** One of the first covers on the page. */
   eager?: boolean
-  onOpen: () => void
+  /** Both are told which box, by position, so one function can serve a whole shelf. */
+  onOpen: (index: number) => void
   /** Arrow keys and the like: the shelf decides where they lead. */
-  onKeyDown?: (event: KeyboardEvent<HTMLButtonElement>) => void
+  onKeyDown?: (event: KeyboardEvent<HTMLButtonElement>, index: number) => void
 }
+
+/**
+ * Whether a box would be drawn the same. Shelves are arranged anew on every
+ * regroup, and the pair of game and copy is made anew with them; the game and
+ * the copy inside the pair are not, so those are what is compared.
+ */
+const sameBox = (before: GameBoxProps, after: GameBoxProps): boolean =>
+  before.item.game === after.item.game &&
+  before.item.copy === after.item.copy &&
+  before.platform === after.platform &&
+  before.density === after.density &&
+  before.label === after.label &&
+  before.active === after.active &&
+  before.tabbable === after.tabbable &&
+  before.index === after.index &&
+  before.eager === after.eager &&
+  before.onOpen === after.onOpen &&
+  before.onKeyDown === after.onKeyDown
 
 /**
  * One game on the shelf, as an object you can pick up: a case in its
@@ -70,8 +93,13 @@ export type GameBoxProps = {
  *
  * Its state shows in its posture and marks, never by color alone (spec 3.2),
  * and `label` says the same in words.
+ *
+ * A shelf redraws often: a row scrolls into view, the pointer moves to the
+ * next box, the rest of the library arrives. A box is only drawn again when
+ * something about it changed (`sameBox`), which is what keeps a pointer
+ * crossing a full shelf, and a slow phone taking over the page, from stalling.
  */
-export function GameBox({
+export const GameBox = memo(function GameBox({
   item,
   platform,
   density,
@@ -161,10 +189,10 @@ export function GameBox({
       data-status={game.status}
       data-index={index}
       data-flip={copy ? `${game.slug}:${copy.platform}` : game.slug}
-      aria-label={label}
+      aria-label={typeof label === 'string' ? label : label(item, platform)}
       tabIndex={tabbable ? 0 : -1}
-      onClick={onOpen}
-      onKeyDown={onKeyDown}
+      onClick={() => onOpen(index)}
+      onKeyDown={onKeyDown ? (event) => onKeyDown(event, index) : undefined}
       style={density === 'compact' ? { width: '100%' } : undefined}
     >
       {body}
@@ -181,4 +209,4 @@ export function GameBox({
       ) : null}
     </button>
   )
-}
+}, sameBox)

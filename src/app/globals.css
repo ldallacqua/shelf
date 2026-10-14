@@ -151,13 +151,18 @@
   }
 
   /*
-   * Until the page is live, nothing animates. A control that remembers a
+   * Until the page is live, no control animates. A control that remembers a
    * choice is corrected as React starts, and that should not be seen as a
    * fade. See features/shell/ready-mark.tsx.
+   *
+   * Controls are named by `data-slot`, which everything in src/ui carries.
+   * The rule used to name every element, and then the browser had to restyle
+   * the whole page the moment the mark appeared: 830 elements on the library,
+   * a twentieth of a second of blocked phone for nothing.
    */
-  html:not([data-ready]) *,
-  html:not([data-ready]) *::before,
-  html:not([data-ready]) *::after {
+  html:not([data-ready]) [data-slot],
+  html:not([data-ready]) [data-slot]::before,
+  html:not([data-ready]) [data-slot]::after {
     transition: none !important;
   }
 

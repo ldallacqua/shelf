@@ -203,11 +203,11 @@ function ListTable({ shelf, platforms, caption, unmeasured, open, onOpen }: List
  * the cover, title, platforms and status; the rest is in the game's details
  * (spec 3.8).
  */
-export function ListView({ shelves, platforms, open, onOpen }: ViewProps) {
+export function ListView({ shelves, platforms, open, onOpen, firstBoxes }: ViewProps) {
   const t = useTranslations('Library')
   const shares = shareFirstBoxes(
     shelves.map((shelf) => shelf.items.length),
-    FIRST_ROWS,
+    Math.min(FIRST_ROWS, firstBoxes),
   )
 
   return (

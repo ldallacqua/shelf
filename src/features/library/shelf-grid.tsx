@@ -10,6 +10,7 @@ import { GameBox, platformFor } from './game-box'
 import type { Density } from './preferences'
 import { boardsOf, piecesOf, runsOf } from './shelf-layout'
 import { useRowWindow } from './use-row-window'
+import type { OpenBox } from './view-props'
 
 /** Fewest boxes a row can hold, at the narrowest width: enough boards are drawn for that before the width is known. */
 const FEWEST_COLUMNS = 3
@@ -40,9 +41,11 @@ type ShelfGridProps = {
   eager?: number
   /** Boxes arrive in a stagger. Only for the first time a shelf is drawn. */
   enter?: boolean
-  onOpen: (index: number) => void
-  /** Page Up or Page Down: to the shelf before or after. */
-  onLeave: (direction: -1 | 1) => void
+  /** This shelf's place among the shelves, from 0. */
+  position: number
+  onOpen: (box: OpenBox) => void
+  /** Page Up or Page Down: to the shelf before or after the one at `position`. */
+  onLeave: (position: number, direction: -1 | 1) => void
 }
 
 /**
@@ -69,6 +72,7 @@ export function ShelfGrid({
   openIndex,
   eager = 0,
   enter,
+  position,
   onOpen,
   onLeave,
 }: ShelfGridProps) {
@@ -119,14 +123,18 @@ export function ShelfGrid({
       ArrowUp: () => at - step >= 0 && move(at - step),
       Home: () => move(0),
       End: () => move(items.length - 1),
-      PageDown: () => onLeave(1),
-      PageUp: () => onLeave(-1),
+      PageDown: () => onLeave(position, 1),
+      PageUp: () => onLeave(position, -1),
     }
     const action = keys[event.key]
     if (!action) return
     event.preventDefault()
     action()
   }
+
+  // One function for the whole shelf, the same from one drawing to the next,
+  // so a box that did not change is not drawn again.
+  const openAt = (index: number) => onOpen({ key: shelfKey, index })
 
   const indexOf = (target: EventTarget | null): number | undefined => {
     const box = (target as HTMLElement | null)?.closest?.<HTMLElement>('[data-index]')
@@ -173,13 +181,13 @@ export function ShelfGrid({
           item={item}
           platform={platform}
           density={density}
-          label={describe(item, platform)}
+          label={describe}
           active={index === active}
           tabbable={index === tabStop}
           index={index}
           eager={index < eager}
-          onOpen={() => onOpen(index)}
-          onKeyDown={(event) => onKeyDown(event, index)}
+          onOpen={openAt}
+          onKeyDown={onKeyDown}
         />
       </li>
     )

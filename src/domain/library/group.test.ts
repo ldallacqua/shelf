@@ -11,8 +11,10 @@ import { sortByTitle, titleKey } from '@/domain/library/sort'
 import { libraryStats } from '@/domain/library/stats'
 import {
   arrangeLibrary,
+  arrangeOnce,
   buildFirstScreen,
   firstScreenShelves,
+  keepFirstScreen,
   parseLibraryQuery,
   shareFirstBoxes,
 } from '@/domain/library/view'
@@ -228,6 +230,30 @@ describe('parseLibraryQuery (spec 2)', () => {
   })
 })
 
+describe('arranging once', () => {
+  it('gives the shelves arrangeLibrary gives', () => {
+    for (const group of ['platform', 'status', 'year', 'none'] as const) {
+      expect(arrangeOnce(all, names, { group }, 'en')).toEqual(
+        arrangeLibrary(all, names, { group }, 'en'),
+      )
+    }
+  })
+
+  it('answers with the same shelves when asked again', () => {
+    const games = [...all]
+    const shelves = arrangeOnce(games, names, { group: 'platform' }, 'en')
+    expect(arrangeOnce(games, names, { group: 'platform' }, 'en')).toBe(shelves)
+  })
+
+  it('works them out anew for another grouping, language or list of games', () => {
+    const games = [...all]
+    const shelves = arrangeOnce(games, names, { group: 'platform' }, 'en')
+    expect(arrangeOnce(games, names, { group: 'status' }, 'en')).not.toBe(shelves)
+    expect(arrangeOnce(games, names, { group: 'platform' }, 'pt-BR')).not.toBe(shelves)
+    expect(arrangeOnce([...games], names, { group: 'platform' }, 'en')).not.toBe(shelves)
+  })
+})
+
 describe('sharing out the first boxes', () => {
   it('gives each shelf what it holds, in order, until the limit is spoken for', () => {
     expect(shareFirstBoxes([10, 30, 20, 5], 48)).toEqual([10, 30, 8, 0])
@@ -269,6 +295,33 @@ describe('the first screen', () => {
       ['platform:130', ['Celeste', 'Hades'], 2],
       ['platform:6', [], 2],
     ])
+  })
+
+  it('keeps the objects that came with the page when the whole library arrives', () => {
+    const first = buildFirstScreen(library, { group: 'platform' }, 'en', 2)
+    // The file is the same library, read again: equal, but not the same objects.
+    const file = structuredClone(library)
+    const whole = keepFirstScreen(file, first)
+
+    expect(whole).toEqual(file)
+    const byTitle = (title: string) => whole.games.find((game) => game.title === title)
+    expect(byTitle('Astro Bot')).toBe(first.games[0])
+    expect(byTitle('Celeste')).toBe(first.games[1])
+    // A game that did not come with the page is the file's.
+    expect(byTitle('Hades')).toBe(file.games.find((game) => game.title === 'Hades'))
+    expect(whole.names.platform[0]).toBe(first.platforms[0])
+  })
+
+  it('gives the very same library when asked again about the same file and page', () => {
+    const first = buildFirstScreen(library, { group: 'platform' }, 'en', 2)
+    const file = structuredClone(library)
+    expect(keepFirstScreen(file, first)).toBe(keepFirstScreen(file, first))
+  })
+
+  it('keeps nothing from a page built for another version of the library', () => {
+    const first = buildFirstScreen(library, { group: 'platform' }, 'en', 2)
+    const file = { ...structuredClone(library), version: 10 }
+    expect(keepFirstScreen(file, first)).toBe(file)
   })
 
   it('matches the full arrangement box for box', () => {

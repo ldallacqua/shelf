@@ -5,13 +5,13 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
-import { FIRST_BOXES, shareFirstBoxes } from '@/domain/library/view'
+import { shareFirstBoxes } from '@/domain/library/view'
 import { caseShapes } from '@/ui/game-case'
 
 import { describeBox, shelfName } from './describe'
 import type { Density } from './preferences'
 import { ShelfGrid } from './shelf-grid'
-import type { DrawnShelf, ViewProps } from './view-props'
+import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
 
 /** A shelf that mixes platforms leaves room for the widest and tallest common cases. */
 const MIXED = { slot: caseShapes.jewel.width, tall: caseShapes.keepCase.height }
@@ -31,12 +31,107 @@ const EAGER = 6
 
 type ShelfViewProps = ViewProps & { density: Density }
 
+type ShelfSectionProps = {
+  shelf: DrawnShelf
+  /** This shelf's place among the shelves, from 0. */
+  position: number
+  unmeasured: number
+  platforms: ReadonlyMap<number, LibraryPlatform>
+  density: Density
+  openIndex?: number
+  enter: boolean
+  onOpen: (box: OpenBox) => void
+  onLeave: (position: number, direction: -1 | 1) => void
+}
+
+/**
+ * One shelf: its name, its counts, its games.
+ *
+ * A component of its own so that its words are worked out once. Counting and
+ * wording a shelf ("36 games", "2 playing") goes through the translator, and
+ * with a dozen shelves that was repeated for all of them every time anything
+ * on the page changed: a game opened, the first boxes settled.
+ */
+function ShelfSection({
+  shelf,
+  position,
+  unmeasured,
+  platforms,
+  density,
+  openIndex,
+  enter,
+  onOpen,
+  onLeave,
+}: ShelfSectionProps) {
+  const t = useTranslations('Library')
+  const name = shelfName(shelf, t)
+  // On a shelf that is not about status, say how many of its games are being played.
+  const playing =
+    shelf.kind === 'status'
+      ? 0
+      : shelf.items.filter((item) => item.game.status === 'playing').length
+  const headingId = `shelf-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
+  const describe = (item: ShelfItem, platform: LibraryPlatform | undefined) =>
+    describeBox(item, platform, t)
+
+  return (
+    <section
+      className="shelf-panel sm:mt-10 sm:first:mt-6"
+      data-scroll-root=""
+      aria-labelledby={headingId}
+    >
+      <header className="flex items-baseline gap-3 pt-3 pb-1 sm:pt-0">
+        <h2 id={headingId} className="title text-lg sm:text-xl">
+          {name}
+        </h2>
+        <span className="readout text-[0.6875rem] text-muted">
+          {t('shelf.count', { count: shelf.total })}
+        </span>
+        {playing > 0 ? (
+          <span className="flex items-center gap-1.5 readout text-[0.6875rem] text-marker">
+            <span
+              aria-hidden="true"
+              className="size-1.5 rounded-full bg-marker shadow-[0_0_calc(2px+var(--glow)*6px)_var(--marker)]"
+            />
+            {t('shelf.playing', { count: playing })}
+          </span>
+        ) : null}
+      </header>
+      <ShelfGrid
+        shelfKey={shelf.key}
+        items={shelf.items}
+        total={shelf.total}
+        unmeasured={unmeasured}
+        platforms={platforms}
+        density={density}
+        {...sizeOf(shelf)}
+        label={t('shelf.games', { shelf: name })}
+        describe={describe}
+        openIndex={openIndex}
+        eager={position === 0 ? EAGER : 0}
+        enter={enter}
+        position={position}
+        onOpen={onOpen}
+        onLeave={onLeave}
+      />
+    </section>
+  )
+}
+
 /**
  * The shelf in 2D. Wider than a phone, shelves stack down the page. On a
  * phone, one shelf fills the screen: swipe sideways for the next, and a row
  * of tabs shows where you are (spec 3.4).
  */
-export function ShelfView({ shelves, platforms, open, onOpen, enter, density }: ShelfViewProps) {
+export function ShelfView({
+  shelves,
+  platforms,
+  open,
+  onOpen,
+  enter,
+  firstBoxes,
+  density,
+}: ShelfViewProps) {
   const t = useTranslations('Library')
   const pager = useRef<HTMLDivElement>(null)
   const tabs = useRef<HTMLElement>(null)
@@ -84,13 +179,10 @@ export function ShelfView({ shelves, platforms, open, onOpen, enter, density }: 
     panel?.querySelector<HTMLElement>('.game-box[tabindex="0"]')?.focus()
   }
 
-  const describe = (item: ShelfItem, platform: LibraryPlatform | undefined) =>
-    describeBox(item, platform, t)
-
   // Before a shelf has measured itself it draws its share of the first screen.
   const shares = shareFirstBoxes(
     shelves.map((shelf) => shelf.items.length),
-    FIRST_BOXES,
+    firstBoxes,
   )
 
   return (
@@ -113,57 +205,20 @@ export function ShelfView({ shelves, platforms, open, onOpen, enter, density }: 
       ) : null}
 
       <div ref={pager} className="shelf-pager">
-        {shelves.map((shelf, index) => {
-          const name = shelfName(shelf, t)
-          // On a shelf that is not about status, say how many of its games are being played.
-          const playing =
-            shelf.kind === 'status'
-              ? 0
-              : shelf.items.filter((item) => item.game.status === 'playing').length
-          const headingId = `shelf-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
-          return (
-            <section
-              key={shelf.key}
-              className="shelf-panel sm:mt-10 sm:first:mt-6"
-              data-scroll-root=""
-              aria-labelledby={headingId}
-            >
-              <header className="flex items-baseline gap-3 pt-3 pb-1 sm:pt-0">
-                <h2 id={headingId} className="title text-lg sm:text-xl">
-                  {name}
-                </h2>
-                <span className="readout text-[0.6875rem] text-muted">
-                  {t('shelf.count', { count: shelf.total })}
-                </span>
-                {playing > 0 ? (
-                  <span className="flex items-center gap-1.5 readout text-[0.6875rem] text-marker">
-                    <span
-                      aria-hidden="true"
-                      className="size-1.5 rounded-full bg-marker shadow-[0_0_calc(2px+var(--glow)*6px)_var(--marker)]"
-                    />
-                    {t('shelf.playing', { count: playing })}
-                  </span>
-                ) : null}
-              </header>
-              <ShelfGrid
-                shelfKey={shelf.key}
-                items={shelf.items}
-                total={shelf.total}
-                unmeasured={shares[index] ?? 0}
-                platforms={platforms}
-                density={density}
-                {...sizeOf(shelf)}
-                label={t('shelf.games', { shelf: name })}
-                describe={describe}
-                openIndex={open?.key === shelf.key ? open.index : undefined}
-                eager={index === 0 ? EAGER : 0}
-                enter={enter}
-                onOpen={(at) => onOpen({ key: shelf.key, index: at })}
-                onLeave={(direction) => leave(index, direction)}
-              />
-            </section>
-          )
-        })}
+        {shelves.map((shelf, index) => (
+          <ShelfSection
+            key={shelf.key}
+            shelf={shelf}
+            position={index}
+            unmeasured={shares[index] ?? 0}
+            platforms={platforms}
+            density={density}
+            openIndex={open?.key === shelf.key ? open.index : undefined}
+            enter={enter}
+            onOpen={onOpen}
+            onLeave={leave}
+          />
+        ))}
       </div>
     </div>
   )

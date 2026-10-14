@@ -18,6 +18,11 @@ export type RowWindow = {
   /** First row in the page, and one past the last. */
   start: number
   end: number
+  /**
+   * More than a screen away sideways: on a phone, where shelves stand side by
+   * side, a shelf that cannot be reached without first passing a nearer one.
+   */
+  away: boolean
 }
 
 const same = (a: RowWindow | undefined, b: RowWindow): boolean =>
@@ -26,7 +31,8 @@ const same = (a: RowWindow | undefined, b: RowWindow): boolean =>
   a.pitch === b.pitch &&
   a.rows === b.rows &&
   a.start === b.start &&
-  a.end === b.end
+  a.end === b.end &&
+  a.away === b.away
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
@@ -80,13 +86,13 @@ export function useRowWindow(
       // A shelf more than a screen away sideways (on a phone, where shelves
       // stand side by side) has no rows in the page. The shelves next to the
       // one in view are not that far, so a swipe always lands on a full shelf.
-      const sideways = box.right < -window.innerWidth || box.left > window.innerWidth * 2
-      if (sideways) {
+      const away = box.right < -window.innerWidth || box.left > window.innerWidth * 2
+      if (away) {
         start = 0
         end = 0
       }
 
-      const next = { columns, pitch, rows, start, end }
+      const next = { columns, pitch, rows, start, end, away }
       setRowWindow((current) => (same(current, next) ? current : next))
     }
 

@@ -129,6 +129,7 @@ export const BoxStates: Story = {
       tall={190}
       label="Every state a box can be in"
       describe={describe}
+      position={0}
       onOpen={() => undefined}
       onLeave={() => undefined}
     />
@@ -149,6 +150,7 @@ export const Compact: Story = {
       tall={190}
       label="Every state a box can be in, spine-out"
       describe={describe}
+      position={0}
       onOpen={() => undefined}
       onLeave={() => undefined}
     />

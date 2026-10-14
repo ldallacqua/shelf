@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { thumbHashToDataURL } from 'thumbhash'
+import { useEffect, useRef, useState } from 'react'
 
 import type { Palette } from '@/domain/color/palette'
 import { coverSources } from '@/domain/igdb/images'
 
 import { pageIsLive } from './live'
+import { previewIfReady, requestPreview } from './preview-queue'
 
 type CoverProps = {
   /** IGDB image id. Without one, the title is set in type over the colors. */
@@ -21,22 +21,6 @@ type CoverProps = {
   eager?: boolean
   /** Drawn small (a box on the shelf, a thumbnail): the largest file is never worth fetching. */
   small?: boolean
-}
-
-const previews = new Map<string, string>()
-
-/** A ThumbHash as an image address. Each is worked out once and kept. */
-const previewOf = (hash: string): string | undefined => {
-  const known = previews.get(hash)
-  if (known) return known
-  try {
-    const bytes = Uint8Array.from(atob(hash), (char) => char.charCodeAt(0))
-    const address = thumbHashToDataURL(bytes)
-    previews.set(hash, address)
-    return address
-  } catch {
-    return undefined
-  }
 }
 
 const wash = ([accent, second, base]: Palette): string =>
@@ -54,8 +38,18 @@ export function Cover({ cover, colors, hash, title, sizes, eager, small }: Cover
   // page, and never revisited: a cover that was there when the page went live
   // is not drawn again, and its blur, which nobody would see, is not worked out.
   const [joined] = useState(pageIsLive)
-  const preview = joined && hash ? previewOf(hash) : undefined
   const fades = joined && !eager
+  // The blur is worked out when the browser is idle, and only while the
+  // image is still on its way.
+  const [preview, setPreview] = useState(() => (joined && hash ? previewIfReady(hash) : undefined))
+  const image = useRef<HTMLImageElement>(null)
+  const forget = useRef<(() => void) | undefined>(undefined)
+  useEffect(() => {
+    if (!joined || !hash || !cover) return
+    if (image.current?.complete) return
+    forget.current = requestPreview(hash, setPreview)
+    return () => forget.current?.()
+  }, [joined, hash, cover])
 
   return (
     <span
@@ -76,11 +70,17 @@ export function Cover({ cover, colors, hash, title, sizes, eager, small }: Cover
           decoding="async"
           draggable={false}
           data-pending={fades ? '' : undefined}
-          ref={(image) => {
+          ref={(element) => {
+            image.current = element
             // Already in the browser's cache: there is nothing to wait for.
-            if (image?.complete && image.naturalWidth > 0) image.removeAttribute('data-pending')
+            if (element?.complete && element.naturalWidth > 0) {
+              element.removeAttribute('data-pending')
+            }
           }}
-          onLoad={(event) => event.currentTarget.removeAttribute('data-pending')}
+          onLoad={(event) => {
+            event.currentTarget.removeAttribute('data-pending')
+            forget.current?.()
+          }}
           onError={(event) => {
             // Leave the wash and say the title in type instead.
             const image = event.currentTarget

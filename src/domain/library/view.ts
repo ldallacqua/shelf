@@ -45,10 +45,19 @@ export const arrangeLibrary = (
 
 /**
  * How many boxes are sent inside the page, and drawn before a view has
- * measured itself: about a screenful on a desktop. Each one is hydrated on a
- * phone too, so more is not free.
+ * measured itself: about a screenful on a desktop.
  */
 export const FIRST_BOXES = 48
+
+/**
+ * The same for a phone, which shows about nine boxes at once: four rows of
+ * three. Every box sent is markup to download, style and bring to life, and
+ * a phone is the device that can least afford the thirty-odd it would then
+ * take off the page again. Standing spine-out, or on the wall at its smallest
+ * size, twelve do not fill a phone's screen; the rest follow with the library
+ * file, a moment later.
+ */
+export const FIRST_BOXES_PHONE = 12
 
 /**
  * How the first boxes are shared out: in shelf order, each shelf takes what
@@ -61,6 +70,37 @@ export const shareFirstBoxes = (counts: readonly number[], limit: number): numbe
     left -= share
     return share
   })
+}
+
+const arranged = new WeakMap<readonly LibraryGame[], Map<string, Shelf[]>>()
+
+/**
+ * The same shelves as `arrangeLibrary`, remembered: asked twice about the
+ * same list of games, grouping and language, it answers at once.
+ *
+ * Arranging a few hundred games is quick on a desktop and a twentieth of a
+ * second on a mid-range phone. Remembering it lets the device do that work
+ * in a moment of its own, before it draws, and keeps a redraw that changed
+ * nothing about the shelves from doing it again.
+ */
+export const arrangeOnce = (
+  games: readonly LibraryGame[],
+  names: LibraryNames,
+  query: Pick<LibraryQuery, 'group'>,
+  locale: string,
+): Shelf[] => {
+  let known = arranged.get(games)
+  if (!known) {
+    known = new Map()
+    arranged.set(games, known)
+  }
+  const key = `${query.group}:${locale}`
+  let shelves = known.get(key)
+  if (!shelves) {
+    shelves = arrangeLibrary(games, names, query, locale)
+    known.set(key, shelves)
+  }
+  return shelves
 }
 
 /** A shelf's name tag before its games are known: enough to draw the shelf and reserve its space. */
@@ -78,6 +118,8 @@ export type ShelfOutline = {
  */
 export type FirstScreen = {
   version: number
+  /** How many boxes this page was sized for: fewer for a phone. */
+  boxes: number
   stats: LibraryStats
   outline: ShelfOutline[]
   /** The first boxes in shelf order, each game once. */
@@ -108,6 +150,7 @@ export const buildFirstScreen = (
 
   return {
     version: library.version,
+    boxes: limit,
     stats: libraryStats(library.games),
     outline,
     games: [...games.values()],
@@ -115,6 +158,34 @@ export const buildFirstScreen = (
     tags: library.names.tag,
   }
 }
+
+/**
+ * The whole library, once its file has arrived, holding on to what came with
+ * the page: a game or platform already drawn keeps the very object it was
+ * drawn from. The file says the same about it (same version, same words), so
+ * nothing on screen has to be drawn again just because the rest arrived.
+ */
+export const keepFirstScreen = (library: Library, first: FirstScreen): Library => {
+  if (library.version !== first.version) return library
+  const before = kept.get(library)
+  if (before?.first === first) return before.library
+
+  const games = new Map(first.games.map((game) => [game.slug, game]))
+  const platforms = new Map(first.platforms.map((platform) => [platform.id, platform]))
+  const whole: Library = {
+    ...library,
+    games: library.games.map((game) => games.get(game.slug) ?? game),
+    names: {
+      ...library.names,
+      platform: library.names.platform.map((platform) => platforms.get(platform.id) ?? platform),
+    },
+  }
+  // Remembered, so the same file and page always give the very same library.
+  kept.set(library, { first, library: whole })
+  return whole
+}
+
+const kept = new WeakMap<Library, { first: FirstScreen; library: Library }>()
 
 /**
  * The shelves to draw before the library file arrives: every shelf from the

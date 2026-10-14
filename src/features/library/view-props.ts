@@ -15,4 +15,9 @@ export type ViewProps = {
   onOpen: (box: OpenBox) => void
   /** Boxes arrive in a stagger: the first time the library is drawn. */
   enter: boolean
+  /**
+   * How many boxes a screen is taken to hold, as the server judged from the
+   * request. Shelves that have not measured themselves share this many.
+   */
+  firstBoxes: number
 }

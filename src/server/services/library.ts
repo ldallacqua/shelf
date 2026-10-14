@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from 'next/cache'
 
 import type { Library } from '@/domain/library/library'
 import { encodeLibrary } from '@/domain/library/snapshot'
+import { sortByTitle } from '@/domain/library/sort'
 import { database } from '@/server/db/client'
 import { readLibrary } from '@/server/library/read'
 import { readVersion } from '@/server/library/store'
@@ -25,12 +26,22 @@ export const getLibraryVersion = async (): Promise<number> => {
   return readVersion(database())
 }
 
+/**
+ * The library with its games in title order. The device sorts again, for its
+ * own language, but sorting a list that is already in order is one pass over
+ * it; from the database's order it was 55 ms of a slow phone doing nothing else.
+ */
+const inTitleOrder = (library: Library): Library => ({
+  ...library,
+  games: sortByTitle(library.games, 'en'),
+})
+
 /** The whole library, for pages rendered on the server. */
 export const getLibrary = async (): Promise<Library> => {
   'use cache'
   cacheTag(LIBRARY_TAG)
   cacheLife('max')
-  return readLibrary(database())
+  return inTitleOrder(await readLibrary(database()))
 }
 
 /**
@@ -41,7 +52,7 @@ export const getLibrarySnapshot = async (): Promise<{ version: number; json: str
   'use cache'
   cacheTag(LIBRARY_TAG)
   cacheLife('max')
-  const library = await readLibrary(database())
+  const library = inTitleOrder(await readLibrary(database()))
   return { version: library.version, json: JSON.stringify(encodeLibrary(library)) }
 }
 

@@ -16,7 +16,12 @@ export type Run = { from: number; to: number; boards: boolean }
  * is away from the screen: with a dozen shelves, a whole row for each is a
  * hundred boxes nobody is looking at.
  *
- * Not yet measured: the first `unmeasured` boxes, at least one.
+ * A shelf that is away sideways has no boxes at all. It cannot be reached
+ * without passing the shelf next to it, which is always whole, and by then
+ * it is no longer away.
+ *
+ * Not yet measured: the first `unmeasured` boxes. A shelf with no share of
+ * the first screen draws none, and is measured a frame later.
  */
 export const runsOf = (
   rowWindow: RowWindow | undefined,
@@ -26,8 +31,10 @@ export const runsOf = (
 ): Run[] => {
   if (count === 0) return []
   if (!rowWindow) {
-    return [{ from: 0, to: Math.min(count, Math.max(1, unmeasured)), boards: true }]
+    const to = Math.min(count, Math.max(0, unmeasured))
+    return to > 0 ? [{ from: 0, to, boards: true }] : []
   }
+  if (rowWindow.away) return []
   const { columns, start, end } = rowWindow
   const from = Math.min(count, start * columns)
   const to = Math.min(count, end * columns)

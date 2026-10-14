@@ -15,7 +15,7 @@ export const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3300'
 export const javascriptBudgets: { path: string; name: string; kilobytes: number }[] = [
   // Step 3: measured 206.2 KB. Shell, plus the foundations demos.
   { path: '/en', name: 'Home', kilobytes: 215 },
-  // Step 3: measured 236.1 KB. The shell (200 KB), plus 36 KB for the library
+  // Step 3: measured 238.1 KB. The shell (200 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
   { path: '/en/library', name: 'Library', kilobytes: 240 },
@@ -25,15 +25,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
 
 /**
  * Lighthouse, mobile profile, with its throttling really applied (a slow 4G
- * connection and a processor four times slower), so the paint times are
- * measured. Its default mode estimates them from an unthrottled run instead,
- * and against a local server that estimate assumes the page's text waits for
- * all of its JavaScript, which it does not.
- *
- * "Four times slower" is relative to the machine. A CI runner is already two
- * to three times slower than a desktop, so a page that scores 96 here can
- * score 72 there: the score is mostly lost to time the page spends blocked,
- * which the script prints. To see what CI will see, run with ten times.
+ * connection and a slowed processor), so the paint times are measured. Its
+ * default mode estimates them from an unthrottled run instead, and against a
+ * local server that estimate assumes the page's text waits for all of its
+ * JavaScript, which it does not.
  */
 export const lighthouseBudgets = {
   paths: ['/en', '/en/library', '/en/library?view=wall'],
@@ -41,6 +36,29 @@ export const lighthouseBudgets = {
   accessibility: 100,
   largestContentfulPaintMs: 2500,
   cumulativeLayoutShift: 0.1,
+}
+
+/**
+ * How many times to slow this machine's processor so that it stands in for
+ * the mid-range phone Lighthouse scores against.
+ *
+ * Lighthouse's default, four times, assumes a fast desktop. It measures the
+ * machine on every run (the "benchmark index") and says to slow a weaker
+ * machine less: docs/throttling.md in its repository, "Calibrating
+ * multipliers". The same four times on a CI runner, which is about a third as
+ * fast as a desktop, emulates a much slower phone than the one the targets
+ * are written for: this library scored 96 on a desktop and 72 on CI from the
+ * same build.
+ *
+ * The steps are those of the Lighthouse team's own calculator
+ * (lighthouse-cpu-throttling-calculator.vercel.app), read from its source in
+ * October 2026. A machine below 150 cannot stand in for that phone at all.
+ */
+export const cpuSlowdownFor = (benchmarkIndex: number): number | undefined => {
+  if (!Number.isFinite(benchmarkIndex) || benchmarkIndex < 150) return undefined
+  if (benchmarkIndex >= 1300) return 3 + (benchmarkIndex - 1300) / 233
+  if (benchmarkIndex >= 800) return 2 + (benchmarkIndex - 800) / 500
+  return 1 + (benchmarkIndex - 150) / 650
 }
 
 /** Text that only appears in three.js. It must not be in any page's first load. */

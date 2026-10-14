@@ -9,6 +9,7 @@ const measured = (columns: number, count: number, start: number, end: number): R
   rows: Math.ceil(count / columns),
   start,
   end,
+  away: false,
 })
 
 /** A compact picture of a shelf: `#` a box, `.` a place kept in a row, `=` a whole row kept. */
@@ -29,8 +30,8 @@ describe('which boxes are in the page', () => {
     expect(runsOf(undefined, 5, 48, 0)).toEqual([{ from: 0, to: 5, boards: true }])
   })
 
-  it('draws one box when it has no share, so there is something to tab to', () => {
-    expect(runsOf(undefined, 60, 0, 0)).toEqual([{ from: 0, to: 1, boards: true }])
+  it('draws nothing when it has no share: it is measured a frame later', () => {
+    expect(runsOf(undefined, 60, 0, 0)).toEqual([])
   })
 
   it('draws nothing for a shelf with nothing on it', () => {
@@ -59,6 +60,13 @@ describe('which boxes are in the page', () => {
 
   it('keeps only that box when no row is near the screen', () => {
     expect(runsOf(measured(4, 40, 0, 0), 40, 48, 0)).toEqual([{ from: 0, to: 1, boards: false }])
+  })
+
+  it('keeps no box for a shelf that is away sideways, and still keeps its height', () => {
+    const away = { ...measured(4, 40, 0, 0), away: true }
+    expect(runsOf(away, 40, 48, 0)).toEqual([])
+    expect(draw(piecesOf([], 4, 10))).toBe('==========')
+    expect(boardsOf([], 4)).toEqual([])
   })
 })
 
