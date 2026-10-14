@@ -950,7 +950,7 @@ Not built now. The design leaves room for each.
 | --- | --- |
 | Export and import, backups | Stable ids; every table holds plain data; filters are text |
 | Importing from the reference app | Entries link to IGDB ids, which the reference app also stores |
-| Steam, Xbox and PlayStation sync | Copies, per-source playtime, cached store ids ([ADR 001](adr/001-game-entry-model.md)) |
+| Steam, PlayStation, Xbox and Nintendo sync | Copies, per-source playtime, cached store ids ([ADR 001](adr/001-game-entry-model.md)); how each source is matched: [ADR 003](adr/003-platform-sync.md), built after step 7 |
 | Installable app, offline use | The library is one loaded data set filtered on the device |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |

@@ -4,7 +4,18 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Step 4: built, waiting at the ⏸ (branch `build-step-4-3d-shelf`, pull request open)
+## Now: step 5, with ADR 003 accepted
+
+- **Step 4 is done.** The owner approved it at the ⏸ and it is merged
+  ([#6](https://github.com/ldallacqua/shelf/pull/6)). What it holds is below.
+- **ADR 003, syncing Steam, PlayStation, Xbox and Nintendo, is accepted**
+  ([#7](https://github.com/ldallacqua/shelf/pull/7)), with the answers it proposed: sync is
+  its own step right after step 7; the Xbox route is settled by a one-day spike, leaning to
+  a Microsoft sign-in of Shelf's own; subscription games show, marked, and never count as
+  owned.
+- **Next:** step 5, filters, sorting and smart shelves, on a branch from `main`.
+
+## Step 4: the 3D shelf, as merged
 
 - **Built:** the 3D shelf in plain three.js (owner's choice over R3F, measured: architecture
   section 2, row 9), the 2D/3D pair and the `D` key, defaults per device, the switch with its
@@ -30,14 +41,12 @@ step 3. This note is what the next session needs and cannot get from the code. R
   miss as step 3. Step 4 did not make the 2D page slower.
 - **Not checked:** the Linux pass (no Docker), so there are no 3D reference screenshots; the
   frame rate on a mid-range laptop (this one has an RTX 4090), at step 9.
-- **Waiting on the owner:** the review at the ⏸, then merging the pull request.
-- **Raised by the owner, not scheduled:** syncing owned games from Steam, PlayStation, Xbox
-  and Nintendo, each matched to the right IGDB record. The reference app did Steam and
-  PlayStation through IGDB's store ids, not Xbox or Nintendo. Sync is out of scope in spec
-  section 18, and ADR 001 left room for it on copies. What the fixtures show: of the 232
-  sample games, IGDB carries a Steam id on 121, a Microsoft Store id on 106 and a PlayStation
-  Store id on 102; no Nintendo store id at all. Proposed: an ADR on sync and matching before
-  step 7, so adding games and sync share one way to resolve a store's id to an entry.
+- **Raised by the owner at the review:** syncing owned games from Steam, PlayStation, Xbox
+  and Nintendo, each matched to the right IGDB record. Written up as ADR 003. The reference
+  app (`myspot-gg/platform` on GitHub, read only) synced Steam and PlayStation through IGDB's
+  store ids and dropped anything unmatched; it never read Xbox or Nintendo. Checked live on
+  14 October: IGDB has 22 store sources and none is Nintendo; its Xbox 360 ids end in the
+  game's title id.
 
 ## Update: 14 October 2026, on the Windows computer
 
