@@ -1,0 +1,3 @@
+# Every text file is stored and checked out with LF, whatever the machine.
+# Prettier expects LF, and Git for Windows otherwise converts to CRLF on checkout.
+* text=auto eol=lf

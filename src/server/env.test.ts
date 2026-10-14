@@ -120,19 +120,24 @@ describe('databaseTarget', () => {
     expect(databaseTarget()).toMatchObject({ kind: 'file', durable: false })
   })
 
-  it('works on a copy where the folder cannot be written, as in a deployed function', () => {
-    const data = join(folder, 'readonly')
-    mkdirSync(data)
-    const file = join(data, 'shelf.db')
-    writeFileSync(file, 'sample')
-    chmodSync(data, 0o555)
-    vi.stubEnv('SHELF_DATABASE_FILE', file)
+  // Windows ignores a folder's mode bits, so chmod cannot make one unwritable there.
+  // Deployed functions run on Linux, which is where this matters.
+  it.skipIf(process.platform === 'win32')(
+    'works on a copy where the folder cannot be written, as in a deployed function',
+    () => {
+      const data = join(folder, 'readonly')
+      mkdirSync(data)
+      const file = join(data, 'shelf.db')
+      writeFileSync(file, 'sample')
+      chmodSync(data, 0o555)
+      vi.stubEnv('SHELF_DATABASE_FILE', file)
 
-    const target = databaseTarget()
-    chmodSync(data, 0o755)
+      const target = databaseTarget()
+      chmodSync(data, 0o755)
 
-    expect(target).toMatchObject({ kind: 'file', durable: false })
-    expect(target.kind === 'file' && target.path).not.toBe(file)
-    expect(target.kind === 'file' && target.path.startsWith(tmpdir())).toBe(true)
-  })
+      expect(target).toMatchObject({ kind: 'file', durable: false })
+      expect(target.kind === 'file' && target.path).not.toBe(file)
+      expect(target.kind === 'file' && target.path.startsWith(tmpdir())).toBe(true)
+    },
+  )
 })

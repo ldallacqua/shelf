@@ -32,6 +32,9 @@ const flags = new Set(process.argv.slice(2))
 const quick = flags.has('--quick')
 const linux = !quick && !flags.has('--skip-linux')
 const updateScreenshots = flags.has('--update-screenshots')
+const windows = process.platform === 'win32'
+/** On Windows pnpm is a .cmd file, which Node starts only through a shell. */
+const shellFor = (command: string) => windows && command === 'pnpm'
 
 const { devDependencies } = JSON.parse(readFileSync('package.json', 'utf8')) as {
   devDependencies: Record<string, string>
@@ -52,7 +55,11 @@ const done: { step: string; seconds: number }[] = []
 const run = (step: string, command: string, args: string[], env: Record<string, string> = {}) => {
   console.log(`\n── ${step}\n`)
   const started = performance.now()
-  const result = spawnSync(command, args, { stdio: 'inherit', env: { ...process.env, ...env } })
+  const result = spawnSync(command, args, {
+    stdio: 'inherit',
+    env: { ...process.env, ...env },
+    shell: shellFor(command),
+  })
   if (result.status !== 0) {
     stopServer()
     console.error(
@@ -66,7 +73,10 @@ const run = (step: string, command: string, args: string[], env: Record<string, 
 let server: ReturnType<typeof spawn> | undefined
 const stopServer = () => {
   // The server is started in a group of its own, so pnpm and the Next.js server it starts both stop.
-  if (server?.pid) process.kill(-server.pid, 'SIGTERM')
+  // Windows has no process groups; taskkill stops the whole tree instead.
+  if (server?.pid && windows) {
+    spawnSync('taskkill', ['/pid', String(server.pid), '/t', '/f'], { stdio: 'ignore' })
+  } else if (server?.pid) process.kill(-server.pid, 'SIGTERM')
   server = undefined
 }
 process.on('SIGINT', () => {
@@ -88,7 +98,9 @@ console.log(`\n── Serving the build at ${BASE_URL}\n`)
 server = spawn('pnpm', ['start'], {
   env: { ...process.env, SHELF_MOCKS: '1' },
   stdio: 'ignore',
-  detached: true,
+  detached: !windows,
+  shell: shellFor('pnpm'),
+  windowsHide: true,
 })
 const deadline = Date.now() + 60_000
 while (!(await answers(`${BASE_URL}/en`))) {

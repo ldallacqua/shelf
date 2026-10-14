@@ -75,6 +75,13 @@ while something else answers on port 3300.
 all three widths (Linux WebKit is not Safari, see below) and the reference screenshots. Docker
 has to be running.
 
+**On Windows** `pnpm verify` runs the same steps. Two things differ: the browser projects'
+WebKit is Playwright's Windows build, which is neither Safari nor Linux WebKit, so the Linux
+pass is still the one that counts for WebKit; and a test that needs a folder Node cannot write
+to is skipped, because Windows ignores a folder's mode bits. Line endings are pinned to LF in
+`.gitattributes`, since Git for Windows otherwise checks files out with CRLF and every file
+fails the format check.
+
 The workflow in `.github/workflows/ci.yml` is still there, for the odd time a check is wanted
 on GitHub's own machines: Actions → CI → Run workflow, or
 `gh workflow run ci.yml --ref <branch>` (add `-f only=lighthouse` for Lighthouse alone).
