@@ -24,6 +24,7 @@ import { markPageLive, pageIsLive, resetPageLive } from './live'
 import { resetPreviews } from './preview-queue'
 import {
   densityPreference,
+  dimensionPreference,
   preferenceScript,
   readPreference,
   wallSizePreference,
@@ -236,18 +237,51 @@ describe('the design system and the data agree', () => {
 })
 
 describe('Toolbar', () => {
-  const setup = (view: 'shelf' | 'wall' | 'list' = 'shelf') => {
+  const setup = (view: 'shelf' | 'wall' | 'list' = 'shelf', noThreeD = false) => {
     const handlers = {
       onView: vi.fn(),
       onGroup: vi.fn(),
       onDensity: vi.fn(),
       onWallSize: vi.fn(),
+      onDimension: vi.fn(),
     }
     renderWithIntl(
-      <Toolbar view={view} group="platform" density="covers" wallSize="medium" {...handlers} />,
+      <Toolbar
+        view={view}
+        group="platform"
+        density="covers"
+        wallSize="medium"
+        dimension="2d"
+        noThreeD={noThreeD}
+        {...handlers}
+      />,
     )
     return handlers
   }
+
+  it('offers 2D or 3D on the shelf only, with the one shown pressed', async () => {
+    const { onDimension } = setup('shelf')
+    const pair = screen.getByRole('radiogroup', { name: 'Shelf in 2D or 3D' })
+    expect(within(pair).getByRole('radio', { name: '2D' })).toBeChecked()
+    await userEvent.click(within(pair).getByRole('radio', { name: '3D' }))
+    expect(onDimension).toHaveBeenCalledWith('3d')
+  })
+
+  it('has no 2D or 3D on the wall or the list', () => {
+    setup('wall')
+    expect(screen.queryByRole('radiogroup', { name: 'Shelf in 2D or 3D' })).toBeNull()
+  })
+
+  it('keeps 3D in reach but unavailable, with its reason, where the browser cannot draw it', async () => {
+    const { onDimension } = setup('shelf', true)
+    const threeD = screen.getByRole('radio', { name: '3D' })
+    expect(threeD).toHaveAttribute('aria-disabled', 'true')
+    expect(threeD).toHaveAccessibleDescription(
+      '3D needs WebGL 2, which this browser does not offer.',
+    )
+    await userEvent.click(threeD)
+    expect(onDimension).not.toHaveBeenCalled()
+  })
 
   it('offers the three views, with the current one pressed', async () => {
     const { onView } = setup()
@@ -295,11 +329,15 @@ describe('Toolbar', () => {
         onGroup={vi.fn()}
         onDensity={vi.fn()}
         onWallSize={vi.fn()}
+        dimension="3d"
+        onDimension={vi.fn()}
       />,
       'pt-BR',
     )
     expect(screen.getByRole('toolbar', { name: 'Visualização da biblioteca' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Estante' })).toBeChecked()
+    expect(screen.getByRole('radiogroup', { name: 'Estante em 2D ou 3D' })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: '3D' })).toBeChecked()
   })
 })
 
@@ -460,6 +498,69 @@ describe('device preferences', () => {
 
     writePreference(wallSizePreference, 'large')
     expect(readPreference(wallSizePreference)).toBe('large')
+  })
+})
+
+describe('2D or 3D on this device', () => {
+  /** A device, as the head script can tell it: which media queries match, and whether WebGL 2 exists. */
+  const device = ({ desktop = false, calm = false, webgl2 = true } = {}) => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('reduced-motion') ? calm : desktop,
+    }))
+    if (webgl2) vi.stubGlobal('WebGL2RenderingContext', function WebGL2RenderingContext() {})
+    else Reflect.deleteProperty(window, 'WebGL2RenderingContext')
+  }
+  const runScript = () => new Function(preferenceScript())()
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    window.localStorage.clear()
+    document.documentElement.removeAttribute('data-shelf-mode')
+  })
+
+  it('starts a desktop that can draw it in 3D', () => {
+    device({ desktop: true })
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '3d')
+  })
+
+  it('starts a phone or a tablet in 2D', () => {
+    device({ desktop: false })
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+  })
+
+  it('starts in 2D when reduced motion is asked for, or there is no WebGL 2', () => {
+    device({ desktop: true, calm: true })
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+
+    device({ desktop: true, webgl2: false })
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+  })
+
+  it('starts in 2D when the device cannot be asked', () => {
+    vi.stubGlobal('matchMedia', () => {
+      throw new Error('no media queries')
+    })
+    expect(runScript).not.toThrow()
+    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+  })
+
+  it('remembers a choice over the default, even a choice equal to it', () => {
+    device({ desktop: false })
+    writePreference(dimensionPreference, '2d')
+    expect(window.localStorage.getItem('shelf:dimension')).toBe('2d')
+
+    device({ desktop: true })
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+
+    window.localStorage.setItem('shelf:dimension', '3d')
+    device({ desktop: false })
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '3d')
   })
 })
 

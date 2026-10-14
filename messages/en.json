@@ -178,6 +178,21 @@
       "covers": "Covers",
       "compact": "Compact"
     },
+    "dimension": {
+      "label": "Shelf in 2D or 3D",
+      "2d": "2D",
+      "3d": "3D",
+      "unsupported": "3D needs WebGL 2, which this browser does not offer."
+    },
+    "shelf3d": {
+      "index": "Shelves along the wall",
+      "tick": "{shelf}, {count, plural, one {# game} other {# games}}",
+      "fallback": {
+        "unsupported": "3D could not start in this browser, so the shelf is in 2D.",
+        "lost": "The 3D shelf stopped when the graphics card reset, so the shelf is in 2D.",
+        "slow": "3D was running too slowly here, so the shelf is in 2D."
+      }
+    },
     "wallSize": {
       "label": "Cover size",
       "small": "Small covers",

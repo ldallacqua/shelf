@@ -1,0 +1,146 @@
+/*
+ * The 3D shelf's stage. Loaded with the 3D bundle only, the first time 3D
+ * opens. The scene draws itself; this places the canvas and the few things
+ * drawn over it as page elements: the focus ring, the label of the box under
+ * the pointer, and the index of shelves.
+ */
+@layer components {
+  .shelf-3d {
+    position: relative;
+    /* The wall fills the window below the controls, and never gets too short to walk along. */
+    height: clamp(30rem, calc(100dvh - 15rem), 60rem);
+    margin-top: 1.5rem;
+    overflow: hidden;
+    border-radius: var(--radius-panel);
+    background: var(--wall);
+    isolation: isolate;
+  }
+
+  .shelf-3d-canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    /* Sideways drags walk the camera; the page still scrolls up and down. */
+    touch-action: pan-y;
+  }
+
+  .shelf-3d-canvas:active {
+    cursor: grabbing;
+  }
+
+  /* Focus is always a 2px accent ring, here drawn round the box in the scene. */
+  .shelf-3d-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 2px solid var(--focus);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  .shelf-3d-tag {
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: 24rem;
+    overflow: hidden;
+    padding: 0.375rem 0.625rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    background: var(--surface-raised);
+    color: var(--text);
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 6px 18px rgb(0 0 0 / calc(var(--shadow-depth) * 0.8));
+  }
+
+  /* The index: a column of ticks at the edge, one per shelf (spec 3.3). */
+  .shelf-3d-index {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.125rem;
+    max-height: calc(100% - 2rem);
+    overflow-y: auto;
+    padding: 0.5rem 0.25rem 0.5rem 0.75rem;
+    translate: 0 -50%;
+    scrollbar-width: none;
+    /* The wall behind the ticks, so they read over the covers at the edge. */
+    background: linear-gradient(
+      to left,
+      color-mix(in srgb, var(--wall) 75%, transparent) 50%,
+      transparent
+    );
+    border-radius: var(--radius-control);
+  }
+
+  .shelf-3d-tick {
+    position: relative;
+    display: flex;
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    border-radius: var(--radius-control);
+    color: var(--text-muted);
+  }
+
+  /* The current shelf's tick is longer and in the accent: never by color alone. */
+  .shelf-3d-tick::after {
+    content: '';
+    width: 0.875rem;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition: width var(--motion-quick) var(--ease-settle);
+  }
+
+  .shelf-3d-tick[aria-current='true'] {
+    color: var(--accent);
+  }
+
+  .shelf-3d-tick[aria-current='true']::after {
+    width: 1.5rem;
+  }
+
+  /* The shelf's name, beside its tick on hover or focus. It takes no room when hidden. */
+  .shelf-3d-tick-name {
+    position: absolute;
+    right: calc(100% + 0.25rem);
+    padding: 0.125rem 0.375rem;
+    white-space: nowrap;
+    border-radius: 3px;
+    background: var(--surface-raised);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity var(--motion-quick) var(--ease-settle);
+  }
+
+  .shelf-3d-index:hover .shelf-3d-tick-name,
+  .shelf-3d-tick:focus-visible .shelf-3d-tick-name {
+    opacity: 1;
+  }
+
+  /* The same shelves as lists, for the keyboard and screen readers. Never seen; their focus is the ring. */
+  .shelf-3d-lists {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

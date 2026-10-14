@@ -27,6 +27,7 @@
     "e2e": "playwright test",
     "perf:js": "node scripts/measure-js.ts",
     "perf:lighthouse": "node scripts/lighthouse.ts",
+    "perf:3d": "node scripts/perf-3d.ts",
     "storybook": "storybook dev -p 6300 --no-open",
     "storybook:build": "storybook build",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm i18n:check && pnpm test",
@@ -47,6 +48,7 @@
     "server-only": "0.0.1",
     "sharp": "0.35.5",
     "tailwind-merge": "3.7.0",
+    "three": "0.186.1",
     "thumbhash": "0.1.1",
     "zod": "4.6.7"
   },
@@ -64,6 +66,7 @@
     "@types/node": "^24",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/three": "0.186.0",
     "@vitejs/plugin-react": "6.1.2",
     "babel-plugin-react-compiler": "1.0.0",
     "drizzle-kit": "0.31.11",

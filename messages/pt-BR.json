@@ -178,6 +178,21 @@
       "covers": "Capas",
       "compact": "Compacto"
     },
+    "dimension": {
+      "label": "Estante em 2D ou 3D",
+      "2d": "2D",
+      "3d": "3D",
+      "unsupported": "O 3D precisa de WebGL 2, que este navegador não oferece."
+    },
+    "shelf3d": {
+      "index": "Prateleiras ao longo da parede",
+      "tick": "{shelf}, {count, plural, one {# jogo} other {# jogos}}",
+      "fallback": {
+        "unsupported": "O 3D não conseguiu abrir neste navegador, então a estante está em 2D.",
+        "lost": "A estante 3D parou quando a placa de vídeo reiniciou, então a estante está em 2D.",
+        "slow": "O 3D estava lento demais aqui, então a estante está em 2D."
+      }
+    },
     "wallSize": {
       "label": "Tamanho das capas",
       "small": "Capas pequenas",

@@ -10,7 +10,7 @@
  */
 import { chromium } from '@playwright/test'
 
-import { BASE_URL, javascriptBudgets, THREE_MARKERS } from './lib/budgets.ts'
+import { BASE_URL, javascriptBudgets, THREE_MARKERS, threeDBudget } from './lib/budgets.ts'
 
 const browser = await chromium.launch()
 let failed = false
@@ -59,6 +59,52 @@ for (const budget of javascriptBudgets) {
 
   await context.close()
 }
+
+/**
+ * The 3D bundle: the library on a desktop, once in 2D and once in 3D. What
+ * the 3D visit fetches that the 2D one does not is the 3D shelf.
+ */
+const scriptsOf = async (dimension: '2d' | '3d'): Promise<Map<string, number>> => {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  await context.addInitScript((value) => localStorage.setItem('shelf:dimension', value), dimension)
+  const page = await context.newPage()
+  const session = await context.newCDPSession(page)
+  await session.send('Network.enable')
+  const urls = new Map<string, string>()
+  const sizes = new Map<string, number>()
+  session.on('Network.responseReceived', (event) => {
+    if (event.type === 'Script') urls.set(event.requestId, event.response.url)
+  })
+  session.on('Network.loadingFinished', (event) => {
+    const url = urls.get(event.requestId)
+    if (url) sizes.set(url, (sizes.get(url) ?? 0) + event.encodedDataLength)
+  })
+  await page.route('**/*', (route) =>
+    route.request().headers()['next-router-prefetch'] ? route.abort() : route.continue(),
+  )
+  await page.goto(`${BASE_URL}${threeDBudget.path}`, { waitUntil: 'networkidle' })
+  if (dimension === '3d') {
+    // Drawn, or given way to 2D where this browser cannot draw it: either way it has loaded.
+    await page
+      .locator('[data-shelf-phase="3d"], [role="status"]')
+      .first()
+      .waitFor({ timeout: 60_000 })
+      .catch(() => {})
+  }
+  await context.close()
+  return sizes
+}
+
+const flat = await scriptsOf('2d')
+const deep = await scriptsOf('3d')
+let threeD = 0
+for (const [url, size] of deep) if (!flat.has(url)) threeD += size
+const threeDKilobytes = threeD / 1024
+const threeDOver = threeDKilobytes > threeDBudget.kilobytes || threeD === 0
+failed ||= threeDOver
+console.log(
+  `${'3D shelf'.padEnd(10)} ${'when opened'.padEnd(14)} ${`${threeDKilobytes.toFixed(1)} KB of ${threeDBudget.kilobytes} KB`.padEnd(24)} ${threeD === 0 ? 'NOT LOADED' : threeDOver ? 'OVER BUDGET' : 'ok'}`,
+)
 
 await browser.close()
 process.exit(failed ? 1 : 0)

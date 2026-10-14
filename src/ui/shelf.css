@@ -818,6 +818,7 @@
    * held back, and the control that shows the choice with them.
    */
   html[data-density='compact']:not([data-ready]) :is(.shelf-grid, [data-preference='density']),
+  html[data-shelf-mode='3d']:not([data-ready]) [data-preference='shelf-mode'],
   html:is([data-wall-size='small'], [data-wall-size='large']):not([data-ready])
     :is(.wall-grid, [data-preference='wall-size']) {
     visibility: hidden;

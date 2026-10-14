@@ -4,6 +4,27 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Step 4 in progress (branch `build-step-4-3d-shelf`, no PR yet)
+
+- **Built and working:** the 3D shelf in plain three.js (owner's choice over R3F, measured:
+  architecture section 2, row 9), the 2D/3D pair and the `D` key, defaults per device, the
+  switch with its anchor, fallbacks (no WebGL 2, lost context, slow frames), the lists beside
+  the canvas, `pnpm perf:3d`, the 3D bundle budget in `pnpm perf:js` (147 of 300 KB; library
+  233.3, budget raised to 240 with its reason).
+- **Checked:** unit tests; `e2e/shelf-3d.spec.ts` in all nine projects; the whole browser
+  suite in Chromium (308 passed). perf:3d: 60 fps, 13 draws at 247 boxes, 14 at 1,376 (stress
+  set), 69 MB of textures, also in software rendering. This machine has an RTX 4090, not a
+  mid-range laptop: say so in the summary.
+- **Left before the ⏸:** finish the docs (architecture sections 14, 17, 19 and 25; testing.md
+  on the 3D tests, the probe and perf:3d; AGENTS.md commands; README status); a full
+  `pnpm verify --skip-linux` from PowerShell with `LIGHTHOUSE_SLOWDOWN=5.5`; open the PR;
+  summary with screenshots (desktop light and dark in 3D, phone light and dark in 2D).
+  No 3D reference screenshots: the Linux pass needs Docker.
+- **Decisions to list in section 25:** the server always draws 2D and 3D takes over after its
+  first frame; a chosen 3D is honored under reduced motion (it cuts); phone widths are offered
+  2D only; the budget hook is `window.__shelf3dProbe`, set by a test, not a test build; bays
+  have three ledges; no pulsing light in 3D (idle draws nothing); the sheet has no scrim in 3D.
+
 ## Update: 14 October 2026, on the Windows computer
 
 - **PR #5 is merged** (steps 2 and 3). The owner chose to merge with Lighthouse a near miss

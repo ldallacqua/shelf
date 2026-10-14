@@ -61,7 +61,7 @@ How to read the evidence labels:
 | Interface motion | Motion | 14.1 | Docs |
 | Scroll scenes | GSAP with ScrollTrigger, and Lenis | 3.15, 1.3 | Docs |
 | Page transitions | React `<ViewTransition>` | in React 19.3 | Docs |
-| 3D | three.js, React Three Fiber, drei | 0.186, 9.8, 10.7 | Docs |
+| 3D | three.js, on its own (no React Three Fiber, no drei: see section 2, row 9) | 0.186.1 | Docs |
 | Address state | nuqs | 2.10 | Docs |
 | Client data | TanStack Query, TanStack Virtual | 5.104, 3.14 | Docs |
 | Validation | Zod | 4.6 | Docs |
@@ -96,7 +96,7 @@ The throwaway project is deleted. Nothing from it is in the repository.
 
 ## 2. Where this differs from the brief
 
-The brief said to check current versions and not rely on memory. Eight checks changed the plan.
+The brief said to check current versions and not rely on memory. Eight checks changed the plan, and one measurement at step 4.
 
 | # | Brief | Decision | Why |
 | --- | --- | --- | --- |
@@ -108,9 +108,11 @@ The brief said to check current versions and not rely on memory. Eight checks ch
 | 6 | Drizzle, latest | **0.45**, not 1.0 | 1.0 is a release candidate (`1.0.0-rc.4`). 0.45 is the stable line. |
 | 7 | "Covers via IGDB CDN with srcset" | As asked, and **not** through Vercel's image optimizer | The Hobby plan includes 5,000 image transformations a month. A 1,000-game library in three sizes would spend that in one visit. IGDB's servers already resize, send WebP, allow cross-origin use and cache for a year. The reference app's own notes record 0.24s direct against 1.20s through an optimizer. |
 | 8 | CI runs everything | Everything runs, **on the Mac before each push** (`pnpm verify`); CI only by hand | A private repository gets 2,000 free minutes a month, and one full run took about 75. It began as two tiers on GitHub; at the end of step 3 the owner asked for the checks to run locally instead. See [section 18](#18-continuous-integration). |
+| 9 | React Three Fiber with drei | **three.js on its own**, driven from one React component (the owner's decision at step 4, 14 Oct 2026) | Measured, compressed, React aside: three.js with only the classes the shelf uses is 129 KB; R3F's `<Canvas>` registers all of three.js, 242 KB; R3F with `createRoot` and a chosen set, 183 KB. The scene is imperative anyway (instanced boxes, our own shaders, camera and picking, frames on demand), so R3F's 54 KB would buy little. drei was never needed. The 3D bundle is 147 KB of its 300. |
 
-Three things in the brief were confirmed as written and need no change: Tailwind 4 with
-shadcn/ui and Radix; React Three Fiber with drei (it accepts React 19.3); MSW for IGDB.
+Three things in the brief were confirmed as written at the start: Tailwind 4 with shadcn/ui
+and Radix; React Three Fiber with drei (it accepts React 19.3), later replaced (row 9); MSW
+for IGDB.
 
 One correction to my own memory: a GitHub OAuth app now accepts **up to 10** callback
 addresses, not one. That simplifies the setup, but preview deployments still get a new address

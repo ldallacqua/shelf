@@ -31,6 +31,25 @@ export async function openLibrary(page: Page, address = '/en/library') {
   // The first boxes arrive in a stagger, and the totals settle. Both are over
   // when the page stops marking its boxes as arriving.
   await page.locator('[data-enter]').first().waitFor({ state: 'detached', timeout: 10_000 })
+  await shelfSettled(page)
+}
+
+/**
+ * Where the page draws the shelf in 3D, waits until the 3D shelf has taken
+ * over, or until it has said why it could not. Returns which happened.
+ */
+export async function shelfSettled(page: Page): Promise<'2d' | '3d' | 'fallback'> {
+  // The pair of buttons shows what the page is drawing, or about to draw.
+  const threeD = page
+    .getByRole('radiogroup', { name: 'Shelf in 2D or 3D' })
+    .getByRole('radio', { name: '3D' })
+  if ((await threeD.count()) === 0 || (await threeD.getAttribute('aria-checked')) !== 'true') {
+    return '2d'
+  }
+  const live = page.locator('[data-shelf-phase="3d"]')
+  const gaveWay = page.getByRole('status').filter({ hasText: /so the shelf is in 2D/ })
+  await expect(live.or(gaveWay)).toBeVisible({ timeout: 30_000 })
+  return (await live.count()) > 0 ? '3d' : 'fallback'
 }
 
 /**
@@ -41,6 +60,12 @@ export async function openLibrary(page: Page, address = '/en/library') {
 const cutShortByLeaving = /due to access control checks/
 
 type Fixtures = {
+  /**
+   * The shelf's 2D or 3D choice, stored before the page loads. 2D unless a
+   * test asks for 3D, so the tests written for 2D read 2D on every project;
+   * `device` stores nothing and leaves it to the device's default.
+   */
+  dimension: '2d' | '3d' | 'device'
   /**
    * Set to true for a test that makes the browser log an error on purpose,
    * for example by opening an address that answers 404.
@@ -60,7 +85,12 @@ export const test = base.extend<Fixtures>({
    * an earlier moment with `waitUntil` is left alone: it is testing the page
    * before it is live.
    */
-  page: async ({ page }, use) => {
+  page: async ({ page, dimension }, use) => {
+    if (dimension !== 'device') {
+      await page.addInitScript((value) => {
+        window.localStorage.setItem('shelf:dimension', value)
+      }, dimension)
+    }
     // No test depends on IGDB's image servers, and the repository holds no
     // cover art: every cover is answered with a flat color made from its id.
     await page.route('https://images.igdb.com/**', (route) => {
@@ -69,6 +99,8 @@ export const test = base.extend<Fixtures>({
       for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % 360
       return route.fulfill({
         contentType: 'image/svg+xml',
+        // As IGDB answers: a cover may be drawn into a canvas, and the 3D shelf makes textures of them.
+        headers: { 'Access-Control-Allow-Origin': '*' },
         body: `<svg xmlns="http://www.w3.org/2000/svg" width="264" height="352"><rect width="264" height="352" fill="hsl(${hash} 55% 38%)"/><rect width="264" height="120" fill="hsl(${(hash + 40) % 360} 60% 55%)"/></svg>`,
       })
     })
@@ -84,6 +116,7 @@ export const test = base.extend<Fixtures>({
     await use(page)
   },
 
+  dimension: ['2d', { option: true }],
   allowConsoleErrors: [false, { option: true }],
   cleanConsole: [
     async ({ page, allowConsoleErrors }, use) => {
