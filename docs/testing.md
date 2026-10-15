@@ -51,6 +51,13 @@ Bot/ })` has the accessible name "Astro Bot (2024), PS5, Physical, Completed". O
 near the window are in the page, so a game far down a shelf is not found until it is scrolled
 or stepped to.
 
+To see the page before the rest of the library arrives, hold the library file with
+`page.route('**/library/snapshot/**', ...)` and let it go later, as the "while the library
+arrives" test does. Meanwhile the places still to fill hold ghosts (`[data-ghost]`), which
+assistive technology does not see. The part of the page built ahead of time, before the first
+boxes, is checked by serving it alone, with script off: `layout.spec.ts` cuts the page where
+the streamed part begins. `LibrarySkeleton` also has component tests and a story.
+
 ## Filters and smart shelves in browser tests
 
 **Counts come from the API.** Where a test checks how many games a filter matches, it asks

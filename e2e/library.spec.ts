@@ -244,6 +244,26 @@ test.describe('on a phone (spec 3.4)', () => {
     ).not.toBeInViewport()
   })
 
+  test('a shelf scrolls inside the screen, above the controls; the footer stays below', async ({
+    page,
+    size,
+  }) => {
+    test.skip(size !== 'phone', 'the shelf pager exists only at phone width')
+    await openLibrary(page)
+    // Scrolled as far as the page goes: only the footer's height, never through the shelf.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    const edges = await page.evaluate(() => {
+      const bounds = (selector: string) => document.querySelector(selector)!.getBoundingClientRect()
+      return {
+        shelf: bounds('.shelf-panel').bottom,
+        controls: bounds('.library-controls'),
+        footer: bounds('footer').top,
+      }
+    })
+    expect(edges.shelf).toBeLessThanOrEqual(edges.controls.top + 1)
+    expect(edges.footer).toBeGreaterThanOrEqual(edges.controls.bottom - 1)
+  })
+
   test('a tap opens the game as a sheet from the bottom', async ({ page, size }) => {
     test.skip(size !== 'phone', 'the bottom sheet is the phone layout')
     await openLibrary(page)
@@ -259,6 +279,42 @@ test.describe('on a phone (spec 3.4)', () => {
       })
       .toBe(height)
     expect((await sheet.boundingBox())?.y ?? 0).toBeGreaterThan(40)
+  })
+})
+
+test.describe('while the library arrives (spec 3.10)', () => {
+  test('every shelf is there from the start, with ghosts where its games will stand', async ({
+    page,
+    size,
+  }) => {
+    // The page comes with its first boxes; the rest wait for the library file, held here.
+    let release = () => {}
+    const held = new Promise<void>((resolve) => (release = resolve))
+    await page.route('**/library/snapshot/**', async (route) => {
+      await held
+      await route.continue()
+    })
+    await page.goto('/en/library')
+    const names = page.getByRole('heading', { level: 2 })
+    await expect(names.first()).toHaveText('PlayStation 5')
+    const before = await names.allTextContents()
+
+    // The last shelf: none of its games came with the page.
+    if (size === 'phone') {
+      await page.getByRole('navigation', { name: 'Shelves' }).getByRole('button').last().click()
+    } else {
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    }
+    const ghosts = page.locator('[data-ghost]')
+    await expect(ghosts.first()).toBeAttached()
+    await expect(ghosts.first()).toHaveAttribute('aria-hidden', 'true')
+    // The status row has its counts already: they came with the page.
+    await expect(page.getByRole('radio', { name: /^Backlog, \d+ games$/ })).toBeAttached()
+
+    release()
+    await expect(ghosts).toHaveCount(0)
+    // No shelf was slotted in or taken away when the rest arrived.
+    expect(await names.allTextContents()).toEqual(before)
   })
 })
 

@@ -5,6 +5,7 @@ import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
 import type { Status } from '@/domain/library/values'
 
 import { GamePreview } from './game-preview'
+import { LibrarySkeleton } from './library-skeleton'
 import { ShelfGrid } from './shelf-grid'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
@@ -155,6 +156,32 @@ export const Compact: Story = {
       onLeave={() => undefined}
     />
   ),
+}
+
+/** A shelf whose first boxes have arrived: ghosts stand where the rest will, until the library file brings them. */
+export const Arriving: Story = {
+  render: () => (
+    <ShelfGrid
+      shelfKey="arriving"
+      items={states.slice(0, 3)}
+      total={16}
+      unmeasured={3}
+      platforms={platforms}
+      density="covers"
+      slot={142}
+      tall={190}
+      label="Three boxes arrived, the rest on their way"
+      describe={describe}
+      position={0}
+      onOpen={() => undefined}
+      onLeave={() => undefined}
+    />
+  ),
+}
+
+/** The library before its first boxes arrive, as the page built ahead of time shows it. */
+export const Loading: Story = {
+  render: () => <LibrarySkeleton />,
 }
 
 export const Controls: Story = {

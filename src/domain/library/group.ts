@@ -4,7 +4,7 @@ import type {
   LibraryNames,
   LibraryPlatform,
 } from '@/domain/library/library'
-import { statuses, type Status } from '@/domain/library/values'
+import { isStatus, statuses, type Status } from '@/domain/library/values'
 
 /**
  * Turns an ordered list of games into shelves (spec, section 3.7).
@@ -47,6 +47,28 @@ export type ShelfId =
   | { kind: 'all'; key: 'all' }
 
 export type Shelf = ShelfId & { items: ShelfItem[] }
+
+/**
+ * What a shelf is for, read back from its key: enough to name a shelf before
+ * any of its games are known. Nothing for a key that names nothing, such as
+ * a platform missing from `platforms`.
+ */
+export const shelfIdOf = (
+  key: string,
+  platforms: readonly LibraryPlatform[],
+): ShelfId | undefined => {
+  if (key === 'all') return { kind: 'all', key }
+  if (key === 'platform:none') return { kind: 'not-owned', key }
+  if (key === 'year:unknown') return { kind: 'year-unknown', key }
+  const [kind, value = ''] = key.split(':')
+  if (kind === 'platform') {
+    const platform = platforms.find((each) => String(each.id) === value)
+    return platform ? { kind, key, platform } : undefined
+  }
+  if (kind === 'status') return isStatus(value) ? { kind, key, status: value } : undefined
+  if (kind === 'year' && /^\d+$/.test(value)) return { kind, key, year: Number(value) }
+  return undefined
+}
 
 /** The copy a game shows when it stands once: the one chosen for display, which is first. */
 export const displayCopy = (game: LibraryGame): LibraryCopy | undefined => game.copies[0]

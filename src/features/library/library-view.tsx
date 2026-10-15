@@ -59,10 +59,10 @@ import { useKeywords } from '@/features/filters/use-keywords'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
-import { Ledge } from '@/ui/ledge'
 
 import { GamePreview } from './game-preview'
-import { ListView } from './list-view'
+import { GhostShelves } from './ghosts'
+import { GhostList, ListView } from './list-view'
 import { markPageLive } from './live'
 import type { Dimension } from './preferences'
 import { anchorIn2d, ShelfStage } from './shelf-stage'
@@ -78,7 +78,7 @@ import {
   useWallSize,
 } from './use-preference'
 import type { DrawnShelf, OpenBox } from './view-props'
-import { WallView } from './wall-view'
+import { GhostWall, WallView } from './wall-view'
 
 // Each change of view or grouping is a step in the browser's history, so Back undoes it.
 const viewParam = parseAsStringLiteral(views)
@@ -392,11 +392,14 @@ export function LibraryView({
       : mentions(parsed.tree, 'status')
         ? undefined
         : 'all'
+  // Until the library file arrives, the counts sent with the page, while they still apply.
   const statusCounts = index
     ? Object.fromEntries(
         facetCounts(index, parsed.tree, 'status').map((value) => [value.word, value.count]),
       )
-    : undefined
+    : query.q === builtFor.q
+      ? first.statusCounts
+      : undefined
   const conditions = chipsOf(parsed.tree).reduce((total, chips) => total + chips.length, 0)
 
   // The totals follow the filter. The server drew them for the address the page came
@@ -574,13 +577,14 @@ export function LibraryView({
       {matching?.length === 0 ? (
         <NoResults onClear={clearFilters} />
       ) : shelves.length === 0 ? (
-        // The wall and the boards first; the boxes follow.
-        <div className="shelves pt-6" aria-busy="true">
+        // Asked for another arrangement before the library file arrived: ghosts until it does.
+        <div aria-busy="true" className="contents">
           <p className="sr-only" role="status">
             {t('loading')}
           </p>
-          <Ledge itemsClassName="h-40 sm:h-52" />
-          <Ledge className="mt-10" itemsClassName="h-40 sm:h-52" />
+          {view === 'shelf' ? <GhostShelves /> : null}
+          {view === 'wall' ? <GhostWall size={wallSize} /> : null}
+          {view === 'list' ? <GhostList /> : null}
         </div>
       ) : (
         <div

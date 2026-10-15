@@ -20,6 +20,7 @@ import { EmptyLibrary } from './empty-library'
 import { dateOf, hoursOf, outOfTen } from './format'
 import { GameBox, platformFor, platformsOwned } from './game-box'
 import { GamePreview } from './game-preview'
+import { LibrarySkeleton } from './library-skeleton'
 import { markPageLive, pageIsLive, resetPageLive } from './live'
 import { resetPreviews } from './preview-queue'
 import {
@@ -433,6 +434,23 @@ describe('EmptyLibrary', () => {
     unmount()
     renderWithIntl(<EmptyLibrary />, 'pt-BR')
     expect(screen.getByText('A estante está sendo abastecida.')).toBeInTheDocument()
+  })
+})
+
+describe('LibrarySkeleton', () => {
+  it('says the library is loading, and keeps its ghosts from assistive technology', () => {
+    const { container } = renderWithIntl(<LibrarySkeleton />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Library' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Loading the library…')
+    // Cases standing on the shelf, and nothing in them anyone could pick up.
+    expect(container.querySelectorAll('.ghost-case').length).toBeGreaterThan(0)
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('has the smart shelf’s name when it is one', () => {
+    renderWithIntl(<LibrarySkeleton title="Short ones" />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Short ones' })).toBeInTheDocument()
   })
 })
 

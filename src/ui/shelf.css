@@ -68,6 +68,50 @@
     pointer-events: none;
   }
 
+  /*
+   * A place for a game on its way: a case on the shelf, a cover on the wall,
+   * a row in the list, and the controls before they arrive. Each is shaped
+   * and placed as what will stand there, so the page reads as loading and
+   * not as an empty shelf, and nothing moves when the games arrive. They
+   * pulse in a wave along the row (see Motion below).
+   */
+  .ghost {
+    display: block;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+  }
+
+  /* A case at the shelf's own size, lit a little from above as the real ones are. */
+  .ghost-case {
+    width: min(100%, calc(var(--slot, 135) * var(--mm)));
+    height: calc(var(--tall, 190) * var(--mm));
+    flex: none;
+    margin-bottom: calc(var(--below) + var(--board));
+    border-radius: var(--radius-case);
+    background: linear-gradient(
+      color-mix(in srgb, var(--text) 12%, transparent),
+      color-mix(in srgb, var(--text) 6%, transparent)
+    );
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 7%, transparent);
+  }
+
+  /*
+   * A ghost's place on the row. Its distance from the board is on the ghost,
+   * not on the place, so a place in a row with no height takes no room: the
+   * loading shelf shows the rows it asks for (`data-rows`), however many
+   * places a row holds at this width.
+   */
+  .shelf-cell[data-ghost] {
+    min-height: 0;
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+
+  .shelf-grid[data-rows] {
+    grid-template-rows: repeat(var(--rows), var(--pitch));
+    grid-auto-rows: 0;
+  }
+
   /* The boards and their light, behind the games. */
   .shelf-bays {
     position: absolute;
@@ -442,6 +486,18 @@
     .game-live {
       animation: live 2.4s var(--ease-glide) infinite;
     }
+
+    /* Ghosts pulse in a wave, one place after another. Under reduced motion they are still. */
+    .ghost {
+      animation: ghost 1.6s var(--ease-glide) infinite;
+      animation-delay: calc(min(var(--i, 0), 24) * 60ms);
+    }
+  }
+
+  @keyframes ghost {
+    50% {
+      opacity: 0.5;
+    }
   }
 
   @keyframes box-in {
@@ -639,7 +695,13 @@
       height: calc(100dvh - 3.5rem - 1px);
     }
 
-    .library[data-view='shelf'] .shelves {
+    /*
+     * Each frame between the library and its shelves passes the screen's
+     * height on: the 3D stage, its 2D layer, the shelves. Otherwise a shelf
+     * grows as tall as its games, and the page under it, footer and all,
+     * scrolls up through it.
+     */
+    .library[data-view='shelf'] :is(.shelf-stage, .shelf-stage-2d, .shelves) {
       display: flex;
       min-height: 0;
       flex: 1;
@@ -783,12 +845,12 @@
     color: var(--text);
   }
 
-  .game-table tbody tr[data-cell] {
+  .game-table tbody tr[data-cell]:not([data-ghost]) {
     cursor: pointer;
     transition: background-color var(--motion-quick) var(--ease-settle);
   }
 
-  .game-table tbody tr[data-cell]:is(:hover, :focus-within, [data-active]) {
+  .game-table tbody tr[data-cell]:not([data-ghost]):is(:hover, :focus-within, [data-active]) {
     background: color-mix(in srgb, var(--text) 6%, transparent);
   }
 
@@ -830,6 +892,24 @@
   .library-swap {
     animation: fade-in 150ms var(--ease-settle) both;
   }
+
+  /*
+   * A total that counts up into place (SettlingNumber) waits unseen for the
+   * page to come alive, so the count never takes a figure already read back
+   * down. Only with script, to count it, and motion, to show it; and only for
+   * a moment: on a page slow to come alive it simply appears.
+   */
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    [data-settle]:not([data-counted]) {
+      animation: settle-wait 0s 700ms both;
+    }
+  }
+
+  @keyframes settle-wait {
+    from {
+      visibility: hidden;
+    }
+  }
 }
 
 @layer components {
@@ -838,7 +918,8 @@
    * The page arrives drawn with covers; until it is live, their shelves are
    * held back, and the control that shows the choice with them.
    */
-  html[data-density='compact']:not([data-ready]) :is(.shelf-grid, [data-preference='density']),
+  html[data-density='compact']:not([data-ready])
+    :is(.shelf-grid:not([data-rows]), [data-preference='density']),
   html[data-shelf-mode='3d']:not([data-ready]) [data-preference='shelf-mode'],
   html:is([data-wall-size='small'], [data-wall-size='large']):not([data-ready])
     :is(.wall-grid, [data-preference='wall-size']) {

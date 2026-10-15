@@ -1,6 +1,7 @@
 import {
   groupLibrary,
   isGrouping,
+  shelfIdOf,
   type Grouping,
   type Shelf,
   type Stands,
@@ -8,6 +9,7 @@ import {
 import type { Library, LibraryGame, LibraryNames } from '@/domain/library/library'
 import { DEFAULT_SORT, parseSort, sortGames, writeSort, type Sort } from '@/domain/library/sort'
 import { libraryStats, type LibraryStats } from '@/domain/library/stats'
+import type { Status } from '@/domain/library/values'
 import {
   buildIndex,
   evaluate,
@@ -17,6 +19,7 @@ import {
   type GameKeywords,
   type LibraryIndex,
 } from '@/domain/query/evaluate'
+import { facetCounts } from '@/domain/query/facets'
 import { parseQuery } from '@/domain/query/parse'
 import type { QueryNode } from '@/domain/query/tree'
 import { writeQuery } from '@/domain/query/write'
@@ -232,6 +235,8 @@ export type FirstScreen = {
   query: FirstQuery
   /** For the games the filter matches. */
   stats: LibraryStats
+  /** How many games each status would give, for the status row: it has its counts from the first paint. */
+  statusCounts: Partial<Record<Status, number>>
   outline: ShelfOutline[]
   /** The first boxes in shelf order, each game once. */
   games: LibraryGame[]
@@ -284,6 +289,9 @@ export const buildFirstScreen = (
       seed: query.seed ?? '',
     },
     stats: libraryStats(matching),
+    statusCounts: Object.fromEntries(
+      facetCounts(index, tree, 'status').map((value) => [value.word, value.count]),
+    ),
     outline,
     games: [...games.values()],
     platforms: library.names.platform,
@@ -323,7 +331,10 @@ const kept = new WeakMap<Library, { first: FirstScreen; library: Library }>()
  * The shelves to draw before the library file arrives: every shelf from the
  * outline, each holding only the boxes that came with the page. A game that
  * came for one shelf may also belong on a later one; it is left off there
- * until the whole shelf is known, so no box ever changes place.
+ * until the whole shelf is known, so no box ever changes place. A shelf none
+ * of whose boxes came is named from its key and drawn empty, so the shelves
+ * and their tabs are all there from the first paint and none is slotted in
+ * when the file arrives.
  */
 export const firstScreenShelves = (first: FirstScreen, locale: string) => {
   const names: LibraryNames = {
@@ -354,8 +365,8 @@ export const firstScreenShelves = (first: FirstScreen, locale: string) => {
   )
   return first.outline.flatMap((entry) => {
     const shelf = partial.get(entry.key)
-    // A shelf with none of its boxes yet cannot be named or drawn until the file arrives.
-    if (!shelf) return []
-    return [{ ...shelf, items: shelf.items.slice(0, entry.known), total: entry.count }]
+    if (shelf) return [{ ...shelf, items: shelf.items.slice(0, entry.known), total: entry.count }]
+    const id = shelfIdOf(entry.key, first.platforms)
+    return id ? [{ ...id, items: [], total: entry.count }] : []
   })
 }

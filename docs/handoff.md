@@ -10,6 +10,10 @@ step 3. This note is what the next session needs and cannot get from the code. R
   [#8](https://github.com/ldallacqua/shelf/pull/8). Step 5 has no ⏸,
   but it waits for the owner's approval before it is merged. **Next after merging:** step 6,
   the game page, on a branch from `main`.
+- **The owner's first review of step 5** (14 Oct 2026) asked for two things, both done on
+  the same branch: a loading state that does not look like an empty shelf with things
+  popping in (ghosts now stand where the games will; architecture section 25 has the four
+  rows), and the footer showing through the shelf on a phone (fixed; below).
 - **Step 4 and ADR 003 are merged** ([#6](https://github.com/ldallacqua/shelf/pull/6),
   [#7](https://github.com/ldallacqua/shelf/pull/7)). ADR 003's answers: sync is its own step
   right after step 7; the Xbox route is settled by a one-day spike; subscription games show,
@@ -24,8 +28,11 @@ step 3. This note is what the next session needs and cannot get from the code. R
   changed from the plan, and why, is in architecture section 25.
 - **The owner is a test cookie** until sign-in at step 7: `shelf-test-owner=1`, read only
   when the server runs with `SHELF_MOCKS=1`. On a preview nobody can save a shelf yet.
-- **Found and fixed on the way:** the phone list's title column was squeezed to one
-  letter (since step 3: spacer rows spanned nine columns, five of them hidden); Back did not
+- **Found and fixed on the way:** on a phone the shelf grew as tall as its games and the
+  page, footer and all, scrolled up through it (since step 4: the 3D stage's two wrappers
+  broke the chain of heights that keeps one shelf to the screen); the phone list's title
+  column was squeezed to one letter (since step 3: spacer rows spanned nine columns, five of
+  them hidden); Back did not
   reach the search field while it had focus; a shelf saved after the build said it was
   missing on its first full load (Next.js serves an unbuilt address from the route's frame
   and the data cached with it, so a shelf is now read by its slug); the status row's counts

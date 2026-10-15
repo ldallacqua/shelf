@@ -34,15 +34,24 @@ export async function generateMetadata({
   return { title: t('notFound'), robots: { index: false, follow: false } }
 }
 
-/** One smart shelf, by its slug and the address. Without a shelf at that slug, it says so. */
-async function ShelfFirstScreen({
+/**
+ * One smart shelf, by its slug and the address. Without a shelf at that slug,
+ * it says so. The shelf is known from the slug alone, so a shelf there was
+ * when the site was built has its name in the frame built ahead; only its
+ * boxes wait for the address.
+ */
+async function ShelfFrame({
   params,
   searchParams,
 }: Pick<PageProps<'/[locale]/shelves/[slug]'>, 'params' | 'searchParams'>) {
   const { slug } = await params
   const shelf = await getShelf(slug)
   if (!shelf) return <ShelfMissing />
-  return <LibraryFirstScreen searchParams={searchParams} library={getLibrary()} shelf={shelf} />
+  return (
+    <Suspense fallback={<LibrarySkeleton title={shelf.name} />}>
+      <LibraryFirstScreen searchParams={searchParams} library={getLibrary()} shelf={shelf} />
+    </Suspense>
+  )
 }
 
 /**
@@ -55,7 +64,7 @@ export default function ShelfPage({ params, searchParams }: PageProps<'/[locale]
   return (
     <Page>
       <Suspense fallback={<LibrarySkeleton />}>
-        <ShelfFirstScreen params={params} searchParams={searchParams} />
+        <ShelfFrame params={params} searchParams={searchParams} />
       </Suspense>
     </Page>
   )
