@@ -33,7 +33,7 @@ const hrefFor = (
   slug: string | undefined,
   query?: Record<string, string>,
 ): Href => {
-  if (pathname === '/shelves/[slug]') {
+  if (pathname === '/shelves/[slug]' || pathname === '/game/[slug]') {
     return slug ? { pathname, params: { slug }, query } : { pathname: '/library', query }
   }
   return { pathname, query }

@@ -3,8 +3,9 @@ import 'server-only'
 import { z } from 'zod'
 
 import { imageUrl } from '@/domain/igdb/images'
+import { namesOf, type GamePage } from '@/domain/library/game-page'
 import { groupings, type Shelf } from '@/domain/library/group'
-import type { Library, LibraryGame } from '@/domain/library/library'
+import type { Library, LibraryGame, Named } from '@/domain/library/library'
 import { numberToDay } from '@/domain/library/snapshot'
 import { libraryStats } from '@/domain/library/stats'
 import { parseSort, sortGames, writeSort } from '@/domain/library/sort'
@@ -25,7 +26,7 @@ import {
   type LibraryIndex,
 } from '@/domain/query/evaluate'
 import { extentOf, facetCounts } from '@/domain/query/facets'
-import { dateKeys, filterWord, listKeys, numberKeys } from '@/domain/query/keys'
+import { dateKeys, filterWord, listKeys, numberKeys, type ListKey } from '@/domain/query/keys'
 import { parseQuery } from '@/domain/query/parse'
 
 /**
@@ -76,6 +77,53 @@ export const apiGame = z
     cover: z.url().nullable().describe('From IGDB’s image servers, 264 pixels wide'),
   })
   .meta({ id: 'Game' })
+
+const value = z.object({
+  value: z.string().describe('As its filter key takes it'),
+  name: z.string(),
+})
+
+export const apiGamePage = apiGame
+  .extend({
+    versionTitle: z
+      .string()
+      .nullable()
+      .describe('What IGDB calls this version: "Definitive Edition"'),
+    summary: z.string().nullable().describe('IGDB’s, in English'),
+    storyline: z.string().nullable().describe('IGDB’s, in English'),
+    developers: z.array(value).describe('As `developer:` takes them'),
+    publishers: z.array(value).describe('As `publisher:` takes them'),
+    franchises: z.array(value),
+    series: z.array(value),
+    modes: z.array(value),
+    perspectives: z.array(value),
+    releases: z
+      .array(
+        z.object({
+          platform: z.string().describe('As `platform:` takes it'),
+          name: z.string(),
+          date: z.string().nullable().describe('YYYY-MM-DD, or YYYY when only the year is known'),
+        }),
+      )
+      .describe('The first release on each platform, oldest first'),
+    timesToBeat: z
+      .object({
+        hastily: z.number().nullable(),
+        normally: z.number().nullable(),
+        completely: z.number().nullable(),
+      })
+      .nullable()
+      .describe('Hours, from IGDB: rushing, a normal playthrough, and everything'),
+    igdbRatingCount: z.int().describe('How many ratings IGDB’s rests on'),
+    igdbUrl: z.url().nullable(),
+    notes: z
+      .string()
+      .nullable()
+      .describe('Mine, when I have made them public. Private notes are never sent.'),
+    backdrop: z.url().nullable().describe('Key art, or a screenshot: 1280 by 720'),
+    screenshots: z.array(z.url()).describe('1280 by 720'),
+  })
+  .meta({ id: 'GamePage' })
 
 export const shelfOutline = z
   .object({
@@ -193,6 +241,51 @@ const toApiGame = (library: Library, game: LibraryGame): z.infer<typeof apiGame>
     themes: named('theme', game.themes),
     tags: game.tags.flatMap((position) => library.names.tag[position]?.slug ?? []),
     cover: game.cover ? imageUrl(game.cover, 'cover_big') : null,
+  }
+}
+
+const hoursOrNull = (minutes: number | undefined): number | null =>
+  minutes === undefined ? null : Math.round(minutes / 6) / 10
+
+/** `GET /games/{slug}`: one game, with everything its page shows a visitor. */
+export const answerGame = (library: Library, page: GamePage): z.infer<typeof apiGamePage> => {
+  const { game, facts } = page
+  const listed = (key: ListKey, names: readonly Named[], ids: readonly number[]) =>
+    namesOf(names, ids).map((named) => ({
+      value: filterWord(key, named.id, named.slug),
+      name: named.name,
+    }))
+  const platforms = new Map(facts.names.platform.map((platform) => [platform.id, platform]))
+  const { length } = facts
+  return {
+    ...toApiGame(library, game),
+    versionTitle: facts.versionTitle ?? null,
+    summary: facts.summary ?? null,
+    storyline: facts.storyline ?? null,
+    developers: listed('developer', facts.names.company, game.developers),
+    publishers: listed('publisher', facts.names.company, game.publishers),
+    franchises: listed('franchise', facts.names.franchise, game.franchises),
+    series: listed('series', facts.names.series, game.series),
+    modes: listed('mode', facts.names.mode, game.modes),
+    perspectives: listed('perspective', facts.names.perspective, game.perspectives),
+    releases: facts.releases.flatMap((release) => {
+      const platform = platforms.get(release.platform)
+      if (!platform) return []
+      const date = release.day ?? (release.year === undefined ? null : String(release.year))
+      return [{ platform: platform.key, name: platform.name, date }]
+    }),
+    timesToBeat: length
+      ? {
+          hastily: hoursOrNull(length.hastily),
+          normally: hoursOrNull(length.normally),
+          completely: hoursOrNull(length.completely),
+        }
+      : null,
+    igdbRatingCount: game.igdbRatingCount,
+    igdbUrl: facts.igdbUrl ?? null,
+    notes: facts.notes ?? null,
+    backdrop: facts.backdrop ? imageUrl(facts.backdrop.id, 'screenshot_huge') : null,
+    screenshots: facts.screenshots.map((shot) => imageUrl(shot.id, 'screenshot_huge')),
   }
 }
 

@@ -79,6 +79,26 @@ and removes it again in a `finally`. A run stopped half-way can leave a shelf ca
 **The API is checked in one project** (Chromium at desktop width): it answers every browser
 the same.
 
+## A game's page in browser tests
+
+**The address changes before the panel shows.** Opening a game adds its address at once and
+draws the panel a moment later, once its code is in (it is fetched when a game is first
+reached for). Wait for the panel, or for its Close button to have focus, before pressing a
+key in it; `e2e/game.spec.ts` does.
+
+**A phone is tapped, not clicked.** On a phone the shelves beside the one in view wait for the
+first touch (`first-touch.ts`). Playwright's `click()` sends no touch even where the project
+has one, so a test that needs those shelves filled uses `tap()`. The "while the library
+arrives" test failed about one run in three on WebKit at phone width until it did.
+
+**The cover's flight is counted, not watched.** A test wraps `document.startViewTransition`
+in an init script and counts its calls: one for a game opened, none under reduced motion,
+and nothing left named once the cover has landed. Where a browser has no view transitions
+the count is not checked.
+
+**A private note is checked where it could leak:** the page's HTML, the API and the game's
+facts file. The sample library gives Donkey Kong Country a private note.
+
 ## The 3D shelf in browser tests
 
 **Every test starts in 2D**, whatever the device would choose: the `dimension` option in

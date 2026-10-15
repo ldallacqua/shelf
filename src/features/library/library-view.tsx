@@ -1,6 +1,7 @@
 'use client'
 
 import { BookmarkPlusIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsString, parseAsStringLiteral, useQueryState, useQueryStates } from 'nuqs'
 import {
@@ -56,11 +57,20 @@ import { ShortcutsDialog } from '@/features/filters/shortcuts-dialog'
 import { SortControl } from '@/features/filters/sort-control'
 import { StatusRow } from '@/features/filters/status-row'
 import { useKeywords } from '@/features/filters/use-keywords'
+import {
+  gameSlugIn,
+  historyMoved,
+  leaveGame,
+  replaceGame,
+  showGame,
+} from '@/features/game-detail/game-address'
+import type { GamePanel as GamePanelType } from '@/features/game-detail/game-panel'
+import { HERO_COVER } from '@/features/game-detail/hero'
+import { morph } from '@/features/game-detail/morph'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 
-import { GamePreview } from './game-preview'
 import { GhostShelves } from './ghosts'
 import { GhostList, ListView } from './list-view'
 import { markPageLive } from './live'
@@ -104,6 +114,40 @@ const typing = (target: EventTarget | null): boolean =>
 
 /** How long the first boxes take to arrive on the shelf, with room to spare. */
 const ARRIVAL_MS = 1400
+
+/** A box's key on the page: the game, and the copy when it stands for one. */
+const keyOf = (item: { game: { slug: string }; copy?: { platform: number } }) =>
+  item.copy ? `${item.game.slug}:${item.copy.platform}` : item.game.slug
+
+/**
+ * What of a box grows into the open game: a box's case or spine, a wall's
+ * cover, a list row's thumbnail.
+ */
+const coverOf = (root: HTMLElement | null, key: string): HTMLElement | undefined => {
+  const target = root?.querySelector<HTMLElement>(`[data-flip="${CSS.escape(key)}"]`)
+  if (!target) return undefined
+  const thumb = target.closest('tr')?.querySelector<HTMLElement>('.game-thumb')
+  return thumb ?? (target.firstElementChild as HTMLElement | null) ?? undefined
+}
+
+const heroCover = () => document.querySelector<HTMLElement>(`[${HERO_COVER}]`)
+const gamePanel = () => document.querySelector<HTMLElement>('[data-slot="sheet"][data-game]')
+
+type GamePanelComponent = typeof GamePanelType
+
+let panelCode: Promise<GamePanelComponent> | undefined
+
+/**
+ * The open game's code: fetched the first time a game is reached for (a
+ * pointer or a finger on one, or focus), and in any case before one opens.
+ * Not every visit opens a game, so not every visit pays for it.
+ */
+const loadPanel = (): Promise<GamePanelComponent> =>
+  (panelCode ??= import('@/features/game-detail/game-panel').then((module) => module.GamePanel))
+
+/** Whether an event happened on a game: a box, a wall cover, a row's title, or a 3D shelf's button. */
+const onAGame = (target: EventTarget) =>
+  target instanceof Element && target.closest('[data-flip], [data-box]') !== null
 
 /** A new seed for a shuffle: short, and safe in an address. */
 const newSeed = (): string => Math.random().toString(36).slice(2, 8)
@@ -183,6 +227,10 @@ export function LibraryView({
   const asked: Dimension = noWebGL2 || tooSmall ? '2d' : dimension
   const shown: Dimension = asked === '3d' && !fallback ? '3d' : '2d'
   const [open, setOpen] = useState<OpenBox>()
+  /** The cover file the box showed, for the open game's cover to start from. */
+  const [placeholder, setPlaceholder] = useState<string>()
+  /** The open game's panel, once its code has arrived. */
+  const [GamePanel, setGamePanel] = useState<GamePanelComponent>()
   const [panelOpen, setPanelOpen] = useState(false)
   const [groupMenu, setGroupMenu] = useState(false)
   const [sortMenu, setSortMenu] = useState(false)
@@ -362,6 +410,99 @@ export function LibraryView({
   const previous = step(-1)
   const next = step(1)
 
+  const itemAt = (box: OpenBox) => shelves.find((each) => each.key === box.key)?.items[box.index]
+  const pulled = view === 'shelf' && shown === '3d'
+
+  /** Opens a game over the shelf, its cover growing out of its box (spec 7.2). */
+  const openBox = (box: OpenBox) => {
+    const item = itemAt(box)
+    if (!item) return
+    const { slug } = item.game
+    if (open) replaceGame(slug)
+    else showGame(slug)
+    void loadPanel().then((panel) => {
+      // Back before the code arrived: the game is no longer wanted.
+      if (gameSlugIn(window.location.pathname) !== slug) return
+      // In 3D the box pulled from the wall is the cover: there is nothing to grow.
+      const source = pulled ? undefined : coverOf(scope.current, keyOf(item))
+      const shows = source?.querySelector('img')?.currentSrc || undefined
+      morph({ from: () => source, to: heroCover, panel: gamePanel }, () => {
+        setGamePanel(() => panel)
+        setPlaceholder(shows)
+        setOpen(box)
+      })
+    })
+  }
+
+  /** Set from asking for the game to close until it has: the address may change first. */
+  const closing = useRef(false)
+
+  /** Closes the game, its cover going back into its box. `fromHistory` when Back already left. */
+  const closeGame = (fromHistory = false) => {
+    const item = open ? itemAt(open) : undefined
+    closing.current = true
+    morph(
+      {
+        from: pulled ? () => undefined : heroCover,
+        to: () => (item ? coverOf(scope.current, keyOf(item)) : undefined),
+        panel: gamePanel,
+      },
+      () => {
+        closing.current = false
+        setOpen(undefined)
+      },
+    )
+    if (!fromHistory) leaveGame()
+  }
+
+  /** Another game in the same panel: the arrows, a swipe, or the buttons. */
+  const stepTo = (box: OpenBox) => {
+    const item = itemAt(box)
+    if (!item) return
+    setPlaceholder(
+      coverOf(scope.current, keyOf(item))?.querySelector('img')?.currentSrc || undefined,
+    )
+    setOpen(box)
+    replaceGame(item.game.slug)
+  }
+
+  // Back closes the game and Forward opens it again; a link out of the open
+  // game to the filtered library closes it too.
+  const latest = useRef({ open, shelves, closeGame })
+  useEffect(() => {
+    latest.current = { open, shelves, closeGame }
+  })
+  useEffect(() => {
+    const onMove = () => {
+      historyMoved()
+      const now = latest.current
+      const slug = gameSlugIn(window.location.pathname)
+      if (!slug) {
+        if (now.open) now.closeGame(true)
+        return
+      }
+      for (const shelf of now.shelves) {
+        const index = shelf.items.findIndex((item) => item.game.slug === slug)
+        if (index >= 0) {
+          void loadPanel().then((panel) => {
+            setGamePanel(() => panel)
+            setOpen({ key: shelf.key, index })
+          })
+          return
+        }
+      }
+      // A game this page cannot show yet: its own page can.
+      window.location.reload()
+    }
+    window.addEventListener('popstate', onMove)
+    return () => window.removeEventListener('popstate', onMove)
+  }, [])
+  const pathname = usePathname()
+  const onGame = gameSlugIn(pathname) !== undefined
+  useEffect(() => {
+    if (!onGame && !closing.current) setOpen(undefined)
+  }, [onGame])
+
   // When the sheet closes, focus returns to the box of the game last shown
   // in it: stepping through games moves your place on the shelf with you.
   const lastOpen = useRef<string | undefined>(undefined)
@@ -418,7 +559,7 @@ export function LibraryView({
     shelves,
     platforms,
     open,
-    onOpen: setOpen,
+    onOpen: openBox,
     enter: arriving,
     firstBoxes: first.boxes,
   }
@@ -426,7 +567,14 @@ export function LibraryView({
   const heading = shelf?.name ?? t('title')
 
   return (
-    <div ref={scope} className="library" data-view={view}>
+    <div
+      ref={scope}
+      className="library"
+      data-view={view}
+      // Reaching for a game fetches what opening one needs.
+      onPointerOver={(event) => onAGame(event.target) && void loadPanel()}
+      onFocus={(event) => onAGame(event.target) && void loadPanel()}
+    >
       <div className="flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
           <h1 className="title text-2xl sm:text-5xl">{heading}</h1>
@@ -609,16 +757,20 @@ export function LibraryView({
         </div>
       )}
 
-      <GamePreview
-        item={openItem}
-        platforms={platforms}
-        tags={tags}
-        onClose={() => setOpen(undefined)}
-        onReturnFocus={returnFocus}
-        scrim={!(view === 'shelf' && shown === '3d')}
-        onPrevious={previous ? () => setOpen(previous) : undefined}
-        onNext={next ? () => setOpen(next) : undefined}
-      />
+      {GamePanel ? (
+        <GamePanel
+          item={openItem}
+          version={library?.version ?? first.version}
+          platforms={platforms}
+          tags={tags}
+          placeholder={placeholder}
+          onClose={() => closeGame()}
+          onReturnFocus={returnFocus}
+          pulled={pulled}
+          onPrevious={previous ? () => stepTo(previous) : undefined}
+          onNext={next ? () => stepTo(next) : undefined}
+        />
+      ) : null}
 
       <FilterPanel
         open={panelOpen}

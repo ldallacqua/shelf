@@ -301,7 +301,9 @@ test.describe('while the library arrives (spec 3.10)', () => {
 
     // The last shelf: none of its games came with the page.
     if (size === 'phone') {
-      await page.getByRole('navigation', { name: 'Shelves' }).getByRole('button').last().click()
+      // A tap, as on a phone: a click alone is no touch, and the shelves beside
+      // the one in view wait for the first touch (first-touch.ts).
+      await page.getByRole('navigation', { name: 'Shelves' }).getByRole('button').last().tap()
     } else {
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
     }

@@ -3,6 +3,7 @@ import 'server-only'
 import { eq, sql } from 'drizzle-orm'
 
 import { lengthMinutes } from '@/domain/igdb/game'
+import type { GameExtras } from '@/domain/library/game-page'
 import {
   emptyNames,
   type Library,
@@ -254,6 +255,63 @@ export const readLibrary = async (db: Executor): Promise<Library> => {
   }
 
   return { version, games: libraryGames, names }
+}
+
+/**
+ * What a game's page shows beyond the library file, for the game whose
+ * primary version has this slug. Nothing for a slug that is no game's
+ * address, including a version folded into another game.
+ */
+export const readGameExtras = async (
+  db: Executor,
+  slug: string,
+): Promise<GameExtras | undefined> => {
+  const [primary] = await db
+    .select({ entryId: entryVersions.entryId, relation: entryVersions.relation })
+    .from(games)
+    .innerJoin(entryVersions, eq(entryVersions.gameId, games.id))
+    .where(eq(games.slug, slug))
+  if (!primary || primary.relation !== 'primary') return undefined
+
+  const [entryRows, versionRows] = await Promise.all([
+    db
+      .select({ notes: entries.notes, notesPublic: entries.notesPublic })
+      .from(entries)
+      .where(eq(entries.id, primary.entryId)),
+    db
+      .select({
+        relation: entryVersions.relation,
+        versionTitle: games.versionTitle,
+        summary: games.summary,
+        storyline: games.storyline,
+        artworks: games.artworks,
+        screenshots: games.screenshots,
+        releases: games.releases,
+        length: games.length,
+        igdbUrl: games.igdbUrl,
+      })
+      .from(entryVersions)
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(eq(entryVersions.entryId, primary.entryId)),
+  ])
+  const entry = entryRows[0]
+  const main = versionRows.find((row) => row.relation === 'primary')
+  if (!entry || !main) return undefined
+
+  const extras: GameExtras = {
+    artworks: main.artworks,
+    screenshots: main.screenshots,
+    // The primary's releases first, then each version's.
+    releases: [main, ...versionRows.filter((row) => row !== main)].map((row) => row.releases),
+    notesPublic: entry.notesPublic,
+  }
+  if (main.versionTitle) extras.versionTitle = main.versionTitle
+  if (main.summary) extras.summary = main.summary
+  if (main.storyline) extras.storyline = main.storyline
+  if (main.length) extras.length = main.length
+  if (main.igdbUrl) extras.igdbUrl = main.igdbUrl
+  if (entry.notes) extras.notes = entry.notes
+  return extras
 }
 
 /**

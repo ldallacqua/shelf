@@ -1,19 +1,30 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import { buildGamePage } from '@/domain/library/game-page'
 import type { Library } from '@/domain/library/library'
-import { readKeywords, readLibrary } from '@/server/library/read'
+import type { Db } from '@/server/db/client'
+import { readGameExtras, readKeywords, readLibrary } from '@/server/library/read'
 import { createTestDatabase } from '@/test/database'
 
-import { answerFacets, answerLibrary, facetsAnswer, libraryAnswer, libraryParams } from './library'
+import {
+  answerFacets,
+  answerGame,
+  answerLibrary,
+  apiGamePage,
+  facetsAnswer,
+  libraryAnswer,
+  libraryParams,
+} from './library'
 import { openApiDocument } from './openapi'
 
 /** The public API's reads (architecture, section 16), on the sample library. */
 
+let db: Db
 let library: Library
 let keywords: Awaited<ReturnType<typeof readKeywords>>
 
 beforeAll(async () => {
-  const db = await createTestDatabase('default')
+  db = await createTestDatabase('default')
   library = await readLibrary(db)
   keywords = await readKeywords(db)
 })
@@ -86,6 +97,27 @@ describe('GET /library/facets', () => {
   })
 })
 
+describe('GET /games/{slug}', () => {
+  it('answers one game with everything its page shows a visitor', async () => {
+    const game = library.games.find((each) => each.slug === 'bloodborne')!
+    const page = buildGamePage(library, game, (await readGameExtras(db, 'bloodborne'))!)
+    const answer = answerGame(library, page)
+    expect(apiGamePage.parse(answer)).toEqual(answer)
+    expect(answer).toMatchObject({
+      slug: 'bloodborne',
+      title: 'Bloodborne',
+      developers: [
+        { value: 'fromsoftware', name: 'FromSoftware' },
+        { value: 'japan-studio', name: 'Japan Studio' },
+      ],
+      releases: [{ platform: 'ps4', name: 'PlayStation 4', date: '2015-03-24' }],
+    })
+    expect(answer.summary).toMatch(/Hunter/)
+    expect(answer.timesToBeat?.normally).toBeGreaterThan(0)
+    expect(answer.screenshots[0]).toMatch(/^https:\/\/images\.igdb\.com\/.+t_screenshot_huge/)
+  })
+})
+
 describe('the OpenAPI document', () => {
   it('describes every read, with the schemas the routes check against', () => {
     const document = openApiDocument()
@@ -93,6 +125,7 @@ describe('the OpenAPI document', () => {
     expect(Object.keys(document.paths)).toEqual([
       '/library',
       '/library/facets',
+      '/games/{slug}',
       '/shelves',
       '/shelves/{slug}',
       '/library/snapshot/{version}',
@@ -101,6 +134,7 @@ describe('the OpenAPI document', () => {
       'Error',
       'Facets',
       'Game',
+      'GamePage',
       'Library',
       'ShelfOutline',
       'SmartShelf',

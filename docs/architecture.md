@@ -251,7 +251,7 @@ that are either cached or streamed per request. This is the default for new Next
 | `/en/library` | Header, heading, and ghosts where the totals, the controls and the first boxes will be: cases standing on the lit boards | The first screen of boxes for this address's filter, sort and grouping, and the list of smart shelves | The library or the shelves change |
 | `/en/shelves/{name}` | The same frame with the shelf's name, per shelf there was when the site was built. A shelf saved since gets its frame on its first visit. | The first screen for the shelf, with whatever the address changes | The library or the shelves change |
 | `/en/trophies` | Whole page | Nothing | The library changes |
-| `/en/game/{slug}` | Whole page, built on first visit and kept | Nothing for visitors. My private notes, for me only. | That game changes |
+| `/en/game/{slug}` | Whole page, for every game there was when the site was built; a game added since, on its first visit, and kept | Nothing (my private notes, for me only, arrive with sign-in at step 7) | The library changes |
 | `/en/sign-in` | Whole page | Nothing | Never |
 | `/llms.txt`, `/sitemap.xml`, `/robots.txt` | Whole file | Nothing | The library changes |
 
@@ -276,7 +276,7 @@ separate file, not inside the page:
 | Caching | The address changes when the content does, so the file is cached for a year by the edge and by the browser. A return visit downloads nothing unless I changed the library. |
 | Built ahead | The current version's file is made when the site is built and served as a static file. A version that appears later, because I added a game, is made on its first request. Any other address is sent on to the current one. |
 | Contents | Per game: ids, title, status, rating, dates, playtime, year, IGDB rating, time to beat, cover id, three colors, a 25-byte blur hash, copies, and the ids of its genres, themes, modes, perspectives, platforms, franchises, series, studios and tags. Plus one name table per kind. |
-| Left out | Summaries, screenshots and notes (the game page fetches those). Keywords, which are large, are a second file, `/api/v1/library/keywords/{version}`, fetched the first time a keyword filter is used, and cached the same way. Private notes are never in any public file. |
+| Left out | Summaries, screenshots and notes. A game opened over the shelf fetches them as its facts, `/api/v1/library/games/{version}/{slug}`, cached the same way; its own page has them inside it. Keywords, which are large, are a second file, `/api/v1/library/keywords/{version}`, fetched the first time a keyword filter is used, and cached the same way. Private notes are never in any public file. |
 | Size target | 120 KB compressed per 1,000 games. A test fails the build past that. |
 
 **Address state.** `q`, `sort`, `group`, `view` and `seed` are read and written with nuqs
@@ -521,7 +521,7 @@ One tool per job, so nothing fights:
 | Menus and sheets | CSS animations on Radix primitives | With the library |
 | Reordering after a regroup or a change of view | The Web Animations API: each box on screen slides from where it stood (`useFlip`) | With the library |
 | Gestures: dragging a sheet, scrubbing spines | Motion, when they are built (step 9). Not installed until then. | n/a |
-| A cover growing into the detail page | React `<ViewTransition>` | Built in |
+| A cover growing into the open game | The browser's view transitions, named for that one change (`features/game-detail/morph.ts`) | Built in |
 | Scroll-driven scenes | GSAP with ScrollTrigger | Landing page only |
 | Smooth scrolling | Lenis | Landing page only, and not on touch |
 | Anything inside the 3D scene | The render loop, with damping | With 3D only |
@@ -535,9 +535,11 @@ show their end state, the camera cuts.
 
 **Reordering 1,000 boxes.** Only boxes on screen animate. The rest jump, unseen.
 
-**Shared-element transitions** follow the current Next.js guidance: the same `name` on the
-cover in the shelf and on the detail page, `share="morph"` with `default="none"`, about 400
-ms. Browsers without the feature get the page change without the animation.
+**The cover growing into the open game** names the box's cover and the panel's cover for
+that one transition, and nothing else: the box stays on the shelf behind the panel, so React's
+`<ViewTransition>`, which pairs a name leaving with the same name arriving, does not fit
+([section 25](#25-changes-since-approval)). About 400 ms; the panel slides in under it.
+Browsers without the feature, and reduced motion, get the panel's own short crossfade.
 
 ---
 
@@ -557,7 +559,7 @@ baseline.
 | First paint | The server sends the first 48 boxes inside the page, or the first 12 to a phone, and the first six covers are fetched ahead of everything else. The whole library follows as the library file. |
 | Phone | One shelf per screen with sideways scroll snapping, each shelf scrolling by itself; tabs for the same move; controls at the bottom |
 | Wall and List | The same shelves and the same open game through different renderers. List is a real table, one per shelf. |
-| A game picked up | A sheet from the bottom on a phone, a panel from the right otherwise, with what is recorded about the game and steps to its neighbors. It becomes the game page at step 6. |
+| A game picked up | Its page, in a sheet from the bottom on a phone and a panel from the right otherwise, at its own address, with steps to its neighbors (`features/game-detail`). |
 
 ---
 
@@ -968,6 +970,15 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 6 | **A game opened from the library is the library's own panel, at the game's address.** Opening it adds `/{language}/game/{slug}` to the browser's history with the library's query string kept, and Back closes it (`game-address.ts`). A direct visit is the game's own page, built ahead. Not an intercepting route. | The library keeps its order, its open game and its place on the shelf in the page itself; a route over it would draw the game in a tree of its own, which would need all of that passed across, and would wait for the server before anything showed. The library reads its filter from the address, so the address keeps the library's query string while a game is open, and a shared address leads back to that same shelf. |
+| Step 6 | **The cover grows into the panel through the browser's view transitions, named for the one change** (`morph.ts`), not React's `<ViewTransition>`. | React pairs a name that leaves with the same name arriving. The box does not leave: it stays on the shelf behind the panel, so the same name would be on the page twice. The box is hidden while its cover is in flight, so it is lifted off the shelf rather than copied. |
+| Step 6 | **In 3D the box pulled from the wall is the game's cover;** the panel beside it has none. | It is what spec 7.2 asks ("the pulled box becomes the hero"), and the pulled box already stands, lit and turned to the camera, beside the panel. A cover in the panel too would be the same picture twice. |
+| Step 6 | **Back or Forward while the cover is in flight ends the flight at once**, before anything else hears of the move. | Found by the browser tests: Back pressed within 400 ms of opening a game from the wall or the list made WebKit's page crash, on desktop and on a phone. A bare page did not; ours did, with view transitions on and with nothing else changed. Ending the transition first fixed it. |
+| Step 6 | **A game's address with no game behind it says so with a 200 status,** marked `noindex`; the API answers 404. | As foreseen at step 1: on a route built ahead, Next.js draws `notFound()` only in the browser, with a 200. The page says it in its HTML instead, as a smart shelf's does. |
+| Step 6 | **The game page's code is fetched when a game is first reached for** (a pointer or a finger on one, or focus), and in any case before one opens. | It is about 9 KB, and with it the library measured 266.7 KB, over its 262. Not every visit opens a game. The cover's flight and the game's place in history stay with the page (2.4 KB), so the first game still opens with its cover growing. |
+| Step 6 | **Every game's page is built with the site** (460 pages, about 12 seconds of the build here). A game added since gets its page on its first visit. | The plan was every page on its first visit. Built ahead, a visitor arriving from a search engine never waits for a server, and the browser tests read the pages as visitors get them. |
+| Step 6 | **The editions and ports folded into a game, and private notes for me, wait for sign-in at step 7.** The page now shows a visitor's view: notes only when public. | Both are for me only, and until step 7 nobody can be me on a deployment. A private note never leaves the server: it is not in the page, the facts file or the API. |
+| Step 6 | **Under Details, values that name something are links; numbers are not.** Genres, themes, modes, perspectives, franchise, series, developer, publisher and each platform released on open the library filtered by them; so do the copies and tags under Mine. Time to beat and IGDB's rating are plain. | Spec 7.1 says every value. A number has no filter that means "games like this one": `length:<=24` would be a choice made for the visitor. |
 | Step 5 | **Saving a smart shelf does not raise the library's version.** Shelf reads have a tag of their own, `shelves`, and a shelf write expires only that. AGENTS.md says every write raises the version; shelves are the one exception. | Shelves are not in the library file. Raising the version would make every visitor download the whole library again for a change that is not in it. |
 | Step 5 | **A shelf's page reads its shelf by slug, cached on its own,** not by searching the cached list of shelves. | Found by the browser tests: a shelf saved after the build answered "There is no shelf at this address" on its first full load, in each language, and was right from the second. Next.js answers an address it did not build from the route's prebuilt frame and the data cached with it, which included the list of shelves from build time. A read keyed by slug has no such copy. Checked after: a new shelf, a changed one and a removed one are each right on their first load. |
 | Step 5 | **An address with no shelf behind it says so with a 200 status,** marked `noindex`. | The same limit as the step 1 row on unknown pages: `proxy.ts` answers addresses with no route, and this one has a route. The page says so and links to the library. |

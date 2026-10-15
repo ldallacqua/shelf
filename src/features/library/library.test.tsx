@@ -19,7 +19,6 @@ import { describeBox, shelfName } from './describe'
 import { EmptyLibrary } from './empty-library'
 import { dateOf, hoursOf, outOfTen } from './format'
 import { GameBox, platformFor, platformsOwned } from './game-box'
-import { GamePreview } from './game-preview'
 import { LibrarySkeleton } from './library-skeleton'
 import { markPageLive, pageIsLive, resetPageLive } from './live'
 import { resetPreviews } from './preview-queue'
@@ -356,73 +355,6 @@ describe('StatsLine', () => {
     const totals = screen.getByRole('group', { name: 'Library totals' })
     expect(totals).toHaveTextContent('1 game')
     expect(totals).toHaveTextContent('1 hour')
-  })
-})
-
-describe('GamePreview', () => {
-  const open = (
-    entry: ShelfItem,
-    handlers: { onPrevious?: () => void; onNext?: () => void } = {},
-  ) =>
-    renderWithIntl(
-      <GamePreview
-        item={entry}
-        platforms={platforms}
-        tags={[{ name: 'roguelike', slug: 'roguelike' }]}
-        onClose={vi.fn()}
-        onReturnFocus={() => false}
-        {...handlers}
-      />,
-    )
-
-  it('shows what is recorded about the game', () => {
-    open(
-      item({
-        status: 'completed',
-        rating: 85,
-        minutes: 4020,
-        length: 1320,
-        igdbRating: 91,
-        igdbRatingCount: 1200,
-        completedOn: '2024-05-01',
-        tags: [0],
-      }),
-    )
-    const sheet = screen.getByRole('dialog', { name: 'Hades' })
-    expect(sheet).toHaveTextContent('Completed')
-    expect(sheet).toHaveTextContent('Released 2020')
-    expect(sheet).toHaveTextContent('8.5')
-    expect(sheet).toHaveTextContent('PlayStation 5, Physical')
-    expect(sheet).toHaveTextContent('67 hours')
-    expect(sheet).toHaveTextContent('22 hours')
-    expect(sheet).toHaveTextContent('91 of 100, from 1,200 ratings')
-    expect(sheet).toHaveTextContent('March 5, 2024')
-    expect(sheet).toHaveTextContent('May 1, 2024')
-    expect(sheet).toHaveTextContent('roguelike')
-  })
-
-  it('leaves out what is not recorded', () => {
-    open(item({ status: 'wishlist', copies: [] }))
-    const sheet = screen.getByRole('dialog', { name: 'Hades' })
-    expect(sheet).toHaveTextContent('Not owned')
-    expect(sheet).not.toHaveTextContent('Played')
-    expect(sheet).not.toHaveTextContent('Completed')
-  })
-
-  it('steps to the game before and after, by button or arrow key', async () => {
-    const onPrevious = vi.fn()
-    const onNext = vi.fn()
-    open(item(), { onPrevious, onNext })
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
-    await userEvent.keyboard('{ArrowLeft}')
-    expect(onNext).toHaveBeenCalledOnce()
-    expect(onPrevious).toHaveBeenCalledOnce()
-  })
-
-  it('disables a step that leads nowhere', () => {
-    open(item())
-    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
   })
 })
 

@@ -160,6 +160,57 @@ GET /api/v1/library/facets?q=genre:rpg
   formats, kinds) are named by the value itself; the site translates them, the API does not.
 - A key with no values in the library has `null` for its range.
 
+## `GET /games/{slug}`
+
+One game, with everything its page shows a visitor: what is in `GET /library` for it, and
+IGDB's summary and storyline, its credits, its first release on each platform, its times to
+beat, its key art and screenshots, and my notes when I have made them public. The slug is the
+game's address on the site: `/en/game/{slug}`.
+
+```text
+GET /api/v1/games/advance-wars
+```
+
+```json
+{
+  "slug": "advance-wars",
+  "title": "Advance Wars",
+  "status": "wishlist",
+  "year": 2001,
+  "genres": ["simulator", "strategy", "tbs", "tactical"],
+  "summary": "Just because this battle fits in the palm of your hand doesn't mean the stakes are small. …",
+  "developers": [{ "value": "intelligent-systems", "name": "Intelligent Systems" }],
+  "publishers": [
+    { "value": "nintendo", "name": "Nintendo" },
+    { "value": "ique", "name": "iQue" }
+  ],
+  "series": [{ "value": "advance-wars", "name": "Advance Wars" }],
+  "releases": [
+    { "platform": "gba", "name": "Game Boy Advance", "date": "2001-09-10" },
+    { "platform": "wii-u", "name": "Wii U", "date": "2014-04-03" }
+  ],
+  "timesToBeat": null,
+  "igdbRatingCount": 141,
+  "igdbUrl": "https://www.igdb.com/games/advance-wars",
+  "notes": null,
+  "backdrop": "https://images.igdb.com/igdb/image/upload/t_screenshot_huge/ar1ksu.webp",
+  "screenshots": ["https://images.igdb.com/igdb/image/upload/t_screenshot_huge/xhhyrgwo9z1ebf0qy9gs.webp"]
+}
+```
+
+(Shortened: every field of a game in `GET /library` is there too.)
+
+- `developers`, `publishers`, `franchises`, `series`, `modes` and `perspectives` give each
+  value as its filter key takes it (`developer:intelligent-systems`) and by its name.
+- `releases` are the first release on each platform, oldest first, across every version
+  folded into the game: a port released years later gives its platform its own date. `date`
+  is `YYYY` when IGDB knows only the year.
+- `timesToBeat` is in hours: `hastily` (the main story), `normally` (with the extras) and
+  `completely`. `timeToBeat` is the normal one, as `GET /library` gives it.
+- `notes` is `null` unless I made my notes public for this game. Private notes are never sent.
+- A slug that is no game's answers 404, as `GET /shelves/{slug}` does. A version folded into
+  another game has no address of its own.
+
 ## `GET /shelves`
 
 The smart shelves: named filters, each with a sort and a grouping, at an address of their own
@@ -207,12 +258,11 @@ when the library does, and an old version is sent on to the current one.
 ## `GET /openapi.json`
 
 The OpenAPI 3.1 description of everything above, with a schema for each answer (`Library`,
-`Facets`, `SmartShelves`, `SmartShelf`, `Game`, `ShelfOutline`, `Error`).
+`Facets`, `SmartShelves`, `SmartShelf`, `Game`, `GamePage`, `ShelfOutline`, `Error`).
 
 ## Still to come
 
 | | Build step |
 | --- | --- |
-| `GET /games/{slug}`: one game, with its public notes | 6, with the game page |
 | Writing: adding and changing games, saving shelves | 7, with sign-in |
 | The MCP endpoints, for AI assistants | 7 |

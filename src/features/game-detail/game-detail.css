@@ -1,0 +1,318 @@
+/*
+ * A game's page and the panel over the shelf (spec 7.1), and the cover that
+ * grows from the shelf into it (spec 7.2).
+ */
+@layer components {
+  /* The hero: the cover over the game's key art, dimmed into the page behind. */
+  .game-hero {
+    --hero-ground: var(--wall);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .game-hero[data-layout='panel'] {
+    --hero-ground: var(--surface);
+  }
+
+  .game-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--wall-deep);
+  }
+
+  /* Key art, or the cover's colors: strong enough to see, dim enough to read over. */
+  .game-backdrop > img,
+  .game-wash {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.32;
+  }
+
+  [data-theme='dark'] .game-backdrop > img,
+  [data-theme='dark'] .game-wash {
+    opacity: 0.5;
+  }
+
+  /* The words sit low, where the art has faded into the page. */
+  .game-backdrop::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--hero-ground) 20%, transparent),
+      color-mix(in srgb, var(--hero-ground) 70%, transparent) 55%,
+      var(--hero-ground)
+    );
+    content: '';
+  }
+
+  .game-hero-inner {
+    display: grid;
+    gap: 1.25rem;
+    padding-top: 3.5rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .game-hero[data-layout='panel'] .game-hero-inner {
+    padding-inline: 1.25rem;
+    padding-top: 4rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .game-hero[data-layout='page'] .game-hero-inner {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+
+    @media (width >= 40rem) {
+      padding-top: 2.5rem;
+      padding-bottom: 3rem;
+    }
+  }
+
+  .game-cover {
+    position: relative;
+    display: block;
+    width: 8rem;
+    flex: none;
+    overflow: hidden;
+    border-radius: var(--radius-case);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.25),
+      0 18px 36px -12px rgb(0 0 0 / calc(var(--shadow-depth) + 0.25));
+  }
+
+  .game-hero[data-layout='page'] .game-cover {
+    width: 10rem;
+
+    @media (width >= 40rem) {
+      width: 14rem;
+    }
+
+    @media (width >= 64rem) {
+      width: 16rem;
+    }
+  }
+
+  .game-section {
+    display: grid;
+    align-content: start;
+    gap: 0.75rem;
+  }
+
+  .game-row {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 34%) minmax(0, 1fr);
+
+    @media (width >= 64rem) {
+      grid-template-columns: 10rem minmax(0, 1fr);
+    }
+    gap: 1rem;
+    align-items: baseline;
+    padding-block: 0.625rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+    font-size: 0.875rem;
+  }
+
+  .game-row:first-child {
+    border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  }
+
+  /* A value that opens the library filtered by it. */
+  .game-value {
+    display: inline-flex;
+    min-height: 1.75rem;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    transition:
+      border-color var(--motion-quick) var(--ease-settle),
+      background-color var(--motion-quick) var(--ease-settle);
+
+    &:hover {
+      border-color: var(--line-strong);
+      background-color: color-mix(in srgb, var(--text) 6%, transparent);
+    }
+  }
+
+  .game-prose {
+    display: grid;
+    gap: 0.875rem;
+    max-width: 68ch;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+
+    & p {
+      white-space: pre-line;
+    }
+  }
+
+  /* Screenshots: a strip that scrolls sideways. */
+  .shot-strip {
+    display: flex;
+    gap: 0.5rem;
+    margin-inline: -0.25rem;
+    padding: 0.25rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .shot-strip > li {
+    flex: none;
+    scroll-snap-align: start;
+  }
+
+  .shot-thumb {
+    display: block;
+    width: 11rem;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-case);
+    background: var(--surface-raised);
+
+    @media (width >= 40rem) {
+      width: 14rem;
+    }
+
+    & img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  /* The viewer: one screenshot to a screen, swiped with the browser's own scrolling. */
+  .shot-track {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    /* Sideways swipes scroll; two fingers zoom the picture instead of the page. */
+    touch-action: pan-x;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /* Zoomed in: one finger moves the picture, and the strip stays where it is. */
+  .shot-track[data-zoomed] {
+    overflow-x: hidden;
+    touch-action: none;
+  }
+
+  .shot-slide {
+    display: flex;
+    width: 100%;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.5rem;
+    overflow: hidden;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+
+    & img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transform-origin: center;
+      user-select: none;
+      will-change: transform;
+    }
+  }
+}
+
+/*
+ * The cover growing from the shelf into the open game, and back (spec 7.2).
+ * `morph.ts` names the two ends for the one transition, so nothing else on
+ * the page is ever captured. While it runs, the panel's own slide gives way
+ * to the transition's, which knows where the cover will land.
+ */
+::view-transition-group(game-cover) {
+  z-index: 2;
+  animation-duration: 400ms;
+  animation-timing-function: var(--ease-glide);
+}
+
+::view-transition-image-pair(game-cover) {
+  isolation: auto;
+}
+
+::view-transition-old(game-cover),
+::view-transition-new(game-cover) {
+  height: 100%;
+  object-fit: cover;
+  animation-duration: 400ms;
+  animation-timing-function: var(--ease-glide);
+}
+
+::view-transition-group(game-panel) {
+  z-index: 1;
+  animation-duration: var(--motion-base);
+}
+
+::view-transition-new(game-panel):only-child {
+  animation: game-panel-in var(--motion-base) var(--ease-settle) both;
+}
+
+::view-transition-old(game-panel):only-child {
+  animation: game-panel-out var(--motion-quick) var(--ease-leave) both;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-base);
+}
+
+/* The page under a running transition still answers the pointer. */
+::view-transition {
+  pointer-events: none;
+}
+
+:root[data-morph] [data-slot='sheet'],
+:root[data-morph] [data-slot='sheet-overlay'] {
+  animation: none !important;
+}
+
+/* From the bottom on a phone, from the right on anything wider: as the sheet itself moves. */
+@keyframes game-panel-in {
+  from {
+    translate: 0 100%;
+  }
+}
+
+@keyframes game-panel-out {
+  to {
+    translate: 0 100%;
+  }
+}
+
+@media (width >= 40rem) {
+  @keyframes game-panel-in {
+    from {
+      translate: 100% 0;
+    }
+  }
+
+  @keyframes game-panel-out {
+    to {
+      translate: 100% 0;
+    }
+  }
+}

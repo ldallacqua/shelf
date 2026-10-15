@@ -4,7 +4,6 @@ import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
 import type { Status } from '@/domain/library/values'
 
-import { GamePreview } from './game-preview'
 import { LibrarySkeleton } from './library-skeleton'
 import { ShelfGrid } from './shelf-grid'
 import { StatsLine } from './stats-line'
@@ -201,19 +200,5 @@ export const Controls: Story = {
         onDimension={() => undefined}
       />
     </div>
-  ),
-}
-
-/** A game picked up from the shelf. */
-export const Preview: Story = {
-  render: () => (
-    <GamePreview
-      item={stand(game(2, 'completed', { rating: 90, completedOn: '2024-06-01', tags: [0] }))}
-      platforms={platforms}
-      tags={[{ name: 'replay someday', slug: 'replay-someday' }]}
-      onClose={() => undefined}
-      onReturnFocus={() => false}
-      onNext={() => undefined}
-    />
   ),
 }

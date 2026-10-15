@@ -9,6 +9,7 @@ import { siteUrl } from '@/server/site-url'
 import {
   apiError,
   apiGame,
+  apiGamePage,
   apiShelf,
   facetsAnswer,
   libraryAnswer,
@@ -42,6 +43,7 @@ export const openApiDocument = () => {
     shelvesAnswer,
     apiShelf,
     apiGame,
+    apiGamePage,
     shelfOutline,
     apiError,
   ]) {
@@ -108,6 +110,16 @@ export const openApiDocument = () => {
           summary: 'Every value a filter can take, with how many games each would match',
           parameters: [filter],
           responses: { 200: { description: 'Values and counts', ...json('Facets') } },
+        },
+      },
+      '/games/{slug}': {
+        get: {
+          summary: 'One game, with everything its page shows a visitor',
+          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: { description: 'The game', ...json('GamePage') },
+            404: { description: 'No game in the library has that slug', ...json('Error') },
+          },
         },
       },
       '/shelves': {

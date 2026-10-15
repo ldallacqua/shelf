@@ -27,9 +27,15 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // the sort, the filter panel and the smart shelves. Fetching the panel, the
   // shortcuts list and the save sheet only when first opened saved 2.7 KB, not
   // worth a wait on a phone's first open; the rest is needed on arrival.
+  // Step 6: measured 260.1 KB. The game's page over the shelf is about 9 KB,
+  // fetched when a game is first reached for, not with the page; what stays
+  // is the cover's flight into it and the game's place in history.
   { path: '/en/library', name: 'Library', kilobytes: 262 },
   // Step 3: measured 191.3 KB. Shell only.
   { path: '/en/trophies', name: 'Trophies', kilobytes: 198 },
+  // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
+  // screenshots and their viewer, and the way back to the library.
+  { path: '/en/game/bloodborne', name: 'Game', kilobytes: 208 },
 ]
 
 /**
@@ -47,7 +53,7 @@ export const threeDBudget = { path: '/en/library', kilobytes: 300 }
  * JavaScript, which it does not.
  */
 export const lighthouseBudgets = {
-  paths: ['/en', '/en/library', '/en/library?view=wall'],
+  paths: ['/en', '/en/library', '/en/library?view=wall', '/en/game/bloodborne'],
   performance: 90,
   accessibility: 100,
   largestContentfulPaintMs: 2500,
