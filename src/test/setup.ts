@@ -18,6 +18,7 @@ class ResizeObserverStub {
 vi.stubGlobal('ResizeObserver', ResizeObserverStub)
 
 Element.prototype.scrollIntoView = () => {}
+Element.prototype.scrollTo = () => {}
 Element.prototype.hasPointerCapture = () => false
 Element.prototype.setPointerCapture = () => {}
 Element.prototype.releasePointerCapture = () => {}

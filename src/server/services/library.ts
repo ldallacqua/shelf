@@ -2,12 +2,13 @@ import 'server-only'
 
 import { cacheLife, cacheTag } from 'next/cache'
 
+import { buildGamePage, type GamePage } from '@/domain/library/game-page'
 import type { Library } from '@/domain/library/library'
 import { encodeKeywords, encodeLibrary } from '@/domain/library/snapshot'
 import { sortByTitle } from '@/domain/library/sort'
 import { database } from '@/server/db/client'
 import type { GameKeywords } from '@/domain/query/evaluate'
-import { readKeywords, readLibrary } from '@/server/library/read'
+import { readGameExtras, readKeywords, readLibrary } from '@/server/library/read'
 import { readVersion } from '@/server/library/store'
 
 /**
@@ -69,6 +70,31 @@ export const getKeywordsFile = async (): Promise<{ version: number; json: string
   const [version, keywords] = await Promise.all([readVersion(db), readKeywords(db)])
   return { version, json: JSON.stringify(encodeKeywords(version, keywords)) }
 }
+
+/**
+ * A game's page, by its address: the game as the library has it, and what
+ * only its page shows. Nothing for a slug that is no game's address. Cached
+ * by slug, like a shelf: a game page Next.js did not build is first answered
+ * from data cached with the route's frame, which a list of games would not
+ * keep up with.
+ */
+export const getGamePage = async (slug: string): Promise<GamePage | undefined> => {
+  'use cache'
+  cacheTag(LIBRARY_TAG)
+  cacheLife('max')
+  const library = await getLibrary()
+  const game = library.games.find((each) => each.slug === slug)
+  if (!game) return undefined
+  const extras = await readGameExtras(database(), slug)
+  return extras && buildGamePage(library, game, extras)
+}
+
+/**
+ * Where a game's facts live for the library's current version: what the game
+ * opened over the shelf fetches. The address changes when the library does.
+ */
+export const gameFactsPath = (version: number, slug: string): string =>
+  `/api/v1/library/games/${version}/${encodeURIComponent(slug)}`
 
 /** Every game's keywords, for a first screen whose filter asks about one. */
 export const getLibraryKeywords = async (): Promise<GameKeywords> => {

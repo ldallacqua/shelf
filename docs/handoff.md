@@ -1,23 +1,49 @@
-# Handoff: 14 October 2026
+# Handoff: 15 October 2026
 
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 5 in review
+## Now: step 6 in review, then step 7 waits for the owner
 
-- **Step 5 is built** on `build-step-5-filters`, in pull request
-  [#8](https://github.com/ldallacqua/shelf/pull/8). Step 5 has no ⏸,
-  but it waits for the owner's approval before it is merged. **Next after merging:** step 6,
-  the game page, on a branch from `main`.
-- **The owner's first review of step 5** (14 Oct 2026) asked for two things, both done on
-  the same branch: a loading state that does not look like an empty shelf with things
-  popping in (ghosts now stand where the games will; architecture section 25 has the four
-  rows), and the footer showing through the shelf on a phone (fixed; below).
-- **Step 4 and ADR 003 are merged** ([#6](https://github.com/ldallacqua/shelf/pull/6),
-  [#7](https://github.com/ldallacqua/shelf/pull/7)). ADR 003's answers: sync is its own step
-  right after step 7; the Xbox route is settled by a one-day spike; subscription games show,
-  marked, and never count as owned.
+- **Step 6 is built** on `build-step-6-game-page`, in a pull request. Step 6 has no ⏸.
+- **The owner allows merging to `main` without asking** while the project is a proof of
+  concept (15 Oct 2026). Still stop at every ⏸ (after step 8, and the final review).
+- **Next: step 7, sign-in and adding games.** It cannot start until the owner has done two
+  things in [the setup checklist](setup.md): B, two Turso databases (two settings each), and
+  C, two GitHub OAuth apps (seven settings). Ask for them; never paste or print the values.
+- **Step 5 is merged** ([#8](https://github.com/ldallacqua/shelf/pull/8)), with the owner's
+  first-review fixes: ghosts while the library loads, and the phone's shelf kept to the screen.
+
+## Step 6: the game page
+
+- **Built:** `src/features/game-detail`. A game's own page at `/{language}/game/{slug}`, built
+  with the site for every game; the same page as the library's panel over the shelf, at the
+  game's address, closed by Back; the cover growing from the box (2D shelf, wall, list) into
+  the panel, a crossfade under reduced motion, the pulled box itself in 3D; the screenshot
+  viewer; schema.org `VideoGame` data; `GET /api/v1/games/{slug}`. What changed from the
+  plan, and why, is in architecture section 25 (nine step 6 rows).
+- **Left for step 7, with sign-in:** the editions and ports folded into a game ("Versions",
+  spec 7.1), my private notes for me, and editing (spec 7.3). The page shows a visitor's view
+  now; a private note never leaves the server.
+- **Found and fixed on the way:** WebKit's page crashed when Back came while the cover was
+  still flying (from the wall or the list); a move in history now ends the flight first
+  (`morph.ts`). The step 5 test "while the library arrives" was flaky on WebKit phones (3 runs
+  in 8, on `main` too): it clicked a shelf tab, and a click is no touch, so the shelf beside
+  stayed waiting for the first touch. It taps now; 16 of 16 passed.
+- **Checked on the last code commit:** `pnpm verify --skip-linux` passed the checks (703 unit
+  and component tests), the build (499 pages, 460 of them games), the JavaScript budgets
+  (library 260.1 of 262 KB, the new game page 201.6 of 208) and 1,577 browser tests in all
+  nine projects, none failed. Its Lighthouse step ran hot, as at step 5 (the benchmark gave
+  19.7 times; the home page blocked 1,653 ms), so it was run on its own after: **at 7.2 times**
+  the home page blocked 162 ms and scored 97, the game page 95 (largest paint 2.09 s), the
+  wall 88 and the library 86. The library's near miss is step 5's: measured side by side with
+  `main`, three runs each, twice, both scored 86 to 87 and blocked 370 to 391 ms. This machine
+  read faster today than on 14 October (at 5.5 times the home page blocked only 94 ms), so
+  calibrate again each time. The Storybook build passes.
+- **Not checked:** the Linux pass (no Docker). The reference screenshots now lack the game
+  page, and the "game picked up" ones show the old sheet; make them with
+  `pnpm verify --update-screenshots` once Docker is here.
 
 ## Step 5: filters, sorting, smart shelves, the API
 

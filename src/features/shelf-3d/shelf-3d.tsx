@@ -63,8 +63,13 @@ export type Shelf3DProps = {
 const SWITCH_MS = 700
 /** A pointer that moves further than this between press and release was dragging, not clicking. */
 const DRAG_SLOP = 5
-/** The detail panel's width on a desktop, which a pulled box keeps clear of: 26rem. */
-const PANEL = 416
+/** The game panel's width, which a pulled box keeps clear of: 26rem, and 32rem on a large screen. */
+const panelWidth = (): number =>
+  window.matchMedia('(min-width: 64rem)').matches
+    ? 512
+    : window.matchMedia('(min-width: 40rem)').matches
+      ? 416
+      : 0
 
 const keyOf = (item: ShelfItem) =>
   item.copy ? `${item.game.slug}:${item.copy.platform}` : item.game.slug
@@ -363,8 +368,7 @@ export default function Shelf3D({
           open.index,
         )
       : undefined
-    const wide = window.matchMedia('(min-width: 40rem)').matches
-    view.setPulled(box, wide ? PANEL : 0)
+    view.setPulled(box, panelWidth())
     if (box !== undefined) view.showBox(box)
   }, [ready, open, shelves])
 

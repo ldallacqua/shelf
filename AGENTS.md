@@ -136,6 +136,15 @@ before the first paint; a choice that belongs to the address (view, grouping, fi
 seed) goes through `parseLibraryQuery`. Nothing on the shelf fades in: a cover that starts transparent is
 counted as painted late.
 
+**A game's page.** `src/features/game-detail` draws it both as a page of its own
+(`/game/{slug}`, built ahead) and as the panel a game opens in over the library. The panel is
+the library's own, not a route: opening a game adds its address to history with the
+library's query string kept (`game-address.ts`), and Back closes it. What the library file
+lacks (summary, screenshots, art, releases) comes from `buildGamePage`; the panel fetches it
+as the game's facts, by library version. The cover grows from the box through `morph.ts`,
+which names the two ends for that one view transition only. A private note never leaves the
+server.
+
 **Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
 and never throws (what it cannot read becomes a problem with a position), `write.ts` turns a
 tree back into canonical text, `evaluate.ts` runs a tree over one index of bitmaps per library

@@ -56,3 +56,11 @@ export const coverSources = (
 /** A screenshot or backdrop, which IGDB crops to 16:9. */
 export const screenshotSources = (imageId: string): Sources =>
   sources(imageId, ['screenshot_med', 'screenshot_big', 'screenshot_huge'])
+
+/**
+ * Key art behind a game's cover. It is dimmed to a third, so a file smaller
+ * than the screen is never seen as soft, and on a phone's slow connection
+ * the largest file was what held its page's largest paint back.
+ */
+export const backdropSources = (imageId: string): Sources =>
+  sources(imageId, ['screenshot_med', 'screenshot_big'])

@@ -111,6 +111,27 @@ test.describe('the public API', () => {
     expect(await missing.json()).toMatchObject({ error: { code: 'not-found' } })
   })
 
+  test('GET /games/{slug} answers one game, with what its page shows a visitor', async ({
+    request,
+  }) => {
+    const answer = await request.get('/api/v1/games/bloodborne')
+    expect(answer.status()).toBe(200)
+    expect(answer.headers()['access-control-allow-origin']).toBe('*')
+    const game = await answer.json()
+    expect(game).toMatchObject({
+      slug: 'bloodborne',
+      title: 'Bloodborne',
+      releases: [{ platform: 'ps4', name: 'PlayStation 4', date: '2015-03-24' }],
+    })
+    expect(game.screenshots.length).toBeGreaterThan(0)
+
+    const missing = await request.get('/api/v1/games/not-a-game')
+    expect(missing.status()).toBe(404)
+    expect(await missing.json()).toEqual({
+      error: { code: 'not-found', message: 'There is no game called not-a-game' },
+    })
+  })
+
   test('describes itself in OpenAPI 3.1', async ({ request }) => {
     const document = (await (await request.get('/api/v1/openapi.json')).json()) as {
       openapi: string
@@ -119,10 +140,16 @@ test.describe('the public API', () => {
     }
     expect(document.openapi).toMatch(/^3\.1\./)
     expect(Object.keys(document.paths)).toEqual(
-      expect.arrayContaining(['/library', '/library/facets', '/shelves', '/shelves/{slug}']),
+      expect.arrayContaining([
+        '/library',
+        '/library/facets',
+        '/games/{slug}',
+        '/shelves',
+        '/shelves/{slug}',
+      ]),
     )
     expect(Object.keys(document.components.schemas)).toEqual(
-      expect.arrayContaining(['Game', 'Library', 'Facets', 'SmartShelf', 'Error']),
+      expect.arrayContaining(['Game', 'GamePage', 'Library', 'Facets', 'SmartShelf', 'Error']),
     )
   })
 })

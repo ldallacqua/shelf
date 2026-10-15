@@ -14,10 +14,15 @@ import { cn } from '@/ui/cn'
 const Sheet = Dialog.Root
 const SheetTrigger = Dialog.Trigger
 const SheetClose = Dialog.Close
+/** The sheet's name, placed by the content itself when it draws its own heading. */
+const SheetTitle = Dialog.Title
 
 type SheetContentProps = Omit<ComponentProps<typeof Dialog.Content>, 'title'> & {
-  /** The sheet's name. Read by assistive technology, and shown unless `titleHidden`. */
-  title: ReactNode
+  /**
+   * The sheet's name. Read by assistive technology, and shown unless
+   * `titleHidden`. Leave it out only when the content holds a `SheetTitle`.
+   */
+  title?: ReactNode
   /** Keeps the title for assistive technology only, when the content shows one of its own. */
   titleHidden?: boolean
   /** One line of help for assistive technology. */
@@ -32,6 +37,11 @@ type SheetContentProps = Omit<ComponentProps<typeof Dialog.Content>, 'title'> & 
   scrim?: boolean
   /** A row that stays at the foot, outside the part that scrolls, so it covers nothing. */
   footer?: ReactNode
+  /**
+   * The content runs to the sheet's edges, under a close button that floats
+   * over it: for content that starts with a picture.
+   */
+  bleed?: boolean
 }
 
 function SheetContent({
@@ -43,8 +53,25 @@ function SheetContent({
   closeLabel,
   scrim = true,
   footer,
+  bleed,
   ...props
 }: SheetContentProps) {
+  const close = (
+    <Dialog.Close
+      aria-label={closeLabel}
+      className={cn(
+        'inline-flex size-10 flex-none items-center justify-center rounded-control text-muted',
+        'transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text',
+        'pointer-coarse:size-11',
+        bleed
+          ? 'absolute top-3 right-3 z-10 rounded-full bg-surface/80 text-text shadow-panel backdrop-blur-sm hover:bg-surface'
+          : '-mt-1 -mr-2 ml-auto',
+      )}
+    >
+      <XIcon aria-hidden="true" className="size-4" />
+    </Dialog.Close>
+  )
+
   return (
     <Dialog.Portal>
       <Dialog.Overlay
@@ -73,27 +100,36 @@ function SheetContent({
         {/* A grip, on a phone, where a thumb expects one. */}
         <span
           aria-hidden="true"
-          className="mx-auto mt-2 h-1 w-9 flex-none rounded-full bg-line-strong sm:hidden"
+          className={cn(
+            'mx-auto mt-2 h-1 w-9 flex-none rounded-full bg-line-strong sm:hidden',
+            bleed && 'absolute inset-x-0 top-0 z-10 bg-text/40',
+          )}
         />
-        <div className="flex flex-none items-start justify-between gap-3 px-5 pt-3 sm:pt-5">
-          <Dialog.Title className={cn('title text-xl text-balance', titleHidden && 'sr-only')}>
-            {title}
-          </Dialog.Title>
-          <Dialog.Close
-            aria-label={closeLabel}
-            className={cn(
-              '-mt-1 -mr-2 ml-auto inline-flex size-10 flex-none items-center justify-center rounded-control text-muted',
-              'transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text',
-              'pointer-coarse:size-11',
+        {bleed ? (
+          <>
+            {title === undefined ? null : <Dialog.Title className="sr-only">{title}</Dialog.Title>}
+            {close}
+          </>
+        ) : (
+          <div className="flex flex-none items-start justify-between gap-3 px-5 pt-3 sm:pt-5">
+            {title === undefined ? null : (
+              <Dialog.Title className={cn('title text-xl text-balance', titleHidden && 'sr-only')}>
+                {title}
+              </Dialog.Title>
             )}
-          >
-            <XIcon aria-hidden="true" className="size-4" />
-          </Dialog.Close>
-        </div>
+            {close}
+          </div>
+        )}
         {description ? (
           <Dialog.Description className="sr-only">{description}</Dialog.Description>
         ) : null}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-6">
+        <div
+          data-sheet-body=""
+          className={cn(
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain',
+            bleed ? '' : 'px-5 pt-2 pb-6',
+          )}
+        >
           {children}
         </div>
         {footer ? (
@@ -106,4 +142,4 @@ function SheetContent({
   )
 }
 
-export { Sheet, SheetClose, SheetContent, SheetTrigger }
+export { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger }

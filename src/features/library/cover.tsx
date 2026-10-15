@@ -21,6 +21,12 @@ type CoverProps = {
   eager?: boolean
   /** Drawn small (a box on the shelf, a thumbnail): the largest file is never worth fetching. */
   small?: boolean
+  /**
+   * A file of this cover the page already shows, such as the shelf's smaller
+   * one: drawn underneath at once, so a cover opened from the shelf is never
+   * blank while its larger file loads.
+   */
+  placeholder?: string
 }
 
 const wash = ([accent, second, base]: Palette): string =>
@@ -31,7 +37,16 @@ const wash = ([accent, second, base]: Palette): string =>
  * colors, then a blur of the cover itself; it is never a drawing of a cover.
  * If it cannot be loaded, the title is set in type over the colors.
  */
-export function Cover({ cover, colors, hash, title, sizes, eager, small }: CoverProps) {
+export function Cover({
+  cover,
+  colors,
+  hash,
+  title,
+  sizes,
+  eager,
+  small,
+  placeholder,
+}: CoverProps) {
   // The page as the server built it shows its covers plainly, over a wash of
   // their colors. A cover that joins a live page (a row scrolled into view)
   // fades in over a blur of itself. Decided once, when the cover joins the
@@ -45,17 +60,24 @@ export function Cover({ cover, colors, hash, title, sizes, eager, small }: Cover
   const image = useRef<HTMLImageElement>(null)
   const forget = useRef<(() => void) | undefined>(undefined)
   useEffect(() => {
-    if (!joined || !hash || !cover) return
+    // With the file the shelf already shows underneath, a blur would only be worse.
+    if (!joined || !hash || !cover || placeholder) return
     if (image.current?.complete) return
     forget.current = requestPreview(hash, setPreview)
     return () => forget.current?.()
-  }, [joined, hash, cover])
+  }, [joined, hash, cover, placeholder])
 
   return (
     <span
       className="cover"
       style={{
-        backgroundImage: preview ? `url("${preview}")` : colors ? wash(colors) : undefined,
+        backgroundImage: placeholder
+          ? `url("${placeholder}")`
+          : preview
+            ? `url("${preview}")`
+            : colors
+              ? wash(colors)
+              : undefined,
       }}
     >
       {cover ? (

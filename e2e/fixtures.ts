@@ -11,6 +11,7 @@ export const pages = [
   { name: 'home', path: '' },
   { name: 'library', path: '/library' },
   { name: 'shelf', path: '/shelves/short-ones' },
+  { name: 'game', path: '/game/bloodborne' },
   { name: 'trophies', path: '/trophies' },
 ] as const
 

@@ -2,8 +2,9 @@ import type { Pathname } from '@/i18n/routing'
 
 /** The destinations in the main navigation, in order, with the other pages that belong to each. */
 export const navItems = [
-  // A smart shelf is the library with a filter kept, so it is in the library too.
-  { href: '/library', label: 'library', under: ['/shelves'] },
+  // A smart shelf is the library with a filter kept, and a game is one of its
+  // games, so both are in the library too.
+  { href: '/library', label: 'library', under: ['/shelves', '/game'] },
   { href: '/trophies', label: 'trophies', under: [] },
 ] as const satisfies readonly { href: Pathname; label: string; under: readonly string[] }[]
 
