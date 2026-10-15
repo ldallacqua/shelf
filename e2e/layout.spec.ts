@@ -23,6 +23,26 @@ test.describe('layout', () => {
         })
       }
     }
+
+    test.describe('before the first boxes arrive', () => {
+      // What a visitor sees while the server works on the rest: the part built ahead of time,
+      // served alone, cut where the streamed part begins. Without script, nothing replaces it.
+      test.use({ javaScriptEnabled: false })
+
+      for (const path of ['/en/library', '/en/shelves/short-ones']) {
+        test(`${path} still fits`, async ({ page }) => {
+          const html = await (await page.request.get(path)).text()
+          const streamed = html.indexOf('<div hidden id="S:')
+          expect(streamed).toBeGreaterThan(0)
+          await page.route(`**${path}`, (route) =>
+            route.fulfill({ contentType: 'text/html', body: html.slice(0, streamed) }),
+          )
+          await page.goto(path, { waitUntil: 'load' })
+          await expect(page.locator('.ghost-case').first()).toBeVisible()
+          expect(await sidewaysOverflow(page)).toBe(0)
+        })
+      }
+    })
   })
 
   test('every control is at least 24 by 24 pixels', async ({ page }) => {

@@ -11,6 +11,7 @@ import { shareFirstBoxes } from '@/domain/library/view'
 import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
 import { platformFor } from './game-box'
+import { GhostHeading, ghostOrder } from './ghosts'
 import type { WallSize } from './preferences'
 import { StatusMark } from './status-mark'
 import { useRowWindow } from './use-row-window'
@@ -132,11 +133,12 @@ function WallGrid({
   const ref = useRef<HTMLUListElement>(null)
   const rowWindow = useRowWindow(ref, shelf.total)
 
+  // Every place on the shelf, the ones whose covers come with the library file included: those hold ghosts.
   const from = rowWindow ? rowWindow.start * rowWindow.columns : 0
   const to = rowWindow
-    ? Math.min(shelf.items.length, rowWindow.end * rowWindow.columns)
-    : // At least one: a row's height is measured from a cover.
-      Math.min(shelf.items.length, Math.max(1, unmeasured))
+    ? Math.min(shelf.total, rowWindow.end * rowWindow.columns)
+    : // At least one: a row's height is measured from a cover, or a ghost.
+      Math.min(shelf.total, Math.max(1, unmeasured))
   const before = rowWindow ? rowWindow.start * rowWindow.pitch : 0
   const after = rowWindow ? (rowWindow.rows - rowWindow.end) * rowWindow.pitch : 0
 
@@ -152,8 +154,10 @@ function WallGrid({
       // Rows that are not near the screen are not in the page; padding keeps their place.
       style={{ paddingTop: before, paddingBottom: after }}
     >
-      {shelf.items.slice(from, to).map((item, offset) => {
+      {Array.from({ length: to - from }, (_, offset) => {
         const index = from + offset
+        const item = shelf.items[index]
+        if (!item) return <GhostCover key={`ghost-${index}`} index={offset} />
         return (
           <WallCell
             key={`${item.game.slug}:${item.copy?.platform ?? ''}`}
@@ -172,6 +176,39 @@ function WallGrid({
         )
       })}
     </ul>
+  )
+}
+
+/** A cover-shaped place on the wall, for a cover on its way. */
+function GhostCover({ index }: { index: number }) {
+  return (
+    <li
+      className="wall-cell"
+      data-cell=""
+      data-ghost=""
+      aria-hidden="true"
+      style={ghostOrder(index)}
+    >
+      <span className="ghost size-full" />
+    </li>
+  )
+}
+
+/** The wall before its shelves are known: two shelves' labels and covers. */
+export function GhostWall({ size }: { size: WallSize }) {
+  return (
+    <div className="pb-6" aria-hidden="true">
+      {[24, 12].map((count, shelf) => (
+        <section key={shelf} className="mt-6 first:mt-4">
+          <GhostHeading className="wall-label" />
+          <ul className="wall-grid" data-size={size}>
+            {Array.from({ length: count }, (_, index) => (
+              <GhostCover key={index} index={index} />
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
   )
 }
 

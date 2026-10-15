@@ -10,6 +10,11 @@ import { duration } from '@/ui/tokens/motion'
  * nothing is wrong before, without, or instead of the animation; with
  * reduced motion it does not run.
  *
+ * Counting up from a figure already on screen would first take it back
+ * down, so it waits unseen for the page to come alive (`data-settle` in
+ * shelf.css). If the page is slow to, the figure simply appears, and stays
+ * as it is when the page does come alive.
+ *
  * The figures are written straight into the page, one frame at a time. Asking
  * React to draw each of them again was fifty redraws in the second a slow
  * phone can least spare. It is decoration: the true figure is read out by
@@ -30,10 +35,15 @@ export function SettlingNumber({
   useEffect(() => {
     const element = ref.current
     if (!element) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const unseen = getComputedStyle(element).visibility === 'hidden'
     const from = Math.round(value * 0.85)
-    if (from === value) return
+    const counts =
+      unseen && from !== value && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const format = new Intl.NumberFormat(locale)
+    // It starts low, then shows: never the final figure first.
+    if (counts) element.textContent = format.format(from)
+    element.dataset.counted = ''
+    if (!counts) return
     let frame = 0
     const started = performance.now()
     const tick = (now: number) => {
@@ -57,6 +67,7 @@ export function SettlingNumber({
     <span
       ref={ref}
       aria-hidden="true"
+      data-settle=""
       className="title text-base text-text tabular-nums sm:text-lg"
     >
       {text}

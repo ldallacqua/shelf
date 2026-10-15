@@ -7,9 +7,9 @@ reasoning behind the layers is in [the architecture, section 17](architecture.md
 
 | Layer | Where | Run with | Covers |
 | --- | --- | --- | --- |
-| Unit | `src/**/*.test.ts`, `scripts/**/*.test.ts` | `pnpm test` | Rules with no browser: the data model's rules (grouping, the library file, platforms, cover colors), the store against a real SQLite, the IGDB client against test doubles, the seeds, the theme rules, the design tokens, the list of pages, the translation check |
+| Unit | `src/**/*.test.ts`, `scripts/**/*.test.ts` | `pnpm test` | Rules with no browser: the data model's rules (grouping, sorting, the library file, platforms, cover colors), the filter language (parsing, writing back, every filter alone and combined, counts, the panel's edits), the API's answers, the store and smart shelves against a real SQLite, the IGDB client against test doubles, the seeds, the theme rules, the design tokens, the list of pages, the translation check, and the filter speed budget |
 | Component | `src/**/*.test.tsx` | `pnpm test` | Components in a simulated browser, in both languages: keyboard paths, labels, state |
-| End to end | `e2e/*.spec.ts` | `pnpm e2e` | The built app in real browsers: language, theme, layout, accessibility, the lit shelf, the library file, the 3D shelf and its switch |
+| End to end | `e2e/*.spec.ts` | `pnpm e2e` | The built app in real browsers: language, theme, layout, accessibility, the lit shelf, the library file, the 3D shelf and its switch, search, filters, sorting, smart shelves and the API |
 | Reference screenshots | `e2e/visual.spec.ts` | `pnpm verify` (its Linux pass) | Every page, both themes, both languages, phone and desktop |
 | Speed | `scripts/measure-js.ts`, `scripts/lighthouse.ts`, `scripts/perf-3d.ts` | `pnpm perf:js`, `pnpm perf:lighthouse`, `pnpm perf:3d` | First-load JavaScript per page and the 3D bundle, Lighthouse on the mobile profile, and the 3D shelf's frame time on this machine's graphics card |
 
@@ -50,6 +50,34 @@ A box is found by its name, which says what it shows: `getByRole('button', { nam
 Bot/ })` has the accessible name "Astro Bot (2024), PS5, Physical, Completed". Only the rows
 near the window are in the page, so a game far down a shelf is not found until it is scrolled
 or stepped to.
+
+To see the page before the rest of the library arrives, hold the library file with
+`page.route('**/library/snapshot/**', ...)` and let it go later, as the "while the library
+arrives" test does. Meanwhile the places still to fill hold ghosts (`[data-ghost]`), which
+assistive technology does not see. The part of the page built ahead of time, before the first
+boxes, is checked by serving it alone, with script off: `layout.spec.ts` cuts the page where
+the streamed part begins. `LibrarySkeleton` also has component tests and a story.
+
+## Filters and smart shelves in browser tests
+
+**Counts come from the API.** Where a test checks how many games a filter matches, it asks
+`/api/v1/library` for the number rather than writing it down, so the page and the API are
+checked against each other and a change to the sample library does not break the test.
+
+**While the filter panel is open the page behind it is out of reach** of `getByRole`, as it
+is of a screen reader. Read the filter from the address instead (`address(page)` in
+`e2e/filters.spec.ts`). Status and genre start open in the panel; the other sections are
+opened by their summary. With a mouse a value's row cycles off, included, excluded; on touch
+it has two buttons. `pick()` does whichever the browser has.
+
+**The owner is a cookie.** Until sign-in, a test saves a shelf as the owner by setting
+`shelf-test-owner=1`, which the server reads only with `SHELF_MOCKS=1`. The nine projects
+run at once against one database, so a test that saves names its shelf after its project
+and removes it again in a `finally`. A run stopped half-way can leave a shelf called
+`Test …` behind; `pnpm seed` puts the database back.
+
+**The API is checked in one project** (Chromium at desktop width): it answers every browser
+the same.
 
 ## The 3D shelf in browser tests
 
@@ -220,8 +248,15 @@ about 180 ms on the Mac and on CI. On Windows that was about 5.5 times at step 3
 with `LIGHTHOUSE_SLOWDOWN=5.5 pnpm verify` there and check the home page's blocked time in
 the output before reading the scores. It drifts with how busy the machine is: at step 4 the
 benchmark read 5,140, not 4,470, and the home page blocked 85 ms at 5.5 times, 160 ms at 7.5
-and 226 ms at 8. Raise or lower the number until it blocks about 180 ms, and read the
-scores there.
+and 226 ms at 8. At step 5 it blocked 129 ms at 6.5, 197 ms at 7.1 and 232 ms at 7.7. Raise
+or lower the number until it blocks about 180 ms, and read the scores there.
+
+Inside `pnpm verify` Lighthouse runs right after a quarter of an hour of browser tests, and
+a machine that has just done that is a slower one. At step 5's review the same 7.1 times
+gave the home page 386 ms in verify, and a few minutes later, on its own, 6.5 times gave
+about 330 ms, 5.5 times 160 ms and 4 times 80 ms. When verify's Lighthouse step misses,
+check the home page's blocked time first, and rerun `pnpm perf:lighthouse` on its own at a
+slowdown that gives about 180 ms.
 
 **`pnpm perf:3d`** measures the 3D shelf on this machine's graphics card, since the test
 browsers draw WebGL in software. It walks the camera along the wall and back, sweeps the

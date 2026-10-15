@@ -7,6 +7,7 @@ import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 
 import { GameBox, platformFor } from './game-box'
+import { GhostCase } from './ghosts'
 import type { Density } from './preferences'
 import { boardsOf, piecesOf, runsOf } from './shelf-layout'
 import { useRowWindow } from './use-row-window'
@@ -19,7 +20,7 @@ type ShelfGridProps = {
   shelfKey: string
   /** The boxes known so far, from the shelf's first. */
   items: readonly ShelfItem[]
-  /** How many boxes the shelf holds once the whole library has arrived. */
+  /** How many boxes the shelf holds once the whole library has arrived. Until then, the rest are ghosts. */
   total: number
   /**
    * How many boxes to draw before the layout has been measured: this shelf's
@@ -97,7 +98,8 @@ export function ShelfGrid({
   const columns = rowWindow?.columns
   const tabStop = Math.min(stop, Math.max(0, items.length - 1))
 
-  const runs = runsOf(rowWindow, items.length, unmeasured, tabStop)
+  // Every place on the shelf, the ones whose boxes come with the library file included: those hold ghosts.
+  const runs = runsOf(rowWindow, total, unmeasured, tabStop)
   const perRow = columns ?? FEWEST_COLUMNS
   const rows = rowWindow?.rows ?? Math.ceil((runs[0]?.to ?? 0) / perRow)
 
@@ -158,7 +160,7 @@ export function ShelfGrid({
     }
     const { index } = piece
     const item = items[index]
-    if (!item) return null
+    if (!item) return <GhostCase key={`ghost-${index}`} index={piece.stagger} />
     const platform = platformFor(item, platforms)
     const inActiveRow = activeRow !== undefined && Math.floor(index / perRow) === activeRow
     return (

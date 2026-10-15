@@ -16,7 +16,8 @@ export function setPathname(pathname: string, locale = 'en'): void {
   state.locale = locale
 }
 
-type Href = string | { pathname: string; query?: Record<string, string> }
+type Href =
+  string | { pathname: string; params?: Record<string, string>; query?: Record<string, string> }
 
 type LinkProps = Omit<ComponentProps<'a'>, 'href'> & {
   href: Href
@@ -26,7 +27,11 @@ type LinkProps = Omit<ComponentProps<'a'>, 'href'> & {
 
 export function Link({ href, locale, scroll: _scroll, children, ...props }: LinkProps) {
   const prefix = `/${locale ?? state.locale}`
-  const path = typeof href === 'string' ? href : href.pathname
+  const path =
+    typeof href === 'string'
+      ? href
+      : // A page with a part of its own, such as a shelf's slug, has it filled in.
+        href.pathname.replace(/\[(\w+)\]/g, (_, name: string) => href.params?.[name] ?? name)
   const query = typeof href === 'string' ? '' : new URLSearchParams(href.query).toString()
   const address = `${prefix}${path === '/' ? '' : path}${query ? `?${query}` : ''}`
   return (

@@ -13,7 +13,10 @@ import { NavLinks } from './nav-links'
 import { MAIN_ID, SkipLink } from './skip-link'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
-vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams() }))
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({}),
+}))
 
 describe('Header', () => {
   beforeEach(() => setPathname('/'))
@@ -50,6 +53,14 @@ describe('Header', () => {
 describe('NavLinks', () => {
   it('marks the current page, and only that one', () => {
     setPathname('/library')
+    renderWithIntl(<NavLinks />)
+
+    expect(screen.getByRole('link', { name: 'Library' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Trophies' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('marks the library on a smart shelf, which is part of it', () => {
+    setPathname('/shelves/short-ones')
     renderWithIntl(<NavLinks />)
 
     expect(screen.getByRole('link', { name: 'Library' })).toHaveAttribute('aria-current', 'page')

@@ -30,6 +30,8 @@ type SheetContentProps = Omit<ComponentProps<typeof Dialog.Content>, 'title'> & 
    * click outside still closes the sheet either way.
    */
   scrim?: boolean
+  /** A row that stays at the foot, outside the part that scrolls, so it covers nothing. */
+  footer?: ReactNode
 }
 
 function SheetContent({
@@ -40,6 +42,7 @@ function SheetContent({
   description,
   closeLabel,
   scrim = true,
+  footer,
   ...props
 }: SheetContentProps) {
   return (
@@ -93,6 +96,11 @@ function SheetContent({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2 pb-6">
           {children}
         </div>
+        {footer ? (
+          <div className="flex flex-none items-center justify-between gap-3 border-t border-line px-5 pt-3 pb-4">
+            {footer}
+          </div>
+        ) : null}
       </Dialog.Content>
     </Dialog.Portal>
   )

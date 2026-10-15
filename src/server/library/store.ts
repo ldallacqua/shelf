@@ -8,6 +8,7 @@ import type { Palette } from '@/domain/color/palette'
 import type { Company, GameData, LineageStep } from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
 import type { LinkedMember } from '@/domain/library/family'
+import { cleanShelf, freeSlug, MAX_SHELF_NAME, type SmartShelf } from '@/domain/library/shelves'
 import {
   isDay,
   isFormat,
@@ -19,6 +20,7 @@ import {
   type Relation,
   type Status,
 } from '@/domain/library/values'
+import { MAX_QUERY_LENGTH } from '@/domain/library/view'
 import type { Platform } from '@/domain/platforms/platforms'
 import type { Db, Executor } from '@/server/db/client'
 import {
@@ -30,6 +32,7 @@ import {
   libraryMeta,
   platforms,
   playTime,
+  shelves,
   tags,
   vocab,
 } from '@/server/db/schema'
@@ -532,4 +535,82 @@ export const findEntryIdBySlug = async (
     .where(eq(games.slug, slug))
     .limit(1)
   return row?.entryId
+}
+
+/** A smart shelf as it is saved: a name, a filter as text, a sort and a grouping. */
+export type ShelfInput = Omit<SmartShelf, 'slug'>
+
+const checkShelf = (input: ShelfInput): ShelfInput => {
+  const name = input.name.trim()
+  if (name.length === 0 || name.length > MAX_SHELF_NAME) {
+    throw invalid(`A shelf's name is 1 to ${MAX_SHELF_NAME} characters`)
+  }
+  if (input.query.length > MAX_QUERY_LENGTH) throw invalid('That filter is too long')
+  const clean = cleanShelf({ slug: '', ...input, name })
+  return { name: clean.name, query: clean.query, sort: clean.sort, group: clean.group }
+}
+
+/**
+ * Saves a smart shelf and returns its slug. Given a slug, it changes that
+ * shelf and keeps its address, even when the name changes; without one, it
+ * adds a shelf with an address of its own, after the others.
+ *
+ * Shelves are not in the library file, so saving one does not raise the
+ * library's version: every visitor's cached file stays good. The service
+ * that calls this expires the shelves' own cache.
+ */
+export const saveShelf = (
+  db: Db,
+  input: ShelfInput & { slug?: string },
+  now = Date.now(),
+): Promise<string> =>
+  db.transaction(async (tx) => {
+    const shelf = checkShelf(input)
+    if (input.slug !== undefined) {
+      const changed = await tx
+        .update(shelves)
+        .set({ ...shelf, updatedAt: now })
+        .where(eq(shelves.slug, input.slug))
+        .returning({ slug: shelves.slug })
+      if (changed.length === 0) throw notFound(`The shelf ${input.slug}`)
+      return input.slug
+    }
+    const existing = await tx
+      .select({ slug: shelves.slug, position: shelves.position })
+      .from(shelves)
+    const slug = freeSlug(shelf.name, new Set(existing.map((row) => row.slug)))
+    const position = Math.max(-1, ...existing.map((row) => row.position)) + 1
+    await tx.insert(shelves).values({
+      id: randomUUID(),
+      slug,
+      ...shelf,
+      position,
+      createdAt: now,
+      updatedAt: now,
+    })
+    return slug
+  })
+
+export const removeShelf = (db: Db, slug: string): Promise<void> =>
+  db.transaction(async (tx) => {
+    const removed = await tx
+      .delete(shelves)
+      .where(eq(shelves.slug, slug))
+      .returning({ slug: shelves.slug })
+    if (removed.length === 0) throw notFound(`The shelf ${slug}`)
+  })
+
+/** Every smart shelf, in the order they were placed. */
+export const readShelves = async (db: Executor): Promise<SmartShelf[]> => {
+  const rows = await db
+    .select({
+      slug: shelves.slug,
+      name: shelves.name,
+      query: shelves.query,
+      sort: shelves.sort,
+      group: shelves.group,
+    })
+    .from(shelves)
+    .orderBy(shelves.position, shelves.createdAt)
+  return rows.map((row) => cleanShelf(row as SmartShelf))
 }

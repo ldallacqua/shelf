@@ -164,9 +164,12 @@ export function ShelfStage({
   const visible = phase === 'entering' || phase === '3d' || phase === 'leaving'
 
   return (
-    <div ref={scope} className="relative">
+    <div ref={scope} className="shelf-stage relative">
       {show2d ? (
-        <div inert={phase === 'entering' || phase === 'leaving' || undefined}>
+        <div
+          className="shelf-stage-2d"
+          inert={phase === 'entering' || phase === 'leaving' || undefined}
+        >
           <ShelfView {...view} density={density} />
         </div>
       ) : null}

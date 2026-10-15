@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { countBoxes, groupLibrary, isGrouping } from '@/domain/library/group'
+import { countBoxes, groupLibrary, isGrouping, shelfIdOf } from '@/domain/library/group'
 import {
   emptyNames,
   type LibraryGame,
@@ -14,10 +14,13 @@ import {
   arrangeOnce,
   buildFirstScreen,
   firstScreenShelves,
+  indexOnce,
   keepFirstScreen,
   parseLibraryQuery,
   shareFirstBoxes,
 } from '@/domain/library/view'
+import { facetCounts } from '@/domain/query/facets'
+import { parseQuery } from '@/domain/query/parse'
 
 const platform = (id: number, key: string, family: LibraryPlatform['family']): LibraryPlatform => ({
   id,
@@ -197,6 +200,21 @@ describe('groupLibrary (spec 3.7)', () => {
     expect(isGrouping('genre')).toBe(false)
     expect(isGrouping(undefined)).toBe(false)
   })
+
+  it('reads every kind of shelf back from its key', () => {
+    for (const grouping of ['platform', 'status', 'year', 'none'] as const) {
+      for (const { items: _items, ...id } of groupLibrary(all, names, grouping)) {
+        expect(shelfIdOf(id.key, names.platform)).toEqual(id)
+      }
+    }
+  })
+
+  it('reads nothing from a key that names nothing', () => {
+    expect(shelfIdOf('platform:999', names.platform)).toBeUndefined()
+    expect(shelfIdOf('status:finished', names.platform)).toBeUndefined()
+    expect(shelfIdOf('year:soon', names.platform)).toBeUndefined()
+    expect(shelfIdOf('genre:rpg', names.platform)).toBeUndefined()
+  })
 })
 
 describe('libraryStats', () => {
@@ -207,26 +225,53 @@ describe('libraryStats', () => {
 })
 
 describe('parseLibraryQuery (spec 2)', () => {
-  it('defaults to the shelf, grouped by platform', () => {
-    expect(parseLibraryQuery({})).toEqual({ view: 'shelf', group: 'platform' })
+  const defaults = {
+    view: 'shelf',
+    group: 'platform',
+    q: '',
+    sort: { key: 'title', descending: false },
+    seed: '',
+  }
+
+  it('defaults to the shelf, grouped by platform, in title order, with no filter', () => {
+    expect(parseLibraryQuery({})).toEqual(defaults)
   })
 
-  it('reads the view and the grouping', () => {
-    expect(parseLibraryQuery({ view: 'list', group: 'year' })).toEqual({
+  it('reads the view, the grouping, the filter, the sort and the seed', () => {
+    expect(
+      parseLibraryQuery({
+        view: 'list',
+        group: 'year',
+        q: 'status:backlog genre:rpg',
+        sort: '-rating',
+        seed: 'k3x9',
+      }),
+    ).toEqual({
       view: 'list',
       group: 'year',
+      q: 'status:backlog genre:rpg',
+      sort: { key: 'rating', descending: true },
+      seed: 'k3x9',
     })
   })
 
   it('falls back to the default for anything it does not know', () => {
     expect(parseLibraryQuery({ view: 'cube', group: ['status', 'year'] })).toEqual({
-      view: 'shelf',
+      ...defaults,
       group: 'status',
     })
-    expect(parseLibraryQuery({ view: '', group: '<script>' })).toEqual({
-      view: 'shelf',
-      group: 'platform',
+    expect(
+      parseLibraryQuery({ view: '', group: '<script>', sort: '-colour', seed: 'a b' }),
+    ).toEqual(defaults)
+    expect(parseLibraryQuery({ sort: '-random' }).sort).toEqual({
+      key: 'random',
+      descending: false,
     })
+  })
+
+  it('keeps a filter it cannot read, for the page to show what was ignored', () => {
+    expect(parseLibraryQuery({ q: 'colour:red' }).q).toBe('colour:red')
+    expect(parseLibraryQuery({ q: 'x'.repeat(5000) }).q).toHaveLength(1000)
   })
 })
 
@@ -285,16 +330,38 @@ describe('the first screen', () => {
     expect(first.games.map((item) => item.title)).toEqual(['Astro Bot', 'Celeste'])
   })
 
+  it('counts each status for the status row as the device would, filter and all', () => {
+    for (const q of ['', 'platform:switch', 'status:completed']) {
+      const first = buildFirstScreen(library, { group: 'platform', q }, 'en', 2)
+      const counts = facetCounts(indexOnce(library), parseQuery(q).tree, 'status')
+      expect(first.statusCounts).toEqual(
+        Object.fromEntries(counts.map((value) => [value.word, value.count])),
+      )
+    }
+  })
+
   it('draws each shelf with exactly the boxes it was sent, in their final places', () => {
     // Hades comes for the Switch shelf. It also belongs on the PC shelf, but
     // that shelf's first box is not known yet, so it must not appear there.
     const first = buildFirstScreen(library, { group: 'platform' }, 'en', 3)
-    const shelves = firstScreenShelves(first, { group: 'platform' }, 'en')
+    const shelves = firstScreenShelves(first, 'en')
     expect(shelves.map((shelf) => [shelf.key, titles(shelf), shelf.total])).toEqual([
       ['platform:167', ['Astro Bot'], 1],
       ['platform:130', ['Celeste', 'Hades'], 2],
       ['platform:6', [], 2],
+      ['platform:none', [], 1],
     ])
+  })
+
+  it('draws every shelf from the first paint, named, even with none of its boxes yet', () => {
+    for (const group of ['platform', 'status', 'year', 'none'] as const) {
+      const full = arrangeLibrary(all, names, { group }, 'en')
+      const first = firstScreenShelves(buildFirstScreen(library, { group }, 'en', 1), 'en')
+      expect(first.map(({ items: _items, total: _total, ...id }) => id)).toEqual(
+        full.map(({ items: _items, ...id }) => id),
+      )
+      expect(first.map((shelf) => shelf.total)).toEqual(full.map((shelf) => shelf.items.length))
+    }
   })
 
   it('keeps the objects that came with the page when the whole library arrives', () => {
@@ -327,11 +394,7 @@ describe('the first screen', () => {
   it('matches the full arrangement box for box', () => {
     for (const group of ['platform', 'status', 'year', 'none'] as const) {
       const full = arrangeLibrary(all, names, { group }, 'en')
-      const first = firstScreenShelves(
-        buildFirstScreen(library, { group }, 'en', 4),
-        { group },
-        'en',
-      )
+      const first = firstScreenShelves(buildFirstScreen(library, { group }, 'en', 4), 'en')
       for (const shelf of first) {
         const whole = full.find((item) => item.key === shelf.key)
         expect(titles(shelf)).toEqual(titles(whole ?? { items: [] }).slice(0, shelf.items.length))

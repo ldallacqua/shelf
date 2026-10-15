@@ -285,5 +285,234 @@
     "title": "Esta página não está na estante.",
     "body": "O endereço pode ter um erro de digitação, ou a página pode ter mudado de lugar.",
     "action": "Ir para a biblioteca"
+  },
+  "Filters": {
+    "search": {
+      "label": "Buscar na biblioteca",
+      "placeholder": "Busque títulos, ou filtre: genre:rpg -theme:horror",
+      "clear": "Limpar a busca",
+      "ignored": "{count, plural, one {Uma parte não foi entendida e ficou de fora.} other {# partes não foram entendidas e ficaram de fora.}}",
+      "short": "Buscar na biblioteca"
+    },
+    "status": {
+      "label": "Status",
+      "all": "Todos",
+      "counted": "{status}, {count, plural, one {# jogo} other {# jogos}}"
+    },
+    "open": "{count, plural, =0 {Filtros} one {Filtros, # ativo} other {Filtros, # ativos}}",
+    "openShort": "Filtros",
+    "keys": {
+      "status": "Status",
+      "owned": "Plataforma que tenho",
+      "format": "Formato",
+      "copies": "Plataformas que tenho",
+      "rating": "Minha nota",
+      "hours": "Tempo jogado",
+      "completed": "Zerado em",
+      "added": "Adicionado em",
+      "tag": "Tag",
+      "has": "Tem",
+      "is": "Destaque",
+      "genre": "Gênero",
+      "theme": "Tema",
+      "keyword": "Palavra-chave",
+      "mode": "Modo de jogo",
+      "perspective": "Perspectiva",
+      "platform": "Lançado para",
+      "kind": "Tipo de jogo",
+      "franchise": "Franquia",
+      "series": "Série",
+      "developer": "Desenvolvedora",
+      "publisher": "Distribuidora",
+      "year": "Ano de lançamento",
+      "igdb": "Nota no IGDB",
+      "length": "Tempo para zerar"
+    },
+    "values": {
+      "kind": {
+        "main": "Jogo principal",
+        "remake": "Remake",
+        "remaster": "Remaster",
+        "expanded": "Edição expandida",
+        "port": "Port",
+        "bundle": "Pacote",
+        "expansion": "Expansão",
+        "other": "Outro"
+      },
+      "has": {
+        "notes": "Notas",
+        "rating": "Minha nota",
+        "playtime": "Tempo jogado",
+        "cover": "Uma capa"
+      },
+      "is": {
+        "featured": "Em destaque"
+      },
+      "family": {
+        "playstation": "Qualquer PlayStation",
+        "xbox": "Qualquer Xbox",
+        "nintendo": "Qualquer Nintendo",
+        "pc": "Qualquer computador",
+        "sega": "Qualquer Sega",
+        "other": "Qualquer outra plataforma"
+      }
+    },
+    "units": {
+      "hours": "{value} h",
+      "outOfTen": "{value}/10"
+    },
+    "compare": {
+      "range": "{from} a {to}",
+      "number": {
+        "lt": "menos de {value}",
+        "le": "{value} ou menos",
+        "gt": "mais de {value}",
+        "ge": "{value} ou mais"
+      },
+      "date": {
+        "lt": "antes de {value}",
+        "le": "até {value}",
+        "gt": "depois de {value}",
+        "ge": "a partir de {value}"
+      }
+    },
+    "chips": {
+      "label": "Filtros ativos",
+      "term": "{key}: {values}",
+      "not": "Sem {key}: {values}",
+      "text": "Título: {text}",
+      "notText": "Fora do título: {text}",
+      "or": "ou",
+      "remove": "Remover {condition}",
+      "ignored": "Não entendido, ficou de fora:",
+      "clear": "Limpar tudo"
+    },
+    "problems": {
+      "unknown-key": "Não existe filtro com esse nome.",
+      "bad-value": "Esse filtro não aceita este valor.",
+      "missing-value": "Este filtro precisa de um valor depois dos dois-pontos.",
+      "unclosed-bracket": "Este parêntese nunca é fechado.",
+      "stray-bracket": "Este parêntese não fecha nada.",
+      "empty-brackets": "Não há nada entre estes parênteses.",
+      "dangling-or": "OR precisa de algo dos dois lados.",
+      "nothing-to-negate": "O traço precisa de algo depois dele."
+    },
+    "panel": {
+      "title": "Filtros",
+      "description": "Cada valor fica desligado, incluído ou excluído. As mudanças valem na hora.",
+      "close": "Fechar os filtros",
+      "groups": "Combina com qualquer um destes grupos",
+      "groupsLabel": "Grupos",
+      "group": "Grupo {number}",
+      "removeGroup": "Remover o grupo {number}",
+      "addGroup": "Adicionar um grupo, ligado por ou",
+      "asText": "Também neste grupo, escrito como texto. Mude no campo de busca:",
+      "mine": "Meus",
+      "igdb": "Do IGDB",
+      "results": "{count, plural, =0 {Nenhum jogo combina} one {# jogo combina} other {# jogos combinam}}",
+      "loading": "Carregando a biblioteca…",
+      "loadingKeywords": "Carregando as palavras-chave…",
+      "notValue": "sem {value}",
+      "match": "{key}: qualquer um ou todos",
+      "anyOf": "Qualquer um",
+      "allOf": "Todos",
+      "find": "Encontrar em {key}",
+      "findPlaceholder": "Encontrar…",
+      "nothingFound": "Nada com esse nome.",
+      "nothing": "Nada para escolher nesta biblioteca.",
+      "value": {
+        "off": "{value}, {count, plural, one {# jogo} other {# jogos}}",
+        "include": "{value}, {count, plural, one {# jogo} other {# jogos}}, incluído",
+        "exclude": "{value}, {count, plural, one {# jogo} other {# jogos}}, excluído"
+      },
+      "include": "Incluir {value}, {count, plural, one {# jogo} other {# jogos}}",
+      "exclude": "Excluir {value}",
+      "more": "Mostrar mais {count}",
+      "fewer": "Mostrar menos",
+      "written": "Escrito como {text}",
+      "clearRange": "Limpar {key}",
+      "from": "De",
+      "to": "Até",
+      "notANumber": "Digite um número.",
+      "notADate": "Digite um ano, um mês ou um dia: 2025, 2025-06 ou 2025-06-14.",
+      "dateHint": "Um ano, um mês ou um dia: 2025, 2025-06 ou 2025-06-14."
+    },
+    "noResults": {
+      "label": "Nenhum jogo",
+      "title": "Nenhum jogo combina com estes filtros.",
+      "body": "Remova um filtro acima, ou limpe todos."
+    }
+  },
+  "Sort": {
+    "label": "Ordem",
+    "menu": "Ordenar por",
+    "keys": {
+      "title": "Título",
+      "added": "Data em que adicionei",
+      "released": "Data de lançamento",
+      "rating": "Minha nota",
+      "igdb": "Nota no IGDB",
+      "hours": "Tempo jogado",
+      "completed": "Data em que zerei",
+      "status": "Status",
+      "length": "Tempo para zerar",
+      "color": "Cor",
+      "random": "Me surpreenda"
+    },
+    "ascending": "{key}, crescente",
+    "descending": "{key}, decrescente",
+    "reverse": "Inverter a ordem",
+    "shuffle": "Embaralhar de novo"
+  },
+  "Shelves": {
+    "open": "Prateleiras",
+    "label": "Prateleiras inteligentes",
+    "all": "Todos os jogos",
+    "changed": "Alterada",
+    "reset": "Voltar à prateleira salva",
+    "saveShelf": "Salvar como prateleira",
+    "saveChanges": "Salvar",
+    "edit": "Editar prateleira",
+    "newTitle": "Salvar como prateleira",
+    "saveTitle": "Salvar {name}",
+    "saveDescription": "Salva o filtro, a ordem e o agrupamento que estão na tela. A prateleira se atualiza sozinha quando a biblioteca muda.",
+    "saveHow": "Como salvar",
+    "save": "Salvar esta prateleira",
+    "saveAsNew": "Salvar como nova",
+    "name": "Nome",
+    "remove": "Remover esta prateleira",
+    "close": "Fechar",
+    "notFound": "Não há prateleira neste endereço.",
+    "errors": {
+      "not-signed-in": "Só o dono pode salvar prateleiras. Entre primeiro.",
+      "invalid": "Isso não pode ser salvo. Confira o nome.",
+      "not-kept": "Esta cópia do site não guarda nada, então a prateleira não foi salva.",
+      "not-found": "Essa prateleira não existe mais.",
+      "failed": "Não deu para salvar. Tente de novo."
+    },
+    "notFoundBody": "Uma prateleira com este nome pode ter sido removida ou renomeada."
+  },
+  "Shortcuts": {
+    "title": "Atalhos de teclado",
+    "description": "Todas as teclas que a biblioteca entende.",
+    "close": "Fechar",
+    "keys": {
+      "arrows": "Jogo anterior ou próximo na prateleira",
+      "ledges": "A fileira de cima ou de baixo",
+      "shelves": "Prateleira anterior ou próxima",
+      "ends": "Primeiro ou último jogo da prateleira",
+      "open": "Abrir o jogo em foco",
+      "close": "Fechar um jogo, uma folha ou um painel",
+      "search": "Buscar",
+      "filters": "Abrir os filtros",
+      "group": "Mudar o agrupamento",
+      "sort": "Mudar a ordem",
+      "view": "Próxima visualização",
+      "dimension": "Alternar entre 2D e 3D",
+      "shuffle": "Me surpreenda: embaralhar as prateleiras",
+      "help": "Mostrar esta lista"
+    },
+    "letters": "Atalhos de uma letra",
+    "lettersHint": "Desligados, as letras não fazem nada; / e ? continuam funcionando."
   }
 }

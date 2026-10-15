@@ -5,10 +5,11 @@ import { ThemeSwitch } from '@/features/theme/theme-switch'
 import { Link } from '@/i18n/navigation'
 import { LogoMark } from '@/ui/logo'
 
+import { HeaderSearch } from './header-search'
 import { MobileNav } from './mobile-nav'
 import { NavLinks } from './nav-links'
 
-/** The header on every page: the name, the main links, theme and language. */
+/** The header on every page: the name, the main links, search, theme and language. */
 export function Header() {
   const t = useTranslations('Shell')
   const meta = useTranslations('Meta')
@@ -31,6 +32,7 @@ export function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-0.5">
+          <HeaderSearch />
           <ThemeSwitch />
           <LanguageSwitch />
           <MobileNav className="sm:hidden" />

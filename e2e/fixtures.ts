@@ -10,6 +10,7 @@ export type Theme = (typeof themes)[number]
 export const pages = [
   { name: 'home', path: '' },
   { name: 'library', path: '/library' },
+  { name: 'shelf', path: '/shelves/short-ones' },
   { name: 'trophies', path: '/trophies' },
 ] as const
 
@@ -154,6 +155,11 @@ export async function openWithTheme(page: Page, address: string, theme: Theme) {
  * Pass a selector to check one part of the page, for example an open menu.
  */
 export async function expectAccessible(page: Page, only?: string) {
+  // A group of buttons that shares one keyboard stop (Radix's roving focus) is sent with no
+  // stop at all, and takes one a render after it comes alive. Judge it once it has.
+  await expect(page.locator('[role="radiogroup"][tabindex="-1"]')).toHaveCount(0, {
+    timeout: 15_000,
+  })
   // Judge the page at rest. A color caught half-way through a fade is not a
   // color anyone is asked to read.
   // Animations that never end (a pulsing light) or that follow the scroll

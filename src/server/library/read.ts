@@ -12,6 +12,7 @@ import {
   type Named,
 } from '@/domain/library/library'
 import { dayOf } from '@/domain/library/values'
+import type { GameKeywords } from '@/domain/query/evaluate'
 import { comparePlatforms } from '@/domain/platforms/platforms'
 import type { Executor } from '@/server/db/client'
 import {
@@ -253,4 +254,29 @@ export const readLibrary = async (db: Executor): Promise<Library> => {
   }
 
   return { version, games: libraryGames, names }
+}
+
+/**
+ * Every game's keywords, by its slug, with the names of the keywords used:
+ * the second file. Keywords are many (thousands across a library), so the
+ * library file leaves them out and this is fetched the first time a
+ * filter asks for one.
+ */
+export const readKeywords = async (db: Executor): Promise<GameKeywords> => {
+  const rows = await db
+    .select({ slug: games.slug, keywords: games.keywords })
+    .from(entryVersions)
+    .innerJoin(games, eq(games.id, entryVersions.gameId))
+    .where(eq(entryVersions.relation, 'primary'))
+  const used = new Set(rows.flatMap((row) => row.keywords))
+  const names =
+    used.size === 0
+      ? []
+      : (await db.select().from(vocab).where(eq(vocab.kind, 'keyword')))
+          .filter((row) => used.has(row.id))
+          .map((row): Named => ({ id: row.id, name: row.name, slug: row.slug }))
+          .sort(byId)
+  const byGame: Record<string, number[]> = {}
+  for (const row of rows) if (row.keywords.length > 0) byGame[row.slug] = row.keywords
+  return { names, games: byGame }
 }

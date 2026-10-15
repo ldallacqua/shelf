@@ -26,7 +26,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 2 | IGDB client, data model, the three data sets, the library file | Done |
 | Step 3 | 2D shelf, wall and list | Done |
 | Step 4 | 3D shelf, and the switch between 2D and 3D | Done |
-| Step 5 | Filters, sorting, smart shelves | Not started |
+| Step 5 | Filters, sorting, smart shelves, the public API: [`docs/api.md`](docs/api.md) | In review |
 | Step 6 | Game detail | Not started |
 | Step 7 | Sign-in and adding games | Not started |
 | Sync | Steam, PlayStation and Xbox sync, and a Nintendo import: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Not started; after step 7 |
@@ -36,9 +36,13 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 
 What is on screen today: the library, with a sample of 230 real games, as a lit shelf, a wall
 of covers or a list, grouped by platform, status or year. On a desktop the shelf is a lit
-wall in 3D, walked sideways, and `D` switches between 2D and 3D (a phone has 2D only). The
-home page is still the foundations page from step 1 (light, color, type, motion, controls)
-until the landing page replaces it at step 8. There is no sign-in yet, so nothing can be added.
+wall in 3D, walked sideways, and `D` switches between 2D and 3D (a phone has 2D only). It
+can be searched as you type, filtered from a panel or in a one-line filter language
+(`genre:rpg -theme:horror`), and sorted eleven ways; six smart shelves keep a filter at an
+address of their own (`/en/shelves/short-ones`). The library can be read as JSON at
+`/api/v1`. The home page is still the foundations page from step 1 (light, color, type,
+motion, controls) until the landing page replaces it at step 8. There is no sign-in yet, so
+nothing can be added, and shelves can be saved only in tests.
 
 ## Credits
 

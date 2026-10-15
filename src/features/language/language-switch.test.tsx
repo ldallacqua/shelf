@@ -8,14 +8,16 @@ import { LanguageSwitch } from './language-switch'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 
-const query = vi.hoisted(() => ({ value: '' }))
+const query = vi.hoisted(() => ({ value: '', params: {} as Record<string, string> }))
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(query.value),
+  useParams: () => query.params,
 }))
 
 describe('LanguageSwitch', () => {
   beforeEach(() => {
     query.value = ''
+    query.params = {}
     setPathname('/')
   })
 
@@ -52,6 +54,17 @@ describe('LanguageSwitch', () => {
       q: 'status:backlog genre:rpg',
       sort: '-rating',
     })
+  })
+
+  it('keeps a smart shelf, and its changes, in the other language', () => {
+    setPathname('/shelves/[slug]')
+    query.params = { slug: 'backlog' }
+    query.value = 'sort=-added'
+    renderWithIntl(<LanguageSwitch />, 'en')
+    expect(screen.getByRole('link', { name: /Português/ })).toHaveAttribute(
+      'href',
+      '/pt-BR/shelves/backlog?sort=-added',
+    )
   })
 
   it('links to the other home page from the home page', () => {

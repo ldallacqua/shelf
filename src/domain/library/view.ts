@@ -1,7 +1,28 @@
-import { groupLibrary, isGrouping, type Grouping, type Shelf } from '@/domain/library/group'
+import {
+  groupLibrary,
+  isGrouping,
+  shelfIdOf,
+  type Grouping,
+  type Shelf,
+  type Stands,
+} from '@/domain/library/group'
 import type { Library, LibraryGame, LibraryNames } from '@/domain/library/library'
-import { sortByTitle } from '@/domain/library/sort'
+import { DEFAULT_SORT, parseSort, sortGames, writeSort, type Sort } from '@/domain/library/sort'
 import { libraryStats, type LibraryStats } from '@/domain/library/stats'
+import type { Status } from '@/domain/library/values'
+import {
+  buildIndex,
+  evaluate,
+  gamesIn,
+  standingCopies,
+  withKeywords,
+  type GameKeywords,
+  type LibraryIndex,
+} from '@/domain/query/evaluate'
+import { facetCounts } from '@/domain/query/facets'
+import { parseQuery } from '@/domain/query/parse'
+import type { QueryNode } from '@/domain/query/tree'
+import { writeQuery } from '@/domain/query/write'
 
 /**
  * What the library's address says, and the shelves that follow from it.
@@ -18,30 +39,115 @@ export const isView = (value: unknown): value is View =>
 export const DEFAULT_VIEW: View = 'shelf'
 export const DEFAULT_GROUPING: Grouping = 'platform'
 
-export type LibraryQuery = { view: View; group: Grouping }
+/**
+ * Everything the library's address says (spec, section 2): the view, the
+ * grouping, the filter as text, the sort, and the seed that keeps a shuffle
+ * the same for everyone who opens the address.
+ */
+export type LibraryQuery = { view: View; group: Grouping; q: string; sort: Sort; seed: string }
+
+/** What decides the shelves and their order: the grouping and the sort. */
+export type Arrangement = { group: Grouping; sort?: Sort; seed?: string }
 
 type RawParams = Record<string, string | string[] | undefined>
 
 const first = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value
 
+/** A filter longer than this is not one anybody typed. */
+export const MAX_QUERY_LENGTH = 1000
+
+/** A shuffle's seed: a few letters and digits, safe in an address. */
+const SEED = /^[a-z0-9]{1,16}$/i
+
 /** An unknown or malformed parameter falls back to its default. It never shows an error. */
 export const parseLibraryQuery = (params: RawParams): LibraryQuery => {
   const view = first(params.view)
   const group = first(params.group)
+  const seed = first(params.seed) ?? ''
   return {
     view: isView(view) ? view : DEFAULT_VIEW,
     group: isGrouping(group) ? group : DEFAULT_GROUPING,
+    q: (first(params.q) ?? '').slice(0, MAX_QUERY_LENGTH),
+    sort: parseSort(first(params.sort)),
+    seed: SEED.test(seed) ? seed : '',
   }
 }
 
-/** The shelves for a library: sorted, then grouped. */
+/**
+ * The shelves for a list of games: sorted, then grouped. The sort applies
+ * inside each shelf. `stands` says which copies may stand, when the filter
+ * is about copies (see `standingCopies`).
+ */
 export const arrangeLibrary = (
   games: readonly LibraryGame[],
   names: LibraryNames,
-  query: Pick<LibraryQuery, 'group'>,
+  query: Arrangement,
   locale: string,
-): Shelf[] => groupLibrary(sortByTitle(games, locale), names, query.group)
+  stands?: Stands,
+): Shelf[] =>
+  groupLibrary(
+    sortGames(games, query.sort ?? DEFAULT_SORT, locale, query.seed),
+    names,
+    query.group,
+    stands,
+  )
+
+const indexes = new WeakMap<Library, LibraryIndex>()
+
+/** The library's filter index, built once per library. */
+export const indexOnce = (library: Library): LibraryIndex => {
+  let index = indexes.get(library)
+  if (!index) {
+    index = buildIndex(library)
+    indexes.set(library, index)
+  }
+  return index
+}
+
+const keywordIndexes = new WeakMap<LibraryIndex, WeakMap<GameKeywords, LibraryIndex>>()
+
+/** The same index with the keywords file added, once it has arrived. */
+export const keywordIndexOnce = (index: LibraryIndex, keywords: GameKeywords): LibraryIndex => {
+  let known = keywordIndexes.get(index)
+  if (!known) {
+    known = new WeakMap()
+    keywordIndexes.set(index, known)
+  }
+  let found = known.get(keywords)
+  if (!found) {
+    found = withKeywords(index, keywords)
+    known.set(keywords, found)
+  }
+  return found
+}
+
+/** How many filters an index remembers the answer to: the last few typed. */
+const REMEMBERED = 24
+
+const selections = new WeakMap<LibraryIndex, Map<string, LibraryGame[]>>()
+
+/**
+ * The games a filter matches, in library order, remembered: the same filter
+ * on the same index gives the very same list, so the shelves arranged from
+ * it are remembered too. No filter gives the library's own list.
+ */
+export const selectOnce = (index: LibraryIndex, tree: QueryNode | undefined): LibraryGame[] => {
+  if (tree === undefined) return index.library.games
+  let known = selections.get(index)
+  if (!known) {
+    known = new Map()
+    selections.set(index, known)
+  }
+  const key = writeQuery(tree)
+  let games = known.get(key)
+  if (!games) {
+    games = gamesIn(index, evaluate(index, tree))
+    known.set(key, games)
+    if (known.size > REMEMBERED) known.delete(known.keys().next().value!)
+  }
+  return games
+}
 
 /**
  * How many boxes are sent inside the page, and drawn before a view has
@@ -76,7 +182,7 @@ const arranged = new WeakMap<readonly LibraryGame[], Map<string, Shelf[]>>()
 
 /**
  * The same shelves as `arrangeLibrary`, remembered: asked twice about the
- * same list of games, grouping and language, it answers at once.
+ * same list of games, arrangement and language, it answers at once.
  *
  * Arranging a few hundred games is quick on a desktop and a twentieth of a
  * second on a mid-range phone. Remembering it lets the device do that work
@@ -86,18 +192,20 @@ const arranged = new WeakMap<readonly LibraryGame[], Map<string, Shelf[]>>()
 export const arrangeOnce = (
   games: readonly LibraryGame[],
   names: LibraryNames,
-  query: Pick<LibraryQuery, 'group'>,
+  query: Arrangement,
   locale: string,
+  stands?: Stands,
 ): Shelf[] => {
   let known = arranged.get(games)
   if (!known) {
     known = new Map()
     arranged.set(games, known)
   }
-  const key = `${query.group}:${locale}`
+  const key = `${query.group}:${writeSort(query.sort ?? DEFAULT_SORT)}:${query.seed ?? ''}:${locale}`
   let shelves = known.get(key)
   if (!shelves) {
-    shelves = arrangeLibrary(games, names, query, locale)
+    // The same list of games always comes from the same filter, so `stands` is the same too.
+    shelves = arrangeLibrary(games, names, query, locale, stands)
     known.set(key, shelves)
   }
   return shelves
@@ -111,6 +219,9 @@ export type ShelfOutline = {
   known: number
 }
 
+/** The part of the address a first screen was built for. The view does not change it. */
+export type FirstQuery = { group: Grouping; q: string; sort: string; seed: string }
+
 /**
  * The start of the library, small enough to send inside the page: every
  * shelf's key and count, and only the games that stand on the first screen.
@@ -120,7 +231,12 @@ export type FirstScreen = {
   version: number
   /** How many boxes this page was sized for: fewer for a phone. */
   boxes: number
+  /** The address it was built for, so the device knows while its shelves still apply. */
+  query: FirstQuery
+  /** For the games the filter matches. */
   stats: LibraryStats
+  /** How many games each status would give, for the status row: it has its counts from the first paint. */
+  statusCounts: Partial<Record<Status, number>>
   outline: ShelfOutline[]
   /** The first boxes in shelf order, each game once. */
   games: LibraryGame[]
@@ -129,21 +245,36 @@ export type FirstScreen = {
   tags: LibraryNames['tag']
 }
 
+/**
+ * The first screen for an address. `keywords` is needed only when the
+ * filter asks about keywords, which the library itself does not carry.
+ */
 export const buildFirstScreen = (
   library: Library,
-  query: Pick<LibraryQuery, 'group'>,
+  query: Arrangement & { q?: string },
   locale: string,
   limit: number,
+  keywords?: GameKeywords,
 ): FirstScreen => {
-  const shelves = arrangeLibrary(library.games, library.names, query, locale)
+  const base = indexOnce(library)
+  const index = keywords ? keywordIndexOnce(base, keywords) : base
+  const { tree } = parseQuery(query.q ?? '')
+  const matching = selectOnce(index, tree)
+  const shelves = arrangeLibrary(
+    matching,
+    library.names,
+    query,
+    locale,
+    standingCopies(index, tree),
+  )
 
   const games = new Map<string, LibraryGame>()
   const shares = shareFirstBoxes(
     shelves.map((shelf) => shelf.items.length),
     limit,
   )
-  const outline = shelves.map((shelf, index): ShelfOutline => {
-    const known = shares[index] ?? 0
+  const outline = shelves.map((shelf, at): ShelfOutline => {
+    const known = shares[at] ?? 0
     for (const item of shelf.items.slice(0, known)) games.set(item.game.slug, item.game)
     return { key: shelf.key, count: shelf.items.length, known }
   })
@@ -151,7 +282,16 @@ export const buildFirstScreen = (
   return {
     version: library.version,
     boxes: limit,
-    stats: libraryStats(library.games),
+    query: {
+      group: query.group,
+      q: query.q ?? '',
+      sort: writeSort(query.sort ?? DEFAULT_SORT),
+      seed: query.seed ?? '',
+    },
+    stats: libraryStats(matching),
+    statusCounts: Object.fromEntries(
+      facetCounts(index, tree, 'status').map((value) => [value.word, value.count]),
+    ),
     outline,
     games: [...games.values()],
     platforms: library.names.platform,
@@ -191,13 +331,12 @@ const kept = new WeakMap<Library, { first: FirstScreen; library: Library }>()
  * The shelves to draw before the library file arrives: every shelf from the
  * outline, each holding only the boxes that came with the page. A game that
  * came for one shelf may also belong on a later one; it is left off there
- * until the whole shelf is known, so no box ever changes place.
+ * until the whole shelf is known, so no box ever changes place. A shelf none
+ * of whose boxes came is named from its key and drawn empty, so the shelves
+ * and their tabs are all there from the first paint and none is slotted in
+ * when the file arrives.
  */
-export const firstScreenShelves = (
-  first: FirstScreen,
-  query: Pick<LibraryQuery, 'group'>,
-  locale: string,
-) => {
+export const firstScreenShelves = (first: FirstScreen, locale: string) => {
   const names: LibraryNames = {
     genre: [],
     theme: [],
@@ -209,13 +348,25 @@ export const firstScreenShelves = (
     platform: first.platforms,
     tag: first.tags,
   }
+  const arrangement: Arrangement = {
+    group: first.query.group,
+    sort: parseSort(first.query.sort),
+    seed: first.query.seed,
+  }
+  // The games came already filtered. Which of their copies stand needs only platforms and
+  // formats, which these few games carry.
+  const index = indexOnce({ version: first.version, games: first.games, names })
+  const stands = standingCopies(index, parseQuery(first.query.q).tree)
   const partial = new Map(
-    arrangeLibrary(first.games, names, query, locale).map((shelf) => [shelf.key, shelf]),
+    arrangeLibrary(first.games, names, arrangement, locale, stands).map((shelf) => [
+      shelf.key,
+      shelf,
+    ]),
   )
   return first.outline.flatMap((entry) => {
     const shelf = partial.get(entry.key)
-    // A shelf with none of its boxes yet cannot be named or drawn until the file arrives.
-    if (!shelf) return []
-    return [{ ...shelf, items: shelf.items.slice(0, entry.known), total: entry.count }]
+    if (shelf) return [{ ...shelf, items: shelf.items.slice(0, entry.known), total: entry.count }]
+    const id = shelfIdOf(entry.key, first.platforms)
+    return id ? [{ ...id, items: [], total: entry.count }] : []
   })
 }

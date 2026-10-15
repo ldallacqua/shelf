@@ -22,7 +22,12 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Step 4: measured 233.3 KB, 4.4 KB more: the 2D and 3D buttons, the stage
   // that switches between them, and the loader that fetches the 3D shelf. The
   // 3D shelf itself is not in this number; it has its own budget below.
-  { path: '/en/library', name: 'Library', kilobytes: 240 },
+  // Step 5: measured 256.2 KB, 23 KB more: the filter language (parser, writer,
+  // the index of bitmaps, counts), the search field, the status row, the chips,
+  // the sort, the filter panel and the smart shelves. Fetching the panel, the
+  // shortcuts list and the save sheet only when first opened saved 2.7 KB, not
+  // worth a wait on a phone's first open; the rest is needed on arrival.
+  { path: '/en/library', name: 'Library', kilobytes: 262 },
   // Step 3: measured 191.3 KB. Shell only.
   { path: '/en/trophies', name: 'Trophies', kilobytes: 198 },
 ]

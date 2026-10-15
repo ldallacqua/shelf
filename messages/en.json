@@ -285,5 +285,234 @@
     "title": "This page is not on the shelf.",
     "body": "The address may be mistyped, or the page may have moved.",
     "action": "Go to the library"
+  },
+  "Filters": {
+    "search": {
+      "label": "Search the library",
+      "placeholder": "Search titles, or filter: genre:rpg -theme:horror",
+      "clear": "Clear the search",
+      "ignored": "{count, plural, one {One part was not understood and is ignored.} other {# parts were not understood and are ignored.}}",
+      "short": "Search the library"
+    },
+    "status": {
+      "label": "Status",
+      "all": "All",
+      "counted": "{status}, {count, plural, one {# game} other {# games}}"
+    },
+    "open": "{count, plural, =0 {Filters} one {Filters, # active} other {Filters, # active}}",
+    "openShort": "Filters",
+    "keys": {
+      "status": "Status",
+      "owned": "Platform owned",
+      "format": "Format",
+      "copies": "Platforms owned",
+      "rating": "My rating",
+      "hours": "Playtime",
+      "completed": "Completed",
+      "added": "Added",
+      "tag": "Tag",
+      "has": "Has",
+      "is": "Featured",
+      "genre": "Genre",
+      "theme": "Theme",
+      "keyword": "Keyword",
+      "mode": "Game mode",
+      "perspective": "Perspective",
+      "platform": "Released on",
+      "kind": "Kind of game",
+      "franchise": "Franchise",
+      "series": "Series",
+      "developer": "Developer",
+      "publisher": "Publisher",
+      "year": "Release year",
+      "igdb": "IGDB rating",
+      "length": "Time to beat"
+    },
+    "values": {
+      "kind": {
+        "main": "Main game",
+        "remake": "Remake",
+        "remaster": "Remaster",
+        "expanded": "Expanded game",
+        "port": "Port",
+        "bundle": "Bundle",
+        "expansion": "Expansion",
+        "other": "Other"
+      },
+      "has": {
+        "notes": "Notes",
+        "rating": "My rating",
+        "playtime": "Playtime",
+        "cover": "A cover"
+      },
+      "is": {
+        "featured": "Featured"
+      },
+      "family": {
+        "playstation": "Any PlayStation",
+        "xbox": "Any Xbox",
+        "nintendo": "Any Nintendo",
+        "pc": "Any computer",
+        "sega": "Any Sega",
+        "other": "Any other platform"
+      }
+    },
+    "units": {
+      "hours": "{value} h",
+      "outOfTen": "{value}/10"
+    },
+    "compare": {
+      "range": "{from} to {to}",
+      "number": {
+        "lt": "under {value}",
+        "le": "{value} or less",
+        "gt": "over {value}",
+        "ge": "{value} or more"
+      },
+      "date": {
+        "lt": "before {value}",
+        "le": "{value} or earlier",
+        "gt": "after {value}",
+        "ge": "{value} or later"
+      }
+    },
+    "chips": {
+      "label": "Active filters",
+      "term": "{key}: {values}",
+      "not": "Not {key}: {values}",
+      "text": "Title: {text}",
+      "notText": "Not in the title: {text}",
+      "or": "or",
+      "remove": "Remove {condition}",
+      "ignored": "Not understood, so ignored:",
+      "clear": "Clear all"
+    },
+    "problems": {
+      "unknown-key": "There is no filter by that name.",
+      "bad-value": "That filter cannot take this value.",
+      "missing-value": "This filter needs a value after the colon.",
+      "unclosed-bracket": "This bracket is never closed.",
+      "stray-bracket": "This bracket closes nothing.",
+      "empty-brackets": "There is nothing between these brackets.",
+      "dangling-or": "OR needs something on both sides.",
+      "nothing-to-negate": "A dash needs something after it."
+    },
+    "panel": {
+      "title": "Filters",
+      "description": "Each value is off, included or excluded. Changes apply at once.",
+      "close": "Close filters",
+      "groups": "Match any of these groups",
+      "groupsLabel": "Groups",
+      "group": "Group {number}",
+      "removeGroup": "Remove group {number}",
+      "addGroup": "Add a group, joined by or",
+      "asText": "Also in this group, written as text. Change these in the search field:",
+      "mine": "Mine",
+      "igdb": "From IGDB",
+      "results": "{count, plural, =0 {No games match} one {# game matches} other {# games match}}",
+      "loading": "Loading the library…",
+      "loadingKeywords": "Loading keywords…",
+      "notValue": "not {value}",
+      "match": "{key}: match any or all",
+      "anyOf": "Any of",
+      "allOf": "All of",
+      "find": "Find a {key}",
+      "findPlaceholder": "Find…",
+      "nothingFound": "Nothing by that name.",
+      "nothing": "Nothing to pick in this library.",
+      "value": {
+        "off": "{value}, {count, plural, one {# game} other {# games}}",
+        "include": "{value}, {count, plural, one {# game} other {# games}}, included",
+        "exclude": "{value}, {count, plural, one {# game} other {# games}}, excluded"
+      },
+      "include": "Include {value}, {count, plural, one {# game} other {# games}}",
+      "exclude": "Exclude {value}",
+      "more": "Show {count} more",
+      "fewer": "Show fewer",
+      "written": "Written as {text}",
+      "clearRange": "Clear {key}",
+      "from": "From",
+      "to": "To",
+      "notANumber": "Type a number.",
+      "notADate": "Type a year, a month or a day: 2025, 2025-06 or 2025-06-14.",
+      "dateHint": "A year, a month or a day: 2025, 2025-06 or 2025-06-14."
+    },
+    "noResults": {
+      "label": "No games",
+      "title": "No games match these filters.",
+      "body": "Remove a filter above, or clear them all."
+    }
+  },
+  "Sort": {
+    "label": "Sort",
+    "menu": "Sort by",
+    "keys": {
+      "title": "Title",
+      "added": "Date added",
+      "released": "Release date",
+      "rating": "My rating",
+      "igdb": "IGDB rating",
+      "hours": "Playtime",
+      "completed": "Completion date",
+      "status": "Status",
+      "length": "Time to beat",
+      "color": "Color",
+      "random": "Surprise me"
+    },
+    "ascending": "{key}, ascending",
+    "descending": "{key}, descending",
+    "reverse": "Reverse the order",
+    "shuffle": "Shuffle again"
+  },
+  "Shelves": {
+    "open": "Shelves",
+    "label": "Smart shelves",
+    "all": "All games",
+    "changed": "Changed",
+    "reset": "Back to the saved shelf",
+    "saveShelf": "Save as a shelf",
+    "saveChanges": "Save",
+    "edit": "Edit shelf",
+    "newTitle": "Save as a shelf",
+    "saveTitle": "Save {name}",
+    "saveDescription": "Saves the filter, the sort and the grouping on screen. The shelf updates itself as the library changes.",
+    "saveHow": "How to save",
+    "save": "Save this shelf",
+    "saveAsNew": "Save as new",
+    "name": "Name",
+    "remove": "Remove this shelf",
+    "close": "Close",
+    "notFound": "There is no shelf at this address.",
+    "errors": {
+      "not-signed-in": "Only the owner can save shelves. Sign in first.",
+      "invalid": "That cannot be saved. Check the name.",
+      "not-kept": "This copy of the site keeps nothing, so the shelf was not saved.",
+      "not-found": "That shelf is not there any more.",
+      "failed": "Saving did not work. Try again."
+    },
+    "notFoundBody": "A shelf by this name may have been removed or renamed."
+  },
+  "Shortcuts": {
+    "title": "Keyboard shortcuts",
+    "description": "Every key the library answers to.",
+    "close": "Close",
+    "keys": {
+      "arrows": "Previous or next game on the ledge",
+      "ledges": "The ledge above or below",
+      "shelves": "Previous or next shelf",
+      "ends": "First or last game of the shelf",
+      "open": "Open the game in focus",
+      "close": "Close a game, a sheet or a panel",
+      "search": "Search",
+      "filters": "Open the filters",
+      "group": "Change the grouping",
+      "sort": "Change the sort",
+      "view": "Next view",
+      "dimension": "Switch between 2D and 3D",
+      "shuffle": "Surprise me: shuffle the shelves",
+      "help": "Show this list"
+    },
+    "letters": "Single-letter shortcuts",
+    "lettersHint": "Off, the letters do nothing; / and ? still work."
   }
 }
