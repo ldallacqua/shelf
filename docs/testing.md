@@ -251,6 +251,13 @@ benchmark read 5,140, not 4,470, and the home page blocked 85 ms at 5.5 times, 1
 and 226 ms at 8. At step 5 it blocked 129 ms at 6.5, 197 ms at 7.1 and 232 ms at 7.7. Raise
 or lower the number until it blocks about 180 ms, and read the scores there.
 
+Inside `pnpm verify` Lighthouse runs right after a quarter of an hour of browser tests, and
+a machine that has just done that is a slower one. At step 5's review the same 7.1 times
+gave the home page 386 ms in verify, and a few minutes later, on its own, 6.5 times gave
+about 330 ms, 5.5 times 160 ms and 4 times 80 ms. When verify's Lighthouse step misses,
+check the home page's blocked time first, and rerun `pnpm perf:lighthouse` on its own at a
+slowdown that gives about 180 ms.
+
 **`pnpm perf:3d`** measures the 3D shelf on this machine's graphics card, since the test
 browsers draw WebGL in software. It walks the camera along the wall and back, sweeps the
 pointer across the boxes, and reports the middle and 95th-percentile frame times, the draw

@@ -50,6 +50,15 @@ step 3. This note is what the next session needs and cannot get from the code. R
   blocks about 340 to 370 ms, against about 300 after step 3's speed pass: the filters add
   work on arrival (the index, the status counts). The Storybook build passes; it was run on
   its own, since verify stops at Lighthouse.
+- **Checked after the review fixes** (commit 084792b): `pnpm verify --skip-linux` passed the
+  checks (677 unit and component tests), the build, the budgets (library 257.7 of 262 KB)
+  and 1,336 browser tests in all nine projects, none failed. Its Lighthouse step came
+  straight after 15 minutes of browser tests and was far too harsh (home blocked 386 ms at
+  7.1 times). **Calibrate on a cool machine:** at 5.5 times the home page blocked 153 ms
+  and scored 97; the library scored 88 (largest paint 2.48 s, blocked 330 ms) and the wall
+  89 (2.45 s, 306 ms), a near miss on the score as before. Measured side by side at 5.5
+  times, five runs each, the review fixes cost nothing: library 87 before and 88 after, wall
+  89 and 88. The Storybook build passes.
 - **Not checked:** the Linux pass (no Docker). The reference screenshots of every library
   page are now out of date (the search, status row and toolbar are new) and there are none
   for the shelf page; make them with `pnpm verify --update-screenshots` once Docker is here.
