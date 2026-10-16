@@ -42,7 +42,21 @@ type SheetContentProps = Omit<ComponentProps<typeof Dialog.Content>, 'title'> & 
    * over it: for content that starts with a picture.
    */
   bleed?: boolean
+  /**
+   * More buttons for the sheet as a whole, drawn left of the close button and
+   * reached after it. Give each the look of `sheetButton`.
+   */
+  actions?: ReactNode
 }
+
+/** The look of the close button, for buttons and links beside it. */
+const sheetButton = (bleed?: boolean) =>
+  cn(
+    'inline-flex size-10 flex-none items-center justify-center rounded-control text-muted',
+    'transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text',
+    'pointer-coarse:size-11',
+    bleed && 'rounded-full bg-surface/80 text-text shadow-panel backdrop-blur-sm hover:bg-surface',
+  )
 
 function SheetContent({
   className,
@@ -54,22 +68,22 @@ function SheetContent({
   scrim = true,
   footer,
   bleed,
+  actions,
   ...props
 }: SheetContentProps) {
-  const close = (
-    <Dialog.Close
-      aria-label={closeLabel}
+  // The close button comes first, where focus starts; the rest stand to its left.
+  const buttons = (
+    <div
       className={cn(
-        'inline-flex size-10 flex-none items-center justify-center rounded-control text-muted',
-        'transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text',
-        'pointer-coarse:size-11',
-        bleed
-          ? 'absolute top-3 right-3 z-10 rounded-full bg-surface/80 text-text shadow-panel backdrop-blur-sm hover:bg-surface'
-          : '-mt-1 -mr-2 ml-auto',
+        'flex flex-none flex-row-reverse gap-2',
+        bleed ? 'absolute top-3 right-3 z-10' : '-mt-1 -mr-2 ml-auto',
       )}
     >
-      <XIcon aria-hidden="true" className="size-4" />
-    </Dialog.Close>
+      <Dialog.Close aria-label={closeLabel} className={sheetButton(bleed)}>
+        <XIcon aria-hidden="true" className="size-4" />
+      </Dialog.Close>
+      {actions}
+    </div>
   )
 
   return (
@@ -108,7 +122,7 @@ function SheetContent({
         {bleed ? (
           <>
             {title === undefined ? null : <Dialog.Title className="sr-only">{title}</Dialog.Title>}
-            {close}
+            {buttons}
           </>
         ) : (
           <div className="flex flex-none items-start justify-between gap-3 px-5 pt-3 sm:pt-5">
@@ -117,7 +131,7 @@ function SheetContent({
                 {title}
               </Dialog.Title>
             )}
-            {close}
+            {buttons}
           </div>
         )}
         {description ? (
@@ -142,4 +156,4 @@ function SheetContent({
   )
 }
 
-export { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger }
+export { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger, sheetButton }

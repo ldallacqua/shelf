@@ -27,7 +27,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 3 | 2D shelf, wall and list | Done |
 | Step 4 | 3D shelf, and the switch between 2D and 3D | Done |
 | Step 5 | Filters, sorting, smart shelves, the public API: [`docs/api.md`](docs/api.md) | Done |
-| Step 6 | Game detail: its own page, and the same page over the shelf | In review |
+| Step 6 | Game detail: its own page, and the same page over the shelf | Done |
 | Step 7 | Sign-in and adding games | Not started |
 | Sync | Steam, PlayStation and Xbox sync, and a Nintendo import: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Not started; after step 7 |
 | Step 8 | Landing page | Not started |

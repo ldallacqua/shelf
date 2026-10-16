@@ -4,9 +4,11 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 6 in review, then step 7 waits for the owner
+## Now: step 7 waits for the owner
 
-- **Step 6 is built** on `build-step-6-game-page`, in a pull request. Step 6 has no ⏸.
+- **Step 6 is merged** ([#9](https://github.com/ldallacqua/shelf/pull/9)). After it, from the
+  owner's first look: the panel no longer slides in a second time as the cover lands, and it
+  has a button to the game's full page (`step-6-follow-up`).
 - **The owner allows merging to `main` without asking** while the project is a proof of
   concept (15 Oct 2026). Still stop at every ⏸ (after step 8, and the final review).
 - **Next: step 7, sign-in and adding games.** It cannot start until the owner has done two

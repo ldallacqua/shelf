@@ -1,14 +1,17 @@
 'use client'
 
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, Maximize2Icon } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState, type TouchEvent } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform, LibraryTag } from '@/domain/library/library'
+import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
-import { Sheet, SheetContent, SheetTitle } from '@/ui/sheet'
+import { Sheet, SheetContent, SheetTitle, sheetButton } from '@/ui/sheet'
 
+import { keptQuery } from './back-to-library'
 import { GameDetail } from './game-detail'
 import { useGameFacts } from './use-game-facts'
 
@@ -62,6 +65,7 @@ export function GamePanel({
   const facts = useGameFacts(version, game?.slug)
   const touch = useRef<{ x: number; y: number } | undefined>(undefined)
   const panel = useRef<HTMLDivElement>(null)
+  const query = keptQuery(useSearchParams())
 
   // Stepping to another game starts at the top of its page.
   useEffect(() => {
@@ -100,6 +104,18 @@ export function GamePanel({
           scrim={!pulled}
           className="lg:w-[32rem]"
           data-game={game.slug}
+          actions={
+            // The game's own page, in place of the panel: Back from it is the library again.
+            <Link
+              href={{ pathname: '/game/[slug]', params: { slug: game.slug }, query }}
+              replace
+              aria-label={t('fullPage')}
+              title={t('fullPage')}
+              className={sheetButton(true)}
+            >
+              <Maximize2Icon aria-hidden="true" className="size-4" />
+            </Link>
+          }
           onCloseAutoFocus={(event) => {
             // Focus goes back to the box that was picked up, not to the top of the page.
             if (onReturnFocus()) event.preventDefault()

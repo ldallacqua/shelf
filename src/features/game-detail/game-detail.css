@@ -285,8 +285,14 @@
   pointer-events: none;
 }
 
+/*
+ * And after it: a sheet the transition brought in is already in place, and
+ * its own entrance, let go of, would start over (`settle` in morph.ts).
+ */
 :root[data-morph] [data-slot='sheet'],
-:root[data-morph] [data-slot='sheet-overlay'] {
+:root[data-morph] [data-slot='sheet-overlay'],
+[data-slot='sheet'][data-settled][data-state='open'],
+[data-slot='sheet-overlay'][data-settled][data-state='open'] {
   animation: none !important;
 }
 

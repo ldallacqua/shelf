@@ -264,6 +264,7 @@
     "notFoundAction": "Go to the library",
     "panelHelp": "This game's page. The left and right arrows go to the game before and after.",
     "close": "Close",
+    "fullPage": "Open the full page",
     "previous": "Previous",
     "next": "Next",
     "hours": "{count, plural, one {# hour} other {# hours}}",

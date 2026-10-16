@@ -243,6 +243,19 @@ test.describe('a game opened from the library', () => {
     )
   })
 
+  test('its full page takes the place of the panel, and Back is the library again', async ({
+    page,
+  }) => {
+    await openLibrary(page, '/en/library?q=bloodborne')
+    await firstGame(page, 'shelf').click()
+    await panel(page).getByRole('link', { name: 'Open the full page' }).click()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bloodborne')
+    await expect(panel(page)).toBeHidden()
+    await expect(page).toHaveURL(/\/en\/game\/bloodborne\?q=bloodborne$/)
+    await page.goBack()
+    await expect(page).toHaveURL(/\/en\/library\?q=bloodborne$/)
+  })
+
   test('its cover grows out of its box, and simply appears under reduced motion', async ({
     page,
   }) => {
@@ -265,6 +278,24 @@ test.describe('a game opened from the library', () => {
         )
         .toBe(0)
     }
+
+    // Once the cover has landed the panel stays where it is: its own entrance,
+    // held off while the cover flew, does not start over behind it.
+    await expect(page.locator('html')).not.toHaveAttribute('data-morph')
+    const moving = await page.evaluate(async () => {
+      const seen = new Set<string>()
+      for (let frame = 0; frame < 12; frame += 1) {
+        await new Promise(requestAnimationFrame)
+        for (const element of document.querySelectorAll('[data-slot^="sheet"]')) {
+          for (const animation of element.getAnimations()) {
+            if (animation.playState === 'running')
+              seen.add((animation as CSSAnimation).animationName)
+          }
+        }
+      }
+      return [...seen]
+    })
+    expect(moving).toEqual([])
 
     await page.goBack()
     await expect(panel(page)).toBeHidden()

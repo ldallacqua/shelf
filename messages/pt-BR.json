@@ -264,6 +264,7 @@
     "notFoundAction": "Ir para a biblioteca",
     "panelHelp": "A página deste jogo. As setas para a esquerda e para a direita vão ao jogo anterior e ao próximo.",
     "close": "Fechar",
+    "fullPage": "Abrir a página completa",
     "previous": "Anterior",
     "next": "Próximo",
     "hours": "{count, plural, one {# hora} other {# horas}}",

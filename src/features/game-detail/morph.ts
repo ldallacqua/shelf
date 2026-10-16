@@ -35,6 +35,21 @@ const name = (element: HTMLElement | null | undefined, value: string) => {
   if (element) element.style.viewTransitionName = value
 }
 
+/**
+ * Marks the open sheet as already where it was going. Its own entrance is
+ * held off while the transition runs; let go of then, the entrance would
+ * start over, and the panel would slide in a second time behind the cover
+ * that had just landed. The mark counts only while the sheet stays open, so
+ * one closed later without a transition still slides away.
+ */
+const settle = () => {
+  for (const element of document.querySelectorAll<HTMLElement>(
+    '[data-slot="sheet"][data-state="open"], [data-slot="sheet-overlay"][data-state="open"]',
+  )) {
+    element.dataset.settled = ''
+  }
+}
+
 let running: ViewTransition | undefined
 
 // Back or Forward while the cover is still flying: it lands at once, before
@@ -84,6 +99,7 @@ export function morph(ends: Ends, change: () => void): void {
     source.style.visibility = ''
     if (running === transition) {
       running = undefined
+      settle()
       delete root.dataset.morph
     }
   }

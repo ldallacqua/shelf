@@ -14,6 +14,11 @@ import { morph } from './morph'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 
+const address = vi.hoisted(() => ({ query: '' }))
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(address.query),
+}))
+
 /** A game's page (spec 7.1) and the game opened over the shelf (spec 7.2). */
 
 const ps4: LibraryPlatform = {
@@ -239,6 +244,16 @@ describe('GamePanel', () => {
     expect(answer).toHaveBeenCalledWith('/api/v1/library/games/7/bloodborne')
   })
 
+  it("links to the game's full page, keeping the library's filter and leaving the rest", () => {
+    address.query = 'q=genre:rpg&view=wall&shelf=ignored'
+    open(item({ slug: 'bloodborne' }))
+    expect(screen.getByRole('link', { name: 'Open the full page' })).toHaveAttribute(
+      'href',
+      '/en/game/bloodborne?q=genre%3Arpg&view=wall',
+    )
+    address.query = ''
+  })
+
   it('says so when the rest does not arrive, and offers the game’s own page', async () => {
     answer.mockImplementation(async () => new Response(null, { status: 500 }))
     open(item({ slug: 'demons-souls' }))
@@ -361,5 +376,42 @@ describe('morph', () => {
     await waitFor(() => expect(to.style.viewTransitionName).toBe(''))
     expect(from.style.visibility).toBe('')
     expect(document.documentElement).not.toHaveAttribute('data-morph')
+  })
+
+  it('leaves the sheet it brought in where it landed, so its own entrance does not run again', async () => {
+    let finish = () => {}
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: (update: () => void) => {
+        update()
+        return {
+          finished: new Promise<void>((resolve) => (finish = resolve)),
+          ready: Promise.resolve(),
+          updateCallbackDone: Promise.resolve(),
+          skipTransition: () => {},
+        }
+      },
+    })
+    const sheet = document.createElement('div')
+    sheet.dataset.slot = 'sheet'
+    const overlay = document.createElement('div')
+    overlay.dataset.slot = 'sheet-overlay'
+    const leaving = document.createElement('div')
+    leaving.dataset.slot = 'sheet'
+    leaving.dataset.state = 'closed'
+    document.body.append(sheet, overlay, leaving)
+    morph(
+      { from: () => document.createElement('span'), to: () => null, panel: () => sheet },
+      () => {
+        sheet.dataset.state = 'open'
+        overlay.dataset.state = 'open'
+      },
+    )
+    expect(sheet).not.toHaveAttribute('data-settled')
+    finish()
+    await waitFor(() => expect(sheet).toHaveAttribute('data-settled'))
+    expect(overlay).toHaveAttribute('data-settled')
+    expect(leaving).not.toHaveAttribute('data-settled')
+    for (const element of [sheet, overlay, leaving]) element.remove()
   })
 })
