@@ -23,9 +23,17 @@ type LinkProps = Omit<ComponentProps<'a'>, 'href'> & {
   href: Href
   locale?: string
   scroll?: boolean
+  replace?: boolean
 }
 
-export function Link({ href, locale, scroll: _scroll, children, ...props }: LinkProps) {
+export function Link({
+  href,
+  locale,
+  scroll: _scroll,
+  replace: _replace,
+  children,
+  ...props
+}: LinkProps) {
   const prefix = `/${locale ?? state.locale}`
   const path =
     typeof href === 'string'

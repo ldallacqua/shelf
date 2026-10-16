@@ -559,7 +559,7 @@ baseline.
 | First paint | The server sends the first 48 boxes inside the page, or the first 12 to a phone, and the first six covers are fetched ahead of everything else. The whole library follows as the library file. |
 | Phone | One shelf per screen with sideways scroll snapping, each shelf scrolling by itself; tabs for the same move; controls at the bottom |
 | Wall and List | The same shelves and the same open game through different renderers. List is a real table, one per shelf. |
-| A game picked up | Its page, in a sheet from the bottom on a phone and a panel from the right otherwise, at its own address, with steps to its neighbors (`features/game-detail`). |
+| A game picked up | Its page, in a sheet from the bottom on a phone and a panel from the right otherwise, at its own address, with steps to its neighbors and a button to the full page (`features/game-detail`). |
 
 ---
 
@@ -970,6 +970,8 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| After step 6 | **The open game has a button to its full page,** beside Close. It takes the panel's place in history, so Back from the full page is the library. | The owner could not find a way from the library to a game's own page: the panel already stood at the page's address, but only reloading showed it. A button beside Close is where a panel that opens as a page usually has one. Taking the panel's place keeps Back from landing on the library with a game's address and no game open. |
+| After step 6 | **A panel the cover brought in is marked as settled** (`data-settled`) when the flight ends, and keeps its own entrance off while it stays open. | Seen by the owner: the panel slid in a second time as the cover landed. Its entrance had been held off by a mark on the page for the flight, and lifting that mark restarted it, with the scrim's fade. The browser tests counted transitions but never watched the panel after one. They do now. |
 | Step 6 | **A game opened from the library is the library's own panel, at the game's address.** Opening it adds `/{language}/game/{slug}` to the browser's history with the library's query string kept, and Back closes it (`game-address.ts`). A direct visit is the game's own page, built ahead. Not an intercepting route. | The library keeps its order, its open game and its place on the shelf in the page itself; a route over it would draw the game in a tree of its own, which would need all of that passed across, and would wait for the server before anything showed. The library reads its filter from the address, so the address keeps the library's query string while a game is open, and a shared address leads back to that same shelf. |
 | Step 6 | **The cover grows into the panel through the browser's view transitions, named for the one change** (`morph.ts`), not React's `<ViewTransition>`. | React pairs a name that leaves with the same name arriving. The box does not leave: it stays on the shelf behind the panel, so the same name would be on the page twice. The box is hidden while its cover is in flight, so it is lifted off the shelf rather than copied. |
 | Step 6 | **In 3D the box pulled from the wall is the game's cover;** the panel beside it has none. | It is what spec 7.2 asks ("the pulled box becomes the hero"), and the pulled box already stands, lit and turned to the camera, beside the panel. A cover in the panel too would be the same picture twice. |
