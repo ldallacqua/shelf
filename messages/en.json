@@ -558,10 +558,13 @@
   "Account": {
     "metaTitle": "Sign in",
     "title": "Sign in",
-    "body": "Only the owner of this shelf signs in, with GitHub. Everyone else can look around without an account.",
-    "withGithub": "Sign in with GitHub",
-    "leaving": "Taking you to GitHub…",
-    "notOwner": "That GitHub account is not the owner of this shelf, so it cannot sign in here. You are welcome to look around.",
+    "body": "Only the owner of this shelf signs in. Everyone else can look around without an account.",
+    "email": "Email address",
+    "password": "Password",
+    "submit": "Sign in",
+    "signingIn": "Signing in…",
+    "wrong": "That email address and password do not match. Try again.",
+    "tooMany": "Too many tries from here. Wait a minute, then try again.",
     "failed": "Signing in did not work. Try again.",
     "notSetUp": "Sign-in is not set up on this server yet.",
     "signedIn": "Signed in as {name}.",
@@ -569,7 +572,7 @@
     "signOut": "Sign out",
     "footerSignIn": "Sign in",
     "footerSignedIn": "Signed in as {name}",
-    "forAssistant": "An assistant asks to use your library as you. Sign in with GitHub, and you will be asked whether to let it."
+    "forAssistant": "An assistant asks to use your library as you. Sign in, and you will be asked whether to let it."
   },
   "Add": {
     "title": "Add a game",

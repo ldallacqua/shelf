@@ -157,9 +157,11 @@ hand. A new filter key goes in `keys.ts` and gets a test in `parse.test.ts` and
 Zod schema before sending it, and the OpenAPI document is built from those schemas: change
 the schema and the document follows.
 
-**The owner.** Only one GitHub account signs in (`OWNER_GITHUB_ID`); everyone else is turned
-away at sign-in by `validateUserInfo` in `src/server/auth/auth.ts`. That is the courtesy. The
-lock is `requireOwner()`, inside `forOwner()`, at the top of every service a route, an action
+**The owner.** There is one account, signed into with an email address and password: it is
+made from `OWNER_EMAIL` and `OWNER_PASSWORD` on the first sign-in (`src/server/auth/auth.ts`),
+its password follows the setting, and nobody can make another. Never print, log or test
+against a real value of either. The lock is `requireOwner()`, inside `forOwner()`, which
+compares the session's email address with `OWNER_EMAIL`, at the top of every service a route, an action
 or an MCP tool calls to change or privately read anything; `owner-only.test.ts` asks each one
 as a stranger. The browser learns it is the owner from `/api/v1/me` (`useOwner`), and only
 asks when the `shelf_owner_hint` cookie is there, so a visitor costs nothing. Edit controls

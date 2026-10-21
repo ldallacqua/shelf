@@ -65,34 +65,31 @@ export async function shelfSettled(page: Page): Promise<'2d' | '3d' | 'fallback'
  */
 const cutShortByLeaving = /due to access control checks/
 
-/** The GitHub accounts the server's test doubles know (`src/server/mocks/handlers.ts`). */
-export type GithubAccount = 'owner' | 'stranger'
+/**
+ * The owner's account while the test doubles answer: `MOCK_OWNER` in
+ * `src/server/mocks/start.ts`. Made-up values, never a real password.
+ */
+export const OWNER = {
+  email: 'owner@shelf.test',
+  password: 'test-doubles-only-owner-password',
+} as const
+
+/** Fills in the sign-in form and sends it. */
+export async function fillSignIn(page: Page, email: string, password: string) {
+  await page.getByLabel('Email address').fill(email)
+  await page.getByLabel('Password').fill(password)
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+}
 
 /**
- * Signs in as GitHub would have it, through the real sign-in code: the trip
- * to GitHub is sent straight back with the code the server's test doubles
- * know for that account, and the server then asks the doubles who it is.
- * Starts from the sign-in page and leaves the page where sign-in sent it.
+ * Signs in as the owner, through the real sign-in page and code. Starts from
+ * the sign-in page and leaves the page where sign-in sent it.
  */
-export async function signIn(page: Page, account: GithubAccount = 'owner', from?: string) {
-  await page.route('https://github.com/login/oauth/authorize**', (route) => {
-    const asked = new URL(route.request().url())
-    const back = new URL(asked.searchParams.get('redirect_uri')!)
-    back.searchParams.set('code', account)
-    back.searchParams.set('state', asked.searchParams.get('state')!)
-    // WebKit will not take a made-up redirect, so GitHub's page sends the browser on itself.
-    const to = back.toString()
-    return route.fulfill({
-      contentType: 'text/html',
-      body: `<!doctype html><meta http-equiv="refresh" content="0;url=${to.replace(/&/g, '&amp;')}">`,
-    })
-  })
+export async function signIn(page: Page, from?: string) {
   await page.goto(from ? `/en/sign-in?from=${encodeURIComponent(from)}` : '/en/sign-in')
   await page.locator('html[data-ready]').waitFor({ state: 'attached' })
-  await page.getByRole('button', { name: 'Sign in with GitHub' }).click()
-  await page.waitForURL(
-    (url) => !url.pathname.startsWith('/en/sign-in') || url.search.includes('error'),
-  )
+  await fillSignIn(page, OWNER.email, OWNER.password)
+  await page.waitForURL((url) => !url.pathname.startsWith('/en/sign-in'))
 }
 
 type Fixtures = {

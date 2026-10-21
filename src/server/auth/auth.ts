@@ -6,7 +6,7 @@ import { mcp } from '@better-auth/mcp'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { createAuthMiddleware } from 'better-auth/api'
-import { jwt, oAuthProxy } from 'better-auth/plugins'
+import { jwt } from 'better-auth/plugins'
 
 import { database } from '@/server/db/client'
 import {
@@ -19,15 +19,17 @@ import {
   oauthConsents,
   oauthRefreshTokens,
   oauthResources,
+  rateLimits,
   sessions,
   users,
   verifications,
 } from '@/server/db/schema'
-import { authEnv, deployment, mocksRequested, onVercel } from '@/server/env'
+import { authEnv, mocksRequested, onVercel, OWNER_PASSWORD_MIN } from '@/server/env'
 import { siteUrl } from '@/server/site-url'
 
 /**
- * Sign-in (architecture, section 9): GitHub only, and one account only.
+ * Sign-in (architecture, section 9): one account, by email address and
+ * password, made from the settings. Nobody can make another.
  *
  * Built on first use, not when the module loads, so a page that never signs
  * anyone in never needs the settings, and a preview without them still
@@ -44,8 +46,16 @@ const WEEK = 60 * 60 * 24 * 7
  */
 export const OWNER_HINT_COOKIE = 'shelf_owner_hint'
 
-/** Why GitHub's answer was turned away: in the address the person is sent back to. */
-export const NOT_THE_OWNER = 'not_the_owner'
+/** Where the password is checked. */
+const SIGN_IN = '/sign-in/email'
+
+/**
+ * The one account, made from the settings the first time anyone signs in,
+ * and kept in step with them: a changed password is hashed again, and every
+ * session signed in with the old one ends. Once per server; a changed
+ * setting arrives with a new deployment, and so a new server.
+ */
+let ownerReady: Promise<void> | undefined
 
 /** The owner's MCP endpoint, which assistants sign in to as me (architecture, section 16). */
 export const MCP_OWNER_PATH = '/api/mcp/owner'
@@ -70,7 +80,6 @@ const ownHosts = (): string[] => {
 
 const createAuth = () => {
   const env = authEnv()
-  const production = process.env.VERCEL_PROJECT_PRODUCTION_URL
 
   return betterAuth({
     appName: 'Shelf',
@@ -91,29 +100,67 @@ const createAuth = () => {
         oauthAccessToken: oauthAccessTokens,
         oauthConsent: oauthConsents,
         oauthClientAssertion: oauthClientAssertions,
+        rateLimit: rateLimits,
       },
     }),
-    socialProviders: {
-      github: { clientId: env.github.clientId, clientSecret: env.github.clientSecret },
-    },
-    user: {
-      // The lock is `requireOwner`, on every write. This is the courtesy: anyone
-      // else is turned away before an account is stored, with a plain message.
-      // It runs on a first sign-in, on every sign-in after, and on a preview
-      // signing in through production, with GitHub's own profile each time.
-      validateUserInfo: ({ source }) => {
-        const id = source.oauth?.providerId === 'github' ? source.oauth.profile?.id : undefined
-        if (String(id) !== env.ownerGithubId) return { error: NOT_THE_OWNER }
-      },
+    // No way to make an account: the one there is comes from the settings.
+    emailAndPassword: {
+      enabled: true,
+      disableSignUp: true,
+      minPasswordLength: OWNER_PASSWORD_MIN,
     },
     session: { expiresIn: WEEK, updateAge: 60 * 60 * 24 },
-    // Sign-in attempts are limited per address. The browser tests all come
-    // from this machine, signing in again and again, so with the test
-    // doubles on (never on a deployment) the limit is lifted.
-    rateLimit: { enabled: !mocksRequested() },
+    // Five tries a minute from one address, counted in the database, where
+    // every server sees the same count. The browser tests all come from this
+    // machine, signing in again and again, so with the test doubles on
+    // (never on a deployment) the limit is lifted.
+    rateLimit: {
+      enabled: !mocksRequested(),
+      storage: 'database',
+      customRules: { [SIGN_IN]: { window: 60, max: 5 } },
+    },
     advanced: { cookiePrefix: 'shelf' },
     telemetry: { enabled: false },
     hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== SIGN_IN) return
+        const { internalAdapter: store, password } = ctx.context
+        const { email } = env.owner
+        ownerReady ??= (async () => {
+          const found = await store.findUserByEmail(email)
+          const user =
+            found?.user ??
+            (await store.createUser(
+              { email, name: email, emailVerified: true },
+              { method: 'admin' },
+            ))
+          const credential = (await store.findAccounts(user.id)).find(
+            (account) => account.providerId === 'credential',
+          )
+          if (
+            credential?.password &&
+            (await password.verify({ hash: credential.password, password: env.owner.password }))
+          ) {
+            return
+          }
+          const hash = await password.hash(env.owner.password)
+          if (credential) await store.updatePassword(user.id, hash)
+          else {
+            await store.linkAccount({
+              userId: user.id,
+              providerId: 'credential',
+              accountId: user.id,
+              password: hash,
+            })
+          }
+          // A new password: whoever signed in with the old one is signed out.
+          await store.deleteUserSessions(user.id)
+        })().catch((error: unknown) => {
+          ownerReady = undefined
+          throw error
+        })
+        await ownerReady
+      }),
       after: createAuthMiddleware(async (ctx) => {
         const hint = { path: '/', sameSite: 'lax' as const, secure: onVercel(), httpOnly: false }
         if (ctx.context.newSession) ctx.setCookie(OWNER_HINT_COOKIE, '1', { ...hint, maxAge: WEEK })
@@ -122,9 +169,9 @@ const createAuth = () => {
     },
     plugins: [
       // An assistant signs in as me for the owner's MCP endpoint: OAuth, with
-      // me signing in through GitHub as on the site, then saying yes on the
-      // consent page. Its access tokens are JWTs, signed here and checked by
-      // the endpoint. Only I can sign in, so only I can say yes.
+      // me signing in as on the site, then saying yes on the consent page.
+      // Its access tokens are JWTs, signed here and checked by the endpoint.
+      // Only I can sign in, so only I can say yes.
       jwt({ jwt: { issuer: authIssuer() } }),
       mcp({ loginPage: '/en/sign-in', consentPage: '/en/consent', resource: mcpResource() }),
       // An assistant is known by the address of its Client ID Metadata
@@ -136,12 +183,6 @@ const createAuth = () => {
           : fetchClientMetadataResource,
         metadataProfile: 'mcp-2026-07-28',
       }),
-      // A preview has no GitHub app of its own: GitHub sends the person back to
-      // production, which hands the answer on, sealed, to the preview it came
-      // from. This machine has its own app, so it signs in directly.
-      ...(deployment() === 'local' || !production
-        ? []
-        : [oAuthProxy({ productionURL: `https://${production}`, secret: env.proxySecret })]),
     ],
   })
 }

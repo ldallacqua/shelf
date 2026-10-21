@@ -558,10 +558,13 @@
   "Account": {
     "metaTitle": "Entrar",
     "title": "Entrar",
-    "body": "Só o dono desta estante entra, com o GitHub. Todo mundo pode olhar à vontade sem conta.",
-    "withGithub": "Entrar com o GitHub",
-    "leaving": "Levando você ao GitHub…",
-    "notOwner": "Essa conta do GitHub não é a do dono desta estante, então não entra aqui. Fique à vontade para olhar.",
+    "body": "Só o dono desta estante entra. Todo mundo pode olhar à vontade sem conta.",
+    "email": "E-mail",
+    "password": "Senha",
+    "submit": "Entrar",
+    "signingIn": "Entrando…",
+    "wrong": "Esse e-mail e essa senha não conferem. Tente de novo.",
+    "tooMany": "Tentativas demais daqui. Espere um minuto e tente de novo.",
     "failed": "Não deu para entrar. Tente de novo.",
     "notSetUp": "A entrada ainda não está configurada neste servidor.",
     "signedIn": "Você entrou como {name}.",
@@ -569,7 +572,7 @@
     "signOut": "Sair",
     "footerSignIn": "Entrar",
     "footerSignedIn": "Você entrou como {name}",
-    "forAssistant": "Um assistente pede para usar sua biblioteca como você. Entre com o GitHub, e você vai poder dizer se deixa."
+    "forAssistant": "Um assistente pede para usar sua biblioteca como você. Entre, e você vai poder dizer se deixa."
   },
   "Add": {
     "title": "Adicionar um jogo",

@@ -2,7 +2,7 @@
  * pnpm serve:test
  *
  * Serves the production build the way the browser tests need it: with the
- * test doubles for IGDB, Twitch and GitHub (`SHELF_MOCKS=1`), and on a fresh
+ * test doubles for IGDB and Twitch and a made-up owner (`SHELF_MOCKS=1`), and on a fresh
  * copy of the database. Tests that add, change and remove games write to the
  * copy, so `.data/shelf.db` is never changed by a test, and every run starts
  * from the same library.

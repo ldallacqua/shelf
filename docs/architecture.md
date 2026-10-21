@@ -114,9 +114,8 @@ Three things in the brief were confirmed as written at the start: Tailwind 4 wit
 and Radix; React Three Fiber with drei (it accepts React 19.3), later replaced (row 9); MSW
 for IGDB.
 
-One correction to my own memory: a GitHub OAuth app now accepts **up to 10** callback
-addresses, not one. That simplifies the setup, but preview deployments still get a new address
-each time, so they sign in through production ([section 9](#9-sign-in-and-access)).
+Sign-in was planned as GitHub; since 21 Oct 2026 it is one account with an email address and
+password ([section 9](#9-sign-in-and-access)).
 
 ---
 
@@ -127,7 +126,6 @@ each time, so they sign in through production ([section 9](#9-sign-in-and-access
 | **Vercel Hobby** | 100 GB transfer, 1,000,000 function calls, 4 CPU-hours, 5,000 image transformations a month. 100 deployments a day. Functions up to 300s. One function region. Scheduled jobs once a day. Non-commercial use only. | A few thousand function calls a month. No image transformations. One daily job. | The feature pauses until the 30-day window rolls over. There is no bill. |
 | **Turso Free** | 100 databases, 5 GB, 500 million rows read and 10 million rows written a month. Point-in-time restore for 1 day. No card needed. | Two databases, a few megabytes. A cold start reads about 10,000 rows. | No bill unless overages are switched on, and they are off unless I turn them on. The pricing page does not say what happens to requests past the limit. |
 | **GitHub Actions** | 2,000 minutes and 500 MB of artifacts a month for private repositories. Unlimited for public ones. | About 1,400 minutes in a busy build month ([section 18](#18-continuous-integration)). | Runs are blocked until next month. No bill without a payment method. |
-| **GitHub OAuth** | Free. Up to 10 callback addresses per app. | Two apps: production and local. | n/a |
 | **IGDB, through Twitch** | Free for non-commercial use. 4 requests a second, 8 open at once, 500 results a request. | A few requests when I add a game. Two a day for refresh. Visitors cause none. | A 429 response; the client waits and retries. |
 | **Google Fonts** | Free. | Fonts are downloaded at build time and served from our own domain. | n/a |
 
@@ -141,8 +139,8 @@ Three rules of the Hobby plan shape the design:
   plan had both in Virginia, because Turso's documented locations had none in South America;
   the owner found São Paulo offered when creating the database (21 Oct 2026). Pages and the
   library file reach every visitor from a nearby Vercel edge; only the data round trip goes to
-  São Paulo. The calls out to IGDB, Twitch and GitHub cross to the US, and they come only when
-  adding games or signing in.
+  São Paulo. The calls out to IGDB and Twitch cross to the US, and they come only when adding
+  games.
 - **Preview deployments ask for a Vercel login.** This is Vercel's standard protection. On
   your phone you sign in to Vercel once and previews open. The setup checklist shows where
   the switch is.
@@ -167,7 +165,6 @@ flowchart LR
   DB[(Turso)]
   IGDBAPI[IGDB API]
   IGDBIMG[IGDB image servers]
-  GH[GitHub sign-in]
   AI[AI assistants]
 
   UI --> CDN --> App
@@ -176,7 +173,6 @@ flowchart LR
   Svc -- owner only --> IGDBAPI
   UI -- covers --> IGDBIMG
   GL -- textures --> IGDBIMG
-  App -- sign-in --> GH
   AI -- API and MCP --> App
   Engine --- Core
 ```
@@ -195,8 +191,8 @@ grouping proposal from ADR 001, stores the IGDB data in our database, writes the
 copies, and marks the cached library as out of date. The next read rebuilds it.
 
 **An assistant.** It reads through the public API or the public MCP endpoint with the same
-filter language a person types. To add or change, it signs in through the same GitHub account
-the interface uses.
+filter language a person types. To add or change, it signs in through the same account the
+interface uses.
 
 The same code answers all three. The browser, the server pages, the API and the MCP server all
 call one domain layer, so they cannot disagree about what a filter means.
@@ -422,26 +418,25 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 
 | Concern | Design |
 | --- | --- |
-| Provider | GitHub only |
-| Who gets in | One account. `OWNER_GITHUB_ID` holds its numeric id, which never changes (a username can). |
-| Turning others away | At sign-in: a GitHub profile whose id is not the owner's is refused before any account is stored, and the person sees a plain message. The hook is Better Auth's `user.validateUserInfo`, which runs on every sign-in with GitHub's own profile, including a preview's through production. The test (a second account cannot sign in) is the contract. |
-| Every write | `requireOwner()` runs first in every service function that changes anything. It loads the session and compares its GitHub id with `OWNER_GITHUB_ID` again. The sign-in check is a courtesy; this one is the lock. |
-| Assistants | The owner's MCP endpoint takes OAuth access tokens, not the session cookie. Better Auth's MCP plugin is the authorization server: an assistant is known by its Client ID Metadata Document's address, I sign in with GitHub as on the site, and say yes on `/consent`. Tokens are JWTs signed with keys in the `jwks` table, for that endpoint only. The endpoint checks the token, checks its user is the owner (`ownerOfUser`, the same GitHub id comparison), and runs the tools inside `asOwner`, which `requireOwner()` honours. Only I can sign in, so only I can say yes. |
+| Provider | An email address and password (Better Auth's own), since 21 Oct 2026; planned as GitHub |
+| Who gets in | One account, made from `OWNER_EMAIL` and `OWNER_PASSWORD` the first time anyone signs in. Its password follows the setting: a changed one is hashed again on the next sign-in, and every session signed in with the old one ends. |
+| Turning others away | There is no way to make an account: sign-up is off. Any other address, or a wrong password, gets the same plain message. Five tries a minute from one address, counted in the database (`rate_limits`), since a function's memory is gone between requests. The tests (nobody can make an account; a wrong password is turned away) are the contract. |
+| Every write | `requireOwner()` runs first in every service function that changes anything. It loads the session and compares its email address with `OWNER_EMAIL` again. Sign-in is one lock; this is the other. |
+| Assistants | The owner's MCP endpoint takes OAuth access tokens, not the session cookie. Better Auth's MCP plugin is the authorization server: an assistant is known by its Client ID Metadata Document's address, I sign in as on the site, and say yes on `/consent`. Tokens are JWTs signed with keys in the `jwks` table, for that endpoint only. The endpoint checks the token, checks its user is the owner (`ownerOfUser`, the same email comparison), and runs the tools inside `asOwner`, which `requireOwner()` honours. Only I can sign in, so only I can say yes. |
 | Sessions | A row in the database and a cookie that scripts cannot read, sent only over HTTPS, with SameSite=Lax. Seven days, extended on use. |
 | Visitors | Carry no cookie, so they cost no session lookups |
 | Edit controls | Rendered only after the browser confirms a session. A second, harmless cookie (`shelf_owner_hint`) tells the page whether it is worth asking; visitors never trigger the question. |
 | Private notes | Never in a cached page or the library file. Fetched by a separate request that requires the session: `GET /api/v1/entries/{id}`, which the editor reads, uncached and private. |
-| Preview deployments | Better Auth's OAuth Proxy: a preview sends the GitHub round trip through production, which hands the result back encrypted. Only the production callback is registered with GitHub. The preview keeps its own database, so signing in there cannot touch the real library. |
-| Local work | A second GitHub OAuth app whose callback is `http://localhost:3300/api/auth/callback/github` |
+| Preview deployments | Sign in as production does, with settings of their own, once they have a database of their own; until then nothing to sign in to. |
+| Local work | The same three settings in `.env.local`, with any values |
 
-The callback path is the same everywhere: `/api/auth/callback/github`.
-
-**In tests,** nothing bypasses sign-in. The server's calls to GitHub are answered by MSW, and
-Playwright redirects the browser's trip to `github.com` straight back to the callback. That
-exercises the real code, including a second account being refused. One sign-in is saved and
-reused by the tests that need me to be signed in. An assistant signs in the same way: MSW
-serves a test assistant's metadata document, the browser says yes on the consent page, and the
-test trades the code for a token and calls the owner's tools with the official MCP client.
+**In tests,** nothing bypasses sign-in. With the test doubles on, the server makes up the
+owner's account (`MOCK_OWNER`), and the browser fills in the real form. That exercises the real
+code, including a wrong password and an attempt to make an account being refused. One sign-in
+is saved and reused by the tests that need me to be signed in. An assistant signs in the same
+way: MSW serves a test assistant's metadata document, the browser signs in and says yes on the
+consent page, and the test trades the code for a token and calls the owner's tools with the
+official MCP client.
 
 ---
 
@@ -697,7 +692,7 @@ is [docs/api.md](api.md).
 | Endpoint | Sign-in | Tools |
 | --- | --- | --- |
 | `/api/mcp` | None | `search_library`, `get_game`, `list_filter_values`, `list_shelves` |
-| `/api/mcp/owner` | OAuth through Better Auth's MCP plugin, which signs me in with the same GitHub account | The four above, plus `search_igdb`, `add_game`, `update_entry`, `set_status` |
+| `/api/mcp/owner` | OAuth through Better Auth's MCP plugin, which signs me in with the same account | The four above, plus `search_igdb`, `add_game`, `update_entry`, `set_status` |
 
 There are two endpoints because, in practice, an assistant only starts a sign-in when a
 server demands one. A single endpoint that allowed anonymous reads would never get to offer
@@ -739,7 +734,7 @@ as JSON text and structured content.
 desktop (1440). Nine projects.
 
 **IGDB is never live in a test.** With `SHELF_MOCKS=1` the server starts MSW from
-`instrumentation.ts`, serving `fixtures/` for the IGDB, Twitch and GitHub addresses, and
+`instrumentation.ts`, serving `fixtures/` for the IGDB and Twitch addresses, and
 treating any other request to those hosts as an error. The mocks refuse to start on Vercel.
 In the browser, Playwright answers requests to `images.igdb.com` with small generated covers
 (a color field and the title), so no test depends on IGDB's image servers and the repository
@@ -847,7 +842,7 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | Database | `.data/shelf.db` | A fresh file | Turso `shelf-preview`. Until it is connected: a sample file built with the deployment. | Turso `shelf`. Until it is connected: an empty file. |
 | Data | `default`, or any set | `default` and `stress` | `default`, loaded if empty | Mine |
 | IGDB | Live for me; mocked with `SHELF_MOCKS=1` | Mocked | Live, when I add | Live, when I add |
-| Sign-in | The local GitHub app | Mocked GitHub | Through production (OAuth Proxy) | The production GitHub app |
+| Sign-in | The settings in `.env.local` | A made-up owner | None until previews have a database | The settings in Vercel |
 | Who can open it | Me | n/a | Me, signed in to Vercel | Everyone |
 
 **Settings** (names only; values are yours to paste):
@@ -859,10 +854,8 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | `TURSO_DATABASE_URL` | Database | Vercel: before step 7. Previews work without it. |
 | `TURSO_AUTH_TOKEN` | Database | Same |
 | `BETTER_AUTH_SECRET` | Signing sessions | Step 7 |
-| `GITHUB_CLIENT_ID` | GitHub sign-in | Step 7 |
-| `GITHUB_CLIENT_SECRET` | GitHub sign-in | Step 7 |
-| `OAUTH_PROXY_SECRET` | Sign-in on previews | Step 7 |
-| `OWNER_GITHUB_ID` | The one allowed account | Step 7 |
+| `OWNER_EMAIL` | The one account's email address | Step 7 |
+| `OWNER_PASSWORD` | Its password, 12 to 128 characters | Step 7 |
 | `CRON_SECRET` | The daily refresh job | Step 9 |
 
 The site's own address comes from Vercel's built-in `VERCEL_PROJECT_PRODUCTION_URL`, so there
@@ -889,7 +882,7 @@ IGDB yet.
 | **4** 3D shelf ⏸ | The 3D bundle, the switch, parity tests, fallback | Nothing |
 | **5** Filters and sorting | The query language (tests first), index, facets, panel, smart shelves, public API, `docs/api.md` | Nothing |
 | **6** Game detail | Detail page and overlay, shared-element transitions, JSON-LD for games | Nothing |
-| **7** Sign-in and adding | Better Auth, owner guard, add and bulk add, edit, write API, both MCP endpoints | Two GitHub OAuth apps; seven settings |
+| **7** Sign-in and adding | Better Auth, owner guard, add and bulk add, edit, write API, both MCP endpoints | An email address and password; five settings |
 | **8** Landing page ⏸ | Landing page, scroll scenes, generated art, OG image, `llms.txt`, sitemap | Nothing |
 | **9** Passes | Phone and tablet polish, accessibility audit, speed work, the daily refresh, security headers | One setting |
 | **10** Review | Walkthrough with screenshots and video, known gaps | Nothing |
@@ -960,14 +953,13 @@ Checked on 12 Oct 2026.
 **Sign-in**
 
 - [Auth.js, now part of Better Auth](https://authjs.dev/getting-started)
-- Better Auth: [GitHub](https://better-auth.com/docs/authentication/github),
+- Better Auth: [email and password](https://better-auth.com/docs/authentication/email-password),
+  [rate limiting](https://better-auth.com/docs/concepts/rate-limit),
   [sessions](https://better-auth.com/docs/concepts/session-management),
   [Next.js](https://better-auth.com/docs/integrations/next),
   [database hooks](https://better-auth.com/docs/concepts/database),
   [Drizzle adapter](https://better-auth.com/docs/adapters/drizzle),
-  [OAuth Proxy](https://better-auth.com/docs/plugins/oauth-proxy),
   [MCP](https://better-auth.com/docs/plugins/mcp)
-- [GitHub: creating an OAuth app](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)
 
 **Other**
 
@@ -994,6 +986,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| After step 7 | **Sign-in is one account with an email address and password, made from `OWNER_EMAIL` and `OWNER_PASSWORD`; not GitHub.** Sign-up is off, attempts are limited to five a minute from one address in the database, and the password follows the setting. The OAuth Proxy, the GitHub apps and four settings are gone. Spec section 9 is changed to match. | The owner's choice (21 Oct 2026), on reading what GitHub sign-in asked of them: they want accounts of their own, and a password for now. Proper account creation, where anyone can make one, is left for later, and needs a decision first: whose library does a new account see? |
 | Step 7 | **Next.js 16.4.1,** from 16.4.0. | 16.4.1 fixes critical security flaws in 16.4.0. |
 | Step 7 | **A game's page is built on its first visit and kept,** not with the site. The build makes 57 pages, sign-in and consent among them, where step 6 made 499. This reverses the step 6 row below. | Found by the browser tests: once a write expires the library's tag, Next.js 16.4 answers a browser's move to a game page that was built ahead with a 404, because the page's prebuilt data went with the tag. A page built on its first visit has none to lose. The cost is one server wait for the first visitor to each game after a change. |
 | Step 7 | **Editing goes through the API (`edit-client.ts`), not server actions.** Adding one game and saving shelves still use server actions. | A server action that expires the library answers with the current address drawn again. With a game's panel open over the shelf, that address is the game's own page, which then took the shelf's place. The API answers with data, and the page fetches what changed itself. |

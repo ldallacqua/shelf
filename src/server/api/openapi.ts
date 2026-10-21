@@ -132,7 +132,7 @@ export const openApiDocument = () => {
       title: 'Shelf',
       version: '1',
       description:
-        'A personal game library. Every read is public. Writes are the owner’s alone: they take the session cookie that signing in with GitHub on the site sets, and answer 401 without it.',
+        'A personal game library. Every read is public. Writes are the owner’s alone: they take the session cookie that signing in on the site sets, and answer 401 without it.',
     },
     servers: [{ url: `${siteUrl()}/api/v1` }],
     paths: {
@@ -393,7 +393,7 @@ export const openApiDocument = () => {
           in: 'cookie',
           name: 'shelf.session_token',
           description:
-            'Set by signing in with GitHub on the site. Only the owner’s GitHub account can sign in. On HTTPS the cookie is named `__Secure-shelf.session_token`.',
+            'Set by signing in on the site, with the owner’s email address and password. There is one account, and no way to make another. On HTTPS the cookie is named `__Secure-shelf.session_token`.',
         },
       },
     },

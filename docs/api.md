@@ -16,7 +16,7 @@ answer is checked against before it is sent, so it cannot drift from what the AP
 | | |
 | --- | --- |
 | Address | `https://{the site}/api/v1` |
-| Sign-in | None to read. A write takes the owner's session cookie, which signing in with GitHub on the site sets, and answers 401 without it. |
+| Sign-in | None to read. A write takes the owner's session cookie, which signing in on the site sets, and answers 401 without it. |
 | Format | JSON, UTF-8 |
 | Other sites | Allowed: every answer carries `Access-Control-Allow-Origin: *` |
 | Caching | `s-maxage=60, stale-while-revalidate=600`: the edge keeps an answer for a minute. The library and keyword files are kept for a year, because their address changes when they do. |
@@ -292,7 +292,7 @@ Two endpoints, on the Model Context Protocol's 2026-07-28 revision and the 2025 
 
 The tools answer with the same shapes as the routes above. To use the owner's endpoint, add
 it to an assistant: the assistant is answered 401 and told where to sign in (RFC 9728), the
-owner signs in with GitHub, says yes on the consent page, and the assistant is given a token
+owner signs in with their email address and password, says yes on the consent page, and the assistant is given a token
 for that endpoint. Assistants are known by their Client ID Metadata Document, so none needs
 registering first.
 

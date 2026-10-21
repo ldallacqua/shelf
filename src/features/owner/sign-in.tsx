@@ -3,17 +3,18 @@
 import { LogInIcon, LogOutIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { type Ref, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 
 import { signOut, useOwner } from './owner'
 
-/** The reason Better Auth gives when the GitHub account is not the owner's. */
-const NOT_THE_OWNER = 'not_the_owner'
+type Trouble = 'wrong' | 'tooMany' | 'failed' | 'notSetUp'
 
-type Trouble = 'notOwner' | 'failed' | 'notSetUp'
+const FIELD =
+  'h-10 w-full min-w-0 rounded-control border border-line-strong bg-surface px-3 text-base text-text disabled:opacity-50 pointer-coarse:h-11'
 
 /** Where to go back to after signing in: a page of this site, or the library. */
 const destination = (from: string | null, locale: string): string =>
@@ -28,30 +29,34 @@ const assistantRequest = (params: URLSearchParams): string | undefined =>
   params.has('sig') && params.has('client_id') ? params.toString() : undefined
 
 /**
- * Leaves for GitHub. Better Auth answers with GitHub's address, and comes
- * back to `from` once GitHub has said who this is, or to this page with the
- * reason it would not.
+ * Checks the email address and password. Signed in, it goes on to `from`,
+ * or, for an assistant, to where Better Auth sends its request next: the
+ * consent page. A whole new page either way, so all of it knows the owner
+ * is here.
  */
-const leaveForGithub = async (
-  locale: string,
-  from: string | null,
+const signInWithPassword = async (
+  email: string,
+  password: string,
+  then: string,
   forAssistant?: string,
 ): Promise<Trouble> => {
   try {
-    const response = await fetch('/api/auth/sign-in/social', {
+    const response = await fetch('/api/auth/sign-in/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        provider: 'github',
-        callbackURL: destination(from, locale),
-        errorCallbackURL: `/${locale}/sign-in`,
+        email,
+        password,
+        rememberMe: true,
         ...(forAssistant ? { oauth_query: forAssistant } : {}),
       }),
     })
+    if (response.status === 401) return 'wrong'
+    if (response.status === 429) return 'tooMany'
     if (response.status === 503) return 'notSetUp'
-    const answer = (await response.json()) as { url?: string }
-    if (!response.ok || !answer.url) return 'failed'
-    window.location.assign(answer.url)
+    if (!response.ok) return 'failed'
+    const answer = (await response.json()) as { redirect?: boolean; url?: string }
+    window.location.assign(forAssistant && answer.redirect && answer.url ? answer.url : then)
     // The page is leaving; nothing more to say.
     return await new Promise<never>(() => {})
   } catch {
@@ -59,7 +64,7 @@ const leaveForGithub = async (
   }
 }
 
-/** Signing in (spec 11): GitHub only, and only the owner gets in. */
+/** Signing in (spec 11): one account, by email address and password. */
 export function SignIn() {
   const t = useTranslations('Account')
   const locale = useLocale()
@@ -67,10 +72,8 @@ export function SignIn() {
   const owner = useOwner()
   const [busy, setBusy] = useState(false)
   const [trouble, setTrouble] = useState<Trouble>()
+  const password = useRef<HTMLInputElement>(null)
 
-  const error = params.get('error')
-  const shown: Trouble | undefined =
-    trouble ?? (error === NOT_THE_OWNER ? 'notOwner' : error ? 'failed' : undefined)
   const forAssistant = assistantRequest(new URLSearchParams(params.toString()))
 
   // Signed in already, and not here for an assistant: nothing to do but go on.
@@ -102,40 +105,99 @@ export function SignIn() {
   return (
     <div className="mt-6 max-w-xl">
       <p className="text-pretty text-muted">{t(forAssistant ? 'forAssistant' : 'body')}</p>
-      {shown ? (
+      {trouble ? (
         <p role="alert" className="mt-6 rounded-control border border-line-strong px-4 py-3">
-          {t(shown)}
+          {t(trouble)}
         </p>
       ) : null}
-      <div className="mt-6">
-        <Button
-          variant="primary"
-          disabled={busy || owner.status === 'checking'}
-          onClick={async () => {
-            setBusy(true)
-            setTrouble(await leaveForGithub(locale, params.get('from'), forAssistant))
+      <form
+        className="mt-6 grid max-w-sm gap-4"
+        onSubmit={async (event) => {
+          event.preventDefault()
+          const form = new FormData(event.currentTarget)
+          setBusy(true)
+          const answer = await signInWithPassword(
+            String(form.get('email') ?? ''),
+            String(form.get('password') ?? ''),
+            destination(params.get('from'), locale),
+            forAssistant,
+          )
+          // Drawn at once: the fields must be enabled again before one takes focus.
+          flushSync(() => {
+            setTrouble(answer)
             setBusy(false)
-          }}
-        >
-          <LogInIcon aria-hidden="true" />
-          {busy ? t('leaving') : t('withGithub')}
-        </Button>
-      </div>
+          })
+          // Wrong: the address stays, and the password is typed again.
+          if (answer === 'wrong' && password.current) {
+            password.current.value = ''
+            password.current.focus()
+          }
+        }}
+      >
+        <SignInFields disabled={busy} password={password} />
+        <div>
+          <Button type="submit" variant="primary" disabled={busy || owner.status === 'checking'}>
+            <LogInIcon aria-hidden="true" />
+            {busy ? t('signingIn') : t('submit')}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }
 
-/** The page before it knows the address: the same words, and a button that waits. */
+function SignInFields({
+  disabled,
+  password,
+}: {
+  disabled?: boolean
+  password?: Ref<HTMLInputElement>
+}) {
+  const t = useTranslations('Account')
+  return (
+    <>
+      <label className="grid gap-1.5 text-sm font-medium">
+        {t('email')}
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="username"
+          spellCheck={false}
+          disabled={disabled}
+          className={FIELD}
+        />
+      </label>
+      <label className="grid gap-1.5 text-sm font-medium">
+        {t('password')}
+        <input
+          ref={password}
+          name="password"
+          type="password"
+          required
+          autoComplete="current-password"
+          disabled={disabled}
+          className={FIELD}
+        />
+      </label>
+    </>
+  )
+}
+
+/** The page before it knows the address: the same words, and a form that waits. */
 export function SignInWaiting() {
   const t = useTranslations('Account')
   return (
     <div className="mt-6 max-w-xl">
       <p className="text-pretty text-muted">{t('body')}</p>
-      <div className="mt-6">
-        <Button variant="primary" disabled>
-          <LogInIcon aria-hidden="true" />
-          {t('withGithub')}
-        </Button>
+      <div className="mt-6 grid max-w-sm gap-4">
+        <SignInFields disabled />
+        <div>
+          <Button variant="primary" disabled>
+            <LogInIcon aria-hidden="true" />
+            {t('submit')}
+          </Button>
+        </div>
       </div>
     </div>
   )
