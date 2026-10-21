@@ -107,7 +107,7 @@ The brief said to check current versions and not rely on memory. Eight checks ch
 | 5 | Node, latest | **24**, not 26 | Vercel offers 24 (its default) and 22. |
 | 6 | Drizzle, latest | **0.45**, not 1.0 | 1.0 is a release candidate (`1.0.0-rc.4`). 0.45 is the stable line. |
 | 7 | "Covers via IGDB CDN with srcset" | As asked, and **not** through Vercel's image optimizer | The Hobby plan includes 5,000 image transformations a month. A 1,000-game library in three sizes would spend that in one visit. IGDB's servers already resize, send WebP, allow cross-origin use and cache for a year. The reference app's own notes record 0.24s direct against 1.20s through an optimizer. |
-| 8 | CI runs everything | Everything runs, **on the Mac before each push** (`pnpm verify`); CI only by hand | A private repository gets 2,000 free minutes a month, and one full run took about 75. It began as two tiers on GitHub; at the end of step 3 the owner asked for the checks to run locally instead. See [section 18](#18-continuous-integration). |
+| 8 | CI runs everything | Everything runs, **locally before each merge** (`pnpm verify`); CI only by hand | A private repository gets 2,000 free minutes a month, and one full run took about 75. It began as two tiers on GitHub; at the end of step 3 the owner asked for the checks to run locally instead, before each push, and after step 7 once before each merge, so the long run does not hold work up. See [section 18](#18-continuous-integration). |
 | 9 | React Three Fiber with drei | **three.js on its own**, driven from one React component (the owner's decision at step 4, 14 Oct 2026) | Measured, compressed, React aside: three.js with only the classes the shelf uses is 129 KB; R3F's `<Canvas>` registers all of three.js, 242 KB; R3F with `createRoot` and a chosen set, 183 KB. The scene is imperative anyway (instanced boxes, our own shaders, camera and picking, frames on demand), so R3F's 54 KB would buy little. drei was never needed. The 3D bundle is 147 KB of its 300. |
 
 Three things in the brief were confirmed as written at the start: Tailwind 4 with shadcn/ui
@@ -758,25 +758,29 @@ that needs 3D is skipped while the fallback has tests of its own. 3D reference s
 Linux pass, which needs Docker, and the Windows computer has none.
 
 **On this machine** I run unit and component tests freely while working, and the Playwright
-files a change touches. The full matrix runs once before each push, in `pnpm verify`. If the
+files a change touches. The full matrix runs once before a pull request merges, in
+`pnpm verify`, not at each push (the owner's rule, 21 Oct 2026). If the
 Mac's load problem comes back (load averages of 70 and more), that run waits for a reboot
 rather than being cut short.
 
 **Storybook** holds every `ui` component and the main feature components in their states,
-with toolbar switches for theme and language and the accessibility panel on.
+with toolbar switches for theme and language and the accessibility panel on. It is deployed
+from `main` to https://shelf-storybook.vercel.app, a Vercel project of its own
+(`deploy/storybook/`).
 
 ---
 
 ## 18. Continuous integration
 
 Free minutes are finite (2,000 a month while the repository is private), and one full run on
-GitHub took about 75. So **nothing runs on GitHub by itself**: every check runs on the Mac
-before a push, with `pnpm verify`, and GitHub's workflow is kept for running by hand.
+GitHub took about 75. So **nothing runs on GitHub by itself**: every check runs on the local
+machine before a pull request merges, with `pnpm verify`, and GitHub's workflow is kept for
+running by hand.
 
 | What | When | Steps | About |
 | --- | --- | --- | --- |
 | `pnpm verify --quick` | While working, as often as useful | Format, lint, typecheck, translation check, unit and component tests, build, bundle checks. End-to-end smoke: Chromium at phone and desktop. | 4 min |
-| `pnpm verify` | Before every push | All of the above; all nine browser projects; a Linux pass in Playwright's Docker image (WebKit at three widths, reference screenshots); Lighthouse; Storybook build | 20 min |
+| `pnpm verify` | Before merging a pull request | All of the above; all nine browser projects; a Linux pass in Playwright's Docker image (WebKit at three widths, reference screenshots); Lighthouse; Storybook build | 20 min |
 | CI workflow | Only by hand (Actions → CI → Run workflow) | Everything, Lighthouse alone, or new reference screenshots | 75 min for everything |
 
 **Why a Linux pass.** The Linux build of WebKit, which GitHub's runners use, is not Safari: in
