@@ -15,6 +15,8 @@ import { keptQuery } from './back-to-library'
 import { GameDetail } from './game-detail'
 import { useGameFacts } from './use-game-facts'
 
+export { loadEditor } from './owner-mine'
+
 /** How far a finger must travel sideways, more than up or down, to step to the next game. */
 const SWIPE = 64
 

@@ -68,7 +68,7 @@ import type { GamePanel as GamePanelType } from '@/features/game-detail/game-pan
 import { HERO_COVER } from '@/features/game-detail/hero'
 import { morph } from '@/features/game-detail/morph'
 import { useLibraryChange } from '@/features/owner/library-change'
-import { useOwner } from '@/features/owner/owner'
+import { ownerIsHere, useOwner } from '@/features/owner/owner'
 import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import { useRouter } from '@/i18n/navigation'
@@ -139,15 +139,19 @@ const gamePanel = () => document.querySelector<HTMLElement>('[data-slot="sheet"]
 
 type GamePanelComponent = typeof GamePanelType
 
-let panelCode: Promise<GamePanelComponent> | undefined
+let panelCode: Promise<{ GamePanel: GamePanelComponent; loadEditor: () => unknown }> | undefined
 
 /**
  * The open game's code: fetched the first time a game is reached for (a
  * pointer or a finger on one, or focus), and in any case before one opens.
- * Not every visit opens a game, so not every visit pays for it.
+ * Not every visit opens a game, so not every visit pays for it. For the
+ * owner, the editor's code is fetched then too, so it is there by the click.
  */
 const loadPanel = (): Promise<GamePanelComponent> =>
-  (panelCode ??= import('@/features/game-detail/game-panel').then((module) => module.GamePanel))
+  (panelCode ??= import('@/features/game-detail/game-panel')).then((module) => {
+    if (ownerIsHere()) void module.loadEditor()
+    return module.GamePanel
+  })
 
 /** Whether an event happened on a game: a box, a wall cover, a row's title, or a 3D shelf's button. */
 const onAGame = (target: EventTarget) =>

@@ -45,6 +45,15 @@ step 3. This note is what the next session needs and cannot get from the code. R
   measurable there; the library and wall misses are the machine's that hour. The Storybook
   build passes. A 3D test that read the 2D shelf before it had drawn failed 1 run in 8 in
   Firefox; it now waits (24 of 24).
+- **Tests run once, before merging, not at each commit or push** (the owner, 21 Oct 2026: the
+  full run is long and should not hold work up). `pnpm verify` passes on a branch's last
+  commit before its pull request merges; while working, run the tests for what changes.
+- **A game opened over the shelf keeps its place** (21 Oct 2026, at the owner's review):
+  rating no longer sends the key art and words back to ghosts, and for the owner "Mine" is
+  the editor's skeleton until the editor is in, so nothing below it jumps. The skeleton
+  mirrors `mine-editor.tsx`: change one, change the other.
+- **Storybook is deployed** from `main` to https://shelf-storybook.vercel.app, a second Vercel
+  project on the same repository (`deploy/storybook/`).
 - **This folder is linked to the Vercel project** (`.vercel/`, ignored). `vercel link` also
   wrote a `VERCEL_OIDC_TOKEN` into `.env.local` and added `.env*` to `.gitignore`; both were
   taken out again. Run `vercel env pull` and `vercel link` with care for the same reason.

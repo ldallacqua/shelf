@@ -13,6 +13,7 @@ import { Link } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 
 import { HERO_COVER } from './hero'
+import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
 import { Screenshots } from './screenshots'
 
@@ -287,7 +288,14 @@ export function GameDetail({
   )
 
   const mine = editable ? (
-    <OwnerMine slug={game.slug} level={level} minor={Minor} onRemoved={onRemoved} refresh={page}>
+    <OwnerMine
+      slug={game.slug}
+      level={level}
+      minor={Minor}
+      onRemoved={onRemoved}
+      refresh={page}
+      skeleton={<MineSkeleton game={game} tags={tags} platforms={platforms} level={level} />}
+    >
       {readOnlyMine}
     </OwnerMine>
   ) : (

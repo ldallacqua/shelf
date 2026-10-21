@@ -343,6 +343,47 @@ test.describe('a game opened from the library', () => {
     })
   })
 
+  test.describe('by the owner', () => {
+    test.use({ signedIn: true })
+
+    test('keeps its place while the editor arrives: what is below Mine never moves', async ({
+      page,
+    }) => {
+      await openLibrary(page, '/en/library?q=bloodborne')
+      // Where "About" stands in the game's page after every change to the page, from the
+      // first: on each change, not each frame, since WebKit draws few frames while it opens.
+      await page.evaluate(() => {
+        const record = window as unknown as { states: { offset: number; skeleton: boolean }[] }
+        record.states = []
+        new MutationObserver(() => {
+          const article = document.querySelector('[role="dialog"] article')
+          const about = [...(article?.querySelectorAll('h3') ?? [])].find(
+            (heading) => heading.textContent === 'About',
+          )
+          if (!article || !about) return
+          record.states.push({
+            offset: Math.round(
+              about.getBoundingClientRect().top - article.getBoundingClientRect().top,
+            ),
+            skeleton: article.querySelector('[data-mine-skeleton]') !== null,
+          })
+        }).observe(document.body, { childList: true, subtree: true })
+      })
+      await firstGame(page, 'shelf').click()
+      await expect(panel(page).getByRole('group', { name: 'Status' })).toBeVisible()
+      await expect(panel(page).locator('.ghost')).toHaveCount(0)
+      const states = await page.evaluate(
+        () => (window as unknown as { states: { offset: number; skeleton: boolean }[] }).states,
+      )
+      // The editor's shape stood in for it, and the editor took exactly its room.
+      expect(states.some((state) => state.skeleton)).toBe(true)
+      const settled = states.at(-1)!
+      expect(settled.skeleton).toBe(false)
+      for (const state of states)
+        expect(Math.abs(state.offset - settled.offset)).toBeLessThanOrEqual(2)
+    })
+  })
+
   for (const theme of themes) {
     test(`passes axe while open, in ${theme}`, async ({ page }) => {
       await openWithTheme(page, '/en/library', theme)

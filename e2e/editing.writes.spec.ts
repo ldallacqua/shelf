@@ -49,9 +49,41 @@ test.describe('editing a game', () => {
     await openLibrary(page, `/en/library?q=${encodeURIComponent(`"${title}"`)}&group=none`)
     const box = page.locator(`[data-flip^="${slug}"]`).first()
     await expect(box).toHaveAttribute('data-status', 'backlog')
+    // Each save, and each fetch of the game's facts, in the order they were answered.
+    const answered: ('saved' | 'facts')[] = []
+    page.on('response', (response) => {
+      if (response.url().includes('/api/v1/library/games/')) answered.push('facts')
+      else if (
+        response.url().includes('/api/v1/entries/') &&
+        response.request().method() === 'PATCH'
+      )
+        answered.push('saved')
+    })
     await box.click()
 
     const panel = page.getByRole('dialog')
+    // Once the game's words and art are in, a change to it never takes them away again.
+    await expect(panel.getByRole('heading', { name: 'Details' })).toBeVisible()
+    await expect(panel.locator('.ghost')).toHaveCount(0)
+    await panel.evaluate((dialog) => {
+      const record = window as unknown as { lost: string[] }
+      record.lost = []
+      new MutationObserver((changes) => {
+        for (const change of changes) {
+          for (const node of change.addedNodes) {
+            if (node instanceof Element && (node.matches('.ghost') || node.querySelector('.ghost')))
+              record.lost.push('words')
+          }
+          for (const node of change.removedNodes) {
+            if (
+              node instanceof HTMLImageElement &&
+              (change.target as Element).matches('.game-backdrop')
+            )
+              record.lost.push('art')
+          }
+        }
+      }).observe(dialog, { childList: true, subtree: true })
+    })
     const status = panel.getByRole('group', { name: 'Status' })
     await status.getByText('Playing', { exact: true }).click()
     // On the shelf, at once: a box being played stands differently.
@@ -71,6 +103,14 @@ test.describe('editing a game', () => {
       }
     await expect.poll(game).toMatchObject({ status: 'playing', rating: 7.5 })
     await expect(mine(panel)).toHaveAttribute('aria-busy', 'false')
+
+    // Each change is a new version of the library, whose facts the panel fetches
+    // again: drawn over the ones it has, never over ghosts.
+    await expect
+      .poll(() => answered.lastIndexOf('facts') > answered.lastIndexOf('saved'))
+      .toBe(true)
+    await expect(panel.locator('.ghost')).toHaveCount(0)
+    expect(await page.evaluate(() => (window as unknown as { lost: string[] }).lost)).toEqual([])
 
     // The owner's own read speaks the API's units too: out of ten, in hours.
     const patched = await page.request.patch(`/api/v1/entries/${slug}`, {
