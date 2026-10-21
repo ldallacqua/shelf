@@ -703,8 +703,9 @@ Both are served by the official SDK's own `createMcpHandler` (`@modelcontextprot
 stateless way. Without a token the owner's endpoint answers 401 with a `WWW-Authenticate`
 header naming `/.well-known/oauth-protected-resource/api/mcp/owner` (RFC 9728), which names
 `/api/auth` as the authorization server, described at
-`/.well-known/oauth-authorization-server/api/auth` (RFC 8414). Assistants are known by Client
-ID Metadata Documents, so none registers first. The tools answer with the API's own shapes,
+`/.well-known/oauth-authorization-server/api/auth` (RFC 8414). Both documents read the
+database, so, like every sign-in route, they are answered per request and never built ahead.
+Assistants are known by Client ID Metadata Documents, so none registers first. The tools answer with the API's own shapes,
 as JSON text and structured content.
 
 **For crawlers and assistants**
@@ -986,6 +987,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| After step 7 | **Every sign-in route is answered per request, never built ahead** (`connection()` in `handler.ts`), the two discovery documents among them. | Found by the first production build with sign-in's settings: with nothing in their address that varies, the build ran the discovery documents ahead, their database queries to Turso were cut off when it stopped, and the build failed. Local builds had no sign-in settings, so the documents answered 503 and nothing was kept, and their SQLite file answers without the network, so the tests never saw it. Reproduced here with a stand-in for Turso over HTTP, and fixed. |
 | After step 7 | **Sign-in is one account with an email address and password, made from `OWNER_EMAIL` and `OWNER_PASSWORD`; not GitHub.** Sign-up is off, attempts are limited to five a minute from one address in the database, and the password follows the setting. The OAuth Proxy, the GitHub apps and four settings are gone. Spec section 9 is changed to match. | The owner's choice (21 Oct 2026), on reading what GitHub sign-in asked of them: they want accounts of their own, and a password for now. Proper account creation, where anyone can make one, is left for later, and needs a decision first: whose library does a new account see? |
 | Step 7 | **Next.js 16.4.1,** from 16.4.0. | 16.4.1 fixes critical security flaws in 16.4.0. |
 | Step 7 | **A game's page is built on its first visit and kept,** not with the site. The build makes 57 pages, sign-in and consent among them, where step 6 made 499. This reverses the step 6 row below. | Found by the browser tests: once a write expires the library's tag, Next.js 16.4 answers a browser's move to a game page that was built ahead with a 404, because the page's prebuilt data went with the tag. A page built on its first visit has none to lose. The cost is one server wait for the first visitor to each game after a change. |
