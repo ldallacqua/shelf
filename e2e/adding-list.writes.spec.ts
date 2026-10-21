@@ -1,6 +1,6 @@
 import type { APIRequestContext, Page } from '@playwright/test'
 
-import { expect, openLibrary, test } from './fixtures'
+import { choose, expect, openLibrary, test } from './fixtures'
 import { listToAdd } from './games-to-add'
 
 /**
@@ -16,7 +16,7 @@ const notice = (page: Page) => page.locator('[data-notice]')
 
 type Search = {
   results: { title: string; year: number | null; platforms: number[] }[]
-  platforms: { id: number; key: string; short: string }[]
+  platforms: { id: number; key: string; name: string; short: string }[]
 }
 
 type Game = {
@@ -57,21 +57,21 @@ test('a reviewed list is added at once, each row as set, and Undo takes them all
   })
 
   // On every row at once, then one row of its own.
-  await sheet(page).getByRole('combobox', { name: 'Status', exact: true }).selectOption('completed')
-  await expect(sheet(page).getByRole('combobox', { name: `Status for ${first}` })).toHaveValue(
-    'completed',
+  await choose(
+    page,
+    sheet(page).getByRole('combobox', { name: 'Status', exact: true }),
+    'Completed',
   )
-  await sheet(page)
-    .getByRole('combobox', { name: `Status for ${third}` })
-    .selectOption('wishlist')
+  await expect(sheet(page).getByRole('combobox', { name: `Status for ${first}` })).toHaveText(
+    'Completed',
+  )
+  await choose(page, sheet(page).getByRole('combobox', { name: `Status for ${third}` }), 'Wishlist')
   await expect(sheet(page).getByRole('combobox', { name: `Platform for ${third}` })).toBeDisabled()
   // The platform its line named, as the format I choose.
-  await expect(sheet(page).getByRole('combobox', { name: `Platform for ${second}` })).toHaveValue(
-    String(platform.id),
+  await expect(sheet(page).getByRole('combobox', { name: `Platform for ${second}` })).toHaveText(
+    platform.name,
   )
-  await sheet(page)
-    .getByRole('combobox', { name: `Format for ${second}` })
-    .selectOption('digital')
+  await choose(page, sheet(page).getByRole('combobox', { name: `Format for ${second}` }), 'Digital')
 
   await sheet(page).getByRole('button', { name: 'Add 3 games' }).click()
   await expect(sheet(page)).toBeHidden()

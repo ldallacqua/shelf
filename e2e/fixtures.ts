@@ -3,7 +3,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test as base, type Browser, type Page, type TestInfo } from '@playwright/test'
+import {
+  expect,
+  test as base,
+  type Browser,
+  type Locator,
+  type Page,
+  type TestInfo,
+} from '@playwright/test'
 
 export const locales = ['en', 'pt-BR'] as const
 export const themes = ['light', 'dark'] as const
@@ -77,9 +84,45 @@ export const OWNER = {
 /** Fills in the sign-in form and sends it. */
 export async function fillSignIn(page: Page, email: string, password: string) {
   await page.getByLabel('Email address').fill(email)
-  await page.getByLabel('Password').fill(password)
+  // Exact: the button beside it is "Show the password".
+  await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
 }
+
+/** Opens a select and chooses the option of this name. */
+export async function choose(page: Page, select: Locator, option: string) {
+  await select.click()
+  await page.getByRole('listbox').getByRole('option', { name: option, exact: true }).click()
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+}
+
+/**
+ * Opens a day's calendar and chooses `day` (`YYYY-MM-DD`): Page Up or Page
+ * Down to its month, as a person at the keyboard would, then the day itself.
+ */
+export async function chooseDay(page: Page, field: Locator, day: string) {
+  await field.click()
+  const calendar = page.locator('[data-slot="calendar"]')
+  const [year = 0, month = 1] = day.split('-').map(Number)
+  const wanted = year * 12 + month - 1
+  for (let step = 0; step < 600; step += 1) {
+    const shown = new Date(`${await calendar.locator('[aria-live]').textContent()} 1`)
+    const at = shown.getFullYear() * 12 + shown.getMonth()
+    if (at === wanted) break
+    await page.keyboard.press(at > wanted ? 'PageUp' : 'PageDown')
+  }
+  const name = new Intl.DateTimeFormat('en', { timeZone: 'UTC', dateStyle: 'full' }).format(
+    new Date(`${day}T00:00:00Z`),
+  )
+  await calendar.getByRole('button', { name, exact: true }).click()
+  await expect(calendar).toHaveCount(0)
+}
+
+/** A day as a date field shows it in English: "Feb 29, 2024". */
+export const shownDay = (day: string) =>
+  new Intl.DateTimeFormat('en', { timeZone: 'UTC', dateStyle: 'medium' }).format(
+    new Date(`${day}T00:00:00Z`),
+  )
 
 /**
  * Signs in as the owner, through the real sign-in page and code. Starts from

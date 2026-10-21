@@ -13,11 +13,16 @@ import {
   type Refusal,
   type SearchAnswer,
 } from '@/domain/library/adding'
-import { statuses, type Format, type Status } from '@/domain/library/values'
+import { formats, statuses, type Format, type Status } from '@/domain/library/values'
 import { Cover } from '@/features/library/cover'
+import { DayField, RatingField, TagsField, today } from '@/features/owner/fields'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { Radio } from '@/ui/checkbox'
+import { ChoiceChip, ToggleChip } from '@/ui/chip'
 import { cn } from '@/ui/cn'
+import { Input } from '@/ui/field'
+import { Segmented, SegmentedItem } from '@/ui/segmented'
 
 import type { AddActions } from './actions'
 
@@ -29,8 +34,6 @@ type Search =
   | { state: 'searching'; text: string; answer?: SearchAnswer }
   | { state: 'ready'; text: string; answer: SearchAnswer }
   | { state: 'failed'; text: string; reason: Refusal['reason'] }
-
-const today = () => new Date().toISOString().slice(0, 10)
 
 type AddOneProps = {
   actions: AddActions
@@ -148,7 +151,7 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
     <div className="grid gap-3">
       <label className="grid gap-1.5 text-sm font-medium">
         {t('searchLabel')}
-        <input
+        <Input
           ref={input}
           type="search"
           role="combobox"
@@ -163,7 +166,7 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={onKeyDown}
-          className="h-11 rounded-control border border-line-strong bg-surface px-3 text-base font-normal text-text placeholder:text-muted"
+          className="h-11 font-normal"
         />
       </label>
       <p className="min-h-5 text-sm text-muted" aria-live="polite">
@@ -267,9 +270,10 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
   const formId = useId()
   const [status, setStatus] = useState<Status>('backlog')
   const [owned, setOwned] = useState<{ platformId: number; format: Format }[]>([])
-  const [rating, setRating] = useState('')
-  const [tags, setTags] = useState('')
-  const [completedOn, setCompletedOn] = useState(today)
+  // Out of ten, as the field shows it; none until it is moved.
+  const [rating, setRating] = useState<number>()
+  const [tags, setTags] = useState<string[]>([])
+  const [completedOn, setCompletedOn] = useState<string | undefined>(today)
   const [grouping, setGrouping] = useState<Grouping>()
   const [together, setTogether] = useState<boolean>()
   const [problem, setProblem] = useState<string>()
@@ -309,27 +313,15 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
     )
 
   const submit = (again: boolean) => {
-    const score =
-      rating.trim() === '' ? undefined : Math.round(Number(rating.replace(',', '.')) * 10)
-    if (score !== undefined && (!Number.isFinite(score) || score < 0 || score > 100)) {
-      setProblem(t('ratingRange'))
-      return
-    }
     startTransition(async () => {
       setProblem(undefined)
       const result = await actions.add({
         igdbId: candidate.igdbId,
         status,
         copies: status === 'wishlist' ? [] : owned,
-        ...(score === undefined ? {} : { rating: score }),
-        ...(tags.trim()
-          ? {
-              tags: tags
-                .split(',')
-                .map((tag) => tag.trim())
-                .filter(Boolean),
-            }
-          : {}),
+        // Stored out of a hundred.
+        ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
+        ...(tags.length > 0 ? { tags } : {}),
         ...(status === 'completed' && completedOn ? { completedOn } : {}),
         ...(related ? { grouping: joins ? ('join' as const) : ('separate' as const) } : {}),
       })
@@ -393,13 +385,11 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
               : t('relatedNoCopies', { title: related.entry.title })}
           </legend>
           {[true, false].map((join) => (
-            <label key={String(join)} className="flex min-h-10 items-center gap-2">
-              <input
-                type="radio"
+            <label key={String(join)} className="flex min-h-10 cursor-pointer items-center gap-2.5">
+              <Radio
                 name={`${formId}-grouping`}
                 checked={joins === join}
                 onChange={() => setTogether(join)}
-                className="size-4 accent-[var(--color-accent)]"
               />
               {join ? t('joinChoice', { title: related.entry.title }) : t('separateChoice')}
             </label>
@@ -411,20 +401,16 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
         <legend className="mb-2 text-sm font-semibold">{t('status')}</legend>
         <div className="flex flex-wrap gap-2">
           {statuses.map((each) => (
-            <label
+            <ChoiceChip
               key={each}
-              className="flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-line-strong px-3 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent/15 has-[:checked]:font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent"
+              type="radio"
+              name={`${formId}-status`}
+              value={each}
+              checked={status === each}
+              onChange={() => setStatus(each)}
             >
-              <input
-                type="radio"
-                name={`${formId}-status`}
-                value={each}
-                checked={status === each}
-                onChange={() => setStatus(each)}
-                className="sr-only"
-              />
               {library(`status.${each}`)}
-            </label>
+            </ChoiceChip>
           ))}
         </div>
       </fieldset>
@@ -440,84 +426,58 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
               if (!platform) return null
               const picked = owned.some((copy) => copy.platformId === id)
               return (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={picked}
-                  onClick={() => toggle(id)}
-                  className="min-h-10 rounded-full border border-line-strong px-3 text-sm aria-pressed:border-accent aria-pressed:bg-accent/15 aria-pressed:font-semibold"
-                >
+                <ToggleChip key={id} pressed={picked} onClick={() => toggle(id)}>
                   {platform.name}
-                </button>
+                </ToggleChip>
               )
             })}
           </div>
-          {owned.map((copy) => {
-            const platform = labels.get(copy.platformId)
-            if (!platform) return null
-            return (
-              <div
-                key={copy.platformId}
-                role="radiogroup"
-                aria-label={t('formatFor', { platform: platform.name })}
-                className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm"
-              >
-                <span className="min-w-28 text-muted">{platform.name}</span>
-                {(['physical', 'digital'] as const).map((format) => (
-                  <label key={format} className="flex min-h-10 items-center gap-2">
-                    <input
-                      type="radio"
-                      name={`${formId}-format-${copy.platformId}`}
-                      checked={copy.format === format}
-                      onChange={() =>
+          {owned.length > 0 ? (
+            <ul className="mt-1 grid gap-2">
+              {owned.map((copy) => {
+                const platform = labels.get(copy.platformId)
+                if (!platform) return null
+                return (
+                  <li
+                    key={copy.platformId}
+                    className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm"
+                  >
+                    <span className="text-muted">{platform.name}</span>
+                    <Segmented
+                      aria-label={t('formatFor', { platform: platform.name })}
+                      value={copy.format}
+                      onValueChange={(format: Format) =>
                         setOwned((list) =>
                           list.map((each) =>
                             each.platformId === copy.platformId ? { ...each, format } : each,
                           ),
                         )
                       }
-                      className="size-4 accent-[var(--color-accent)]"
-                    />
-                    {library(`format.${format}`)}
-                  </label>
-                ))}
-              </div>
-            )
-          })}
+                    >
+                      {formats.map((format) => (
+                        <SegmentedItem key={format} value={format}>
+                          {library(`format.${format}`)}
+                        </SegmentedItem>
+                      ))}
+                    </Segmented>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : null}
         </fieldset>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-medium">
-          {t('rating')}
-          <input
-            inputMode="decimal"
-            value={rating}
-            onChange={(event) => setRating(event.target.value)}
-            className="h-10 rounded-control border border-line-strong bg-surface px-3 font-normal"
-          />
-        </label>
-        {status === 'completed' ? (
-          <label className="grid gap-1.5 text-sm font-medium">
-            {t('completedOn')}
-            <input
-              type="date"
-              value={completedOn}
-              max={today()}
-              onChange={(event) => setCompletedOn(event.target.value)}
-              className="h-10 rounded-control border border-line-strong bg-surface px-3 font-normal"
-            />
-          </label>
-        ) : null}
-        <label className="grid gap-1.5 text-sm font-medium sm:col-span-2">
-          {t('tags')}
-          <input
-            value={tags}
-            onChange={(event) => setTags(event.target.value)}
-            className="h-10 rounded-control border border-line-strong bg-surface px-3 font-normal"
-          />
-        </label>
-      </div>
+      <RatingField value={rating} onChange={setRating} />
+      {status === 'completed' ? (
+        <DayField
+          label={t('completedOn')}
+          value={completedOn}
+          onChange={setCompletedOn}
+          className="grid gap-1.5 sm:max-w-64"
+        />
+      ) : null}
+      <TagsField value={tags} onChange={setTags} />
 
       {problem ? (
         <p role="alert" className="text-sm">

@@ -100,7 +100,7 @@ export function SearchField({ value, onChange, className }: SearchFieldProps) {
       {problems.length > 0 ? (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-10 left-9 flex items-center overflow-hidden text-sm whitespace-pre text-transparent"
+          className="pointer-events-none absolute inset-y-0 right-10 left-9 flex items-center overflow-hidden text-base whitespace-pre text-transparent sm:text-sm"
         >
           <span ref={mirror}>
             {pieces.map((piece, index) =>
@@ -142,7 +142,8 @@ export function SearchField({ value, onChange, className }: SearchFieldProps) {
           setText(value)
         }}
         className={cn(
-          'h-10 w-full min-w-0 rounded-control border border-line-strong bg-surface pr-10 pl-9 text-sm text-text',
+          // Sixteen pixels on a phone, so focusing the field never zooms the page.
+          'h-10 w-full min-w-0 rounded-control border border-line-strong bg-surface pr-10 pl-9 text-base text-text sm:text-sm',
           'placeholder:text-muted',
           'transition-[border-color,box-shadow] duration-quick ease-settle hover:border-text/40',
           '[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none',

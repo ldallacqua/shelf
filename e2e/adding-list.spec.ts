@@ -71,7 +71,7 @@ test('a pasted list of 50 known titles has every line matched or marked, the one
   await expect(owned.locator('input[type="checkbox"]:checked')).toHaveCount(0)
 
   // A year and a platform are read: Bastion starts on PC.
-  await expect(sheet(page).getByRole('combobox', { name: 'Platform for Bastion' })).toHaveValue('6')
+  await expect(sheet(page).getByRole('combobox', { name: 'Platform for Bastion' })).toHaveText('PC')
   // A line no game matches says so, and can be searched again.
   const none = each.filter({ hasText: 'No match' })
   await expect(none).toHaveCount(1)

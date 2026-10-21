@@ -1,20 +1,18 @@
 'use client'
 
-import { LogInIcon, LogOutIcon } from 'lucide-react'
+import { EyeIcon, EyeOffIcon, LogInIcon, LogOutIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { type Ref, useRef, useState } from 'react'
+import { type Ref, useId, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { Input } from '@/ui/field'
 
 import { signOut, useOwner } from './owner'
 
 type Trouble = 'wrong' | 'tooMany' | 'failed' | 'notSetUp'
-
-const FIELD =
-  'h-10 w-full min-w-0 rounded-control border border-line-strong bg-surface px-3 text-base text-text disabled:opacity-50 pointer-coarse:h-11'
 
 /** Where to go back to after signing in: a page of this site, or the library. */
 const destination = (from: string | null, locale: string): string =>
@@ -154,32 +152,55 @@ function SignInFields({
   password?: Ref<HTMLInputElement>
 }) {
   const t = useTranslations('Account')
+  const [shown, setShown] = useState(false)
+  const passwordId = useId()
   return (
     <>
       <label className="grid gap-1.5 text-sm font-medium">
         {t('email')}
-        <input
+        <Input
           name="email"
           type="email"
           required
           autoComplete="username"
           spellCheck={false}
           disabled={disabled}
-          className={FIELD}
+          className="font-normal"
         />
       </label>
-      <label className="grid gap-1.5 text-sm font-medium">
-        {t('password')}
-        <input
-          ref={password}
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          disabled={disabled}
-          className={FIELD}
-        />
-      </label>
+      <div className="grid gap-1.5">
+        <label htmlFor={passwordId} className="text-sm font-medium">
+          {t('password')}
+        </label>
+        <div className="relative">
+          <Input
+            ref={password}
+            id={passwordId}
+            name="password"
+            type={shown ? 'text' : 'password'}
+            required
+            autoComplete="current-password"
+            spellCheck={false}
+            disabled={disabled}
+            className="pr-12 font-normal"
+          />
+          {/* Pressed, the password shows as text; its name stays the same either way. */}
+          <button
+            type="button"
+            aria-pressed={shown}
+            aria-label={t('showPassword')}
+            disabled={disabled}
+            onClick={() => setShown((was) => !was)}
+            className="absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center rounded-r-control text-muted transition-colors duration-quick ease-settle hover:text-text disabled:opacity-50"
+          >
+            {shown ? (
+              <EyeOffIcon aria-hidden="true" className="size-4" />
+            ) : (
+              <EyeIcon aria-hidden="true" className="size-4" />
+            )}
+          </button>
+        </div>
+      </div>
     </>
   )
 }

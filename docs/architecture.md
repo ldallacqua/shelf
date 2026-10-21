@@ -502,7 +502,11 @@ contrast requirement, including text on a wall washed by an LED of any color.
 **Components.** shadcn/ui copies component source into `src/ui`, built on Radix primitives
 for focus handling, keyboard support and screen-reader roles. Every one is restyled with the
 tokens; none keeps its stock look. Sheets, dialogs, menus, tooltips, tabs, the command
-palette and toasts come from this set.
+palette and toasts come from this set, and so do the form's controls: a select, a rating
+slider, a calendar, a tag field, chips, checkboxes and switches, and one text field they
+all look like. No form control is the browser's own drawing. The checkbox, radio button
+and switch are the browser's inputs underneath, restyled, so they cost no script on the
+pages visitors load.
 
 **Type.** Archivo for titles and interface, Martian Mono for numbers and labels, through
 `next/font`: served from our domain, subset to Latin, preloaded, with fallback metrics so
@@ -790,7 +794,7 @@ Neither needs **secrets**: both build against a SQLite file and the mocks.
 
 | Measure | Budget | Enforced by |
 | --- | --- | --- |
-| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`: 205 KB for the home page, 262 KB for the library. | Build check |
+| Each page's JavaScript, first load, compressed | A ratchet: what the page measured when last changed on purpose, plus a little room. The numbers are in `scripts/lib/budgets.ts`: 205 KB for the home page, 265 KB for the library. | Build check |
 | three.js in any page's first load | None | Build check |
 | The 3D bundle, fetched when 3D first opens, compressed | 300 KB | `pnpm perf:js` |
 | 3D: draw calls, texture memory | Under 40, under 256 MB | End-to-end test |
@@ -987,6 +991,8 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| After step 7 | **The form's controls are drawn by the page, in `src/ui`:** a select whose list can show a cover and details, my rating as a slider from 0 to 10 in half steps with the number large above it, a day from a calendar, tags as chips with the ones in use offered as I type, status and platforms as chips with a tick, physical or digital as a segmented control, and a shared text field. Sign-in can show the password. The fields the Add sheet and the editor share are in `features/owner/fields.tsx`. The editor saves a rating once it has rested 400 ms. | The owner's review (21 Oct 2026): the browser's own selects, date field and checkboxes, and a rating typed as a number, did not reach the quality asked for. A rating out of ten in half steps (spec decision 10) is a number, so a slider, not stars. The filter panel's range boxes stay typed: they take dates as well as numbers, and they load with the library. |
+| After step 7 | **The library's JavaScript budget is 265 KB, from 262.** It measures 264.1, from 261.3. | The new select and calendar place their lists with the code Radix's menus use. Shared with the owner's code, it left the menus' file for one of its own: one more file on every page, 1.8 KB, none of it the owner's code. Writing that placing code again was the other way; the owner chose the budget. |
 | After step 7 | **Every sign-in route is answered per request, never built ahead** (`connection()` in `handler.ts`), the two discovery documents among them. | Found by the first production build with sign-in's settings: with nothing in their address that varies, the build ran the discovery documents ahead, their database queries to Turso were cut off when it stopped, and the build failed. Local builds had no sign-in settings, so the documents answered 503 and nothing was kept, and their SQLite file answers without the network, so the tests never saw it. Reproduced here with a stand-in for Turso over HTTP, and fixed. |
 | After step 7 | **Sign-in is one account with an email address and password, made from `OWNER_EMAIL` and `OWNER_PASSWORD`; not GitHub.** Sign-up is off, attempts are limited to five a minute from one address in the database, and the password follows the setting. The OAuth Proxy, the GitHub apps and four settings are gone. Spec section 9 is changed to match. | The owner's choice (21 Oct 2026), on reading what GitHub sign-in asked of them: they want accounts of their own, and a password for now. Proper account creation, where anyone can make one, is left for later, and needs a decision first: whose library does a new account see? |
 | Step 7 | **Next.js 16.4.1,** from 16.4.0. | 16.4.1 fixes critical security flaws in 16.4.0. |

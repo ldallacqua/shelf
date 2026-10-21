@@ -19,7 +19,9 @@ type RangeSectionProps = {
 }
 
 const inputClass = cn(
-  'h-9 w-full min-w-0 rounded-control border border-line-strong bg-surface px-3 text-sm tabular-nums',
+  // Sixteen pixels on a phone, so focusing a box never zooms the page.
+  'h-9 w-full min-w-0 rounded-control border border-line-strong bg-surface px-3 text-base tabular-nums sm:text-sm',
+  'transition-[border-color] duration-quick ease-settle hover:border-muted',
   'placeholder:text-muted aria-invalid:border-dashed aria-invalid:border-text pointer-coarse:h-10',
 )
 

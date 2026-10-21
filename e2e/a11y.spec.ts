@@ -65,6 +65,50 @@ for (const theme of themes) {
       await page.getByRole('dialog', { name: 'Save as a shelf' }).waitFor()
       await expectAccessible(page, '[role="dialog"]')
     })
+
+    // Nothing below is added or saved: each stops before the button that would.
+    test(`adding a game passes axe, and its calendar while open, ${theme}`, async ({ page }) => {
+      await openWithTheme(page, '/en/library', theme)
+      await page.getByRole('banner').getByRole('button', { name: 'Add', exact: true }).click()
+      const sheet = page.getByRole('dialog', { name: 'Add a game' })
+      await sheet.getByRole('combobox', { name: 'Search IGDB' }).fill('Half-Life')
+      await sheet.getByRole('option').filter({ hasNotText: 'In library' }).first().click()
+      await sheet.getByText('Completed', { exact: true }).click()
+      await expectAccessible(page, '[role="dialog"]')
+
+      await sheet.getByRole('button', { name: /^Completed on/ }).click()
+      await page.locator('[data-slot="calendar"]').waitFor()
+      await expectAccessible(page, '[data-slot="popover-content"]')
+    })
+
+    test(`a pasted list's review passes axe, and a select while open, ${theme}`, async ({
+      page,
+    }) => {
+      await openWithTheme(page, '/en/library', theme)
+      await page.getByRole('banner').getByRole('button', { name: 'Add', exact: true }).click()
+      const sheet = page.getByRole('dialog', { name: 'Add a game' })
+      await sheet.getByRole('tab', { name: 'Paste a list' }).click()
+      await sheet
+        .getByRole('textbox', { name: 'Titles, one per line' })
+        .fill(['Half-Life', 'Stick of Truth', 'Zzqx Nothing Like It'].join('\n'))
+      await sheet.getByRole('button', { name: 'Match 3 titles' }).click()
+      await sheet.getByText(/^3 lines:/).waitFor({ timeout: 20_000 })
+      await expectAccessible(page, '[role="dialog"]')
+
+      await sheet
+        .getByRole('combobox', { name: /^Match for/ })
+        .first()
+        .click()
+      await page.getByRole('listbox').waitFor()
+      await expectAccessible(page, '[role="listbox"]')
+    })
+
+    test(`editing a game passes axe, ${theme}`, async ({ page }) => {
+      await openWithTheme(page, '/en/game/bloodborne', theme)
+      const mine = page.locator('section[aria-busy]')
+      await mine.getByRole('slider', { name: 'My rating' }).waitFor()
+      await expectAccessible(page, 'section[aria-busy]')
+    })
   })
 
   test(`the sort menu passes axe while open, ${theme}`, async ({ page }) => {

@@ -33,6 +33,23 @@ test.describe('signing in', () => {
     expect(await (await page.request.get('/api/v1/me')).json()).toMatchObject({ owner: true })
   })
 
+  test('the password can be shown as typed, and hidden again', async ({ page }) => {
+    await page.goto('/en/sign-in')
+    await page.locator('html[data-ready]').waitFor({ state: 'attached' })
+    const password = page.getByLabel('Password', { exact: true })
+    const show = page.getByRole('button', { name: 'Show the password' })
+    await password.fill('a password typed')
+    await expect(password).toHaveAttribute('type', 'password')
+
+    await show.click()
+    await expect(show).toHaveAttribute('aria-pressed', 'true')
+    await expect(password).toHaveAttribute('type', 'text')
+    await expect(password).toHaveValue('a password typed')
+
+    await show.click()
+    await expect(password).toHaveAttribute('type', 'password')
+  })
+
   test.describe('turned away', () => {
     // A wrong password is answered 401, which the browser logs as a failed request.
     test.use({ allowConsoleErrors: true })
@@ -49,8 +66,9 @@ test.describe('signing in', () => {
       await expect(trouble(page)).toHaveText(wrong)
       // The address stays; the password is typed again.
       await expect(page.getByLabel('Email address')).toHaveValue(OWNER.email)
-      await expect(page.getByLabel('Password')).toHaveValue('')
-      await expect(page.getByLabel('Password')).toBeFocused()
+      const password = page.getByLabel('Password', { exact: true })
+      await expect(password).toHaveValue('')
+      await expect(password).toBeFocused()
 
       await fillSignIn(page, 'someone@shelf.test', OWNER.password)
       await expect(trouble(page)).toHaveText(wrong)

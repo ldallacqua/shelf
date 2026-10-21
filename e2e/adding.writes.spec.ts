@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
 import { expect, openLibrary, test } from './fixtures'
 import { gameToAdd } from './games-to-add'
@@ -34,6 +34,15 @@ async function findWithKeys(page: Page, title: string) {
   throw new Error(`The arrow keys never reached ${title}`)
 }
 
+/** Tab, as many times as it takes to reach `target`. */
+async function tabTo(page: Page, target: Locator) {
+  for (let step = 0; step < 30; step += 1) {
+    if (await target.evaluate((element) => element === document.activeElement)) return
+    await page.keyboard.press('Tab')
+  }
+  throw new Error('Tab never reached it')
+}
+
 test.describe('adding a game', () => {
   test('is found and added with the keyboard alone, comes into view, and Undo takes it off again @smoke', async ({
     page,
@@ -51,15 +60,13 @@ test.describe('adding a game', () => {
     await expect(first).toBeFocused()
     await page.keyboard.press('Space')
     await expect(first).toHaveAttribute('aria-pressed', 'true')
-    const rating = sheet(page).getByLabel('My rating, out of 10')
-    for (
-      let step = 0;
-      step < 20 && !(await rating.evaluate((field) => field === document.activeElement));
-      step += 1
-    ) {
-      await page.keyboard.press('Tab')
-    }
-    await page.keyboard.type('8')
+    // The rating: out to ten with End, back by half points with the arrows.
+    const rating = sheet(page).getByRole('slider', { name: 'My rating' })
+    await tabTo(page, rating)
+    await page.keyboard.press('End')
+    for (let step = 0; step < 4; step += 1) await page.keyboard.press('ArrowLeft')
+    await expect(rating).toHaveAttribute('aria-valuetext', '8 out of 10')
+    await tabTo(page, sheet(page).getByRole('button', { name: 'Add', exact: true }))
     await page.keyboard.press('Enter')
 
     await expect(sheet(page)).toBeHidden()

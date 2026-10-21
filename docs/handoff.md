@@ -16,6 +16,10 @@ step 3. This note is what the next session needs and cannot get from the code. R
   only, and the functions moved there with it; previews have no database yet. Never paste or
   print the values, and never enter them for the owner; give them the `vercel env add`
   commands instead. The owner allows deploying to production (21 Oct 2026).
+- **Production signs in and adds games.** The owner signed in and searched IGDB there (21 Oct
+  2026), so the session settings and the two Twitch ones work. A GitHub incident delayed
+  webhooks that day, so that deployment was started through Vercel's API (`vercel api
+  /v13/deployments` with a `gitSource` for `main`), not by the merge.
 - **The first production build with those settings failed:** the build ran the two discovery
   documents ahead, and Turso's queries were cut off (architecture, section 25). Fixed. Verify
   cannot catch this kind of failure: its build has no sign-in settings, and its SQLite file
@@ -25,6 +29,22 @@ step 3. This note is what the next session needs and cannot get from the code. R
   and, on its own at 7.2 times, scored home 98, library 90, wall 92, game page 97. The
   Storybook build passes. Playwright's browsers had gone from this computer and were
   downloaded again.
+- **The form's controls were rebuilt** at the owner's review (21 Oct 2026): "an input like
+  that is too simple", and the selects looked like the browser's own. Every form control is
+  now drawn by `src/ui` (architecture, section 25): a select, my rating as a slider, a
+  calendar, a tag field with the tags in use offered, chips with a tick, checkboxes and
+  switches. Owner-only code, so visitors load none of it, but sharing Radix's positioning code
+  split the pages' files: the library's budget went from 262 to 265 KB, the owner's choice
+  over writing that code a second time. **Checked:** `pnpm verify --skip-linux` passed the
+  checks (799 unit and component tests), the build, the JavaScript budgets (library 264.1 of
+  265 KB, home 203.2 of 205, game page 206.3 of 208, trophies 196.5 of 198) and 1,905
+  browser tests in all nine projects, none failed. Lighthouse ran hot (18.8 times). On its
+  own at 7.2 times the machine read slower than in the morning, so it was measured side by
+  side with the code before: home 93 to 95 both, library 82 to 84 against 83 to 84, wall 85
+  to 86 against 87 to 89, game page 93 to 94 against 92 to 95. The change costs nothing
+  measurable there; the library and wall misses are the machine's that hour. The Storybook
+  build passes. A 3D test that read the 2D shelf before it had drawn failed 1 run in 8 in
+  Firefox; it now waits (24 of 24).
 - **This folder is linked to the Vercel project** (`.vercel/`, ignored). `vercel link` also
   wrote a `VERCEL_OIDC_TOKEN` into `.env.local` and added `.env*` to `.gitignore`; both were
   taken out again. Run `vercel env pull` and `vercel link` with care for the same reason.

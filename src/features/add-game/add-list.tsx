@@ -22,7 +22,18 @@ import {
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
 import { Cover } from '@/features/library/cover'
 import { Button } from '@/ui/button'
+import { Checkbox } from '@/ui/checkbox'
 import { cn } from '@/ui/cn'
+import { Input, Textarea } from '@/ui/field'
+import { Progress } from '@/ui/progress'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/ui/select'
 
 import { addGames, matchLines, type NewGame } from './list-client'
 
@@ -96,8 +107,8 @@ const leaveOutRepeats = (rows: Row[]): Row[] => {
   })
 }
 
-const FIELD =
-  'h-10 w-full min-w-0 rounded-control border border-line-strong bg-surface px-2 text-sm text-text disabled:opacity-50 pointer-coarse:h-11'
+/** A row's select stands for a copy that is not there: Radix keeps the empty value for "nothing chosen". */
+const NO_COPY = 'none'
 
 type AddListProps = {
   /** After an add: what was added, and whether every chosen game made it. */
@@ -310,7 +321,7 @@ export function AddList({ onAdded }: AddListProps) {
       <div className="grid gap-3">
         <label className="grid gap-1.5 text-sm font-medium">
           {t('list.label')}
-          <textarea
+          <Textarea
             data-add-search=""
             rows={10}
             spellCheck={false}
@@ -319,7 +330,7 @@ export function AddList({ onAdded }: AddListProps) {
             aria-describedby={`${id}-hint ${id}-count`}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={onKeyDown}
-            className="min-h-48 rounded-control border border-line-strong bg-surface p-3 text-base font-normal text-text read-only:opacity-70"
+            className="min-h-48 p-3 font-normal"
           />
         </label>
         <p id={`${id}-hint`} className="text-sm text-muted">
@@ -337,12 +348,7 @@ export function AddList({ onAdded }: AddListProps) {
         ) : null}
         {busy ? (
           <div className="grid gap-2">
-            <progress
-              max={stage.total}
-              value={stage.done}
-              aria-label={t('list.progress')}
-              className="h-2 w-full accent-[var(--color-accent)]"
-            />
+            <Progress max={stage.total} value={stage.done} aria-label={t('list.progress')} />
             <p className="text-sm text-muted" aria-live="polite">
               {stage.waiting
                 ? t('list.waiting')
@@ -398,62 +404,38 @@ export function AddList({ onAdded }: AddListProps) {
         </p>
       ) : null}
 
-      <fieldset className="grid grid-cols-3 gap-2 rounded-control border border-line-strong p-3 sm:gap-3">
+      <fieldset className="grid gap-2 rounded-panel border border-line-strong p-3 sm:grid-cols-3 sm:gap-3">
         <legend className="px-1 text-sm font-semibold">{t('list.everyRow')}</legend>
-        <label className="grid gap-1 text-sm">
-          {t('list.status')}
-          <select
-            className={FIELD}
-            value={every.status ?? ''}
-            disabled={adding}
-            onChange={(event) => applyAll({ status: event.target.value as Status })}
-          >
-            <option value="" disabled>
-              {t('list.noChange')}
-            </option>
-            {statuses.map((each) => (
-              <option key={each} value={each}>
-                {library(`status.${each}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-1 text-sm">
-          {t('list.platform')}
-          <select
-            className={FIELD}
-            value={every.platform ?? ''}
-            disabled={adding}
-            onChange={(event) => applyAll({ platform: Number(event.target.value) })}
-          >
-            <option value="" disabled>
-              {t('list.noChange')}
-            </option>
-            {everyPlatform.map((platform) => (
-              <option key={platform.id} value={platform.id}>
-                {platform.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-1 text-sm">
-          {t('list.format')}
-          <select
-            className={FIELD}
-            value={every.format ?? ''}
-            disabled={adding}
-            onChange={(event) => applyAll({ format: event.target.value as Format })}
-          >
-            <option value="" disabled>
-              {t('list.noChange')}
-            </option>
-            {formats.map((each) => (
-              <option key={each} value={each}>
-                {library(`format.${each}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <EveryRow
+          id={`${id}-every-status`}
+          label={t('list.status')}
+          placeholder={t('list.noChange')}
+          value={every.status}
+          disabled={adding}
+          onChange={(value) => applyAll({ status: value as Status })}
+          options={statuses.map((each) => ({ value: each, name: library(`status.${each}`) }))}
+        />
+        <EveryRow
+          id={`${id}-every-platform`}
+          label={t('list.platform')}
+          placeholder={t('list.noChange')}
+          value={every.platform === undefined ? undefined : String(every.platform)}
+          disabled={adding}
+          onChange={(value) => applyAll({ platform: Number(value) })}
+          options={everyPlatform.map((platform) => ({
+            value: String(platform.id),
+            name: platform.name,
+          }))}
+        />
+        <EveryRow
+          id={`${id}-every-format`}
+          label={t('list.format')}
+          placeholder={t('list.noChange')}
+          value={every.format}
+          disabled={adding}
+          onChange={(value) => applyAll({ format: value as Format })}
+          options={formats.map((each) => ({ value: each, name: library(`format.${each}`) }))}
+        />
       </fieldset>
 
       <ol aria-label={t('list.rows')} className="grid">
@@ -476,12 +458,7 @@ export function AddList({ onAdded }: AddListProps) {
       <div className="sticky -bottom-6 -mx-5 -mb-6 grid gap-2 border-t border-line bg-surface px-5 pt-3 pb-6">
         {adding ? (
           <>
-            <progress
-              max={stage.total}
-              value={stage.done}
-              aria-label={t('list.progress')}
-              className="h-2 w-full accent-[var(--color-accent)]"
-            />
+            <Progress max={stage.total} value={stage.done} aria-label={t('list.progress')} />
             <p className="text-sm text-muted" aria-live="polite">
               {t('list.adding', { done: stage.done, total: stage.total })}
             </p>
@@ -529,6 +506,78 @@ const aboutCandidate = (candidate: Candidate, labels: ReadonlyMap<number, Platfo
     .filter(Boolean)
     .join(' · ')
 
+type Option = { value: string; name: string }
+
+/** One of the choices made for every row at once: nothing chosen until one is. */
+function EveryRow({
+  id,
+  label,
+  placeholder,
+  value,
+  disabled,
+  onChange,
+  options,
+}: {
+  id: string
+  label: string
+  placeholder: string
+  value: string | undefined
+  disabled: boolean
+  onChange: (value: string) => void
+  options: readonly Option[]
+}) {
+  return (
+    // On a phone, the label beside its select; wider, above it, in three columns.
+    <div className="grid min-w-0 grid-cols-[6rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-1 sm:gap-1">
+      <label htmlFor={id} className="text-sm">
+        {label}
+      </label>
+      <Select value={value ?? ''} disabled={disabled} onValueChange={onChange}>
+        <SelectTrigger id={id} className="px-2.5">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
+/** One of a row's choices, named for its game. */
+function RowSelect({
+  label,
+  value,
+  disabled,
+  onChange,
+  options,
+}: {
+  label: string
+  value: string
+  disabled: boolean
+  onChange: (value: string) => void
+  options: readonly Option[]
+}) {
+  return (
+    <Select value={value} disabled={disabled} onValueChange={onChange}>
+      <SelectTrigger aria-label={label} className="px-2.5">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 type ListRowProps = {
   row: Row
   labels: ReadonlyMap<number, PlatformLabel>
@@ -571,13 +620,12 @@ function ListRow({
         <span className="mt-3 w-6 flex-none text-right readout text-[0.625rem] text-muted">
           {row.key + 1}
         </span>
-        <input
-          type="checkbox"
+        <Checkbox
           checked={row.include}
           disabled={disabled || !candidate}
           aria-label={t('list.include', { title })}
           onChange={(event) => onChange((each) => ({ ...each, include: event.target.checked }))}
-          className="mt-3 size-4 flex-none accent-[var(--color-accent)]"
+          className="mt-2.5"
         />
         <span
           aria-hidden="true"
@@ -632,8 +680,7 @@ function ListRow({
           <div className="flex flex-wrap items-end gap-2">
             <label className="grid min-w-0 flex-1 gap-1 text-sm">
               {t('list.retitle')}
-              <input
-                className={FIELD}
+              <Input
                 value={row.retitle ?? row.line.title}
                 disabled={disabled || row.searching}
                 onChange={(event) => onChange((each) => ({ ...each, retitle: event.target.value }))}
@@ -656,44 +703,54 @@ function ListRow({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))] sm:pl-[4.75rem]">
-          <select
-            className={cn(FIELD, 'col-span-2 sm:col-span-1')}
-            value={row.pick}
+          <Select
+            value={String(row.pick)}
             disabled={disabled}
-            aria-label={t('list.matchFor', { line: row.line.text })}
-            onChange={(event) => onRepick(Number(event.target.value))}
+            onValueChange={(value) => onRepick(Number(value))}
           >
-            {row.line.candidates.map((each, index) => (
-              <option key={each.igdbId} value={index}>
-                {[each.title, aboutCandidate(each, labels)].filter(Boolean).join(' · ')}
-              </option>
-            ))}
-            <option value={-1}>{t('list.skip')}</option>
-          </select>
-          <select
-            className={FIELD}
+            <SelectTrigger
+              aria-label={t('list.matchFor', { line: row.line.text })}
+              className="col-span-2 px-2.5 sm:col-span-1"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-w-[min(32rem,calc(100vw-2rem))]">
+              {row.line.candidates.map((each, index) => (
+                <SelectItem
+                  key={each.igdbId}
+                  value={String(index)}
+                  media={
+                    <span
+                      aria-hidden="true"
+                      className="relative block w-8 flex-none overflow-hidden rounded-[3px] bg-text/8"
+                      style={{ aspectRatio: '3 / 4' }}
+                    >
+                      <Cover cover={each.cover?.id} title={each.title} sizes="32px" />
+                    </span>
+                  }
+                  detail={aboutCandidate(each, labels)}
+                >
+                  {each.title}
+                </SelectItem>
+              ))}
+              <SelectSeparator />
+              <SelectItem value="-1">{t('list.skip')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <RowSelect
+            label={t('list.statusFor', { title })}
             value={row.status}
             disabled={disabled || !candidate}
-            aria-label={t('list.statusFor', { title })}
-            onChange={(event) =>
-              onChange((each) => ({ ...each, status: event.target.value as Status }))
-            }
-          >
-            {statuses.map((each) => (
-              <option key={each} value={each}>
-                {library(`status.${each}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            className={FIELD}
-            value={wishlist ? '' : (row.platform ?? '')}
+            onChange={(value) => onChange((each) => ({ ...each, status: value as Status }))}
+            options={statuses.map((each) => ({ value: each, name: library(`status.${each}`) }))}
+          />
+          <RowSelect
+            label={t('list.platformFor', { title })}
+            value={wishlist || row.platform === undefined ? NO_COPY : String(row.platform)}
             disabled={disabled || !candidate || wishlist}
-            aria-label={t('list.platformFor', { title })}
-            onChange={(event) => {
-              const value = event.target.value
+            onChange={(value) =>
               onChange(({ platform: _was, ...each }) =>
-                value === ''
+                value === NO_COPY
                   ? each
                   : {
                       ...each,
@@ -701,30 +758,19 @@ function ListRow({
                       format: habits.formats[Number(value)] ?? each.format,
                     },
               )
-            }}
-          >
-            <option value="">{t('list.noCopy')}</option>
-            {platforms.map((platform) => (
-              <option key={platform.id} value={platform.id}>
-                {platform.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className={FIELD}
+            }
+            options={[
+              { value: NO_COPY, name: t('list.noCopy') },
+              ...platforms.map((platform) => ({ value: String(platform.id), name: platform.name })),
+            ]}
+          />
+          <RowSelect
+            label={t('list.formatFor', { title })}
             value={row.format}
             disabled={disabled || !candidate || wishlist || row.platform === undefined}
-            aria-label={t('list.formatFor', { title })}
-            onChange={(event) =>
-              onChange((each) => ({ ...each, format: event.target.value as Format }))
-            }
-          >
-            {formats.map((each) => (
-              <option key={each} value={each}>
-                {library(`format.${each}`)}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => onChange((each) => ({ ...each, format: value as Format }))}
+            options={formats.map((each) => ({ value: each, name: library(`format.${each}`) }))}
+          />
         </div>
       )}
     </li>

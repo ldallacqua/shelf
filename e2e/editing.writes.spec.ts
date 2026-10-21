@@ -1,6 +1,6 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 
-import { expect, openLibrary, test } from './fixtures'
+import { chooseDay, expect, openLibrary, shownDay, test } from './fixtures'
 import { gameToAdd } from './games-to-add'
 
 /**
@@ -58,14 +58,19 @@ test.describe('editing a game', () => {
     await expect(box).toHaveAttribute('data-status', 'playing')
     await expect(mine(panel)).toHaveAttribute('aria-busy', 'false')
 
-    await panel.getByLabel('My rating, out of 10').fill('7.5')
-    await panel.getByLabel('My rating, out of 10').press('Enter')
+    // Out to ten and back by half points: saved once it has come to rest, not at each press.
+    const rating = panel.getByRole('slider', { name: 'My rating' })
+    await rating.focus()
+    await page.keyboard.press('End')
+    for (let step = 0; step < 5; step += 1) await page.keyboard.press('ArrowLeft')
+    await expect(rating).toHaveAttribute('aria-valuetext', '7.5 out of 10')
+    const game = async () =>
+      (await (await page.request.get(`/api/v1/games/${slug}`)).json()) as {
+        status: string
+        rating: number
+      }
+    await expect.poll(game).toMatchObject({ status: 'playing', rating: 7.5 })
     await expect(mine(panel)).toHaveAttribute('aria-busy', 'false')
-    const game = (await (await page.request.get(`/api/v1/games/${slug}`)).json()) as {
-      status: string
-      rating: number
-    }
-    expect(game).toMatchObject({ status: 'playing', rating: 7.5 })
 
     // The owner's own read speaks the API's units too: out of ten, in hours.
     const patched = await page.request.patch(`/api/v1/entries/${slug}`, {
@@ -86,13 +91,20 @@ test.describe('editing a game', () => {
     await page.goto(`/en/game/${slug}`)
     const status = page.getByRole('group', { name: 'Status' })
     await status.getByText('Completed', { exact: true }).click()
-    const date = page.getByLabel('Completed on')
-    await expect(date).toHaveValue(new Date().toISOString().slice(0, 10))
-    await date.fill('2024-02-29')
+    const date = page.getByRole('button', { name: /^Completed on/ })
+    // Today where the browser is, as the field shows it.
+    const today = await page.evaluate(() =>
+      new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(new Date()),
+    )
+    await expect(date).toHaveAccessibleName(`Completed on ${today}`)
+    await chooseDay(page, date, '2024-02-29')
+    await expect(date).toHaveAccessibleName(`Completed on ${shownDay('2024-02-29')}`)
     await expect(mine(page)).toHaveAttribute('aria-busy', 'false')
 
     await page.reload()
-    await expect(page.getByLabel('Completed on')).toHaveValue('2024-02-29')
+    await expect(page.getByRole('button', { name: /^Completed on/ })).toHaveAccessibleName(
+      `Completed on ${shownDay('2024-02-29')}`,
+    )
     await expect(page.locator('.game-hero')).toContainText('Completed')
   })
 
@@ -125,7 +137,7 @@ test.describe('editing a game', () => {
       expect(await read(path), path).not.toContain(note)
     }
 
-    await page.getByLabel('Visitors can read these notes').check()
+    await page.getByRole('switch', { name: 'Visitors can read these notes' }).check()
     await expect(mine(page)).toHaveAttribute('aria-busy', 'false')
     expect(await read(`/en/game/${slug}`)).toContain(note)
     await visitor.close()
