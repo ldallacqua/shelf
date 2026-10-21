@@ -4,18 +4,27 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 7 is merged; sign-in is a password now, and waits for the owner's settings
+## Now: step 7 is merged; sign-in is a password now, with its settings on production
 
 - **Step 7 is merged** ([#11](https://github.com/ldallacqua/shelf/pull/11)).
 - **Sign-in changed from GitHub to one account with an email address and password** (21 Oct
   2026), at the owner's request after reading what GitHub sign-in asked of them. They want
   **proper account creation** later. That needs a decision first: whose library does a new
   account see? Shelf is one person's library today. Ask before building it.
-- **On a deployment nobody can sign in** until the owner has pasted part C's five settings in
-  [the setup checklist](setup.md) (Production only). B is half done: production's database is
-  in São Paulo, for Production only, and the functions moved there with it; previews have no
-  database yet. Never paste or print the values, and never enter them for the owner; give
-  them the `vercel env add` commands instead.
+- **The owner pasted part C's five settings** in [the setup checklist](setup.md) (Production
+  only, 21 Oct 2026). B is half done: production's database is in São Paulo, for Production
+  only, and the functions moved there with it; previews have no database yet. Never paste or
+  print the values, and never enter them for the owner; give them the `vercel env add`
+  commands instead. The owner allows deploying to production (21 Oct 2026).
+- **The first production build with those settings failed:** the build ran the two discovery
+  documents ahead, and Turso's queries were cut off (architecture, section 25). Fixed. Verify
+  cannot catch this kind of failure: its build has no sign-in settings, and its SQLite file
+  answers without the network. A stand-in for Turso over HTTP reproduced it. **Checked:**
+  `pnpm verify --skip-linux` passed the checks, the build, the JavaScript budgets (unchanged)
+  and 1,842 browser tests in all nine projects, none failed; Lighthouse ran hot (19.5 times)
+  and, on its own at 7.2 times, scored home 98, library 90, wall 92, game page 97. The
+  Storybook build passes. Playwright's browsers had gone from this computer and were
+  downloaded again.
 - **This folder is linked to the Vercel project** (`.vercel/`, ignored). `vercel link` also
   wrote a `VERCEL_OIDC_TOKEN` into `.env.local` and added `.env*` to `.gitignore`; both were
   taken out again. Run `vercel env pull` and `vercel link` with care for the same reason.
