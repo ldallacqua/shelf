@@ -67,6 +67,9 @@ import {
 import type { GamePanel as GamePanelType } from '@/features/game-detail/game-panel'
 import { HERO_COVER } from '@/features/game-detail/hero'
 import { morph } from '@/features/game-detail/morph'
+import { useLibraryChange } from '@/features/owner/library-change'
+import { useOwner } from '@/features/owner/owner'
+import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -80,6 +83,7 @@ import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
+import { revealRow } from './use-row-window'
 import {
   useDensity,
   useDimension,
@@ -161,7 +165,7 @@ type LibraryViewProps = {
   shelves: readonly SmartShelf[]
   /** The smart shelf this page is, when it is one: its filter, sort and grouping are the defaults. */
   shelf?: SmartShelf
-  /** The owner's ways to save and remove shelves. Absent for a visitor. */
+  /** The owner's ways to save and remove shelves. Offered once the browser knows the owner is here. */
   actions?: ShelfActions
 }
 
@@ -179,9 +183,12 @@ export function LibraryView({
   stats,
   shelves: smartShelves,
   shelf,
-  actions,
+  actions: ownerActions,
 }: LibraryViewProps) {
+  // A visitor is never offered a control: they appear once the owner is known to be here.
+  const actions = useOwner().status === 'owner' ? ownerActions : undefined
   const t = useTranslations('Library')
+  const added = useTranslations('Add')
   const filters = useTranslations('Filters')
   const shelfWords = useTranslations('Shelves')
   const locale = useLocale()
@@ -240,7 +247,10 @@ export function LibraryView({
 
   // When the library file arrives, its shelves are arranged in a turn of
   // their own, ahead of drawing them.
-  const state = useLibrary(first.version, (whole) => {
+  // A game the owner just added or changed here: its library's version, and the game.
+  const edit = useLibraryChange()
+  const version = Math.max(first.version, edit?.version ?? 0)
+  const state = useLibrary(version, (whole) => {
     const library = keepFirstScreen(whole, first)
     const index = indexOnce(library)
     const { tree } = parseQuery(query.q)
@@ -334,6 +344,70 @@ export function LibraryView({
     void setAddress({ sort: 'random', seed: newSeed() })
   }
   const clearFilters = () => writeQ('')
+
+  // Afterwards (spec 4.1): once the new file is here, the view moves to the
+  // game just added and it takes focus. If the filters hide it, the notice
+  // says so and offers to show it.
+  const handledEdit = useRef(0)
+  const landing = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (
+      edit?.slug &&
+      handledEdit.current !== edit.id &&
+      library &&
+      library.version >= edit.version &&
+      matching
+    ) {
+      handledEdit.current = edit.id
+      const slug = edit.slug
+      const shown = shelves.some((each) => each.items.some((item) => item.game.slug === slug))
+      if (shown) landing.current = slug
+      else {
+        notify({
+          message: added('addedHidden', { title: edit.title ?? slug }),
+          actions: [
+            {
+              label: added('show'),
+              run: () => {
+                landing.current = slug
+                clearFilters()
+              },
+            },
+            ...(edit.undo ? [{ label: added('undo'), run: edit.undo }] : []),
+          ],
+        })
+      }
+    }
+    const target = landing.current
+    if (!target) return
+    const name = CSS.escape(target)
+    let tries = 0
+    let frame = 0
+    const land = () => {
+      const box = scope.current?.querySelector<HTMLElement>(
+        `[data-flip="${name}"], [data-flip^="${name}:"], [data-box="${name}"], [data-box^="${name}:"]`,
+      )
+      if (box) {
+        landing.current = undefined
+        box.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' })
+        box.focus({ preventScroll: true })
+        return
+      }
+      // A box far from the screen is not in the page until its row comes near.
+      const shelf = shelves.find((each) => each.items.some((item) => item.game.slug === target))
+      const index = shelf?.items.findIndex((item) => item.game.slug === target) ?? -1
+      const grid = shelf
+        ? scope.current?.querySelector<HTMLElement>(`[data-grid-of="${CSS.escape(shelf.key)}"]`)
+        : undefined
+      if (grid && index >= 0) revealRow(grid, index)
+      if ((tries += 1) < 10) frame = requestAnimationFrame(land)
+      else landing.current = undefined
+    }
+    frame = requestAnimationFrame(land)
+    return () => cancelAnimationFrame(frame)
+    // `shelves` is new on every drawing; what matters is that they were redrawn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit, library, matching, shelves.length, drawnQ])
 
   const nextView = () => change(setView, views[(views.indexOf(view) + 1) % views.length]!)
 
@@ -434,25 +508,15 @@ export function LibraryView({
     })
   }
 
-  /** Set from asking for the game to close until it has: the address may change first. */
-  const closing = useRef(false)
-
-  /** Closes the game, its cover going back into its box. `fromHistory` when Back already left. */
-  const closeGame = (fromHistory = false) => {
-    const item = open ? itemAt(open) : undefined
-    closing.current = true
-    morph(
-      {
-        from: pulled ? () => undefined : heroCover,
-        to: () => (item ? coverOf(scope.current, keyOf(item)) : undefined),
-        panel: gamePanel,
-      },
-      () => {
-        closing.current = false
-        setOpen(undefined)
-      },
-    )
-    if (!fromHistory) leaveGame()
+  /**
+   * The close button, Escape or a click outside: a step back out of history,
+   * which closes the game as Back does (below). The panel slides away on its
+   * own; the cover does not fly home, because WebKit's page crashed under
+   * that flight (architecture, section 25).
+   */
+  const closeGame = () => {
+    if (gameSlugIn(window.location.pathname)) leaveGame()
+    else setOpen(undefined)
   }
 
   /** Another game in the same panel: the arrows, a swipe, or the buttons. */
@@ -468,20 +532,19 @@ export function LibraryView({
 
   // Back closes the game and Forward opens it again; a link out of the open
   // game to the filtered library closes it too.
-  const latest = useRef({ open, shelves, closeGame })
+  const latest = useRef({ shelves })
   useEffect(() => {
-    latest.current = { open, shelves, closeGame }
+    latest.current = { shelves }
   })
   useEffect(() => {
     const onMove = () => {
       historyMoved()
-      const now = latest.current
       const slug = gameSlugIn(window.location.pathname)
       if (!slug) {
-        if (now.open) now.closeGame(true)
+        setOpen(undefined)
         return
       }
-      for (const shelf of now.shelves) {
+      for (const shelf of latest.current.shelves) {
         const index = shelf.items.findIndex((item) => item.game.slug === slug)
         if (index >= 0) {
           void loadPanel().then((panel) => {
@@ -499,9 +562,11 @@ export function LibraryView({
   }, [])
   const pathname = usePathname()
   const onGame = gameSlugIn(pathname) !== undefined
-  useEffect(() => {
-    if (!onGame && !closing.current) setOpen(undefined)
-  }, [onGame])
+  const [wasOnGame, setWasOnGame] = useState(onGame)
+  if (onGame !== wasOnGame) {
+    setWasOnGame(onGame)
+    if (!onGame) setOpen(undefined)
+  }
 
   // When the sheet closes, focus returns to the box of the game last shown
   // in it: stepping through games moves your place on the shelf with you.

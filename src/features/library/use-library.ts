@@ -67,8 +67,15 @@ export function useLibrary(version: number, prepare?: (library: Library) => void
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, key])
 
+  // While a newer version is on its way (a game was just added or changed),
+  // the shelf keeps the library it has, rather than falling back to its
+  // first screen; the new one replaces it when it arrives.
+  const [shown, setShown] = useState<Library>()
+  if (result?.key === key && result.library && result.library !== shown) setShown(result.library)
+
   // An answer for an earlier version or attempt is not this one's answer.
-  if (result?.key !== key) return { status: 'loading' }
+  if (result?.key !== key)
+    return shown ? { status: 'ready', library: shown } : { status: 'loading' }
   if (result.library) return { status: 'ready', library: result.library }
   return { status: 'failed', retry: () => setAttempt((count) => count + 1) }
 }

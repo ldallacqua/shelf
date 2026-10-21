@@ -119,27 +119,62 @@ describe('GET /games/{slug}', () => {
 })
 
 describe('the OpenAPI document', () => {
-  it('describes every read, with the schemas the routes check against', () => {
+  it('describes every read and write, with the schemas the routes check against', () => {
     const document = openApiDocument()
     expect(document.openapi).toBe('3.1.0')
     expect(Object.keys(document.paths)).toEqual([
       '/library',
       '/library/facets',
       '/games/{slug}',
+      '/igdb/search',
+      '/igdb/match',
+      '/additions',
+      '/additions/undo',
+      '/entries',
+      '/entries/{id}',
+      '/entries/{id}/copies',
+      '/entries/{id}/copies/{copy}',
+      '/removed/{undo}',
       '/shelves',
       '/shelves/{slug}',
       '/library/snapshot/{version}',
     ])
     expect(Object.keys(document.components.schemas ?? {}).sort()).toEqual([
+      'AddUndo',
+      'Added',
+      'Additions',
+      'Changed',
+      'CopyPatch',
       'Error',
       'Facets',
       'Game',
       'GamePage',
+      'GamePatch',
+      'IgdbSearch',
       'Library',
+      'LineMatch',
+      'ListMatch',
+      'NewCopy',
+      'NewGame',
+      'NewGames',
+      'OwnerGame',
+      'PastedLines',
+      'Removed',
+      'Restored',
+      'SearchResult',
       'ShelfOutline',
       'SmartShelf',
       'SmartShelves',
+      'UndoAdditions',
     ])
+    // Every write takes the owner's session; of the reads, only the owner's own do.
+    const ownerReads = ['/igdb/search', '/entries/{id}']
+    for (const [path, methods] of Object.entries(document.paths)) {
+      for (const [method, operation] of Object.entries(methods)) {
+        const secured = 'security' in operation
+        expect(secured, `${method} ${path}`).toBe(method !== 'get' || ownerReads.includes(path))
+      }
+    }
     expect(JSON.stringify(document.components.schemas?.Library)).toContain(
       '#/components/schemas/Game',
     )

@@ -10,7 +10,7 @@ this phase.
 Three rules I keep throughout:
 
 - I never ask for a secret value in chat, and never print one.
-- You paste values straight into Vercel or into `.env.local` on this Mac.
+- You paste values straight into Vercel or into `.env.local` on this computer.
 - The repository holds names only (`.env.example`).
 
 ## At a glance
@@ -39,7 +39,7 @@ There are two ways. The first is less clicking.
 
 ### Option 1: you sign in, I do the rest
 
-1. In a terminal on this Mac, run `vercel login` and finish the sign-in in the browser it
+1. In a terminal on this computer, run `vercel login` and finish the sign-in in the browser it
    opens. Use your GitHub account, `ldallacqua`.
 2. Tell me it is done.
 
@@ -82,12 +82,17 @@ little from these):
 | Setting | Should read |
 | --- | --- |
 | Build and Deployment, Node.js Version | 24.x |
-| Functions, Function Region | Washington, D.C. (`iad1`) |
+| Functions, Function Region | São Paulo (`gru1`), set by `vercel.json` |
 | Deployment Protection | Vercel Authentication on, Standard Protection |
 
 ---
 
 ## B. Turso databases
+
+**Production's database was made on 21 Oct 2026**, as `shelf-ldallacqua`, in AWS São Paulo
+(`aws-sa-east-1`); the functions moved to São Paulo with it (`gru1`, in `vercel.json`). Its
+two settings are for **Production only**. The preview database is not made yet, so previews
+keep the sample built into them, which cannot be written to.
 
 **When:** any time before I start build step 7. Nothing before that needs it.
 
@@ -101,9 +106,11 @@ Shelf refuses to save into the built-in sample.
 
 1. Go to [turso.tech](https://turso.tech) and sign up with GitHub. The free plan needs no
    card.
-2. Create a database named **`shelf`**. For location choose **AWS US East (Virginia)**,
-   `aws-us-east-1`. That puts it next to the Vercel function.
-3. Create a second database named **`shelf-preview`** in the same location.
+2. Create a database named **`shelf`**. For location choose **AWS South America (São
+   Paulo)**, `aws-sa-east-1`. That puts it next to the Vercel function.
+3. Create a second database named **`shelf-preview`** in the same location. Never give
+   previews production's database: a preview build fills an empty database with the sample
+   games.
 4. For each database, copy its **URL** (it starts with `libsql://`) and create a **token**
    with read and write access.
 5. In Vercel: your project, **Settings**, **Environment Variables**. Add these, marked
@@ -153,7 +160,9 @@ Preview deployments need no app of their own. They sign in through production.
 ### Settings in Vercel
 
 Mark all of them **Sensitive**. To make a random value, run `openssl rand -base64 32` in a
-terminal.
+terminal, or, where there is no `openssl`,
+`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Use a terminal
+of your own, not the one in the Claude app: I can read that one.
 
 | Name | Environment | Value |
 | --- | --- | --- |
@@ -170,7 +179,7 @@ terminal.
 --jq .id` prints it. Shelf uses the number and not the username because a username can be
 changed and then claimed by someone else.
 
-### Settings on this Mac
+### Settings on this computer
 
 Open `.env.local` in the project folder. I will have added the names; you fill in two:
 
@@ -183,7 +192,10 @@ I generate the local `BETTER_AUTH_SECRET` myself, into the file, without display
 
 **Check it worked:** on the step 7 preview, **Sign in** takes you to GitHub and back, and the
 **Add** button appears. Signing in with any other GitHub account is turned away with a plain
-message.
+message. To let an assistant in, add `https://{the deployment's address}/api/mcp/owner` to it
+as an MCP server: it sends you to sign in, then asks you to say yes. Use the deployment's own
+`*.vercel.app` address, not the branch's: tokens are issued for one address. No setting is
+needed for this.
 
 ---
 

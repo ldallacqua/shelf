@@ -1,9 +1,11 @@
 # Shelf: the API
 
 Shelf's library can be read by other programs: a script, a spreadsheet, another site, an AI
-assistant. Everything here is public and read-only, needs no key, and answers in JSON. The
-design is in [the architecture, section 16](architecture.md#16-api-mcp-and-machine-readable-pages);
-the filter language is [spec section 5.3](spec.md#53-the-filter-language).
+assistant. Reading is public, needs no key, and answers in JSON. Writing is the owner's alone
+([below](#writing-the-owner-only)), and an assistant can do both through
+[MCP](#mcp-for-ai-assistants). The design is in
+[the architecture, section 16](architecture.md#16-api-mcp-and-machine-readable-pages); the
+filter language is [spec section 5.3](spec.md#53-the-filter-language).
 
 The machine-readable description is the OpenAPI 3.1 document at
 [`/api/v1/openapi.json`](#get-openapijson). It is generated from the same Zod schemas every
@@ -14,7 +16,7 @@ answer is checked against before it is sent, so it cannot drift from what the AP
 | | |
 | --- | --- |
 | Address | `https://{the site}/api/v1` |
-| Sign-in | None. Writing arrives with sign-in, at build step 7. |
+| Sign-in | None to read. A write takes the owner's session cookie, which signing in with GitHub on the site sets, and answers 401 without it. |
 | Format | JSON, UTF-8 |
 | Other sites | Allowed: every answer carries `Access-Control-Allow-Origin: *` |
 | Caching | `s-maxage=60, stale-while-revalidate=600`: the edge keeps an answer for a minute. The library and keyword files are kept for a year, because their address changes when they do. |
@@ -255,14 +257,52 @@ Every keyword the library's games have, and which games have each, by slug. The 
 it the first time a keyword filter is used. Like the snapshot, it is kept for a year, moves
 when the library does, and an old version is sent on to the current one.
 
+## Writing (the owner only)
+
+Everything the site's Add sheet and "Mine" do, with the session cookie that signing in sets.
+A write is kept by nothing between the server and the owner (`Cache-Control: private,
+no-store`), and every page and file built from the library is made again on its next visit.
+Ratings are out of ten and time is in hours, as the reads give them.
+
+| Method and path | Does |
+| --- | --- |
+| `GET /igdb/search?q=` | Up to eight games on IGDB, editions left out, ports folded in, each marked when the library has it |
+| `POST /igdb/match` | Up to twenty pasted lines (`{ "lines": ["Hollow Knight (2017) [Switch]"] }`), each with its match, how sure it is (`exact`, `close`, `none`) and up to five alternatives |
+| `POST /entries` | Adds a game: `{ "igdbId": 231, "status": "backlog", "copies": [{ "platform": 6, "format": "digital" }] }` (Half-Life, on PC). A game related to one in the library is folded into it as [ADR 001](adr/001-game-entry-model.md) proposes, unless `grouping` says `separate`. A game already there gets only the copies it lacked. |
+| `POST /additions` | Up to fifty games at once, `{ "games": [ … ] }`, each as `POST /entries` takes it. One result a game; one that fails leaves the rest. Each added game's `undo` is what `POST /additions/undo` takes back. |
+| `GET /entries/{id}` | A game as I keep it: private notes, the ids of its copies and versions |
+| `PATCH /entries/{id}` | Changes what is mine, in one step: `status`, `rating`, `completedOn`, `notes`, `notesPublic`, `tags` (replaces them all), `hoursPlayed`, `mainVersion`. Absent is unchanged; `null` clears. |
+| `DELETE /entries/{id}` | Removes a game and everything added with it. The answer's `undo` is kept a day. |
+| `POST /removed/{undo}` | Puts a removed game back exactly as it was |
+| `POST /entries/{id}/copies`, `PATCH` and `DELETE /entries/{id}/copies/{copy}` | A copy: add one (`{ "platform", "format" }`), switch it between physical and digital, remove it |
+| `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Saves or removes a smart shelf |
+
+`{id}` is a game's address (its slug) or its entry id. A refusal is an error as above:
+`not-signed-in` (401), `invalid` (400), `not-found` (404), `conflict` (409), `not-kept` (503,
+on a deployment with no database), `igdb` (502).
+
+## MCP, for AI assistants
+
+Two endpoints, on the Model Context Protocol's 2026-07-28 revision and the 2025 one:
+
+| Endpoint | Sign-in | Tools |
+| --- | --- | --- |
+| `/api/mcp` | None | `search_library` (a filter in the filter language, sorted and grouped, a page at a time), `get_game`, `list_filter_values`, `list_shelves` |
+| `/api/mcp/owner` | The owner, through OAuth | The four above, and `search_igdb`, `add_game`, `update_entry`, `set_status` |
+
+The tools answer with the same shapes as the routes above. To use the owner's endpoint, add
+it to an assistant: the assistant is answered 401 and told where to sign in (RFC 9728), the
+owner signs in with GitHub, says yes on the consent page, and the assistant is given a token
+for that endpoint. Assistants are known by their Client ID Metadata Document, so none needs
+registering first.
+
 ## `GET /openapi.json`
 
-The OpenAPI 3.1 description of everything above, with a schema for each answer (`Library`,
-`Facets`, `SmartShelves`, `SmartShelf`, `Game`, `GamePage`, `ShelfOutline`, `Error`).
+The OpenAPI 3.1 description of everything above, with a schema for each body and answer.
+The writes are marked with the `ownerSession` cookie as their security scheme.
 
 ## Still to come
 
 | | Build step |
 | --- | --- |
-| Writing: adding and changing games, saving shelves | 7, with sign-in |
-| The MCP endpoints, for AI assistants | 7 |
+| `/llms.txt`: the site, the API, both MCP endpoints and the filter language, for assistants | 8 |

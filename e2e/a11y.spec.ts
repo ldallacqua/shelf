@@ -56,13 +56,15 @@ for (const theme of themes) {
     await expectAccessible(page, '[role="dialog"]')
   })
 
-  test(`saving a shelf passes axe, ${theme}`, async ({ page, context, baseURL }) => {
-    // The owner, as the test doubles know them.
-    await context.addCookies([{ name: 'shelf-test-owner', value: '1', url: baseURL! }])
-    await openWithTheme(page, '/en/library?q=genre%3Arpg', theme)
-    await page.getByRole('button', { name: 'Save as a shelf' }).click()
-    await page.getByRole('dialog', { name: 'Save as a shelf' }).waitFor()
-    await expectAccessible(page, '[role="dialog"]')
+  test.describe('signed in', () => {
+    test.use({ signedIn: true })
+
+    test(`saving a shelf passes axe, ${theme}`, async ({ page }) => {
+      await openWithTheme(page, '/en/library?q=genre%3Arpg', theme)
+      await page.getByRole('button', { name: 'Save as a shelf' }).click()
+      await page.getByRole('dialog', { name: 'Save as a shelf' }).waitFor()
+      await expectAccessible(page, '[role="dialog"]')
+    })
   })
 
   test(`the sort menu passes axe while open, ${theme}`, async ({ page }) => {

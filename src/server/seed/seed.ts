@@ -18,6 +18,7 @@ import {
   libraryMeta,
   platforms,
   playTime,
+  removedEntries,
   shelves,
   tags,
   vocab,
@@ -62,6 +63,7 @@ const insertAll = async <T extends SQLiteTable>(db: Db, table: T, rows: Rows<T>,
 export const clearLibrary = async (db: Db) => {
   // Children first, so it works whether or not the engine enforces foreign keys.
   for (const table of [
+    removedEntries,
     playTime,
     copies,
     entryTags,

@@ -144,6 +144,15 @@ test.describe('the public API', () => {
         '/library',
         '/library/facets',
         '/games/{slug}',
+        '/igdb/search',
+        '/igdb/match',
+        '/additions',
+        '/additions/undo',
+        '/entries',
+        '/entries/{id}',
+        '/entries/{id}/copies',
+        '/entries/{id}/copies/{copy}',
+        '/removed/{undo}',
         '/shelves',
         '/shelves/{slug}',
       ]),
@@ -152,4 +161,72 @@ test.describe('the public API', () => {
       expect.arrayContaining(['Game', 'GamePage', 'Library', 'Facets', 'SmartShelf', 'Error']),
     )
   })
+})
+
+/** Any id: the owner is asked for before anything is looked up. */
+const ID = '00000000-0000-4000-a000-000000000000'
+
+test.describe('the API’s writes, without the owner’s session', () => {
+  test.skip(
+    ({ browserName, size }) => browserName !== 'chromium' || size !== 'desktop',
+    'it answers the same to every browser',
+  )
+
+  const writes = [
+    { method: 'GET', path: '/api/v1/igdb/search?q=hades' },
+    { method: 'POST', path: '/api/v1/igdb/match', data: { lines: ['Hades', 'Celeste'] } },
+    { method: 'POST', path: '/api/v1/entries', data: { igdbId: 231, status: 'backlog' } },
+    { method: 'POST', path: '/api/v1/additions', data: { games: [{ igdbId: 231 }] } },
+    {
+      method: 'POST',
+      path: '/api/v1/additions/undo',
+      data: {
+        undo: [{ entryId: ID, gameId: ID, newEntry: true, newVersion: true, copyIds: [] }],
+      },
+    },
+    // The owner's own read: private notes are in it.
+    { method: 'GET', path: '/api/v1/entries/bloodborne' },
+    { method: 'PATCH', path: '/api/v1/entries/bloodborne', data: { status: 'dropped' } },
+    { method: 'DELETE', path: '/api/v1/entries/bloodborne' },
+    {
+      method: 'POST',
+      path: '/api/v1/entries/bloodborne/copies',
+      data: { platform: 48, format: 'digital' },
+    },
+    {
+      method: 'PATCH',
+      path: `/api/v1/entries/bloodborne/copies/${ID}`,
+      data: { format: 'digital' },
+    },
+    { method: 'DELETE', path: `/api/v1/entries/bloodborne/copies/${ID}` },
+    { method: 'POST', path: `/api/v1/removed/${ID}` },
+    { method: 'PUT', path: '/api/v1/shelves/short-ones', data: { name: 'Mine now' } },
+    { method: 'DELETE', path: '/api/v1/shelves/short-ones' },
+  ] as const
+
+  for (const write of writes) {
+    test(`${write.method} ${write.path.split('?')[0]} is refused, and changes nothing`, async ({
+      request,
+    }) => {
+      const version = async () =>
+        new URL(
+          (await request.get('/api/v1/library/snapshot/0', { maxRedirects: 0 })).headers()
+            .location ?? '',
+          'http://x',
+        ).pathname
+      const before = await version()
+      for (const cookie of [undefined, 'shelf.session_token=made-up.value']) {
+        const response = await request.fetch(write.path, {
+          method: write.method,
+          headers: cookie ? { cookie } : {},
+          ...('data' in write ? { data: write.data } : {}),
+        })
+        expect(response.status(), cookie ?? 'no cookie').toBe(401)
+        expect(await response.json()).toMatchObject({ error: { code: 'not-signed-in' } })
+      }
+      expect(await version()).toBe(before)
+      expect((await request.get('/api/v1/games/bloodborne')).status()).toBe(200)
+      expect((await request.get('/api/v1/shelves/short-ones')).status()).toBe(200)
+    })
+  }
 })

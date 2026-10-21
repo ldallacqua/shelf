@@ -15,13 +15,32 @@ const sizes = {
   desktop: { viewport: { width: 1440, height: 900 }, hasTouch: false },
 } as const
 
-const projects: Project[] = browsers.flatMap((browserName) =>
+/** Tests that add, change or remove games. */
+const WRITES = /\.writes\.spec\.ts$/
+
+const reading: Project[] = browsers.flatMap((browserName) =>
   Object.entries(sizes).map(([size, options]) => ({
     name: `${browserName}-${size}`,
     use: { browserName, ...options },
     metadata: { size },
+    testIgnore: WRITES,
   })),
 )
+
+/**
+ * The same nine, for the tests that change the library. They start once
+ * every test that reads it has finished, so no count or shelf a reading
+ * test checks can change under it. Run one alone with `--no-deps`.
+ */
+const writing: Project[] = reading.map((project) => ({
+  ...project,
+  name: `${project.name}-writes`,
+  testIgnore: undefined,
+  testMatch: WRITES,
+  dependencies: reading.map((each) => each.name!),
+}))
+
+const projects = [...reading, ...writing]
 
 export default defineConfig({
   testDir: './e2e',
@@ -45,10 +64,10 @@ export default defineConfig({
   webServer: process.env.BASE_URL
     ? undefined
     : {
-        // Tests run against a production build: `pnpm build` first.
-        command: `pnpm start`,
-        // IGDB and Twitch are answered by test doubles inside the server.
-        env: { SHELF_MOCKS: '1' },
+        // Tests run against a production build: `pnpm build` first. IGDB, Twitch and
+        // GitHub are answered by test doubles inside the server, and it serves a
+        // fresh copy of the database, which the tests that add games write to.
+        command: `pnpm serve:test`,
         url: `${baseURL}/en`,
         reuseExistingServer: !process.env.CI,
         timeout: 60_000,

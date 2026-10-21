@@ -148,6 +148,7 @@ function WallGrid({
     <ul
       ref={ref}
       role="list"
+      data-grid-of={shelf.key}
       className="wall-grid"
       data-size={size}
       aria-label={label}

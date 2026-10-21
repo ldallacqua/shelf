@@ -31,7 +31,8 @@ reasoning behind the layers is in [the architecture, section 17](architecture.md
   not understand gets a 400, as IGDB would give, so a query cannot pass against the double
   and fail against the real thing for being malformed.
 - **In the browser tests** the built app is started with `SHELF_MOCKS=1`, which installs the
-  same doubles inside the server (`src/instrumentation.ts`). They refuse to start on Vercel.
+  same doubles inside the server (`src/instrumentation.ts`): IGDB and Twitch, GitHub with two
+  made-up accounts, and a test assistant's metadata document. They refuse to start on Vercel.
 - **Covers are flat colors.** In the browser tests every request to IGDB's image servers is
   answered with a color made from the image's id (`e2e/fixtures.ts`). No test depends on
   those servers, and the repository holds no cover art. Lighthouse is the exception: it
@@ -70,14 +71,52 @@ is of a screen reader. Read the filter from the address instead (`address(page)`
 opened by their summary. With a mouse a value's row cycles off, included, excluded; on touch
 it has two buttons. `pick()` does whichever the browser has.
 
-**The owner is a cookie.** Until sign-in, a test saves a shelf as the owner by setting
-`shelf-test-owner=1`, which the server reads only with `SHELF_MOCKS=1`. The nine projects
-run at once against one database, so a test that saves names its shelf after its project
-and removes it again in a `finally`. A run stopped half-way can leave a shelf called
+**The owner signs in.** A test that needs me writes `test.use({ signedIn: true })`. The first
+such test in a worker signs in for real (`signIn()` in `e2e/fixtures.ts`): the browser's trip
+to `github.com` is sent straight back to the callback with a code the GitHub double knows,
+the server asks the double who that is, and the session is saved to a file the worker's
+other tests load. `signIn(page, 'stranger')` is the account that must be turned away. The nine
+projects run at once against one database, so a test that saves a shelf names it after its
+project and removes it again in a `finally`. A run stopped half-way can leave a shelf called
 `Test …` behind; `pnpm seed` puts the database back.
 
 **The API is checked in one project** (Chromium at desktop width): it answers every browser
-the same.
+the same. So are the MCP endpoints, through the official MCP client, on both revisions of the
+protocol.
+
+## Adding and editing in browser tests
+
+**Tests that change the library are `*.writes.spec.ts`,** and run in nine projects of their
+own (`chromium-desktop-writes` and so on), which start only once the nine that read have
+finished: the reading tests compare what they see with the sample library. To run them
+alone, pass `--no-deps`:
+
+```sh
+pnpm e2e e2e/editing.writes.spec.ts --project=firefox-phone-writes --no-deps
+```
+
+**The server serves a copy of the database.** `pnpm serve:test` copies `.data/shelf.db` to
+`.data/e2e.db`, migrates the copy, and serves it with the test doubles on; Playwright and
+`pnpm verify` both start it. Nothing a test adds reaches `shelf.db`. A server left running
+keeps its copy, with what earlier runs added, so tests clean up after themselves.
+
+**Each test adds a game no other test touches.** Nine projects add games at once, so
+`gameToAdd(info, slot)` and `listToAdd(info)` in `e2e/games-to-add.ts` give each test in each
+project a fixture game of its own, one no sample game is related to. A test that adds a
+game takes it away again, through the API.
+
+**An assistant signs in** in `e2e/mcp.writes.spec.ts`, once, in Chromium: MSW serves a test
+assistant's metadata document (`MOCK_ASSISTANT`), the browser says no and then yes on the
+consent page, and the test trades the code for a token and calls the owner's tools. Three
+things learned there:
+
+- Ask with `prompt=consent` when a test needs the consent page. A yes from an earlier run
+  is remembered, and the server then sends the browser straight on.
+- A route set with `page.route()` does not catch where a server's own redirect lands. Read
+  such a redirect from the response (`maxRedirects: 0`).
+- A request context the test makes carries the test's cookies unless it is given an empty
+  `storageState`. With a cookie, Better Auth asks for an `Origin`, which an assistant never
+  sends.
 
 ## A game's page in browser tests
 
@@ -174,8 +213,10 @@ pnpm e2e --grep @smoke                         # the short list `pnpm verify --q
 ```
 
 The nine projects are three engines (Chromium, Firefox, WebKit) at three widths (phone 390,
-tablet 820, desktop 1440). Playwright starts the server itself; if one is already running on
-port 3300 it uses that.
+tablet 820, desktop 1440), and each has a twin that runs the tests that write (above).
+Playwright starts the server itself (`pnpm serve:test`); if one is already running on port
+3300 it uses that. On Windows, run Playwright from PowerShell with
+`PLAYWRIGHT_BROWSERS_PATH` set to where its browsers are.
 
 **WebKit on Linux is not Safari.** The Linux build of WebKit paints with different code from
 the one on a Mac. A test can pass in WebKit on a Mac and hang on Linux: the wall's shelf

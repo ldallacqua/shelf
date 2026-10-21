@@ -55,7 +55,7 @@ export function LibrarySkeleton({ title }: { title?: string }) {
       {/* The toolbar: under the search on a wide screen, two rows at the bottom on a phone. */}
       <div
         aria-hidden="true"
-        className="library-controls grid gap-2 sm:mt-3 sm:flex sm:items-center sm:gap-3"
+        className="library-controls grid gap-2 sm:mt-3 sm:flex sm:flex-wrap sm:items-center sm:gap-3"
       >
         <div className="flex gap-2 sm:contents">
           <span className={cn('ghost w-22 flex-none sm:w-24', BUTTON)} />

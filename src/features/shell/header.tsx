@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl'
 
+import type { AddActions } from '@/features/add-game/actions'
+import { AddButton } from '@/features/add-game/add-button'
 import { LanguageSwitch } from '@/features/language/language-switch'
 import { ThemeSwitch } from '@/features/theme/theme-switch'
 import { Link } from '@/i18n/navigation'
@@ -9,8 +11,11 @@ import { HeaderSearch } from './header-search'
 import { MobileNav } from './mobile-nav'
 import { NavLinks } from './nav-links'
 
-/** The header on every page: the name, the main links, search, theme and language. */
-export function Header() {
+/**
+ * The header on every page: the name, the main links, search, theme and
+ * language, and, for the owner once signed in, Add.
+ */
+export function Header({ add }: { add?: AddActions }) {
   const t = useTranslations('Shell')
   const meta = useTranslations('Meta')
 
@@ -32,6 +37,7 @@ export function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-0.5">
+          {add ? <AddButton actions={add} /> : null}
           <HeaderSearch />
           <ThemeSwitch />
           <LanguageSwitch />

@@ -152,6 +152,9 @@ export function GamePanel({
             cover={!pulled}
             placeholder={placeholder}
             heading={(heading) => <SheetTitle asChild>{heading}</SheetTitle>}
+            editable
+            // Removed, the game has no page to stay on: the panel closes, back to the shelf.
+            onRemoved={onClose}
           />
         </SheetContent>
       ) : null}

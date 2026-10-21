@@ -13,6 +13,7 @@ import { Link } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 
 import { HERO_COVER } from './hero'
+import { OwnerMine } from './owner-mine'
 import { Screenshots } from './screenshots'
 
 import './game-detail.css'
@@ -37,6 +38,10 @@ type GameDetailProps = {
   heading?: (heading: ReactElement) => ReactElement
   /** What stands above the heading: on the page, the way back to the library. */
   above?: ReactNode
+  /** Editable by the owner, once the browser knows the owner is here (spec 7.3). */
+  editable?: boolean
+  /** After the owner removes it: where to go. */
+  onRemoved?: () => void
 }
 
 const wash = ([accent, second, base]: Palette): string =>
@@ -116,6 +121,8 @@ export function GameDetail({
   placeholder,
   heading = (node) => node,
   above,
+  editable,
+  onRemoved,
 }: GameDetailProps) {
   const t = useTranslations('Game')
   const library = useTranslations('Library')
@@ -219,7 +226,7 @@ export function GameDetail({
     return platform ? [{ copy, platform }] : []
   })
 
-  const mine = (
+  const readOnlyMine = (
     <Section title={t('mine')} level={level} className={page ? 'game-mine' : undefined}>
       <dl>
         <Row label={t('status')}>
@@ -277,6 +284,14 @@ export function GameDetail({
         </div>
       ) : null}
     </Section>
+  )
+
+  const mine = editable ? (
+    <OwnerMine slug={game.slug} level={level} minor={Minor} onRemoved={onRemoved} refresh={page}>
+      {readOnlyMine}
+    </OwnerMine>
+  ) : (
+    readOnlyMine
   )
 
   const about =

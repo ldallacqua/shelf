@@ -111,6 +111,14 @@ describe('Footer', () => {
     renderWithIntl(<Footer />, 'pt-BR')
     expect(screen.getByRole('contentinfo')).toHaveTextContent('Dados e capas dos jogos: IGDB.com.')
   })
+
+  it('offers a visitor the way to sign in, and back to this page afterwards', () => {
+    setPathname('/trophies')
+    renderWithIntl(<Footer />)
+    expect(
+      within(screen.getByRole('contentinfo')).getByRole('link', { name: 'Sign in' }),
+    ).toHaveAttribute('href', '/en/sign-in?from=%2Fen%2Ftrophies')
+  })
 })
 
 describe('SkipLink', () => {

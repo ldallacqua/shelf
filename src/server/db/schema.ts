@@ -297,6 +297,23 @@ export const shelves = sqliteTable(
   (table) => [uniqueIndex('shelves_slug').on(table.slug)],
 )
 
+/**
+ * A game just removed, kept whole for a day so Undo can put it back exactly
+ * as it was (spec 7.3): the entry, its versions, the IGDB records only it
+ * used, its copies, playtime and tags.
+ */
+export const removedEntries = sqliteTable(
+  'removed_entries',
+  {
+    id: text().primaryKey(),
+    entryId: text().notNull(),
+    title: text().notNull(),
+    snapshot: text({ mode: 'json' }).$type<unknown>().notNull(),
+    removedAt: integer().notNull(),
+  },
+  (table) => [index('removed_entries_at').on(table.removedAt)],
+)
+
 /** One row: the counter raised by every write. The library file's address contains it. */
 export const libraryMeta = sqliteTable(
   'library_meta',
@@ -317,3 +334,272 @@ export const igdbToken = sqliteTable(
   },
   (table) => [check('igdb_token_one_row', sql`${table.id} = 1`)],
 )
+
+/*
+ * Sign-in (architecture, section 9). Better Auth's own four tables, under
+ * the names its Drizzle adapter is given in `server/auth/auth.ts`. Only one
+ * GitHub account is ever let in, so each holds a row or two. A seed leaves
+ * them alone.
+ */
+
+/** A moment as Better Auth hands it over, a Date, stored as milliseconds like every other moment here. */
+const moment = () => integer({ mode: 'timestamp_ms' })
+
+export const users = sqliteTable('users', {
+  id: text().primaryKey(),
+  name: text().notNull(),
+  email: text().notNull().unique(),
+  emailVerified: integer({ mode: 'boolean' }).notNull().default(false),
+  image: text(),
+  createdAt: moment().notNull(),
+  updatedAt: moment().notNull(),
+})
+
+export const sessions = sqliteTable(
+  'sessions',
+  {
+    id: text().primaryKey(),
+    expiresAt: moment().notNull(),
+    token: text().notNull().unique(),
+    createdAt: moment().notNull(),
+    updatedAt: moment().notNull(),
+    ipAddress: text(),
+    userAgent: text(),
+    userId: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+  },
+  (table) => [index('sessions_user').on(table.userId)],
+)
+
+/** A sign-in method for a user: here, always their GitHub account, by its numeric id. */
+export const accounts = sqliteTable(
+  'accounts',
+  {
+    id: text().primaryKey(),
+    accountId: text().notNull(),
+    providerId: text().notNull(),
+    userId: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    accessToken: text(),
+    refreshToken: text(),
+    idToken: text(),
+    accessTokenExpiresAt: moment(),
+    refreshTokenExpiresAt: moment(),
+    scope: text(),
+    password: text(),
+    createdAt: moment().notNull(),
+    updatedAt: moment().notNull(),
+  },
+  (table) => [index('accounts_user').on(table.userId)],
+)
+
+/** Short-lived values a sign-in needs between leaving for GitHub and coming back. */
+export const verifications = sqliteTable(
+  'verifications',
+  {
+    id: text().primaryKey(),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: moment().notNull(),
+    createdAt: moment().notNull(),
+    updatedAt: moment().notNull(),
+  },
+  (table) => [index('verifications_identifier').on(table.identifier)],
+)
+
+/*
+ * Assistants signing in as me, for the owner's MCP endpoint (architecture,
+ * section 16): the tables of Better Auth's OAuth provider and of its JWT
+ * plugin, which signs the access tokens. Their shape is Better Auth's, as its
+ * own Drizzle generator writes it; lists and objects are JSON text. Each
+ * holds a row per assistant I let in, or per token it was given.
+ */
+
+/** A list or object Better Auth stores, as JSON text. */
+const json = <T>() => text({ mode: 'json' }).$type<T>()
+
+/** The keys access tokens are signed with; the public half is at /api/auth/jwks. */
+export const jwks = sqliteTable('jwks', {
+  id: text().primaryKey(),
+  publicKey: text().notNull(),
+  privateKey: text().notNull(),
+  createdAt: moment().notNull(),
+  expiresAt: moment(),
+  alg: text(),
+  crv: text(),
+})
+
+/** An assistant: here, always one known by its Client ID Metadata Document's address. */
+export const oauthClients = sqliteTable(
+  'oauth_clients',
+  {
+    id: text().primaryKey(),
+    clientId: text().notNull().unique(),
+    clientSecret: text(),
+    clientDiscoveryId: text(),
+    disabled: integer({ mode: 'boolean' }).default(false),
+    skipConsent: integer({ mode: 'boolean' }),
+    enableEndSession: integer({ mode: 'boolean' }),
+    subjectType: text(),
+    scopes: json<string[]>(),
+    clientCredentialsScopes: json<string[]>().default([]),
+    userId: text().references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: moment(),
+    updatedAt: moment(),
+    name: text(),
+    uri: text(),
+    icon: text(),
+    contacts: json<string[]>(),
+    tos: text(),
+    policy: text(),
+    softwareId: text(),
+    softwareVersion: text(),
+    softwareStatement: text(),
+    redirectUris: json<string[]>().notNull(),
+    postLogoutRedirectUris: json<string[]>(),
+    backchannelLogoutUri: text(),
+    backchannelLogoutSessionRequired: integer({ mode: 'boolean' }),
+    tokenEndpointAuthMethod: text(),
+    applicationType: text(),
+    jwks: text(),
+    jwksUri: text(),
+    grantTypes: json<string[]>(),
+    responseTypes: json<string[]>(),
+    requirePKCE: integer({ mode: 'boolean' }),
+    dpopBoundAccessTokens: integer({ mode: 'boolean' }).default(false),
+    referenceId: text(),
+    metadata: json<unknown>(),
+  },
+  (table) => [index('oauth_clients_user').on(table.userId)],
+)
+
+/** What tokens are issued for: the owner's MCP endpoint. */
+export const oauthResources = sqliteTable('oauth_resources', {
+  id: text().primaryKey(),
+  identifier: text().notNull().unique(),
+  name: text().notNull(),
+  accessTokenTtl: integer(),
+  refreshTokenTtl: integer(),
+  signingAlgorithm: text(),
+  signingKeyId: text(),
+  allowedScopes: json<string[]>(),
+  customClaims: json<unknown>(),
+  dpopBoundAccessTokensRequired: integer({ mode: 'boolean' }).default(false),
+  disabled: integer({ mode: 'boolean' }).default(false),
+  createdAt: moment(),
+  updatedAt: moment(),
+  policyVersion: integer().default(1),
+  metadata: json<unknown>(),
+})
+
+export const oauthClientResources = sqliteTable(
+  'oauth_client_resources',
+  {
+    id: text().primaryKey(),
+    clientId: text()
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+    resourceId: text()
+      .notNull()
+      .references(() => oauthResources.identifier, { onDelete: 'cascade' }),
+    metadata: json<unknown>(),
+    createdAt: moment(),
+  },
+  (table) => [
+    uniqueIndex('oauth_client_resources_pair').on(table.clientId, table.resourceId),
+    index('oauth_client_resources_resource').on(table.resourceId),
+  ],
+)
+
+export const oauthRefreshTokens = sqliteTable(
+  'oauth_refresh_tokens',
+  {
+    id: text().primaryKey(),
+    token: text().notNull().unique(),
+    clientId: text()
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+    sessionId: text().references(() => sessions.id, { onDelete: 'set null' }),
+    userId: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    referenceId: text(),
+    authorizationCodeId: text(),
+    resources: json<string[]>(),
+    requestedUserInfoClaims: json<string[]>(),
+    expiresAt: moment(),
+    createdAt: moment(),
+    revoked: moment(),
+    rotatedAt: moment(),
+    rotationReplayResponse: text(),
+    rotationReplayExpiresAt: moment(),
+    authTime: moment(),
+    confirmation: json<unknown>(),
+    scopes: json<string[]>().notNull(),
+  },
+  (table) => [
+    index('oauth_refresh_tokens_client').on(table.clientId),
+    index('oauth_refresh_tokens_session').on(table.sessionId),
+    index('oauth_refresh_tokens_user').on(table.userId),
+    index('oauth_refresh_tokens_code').on(table.authorizationCodeId),
+  ],
+)
+
+export const oauthAccessTokens = sqliteTable(
+  'oauth_access_tokens',
+  {
+    id: text().primaryKey(),
+    token: text().unique(),
+    clientId: text()
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+    sessionId: text().references(() => sessions.id, { onDelete: 'set null' }),
+    userId: text().references(() => users.id, { onDelete: 'cascade' }),
+    referenceId: text(),
+    authorizationCodeId: text(),
+    resources: json<string[]>(),
+    requestedUserInfoClaims: json<string[]>(),
+    refreshId: text().references(() => oauthRefreshTokens.id, { onDelete: 'cascade' }),
+    expiresAt: moment(),
+    createdAt: moment(),
+    revoked: moment(),
+    confirmation: json<unknown>(),
+    scopes: json<string[]>().notNull(),
+  },
+  (table) => [
+    index('oauth_access_tokens_client').on(table.clientId),
+    index('oauth_access_tokens_session').on(table.sessionId),
+    index('oauth_access_tokens_user').on(table.userId),
+    index('oauth_access_tokens_code').on(table.authorizationCodeId),
+    index('oauth_access_tokens_refresh').on(table.refreshId),
+  ],
+)
+
+/** My yes to an assistant, so it is asked once. */
+export const oauthConsents = sqliteTable(
+  'oauth_consents',
+  {
+    id: text().primaryKey(),
+    clientId: text()
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+    userId: text().references(() => users.id, { onDelete: 'cascade' }),
+    referenceId: text(),
+    resources: json<string[]>(),
+    requestedUserInfoClaims: json<string[]>(),
+    scopes: json<string[]>().notNull(),
+    createdAt: moment(),
+    updatedAt: moment(),
+  },
+  (table) => [
+    index('oauth_consents_client').on(table.clientId),
+    index('oauth_consents_user').on(table.userId),
+  ],
+)
+
+export const oauthClientAssertions = sqliteTable('oauth_client_assertions', {
+  id: text().primaryKey(),
+  expiresAt: moment().notNull(),
+})

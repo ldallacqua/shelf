@@ -182,6 +182,28 @@ test.describe('a game opened from the library', () => {
     })
   }
 
+  test('its cover does not fly home, by the close button or by Back', async ({ page }) => {
+    await countTransitions(page)
+    await openLibrary(page, '/en/library?view=wall')
+    test.skip(!(await transitions(page)).supported, 'this browser has no view transitions')
+    const box = firstGame(page, 'wall')
+    const ways = [
+      () => panel(page).getByRole('button', { name: 'Close' }).click(),
+      () => page.goBack(),
+    ]
+    for (const close of ways) {
+      const before = (await transitions(page)).count
+      await box.click()
+      await expect(panel(page)).toBeVisible()
+      await expect(page.locator('html')).not.toHaveAttribute('data-morph')
+      await close()
+      await expect(panel(page)).toBeHidden()
+      await expect(page).toHaveURL(/\/en\/library\?view=wall$/)
+      // Out of its box, and not back: WebKit's page crashed as a cover flew home.
+      expect((await transitions(page)).count).toBe(before + 1)
+    }
+  })
+
   test('the close button steps back out of history, as Back does @smoke', async ({ page }) => {
     await openLibrary(page)
     await firstGame(page, 'shelf').click()

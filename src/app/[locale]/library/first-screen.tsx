@@ -15,7 +15,6 @@ import { EmptyLibrary } from '@/features/library/empty-library'
 import { LibraryView } from '@/features/library/library-view'
 import { StatsLine } from '@/features/library/stats-line'
 import { needsKeywords } from '@/server/api/library'
-import { isOwner } from '@/server/auth/owner'
 import { isPhone } from '@/server/device'
 import { getLibraryKeywords } from '@/server/services/library'
 import { getShelves } from '@/server/services/shelves'
@@ -45,12 +44,11 @@ export async function LibraryFirstScreen({
     sort: params.sort ?? shelf?.sort,
     group: params.group ?? shelf?.group,
   })
-  const [library, locale, request, shelves, owner, keywords] = await Promise.all([
+  const [library, locale, request, shelves, keywords] = await Promise.all([
     pending,
     getLocale(),
     headers(),
     getShelves(),
-    isOwner(),
     needsKeywords(query.q) ? getLibraryKeywords() : undefined,
   ])
   if (library.games.length === 0) return <EmptyLibrary />
@@ -68,7 +66,9 @@ export async function LibraryFirstScreen({
         stats={<StatsLine stats={first.stats} />}
         shelves={shelves}
         shelf={shelf}
-        actions={owner ? { save: saveShelfAction, remove: removeShelfAction } : undefined}
+        // Handed to everyone, used only once the browser knows the owner is here,
+        // and checked again on the server whoever calls them.
+        actions={{ save: saveShelfAction, remove: removeShelfAction }}
       />
     </NuqsAdapter>
   )

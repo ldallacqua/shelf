@@ -16,6 +16,26 @@ import {
   shelfOutline,
   shelvesAnswer,
 } from './library'
+import {
+  apiAdded,
+  apiAdditions,
+  apiAddUndo,
+  apiChanged,
+  apiCopyPatch,
+  apiGamePatch,
+  apiLineMatch,
+  apiListMatch,
+  apiNewCopy,
+  apiNewGame,
+  apiNewGames,
+  apiOwnerGame,
+  apiPastedLines,
+  apiRemoved,
+  apiRestored,
+  apiSearchAnswer,
+  apiSearchResult,
+  apiUndoAdditions,
+} from './writes'
 
 /**
  * The API's own description, as OpenAPI 3.1, made from the same Zod schemas
@@ -34,6 +54,34 @@ const query = (name: string, description: string, schema: Record<string, unknown
   schema,
 })
 
+/** The owner's session: what every write takes. */
+const OWNER = [{ ownerSession: [] }]
+
+/** How a write is turned down. */
+const REFUSALS = {
+  400: { description: 'The body is not one Shelf can carry out', ...json('Error') },
+  401: { description: 'Not the owner’s session', ...json('Error') },
+  404: { description: 'No such game', ...json('Error') },
+  409: { description: 'That is there already', ...json('Error') },
+  503: { description: 'This deployment keeps nothing it is given', ...json('Error') },
+}
+
+const ENTRY = {
+  name: 'id',
+  in: 'path',
+  required: true,
+  description: 'The entry’s id, or the address (slug) of any of its versions',
+  schema: { type: 'string' },
+}
+
+const COPY = {
+  name: 'copy',
+  in: 'path',
+  required: true,
+  description: 'The copy’s id, from GET /entries/{id}',
+  schema: { type: 'string' },
+}
+
 export const openApiDocument = () => {
   // Every schema with an id becomes a component; a schema inside another is a reference to it.
   const registry = z.registry<{ id: string }>()
@@ -46,6 +94,24 @@ export const openApiDocument = () => {
     apiGamePage,
     shelfOutline,
     apiError,
+    apiSearchResult,
+    apiSearchAnswer,
+    apiNewGame,
+    apiAdded,
+    apiGamePatch,
+    apiChanged,
+    apiRemoved,
+    apiOwnerGame,
+    apiNewCopy,
+    apiCopyPatch,
+    apiRestored,
+    apiPastedLines,
+    apiLineMatch,
+    apiListMatch,
+    apiNewGames,
+    apiAddUndo,
+    apiAdditions,
+    apiUndoAdditions,
   ]) {
     registry.add(schema, { id: (schema.meta() as { id: string }).id })
   }
@@ -66,7 +132,7 @@ export const openApiDocument = () => {
       title: 'Shelf',
       version: '1',
       description:
-        'A personal game library. Everything here is public and read-only; changes need the owner, and arrive with sign-in.',
+        'A personal game library. Every read is public. Writes are the owner’s alone: they take the session cookie that signing in with GitHub on the site sets, and answer 401 without it.',
     },
     servers: [{ url: `${siteUrl()}/api/v1` }],
     paths: {
@@ -122,6 +188,138 @@ export const openApiDocument = () => {
           },
         },
       },
+      '/igdb/search': {
+        get: {
+          summary: 'Search IGDB for a game to add. The owner only.',
+          security: OWNER,
+          parameters: [
+            {
+              name: 'q',
+              in: 'query',
+              required: true,
+              description: 'A title, two characters or more',
+              schema: { type: 'string', minLength: 2, maxLength: 100 },
+            },
+          ],
+          responses: {
+            200: { description: 'Up to eight games', ...json('IgdbSearch') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/igdb/match': {
+        post: {
+          summary:
+            'Match a pasted list against IGDB, up to twenty lines at a time. The owner only.',
+          description:
+            'Each line gets its match, how sure it is, and alternatives. Nothing is added: send the games chosen to POST /additions.',
+          security: OWNER,
+          requestBody: { required: true, ...json('PastedLines') },
+          responses: {
+            200: { description: 'One match a line, in order', ...json('ListMatch') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/additions': {
+        post: {
+          summary: 'Add many games at once, up to fifty. The owner only.',
+          description:
+            'Each is added as POST /entries would add it, in order, so a game can fold into one added before it. One that fails leaves the rest.',
+          security: OWNER,
+          requestBody: { required: true, ...json('NewGames') },
+          responses: {
+            200: { description: 'One result a game, in order', ...json('Additions') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/additions/undo': {
+        post: {
+          summary: 'Take back what POST /additions added. The owner only.',
+          security: OWNER,
+          requestBody: { required: true, ...json('UndoAdditions') },
+          responses: { 200: { description: 'Taken back', ...json('Changed') }, ...REFUSALS },
+        },
+      },
+      '/entries': {
+        post: {
+          summary: 'Add a game from IGDB. The owner only.',
+          description:
+            'A game related to one in the library (an edition, a port, a remaster) is folded into it or kept apart as ADR 001 proposes, unless `grouping` says otherwise. A game already in the library gets only the copies it lacked.',
+          security: OWNER,
+          requestBody: { required: true, ...json('NewGame') },
+          responses: {
+            201: { description: 'Added', ...json('Added') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/entries/{id}': {
+        get: {
+          summary:
+            'A game as its owner keeps it: private notes, its versions and copies, with ids. The owner only.',
+          security: OWNER,
+          parameters: [ENTRY],
+          responses: { 200: { description: 'The game', ...json('OwnerGame') }, ...REFUSALS },
+        },
+        patch: {
+          summary: 'Change what is mine about a game, in one step. The owner only.',
+          security: OWNER,
+          parameters: [ENTRY],
+          requestBody: { required: true, ...json('GamePatch') },
+          responses: { 200: { description: 'Changed', ...json('Changed') }, ...REFUSALS },
+        },
+        delete: {
+          summary: 'Remove a game, with everything added with it. The owner only.',
+          security: OWNER,
+          parameters: [ENTRY],
+          responses: { 200: { description: 'Removed', ...json('Removed') }, ...REFUSALS },
+        },
+      },
+      '/entries/{id}/copies': {
+        post: {
+          summary: 'Add a copy: a platform and format I own the game on. The owner only.',
+          security: OWNER,
+          parameters: [ENTRY],
+          requestBody: { required: true, ...json('NewCopy') },
+          responses: { 201: { description: 'Added', ...json('Changed') }, ...REFUSALS },
+        },
+      },
+      '/entries/{id}/copies/{copy}': {
+        patch: {
+          summary: 'Switch a copy between physical and digital. The owner only.',
+          security: OWNER,
+          parameters: [ENTRY, COPY],
+          requestBody: { required: true, ...json('CopyPatch') },
+          responses: { 200: { description: 'Changed', ...json('Changed') }, ...REFUSALS },
+        },
+        delete: {
+          summary: 'Remove a copy. The owner only.',
+          security: OWNER,
+          parameters: [ENTRY, COPY],
+          responses: { 200: { description: 'Removed', ...json('Changed') }, ...REFUSALS },
+        },
+      },
+      '/removed/{undo}': {
+        post: {
+          summary: 'Put a removed game back as it was, within a day. The owner only.',
+          security: OWNER,
+          parameters: [
+            {
+              name: 'undo',
+              in: 'path',
+              required: true,
+              description: 'What DELETE /entries/{id} answered with',
+              schema: { type: 'string' },
+            },
+          ],
+          responses: {
+            200: { description: 'Back on the shelf', ...json('Restored') },
+            ...REFUSALS,
+          },
+        },
+      },
       '/shelves': {
         get: {
           summary: 'The smart shelves',
@@ -139,6 +337,38 @@ export const openApiDocument = () => {
             404: { description: 'No shelf has that slug', ...json('Error') },
           },
         },
+        put: {
+          summary:
+            'Save a smart shelf: the one at this address, or a new one named as asked. The owner only.',
+          security: OWNER,
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['name'],
+                  properties: {
+                    name: { type: 'string', maxLength: 60 },
+                    query: { type: 'string', maxLength: 1000 },
+                    sort: { type: 'string' },
+                    group: { type: 'string', enum: groupings },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: 'Saved' },
+            201: { description: 'Added, at the address in the answer' },
+            ...REFUSALS,
+          },
+        },
+        delete: {
+          summary: 'Remove a smart shelf. The owner only.',
+          security: OWNER,
+          responses: { 200: { description: 'Removed' }, ...REFUSALS },
+        },
       },
       '/library/snapshot/{version}': {
         get: {
@@ -155,6 +385,17 @@ export const openApiDocument = () => {
         },
       },
     },
-    components: { schemas },
+    components: {
+      schemas,
+      securitySchemes: {
+        ownerSession: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: 'shelf.session_token',
+          description:
+            'Set by signing in with GitHub on the site. Only the owner’s GitHub account can sign in. On HTTPS the cookie is named `__Secure-shelf.session_token`.',
+        },
+      },
+    },
   }
 }

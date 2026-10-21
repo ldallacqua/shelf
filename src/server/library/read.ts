@@ -1,8 +1,9 @@
 import 'server-only'
 
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 
 import { lengthMinutes } from '@/domain/igdb/game'
+import type { OwnerGame } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
 import {
   emptyNames,
@@ -15,19 +16,19 @@ import {
 import { dayOf } from '@/domain/library/values'
 import type { GameKeywords } from '@/domain/query/evaluate'
 import { comparePlatforms } from '@/domain/platforms/platforms'
-import type { Executor } from '@/server/db/client'
+import type { Db, Executor } from '@/server/db/client'
 import {
   copies,
   entries,
   entryTags,
   entryVersions,
   games,
+  libraryMeta,
   platforms,
   playTime,
   tags,
   vocab,
 } from '@/server/db/schema'
-import { readVersion } from '@/server/library/store'
 
 /**
  * Reads the whole library in a handful of queries and puts it together in
@@ -39,52 +40,71 @@ const union = (lists: readonly (readonly number[])[]): number[] => [...new Set(l
 
 const byId = <T extends { id: number }>(a: T, b: T) => a.id - b.id
 
-export const readLibrary = async (db: Executor): Promise<Library> => {
-  const [version, entryRows, versionRows, copyRows, timeRows, tagRows, entryTagRows] =
-    await Promise.all([
-      readVersion(db),
-      db.select().from(entries),
-      db
-        .select({
-          entryId: entryVersions.entryId,
-          relation: entryVersions.relation,
-          gameId: games.id,
-          slug: games.slug,
-          title: games.title,
-          kind: games.kind,
-          releasedOn: games.releasedOn,
-          year: games.year,
-          cover: games.cover,
-          colors: games.colors,
-          thumbhash: games.thumbhash,
-          igdbRating: games.igdbRating,
-          igdbRatingCount: games.igdbRatingCount,
-          length: games.length,
-          genres: games.genres,
-          themes: games.themes,
-          modes: games.modes,
-          perspectives: games.perspectives,
-          platforms: games.platforms,
-          franchises: games.franchises,
-          series: games.series,
-          developers: games.developers,
-          publishers: games.publishers,
-        })
-        .from(entryVersions)
-        .innerJoin(games, eq(games.id, entryVersions.gameId)),
-      // The order they were added in. Two copies added in the same millisecond
-      // are told apart by SQLite's own row number, which only ever grows.
-      db
-        .select()
-        .from(copies)
-        .orderBy(copies.createdAt, sql`rowid`),
-      db
-        .select({ entryId: playTime.entryId, minutes: sql<number>`sum(${playTime.minutes})` })
-        .from(playTime)
-        .groupBy(playTime.entryId),
-      db.select().from(tags).orderBy(tags.name),
-      db.select().from(entryTags),
-    ])
+export const readLibrary = async (db: Db): Promise<Library> => {
+  // One batch is one transaction: every query sees the library as it was at
+  // one moment. Run side by side, a write landing between them would give a
+  // file that claims the new version without the new game, kept a year at
+  // that version's address. On Turso it is also one round trip.
+  const [
+    versionRow,
+    entryRows,
+    versionRows,
+    copyRows,
+    timeRows,
+    tagRows,
+    entryTagRows,
+    vocabRows,
+    platformRows,
+  ] = await db.batch([
+    db.select({ version: libraryMeta.version }).from(libraryMeta).limit(1),
+    db.select().from(entries),
+    db
+      .select({
+        entryId: entryVersions.entryId,
+        relation: entryVersions.relation,
+        gameId: games.id,
+        slug: games.slug,
+        title: games.title,
+        kind: games.kind,
+        releasedOn: games.releasedOn,
+        year: games.year,
+        cover: games.cover,
+        colors: games.colors,
+        thumbhash: games.thumbhash,
+        igdbRating: games.igdbRating,
+        igdbRatingCount: games.igdbRatingCount,
+        length: games.length,
+        genres: games.genres,
+        themes: games.themes,
+        modes: games.modes,
+        perspectives: games.perspectives,
+        platforms: games.platforms,
+        franchises: games.franchises,
+        series: games.series,
+        developers: games.developers,
+        publishers: games.publishers,
+      })
+      .from(entryVersions)
+      .innerJoin(games, eq(games.id, entryVersions.gameId)),
+    // The order they were added in. Two copies added in the same millisecond
+    // are told apart by SQLite's own row number, which only ever grows.
+    db
+      .select()
+      .from(copies)
+      .orderBy(copies.createdAt, sql`rowid`),
+    db
+      .select({ entryId: playTime.entryId, minutes: sql<number>`sum(${playTime.minutes})` })
+      .from(playTime)
+      .groupBy(playTime.entryId),
+    db.select().from(tags).orderBy(tags.name),
+    db.select().from(entryTags),
+    db
+      .select()
+      .from(vocab)
+      .where(sql`${vocab.kind} != 'keyword'`),
+    db.select().from(platforms),
+  ])
+  const version = versionRow[0]?.version ?? 0
 
   type VersionRow = (typeof versionRows)[number]
   const versionsByEntry = new Map<string, VersionRow[]>()
@@ -209,13 +229,6 @@ export const readLibrary = async (db: Executor): Promise<Library> => {
 
   const names = emptyNames()
   if (libraryGames.length > 0) {
-    const [vocabRows, platformRows] = await Promise.all([
-      db
-        .select()
-        .from(vocab)
-        .where(sql`${vocab.kind} != 'keyword'`),
-      db.select().from(platforms),
-    ])
     for (const row of vocabRows) {
       if (row.kind === 'keyword') continue
       if (!used[row.kind].has(row.id)) continue
@@ -337,4 +350,102 @@ export const readKeywords = async (db: Executor): Promise<GameKeywords> => {
   const byGame: Record<string, number[]> = {}
   for (const row of rows) if (row.keywords.length > 0) byGame[row.slug] = row.keywords
   return { names, games: byGame }
+}
+
+/**
+ * A game as its owner edits it: the ids the edits need, the notes whether or
+ * not they are public, the versions folded into it, and every platform it
+ * could be owned on. Only for the owner: the caller checks.
+ */
+export const readOwnerGame = async (
+  db: Executor,
+  entryId: string,
+): Promise<OwnerGame | undefined> => {
+  const [entryRows, versionRows, copyRows, timeRows, tagRows] = await Promise.all([
+    db.select().from(entries).where(eq(entries.id, entryId)),
+    db
+      .select({
+        gameId: games.id,
+        slug: games.slug,
+        title: games.title,
+        relation: entryVersions.relation,
+        kind: games.kind,
+        year: games.year,
+        platforms: games.platforms,
+      })
+      .from(entryVersions)
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(eq(entryVersions.entryId, entryId)),
+    db
+      .select({ id: copies.id, platformId: copies.platformId, format: copies.format })
+      .from(copies)
+      .where(eq(copies.entryId, entryId))
+      .orderBy(copies.createdAt, sql`rowid`),
+    db
+      .select({ minutes: playTime.minutes })
+      .from(playTime)
+      .where(and(eq(playTime.entryId, entryId), eq(playTime.source, 'manual'))),
+    db
+      .select({ name: tags.name })
+      .from(entryTags)
+      .innerJoin(tags, eq(tags.id, entryTags.tagId))
+      .where(eq(entryTags.entryId, entryId))
+      .orderBy(tags.name),
+  ])
+  const entry = entryRows[0]
+  const primary = versionRows.find((row) => row.relation === 'primary')
+  if (!entry || !primary) return undefined
+
+  const platformIds = union([
+    ...versionRows.map((row) => row.platforms),
+    copyRows.map((copy) => copy.platformId),
+  ])
+  const platformRows =
+    platformIds.length > 0
+      ? await db.select().from(platforms).where(inArray(platforms.igdbId, platformIds))
+      : []
+
+  const owned: OwnerGame = {
+    entryId,
+    slug: primary.slug,
+    title: primary.title,
+    status: entry.status,
+    notesPublic: entry.notesPublic,
+    minutes: timeRows.reduce((sum, row) => sum + row.minutes, 0),
+    copies: copyRows,
+    tags: tagRows.map((tag) => tag.name),
+    versions: [primary, ...versionRows.filter((row) => row !== primary)].map((row) => ({
+      gameId: row.gameId,
+      slug: row.slug,
+      title: row.title,
+      relation: row.relation,
+      kind: row.kind,
+      ...(row.year === null ? {} : { year: row.year }),
+      platforms: row.platforms,
+    })),
+    platforms: platformRows
+      .map((row) => ({
+        platform: {
+          igdbId: row.igdbId,
+          key: row.key,
+          name: row.name,
+          short: row.short,
+          family: row.family,
+          shape: row.shape,
+          plastic: row.plastic,
+          ...(row.generation === null ? {} : { generation: row.generation }),
+        },
+      }))
+      .sort((a, b) => comparePlatforms(a.platform, b.platform))
+      .map(({ platform }) => ({
+        id: platform.igdbId,
+        key: platform.key,
+        name: platform.name,
+        short: platform.short,
+      })),
+  }
+  if (entry.rating !== null) owned.rating = entry.rating
+  if (entry.completedOn) owned.completedOn = entry.completedOn
+  if (entry.notes) owned.notes = entry.notes
+  return owned
 }
