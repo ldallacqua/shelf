@@ -1,28 +1,31 @@
 import type { Page } from '@playwright/test'
 
-import { expect, signIn, test } from './fixtures'
+import { expect, fillSignIn, OWNER, signIn, test } from './fixtures'
 
 /**
- * Signing in (spec 11): GitHub only, one account only. Nothing here goes
- * around sign-in: the browser's trip to GitHub comes straight back with a
- * code, and the server asks GitHub's test doubles who that is, through the
- * same code a real sign-in runs.
+ * Signing in (spec 11): one account, by email address and password, made
+ * from the server's settings. Nothing here goes around sign-in: the form is
+ * sent to the same code a real sign-in runs, with the test server's made-up
+ * owner.
  */
 
 const footer = (page: Page) => page.locator('footer')
+/** The page's own message: Next.js's route announcer is an alert too. */
+const trouble = (page: Page) => page.getByRole('main').getByRole('alert')
 
 test.describe('signing in', () => {
-  test('the owner signs in with GitHub and comes back to the page they left @smoke', async ({
+  test('the owner signs in and comes back to the page they left @smoke', async ({
     page,
     context,
   }) => {
     await page.goto('/en/trophies')
     await footer(page).getByRole('link', { name: 'Sign in' }).click()
     await expect(page).toHaveURL(/\/en\/sign-in\?from=%2Fen%2Ftrophies$/)
-    await signIn(page, 'owner', '/en/trophies')
+    await page.locator('html[data-ready]').waitFor({ state: 'attached' })
+    await fillSignIn(page, OWNER.email, OWNER.password)
 
     await expect(page).toHaveURL(/\/en\/trophies$/)
-    await expect(footer(page)).toContainText('Signed in as Shelf Owner')
+    await expect(footer(page)).toContainText(`Signed in as ${OWNER.email}`)
     const cookies = await context.cookies()
     // The session is out of scripts' reach; only the hint is not.
     expect(cookies.find((cookie) => cookie.name === 'shelf.session_token')?.httpOnly).toBe(true)
@@ -30,18 +33,84 @@ test.describe('signing in', () => {
     expect(await (await page.request.get('/api/v1/me')).json()).toMatchObject({ owner: true })
   })
 
-  test('any other GitHub account is turned away with a plain message, and nothing is kept', async ({
+  test.describe('turned away', () => {
+    // A wrong password is answered 401, which the browser logs as a failed request.
+    test.use({ allowConsoleErrors: true })
+
+    test('a wrong password, or any other address, is turned away, and nothing is kept', async ({
+      page,
+      context,
+    }) => {
+      await page.goto('/en/sign-in')
+      await page.locator('html[data-ready]').waitFor({ state: 'attached' })
+      const wrong = 'That email address and password do not match. Try again.'
+
+      await fillSignIn(page, OWNER.email, 'not-the-owner-password')
+      await expect(trouble(page)).toHaveText(wrong)
+      // The address stays; the password is typed again.
+      await expect(page.getByLabel('Email address')).toHaveValue(OWNER.email)
+      await expect(page.getByLabel('Password')).toHaveValue('')
+      await expect(page.getByLabel('Password')).toBeFocused()
+
+      await fillSignIn(page, 'someone@shelf.test', OWNER.password)
+      await expect(trouble(page)).toHaveText(wrong)
+      await expect(page).toHaveURL(/\/en\/sign-in$/)
+      expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain(
+        'shelf.session_token',
+      )
+      expect(await (await page.request.get('/api/v1/me')).json()).toEqual({ owner: false })
+    })
+
+    test('nobody can make an account', async ({ page, context }) => {
+      const made = await page.request.post('/api/auth/sign-up/email', {
+        data: { email: 'someone@shelf.test', password: 'a-long-enough-password', name: 'Someone' },
+      })
+      expect(made.ok()).toBe(false)
+      expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain(
+        'shelf.session_token',
+      )
+      // Nor can that address sign in afterwards.
+      await page.goto('/en/sign-in')
+      await page.locator('html[data-ready]').waitFor({ state: 'attached' })
+      await fillSignIn(page, 'someone@shelf.test', 'a-long-enough-password')
+      await expect(trouble(page)).toHaveText(
+        'That email address and password do not match. Try again.',
+      )
+    })
+  })
+
+  test('an assistant’s request carries on to the consent page once signed in', async ({
     page,
-    context,
+    browserName,
+    size,
   }) => {
-    await signIn(page, 'stranger')
-    await expect(page).toHaveURL(/\/en\/sign-in\?error=not_the_owner/)
-    await expect(page.getByText('That GitHub account is not the owner of this shelf')).toBeVisible()
-    expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain(
-      'shelf.session_token',
+    test.skip(
+      browserName !== 'chromium' || size !== 'desktop',
+      'once is enough: no browser differs',
     )
-    expect(await (await page.request.get('/api/v1/me')).json()).toEqual({ owner: false })
-    await expect(footer(page).getByRole('link', { name: 'Sign in' })).toBeVisible()
+    // The test doubles' assistant (MOCK_ASSISTANT), asking as an assistant does.
+    const address = new URL('/api/auth/oauth2/authorize', 'http://localhost:3300')
+    address.search = new URLSearchParams({
+      response_type: 'code',
+      client_id: 'https://assistant.example/shelf-tests/client.json',
+      redirect_uri: 'http://127.0.0.1:47231/callback',
+      scope: 'openid offline_access',
+      state: 'from-the-test',
+      // RFC 7636's own example; nothing here trades the code for a token.
+      code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
+      code_challenge_method: 'S256',
+      resource: 'http://localhost:3300/api/mcp/owner',
+      // Asked every time, so a yes from an earlier run is not taken as given.
+      prompt: 'consent',
+    }).toString()
+    await page.goto(address.toString())
+    await expect(page).toHaveURL(/\/en\/sign-in\?.*sig=/)
+    await expect(page.getByText('An assistant asks to use your library as you.')).toBeVisible()
+    await fillSignIn(page, OWNER.email, OWNER.password)
+    await expect(page).toHaveURL(/\/en\/consent\?/)
+    await expect(page.getByRole('main')).toContainText(
+      'Test Assistant asks to use your library as you.',
+    )
   })
 
   test('a visitor is offered no way to add a game, and A does nothing', async ({ page }) => {
@@ -72,7 +141,7 @@ test.describe('signed in', () => {
   }) => {
     // A session of this test's own: signing out the shared one would sign out the others.
     await context.clearCookies()
-    await signIn(page, 'owner', '/en/library')
+    await signIn(page, '/en/library')
     await expect(page.getByRole('button', { name: 'Save as a shelf' })).toBeVisible()
 
     await footer(page).getByRole('button', { name: 'Sign out' }).click()
@@ -86,7 +155,7 @@ test.describe('signed in', () => {
 
   test('the sign-in page says who is signed in, and offers the way out', async ({ page }) => {
     await page.goto('/en/sign-in')
-    await expect(page.getByText('Signed in as Shelf Owner.')).toBeVisible()
+    await expect(page.getByText(`Signed in as ${OWNER.email}.`)).toBeVisible()
     await expect(page.getByRole('main').getByRole('button', { name: 'Sign out' })).toBeVisible()
   })
 })

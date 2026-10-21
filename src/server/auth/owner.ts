@@ -3,19 +3,19 @@ import 'server-only'
 import { AsyncLocalStorage } from 'node:async_hooks'
 
 import { getSessionCookie } from 'better-auth/cookies'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 
 import { auth } from '@/server/auth/auth'
 import { database } from '@/server/db/client'
-import { accounts, users } from '@/server/db/schema'
+import { users } from '@/server/db/schema'
 import { authEnv, MissingSettingsError } from '@/server/env'
 
 /**
- * Who may change things (spec 11): the one GitHub account named by
- * `OWNER_GITHUB_ID`. Sign-in already turns everyone else away; this is the
- * lock, and every write runs it first. It loads the session and compares the
- * GitHub id behind it with the setting again, so a session that somehow
+ * Who may change things (spec 11): the one account, whose email address is
+ * `OWNER_EMAIL`. Nobody can make another account; this is the lock all the
+ * same, and every write runs it first. It loads the session and compares the
+ * address behind it with the setting again, so a session that somehow
  * exists for anyone else opens nothing.
  */
 
@@ -24,32 +24,36 @@ export type Owner = { name: string; image?: string }
 /** What the owner's session answered with: the owner, and any cookie it renewed. */
 export type OwnerCheck = { owner?: Owner; headers?: Headers }
 
+/** The owner's email address; none on a deployment without sign-in. */
+const ownerEmail = (): string | undefined => {
+  try {
+    return authEnv().owner.email
+  } catch (error) {
+    if (error instanceof MissingSettingsError) return undefined
+    throw error
+  }
+}
+
+const asOwnerIf = (
+  user: { email: string; name: string; image?: string | null },
+  email: string,
+): Owner | undefined =>
+  user.email.toLowerCase() === email
+    ? { name: user.name, ...(user.image ? { image: user.image } : {}) }
+    : undefined
+
 export const checkOwner = async (from: Headers): Promise<OwnerCheck> => {
   // No session cookie, nothing to look up: a visitor costs no query.
   if (!getSessionCookie(from, { cookiePrefix: 'shelf' })) return {}
-  let ownerId: string
-  try {
-    ownerId = authEnv().ownerGithubId
-  } catch (error) {
-    // A deployment without sign-in has no owner.
-    if (error instanceof MissingSettingsError) return {}
-    throw error
-  }
+  const email = ownerEmail()
+  if (!email) return {}
   const { response: found, headers: renewed } = await auth().api.getSession({
     headers: from,
     returnHeaders: true,
   })
   if (!found) return { headers: renewed }
-  const [account] = await database()
-    .select({ githubId: accounts.accountId })
-    .from(accounts)
-    .where(and(eq(accounts.userId, found.user.id), eq(accounts.providerId, 'github')))
-    .limit(1)
-  if (account?.githubId !== ownerId) return { headers: renewed }
-  return {
-    owner: { name: found.user.name, ...(found.user.image ? { image: found.user.image } : {}) },
-    headers: renewed,
-  }
+  const owner = asOwnerIf(found.user, email)
+  return owner ? { owner, headers: renewed } : { headers: renewed }
 }
 
 /**
@@ -57,21 +61,14 @@ export const checkOwner = async (from: Headers): Promise<OwnerCheck> => {
  * checked against the setting as a session is.
  */
 export const ownerOfUser = async (userId: string): Promise<Owner | undefined> => {
-  let ownerId: string
-  try {
-    ownerId = authEnv().ownerGithubId
-  } catch (error) {
-    if (error instanceof MissingSettingsError) return undefined
-    throw error
-  }
+  const email = ownerEmail()
+  if (!email) return undefined
   const [found] = await database()
-    .select({ githubId: accounts.accountId, name: users.name, image: users.image })
-    .from(accounts)
-    .innerJoin(users, eq(users.id, accounts.userId))
-    .where(and(eq(accounts.userId, userId), eq(accounts.providerId, 'github')))
+    .select({ email: users.email, name: users.name, image: users.image })
+    .from(users)
+    .where(eq(users.id, userId))
     .limit(1)
-  if (!found || found.githubId !== ownerId) return undefined
-  return { name: found.name, ...(found.image ? { image: found.image } : {}) }
+  return found ? asOwnerIf(found, email) : undefined
 }
 
 /** An owner proven by something other than the session cookie, for the work done on their behalf. */

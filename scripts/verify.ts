@@ -8,7 +8,7 @@
  *
  *   1. Format, lint, types, translations, unit and component tests (pnpm check)
  *   2. A production build, served on port 3300 with the test doubles for
- *      IGDB and GitHub, on a fresh copy of the database
+ *      IGDB and Twitch, on a fresh copy of the database
  *   3. JavaScript budgets
  *   4. The browser tests: three engines at three widths
  *   5. The Linux pass, in Playwright's Docker image: WebKit as CI ran it

@@ -31,8 +31,9 @@ reasoning behind the layers is in [the architecture, section 17](architecture.md
   not understand gets a 400, as IGDB would give, so a query cannot pass against the double
   and fail against the real thing for being malformed.
 - **In the browser tests** the built app is started with `SHELF_MOCKS=1`, which installs the
-  same doubles inside the server (`src/instrumentation.ts`): IGDB and Twitch, GitHub with two
-  made-up accounts, and a test assistant's metadata document. They refuse to start on Vercel.
+  same doubles inside the server (`src/instrumentation.ts`): IGDB and Twitch, and a test
+  assistant's metadata document. It also makes up the owner's account (`MOCK_OWNER` in
+  `src/server/mocks/start.ts`). They refuse to start on Vercel.
 - **Covers are flat colors.** In the browser tests every request to IGDB's image servers is
   answered with a color made from the image's id (`e2e/fixtures.ts`). No test depends on
   those servers, and the repository holds no cover art. Lighthouse is the exception: it
@@ -72,10 +73,9 @@ opened by their summary. With a mouse a value's row cycles off, included, exclud
 it has two buttons. `pick()` does whichever the browser has.
 
 **The owner signs in.** A test that needs me writes `test.use({ signedIn: true })`. The first
-such test in a worker signs in for real (`signIn()` in `e2e/fixtures.ts`): the browser's trip
-to `github.com` is sent straight back to the callback with a code the GitHub double knows,
-the server asks the double who that is, and the session is saved to a file the worker's
-other tests load. `signIn(page, 'stranger')` is the account that must be turned away. The nine
+such test in a worker signs in for real (`signIn()` in `e2e/fixtures.ts`): it fills in the
+sign-in form with the made-up owner's email address and password (`OWNER`), and the session
+is saved to a file the worker's other tests load. The nine
 projects run at once against one database, so a test that saves a shelf names it after its
 project and removes it again in a `finally`. A run stopped half-way can leave a shelf called
 `Test …` behind; `pnpm seed` puts the database back.

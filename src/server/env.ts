@@ -54,35 +54,27 @@ export const igdbEnv = () => {
   return { clientId: env.TWITCH_CLIENT_ID, clientSecret: env.TWITCH_CLIENT_SECRET }
 }
 
+/** The shortest password the owner's account takes. */
+export const OWNER_PASSWORD_MIN = 12
+
 /**
- * Sign-in with GitHub (architecture, section 9): the OAuth app, the secret
- * sessions are signed with, and the one GitHub account let in, by its
- * numeric id, which never changes when a username does.
+ * Sign-in (architecture, section 9): the secret sessions are signed with,
+ * and the one account, by its email address and password. The account is
+ * made from these, and its password follows this setting.
  */
 export const authEnv = () => {
   const env = read(
     {
       BETTER_AUTH_SECRET: z.string().trim().min(32),
-      GITHUB_CLIENT_ID: text,
-      GITHUB_CLIENT_SECRET: text,
-      OWNER_GITHUB_ID: z.string().trim().regex(/^\d+$/),
+      OWNER_EMAIL: z.string().trim().pipe(z.email()),
+      // Not trimmed: a space is a character like any other in a password.
+      OWNER_PASSWORD: z.string().min(OWNER_PASSWORD_MIN).max(128),
     },
-    'Sign-in needs a GitHub OAuth app, a secret of at least 32 characters, and the owner’s GitHub id.',
+    `Sign-in needs a secret of at least 32 characters, the owner’s email address, and a password of ${OWNER_PASSWORD_MIN} to 128 characters.`,
   )
-  // A preview signs in through production, which hands the result back
-  // sealed with this. Every deployment must share it; this machine has an
-  // OAuth app of its own and never needs it.
-  const proxy = onVercel()
-    ? read(
-        { OAUTH_PROXY_SECRET: z.string().trim().min(32) },
-        'Sign-in on Vercel goes through production.',
-      ).OAUTH_PROXY_SECRET
-    : undefined
   return {
     secret: env.BETTER_AUTH_SECRET,
-    github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET },
-    ownerGithubId: env.OWNER_GITHUB_ID,
-    proxySecret: proxy,
+    owner: { email: env.OWNER_EMAIL.toLowerCase(), password: env.OWNER_PASSWORD },
   }
 }
 

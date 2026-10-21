@@ -16,7 +16,7 @@ export function AccountLink() {
   const owner = useOwner()
   const router = useRouter()
   const locale = useLocale()
-  // Back to this page once GitHub has said who this is.
+  // Back to this page once signed in.
   const from = `/${locale}${usePathname()}`
 
   if (owner.status === 'owner') {

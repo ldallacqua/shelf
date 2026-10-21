@@ -19,7 +19,7 @@ Three rules I keep throughout:
 | --- | --- | --- | --- |
 | [A](#a-vercel-project) | Create the Vercel project | Reviewing build step 1 | 5 min |
 | [B](#b-turso-databases) | Create two Turso databases, paste 2 settings | Build step 7 (sooner if you like) | 10 min |
-| [C](#c-github-sign-in) | Create two GitHub OAuth apps, paste 7 settings | Build step 7 | 15 min |
+| [C](#c-sign-in) | Choose your email address and password, paste 5 settings | Build step 7 | 5 min |
 | [D](#d-daily-refresh) | Paste 1 setting | Build step 9 | 2 min |
 
 Steps 2, 3, 4, 5, 6, 8 and 10 need nothing from you but review.
@@ -136,66 +136,53 @@ used to warn that no database is connected, and the preview still shows the samp
 
 ---
 
-## C. GitHub sign-in
+## C. Sign-in
 
-**When:** before I start build step 7.
-
-### Two OAuth apps
-
-On GitHub: your profile picture, **Settings**, **Developer settings**, **OAuth Apps**, **New
-OAuth App**. Create two.
-
-| Field | App 1 | App 2 |
-| --- | --- | --- |
-| Application name | `Shelf` | `Shelf (local)` |
-| Homepage URL | `https://shelf-ldallacqua.vercel.app` | `http://localhost:3300` |
-| Authorization callback URL | `https://shelf-ldallacqua.vercel.app/api/auth/callback/github` | `http://localhost:3300/api/auth/callback/github` |
-| Enable Device Flow | Off | Off |
-
-For each, press **Generate a new client secret** and keep the page open; GitHub shows the
-secret once.
-
-Preview deployments need no app of their own. They sign in through production.
+**When:** before signing in on the site. Changed on 21 Oct 2026: sign-in was going to be
+GitHub, and is now one account with an email address and password, made from the settings
+below. Nobody can make another account.
 
 ### Settings in Vercel
 
-Mark all of them **Sensitive**. To make a random value, run `openssl rand -base64 32` in a
-terminal, or, where there is no `openssl`,
-`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Use a terminal
-of your own, not the one in the Claude app: I can read that one.
-
-| Name | Environment | Value |
-| --- | --- | --- |
-| `GITHUB_CLIENT_ID` | Production and Preview | App 1's client id |
-| `GITHUB_CLIENT_SECRET` | Production and Preview | App 1's client secret |
-| `BETTER_AUTH_SECRET` | Production | A random value |
-| `BETTER_AUTH_SECRET` | Preview | A different random value |
-| `OAUTH_PROXY_SECRET` | Production and Preview | One random value, the same in both |
-| `OWNER_GITHUB_ID` | Production and Preview | `186446537` |
-| `TWITCH_CLIENT_ID` | Production and Preview | From `.env.local` in this project |
-| `TWITCH_CLIENT_SECRET` | Production and Preview | From `.env.local` in this project |
-
-`186446537` is your GitHub account's numeric id. It is public, not a secret; `gh api user
---jq .id` prints it. Shelf uses the number and not the username because a username can be
-changed and then claimed by someone else.
-
-### Settings on this computer
-
-Open `.env.local` in the project folder. I will have added the names; you fill in two:
+For **Production** only (previews have no database to keep a session in yet). Mark all of
+them **Sensitive**.
 
 | Name | Value |
 | --- | --- |
-| `GITHUB_CLIENT_ID` | App 2's client id |
-| `GITHUB_CLIENT_SECRET` | App 2's client secret |
+| `BETTER_AUTH_SECRET` | A random value, 32 characters or more |
+| `OWNER_EMAIL` | The email address you will sign in with |
+| `OWNER_PASSWORD` | Your password: 12 to 128 characters. A long one from a password manager is best. |
+| `TWITCH_CLIENT_ID` | From `.env.local` in this project (searching IGDB needs it) |
+| `TWITCH_CLIENT_SECRET` | From `.env.local` in this project |
 
-I generate the local `BETTER_AUTH_SECRET` myself, into the file, without displaying it.
+From a terminal in the project folder, each of these asks for its value:
 
-**Check it worked:** on the step 7 preview, **Sign in** takes you to GitHub and back, and the
-**Add** button appears. Signing in with any other GitHub account is turned away with a plain
-message. To let an assistant in, add `https://{the deployment's address}/api/mcp/owner` to it
-as an MCP server: it sends you to sign in, then asks you to say yes. Use the deployment's own
-`*.vercel.app` address, not the branch's: tokens are issued for one address. No setting is
-needed for this.
+```sh
+vercel env add BETTER_AUTH_SECRET production --sensitive
+vercel env add OWNER_EMAIL production --sensitive
+vercel env add OWNER_PASSWORD production --sensitive
+vercel env add TWITCH_CLIENT_ID production --sensitive
+vercel env add TWITCH_CLIENT_SECRET production --sensitive
+```
+
+To make a random value, run `openssl rand -base64 32`, or, where there is no `openssl`,
+`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Use a terminal
+of your own, not the one in the Claude app: I can read that one.
+
+The account is made the first time you sign in. **To change the password,** change
+`OWNER_PASSWORD` and redeploy: the next sign-in takes the new one, and every session signed in
+with the old one ends. Five wrong tries a minute from one address, and sign-in waits.
+
+### Settings on this computer
+
+Not needed: the browser tests make up an owner of their own. To sign in on `pnpm dev`, add
+`BETTER_AUTH_SECRET`, `OWNER_EMAIL` and `OWNER_PASSWORD` to `.env.local` yourself, with any
+values; I can generate the secret into the file without displaying it.
+
+**Check it worked:** on production, **Sign in** asks for your email address and password, and
+the **Add** button appears once you are in. A wrong password is turned away with a plain
+message. To let an assistant in, add `https://shelf-ldallacqua.vercel.app/api/mcp/owner` to
+it as an MCP server: it sends you to sign in, then asks you to say yes.
 
 ---
 
@@ -216,9 +203,7 @@ Vercel sends this value with its once-a-day call, so nobody else can trigger the
 - **A changed setting takes effect on the next deployment.** After pasting values, tell me and
   I push, or press **Redeploy** in Vercel.
 - **If a deployment is refused over the commit author,** tell me. The fix is on my side.
-- **A custom domain later** needs two changes: add it in Vercel, and add
-  `https://your-domain/api/auth/callback/github` as a second callback on App 1 (GitHub allows
-  up to ten). Nothing in the code changes.
+- **A custom domain later** is added in Vercel. Nothing in the code changes.
 - **Free limits** are in [the architecture, section 3](architecture.md#3-services-and-their-free-limits).
   None of these services can bill you on its free plan as set up here.
 
@@ -226,14 +211,12 @@ Vercel sends this value with its once-a-day call, so nobody else can trigger the
 
 | Name | Local | Preview | Production | Session |
 | --- | --- | --- | --- | --- |
-| `TWITCH_CLIENT_ID` | Set already | Paste | Paste | C |
-| `TWITCH_CLIENT_SECRET` | Set already | Paste | Paste | C |
-| `TURSO_DATABASE_URL` | Not used | Paste (`shelf-preview`) | Paste (`shelf`) | B |
-| `TURSO_AUTH_TOKEN` | Not used | Paste (`shelf-preview`) | Paste (`shelf`) | B |
+| `TWITCH_CLIENT_ID` | Set already | Not yet | Paste | C |
+| `TWITCH_CLIENT_SECRET` | Set already | Not yet | Paste | C |
+| `TURSO_DATABASE_URL` | Not used | Not yet (`shelf-preview`) | Set (`shelf-ldallacqua`) | B |
+| `TURSO_AUTH_TOKEN` | Not used | Not yet (`shelf-preview`) | Set (`shelf-ldallacqua`) | B |
 | `SHELF_MOCKS` | Tests set it | Never | Never | none |
-| `GITHUB_CLIENT_ID` | Paste (App 2) | Paste (App 1) | Paste (App 1) | C |
-| `GITHUB_CLIENT_SECRET` | Paste (App 2) | Paste (App 1) | Paste (App 1) | C |
-| `BETTER_AUTH_SECRET` | I generate it | Paste, random | Paste, a different random | C |
-| `OAUTH_PROXY_SECRET` | Not used | Paste, random | Paste, the same value | C |
-| `OWNER_GITHUB_ID` | I add it | `186446537` | `186446537` | C |
+| `BETTER_AUTH_SECRET` | Optional | Not yet | Paste, random | C |
+| `OWNER_EMAIL` | Optional | Not yet | Paste | C |
+| `OWNER_PASSWORD` | Optional | Not yet | Paste | C |
 | `CRON_SECRET` | Not used | Not used | Paste, random | D |

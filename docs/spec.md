@@ -49,7 +49,7 @@ filters and sorting.
 | Who | Can do |
 | --- | --- |
 | Anyone | Browse the library, open games, filter, sort, switch views, change theme and language |
-| Me, signed in with GitHub | All of that, plus add, edit and remove games, and save smart shelves |
+| Me, signed in | All of that, plus add, edit and remove games, and save smart shelves |
 
 **Principles**
 
@@ -75,7 +75,7 @@ language the browser asks for.
 | `/en/shelves/{name}` | A saved smart shelf: the library with a stored filter, sort and grouping |
 | `/en/trophies` | Trophy wall: completed games and stats |
 | `/en/game/{slug}` | A game's page. Opened from the library, it appears over the shelf; opened directly, it is a full page. |
-| `/en/sign-in` | GitHub sign-in |
+| `/en/sign-in` | Sign-in, with an email address and password |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
 
 Library query string, in full:
@@ -768,8 +768,10 @@ English and Brazilian Portuguese from the first build.
 | Add, edit, remove games | No | Yes |
 | Save smart shelves | No | Yes |
 
-- **Sign-in** is GitHub only. One account is allowed, named in a setting on the server. Any
-  other GitHub account is turned away with a plain message.
+- **Sign-in** is an email address and password, for one account, made from settings on the
+  server (changed from GitHub on 21 Oct 2026). Nobody can make another account. A wrong
+  password, or any other address, is turned away with a plain message, and repeated tries are
+  slowed down.
 - **Every change** is checked on the server. Hiding a button is never the protection.
 - **IGDB search is mine alone**, so a visitor cannot spend the request allowance.
 - **Edit controls are absent** for visitors, not disabled.
@@ -778,7 +780,7 @@ English and Brazilian Portuguese from the first build.
 **Done when**
 
 - Every write request without a valid session is refused, tested request by request.
-- A second GitHub account cannot sign in.
+- Nobody can make an account, and a wrong password cannot sign in.
 - The public pages contain no private note text, checked in the page source.
 
 ---

@@ -1,24 +1,25 @@
-# Handoff: 16 October 2026
+# Handoff: 21 October 2026
 
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 7 is built; sign-in on a deployment waits for the owner
+## Now: step 7 is merged; sign-in is a password now, and waits for the owner's settings
 
-- **Step 7 was built before the owner's setup,** at the owner's choice (16 Oct 2026): against
-  the local database and the GitHub test doubles. On a deployment nobody can sign in, so
-  nothing can be added or changed there, until the owner has done C (two GitHub OAuth apps) in
-  [the setup checklist](setup.md). B is half done (21 Oct 2026): production's database is in
-  São Paulo, for Production only, and the functions moved there with it; previews have no
-  database yet. Never paste or print the values, and never enter them for the owner. Once C is
-  done locally, add the names to `.env.local` and generate `BETTER_AUTH_SECRET` into it
-  without displaying it, as part C says.
+- **Step 7 is merged** ([#11](https://github.com/ldallacqua/shelf/pull/11)).
+- **Sign-in changed from GitHub to one account with an email address and password** (21 Oct
+  2026), at the owner's request after reading what GitHub sign-in asked of them. They want
+  **proper account creation** later. That needs a decision first: whose library does a new
+  account see? Shelf is one person's library today. Ask before building it.
+- **On a deployment nobody can sign in** until the owner has pasted part C's five settings in
+  [the setup checklist](setup.md) (Production only). B is half done: production's database is
+  in São Paulo, for Production only, and the functions moved there with it; previews have no
+  database yet. Never paste or print the values, and never enter them for the owner; give
+  them the `vercel env add` commands instead.
 - **This folder is linked to the Vercel project** (`.vercel/`, ignored). `vercel link` also
   wrote a `VERCEL_OIDC_TOKEN` into `.env.local` and added `.env*` to `.gitignore`; both were
   taken out again. Run `vercel env pull` and `vercel link` with care for the same reason.
-- **Next.js is 16.4.1** on this branch, for critical security fixes in 16.4.0. `main` has
-  16.4.0 until step 7 merges.
+- **Next.js is 16.4.1,** for critical security fixes in 16.4.0. 16.4.2 is out.
 - **The owner allows merging to `main` without asking** while the project is a proof of
   concept (15 Oct 2026). Still stop at every ⏸ (after step 8, and the final review).
 - **Next: step 8, the landing page** (⏸ after it), or platform sync ([ADR 003](adr/003-platform-sync.md)),
@@ -26,8 +27,8 @@ step 3. This note is what the next session needs and cannot get from the code. R
 
 ## Step 7: sign-in, adding, editing, the write API, MCP
 
-- **Built:** GitHub sign-in for one account (Better Auth; `validateUserInfo` turns anyone
-  else away), `requireOwner()` on every write; the Add sheet (one game: search as you type,
+- **Built:** sign-in for one account (Better Auth; GitHub at first, an email address and
+  password since), `requireOwner()` on every write; the Add sheet (one game: search as you type,
   the keyboard alone, ADR 001's proposal, Undo; and "Paste a list": up to 200 lines matched
   ten at a time with progress and Cancel, a review with a menu of alternatives per line, the
   same choice on every row, Add N games, Undo); "Mine" edited in place on a game's page and
@@ -59,12 +60,20 @@ step 3. This note is what the next session needs and cannot get from the code. R
   step 6's 385, and the home page 183 against 162, so this machine read about a tenth slower
   today. In the hot run the game page shifted 0.089 (the limit is 0.1); at 7.2 times, 0. The
   library has 0.7 KB of its budget left. The Storybook build passes.
-- **Not checked:** a real GitHub sign-in and a real assistant (both need part C and a
-  deployment); the Linux pass (no Docker); new reference screenshots for the Add sheet and
-  the editor.
+- **Not checked:** signing in on production and a real assistant (both need part C); the
+  Linux pass (no Docker); new reference screenshots for the Add sheet and the editor.
+- **A cache race, found 21 Oct 2026, not fixed yet.** In full browser runs, a few tests that
+  write then read (`editing.writes`, `mcp.writes`) now and then read the library as it was
+  before the write: 5 of about 45 in one run, 2 in another; all pass on their own. Next.js
+  16.4 shares in-flight work between requests: a page render (the response cache's batchers)
+  and a `use cache` fill (cross-request joins). A request that comes after a write can join one
+  that began before it. A shared page render is then stored as new, so a game page can stay
+  stale until the next write. `getGamePage` calling the cached `getLibrary` inside it widens
+  the window. Seen with `NEXT_PRIVATE_DEBUG_CACHE=1`. Reuse no `.next` folder across runs:
+  pages regenerated during one run are served by the next server, whatever its database says.
 - **Left open:** on a preview, an assistant must use the deployment's own `*.vercel.app`
   address, not the branch's (tokens are for one address). Better Auth is pinned at 1.7.7;
-  1.7.10 came out the day before this was written.
+  1.7.10 came out on 15 Oct 2026.
 
 ## Step 6 is merged
 

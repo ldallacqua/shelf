@@ -336,10 +336,9 @@ export const igdbToken = sqliteTable(
 )
 
 /*
- * Sign-in (architecture, section 9). Better Auth's own four tables, under
- * the names its Drizzle adapter is given in `server/auth/auth.ts`. Only one
- * GitHub account is ever let in, so each holds a row or two. A seed leaves
- * them alone.
+ * Sign-in (architecture, section 9). Better Auth's own tables, under the
+ * names its Drizzle adapter is given in `server/auth/auth.ts`. There is one
+ * account, so each holds a row or two. A seed leaves them alone.
  */
 
 /** A moment as Better Auth hands it over, a Date, stored as milliseconds like every other moment here. */
@@ -372,7 +371,7 @@ export const sessions = sqliteTable(
   (table) => [index('sessions_user').on(table.userId)],
 )
 
-/** A sign-in method for a user: here, always their GitHub account, by its numeric id. */
+/** A sign-in method for a user: here, always an email address and the password's hash. */
 export const accounts = sqliteTable(
   'accounts',
   {
@@ -395,7 +394,7 @@ export const accounts = sqliteTable(
   (table) => [index('accounts_user').on(table.userId)],
 )
 
-/** Short-lived values a sign-in needs between leaving for GitHub and coming back. */
+/** Short-lived values a sign-in needs, such as an assistant's request while I sign in. */
 export const verifications = sqliteTable(
   'verifications',
   {
@@ -408,6 +407,18 @@ export const verifications = sqliteTable(
   },
   (table) => [index('verifications_identifier').on(table.identifier)],
 )
+
+/**
+ * Sign-in attempts, counted per address and path, so guessing the password
+ * is slow. In the database: a function's memory is gone between requests.
+ */
+export const rateLimits = sqliteTable('rate_limits', {
+  id: text().primaryKey(),
+  key: text().notNull().unique(),
+  count: integer().notNull(),
+  /** Milliseconds, as Better Auth counts them. */
+  lastRequest: integer().notNull(),
+})
 
 /*
  * Assistants signing in as me, for the owner's MCP endpoint (architecture,

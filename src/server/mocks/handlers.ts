@@ -6,30 +6,14 @@ import { parseMultiQuery, parseQuery, QueryError, runQuery } from '@/server/mock
 import type { Fixtures } from '@/server/seed/fixtures'
 
 /**
- * Test doubles for Twitch, IGDB and GitHub, answering the way the real
- * services answer: for IGDB, from `fixtures/`, a token first and then
- * queries that need it; for GitHub, two made-up accounts, the owner and
- * someone else. Any other address on those hosts is refused loudly, so a
- * test can never be quietly talking to something that is not there.
+ * Test doubles for Twitch and IGDB, answering the way the real services
+ * answer: from `fixtures/`, a token first and then queries that need it.
+ * Any other address on those hosts is refused loudly, so a test can never
+ * be quietly talking to something that is not there.
  */
 
 export const MOCK_CLIENT_ID = 'mock-client-id'
 export const MOCK_CLIENT_SECRET = 'mock-client-secret'
-
-export const MOCK_GITHUB_CLIENT_ID = 'mock-github-client-id'
-export const MOCK_GITHUB_CLIENT_SECRET = 'mock-github-client-secret'
-
-/**
- * The GitHub accounts the doubles know, by the code GitHub would hand back.
- * A browser test sends its trip to GitHub straight back with one of these
- * codes, and the server then asks GitHub about it, as it would for real.
- */
-export const MOCK_GITHUB_ACCOUNTS = {
-  owner: { id: 9_000_001, login: 'shelf-owner', name: 'Shelf Owner' },
-  stranger: { id: 9_000_002, login: 'someone-else', name: 'Someone Else' },
-} as const
-
-export type MockGithubAccount = keyof typeof MOCK_GITHUB_ACCOUNTS
 
 /**
  * An assistant that signs in to the owner's MCP endpoint, known, as MCP
@@ -134,42 +118,6 @@ export const createHandlers = (fixtures: Fixtures, state: MockState = newMockSta
       }
     }),
 
-    // GitHub: a code for an access token, then the profile and its emails.
-    http.post('https://github.com/login/oauth/access_token', async ({ request }) => {
-      const form = new URLSearchParams(await request.text())
-      const code = form.get('code') ?? ''
-      const known = code in MOCK_GITHUB_ACCOUNTS
-      const client =
-        form.get('client_id') === MOCK_GITHUB_CLIENT_ID &&
-        form.get('client_secret') === MOCK_GITHUB_CLIENT_SECRET
-      if (!known || !client) {
-        return HttpResponse.json({ error: 'bad_verification_code' })
-      }
-      return HttpResponse.json({
-        access_token: `mock-github-token-${code}`,
-        token_type: 'bearer',
-        scope: 'read:user,user:email',
-      })
-    }),
-    http.get('https://api.github.com/user', ({ request }) => {
-      const account = githubAccount(request)
-      if (!account) return HttpResponse.json({ message: 'Bad credentials' }, { status: 401 })
-      return HttpResponse.json({
-        id: account.id,
-        login: account.login,
-        name: account.name,
-        email: null,
-        avatar_url: `https://avatars.githubusercontent.com/u/${account.id}`,
-      })
-    }),
-    http.get('https://api.github.com/user/emails', ({ request }) => {
-      const account = githubAccount(request)
-      if (!account) return HttpResponse.json({ message: 'Bad credentials' }, { status: 401 })
-      return HttpResponse.json([
-        { email: `${account.login}@example.com`, primary: true, verified: true },
-      ])
-    }),
-
     // A cover, when a game is added and its colors are read: a flat color
     // made from its id. The repository holds no cover art.
     http.get(`${IMAGE_HOST}/*`, ({ request }) => {
@@ -198,12 +146,6 @@ export const createHandlers = (fixtures: Fixtures, state: MockState = newMockSta
     ),
 
     // Anything else on these hosts has no double. Say so; never let it through.
-    http.all('https://github.com/*', () =>
-      HttpResponse.json({ message: 'No test double for this GitHub address' }, { status: 501 }),
-    ),
-    http.all('https://api.github.com/*', () =>
-      HttpResponse.json({ message: 'No test double for this GitHub address' }, { status: 501 }),
-    ),
     http.all('https://api.igdb.com/*', () =>
       HttpResponse.json({ message: 'No test double for this IGDB address' }, { status: 501 }),
     ),
@@ -211,12 +153,6 @@ export const createHandlers = (fixtures: Fixtures, state: MockState = newMockSta
       HttpResponse.json({ message: 'No test double for this Twitch address' }, { status: 501 }),
     ),
   ]
-}
-
-const githubAccount = (request: Request) => {
-  const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
-  const code = token.replace(/^mock-github-token-/, '')
-  return code in MOCK_GITHUB_ACCOUNTS ? MOCK_GITHUB_ACCOUNTS[code as MockGithubAccount] : undefined
 }
 
 export const newMockState = (): MockState => ({ tokensIssued: 0, requests: [] })
