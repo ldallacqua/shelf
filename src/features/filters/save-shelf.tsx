@@ -5,6 +5,8 @@ import { useId, useState, useTransition } from 'react'
 
 import { MAX_SHELF_NAME, type SmartShelf } from '@/domain/library/shelves'
 import { Button } from '@/ui/button'
+import { Input } from '@/ui/field'
+import { Segmented, SegmentedItem } from '@/ui/segmented'
 import { Sheet, SheetContent } from '@/ui/sheet'
 
 import type { ShelfActions, ShelfWrite } from './shelf-controls'
@@ -76,36 +78,32 @@ export function SaveShelf({ open, onOpenChange, shelf, view, actions, onDone }: 
           }}
         >
           {shelf ? (
-            <div className="flex gap-2 text-sm" role="radiogroup" aria-label={t('saveHow')}>
+            <Segmented
+              aria-label={t('saveHow')}
+              value={asNew ? 'new' : 'same'}
+              onValueChange={(how: 'same' | 'new') => {
+                setAsNew(how === 'new')
+                setName(how === 'new' ? '' : shelf.name)
+              }}
+            >
               {(['same', 'new'] as const).map((how) => (
-                <label key={how} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="how"
-                    checked={(how === 'new') === asNew}
-                    onChange={() => {
-                      setAsNew(how === 'new')
-                      setName(how === 'new' ? '' : shelf.name)
-                    }}
-                    className="size-4 accent-(--accent)"
-                  />
+                <SegmentedItem key={how} value={how}>
                   {t(how === 'new' ? 'saveAsNew' : 'save')}
-                </label>
+                </SegmentedItem>
               ))}
-            </div>
+            </Segmented>
           ) : null}
           <div className="grid gap-1.5">
             <label htmlFor={nameId} className="text-sm font-medium">
               {t('name')}
             </label>
-            <input
+            <Input
               id={nameId}
               required
               maxLength={MAX_SHELF_NAME}
               autoComplete="off"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className="h-10 rounded-control border border-line-strong bg-surface px-3 text-sm pointer-coarse:h-11"
             />
           </div>
           {problem ? (

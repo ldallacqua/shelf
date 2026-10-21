@@ -7,11 +7,16 @@ import { useEffect, useId, useRef, useState, useTransition, type ReactNode } fro
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
 import type { Changed, EditPatch, OwnedCopy, OwnerGame } from '@/domain/library/editing'
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
+import { DayField, RatingField, TagsField, today } from '@/features/owner/fields'
 import { announceChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
-import { cn } from '@/ui/cn'
+import { Switch } from '@/ui/checkbox'
+import { ChoiceChip } from '@/ui/chip'
+import { Input, Textarea } from '@/ui/field'
+import { Segmented, SegmentedItem } from '@/ui/segmented'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
 
 import { editClient as actions } from './edit-client'
 
@@ -25,14 +30,6 @@ type MineEditorProps = {
   /** Shown until the game's editable record has arrived. */
   fallback: ReactNode
 }
-
-const today = () => new Date().toISOString().slice(0, 10)
-
-const FIELD =
-  'h-10 w-full min-w-0 rounded-control border border-line-strong bg-surface px-3 text-sm text-text pointer-coarse:h-11'
-
-const CHIP =
-  'flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-line-strong px-3 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent/15 has-[:checked]:font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent pointer-coarse:min-h-11'
 
 /**
  * Every field under "Mine", edited in place and saved as it changes (spec
@@ -185,36 +182,27 @@ export function MineEditor({
           <legend className="mb-2 text-sm font-semibold">{game('status')}</legend>
           <div className="flex flex-wrap gap-2">
             {statuses.map((each) => (
-              <label key={each} className={CHIP}>
-                <input
-                  type="radio"
-                  name={`${id}-status`}
-                  checked={owned.status === each}
-                  onChange={() => setStatus(each)}
-                  className="sr-only"
-                />
+              <ChoiceChip
+                key={each}
+                type="radio"
+                name={`${id}-status`}
+                checked={owned.status === each}
+                onChange={() => setStatus(each)}
+              >
                 {library(`status.${each}`)}
-              </label>
+              </ChoiceChip>
             ))}
           </div>
         </fieldset>
 
+        <SavedRating
+          score={owned.rating}
+          onSave={(score) =>
+            void update({ rating: score }, { rating: score === null ? undefined : score })
+          }
+        />
+
         <div className="grid gap-4 sm:grid-cols-2">
-          <SavedField
-            label={t('rating')}
-            value={owned.rating === undefined ? '' : String(owned.rating / 10)}
-            inputMode="decimal"
-            onSave={(text) => {
-              const trimmed = text.trim().replace(',', '.')
-              if (trimmed === '') return void update({ rating: null }, { rating: undefined })
-              const score = Math.round(Number(trimmed) * 10)
-              if (!Number.isFinite(score) || score < 0 || score > 100) {
-                setProblem(t('ratingRange'))
-                return
-              }
-              void update({ rating: score }, { rating: score })
-            }}
-          />
           <SavedField
             label={t('played')}
             value={owned.minutes > 0 ? String(Math.round((owned.minutes / 60) * 10) / 10) : ''}
@@ -230,19 +218,14 @@ export function MineEditor({
             }}
           />
           {owned.status === 'completed' || owned.completedOn ? (
-            <label className="grid gap-1.5 text-sm font-medium">
-              {t('completedOn')}
-              <input
-                type="date"
-                className={FIELD}
-                value={owned.completedOn ?? ''}
-                max={today()}
-                onChange={(event) => {
-                  const day = event.target.value || null
-                  void update({ completedOn: day }, { completedOn: day ?? undefined })
-                }}
-              />
-            </label>
+            <DayField
+              label={t('completedOn')}
+              value={owned.completedOn}
+              clearable
+              onChange={(day) =>
+                void update({ completedOn: day ?? null }, { completedOn: day ?? undefined })
+              }
+            />
           ) : null}
         </div>
 
@@ -280,17 +263,7 @@ export function MineEditor({
           }
         />
 
-        <SavedField
-          label={t('tags')}
-          value={owned.tags.join(', ')}
-          onSave={(text) => {
-            const tags = text
-              .split(',')
-              .map((tag) => tag.trim())
-              .filter(Boolean)
-            void update({ tags }, { tags })
-          }}
-        />
+        <TagsField value={owned.tags} onChange={(tags) => void update({ tags }, { tags })} />
 
         <div className="grid gap-2">
           <SavedField
@@ -302,14 +275,12 @@ export function MineEditor({
               void update({ notes: notes || null }, { notes: notes || undefined })
             }}
           />
-          <label className="flex min-h-10 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <label className="flex min-h-10 cursor-pointer items-center gap-3 text-sm">
+            <Switch
               checked={owned.notesPublic}
               onChange={(event) =>
                 update({ notesPublic: event.target.checked }, { notesPublic: event.target.checked })
               }
-              className="size-4 accent-[var(--color-accent)]"
             />
             {t('notesPublic')}
           </label>
@@ -406,15 +377,16 @@ function SavedField({
     <label className="grid gap-1.5 text-sm font-medium">
       {label}
       {multiline ? (
-        <textarea
+        <Textarea
+          grow
           value={text}
           rows={4}
           onChange={(event) => setText(event.target.value)}
           onBlur={commit}
-          className={cn(FIELD, 'h-auto py-2 leading-relaxed')}
+          className="font-normal"
         />
       ) : (
-        <input
+        <Input
           value={text}
           inputMode={inputMode}
           onChange={(event) => setText(event.target.value)}
@@ -425,10 +397,60 @@ function SavedField({
               commit()
             }
           }}
-          className={FIELD}
+          className="font-normal"
         />
       )}
     </label>
+  )
+}
+
+/** How long a rating rests before it is saved: the arrow keys commit at every press. */
+const RATING_REST_MS = 400
+
+/**
+ * My rating, saved once it comes to rest: let go of, or the keys left alone
+ * for a moment. Leaving the page first saves it at once.
+ */
+function SavedRating({
+  score,
+  onSave,
+}: {
+  /** Out of a hundred, as stored. */
+  score: number | undefined
+  onSave: (score: number | null) => void
+}) {
+  // While it moves, the field shows where it is, not what was saved.
+  const [moving, setMoving] = useState<{ value: number | undefined }>()
+  const pending = useRef<{ score: number | null }>(undefined)
+  const timer = useRef(0)
+  const save = useRef(onSave)
+  useEffect(() => {
+    save.current = onSave
+  })
+
+  const flush = () => {
+    window.clearTimeout(timer.current)
+    const waiting = pending.current
+    pending.current = undefined
+    setMoving(undefined)
+    if (waiting && waiting.score !== (score ?? null)) save.current(waiting.score)
+  }
+  const latestFlush = useRef(flush)
+  useEffect(() => {
+    latestFlush.current = flush
+  })
+  useEffect(() => () => latestFlush.current(), [])
+
+  return (
+    <RatingField
+      value={moving ? moving.value : score === undefined ? undefined : score / 10}
+      onChange={(value) => setMoving({ value })}
+      onCommit={(value) => {
+        pending.current = { score: value === undefined ? null : Math.round(value * 10) }
+        window.clearTimeout(timer.current)
+        timer.current = window.setTimeout(flush, RATING_REST_MS)
+      }}
+    />
   )
 }
 
@@ -470,26 +492,19 @@ function Copies({
           {owned.copies.map((copy) => {
             const name = labels.get(copy.platformId)?.name ?? ''
             return (
-              <li key={copy.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                <span className="min-w-28 font-medium">{name}</span>
-                <span
-                  role="radiogroup"
+              <li key={copy.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                <span className="min-w-28 flex-1 font-medium">{name}</span>
+                <Segmented
                   aria-label={t('formatOf', { platform: name })}
-                  className="flex gap-3"
+                  value={copy.format}
+                  onValueChange={(format: Format) => onFormat(copy, format)}
                 >
                   {formats.map((each) => (
-                    <label key={each} className="flex min-h-10 items-center gap-2">
-                      <input
-                        type="radio"
-                        name={`${id}-${copy.id}`}
-                        checked={copy.format === each}
-                        onChange={() => onFormat(copy, each)}
-                        className="size-4 accent-[var(--color-accent)]"
-                      />
+                    <SegmentedItem key={each} value={each}>
                       {library(`format.${each}`)}
-                    </label>
+                    </SegmentedItem>
                   ))}
-                </span>
+                </Segmented>
                 <button
                   type="button"
                   aria-label={t('removeCopy', {
@@ -508,34 +523,40 @@ function Copies({
       )}
       {open.length > 0 && chosen !== undefined ? (
         <div className="mt-1 flex flex-wrap items-end gap-2">
-          <label className="grid gap-1.5 text-sm font-medium">
-            {t('copyPlatform')}
-            <select
-              className={cn(FIELD, 'w-auto')}
-              value={chosen}
-              onChange={(event) => setPlatform(Number(event.target.value))}
-            >
-              {open.map((each) => (
-                <option key={each.id} value={each.id}>
-                  {each.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1.5 text-sm font-medium">
-            {t('copyFormat')}
-            <select
-              className={FIELD}
-              value={format}
-              onChange={(event) => setFormat(event.target.value as Format)}
-            >
-              {formats.map((each) => (
-                <option key={each} value={each} disabled={have.has(`${chosen}:${each}`)}>
-                  {library(`format.${each}`)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="grid min-w-44 flex-1 gap-1.5">
+            <label htmlFor={`${id}-platform`} className="text-sm font-medium">
+              {t('copyPlatform')}
+            </label>
+            <Select value={String(chosen)} onValueChange={(value) => setPlatform(Number(value))}>
+              <SelectTrigger id={`${id}-platform`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {open.map((each) => (
+                  <SelectItem key={each.id} value={String(each.id)}>
+                    {each.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid min-w-32 gap-1.5">
+            <label htmlFor={`${id}-format`} className="text-sm font-medium">
+              {t('copyFormat')}
+            </label>
+            <Select value={format} onValueChange={(value) => setFormat(value as Format)}>
+              <SelectTrigger id={`${id}-format`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {formats.map((each) => (
+                  <SelectItem key={each} value={each} disabled={have.has(`${chosen}:${each}`)}>
+                    {library(`format.${each}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <Button
             variant="secondary"
             disabled={have.has(`${chosen}:${format}`)}

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { useId } from 'react'
 
+import { Switch } from '@/ui/checkbox'
 import { Sheet, SheetContent } from '@/ui/sheet'
 
 import { setShortcutsOn, useShortcutsOn } from './shortcuts'
@@ -54,13 +55,10 @@ export function ShortcutsDialog({
           ))}
         </dl>
         <div className="mt-6 flex items-center gap-3 border-t border-line pt-4">
-          <input
+          <Switch
             id={switchId}
-            type="checkbox"
-            role="switch"
             checked={on}
             onChange={(event) => setShortcutsOn(event.target.checked)}
-            className="size-5 accent-(--accent)"
           />
           <label htmlFor={switchId} className="text-sm">
             {t('letters')}

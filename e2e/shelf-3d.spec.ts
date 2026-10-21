@@ -132,8 +132,9 @@ test.describe('the shelf in 3D', () => {
 
     await page.keyboard.press('d')
     await expect(page.locator('[data-shelf-3d]')).toHaveCount(0)
-    expect(await shelfNames(page)).toEqual(shelves3d)
-    expect(await firstGames(page, 'PlayStation 4', 12)).toEqual(games3d)
+    // The 2D shelf draws its boxes in as it arrives: read it once it has.
+    await expect.poll(() => shelfNames(page)).toEqual(shelves3d)
+    await expect.poll(() => firstGames(page, 'PlayStation 4', 12)).toEqual(games3d)
     expect(shelves3d.slice(0, 2)).toEqual(['PlayStation 5', 'PlayStation 4'])
   })
 

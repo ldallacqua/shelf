@@ -561,6 +561,7 @@
     "body": "Only the owner of this shelf signs in. Everyone else can look around without an account.",
     "email": "Email address",
     "password": "Password",
+    "showPassword": "Show the password",
     "submit": "Sign in",
     "signingIn": "Signing in…",
     "wrong": "That email address and password do not match. Try again.",
@@ -609,9 +610,6 @@
     "owned": "Platforms owned",
     "wishlistNone": "A wishlist game needs no platform.",
     "formatFor": "{platform}: physical or digital",
-    "rating": "My rating, out of 10",
-    "ratingRange": "A rating is a number from 0 to 10.",
-    "tags": "Tags, separated by commas",
     "completedOn": "Completed on",
     "add": "Add",
     "addAnother": "Add and add another",
@@ -678,11 +676,8 @@
   },
   "Edit": {
     "saving": "Saving…",
-    "rating": "My rating, out of 10",
-    "ratingRange": "A rating is a number from 0 to 10.",
     "played": "Hours played",
     "playedRange": "Hours played is a number, 0 or more.",
-    "tags": "Tags, separated by commas",
     "notesPublic": "Visitors can read these notes",
     "versions": "Versions",
     "relations": {
@@ -707,6 +702,23 @@
     "copyFormat": "Format",
     "addCopy": "Add a copy",
     "completedOn": "Completed on"
+  },
+  "Fields": {
+    "rating": "My rating",
+    "unrated": "Not rated",
+    "clearRating": "Take the rating away",
+    "outOf": "/10",
+    "ratingValue": "{value} out of 10",
+    "tags": "Tags",
+    "tagsHint": "Press Enter or a comma after each tag.",
+    "tagsPlaceholder": "Add a tag",
+    "removeTag": "Remove the tag {tag}",
+    "tagSuggestions": "Tags you have used",
+    "pickDay": "Choose a day",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "clearDay": "Clear",
+    "choose": "Choose…"
   },
   "Consent": {
     "metaTitle": "Let an assistant in",

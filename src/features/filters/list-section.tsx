@@ -145,7 +145,7 @@ export function ListSection({
             placeholder={t('panel.findPlaceholder')}
             value={find}
             onChange={(event) => setFind(event.target.value)}
-            className="h-9 rounded-control border border-line-strong bg-surface px-3 text-sm placeholder:text-muted pointer-coarse:h-10"
+            className="h-9 rounded-control border border-line-strong bg-surface px-3 text-base transition-[border-color] duration-quick ease-settle placeholder:text-muted hover:border-muted sm:text-sm pointer-coarse:h-10"
           />
         </>
       ) : null}

@@ -30,7 +30,13 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Step 6: measured 260.1 KB. The game's page over the shelf is about 9 KB,
   // fetched when a game is first reached for, not with the page; what stays
   // is the cover's flight into it and the game's place in history.
-  { path: '/en/library', name: 'Library', kilobytes: 262 },
+  // After step 7: measured 264.1 KB, from 261.3. The owner's select and
+  // calendar use the code that places Radix's menus beside their buttons, so
+  // the bundler moved it out of the menus' file into one of its own: one more
+  // file on every page, 1.8 KB, none of it the owner's code. The rest is the
+  // shared text field and switch. The owner chose this over writing that
+  // placing code a second time (21 Oct 2026).
+  { path: '/en/library', name: 'Library', kilobytes: 265 },
   // Step 3: measured 191.3 KB. Shell only.
   { path: '/en/trophies', name: 'Trophies', kilobytes: 198 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the

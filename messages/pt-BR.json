@@ -561,6 +561,7 @@
     "body": "Só o dono desta estante entra. Todo mundo pode olhar à vontade sem conta.",
     "email": "E-mail",
     "password": "Senha",
+    "showPassword": "Mostrar a senha",
     "submit": "Entrar",
     "signingIn": "Entrando…",
     "wrong": "Esse e-mail e essa senha não conferem. Tente de novo.",
@@ -609,9 +610,6 @@
     "owned": "Plataformas que você tem",
     "wishlistNone": "Um jogo da lista de desejos não precisa de plataforma.",
     "formatFor": "{platform}: físico ou digital",
-    "rating": "Minha nota, de 0 a 10",
-    "ratingRange": "A nota é um número de 0 a 10.",
-    "tags": "Etiquetas, separadas por vírgulas",
     "completedOn": "Terminado em",
     "add": "Adicionar",
     "addAnother": "Adicionar e continuar",
@@ -678,11 +676,8 @@
   },
   "Edit": {
     "saving": "Salvando…",
-    "rating": "Minha nota, de 0 a 10",
-    "ratingRange": "A nota é um número de 0 a 10.",
     "played": "Horas jogadas",
     "playedRange": "As horas jogadas são um número, 0 ou mais.",
-    "tags": "Etiquetas, separadas por vírgulas",
     "notesPublic": "Os visitantes podem ler estas notas",
     "versions": "Versões",
     "relations": {
@@ -707,6 +702,23 @@
     "copyFormat": "Formato",
     "addCopy": "Adicionar uma cópia",
     "completedOn": "Terminado em"
+  },
+  "Fields": {
+    "rating": "Minha nota",
+    "unrated": "Sem nota",
+    "clearRating": "Tirar a nota",
+    "outOf": "/10",
+    "ratingValue": "{value} de 10",
+    "tags": "Etiquetas",
+    "tagsHint": "Aperte Enter ou vírgula depois de cada etiqueta.",
+    "tagsPlaceholder": "Adicionar uma etiqueta",
+    "removeTag": "Tirar a etiqueta {tag}",
+    "tagSuggestions": "Etiquetas que você já usou",
+    "pickDay": "Escolha um dia",
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "clearDay": "Limpar",
+    "choose": "Escolha…"
   },
   "Consent": {
     "metaTitle": "Deixar um assistente entrar",

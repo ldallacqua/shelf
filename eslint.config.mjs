@@ -33,6 +33,12 @@ export default defineConfig([
     files: ['**/*.{jsx,tsx}'],
     rules: {
       ...jsxA11y.flatConfigs.recommended.rules,
+      // The design system's inputs (src/ui/checkbox.tsx, field.tsx) are the
+      // browser's own underneath: a label around one names it.
+      'jsx-a11y/label-has-associated-control': [
+        'error',
+        { controlComponents: ['Checkbox', 'Radio', 'Switch', 'Input', 'Textarea'], depth: 3 },
+      ],
     },
   },
 
