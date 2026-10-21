@@ -30,23 +30,24 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 
 ## Commands
 
-| Command                        | Does                                                                                                            |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                     | The app at http://localhost:3300                                                                                |
-| `pnpm build` then `pnpm start` | A production build, same port                                                                                   |
-| `pnpm check`                   | Format, lint, types, translations, unit and component tests                                                     |
-| `pnpm verify`                  | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before every push.  |
-| `pnpm test`                    | Unit and component tests (Vitest)                                                                               |
-| `pnpm e2e`                     | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine. |
-| `pnpm perf:js`                 | Each page's first-load JavaScript against its budget. Needs a running server.                                   |
-| `pnpm perf:lighthouse`         | Lighthouse, mobile profile. Needs a running server.                                                             |
-| `pnpm perf:3d`                 | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.     |
-| `pnpm storybook`               | The component workshop at http://localhost:6300                                                                 |
-| `pnpm i18n:check`              | Fails if the two languages disagree                                                                             |
-| `pnpm seed [set]`              | Migrates `.data/shelf.db` and fills it with a data set: `default` (230 games), `empty` or `stress` (1,280)      |
-| `pnpm db:generate`             | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`              |
-| `pnpm db:migrate`              | Applies migrations without touching the data                                                                    |
-| `pnpm fixtures:fetch`          | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff     |
+| Command                        | Does                                                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                     | The app at http://localhost:3300                                                                                 |
+| `pnpm build` then `pnpm start` | A production build, same port                                                                                    |
+| `pnpm check`                   | Format, lint, types, translations, unit and component tests                                                      |
+| `pnpm verify`                  | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before every push.   |
+| `pnpm test`                    | Unit and component tests (Vitest)                                                                                |
+| `pnpm e2e`                     | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine.  |
+| `pnpm serve:test`              | The build as the browser tests use it: test doubles on, serving a migrated copy of the database (`.data/e2e.db`) |
+| `pnpm perf:js`                 | Each page's first-load JavaScript against its budget. Needs a running server.                                    |
+| `pnpm perf:lighthouse`         | Lighthouse, mobile profile. Needs a running server.                                                              |
+| `pnpm perf:3d`                 | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.      |
+| `pnpm storybook`               | The component workshop at http://localhost:6300                                                                  |
+| `pnpm i18n:check`              | Fails if the two languages disagree                                                                              |
+| `pnpm seed [set]`              | Migrates `.data/shelf.db` and fills it with a data set: `default` (230 games), `empty` or `stress` (1,280)       |
+| `pnpm db:generate`             | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`               |
+| `pnpm db:migrate`              | Applies migrations without touching the data                                                                     |
+| `pnpm fixtures:fetch`          | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff      |
 
 Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**
 (Actions minutes are limited): while working, run the browser tests your change touches, and
@@ -137,13 +138,14 @@ seed) goes through `parseLibraryQuery`. Nothing on the shelf fades in: a cover t
 counted as painted late.
 
 **A game's page.** `src/features/game-detail` draws it both as a page of its own
-(`/game/{slug}`, built ahead) and as the panel a game opens in over the library. The panel is
+(`/game/{slug}`, built on its first visit and kept: a page built ahead answers a browser's move
+to it with a 404 once its tag expires) and as the panel a game opens in over the library. The panel is
 the library's own, not a route: opening a game adds its address to history with the
 library's query string kept (`game-address.ts`), and Back closes it. What the library file
 lacks (summary, screenshots, art, releases) comes from `buildGamePage`; the panel fetches it
 as the game's facts, by library version. The cover grows from the box through `morph.ts`,
 which names the two ends for that one view transition only. A private note never leaves the
-server.
+server except to the owner, in `GET /api/v1/entries/{id}`, which the editor reads.
 
 **Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
 and never throws (what it cannot read becomes a problem with a position), `write.ts` turns a
@@ -153,8 +155,24 @@ The search field and the panel are two views of one tree: change the tree, never
 hand. A new filter key goes in `keys.ts` and gets a test in `parse.test.ts` and
 `evaluate.test.ts` first. The public API (`src/server/api/`) parses every answer with its own
 Zod schema before sending it, and the OpenAPI document is built from those schemas: change
-the schema and the document follows. Until sign-in (step 7), the owner in tests is a cookie,
-`shelf-test-owner=1`, which the server reads only when it runs with `SHELF_MOCKS=1`.
+the schema and the document follows.
+
+**The owner.** Only one GitHub account signs in (`OWNER_GITHUB_ID`); everyone else is turned
+away at sign-in by `validateUserInfo` in `src/server/auth/auth.ts`. That is the courtesy. The
+lock is `requireOwner()`, inside `forOwner()`, at the top of every service a route, an action
+or an MCP tool calls to change or privately read anything; `owner-only.test.ts` asks each one
+as a stranger. The browser learns it is the owner from `/api/v1/me` (`useOwner`), and only
+asks when the `shelf_owner_hint` cookie is there, so a visitor costs nothing. Edit controls
+appear only after that answer. An assistant on `/api/mcp/owner` has no cookie: the route
+checks its token and runs the tools inside `asOwner()`. Never call `asOwner()` anywhere else.
+
+**Changing the library from the page.** Adding one game and saving shelves are server actions
+(`updateTag`). Editing, adding from a list and Undo of a removal go through the API
+(`edit-client.ts`, `list-client.ts`): a server action that expires the library draws the
+current address again, and with a game's panel open that is the game's own page, which then
+replaces the shelf. After a change, call `announceChange()` with the new version: the
+library fetches its new file and moves to the game. Every write to the library answers with
+its new version for that.
 
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used

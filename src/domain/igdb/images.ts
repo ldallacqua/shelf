@@ -29,6 +29,12 @@ export const imageUrl = (imageId: string, size: ImageSize): string => {
   return `${IMAGE_HOST}/igdb/image/upload/t_${size}/${imageId}.webp`
 }
 
+const IMAGE_URL =
+  /^https:\/\/images\.igdb\.com\/igdb\/image\/upload\/t_[a-z0-9_]+\/([a-z0-9_]+)\.\w+$/i
+
+/** The image id in an address `imageUrl` made, as the API gives covers. Nothing for any other address. */
+export const imageIdOf = (url: string): string | undefined => IMAGE_URL.exec(url)?.[1]
+
 type Sources = { src: string; srcSet: string }
 
 const sources = (imageId: string, sizes: readonly ImageSize[]): Sources => ({

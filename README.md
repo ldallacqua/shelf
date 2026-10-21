@@ -28,7 +28,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 4 | 3D shelf, and the switch between 2D and 3D | Done |
 | Step 5 | Filters, sorting, smart shelves, the public API: [`docs/api.md`](docs/api.md) | Done |
 | Step 6 | Game detail: its own page, and the same page over the shelf | Done |
-| Step 7 | Sign-in and adding games | Not started |
+| Step 7 | Sign-in, adding one game or a pasted list, editing in place, the write API, and MCP for assistants | Built; on a deployment once sign-in is set up ([setup](docs/setup.md), parts B and C) |
 | Sync | Steam, PlayStation and Xbox sync, and a Nintendo import: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Not started; after step 7 |
 | Step 8 | Landing page | Not started |
 | Step 9 | Phone and tablet, accessibility and speed passes | Not started |
@@ -40,9 +40,13 @@ wall in 3D, walked sideways, and `D` switches between 2D and 3D (a phone has 2D 
 can be searched as you type, filtered from a panel or in a one-line filter language
 (`genre:rpg -theme:horror`), and sorted eleven ways; six smart shelves keep a filter at an
 address of their own (`/en/shelves/short-ones`). The library can be read as JSON at
-`/api/v1`. The home page is still the foundations page from step 1 (light, color, type,
-motion, controls) until the landing page replaces it at step 8. There is no sign-in yet, so
-nothing can be added, and shelves can be saved only in tests.
+`/api/v1`. A game opens over the shelf, its cover growing out of its box, or on a page of its
+own. Signed in with GitHub, the owner (one account only) adds games one at a time or from a
+pasted list, and edits everything under "Mine" in place; an assistant can read the library
+through MCP and, once the owner says yes, add and change games too. On a deployment that waits
+for sign-in to be set up ([setup](docs/setup.md), parts B and C). The home page is still the
+foundations page from step 1 (light, color, type, motion, controls) until the landing page
+replaces it at step 8.
 
 ## Credits
 

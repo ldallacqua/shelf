@@ -67,10 +67,10 @@ How to read the evidence labels:
 | Validation | Zod | 4.6 | Docs |
 | Database | Turso (libSQL); a SQLite file locally | @libsql/client 0.18 | Docs |
 | Database access | Drizzle | orm 0.45, kit 0.31 | Docs |
-| Sign-in | Better Auth | 1.7 | Docs |
+| Sign-in | Better Auth; its MCP, CIMD and JWT plugins for assistants | 1.7 | Tested |
 | Languages | next-intl | 4.14 | Docs |
 | Themes | A small module of our own | none | Docs |
-| MCP | mcp-handler on the MCP SDK | 2.3 on 2.3 | Docs |
+| MCP | The MCP SDK's own handler (`@modelcontextprotocol/server`) | 2.3 | Tested |
 | Unit and component tests | Vitest, Testing Library | 5.0, 16.3 | Docs |
 | End-to-end tests | Playwright, with axe | 1.64, 4.13 | Docs |
 | IGDB test double | MSW | 3.0 | Tested |
@@ -137,10 +137,12 @@ Three rules of the Hobby plan shape the design:
   with the GitHub account linked to the Vercel account. Commits here are authored as
   `ldallacqua`, so that holds. A commit authored by a bot would not deploy. This is why the
   screenshot-baseline job hands me files to commit and does not commit them itself.
-- **One function region.** Turso's documented locations are Virginia, Ohio, Oregon, Ireland,
-  Mumbai and Tokyo; none is in South America. The function and the database both go in
-  Virginia (`iad1` and `aws-us-east-1`), next to each other. A visitor in Brazil still gets the page
-  frame from a nearby Vercel edge; only the data round trip goes to Virginia.
+- **One function region, next to the database: São Paulo** (`gru1` and `aws-sa-east-1`). The
+  plan had both in Virginia, because Turso's documented locations had none in South America;
+  the owner found São Paulo offered when creating the database (21 Oct 2026). Pages and the
+  library file reach every visitor from a nearby Vercel edge; only the data round trip goes to
+  São Paulo. The calls out to IGDB, Twitch and GitHub cross to the US, and they come only when
+  adding games or signing in.
 - **Preview deployments ask for a Vercel login.** This is Vercel's standard protection. On
   your phone you sign in to Vercel once and previews open. The setup checklist shows where
   the switch is.
@@ -251,8 +253,8 @@ that are either cached or streamed per request. This is the default for new Next
 | `/en/library` | Header, heading, and ghosts where the totals, the controls and the first boxes will be: cases standing on the lit boards | The first screen of boxes for this address's filter, sort and grouping, and the list of smart shelves | The library or the shelves change |
 | `/en/shelves/{name}` | The same frame with the shelf's name, per shelf there was when the site was built. A shelf saved since gets its frame on its first visit. | The first screen for the shelf, with whatever the address changes | The library or the shelves change |
 | `/en/trophies` | Whole page | Nothing | The library changes |
-| `/en/game/{slug}` | Whole page, for every game there was when the site was built; a game added since, on its first visit, and kept | Nothing (my private notes, for me only, arrive with sign-in at step 7) | The library changes |
-| `/en/sign-in` | Whole page | Nothing | Never |
+| `/en/game/{slug}` | Whole page, on its first visit, and kept | Nothing. For me, "Mine" is then read from `GET /api/v1/entries/{id}`, private notes included. | The library changes |
+| `/en/sign-in`, `/en/consent` | Whole page | Nothing. Whether I am signed in is asked by the page. | Never |
 | `/llms.txt`, `/sitemap.xml`, `/robots.txt` | Whole file | Nothing | The library changes |
 
 **How "the library changes" works.** Every cached read is tagged `library` (and
@@ -329,7 +331,8 @@ log, and anything that saves my own data refuses to run on it
 | `library_meta` | The version counter. One row. |
 | `igdb_token` | The current Twitch token and its expiry. One row. |
 | `user`, `session`, `account`, `verification` | Better Auth's own |
-| `oauth*` (five tables) | Better Auth's, for MCP sign-in |
+| `oauth_*` (seven tables), `jwks` | Better Auth's, for assistants signing in to the owner's MCP endpoint: clients, resources, tokens, consents; and the keys tokens are signed with |
+| `removed_entries` | A removed game, whole, for a day, so Undo can put it back exactly |
 
 **Indexes** go on what is looked up one row at a time: `games.igdb_id`, `games.slug`,
 `entry_versions.game_id`, `copies.entry_id`. The library itself is always read whole.
@@ -421,12 +424,13 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 | --- | --- |
 | Provider | GitHub only |
 | Who gets in | One account. `OWNER_GITHUB_ID` holds its numeric id, which never changes (a username can). |
-| Turning others away | At sign-in: a GitHub profile whose id is not the owner's is refused before any account is stored, and the person sees a plain message. Better Auth's "before" hooks can abort a sign-up; the exact hook is settled at step 7, and the test (a second account cannot sign in) is the contract. |
+| Turning others away | At sign-in: a GitHub profile whose id is not the owner's is refused before any account is stored, and the person sees a plain message. The hook is Better Auth's `user.validateUserInfo`, which runs on every sign-in with GitHub's own profile, including a preview's through production. The test (a second account cannot sign in) is the contract. |
 | Every write | `requireOwner()` runs first in every service function that changes anything. It loads the session and compares its GitHub id with `OWNER_GITHUB_ID` again. The sign-in check is a courtesy; this one is the lock. |
+| Assistants | The owner's MCP endpoint takes OAuth access tokens, not the session cookie. Better Auth's MCP plugin is the authorization server: an assistant is known by its Client ID Metadata Document's address, I sign in with GitHub as on the site, and say yes on `/consent`. Tokens are JWTs signed with keys in the `jwks` table, for that endpoint only. The endpoint checks the token, checks its user is the owner (`ownerOfUser`, the same GitHub id comparison), and runs the tools inside `asOwner`, which `requireOwner()` honours. Only I can sign in, so only I can say yes. |
 | Sessions | A row in the database and a cookie that scripts cannot read, sent only over HTTPS, with SameSite=Lax. Seven days, extended on use. |
 | Visitors | Carry no cookie, so they cost no session lookups |
 | Edit controls | Rendered only after the browser confirms a session. A second, harmless cookie (`shelf_owner_hint`) tells the page whether it is worth asking; visitors never trigger the question. |
-| Private notes | Never in a cached page or the library file. Fetched by a separate request that requires the session. |
+| Private notes | Never in a cached page or the library file. Fetched by a separate request that requires the session: `GET /api/v1/entries/{id}`, which the editor reads, uncached and private. |
 | Preview deployments | Better Auth's OAuth Proxy: a preview sends the GitHub round trip through production, which hands the result back encrypted. Only the production callback is registered with GitHub. The preview keeps its own database, so signing in there cannot touch the real library. |
 | Local work | A second GitHub OAuth app whose callback is `http://localhost:3300/api/auth/callback/github` |
 
@@ -435,7 +439,9 @@ The callback path is the same everywhere: `/api/auth/callback/github`.
 **In tests,** nothing bypasses sign-in. The server's calls to GitHub are answered by MSW, and
 Playwright redirects the browser's trip to `github.com` straight back to the callback. That
 exercises the real code, including a second account being refused. One sign-in is saved and
-reused by the tests that need me to be signed in.
+reused by the tests that need me to be signed in. An assistant signs in the same way: MSW
+serves a test assistant's metadata document, the browser says yes on the consent page, and the
+test trades the code for a token and calls the owner's tools with the official MCP client.
 
 ---
 
@@ -671,14 +677,20 @@ generated from them, so it cannot drift from the code.
 | `GET /shelves`, `GET /shelves/{slug}` | Anyone | Smart shelves |
 | `GET /openapi.json` | Anyone | The API's own description |
 | `GET /igdb/search?q` | Me | Search IGDB |
-| `POST /entries`, `PATCH /entries/{id}`, `DELETE /entries/{id}` | Me | Add, change, remove |
-| `POST /entries/bulk` | Me | Add from a pasted list |
+| `POST /igdb/match` | Me | Match pasted lines, twenty at a time |
+| `POST /entries`, `GET /entries/{id}`, `PATCH /entries/{id}`, `DELETE /entries/{id}` | Me | Add; read as I keep it (private notes, ids); change; remove |
+| `POST /entries/{id}/copies`, `PATCH` and `DELETE /entries/{id}/copies/{copy}` | Me | A copy: add, switch its format, remove |
+| `POST /removed/{undo}` | Me | Put a removed game back, within a day |
+| `POST /additions`, `POST /additions/undo` | Me | Add many games at once, up to fifty; take them back |
 | `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Me | Save or remove a smart shelf |
 
-The interface itself uses server actions for writes; these routes are the same services with
-an HTTP face. The reads are built at step 5, open to any site, and kept by the edge for a
-minute; `/games/{slug}` comes with the game page (step 6) and the writes with sign-in (step
-7). The reference for anyone calling it is [docs/api.md](api.md).
+These routes are the same services as the interface, with an HTTP face. The interface uses
+server actions for adding one game and saving shelves, and these routes for editing and for
+lists: a server action that expires the library redraws the current address, and with a
+game's panel open over the shelf that address is the game's own page. The reads are built at
+step 5, open to any site, and kept by the edge for a minute; `/games/{slug}` comes with the
+game page (step 6) and the writes with sign-in (step 7). The reference for anyone calling it
+is [docs/api.md](api.md).
 
 **MCP**, on the current specification (2026-07-28), stateless:
 
@@ -690,6 +702,15 @@ minute; `/games/{slug}` comes with the game page (step 6) and the writes with si
 There are two endpoints because, in practice, an assistant only starts a sign-in when a
 server demands one. A single endpoint that allowed anonymous reads would never get to offer
 the write tools.
+
+Both are served by the official SDK's own `createMcpHandler` (`@modelcontextprotocol/server`
+2.3), one fresh server per request, and answer assistants on the 2025 revision too, the same
+stateless way. Without a token the owner's endpoint answers 401 with a `WWW-Authenticate`
+header naming `/.well-known/oauth-protected-resource/api/mcp/owner` (RFC 9728), which names
+`/api/auth` as the authorization server, described at
+`/.well-known/oauth-authorization-server/api/auth` (RFC 8414). Assistants are known by Client
+ID Metadata Documents, so none registers first. The tools answer with the API's own shapes,
+as JSON text and structured content.
 
 **For crawlers and assistants**
 
@@ -845,7 +866,10 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | `CRON_SECRET` | The daily refresh job | Step 9 |
 
 The site's own address comes from Vercel's built-in `VERCEL_PROJECT_PRODUCTION_URL`, so there
-is nothing to set for it, and sign-in uses the same value. Each group of settings is checked
+is nothing to set for it, and sign-in uses the same value. Assistants need no setting either:
+the owner's MCP endpoint, its access tokens and their issuer are all at the deployment's own
+address (`siteUrl()`). Tokens are issued for one address, so on a preview an assistant connects
+to the deployment's `*.vercel.app` address, not the branch's. Each group of settings is checked
 with Zod when it is first needed (the database's when the database is opened, IGDB's when
 IGDB is called), and a missing one stops that call with a message naming it: the name, never
 the value. Checking everything at startup would refuse to run a preview that has no use for
@@ -892,7 +916,7 @@ Two notes on order:
 | 6 | GitHub Actions minutes run out mid-month | Medium in a heavy month | Fewer full runs; or make the repository public |
 | 7 | Texture memory is too high on an older laptop | Medium | Smaller atlases and fewer cover levels, chosen automatically from measured frame time |
 | 8 | Two open branches migrate the shared preview database differently | Low; work is one branch at a time | `pnpm db:reset:preview` rebuilds it from fixtures |
-| 9 | The page frame is instant but the first boxes take a cold-start round trip to Virginia | Medium | Keep a ready-made copy of the library file in the database, rebuilt on each write, so a cold start is one read |
+| 9 | The page frame is instant but the first boxes take a cold-start round trip to the function | Medium | Keep a ready-made copy of the library file in the database, rebuilt on each write, so a cold start is one read |
 | 10 | TypeScript 7.1 or typescript-eslint support lands mid-build | Certain, eventually | Upgrade between steps, never inside one |
 | 11 | Preview sign-in depends on a secret shared between preview and production | Accepted | Previews only ever run my own code from a private repository |
 
@@ -970,6 +994,17 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 7 | **Next.js 16.4.1,** from 16.4.0. | 16.4.1 fixes critical security flaws in 16.4.0. |
+| Step 7 | **A game's page is built on its first visit and kept,** not with the site. The build makes 57 pages, sign-in and consent among them, where step 6 made 499. This reverses the step 6 row below. | Found by the browser tests: once a write expires the library's tag, Next.js 16.4 answers a browser's move to a game page that was built ahead with a 404, because the page's prebuilt data went with the tag. A page built on its first visit has none to lose. The cost is one server wait for the first visitor to each game after a change. |
+| Step 7 | **Editing goes through the API (`edit-client.ts`), not server actions.** Adding one game and saving shelves still use server actions. | A server action that expires the library answers with the current address drawn again. With a game's panel open over the shelf, that address is the game's own page, which then took the shelf's place. The API answers with data, and the page fetches what changed itself. |
+| Step 7 | **The library is read in one batch, which is one transaction,** and the keywords in one transaction. | Found by the browser tests, with two projects writing at once: the seven queries ran side by side, and a write landing between them gave a library file that claimed the new version without the new game, kept a year at that version's address. On Turso one batch is also one round trip. |
+| Step 7 | **"Mine" stays busy until the page has been drawn again after a save,** not only until the save is answered. | Found in Firefox: a reload right after a save collided with the page's own refresh, and Next.js fell back to loading the page a second time. |
+| Step 7 | **Adding many is `POST /igdb/match` then `POST /additions`,** not `POST /entries/bulk`. | `/entries/bulk` would hide a game whose address is `bulk` under `/entries/{id}`. Matching is a route of its own so the tab can move its progress bar, and stop on Cancel, between steps of ten lines. |
+| Step 7 | **MCP is served by the SDK's own `createMcpHandler`,** not `mcp-handler`, **and it answers assistants on the 2025 revision too.** | Better Auth's MCP plugin documents the SDK's handler. It suggests turning the 2025 revision away; that would turn away an assistant not yet updated, and the owner's endpoint checks the token before either revision is served. |
+| Step 7 | **The owner's MCP endpoint checks tokens with `createMcpProtectedRequestHandler`,** given the issuer, audience and keys' address, not `requireMcpAuth`. | `requireMcpAuth` reads the issuer from Better Auth's base address, which here depends on the host a request came to (a preview has several). The plugin's documentation says to pass them explicitly in that case. |
+| Step 7 | **The browser tests that write run after the ones that read, in nine projects of their own, against a copy of the database** (`pnpm serve:test`). Each test adds a fixture game no other test uses (`e2e/games-to-add.ts`). | The reading tests compare what they see with what the sample library holds. Nine browsers adding and removing games at once must never see each other's. |
+| Step 7 | **The functions run in São Paulo (`gru1`), next to the database in `aws-sa-east-1`,** not in Virginia. Previews have no database of their own yet: they keep the sample built into each deployment, which cannot be written to. | The owner made the production database in São Paulo, where Turso now offers a location, and lives near it. A function in Virginia would have crossed the continent on every query, about 120 ms each. One database for production only, for now: a preview build fills an empty database with the sample games, so previews must never share production's. |
+| Step 7 | **Closing a game has no flight home: the cover grows out of its box when a game opens, and the panel slides away on its own when it closes,** by Back, the close button, Escape or a click outside. Spec 7.2 says closing reverses the opening. The close button now steps back in history, and that step closes the game, as Back does (`library-view.tsx`). | Found by the browser tests: WebKit's page crashed on Back once the cover had landed, every time in a full run and 10 in 64 under load on their own. A flight home was what crashed it. Without one on Back: 0 in 64. Started only once the router had drawn the library's address: 63 in 64. Flown from the close button with history held still until it landed: 7 in 32. Before this, the close button's own step back ended its flight at once, so a cover never visibly flew home anyway. |
 | After step 6 | **The open game has a button to its full page,** beside Close. It takes the panel's place in history, so Back from the full page is the library. | The owner could not find a way from the library to a game's own page: the panel already stood at the page's address, but only reloading showed it. A button beside Close is where a panel that opens as a page usually has one. Taking the panel's place keeps Back from landing on the library with a game's address and no game open. |
 | After step 6 | **A panel the cover brought in is marked as settled** (`data-settled`) when the flight ends, and keeps its own entrance off while it stays open. | Seen by the owner: the panel slid in a second time as the cover landed. Its entrance had been held off by a mark on the page for the flight, and lifting that mark restarted it, with the scrim's fade. The browser tests counted transitions but never watched the panel after one. They do now. |
 | Step 6 | **A game opened from the library is the library's own panel, at the game's address.** Opening it adds `/{language}/game/{slug}` to the browser's history with the library's query string kept, and Back closes it (`game-address.ts`). A direct visit is the game's own page, built ahead. Not an intercepting route. | The library keeps its order, its open game and its place on the shelf in the page itself; a route over it would draw the game in a tree of its own, which would need all of that passed across, and would wait for the server before anything showed. The library reads its filter from the address, so the address keeps the library's query string while a game is open, and a shared address leads back to that same shelf. |

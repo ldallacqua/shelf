@@ -214,6 +214,7 @@ export function ShelfGrid({
       role="list"
       className="shelf-grid"
       data-shelf={shelfKey}
+      data-grid-of={shelfKey}
       data-density={density}
       aria-label={label}
       style={{ '--slot': slot, '--tall': tall } as CSSProperties}

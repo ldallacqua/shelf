@@ -15,6 +15,27 @@
       "when": 1791996209780,
       "tag": "0001_starter-shelves",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792116897505,
+      "tag": "0002_sign-in",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792119956442,
+      "tag": "0003_removed-entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1792181426646,
+      "tag": "0004_mcp-sign-in",
+      "breakpoints": true
     }
   ]
 }

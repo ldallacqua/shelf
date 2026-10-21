@@ -1,19 +1,76 @@
-# Handoff: 15 October 2026
+# Handoff: 16 October 2026
 
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 7 waits for the owner
+## Now: step 7 is built; sign-in on a deployment waits for the owner
 
-- **Step 6 is merged** ([#9](https://github.com/ldallacqua/shelf/pull/9)). After it, from the
-  owner's first look: the panel no longer slides in a second time as the cover lands, and it
-  has a button to the game's full page (`step-6-follow-up`).
+- **Step 7 was built before the owner's setup,** at the owner's choice (16 Oct 2026): against
+  the local database and the GitHub test doubles. On a deployment nobody can sign in, so
+  nothing can be added or changed there, until the owner has done C (two GitHub OAuth apps) in
+  [the setup checklist](setup.md). B is half done (21 Oct 2026): production's database is in
+  São Paulo, for Production only, and the functions moved there with it; previews have no
+  database yet. Never paste or print the values, and never enter them for the owner. Once C is
+  done locally, add the names to `.env.local` and generate `BETTER_AUTH_SECRET` into it
+  without displaying it, as part C says.
+- **This folder is linked to the Vercel project** (`.vercel/`, ignored). `vercel link` also
+  wrote a `VERCEL_OIDC_TOKEN` into `.env.local` and added `.env*` to `.gitignore`; both were
+  taken out again. Run `vercel env pull` and `vercel link` with care for the same reason.
+- **Next.js is 16.4.1** on this branch, for critical security fixes in 16.4.0. `main` has
+  16.4.0 until step 7 merges.
 - **The owner allows merging to `main` without asking** while the project is a proof of
   concept (15 Oct 2026). Still stop at every ⏸ (after step 8, and the final review).
-- **Next: step 7, sign-in and adding games.** It cannot start until the owner has done two
-  things in [the setup checklist](setup.md): B, two Turso databases (two settings each), and
-  C, two GitHub OAuth apps (seven settings). Ask for them; never paste or print the values.
+- **Next: step 8, the landing page** (⏸ after it), or platform sync ([ADR 003](adr/003-platform-sync.md)),
+  which the plan puts right after step 7.
+
+## Step 7: sign-in, adding, editing, the write API, MCP
+
+- **Built:** GitHub sign-in for one account (Better Auth; `validateUserInfo` turns anyone
+  else away), `requireOwner()` on every write; the Add sheet (one game: search as you type,
+  the keyboard alone, ADR 001's proposal, Undo; and "Paste a list": up to 200 lines matched
+  ten at a time with progress and Cancel, a review with a menu of alternatives per line, the
+  same choice on every row, Add N games, Undo); "Mine" edited in place on a game's page and
+  in its panel (status, rating, completion date, hours, copies, tags, notes and whether they
+  are public, the main version, removal with Undo); the write API (`docs/api.md`); both MCP
+  endpoints, the owner's with OAuth and a consent page. What changed from the plan, and why,
+  is in architecture section 25 (eleven step 7 rows).
+- **Found and fixed on the way:** an edit in a game's panel replaced the shelf with the game's
+  page (a server action redraws the current address; editing moved to the API); a game page
+  built ahead answered 404 to a browser's move once a write expired its tag (pages are now
+  built on first visit); the library file could claim a version without its newest game when
+  a write landed between its seven queries (one batch now); Firefox reloading during the
+  page's own refresh after a save; WebKit's page crashing on Back from a game opened from the
+  wall or the list. That one was the cover's flight home, and closing no longer has one. It
+  crashed 5 in 64 on this branch and 0 in 64 on `main` in the same test (10 in 64 under load),
+  which looked like a step 7 regression. Taking parts of step 7 out did not end it: the Next.js upgrade
+  and building game pages on first visit not at all (5 in 64 either way), and the header and
+  footer additions only to 2 in 64, which is within noise. Removing the flight ended it.
+  Also, since step 5: the library's skeleton ran 184 pixels off a tablet's screen, because
+  its toolbar of ghosts did not wrap where the real one does. The layout test checked the
+  skeleton at 320 pixels only, and it now checks every project's width too.
+- **Checked on the last code commit:** `pnpm verify --skip-linux` passed the checks (767 unit
+  and component tests), the build (57 pages), the JavaScript budgets (library 261.3 of 262
+  KB, game page 204.5 of 208, home 201.4 of 205) and 1,832 browser tests in all nine
+  projects, none failed. Its Lighthouse step ran hot (19.4 times; the home page blocked
+  2,009 ms), so it was run on its own after. **At 7.2 times:** home 96 (blocked 183 ms), game
+  page 96 (largest paint 2.07 s), wall 88, library 85 (largest paint 2.48 s, blocked 423 ms).
+  The wall and library near misses are steps 5 and 6's. The library blocked 423 ms against
+  step 6's 385, and the home page 183 against 162, so this machine read about a tenth slower
+  today. In the hot run the game page shifted 0.089 (the limit is 0.1); at 7.2 times, 0. The
+  library has 0.7 KB of its budget left. The Storybook build passes.
+- **Not checked:** a real GitHub sign-in and a real assistant (both need part C and a
+  deployment); the Linux pass (no Docker); new reference screenshots for the Add sheet and
+  the editor.
+- **Left open:** on a preview, an assistant must use the deployment's own `*.vercel.app`
+  address, not the branch's (tokens are for one address). Better Auth is pinned at 1.7.7;
+  1.7.10 came out the day before this was written.
+
+## Step 6 is merged
+
+- [#9](https://github.com/ldallacqua/shelf/pull/9), and after the owner's first look
+  ([#10](https://github.com/ldallacqua/shelf/pull/10)): the panel no longer slides in a second
+  time as the cover lands, and it has a button to the game's full page.
 - **Step 5 is merged** ([#8](https://github.com/ldallacqua/shelf/pull/8)), with the owner's
   first-review fixes: ghosts while the library loads, and the phone's shelf kept to the screen.
 

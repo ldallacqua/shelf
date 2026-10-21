@@ -3,9 +3,16 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 
+import {
+  addGameAction,
+  groupingAction,
+  searchGamesAction,
+  undoAddAction,
+} from '@/app/actions/games'
 import { PreferenceScript } from '@/features/library/preference-script'
 import { Footer } from '@/features/shell/footer'
 import { Header } from '@/features/shell/header'
+import { Notices } from '@/features/shell/notices'
 import { ReadyMark } from '@/features/shell/ready-mark'
 import { MAIN_ID, SkipLink } from '@/features/shell/skip-link'
 import { ThemeScript } from '@/features/theme/theme-script'
@@ -57,11 +64,21 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
         <ReadyMark />
         <NextIntlClientProvider>
           <SkipLink />
-          <Header />
+          <Header
+            // Handed to everyone, shown only once the browser knows the owner is
+            // here, and checked again on the server whoever calls them.
+            add={{
+              search: searchGamesAction,
+              grouping: groupingAction,
+              add: addGameAction,
+              undo: undoAddAction,
+            }}
+          />
           <main id={MAIN_ID} tabIndex={-1} className="flex-1 outline-none">
             {children}
           </main>
           <Footer />
+          <Notices />
         </NextIntlClientProvider>
       </body>
     </html>

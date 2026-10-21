@@ -54,6 +54,38 @@ export const igdbEnv = () => {
   return { clientId: env.TWITCH_CLIENT_ID, clientSecret: env.TWITCH_CLIENT_SECRET }
 }
 
+/**
+ * Sign-in with GitHub (architecture, section 9): the OAuth app, the secret
+ * sessions are signed with, and the one GitHub account let in, by its
+ * numeric id, which never changes when a username does.
+ */
+export const authEnv = () => {
+  const env = read(
+    {
+      BETTER_AUTH_SECRET: z.string().trim().min(32),
+      GITHUB_CLIENT_ID: text,
+      GITHUB_CLIENT_SECRET: text,
+      OWNER_GITHUB_ID: z.string().trim().regex(/^\d+$/),
+    },
+    'Sign-in needs a GitHub OAuth app, a secret of at least 32 characters, and the owner’s GitHub id.',
+  )
+  // A preview signs in through production, which hands the result back
+  // sealed with this. Every deployment must share it; this machine has an
+  // OAuth app of its own and never needs it.
+  const proxy = onVercel()
+    ? read(
+        { OAUTH_PROXY_SECRET: z.string().trim().min(32) },
+        'Sign-in on Vercel goes through production.',
+      ).OAUTH_PROXY_SECRET
+    : undefined
+  return {
+    secret: env.BETTER_AUTH_SECRET,
+    github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET },
+    ownerGithubId: env.OWNER_GITHUB_ID,
+    proxySecret: proxy,
+  }
+}
+
 export type DatabaseTarget =
   /** Turso: what a deployment with a database connected uses. */
   | { kind: 'turso'; url: string; authToken: string }

@@ -16,6 +16,8 @@ export const routing = defineRouting({
     '/shelves/[slug]': '/shelves/[slug]',
     '/game/[slug]': '/game/[slug]',
     '/trophies': '/trophies',
+    '/sign-in': '/sign-in',
+    '/consent': '/consent',
   },
 })
 

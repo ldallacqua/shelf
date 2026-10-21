@@ -5,8 +5,7 @@ import { expect, openLibrary, test } from './fixtures'
 /**
  * Smart shelves (spec 5.5): a filter, a sort and a grouping kept under a
  * name, at an address of their own. Everyone sees the same shelves; only
- * the owner saves them. The owner is a test double here: a cookie the
- * server reads only when it runs with its test doubles.
+ * the owner saves them, signed in through GitHub's test doubles.
  */
 
 const search = (page: Page) => page.getByRole('searchbox', { name: 'Search the library' })
@@ -85,9 +84,7 @@ test.describe('a smart shelf', () => {
 })
 
 test.describe('saving a shelf, as the owner', () => {
-  test.beforeEach(async ({ context, baseURL }) => {
-    await context.addCookies([{ name: 'shelf-test-owner', value: '1', url: baseURL! }])
-  })
+  test.use({ signedIn: true })
 
   test('what is on screen is saved under a name, at an address of its own, and removed again', async ({
     page,

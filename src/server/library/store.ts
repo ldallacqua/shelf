@@ -7,6 +7,7 @@ import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Palette } from '@/domain/color/palette'
 import type { Company, GameData, LineageStep } from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
+import type { Added } from '@/domain/library/adding'
 import type { LinkedMember } from '@/domain/library/family'
 import { cleanShelf, freeSlug, MAX_SHELF_NAME, type SmartShelf } from '@/domain/library/shelves'
 import {
@@ -32,6 +33,7 @@ import {
   libraryMeta,
   platforms,
   playTime,
+  removedEntries,
   shelves,
   tags,
   vocab,
@@ -333,35 +335,156 @@ const writeTags = async (tx: Executor, entryId: string, names: readonly string[]
   await tx.delete(tags).where(sql`${tags.id} not in (select ${entryTags.tagId} from ${entryTags})`)
 }
 
+const insertEntry = async (tx: Executor, input: NewEntry, now: number): Promise<string> => {
+  const id = randomUUID()
+  await tx.insert(entries).values({
+    id,
+    status: input.status,
+    rating: input.rating ?? null,
+    notes: input.notes?.trim() || null,
+    notesPublic: input.notesPublic ?? false,
+    featured: input.featured ?? false,
+    addedAt: input.addedAt ?? now,
+    completedOn: input.completedOn ?? null,
+    createdAt: now,
+    updatedAt: now,
+  })
+  await tx
+    .insert(entryVersions)
+    .values({ entryId: id, gameId: input.primaryGameId, relation: 'primary' })
+  for (const copy of input.copies ?? []) await insertCopy(tx, id, copy, now)
+  if (input.minutes) await writeManualMinutes(tx, id, input.minutes, now)
+  if (input.tags?.length) await writeTags(tx, id, input.tags)
+  return id
+}
+
 /** Adds a game to the library: the entry, its primary version, its copies. */
 export const createEntry = (db: Db, input: NewEntry, now = Date.now()): Promise<string> => {
   checkMine(input)
   return withConflict('That game is already in the library', () =>
     db.transaction(async (tx) => {
-      const id = randomUUID()
-      await tx.insert(entries).values({
-        id,
-        status: input.status,
-        rating: input.rating ?? null,
-        notes: input.notes?.trim() || null,
-        notesPublic: input.notesPublic ?? false,
-        featured: input.featured ?? false,
-        addedAt: input.addedAt ?? now,
-        completedOn: input.completedOn ?? null,
-        createdAt: now,
-        updatedAt: now,
-      })
-      await tx
-        .insert(entryVersions)
-        .values({ entryId: id, gameId: input.primaryGameId, relation: 'primary' })
-      for (const copy of input.copies ?? []) await insertCopy(tx, id, copy, now)
-      if (input.minutes) await writeManualMinutes(tx, id, input.minutes, now)
-      if (input.tags?.length) await writeTags(tx, id, input.tags)
+      const id = await insertEntry(tx, input, now)
       await bumpVersion(tx)
       return id
     }),
   )
 }
+
+/** Everything about one IGDB record that adding it stores: the record, and the names it uses. */
+export type RecordToStore = {
+  data: GameData
+  lineage: readonly LineageStep[]
+  art?: CoverArt
+  names: readonly { kind: Exclude<VocabKind, 'company'>; items: readonly IgdbNamed[] }[]
+  /** The platforms it was released on, and any a copy is on. */
+  platforms: readonly Platform[]
+}
+
+/**
+ * Where an added record goes (ADR 001, decision 4): an entry of its own, or
+ * into an entry already on the shelf, as a version of it with the copies
+ * owned of it. `version` is absent when the record is already that entry's.
+ */
+export type Placement =
+  | { kind: 'entry'; entry: Omit<NewEntry, 'primaryGameId'> }
+  | {
+      kind: 'join'
+      entryId: string
+      version?: Exclude<Relation, 'primary'>
+      copies: readonly Omit<NewCopy, 'gameId'>[]
+    }
+
+/**
+ * Stores an IGDB record and adds it to the library, in one transaction: the
+ * record, the names it uses, its platforms, and the entry, or the version
+ * and copies folded into an existing one.
+ */
+export const addFromIgdb = (
+  db: Db,
+  record: RecordToStore,
+  placement: Placement,
+  now = Date.now(),
+): Promise<Added> => {
+  if (placement.kind === 'entry') checkMine(placement.entry)
+  return withConflict('That game is already in the library', () =>
+    db.transaction(async (tx) => {
+      await savePlatforms(tx, record.platforms)
+      await saveCompanies(tx, record.data.companies)
+      for (const { kind, items } of record.names) await saveVocab(tx, kind, items)
+      const gameId = await saveGame(tx, record.data, {
+        lineage: record.lineage,
+        ...(record.art ? { art: record.art } : {}),
+        now,
+      })
+
+      if (placement.kind === 'entry') {
+        const entryId = await insertEntry(tx, { ...placement.entry, primaryGameId: gameId }, now)
+        const copyIds = (
+          await tx.select({ id: copies.id }).from(copies).where(eq(copies.entryId, entryId))
+        ).map((row) => row.id)
+        await bumpVersion(tx)
+        return { entryId, gameId, newEntry: true, newVersion: true, copyIds }
+      }
+
+      const { entryId } = placement
+      await requireEntry(tx, entryId)
+      if (placement.version) {
+        await tx.insert(entryVersions).values({ entryId, gameId, relation: placement.version })
+      }
+      const copyIds: string[] = []
+      for (const copy of placement.copies) {
+        // A copy of a version names it; a copy of the entry's own record does not need to.
+        const version = placement.version ? { gameId } : {}
+        copyIds.push(await insertCopy(tx, entryId, { ...copy, ...version }, now))
+      }
+      await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
+      await bumpVersion(tx)
+      return { entryId, gameId, newEntry: false, newVersion: Boolean(placement.version), copyIds }
+    }),
+  )
+}
+
+/**
+ * Undoes an add that joined an existing entry: its copies, and the version
+ * it linked, with the record when nothing else uses it. An add that made an
+ * entry of its own is undone with `removeEntry`.
+ */
+export const undoJoin = (db: Db, added: Added, now = Date.now()) =>
+  db.transaction(async (tx) => {
+    await requireEntry(tx, added.entryId)
+    if (added.copyIds.length > 0) {
+      await tx.delete(playTime).where(inArray(playTime.copyId, added.copyIds))
+      await tx
+        .update(entries)
+        .set({ displayCopyId: null })
+        .where(and(eq(entries.id, added.entryId), inArray(entries.displayCopyId, added.copyIds)))
+      await tx
+        .delete(copies)
+        .where(and(eq(copies.entryId, added.entryId), inArray(copies.id, added.copyIds)))
+    }
+    if (added.newVersion) {
+      await tx
+        .delete(entryVersions)
+        .where(
+          and(
+            eq(entryVersions.entryId, added.entryId),
+            eq(entryVersions.gameId, added.gameId),
+            sql`${entryVersions.relation} != 'primary'`,
+          ),
+        )
+      await tx
+        .delete(games)
+        .where(
+          and(
+            eq(games.id, added.gameId),
+            sql`${games.id} not in (select ${entryVersions.gameId} from ${entryVersions})`,
+            sql`${games.id} not in (select ${copies.gameId} from ${copies} where ${copies.gameId} is not null)`,
+          ),
+        )
+    }
+    await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, added.entryId))
+    await bumpVersion(tx)
+  })
 
 export type EntryPatch = {
   status?: Status
@@ -391,6 +514,35 @@ export const updateEntry = (db: Db, entryId: string, patch: EntryPatch, now = Da
       .update(entries)
       .set({ ...patch, ...(notes === undefined ? {} : { notes }), updatedAt: now })
       .where(eq(entries.id, entryId))
+    await bumpVersion(tx)
+  })
+}
+
+/**
+ * Several changes to one entry, in one transaction: what is mine about it,
+ * its tags, and the minutes I typed in. For the API, where one request may
+ * carry them all.
+ */
+export const patchEntry = (
+  db: Db,
+  entryId: string,
+  patch: { mine?: EntryPatch; tags?: readonly string[]; minutes?: number },
+  now = Date.now(),
+) => {
+  if (patch.mine) checkMine(patch.mine)
+  if (patch.minutes !== undefined) checkMine({ minutes: patch.minutes })
+  return db.transaction(async (tx) => {
+    await requireEntry(tx, entryId)
+    if (patch.mine && Object.keys(patch.mine).length > 0) {
+      const notes = patch.mine.notes === undefined ? undefined : patch.mine.notes?.trim() || null
+      await tx
+        .update(entries)
+        .set({ ...patch.mine, ...(notes === undefined ? {} : { notes }) })
+        .where(eq(entries.id, entryId))
+    }
+    if (patch.tags) await writeTags(tx, entryId, patch.tags)
+    if (patch.minutes !== undefined) await writeManualMinutes(tx, entryId, patch.minutes, now)
+    await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
     await bumpVersion(tx)
   })
 }
@@ -483,31 +635,123 @@ export const setTags = (db: Db, entryId: string, names: readonly string[], now =
  * tags, and the cached IGDB records only it used. Children are deleted here
  * and not left to cascades, so the result is the same on every engine.
  */
+const deleteEntry = async (tx: Executor, entryId: string) => {
+  const versions = await tx
+    .select({ gameId: entryVersions.gameId })
+    .from(entryVersions)
+    .where(eq(entryVersions.entryId, entryId))
+  await tx.delete(playTime).where(eq(playTime.entryId, entryId))
+  await tx.delete(copies).where(eq(copies.entryId, entryId))
+  await tx.delete(entryTags).where(eq(entryTags.entryId, entryId))
+  await tx.delete(entryVersions).where(eq(entryVersions.entryId, entryId))
+  await tx.delete(entries).where(eq(entries.id, entryId))
+  if (versions.length > 0) {
+    await tx.delete(games).where(
+      inArray(
+        games.id,
+        versions.map((version) => version.gameId),
+      ),
+    )
+  }
+  await tx.delete(tags).where(sql`${tags.id} not in (select ${entryTags.tagId} from ${entryTags})`)
+}
+
 export const removeEntry = (db: Db, entryId: string) =>
   db.transaction(async (tx) => {
     await requireEntry(tx, entryId)
-    const versions = await tx
-      .select({ gameId: entryVersions.gameId })
-      .from(entryVersions)
-      .where(eq(entryVersions.entryId, entryId))
-    await tx.delete(playTime).where(eq(playTime.entryId, entryId))
-    await tx.delete(copies).where(eq(copies.entryId, entryId))
-    await tx.delete(entryTags).where(eq(entryTags.entryId, entryId))
-    await tx.delete(entryVersions).where(eq(entryVersions.entryId, entryId))
-    await tx.delete(entries).where(eq(entries.id, entryId))
-    if (versions.length > 0) {
-      await tx.delete(games).where(
-        inArray(
-          games.id,
-          versions.map((version) => version.gameId),
-        ),
-      )
-    }
-    await tx
-      .delete(tags)
-      .where(sql`${tags.id} not in (select ${entryTags.tagId} from ${entryTags})`)
+    await deleteEntry(tx, entryId)
     await bumpVersion(tx)
   })
+
+/** Everything removing a game takes away, as rows, so it can all go back. */
+type EntrySnapshot = {
+  entry: typeof entries.$inferSelect
+  versions: (typeof entryVersions.$inferSelect)[]
+  games: (typeof games.$inferSelect)[]
+  copies: (typeof copies.$inferSelect)[]
+  playTime: (typeof playTime.$inferSelect)[]
+  tags: string[]
+}
+
+/** How long a removed game can be put back. */
+const KEPT_FOR_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Removes a game as `removeEntry` does, keeping what it removed for a day.
+ * Returns the id Undo takes.
+ */
+export const removeEntryForUndo = (db: Db, entryId: string, now = Date.now()) =>
+  db.transaction(async (tx) => {
+    const entry = await requireEntry(tx, entryId)
+    const versions = await tx.select().from(entryVersions).where(eq(entryVersions.entryId, entryId))
+    const ids = versions.map((version) => version.gameId)
+    const snapshot: EntrySnapshot = {
+      entry,
+      versions,
+      games: ids.length > 0 ? await tx.select().from(games).where(inArray(games.id, ids)) : [],
+      copies: await tx.select().from(copies).where(eq(copies.entryId, entryId)),
+      playTime: await tx.select().from(playTime).where(eq(playTime.entryId, entryId)),
+      tags: (
+        await tx
+          .select({ name: tags.name })
+          .from(entryTags)
+          .innerJoin(tags, eq(tags.id, entryTags.tagId))
+          .where(eq(entryTags.entryId, entryId))
+      ).map((tag) => tag.name),
+    }
+    const primary = snapshot.games.find(
+      (game) => versions.find((version) => version.relation === 'primary')?.gameId === game.id,
+    )
+    await deleteEntry(tx, entryId)
+    const id = randomUUID()
+    await tx.insert(removedEntries).values({
+      id,
+      entryId,
+      title: primary?.title ?? '',
+      snapshot,
+      removedAt: now,
+    })
+    await tx.delete(removedEntries).where(sql`${removedEntries.removedAt} < ${now - KEPT_FOR_MS}`)
+    await bumpVersion(tx)
+    return id
+  })
+
+/** Puts a removed game back exactly as it was. Returns its entry's id. */
+export const restoreEntry = (db: Db, removedId: string) =>
+  withConflict('That game is in the library again already', () =>
+    db.transaction(async (tx) => {
+      const [row] = await tx
+        .select()
+        .from(removedEntries)
+        .where(eq(removedEntries.id, removedId))
+        .limit(1)
+      if (!row) throw notFound('That removed game')
+      const snapshot = row.snapshot as EntrySnapshot
+      if (snapshot.games.length > 0) await tx.insert(games).values(snapshot.games)
+      await tx.insert(entries).values(snapshot.entry)
+      if (snapshot.versions.length > 0) await tx.insert(entryVersions).values(snapshot.versions)
+      if (snapshot.copies.length > 0) await tx.insert(copies).values(snapshot.copies)
+      if (snapshot.playTime.length > 0) await tx.insert(playTime).values(snapshot.playTime)
+      if (snapshot.tags.length > 0) await writeTags(tx, snapshot.entry.id, snapshot.tags)
+      await tx.delete(removedEntries).where(eq(removedEntries.id, removedId))
+      await bumpVersion(tx)
+      return snapshot.entry.id
+    }),
+  )
+
+/** Switches a copy between physical and digital. */
+export const setCopyFormat = (db: Db, copyId: string, format: Format, now = Date.now()) => {
+  if (!isFormat(format)) throw invalid('A copy is physical or digital')
+  return withConflict('That platform and format are already on this game', () =>
+    db.transaction(async (tx) => {
+      const [copy] = await tx.select().from(copies).where(eq(copies.id, copyId)).limit(1)
+      if (!copy) throw notFound('That copy')
+      await tx.update(copies).set({ format }).where(eq(copies.id, copyId))
+      await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, copy.entryId))
+      await bumpVersion(tx)
+    }),
+  )
+}
 
 /**
  * Every IGDB record linked to an entry, with its family chain: what the

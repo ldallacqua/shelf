@@ -1,8 +1,9 @@
 import { flushSync } from 'react-dom'
 
 /**
- * The cover growing from the shelf into the open game, and back into the
- * shelf when it closes (spec 7.2), with the browser's view transitions.
+ * The cover growing from the shelf into the open game (spec 7.2), with the
+ * browser's view transitions. It does not fly back when the game closes:
+ * WebKit's page crashed under that flight (architecture, section 25).
  *
  * The two ends are named for the one transition and unnamed after it: a
  * name left on a box would make every later transition capture it, and the

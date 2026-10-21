@@ -1,12 +1,17 @@
 import { useTranslations } from 'next-intl'
 
-/** The footer on every page. IGDB's terms ask for this credit wherever its data is shown. */
+import { AccountLink } from '@/features/owner/account-link'
+
+/**
+ * The footer on every page: the credit IGDB's terms ask for wherever its
+ * data is shown, and the way to sign in.
+ */
 export function Footer() {
   const t = useTranslations('Shell')
 
   return (
     <footer className="mt-auto border-t border-line/70">
-      <div className="mx-auto w-full max-w-360 px-4 py-6 text-sm text-muted sm:px-6 lg:px-10">
+      <div className="mx-auto flex w-full max-w-360 flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 py-6 text-sm text-muted sm:px-6 lg:px-10">
         <p>
           {t.rich('igdbCredit', {
             link: (chunks) => (
@@ -20,6 +25,7 @@ export function Footer() {
             ),
           })}
         </p>
+        <AccountLink />
       </div>
     </footer>
   )

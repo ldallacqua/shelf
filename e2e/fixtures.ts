@@ -1,5 +1,9 @@
+import { mkdirSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test as base, type Page } from '@playwright/test'
+import { expect, test as base, type Browser, type Page, type TestInfo } from '@playwright/test'
 
 export const locales = ['en', 'pt-BR'] as const
 export const themes = ['light', 'dark'] as const
@@ -61,7 +65,42 @@ export async function shelfSettled(page: Page): Promise<'2d' | '3d' | 'fallback'
  */
 const cutShortByLeaving = /due to access control checks/
 
+/** The GitHub accounts the server's test doubles know (`src/server/mocks/handlers.ts`). */
+export type GithubAccount = 'owner' | 'stranger'
+
+/**
+ * Signs in as GitHub would have it, through the real sign-in code: the trip
+ * to GitHub is sent straight back with the code the server's test doubles
+ * know for that account, and the server then asks the doubles who it is.
+ * Starts from the sign-in page and leaves the page where sign-in sent it.
+ */
+export async function signIn(page: Page, account: GithubAccount = 'owner', from?: string) {
+  await page.route('https://github.com/login/oauth/authorize**', (route) => {
+    const asked = new URL(route.request().url())
+    const back = new URL(asked.searchParams.get('redirect_uri')!)
+    back.searchParams.set('code', account)
+    back.searchParams.set('state', asked.searchParams.get('state')!)
+    // WebKit will not take a made-up redirect, so GitHub's page sends the browser on itself.
+    const to = back.toString()
+    return route.fulfill({
+      contentType: 'text/html',
+      body: `<!doctype html><meta http-equiv="refresh" content="0;url=${to.replace(/&/g, '&amp;')}">`,
+    })
+  })
+  await page.goto(from ? `/en/sign-in?from=${encodeURIComponent(from)}` : '/en/sign-in')
+  await page.locator('html[data-ready]').waitFor({ state: 'attached' })
+  await page.getByRole('button', { name: 'Sign in with GitHub' }).click()
+  await page.waitForURL(
+    (url) => !url.pathname.startsWith('/en/sign-in') || url.search.includes('error'),
+  )
+}
+
 type Fixtures = {
+  /**
+   * Signed in as the owner from the start: the session saved once per
+   * worker is loaded into the browser before the page opens.
+   */
+  signedIn: boolean
   /**
    * The shelf's 2D or 3D choice, stored before the page loads. 2D unless a
    * test asks for 3D, so the tests written for 2D read 2D on every project;
@@ -79,7 +118,34 @@ type Fixtures = {
   size: 'phone' | 'tablet' | 'desktop'
 }
 
+/**
+ * The owner's session for this worker, made by signing in the first time a
+ * test asks for it. A worker is a process of its own and runs one project's
+ * tests, so this is one sign-in per worker, and none where no test asks.
+ */
+let ownerSession: Promise<string> | undefined
+
+const saveOwnerSession = async (browser: Browser, info: TestInfo): Promise<string> => {
+  const folder = join(tmpdir(), 'shelf-e2e')
+  mkdirSync(folder, { recursive: true })
+  const file = join(folder, `owner-${info.project.name}-${info.workerIndex}.json`)
+  const context = await browser.newContext({ baseURL: info.project.use.baseURL })
+  const page = await context.newPage()
+  await signIn(page)
+  await expect(page.locator('footer')).toContainText('Signed in as')
+  await context.storageState({ path: file })
+  await context.close()
+  return file
+}
+
 export const test = base.extend<Fixtures>({
+  signedIn: [false, { option: true }],
+  storageState: async ({ signedIn, storageState, browser }, use, testInfo) => {
+    if (!signedIn) return use(storageState)
+    ownerSession ??= saveOwnerSession(browser, testInfo)
+    await use(await ownerSession)
+  },
+
   /**
    * After opening an address, wait until the page is live (React has taken
    * over and set `data-ready`). A click that lands before that does nothing,

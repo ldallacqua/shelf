@@ -164,7 +164,7 @@ function ListTable({
           </Heading>
         </tr>
       </thead>
-      <tbody ref={body}>
+      <tbody ref={body} data-grid-of={shelf.key}>
         {/* Rows that are not near the screen are not in the page; these keep their place.
             One cell each: one across all nine would make columns of those a phone hides,
             and they would take the title's room. */}

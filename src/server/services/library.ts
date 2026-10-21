@@ -66,8 +66,11 @@ export const getKeywordsFile = async (): Promise<{ version: number; json: string
   'use cache'
   cacheTag(LIBRARY_TAG)
   cacheLife('max')
-  const db = database()
-  const [version, keywords] = await Promise.all([readVersion(db), readKeywords(db)])
+  // One transaction, so the keywords are the version's own.
+  const { version, keywords } = await database().transaction(async (tx) => ({
+    version: await readVersion(tx),
+    keywords: await readKeywords(tx),
+  }))
   return { version, json: JSON.stringify(encodeKeywords(version, keywords)) }
 }
 

@@ -7,7 +7,8 @@
  * when this passes on its last commit.
  *
  *   1. Format, lint, types, translations, unit and component tests (pnpm check)
- *   2. A production build, served on port 3300 with the IGDB test doubles
+ *   2. A production build, served on port 3300 with the test doubles for
+ *      IGDB and GitHub, on a fresh copy of the database
  *   3. JavaScript budgets
  *   4. The browser tests: three engines at three widths
  *   5. The Linux pass, in Playwright's Docker image: WebKit as CI ran it
@@ -95,8 +96,9 @@ run('Format, lint, types, translations, unit and component tests', 'pnpm', ['che
 run('Production build', 'pnpm', ['build'])
 
 console.log(`\n── Serving the build at ${BASE_URL}\n`)
-server = spawn('pnpm', ['start'], {
-  env: { ...process.env, SHELF_MOCKS: '1' },
+// The test doubles, on a fresh copy of the database: tests that add games write to the copy.
+server = spawn('pnpm', ['serve:test'], {
+  env: process.env,
   stdio: 'ignore',
   detached: !windows,
   shell: shellFor('pnpm'),

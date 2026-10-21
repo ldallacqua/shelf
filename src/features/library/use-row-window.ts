@@ -132,3 +132,28 @@ export function useRowWindow(
 
   return rowWindow
 }
+
+/**
+ * Scrolls a windowed grid so the row holding `index` is in the middle of
+ * what can be seen: its box may not be in the page until then. The grid is
+ * found by its `data-grid-of`. False when the grid could not be measured.
+ */
+export const revealRow = (grid: HTMLElement, index: number): boolean => {
+  const style = getComputedStyle(grid)
+  const columns = Math.max(1, style.gridTemplateColumns.split(' ').filter(Boolean).length)
+  let pitch = Number.parseFloat(style.gridAutoRows)
+  if (!Number.isFinite(pitch) || pitch <= 0) {
+    const cell = grid.querySelector<HTMLElement>('[data-cell]')
+    pitch = cell ? cell.getBoundingClientRect().height + (Number.parseFloat(style.rowGap) || 0) : 0
+  }
+  if (!pitch) return false
+  const root = scrollRootOf(grid)
+  // On a phone the shelves stand side by side: this one first.
+  grid.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'instant' })
+  const middle = grid.getBoundingClientRect().top + (Math.floor(index / columns) + 0.5) * pitch
+  const view = root?.getBoundingClientRect() ?? { top: 0, height: window.innerHeight }
+  const by = middle - (view.top + view.height / 2)
+  if (root) root.scrollBy({ top: by, behavior: 'instant' })
+  else window.scrollBy({ top: by, behavior: 'instant' })
+  return true
+}

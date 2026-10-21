@@ -9,18 +9,19 @@ import { BackToLibrary, LibraryLink } from '@/features/game-detail/back-to-libra
 import { GameDetail } from '@/features/game-detail/game-detail'
 import { GameMissing } from '@/features/game-detail/game-missing'
 import { GameSkeleton } from '@/features/game-detail/game-skeleton'
-import { getGamePage, getLibrary } from '@/server/services/library'
+import { getGamePage } from '@/server/services/library'
 import { siteUrl } from '@/server/site-url'
 
 /**
- * Every game in the library has its page built with the site. A game added
- * since gets its page on its first visit, and keeps it. With Cache
- * Components there must be at least one, so an empty library offers an
- * address that then says there is no game there.
+ * No game's page is built ahead: each is built on its first visit, from the
+ * shell built here, and kept until the library changes. Next.js 16.4 answers
+ * a client navigation to a page built ahead with a 404 once a change has
+ * expired it, until its HTML has been asked for once; a page built on a
+ * visit has no such trouble. Cache Components needs one path to build the
+ * shell from, and `none` is no game's.
  */
-export async function generateStaticParams() {
-  const { games } = await getLibrary()
-  return games.length > 0 ? games.map((game) => ({ slug: game.slug })) : [{ slug: 'none' }]
+export function generateStaticParams() {
+  return [{ slug: 'none' }]
 }
 
 export async function generateMetadata({
@@ -74,6 +75,8 @@ async function GameFrame({ params }: Pick<PageProps<'/[locale]/game/[slug]'>, 'p
             <BackToLibrary />
           </Suspense>
         }
+        // For the owner, once the browser knows it is them; every change is checked on the server.
+        editable
       />
     </>
   )
