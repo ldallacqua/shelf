@@ -20,6 +20,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { editClient as actions } from './edit-client'
 
+/**
+ * The records read so far this visit, by game: a game opened again is
+ * edited at once, and read again behind it in case it changed.
+ */
+const records = new Map<string, OwnerGame>()
+
 type MineEditorProps = {
   slug: string
   level: 'h2' | 'h3'
@@ -51,13 +57,13 @@ export function MineEditor({
   const router = useRouter()
   const id = useId()
 
-  const [owned, setOwned] = useState<OwnerGame>()
+  const [owned, setOwned] = useState(() => records.get(slug))
   const [saving, setSaving] = useState(0)
   // The page being drawn again after a change: busy until it has.
   const [drawing, startDrawing] = useTransition()
   const [problem, setProblem] = useState<string>()
   const [confirming, setConfirming] = useState(false)
-  const shown = useRef<OwnerGame | undefined>(undefined)
+  const shown = useRef<OwnerGame | undefined>(owned)
 
   useEffect(() => {
     let current = true
@@ -67,10 +73,15 @@ export function MineEditor({
       .then((result) => {
         if (!current) return
         if (!result) return
-        if (result.ok) {
-          shown.current = result.value
-          setOwned(result.value)
-        } else setProblem(errors(`errors.${result.reason}`))
+        if (!result.ok) {
+          setProblem(errors(`errors.${result.reason}`))
+          return
+        }
+        // Not over a change made since: its own save reads the record again.
+        if (shown.current !== records.get(slug)) return
+        shown.current = result.value
+        records.set(slug, result.value)
+        setOwned(result.value)
       })
     return () => {
       current = false
@@ -106,6 +117,7 @@ export function MineEditor({
       const fresh = await actions.read(slug).catch(() => undefined)
       if (fresh?.ok && shown.current === next) {
         shown.current = fresh.value
+        records.set(slug, fresh.value)
         setOwned(fresh.value)
       }
     } finally {
@@ -136,6 +148,8 @@ export function MineEditor({
       setProblem(errors(`errors.${result.reason}`))
       return
     }
+    // Put back, it is a new entry: read afresh.
+    records.delete(slug)
     const { undo, title } = result.value
     notify({
       message: t('removed', { title }),

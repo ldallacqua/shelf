@@ -14,6 +14,12 @@ import type { GameFacts } from '@/domain/library/game-page'
 const files = new Map<string, Promise<GameFacts>>()
 /** The ones that have arrived, so a game opened again is drawn whole at once. */
 const arrived = new Map<string, GameFacts>()
+/**
+ * Each game's newest facts, of whichever version. A change to the library is
+ * a new version, whose facts are fetched again; until they are in, the game
+ * keeps the ones it has rather than going back to ghosts.
+ */
+const newest = new Map<string, { version: number; facts: GameFacts }>()
 
 const addressOf = (version: number, slug: string) =>
   `/api/v1/library/games/${version}/${encodeURIComponent(slug)}`
@@ -29,6 +35,7 @@ const load = (version: number, slug: string): Promise<GameFacts> => {
       })
       .then((facts) => {
         arrived.set(address, facts)
+        if ((newest.get(slug)?.version ?? -1) <= version) newest.set(slug, { version, facts })
         return facts
       })
     files.set(address, file)
@@ -58,6 +65,9 @@ export function useGameFacts(version: number, slug: string | undefined): FactsSt
 
   const known = arrived.get(key)
   if (known) return { status: 'ready', facts: known }
+  if (result?.key === key && result.facts) return { status: 'ready', facts: result.facts }
+  const earlier = slug ? newest.get(slug)?.facts : undefined
+  if (earlier) return { status: 'ready', facts: earlier }
   if (!slug || result?.key !== key) return { status: 'loading' }
-  return result.facts ? { status: 'ready', facts: result.facts } : { status: 'failed' }
+  return { status: 'failed' }
 }

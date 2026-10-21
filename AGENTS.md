@@ -35,7 +35,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm dev`                     | The app at http://localhost:3300                                                                                 |
 | `pnpm build` then `pnpm start` | A production build, same port                                                                                    |
 | `pnpm check`                   | Format, lint, types, translations, unit and component tests                                                      |
-| `pnpm verify`                  | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before every push.   |
+| `pnpm verify`                  | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before merging.      |
 | `pnpm test`                    | Unit and component tests (Vitest)                                                                                |
 | `pnpm e2e`                     | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine.  |
 | `pnpm serve:test`              | The build as the browser tests use it: test doubles on, serving a migrated copy of the database (`.data/e2e.db`) |
@@ -50,9 +50,12 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm fixtures:fetch`          | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff      |
 
 Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**
-(Actions minutes are limited): while working, run the browser tests your change touches, and
-run `pnpm verify` before every push. A build step is done when it passes on the step's last
-commit. Never start the workflow on GitHub unless the owner asks.
+(Actions minutes are limited). **Run every test once, before merging a pull request**, not
+at each commit or push: the full run is long, and the owner asked that it not hold work up
+(21 Oct 2026). While working, run what helps: the tests for what you are changing, a type
+check. Before merging, `pnpm verify` must pass on the branch's last commit, and the pull
+request says what it ran. A build step is done when its pull request merges that way. Never
+start the workflow on GitHub unless the owner asks.
 
 A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app reads its
 library from `.data/shelf.db`, which is not committed.
@@ -143,7 +146,11 @@ to it with a 404 once its tag expires) and as the panel a game opens in over the
 the library's own, not a route: opening a game adds its address to history with the
 library's query string kept (`game-address.ts`), and Back closes it. What the library file
 lacks (summary, screenshots, art, releases) comes from `buildGamePage`; the panel fetches it
-as the game's facts, by library version. The cover grows from the box through `morph.ts`,
+as the game's facts, by library version, and keeps the facts it has while a newer version's
+are fetched, so a change never takes them back to ghosts. While the owner's editor is on its
+way, `mine-skeleton.tsx` holds its place in the editor's exact shape: change
+`mine-editor.tsx` and change the skeleton with it (a test in `e2e/game.spec.ts` fails when
+they differ). The cover grows from the box through `morph.ts`,
 which names the two ends for that one view transition only. A private note never leaves the
 server except to the owner, in `GET /api/v1/entries/{id}`, which the editor reads.
 

@@ -5,6 +5,7 @@ import type { LibraryPlatform } from '@/domain/library/library'
 import { testGame } from '@/domain/library/testing'
 
 import { GameDetail } from './game-detail'
+import { MineSkeleton } from './mine-skeleton'
 
 /**
  * A game's page, on its own and in the panel over the shelf. The game is
@@ -90,4 +91,18 @@ export const Page: Story = {
  */
 export const Arriving: Story = {
   args: { layout: 'panel', game, tags, platforms },
+}
+
+/**
+ * "Mine" for the owner while the editor is on its way: each label where it
+ * will be and a ghost the size of each control, so nothing below moves when
+ * the editor arrives.
+ */
+export const OwnerArriving: Story = {
+  args: { layout: 'panel', game, tags, platforms },
+  render: (args) => (
+    <div className="max-w-[32rem] px-5 py-6">
+      <MineSkeleton game={args.game} tags={args.tags} platforms={args.platforms} level="h3" />
+    </div>
+  ),
 }

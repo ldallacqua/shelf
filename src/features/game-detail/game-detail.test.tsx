@@ -1,11 +1,12 @@
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { NextIntlClientProvider } from 'next-intl'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { GameFacts } from '@/domain/library/game-page'
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
-import { renderWithIntl } from '@/test/render'
+import { messages, renderWithIntl } from '@/test/render'
 
 import { GameDetail } from './game-detail'
 import { gameSlugIn, historyMoved, leaveGame, replaceGame, showGame } from './game-address'
@@ -242,6 +243,41 @@ describe('GamePanel', () => {
     expect(panel).toHaveTextContent('PlayStation 4, Physical')
     await waitFor(() => expect(panel).toHaveTextContent('A Hunter wakes in Yharnam.'))
     expect(answer).toHaveBeenCalledWith('/api/v1/library/games/7/bloodborne')
+  })
+
+  it('keeps what it has drawn while a new version of the library fetches it again', async () => {
+    const entry = item({ slug: 'nioh' })
+    const panel = (version: number) => (
+      <NextIntlClientProvider locale="en" messages={messages.en} timeZone="UTC">
+        <GamePanel
+          item={entry}
+          version={version}
+          platforms={platforms}
+          tags={tags}
+          onClose={vi.fn()}
+          onReturnFocus={() => false}
+        />
+      </NextIntlClientProvider>
+    )
+    const { rerender } = render(panel(7))
+    await screen.findByText('A Hunter wakes in Yharnam.')
+
+    // A rating saved: the library moves to version 8, and the facts are fetched for it.
+    let arrive = () => {}
+    answer.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          arrive = () => resolve(Response.json(facts({ summary: 'Fetched for version 8.' })))
+        }),
+    )
+    rerender(panel(8))
+    expect(answer).toHaveBeenCalledWith('/api/v1/library/games/8/nioh')
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveTextContent('A Hunter wakes in Yharnam.')
+    expect(dialog.querySelector('.ghost')).toBeNull()
+
+    act(() => arrive())
+    await screen.findByText('Fetched for version 8.')
   })
 
   it("links to the game's full page, keeping the library's filter and leaving the rest", () => {

@@ -166,12 +166,15 @@ await page.addInitScript(() => {
 The scene's lists beside the canvas are what a test drives: the same names and order as the
 2D boxes, as buttons with `data-box`. The canvas itself is hidden from assistive technology.
 
-## Before a push: `pnpm verify`
+## Before merging: `pnpm verify`
 
 **CI on GitHub runs nothing by itself.** Actions minutes on a private repository are
 limited, and the full set of checks took about 75 of the month's 2,000 each time, so every
-check runs on this Mac instead. A build step is done when `pnpm verify` passes on its last
-commit.
+check runs on the local machine instead. **It runs once, before a pull request merges**,
+on the branch's last commit: not at each commit or push, which the owner asked for so the
+long run does not hold work up (21 Oct 2026). While working, run the tests for what you
+are changing. A build step is done when its pull request merges with `pnpm verify`
+passing.
 
 ```sh
 pnpm verify                       # everything; about 20 minutes
@@ -269,7 +272,7 @@ pass writes its own inside the container and throws it away; rerun the failing f
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs only by hand (Actions → CI → Run workflow). Nothing runs on a
-push or a pull request: see [Before a push](#before-a-push-pnpm-verify). By hand it can run
+push or a pull request: see [Before merging](#before-merging-pnpm-verify). By hand it can run
 everything (about 75 minutes of the month's 2,000), Lighthouse and the Storybook build alone,
 or make new reference screenshots and offer them as a download. It never commits: on
 Vercel's free plan a commit made by a bot does not deploy.
