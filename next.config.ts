@@ -69,7 +69,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }]
+    // Not on Next.js's own script, style and font files: a policy governs a
+    // page, and on every one of those files it was 600 bytes for nothing.
+    return [{ source: '/((?!_next/static/).*)', headers: securityHeaders }]
   },
   cacheComponents: true,
   partialPrefetching: true,
