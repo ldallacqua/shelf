@@ -67,8 +67,8 @@ import {
 import type { GamePanel as GamePanelType } from '@/features/game-detail/game-panel'
 import { HERO_COVER } from '@/features/game-detail/hero'
 import { morph } from '@/features/game-detail/morph'
+import { signedInAccount, useIsMine } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
-import { ownerIsHere, useOwner } from '@/features/owner/owner'
 import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import { useRouter } from '@/i18n/navigation'
@@ -81,6 +81,8 @@ import type { Dimension } from './preferences'
 import { anchorIn2d, ShelfStage } from './shelf-stage'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
+import { useShelf } from './shelf'
+import { libraryHref, smartShelfHref } from './shelf-address'
 import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
 import { revealRow } from './use-row-window'
@@ -144,12 +146,13 @@ let panelCode: Promise<{ GamePanel: GamePanelComponent; loadEditor: () => unknow
 /**
  * The open game's code: fetched the first time a game is reached for (a
  * pointer or a finger on one, or focus), and in any case before one opens.
- * Not every visit opens a game, so not every visit pays for it. For the
- * owner, the editor's code is fetched then too, so it is there by the click.
+ * Not every visit opens a game, so not every visit pays for it. On one's
+ * own shelf, the editor's code is fetched then too, so it is there by the
+ * click.
  */
-const loadPanel = (): Promise<GamePanelComponent> =>
+const loadPanel = (handle: string): Promise<GamePanelComponent> =>
   (panelCode ??= import('@/features/game-detail/game-panel')).then((module) => {
-    if (ownerIsHere()) void module.loadEditor()
+    if (signedInAccount()?.handle === handle) void module.loadEditor()
     return module.GamePanel
   })
 
@@ -189,8 +192,10 @@ export function LibraryView({
   shelf,
   actions: ownerActions,
 }: LibraryViewProps) {
-  // A visitor is never offered a control: they appear once the owner is known to be here.
-  const actions = useOwner().status === 'owner' ? ownerActions : undefined
+  const { handle, files, name: ownerName } = useShelf()
+  // Nobody is offered a control on a shelf not their own: they appear once
+  // the browser knows the shelf is the signed-in account's.
+  const actions = useIsMine(handle) ? ownerActions : undefined
   const t = useTranslations('Library')
   const added = useTranslations('Add')
   const filters = useTranslations('Filters')
@@ -254,7 +259,7 @@ export function LibraryView({
   // A game the owner just added or changed here: its library's version, and the game.
   const edit = useLibraryChange()
   const version = Math.max(first.version, edit?.version ?? 0)
-  const state = useLibrary(version, (whole) => {
+  const state = useLibrary(files, version, (whole) => {
     const library = keepFirstScreen(whole, first)
     const index = indexOnce(library)
     const { tree } = parseQuery(query.q)
@@ -279,6 +284,7 @@ export function LibraryView({
   const drawnQ = useDeferredValue(query.q)
   const drawn = parseQuery(drawnQ)
   const keywords = useKeywords(
+    files,
     first.version,
     keywordsAsked || mentions(parsed.tree, 'keyword') || mentions(drawn.tree, 'keyword'),
   )
@@ -498,7 +504,7 @@ export function LibraryView({
     const { slug } = item.game
     if (open) replaceGame(slug)
     else showGame(slug)
-    void loadPanel().then((panel) => {
+    void loadPanel(handle).then((panel) => {
       // Back before the code arrived: the game is no longer wanted.
       if (gameSlugIn(window.location.pathname) !== slug) return
       // In 3D the box pulled from the wall is the cover: there is nothing to grow.
@@ -551,7 +557,7 @@ export function LibraryView({
       for (const shelf of latest.current.shelves) {
         const index = shelf.items.findIndex((item) => item.game.slug === slug)
         if (index >= 0) {
-          void loadPanel().then((panel) => {
+          void loadPanel(handle).then((panel) => {
             setGamePanel(() => panel)
             setOpen({ key: shelf.key, index })
           })
@@ -563,7 +569,7 @@ export function LibraryView({
     }
     window.addEventListener('popstate', onMove)
     return () => window.removeEventListener('popstate', onMove)
-  }, [])
+  }, [handle])
   const pathname = usePathname()
   const onGame = gameSlugIn(pathname) !== undefined
   const [wasOnGame, setWasOnGame] = useState(onGame)
@@ -633,7 +639,8 @@ export function LibraryView({
     firstBoxes: first.boxes,
   }
 
-  const heading = shelf?.name ?? t('title')
+  // A smart shelf by its name; the whole library by whose it is, when that may be said.
+  const heading = shelf?.name ?? (ownerName ? t('shelfTitle', { name: ownerName }) : t('title'))
 
   return (
     <div
@@ -641,8 +648,8 @@ export function LibraryView({
       className="library"
       data-view={view}
       // Reaching for a game fetches what opening one needs.
-      onPointerOver={(event) => onAGame(event.target) && void loadPanel()}
-      onFocus={(event) => onAGame(event.target) && void loadPanel()}
+      onPointerOver={(event) => onAGame(event.target) && void loadPanel(handle)}
+      onFocus={(event) => onAGame(event.target) && void loadPanel(handle)}
     >
       <div className="flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -862,8 +869,8 @@ export function LibraryView({
           view={{ query: query.q, sort: sortText, group }}
           actions={actions}
           onDone={(slug) => {
-            if (slug) router.push({ pathname: '/shelves/[slug]', params: { slug } })
-            else router.push('/library')
+            if (slug) router.push(smartShelfHref(handle, slug))
+            else router.push(libraryHref(handle))
             router.refresh()
           }}
         />

@@ -15,7 +15,7 @@ export function NotFound() {
       <p className="mx-auto mt-5 max-w-[46ch] text-pretty text-muted">{t('body')}</p>
       <div className="mt-8 flex justify-center">
         <Button variant="primary" asChild>
-          <Link href="/library">{t('action')}</Link>
+          <Link href="/">{t('action')}</Link>
         </Button>
       </div>
     </Page>

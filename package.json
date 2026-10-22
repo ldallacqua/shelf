@@ -22,6 +22,7 @@
     "db:migrate": "tsx --conditions=react-server scripts/db.ts migrate",
     "db:prepare": "tsx --conditions=react-server scripts/db.ts prepare",
     "seed": "tsx --conditions=react-server scripts/db.ts seed",
+    "account:password": "tsx --conditions=react-server scripts/account-password.ts",
     "fixtures:fetch": "tsx --conditions=react-server --env-file=.env.local scripts/fixtures-fetch.ts",
     "test": "vitest run",
     "test:watch": "vitest",

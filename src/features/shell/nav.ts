@@ -1,19 +1,29 @@
+import { libraryHref, trophiesHref } from '@/features/library/shelf-address'
 import type { Pathname } from '@/i18n/routing'
 
-/** The destinations in the main navigation, in order, with the other pages that belong to each. */
+/**
+ * The destinations in the main navigation, in order, each a page of a shelf
+ * (ADR 004), with the other pages that belong to it. The header links to the
+ * shelf in the address, or, elsewhere, to one's own.
+ */
 export const navItems = [
   // A smart shelf is the library with a filter kept, and a game is one of its
   // games, so both are in the library too.
-  { href: '/library', label: 'library', under: ['/shelves', '/game'] },
-  { href: '/trophies', label: 'trophies', under: [] },
-] as const satisfies readonly { href: Pathname; label: string; under: readonly string[] }[]
+  {
+    label: 'library',
+    href: libraryHref,
+    pages: ['/u/[handle]', '/u/[handle]/shelves/[slug]', '/u/[handle]/game/[slug]'],
+  },
+  { label: 'trophies', href: trophiesHref, pages: ['/u/[handle]/trophies'] },
+] as const satisfies readonly {
+  label: string
+  href: (handle: string) => { pathname: Pathname }
+  pages: readonly Pathname[]
+}[]
 
 export type NavItem = (typeof navItems)[number]
 
-/** Whether the visitor is on this destination, or on a page under it. */
+/** Whether the visitor is on this destination, or on a page under it, by the page's pathname template. */
 export function isCurrent(item: NavItem, pathname: string | undefined): boolean {
-  if (pathname === undefined) return false
-  return [item.href, ...item.under].some(
-    (base) => pathname === base || pathname.startsWith(`${base}/`),
-  )
+  return pathname !== undefined && (item.pages as readonly string[]).includes(pathname)
 }

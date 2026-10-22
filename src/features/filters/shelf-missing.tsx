@@ -1,5 +1,9 @@
+'use client'
+
 import { useTranslations } from 'next-intl'
 
+import { useShelf } from '@/features/library/shelf'
+import { libraryHref } from '@/features/library/shelf-address'
 import { EmptyLedge } from '@/features/shell/empty-ledge'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -8,6 +12,7 @@ import { Button } from '@/ui/button'
 export function ShelfMissing() {
   const t = useTranslations('Shelves')
   const library = useTranslations('Library')
+  const { handle } = useShelf()
 
   return (
     <>
@@ -18,7 +23,7 @@ export function ShelfMissing() {
         body={t('notFoundBody')}
         action={
           <Button variant="primary" asChild>
-            <Link href="/library">{library('title')}</Link>
+            <Link href={libraryHref(handle)}>{library('title')}</Link>
           </Button>
         }
       />

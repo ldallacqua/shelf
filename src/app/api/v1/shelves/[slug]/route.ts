@@ -1,24 +1,20 @@
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 
-import { apiShelf, toApiShelf } from '@/server/api/library'
-import { answer, failure } from '@/server/api/respond'
 import { bodyOf, refused } from '@/server/api/writes'
+import { currentAccount } from '@/server/auth/account'
 import {
   getShelf,
-  removeShelfForOwner,
-  saveShelfForOwner,
-  SHELVES_TAG,
+  removeMyShelf,
+  saveMyShelf,
+  shelvesTag,
   type ShelfWrite,
 } from '@/server/services/shelves'
 
-/** `GET /api/v1/shelves/{slug}`: one smart shelf. Its games are `GET /library` with its query. */
-export async function GET(_request: Request, context: RouteContext<'/api/v1/shelves/[slug]'>) {
-  const { slug } = await context.params
-  const shelf = await getShelf(slug)
-  if (!shelf) return failure(404, 'not-found', `There is no shelf called ${slug}`)
-  return answer(apiShelf, toApiShelf(shelf))
-}
+/**
+ * Writing smart shelves through the API, in the signed-in account's own
+ * library. Reading them is `GET /api/v1/u/{handle}/shelves`.
+ */
 
 export const apiShelfInput = z
   .object({
@@ -31,7 +27,7 @@ export const apiShelfInput = z
 
 const done = (result: ShelfWrite, status = 200): Response => {
   if (!result.ok) return refused(result)
-  revalidateTag(SHELVES_TAG, { expire: 0 })
+  revalidateTag(shelvesTag(result.libraryId), { expire: 0 })
   return Response.json(
     { slug: result.slug },
     { status, headers: { 'Cache-Control': 'private, no-store' } },
@@ -39,23 +35,25 @@ const done = (result: ShelfWrite, status = 200): Response => {
 }
 
 /**
- * `PUT /api/v1/shelves/{slug}`: saves a smart shelf, changing the one at that
- * address or, if there is none, adding one named as asked (its own address
- * comes from its name). The owner only.
+ * `PUT /api/v1/shelves/{slug}`: saves a smart shelf in your library,
+ * changing the one at that address or, if there is none, adding one named
+ * as asked (its own address comes from its name).
  */
 export async function PUT(request: Request, context: RouteContext<'/api/v1/shelves/[slug]'>) {
   const { slug } = await context.params
+  const account = await currentAccount()
+  if (!account) return refused({ ok: false, reason: 'not-signed-in' })
   const parsed = apiShelfInput.safeParse(await bodyOf(request))
   if (!parsed.success) return refused({ ok: false, reason: 'invalid' })
-  const exists = Boolean(await getShelf(slug))
+  const exists = Boolean(await getShelf(account.id, slug))
   return done(
-    await saveShelfForOwner({ ...parsed.data, ...(exists ? { slug } : {}) }),
+    await saveMyShelf({ ...parsed.data, ...(exists ? { slug } : {}) }, account),
     exists ? 200 : 201,
   )
 }
 
-/** `DELETE /api/v1/shelves/{slug}`: removes a smart shelf. The owner only. */
+/** `DELETE /api/v1/shelves/{slug}`: removes a smart shelf from your library. */
 export async function DELETE(_request: Request, context: RouteContext<'/api/v1/shelves/[slug]'>) {
   const { slug } = await context.params
-  return done(await removeShelfForOwner(slug))
+  return done(await removeMyShelf(slug))
 }

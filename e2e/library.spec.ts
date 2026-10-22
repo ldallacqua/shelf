@@ -13,7 +13,7 @@ const boxes = (page: Page) => page.locator('.game-box')
 test.describe('the shelf', () => {
   test('arrives with its first shelf of games already in the page @smoke', async ({ page }) => {
     // Before any script runs: the boxes are in the HTML the server sent.
-    const response = await page.request.get('/en/library')
+    const response = await page.request.get('/en/u/sample')
     const html = await response.text()
     expect(html).toContain('PlayStation 5')
     expect(html).toContain('Astro Bot')
@@ -49,7 +49,7 @@ test.describe('the shelf', () => {
   })
 
   test('keeps only the rows near the window in the page', async ({ page }) => {
-    await openLibrary(page, '/en/library?group=none')
+    await openLibrary(page, '/en/u/sample?group=none')
     await expect(page.getByRole('heading', { level: 2, name: 'All games' })).toBeVisible()
     expect(await boxes(page).count()).toBeLessThan(120)
 
@@ -173,7 +173,7 @@ test.describe('the address is the state (spec 2)', () => {
   })
 
   test('loading an address directly shows exactly the state it describes', async ({ page }) => {
-    await openLibrary(page, '/en/library?view=list&group=year')
+    await openLibrary(page, '/en/u/sample?view=list&group=year')
     await expect(page.getByRole('radio', { name: 'List', exact: true })).toBeChecked()
     await expect(page.getByRole('table').first()).toBeVisible()
     // Newest year first.
@@ -182,7 +182,7 @@ test.describe('the address is the state (spec 2)', () => {
   })
 
   test('an unknown or malformed parameter falls back to its default', async ({ page }) => {
-    await openLibrary(page, '/en/library?view=cube&group=%3Cscript%3E&sort=')
+    await openLibrary(page, '/en/u/sample?view=cube&group=%3Cscript%3E&sort=')
     await expect(page.getByRole('radio', { name: 'Shelf', exact: true })).toBeChecked()
     await expect(page.getByRole('heading', { level: 2 }).first()).toHaveText('PlayStation 5')
   })
@@ -190,7 +190,7 @@ test.describe('the address is the state (spec 2)', () => {
 
 test.describe('the wall and the list', () => {
   test('the wall shows a status mark and platforms on each cover', async ({ page }) => {
-    await openLibrary(page, '/en/library?view=wall')
+    await openLibrary(page, '/en/u/sample?view=wall')
     const first = page.getByRole('list', { name: 'Games on the PlayStation 5 shelf' })
     await expect(first.getByRole('button').first()).toHaveAccessibleName(/^Astro Bot/)
     await expect(first.locator('.wall-marks').first()).toContainText('PS5')
@@ -200,7 +200,7 @@ test.describe('the wall and the list', () => {
   })
 
   test('the list is a real table, and a row opens its game', async ({ page, size }) => {
-    await openLibrary(page, '/en/library?view=list')
+    await openLibrary(page, '/en/u/sample?view=list')
     const table = page.getByRole('table', { name: 'Games on the PlayStation 5 shelf' })
     await expect(table.getByRole('columnheader', { name: 'Title' })).toBeVisible()
     if (size === 'desktop') {
@@ -220,7 +220,7 @@ test.describe('choices that belong to the device', () => {
     await openLibrary(page)
     await page.getByRole('radio', { name: 'Compact' }).click()
     await expect(page.locator('.game-spine').first()).toBeVisible()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
 
     await page.reload()
     await expect(page.getByRole('radio', { name: 'Compact' })).toBeChecked()
@@ -290,11 +290,11 @@ test.describe('while the library arrives (spec 3.10)', () => {
     // The page comes with its first boxes; the rest wait for the library file, held here.
     let release = () => {}
     const held = new Promise<void>((resolve) => (release = resolve))
-    await page.route('**/library/snapshot/**', async (route) => {
+    await page.route('**/api/v1/libraries/*/snapshot/**', async (route) => {
       await held
       await route.continue()
     })
-    await page.goto('/en/library')
+    await page.goto('/en/u/sample')
     const names = page.getByRole('heading', { level: 2 })
     await expect(names.first()).toHaveText('PlayStation 5')
     const before = await names.allTextContents()
@@ -322,9 +322,9 @@ test.describe('while the library arrives (spec 3.10)', () => {
 
 test.describe('in Portuguese', () => {
   test('statuses and labels are translated; titles stay as IGDB gives them', async ({ page }) => {
-    await openLibrary(page, '/pt-BR/library?group=status')
+    await openLibrary(page, '/pt-BR/u/sample?group=status')
     await expect(page.getByRole('heading', { level: 2 }).first()).toHaveText('Jogando')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Biblioteca')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Estante de Sample')
     await expect(page.getByRole('radio', { name: 'Estante' })).toBeChecked()
   })
 })

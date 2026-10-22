@@ -56,14 +56,14 @@ export function RatingField({ value, onChange, onCommit, disabled }: RatingField
 
 let tagNames: Promise<string[]> | undefined
 
-/** The tags in use, most used first, fetched once a page. None if they cannot be had. */
+/** The tags in one's own library, most worn first, fetched once a page. None if they cannot be had. */
 const loadTags = () =>
-  (tagNames ??= fetch('/api/v1/library/facets')
+  (tagNames ??= fetch('/api/v1/me/tags', { cache: 'no-store' })
     .then((response) => {
-      if (!response.ok) throw new Error(`The facets answered ${response.status}`)
-      return response.json() as Promise<{ facets: Record<string, { name: string }[]> }>
+      if (!response.ok) throw new Error(`The tags answered ${response.status}`)
+      return response.json() as Promise<{ tags: { name: string }[] }>
     })
-    .then((answer) => (answer.facets.tag ?? []).map((tag) => tag.name))
+    .then((answer) => answer.tags.map((tag) => tag.name))
     .catch(() => {
       // Asked again next time; typing a tag works without suggestions.
       tagNames = undefined

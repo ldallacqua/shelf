@@ -82,7 +82,7 @@ type Story = StoryObj<typeof meta>
 
 /** A game's own page, opened directly. */
 export const Page: Story = {
-  args: { layout: 'page', game, tags, platforms, facts },
+  args: { handle: 'sample', layout: 'page', game, tags, platforms, facts },
 }
 
 /**
@@ -90,7 +90,7 @@ export const Page: Story = {
  * library file knows at once, and ghosts for the rest.
  */
 export const Arriving: Story = {
-  args: { layout: 'panel', game, tags, platforms },
+  args: { handle: 'sample', layout: 'panel', game, tags, platforms },
 }
 
 /**
@@ -99,7 +99,7 @@ export const Arriving: Story = {
  * the editor arrives.
  */
 export const OwnerArriving: Story = {
-  args: { layout: 'panel', game, tags, platforms },
+  args: { handle: 'sample', layout: 'panel', game, tags, platforms },
   render: (args) => (
     <div className="max-w-[32rem] px-5 py-6">
       <MineSkeleton game={args.game} tags={args.tags} platforms={args.platforms} level="h3" />

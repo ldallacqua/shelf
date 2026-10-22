@@ -17,28 +17,52 @@ export const themes = ['light', 'dark'] as const
 export type Locale = (typeof locales)[number]
 export type Theme = (typeof themes)[number]
 
+/**
+ * The sample account's shelf, which every seed fills (ADR 004): its handle,
+ * and the address of its library after the language.
+ */
+export const SAMPLE = 'sample'
+export const SHELF = `/u/${SAMPLE}`
+
 /** Every page that exists, by its address after the language. */
 export const pages = [
   { name: 'home', path: '' },
-  { name: 'library', path: '/library' },
-  { name: 'shelf', path: '/shelves/short-ones' },
-  { name: 'game', path: '/game/bloodborne' },
-  { name: 'trophies', path: '/trophies' },
+  { name: 'library', path: SHELF },
+  { name: 'shelf', path: `${SHELF}/shelves/short-ones` },
+  { name: 'game', path: `${SHELF}/game/bloodborne` },
+  { name: 'trophies', path: `${SHELF}/trophies` },
+  { name: 'sign-in', path: '/sign-in' },
+  { name: 'sign-up', path: '/sign-up' },
 ] as const
 
 /** The library in each of its views, for checks that should see all three. */
 export const libraryViews = [
-  { name: 'library-wall', path: '/library?view=wall' },
-  { name: 'library-list', path: '/library?view=list' },
-  { name: 'library-by-status', path: '/library?group=status' },
+  { name: 'library-wall', path: `${SHELF}?view=wall` },
+  { name: 'library-list', path: `${SHELF}?view=list` },
+  { name: 'library-by-status', path: `${SHELF}?group=status` },
 ] as const
+
+/** The address of a library's data files: `/api/v1/libraries/{key}/…`, by the page's own requests. */
+export const isSnapshot = (url: string) => /\/api\/v1\/libraries\/[^/]+\/snapshot\/\d+/.test(url)
+
+/**
+ * The key in a public library's file addresses (ADR 004), read from the
+ * address of the library file the page asked for.
+ */
+export async function libraryKey(page: Page, address = `/en${SHELF}`): Promise<string> {
+  const file = page.waitForResponse((response) => isSnapshot(response.url()))
+  await page.goto(address)
+  const key = /\/api\/v1\/libraries\/([^/]+)\/snapshot\//.exec((await file).url())?.[1]
+  if (!key) throw new Error('The library file was not asked for.')
+  return key
+}
 
 /**
  * Opens the library and waits until the whole of it has arrived: the page
  * comes with its first boxes, and the rest follow as one file.
  */
-export async function openLibrary(page: Page, address = '/en/library') {
-  const file = page.waitForResponse((response) => response.url().includes('/library/snapshot/'))
+export async function openLibrary(page: Page, address = `/en${SHELF}`) {
+  const file = page.waitForResponse((response) => isSnapshot(response.url()))
   await page.goto(address)
   await file
   // The first boxes arrive in a stagger, and the totals settle. Both are over
@@ -73,20 +97,33 @@ export async function shelfSettled(page: Page): Promise<'2d' | '3d' | 'fallback'
 const cutShortByLeaving = /due to access control checks/
 
 /**
- * The owner's account while the test doubles answer: `MOCK_OWNER` in
- * `src/server/mocks/start.ts`. Made-up values, never a real password.
+ * The sample account's sign-in while the test doubles answer: `MOCK_OWNER`
+ * in `src/server/mocks/owner.ts`. Made-up values, never a real password.
  */
 export const OWNER = {
   email: 'owner@shelf.test',
   password: 'test-doubles-only-owner-password',
 } as const
 
-/** Fills in the sign-in form and sends it. */
-export async function fillSignIn(page: Page, email: string, password: string) {
-  await page.getByLabel('Email address').fill(email)
+/** Fills in the sign-in form and sends it: an email address or a handle, and a password. */
+export async function fillSignIn(page: Page, who: string, password: string) {
+  await page.getByLabel('Email address or handle').fill(who)
   // Exact: the button beside it is "Show the password".
   await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
+}
+
+/**
+ * Types into a field until the page answers with `answer`. Typed in the
+ * moment a form comes alive, a letter can reach the field and not the form;
+ * cleared and typed again, it is a change the form hears.
+ */
+export async function fillUntil(field: Locator, value: string, answer: Locator) {
+  await expect(async () => {
+    await field.fill('')
+    await field.fill(value)
+    await expect(answer).toBeVisible({ timeout: 1_000 })
+  }).toPass({ timeout: 15_000 })
 }
 
 /** Opens a select and chooses the option of this name. */
@@ -125,8 +162,9 @@ export const shownDay = (day: string) =>
   )
 
 /**
- * Signs in as the owner, through the real sign-in page and code. Starts from
- * the sign-in page and leaves the page where sign-in sent it.
+ * Signs in as the sample account, whose shelf it then is, through the real
+ * sign-in page and code. Starts from the sign-in page and leaves the page
+ * where sign-in sent it.
  */
 export async function signIn(page: Page, from?: string) {
   await page.goto(from ? `/en/sign-in?from=${encodeURIComponent(from)}` : '/en/sign-in')
@@ -137,8 +175,8 @@ export async function signIn(page: Page, from?: string) {
 
 type Fixtures = {
   /**
-   * Signed in as the owner from the start: the session saved once per
-   * worker is loaded into the browser before the page opens.
+   * Signed in as the sample account from the start: the session saved once
+   * per worker is loaded into the browser before the page opens.
    */
   signedIn: boolean
   /**
@@ -262,6 +300,9 @@ export async function openWithTheme(page: Page, address: string, theme: Theme) {
  * Pass a selector to check one part of the page, for example an open menu.
  */
 export async function expectAccessible(page: Page, only?: string) {
+  // Judge the page that arrived, not its skeleton: a page built on its first
+  // visit shows one while it is made.
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0, { timeout: 15_000 })
   // A group of buttons that shares one keyboard stop (Radix's roving focus) is sent with no
   // stop at all, and takes one a render after it comes alive. Judge it once it has.
   await expect(page.locator('[role="radiogroup"][tabindex="-1"]')).toHaveCount(0, {

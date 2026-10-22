@@ -23,7 +23,7 @@ import {
   entryTags,
   entryVersions,
   games,
-  libraryMeta,
+  libraries,
   platforms,
   playTime,
   tags,
@@ -31,16 +31,18 @@ import {
 } from '@/server/db/schema'
 
 /**
- * Reads the whole library in a handful of queries and puts it together in
- * memory. The library is always read whole: it is small, and every view
- * filters and sorts it on the device.
+ * Reads one library, an account's (ADR 004), whole, in a handful of
+ * queries, and puts it together in memory. A library is always read whole:
+ * it is small, and every view filters and sorts it on the device. Nothing
+ * here asks whether the reader may see it: the services do.
  */
 
 const union = (lists: readonly (readonly number[])[]): number[] => [...new Set(lists.flat())]
 
 const byId = <T extends { id: number }>(a: T, b: T) => a.id - b.id
 
-export const readLibrary = async (db: Db): Promise<Library> => {
+export const readLibrary = async (db: Db, libraryId: string): Promise<Library> => {
+  const own = sql`(select ${entries.id} from ${entries} where ${entries.userId} = ${libraryId})`
   // One batch is one transaction: every query sees the library as it was at
   // one moment. Run side by side, a write landing between them would give a
   // file that claims the new version without the new game, kept a year at
@@ -56,8 +58,12 @@ export const readLibrary = async (db: Db): Promise<Library> => {
     vocabRows,
     platformRows,
   ] = await db.batch([
-    db.select({ version: libraryMeta.version }).from(libraryMeta).limit(1),
-    db.select().from(entries),
+    db
+      .select({ version: libraries.version })
+      .from(libraries)
+      .where(eq(libraries.userId, libraryId))
+      .limit(1),
+    db.select().from(entries).where(eq(entries.userId, libraryId)),
     db
       .select({
         entryId: entryVersions.entryId,
@@ -85,19 +91,25 @@ export const readLibrary = async (db: Db): Promise<Library> => {
         publishers: games.publishers,
       })
       .from(entryVersions)
-      .innerJoin(games, eq(games.id, entryVersions.gameId)),
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(eq(entryVersions.userId, libraryId)),
     // The order they were added in. Two copies added in the same millisecond
     // are told apart by SQLite's own row number, which only ever grows.
     db
       .select()
       .from(copies)
+      .where(sql`${copies.entryId} in ${own}`)
       .orderBy(copies.createdAt, sql`rowid`),
     db
       .select({ entryId: playTime.entryId, minutes: sql<number>`sum(${playTime.minutes})` })
       .from(playTime)
+      .where(sql`${playTime.entryId} in ${own}`)
       .groupBy(playTime.entryId),
-    db.select().from(tags).orderBy(tags.name),
-    db.select().from(entryTags),
+    db.select().from(tags).where(eq(tags.userId, libraryId)).orderBy(tags.name),
+    db
+      .select()
+      .from(entryTags)
+      .where(sql`${entryTags.entryId} in ${own}`),
     db
       .select()
       .from(vocab)
@@ -277,13 +289,14 @@ export const readLibrary = async (db: Db): Promise<Library> => {
  */
 export const readGameExtras = async (
   db: Executor,
+  libraryId: string,
   slug: string,
 ): Promise<GameExtras | undefined> => {
   const [primary] = await db
     .select({ entryId: entryVersions.entryId, relation: entryVersions.relation })
     .from(games)
     .innerJoin(entryVersions, eq(entryVersions.gameId, games.id))
-    .where(eq(games.slug, slug))
+    .where(and(eq(games.slug, slug), eq(entryVersions.userId, libraryId)))
   if (!primary || primary.relation !== 'primary') return undefined
 
   const [entryRows, versionRows] = await Promise.all([
@@ -333,12 +346,12 @@ export const readGameExtras = async (
  * library file leaves them out and this is fetched the first time a
  * filter asks for one.
  */
-export const readKeywords = async (db: Executor): Promise<GameKeywords> => {
+export const readKeywords = async (db: Executor, libraryId: string): Promise<GameKeywords> => {
   const rows = await db
     .select({ slug: games.slug, keywords: games.keywords })
     .from(entryVersions)
     .innerJoin(games, eq(games.id, entryVersions.gameId))
-    .where(eq(entryVersions.relation, 'primary'))
+    .where(and(eq(entryVersions.relation, 'primary'), eq(entryVersions.userId, libraryId)))
   const used = new Set(rows.flatMap((row) => row.keywords))
   const names =
     used.size === 0
@@ -355,14 +368,19 @@ export const readKeywords = async (db: Executor): Promise<GameKeywords> => {
 /**
  * A game as its owner edits it: the ids the edits need, the notes whether or
  * not they are public, the versions folded into it, and every platform it
- * could be owned on. Only for the owner: the caller checks.
+ * could be owned on. Only for its library's owner: the caller checks. An
+ * entry of another library is not found.
  */
 export const readOwnerGame = async (
   db: Executor,
+  libraryId: string,
   entryId: string,
 ): Promise<OwnerGame | undefined> => {
   const [entryRows, versionRows, copyRows, timeRows, tagRows] = await Promise.all([
-    db.select().from(entries).where(eq(entries.id, entryId)),
+    db
+      .select()
+      .from(entries)
+      .where(and(eq(entries.id, entryId), eq(entries.userId, libraryId))),
     db
       .select({
         gameId: games.id,

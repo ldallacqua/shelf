@@ -10,7 +10,7 @@ import {
   toEditPatch,
   written,
 } from '@/server/api/writes'
-import { ownerGame, patchForOwner, removeForOwner } from '@/server/services/editing'
+import { myGame, patchMine, removeMine } from '@/server/services/editing'
 
 /**
  * A game, as its owner keeps it. `{id}` is the entry's id, or the address of
@@ -20,7 +20,7 @@ import { ownerGame, patchForOwner, removeForOwner } from '@/server/services/edit
 /** `GET /api/v1/entries/{id}`: the game with what only its owner sees: ids, private notes, versions. */
 export async function GET(_request: Request, context: RouteContext<'/api/v1/entries/[id]'>) {
   const { id } = await context.params
-  const game = await ownerGame(id)
+  const game = await myGame(id)
   return ownerRead(apiOwnerGame, game.ok ? { ok: true, value: toApiOwnerGame(game.value) } : game)
 }
 
@@ -29,11 +29,11 @@ export async function PATCH(request: Request, context: RouteContext<'/api/v1/ent
   const { id } = await context.params
   const parsed = apiGamePatch.safeParse(await bodyOf(request))
   if (!parsed.success) return refused({ ok: false, reason: 'invalid' })
-  return written(apiChanged, await patchForOwner(id, toEditPatch(parsed.data)))
+  return written(apiChanged, await patchMine(id, toEditPatch(parsed.data)))
 }
 
 /** `DELETE /api/v1/entries/{id}`: removes it, with everything added with it. Kept a day for Undo. */
 export async function DELETE(_request: Request, context: RouteContext<'/api/v1/entries/[id]'>) {
   const { id } = await context.params
-  return written(apiRemoved, await removeForOwner(id))
+  return written(apiRemoved, await removeMine(id))
 }

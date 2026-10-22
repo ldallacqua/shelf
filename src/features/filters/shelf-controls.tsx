@@ -4,6 +4,8 @@ import { ChevronDownIcon, LibraryBigIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import type { SmartShelf } from '@/domain/library/shelves'
+import { useShelf } from '@/features/library/shelf'
+import { libraryHref, smartShelfHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import {
@@ -20,7 +22,7 @@ export type ShelfWrite =
   | { ok: true; slug: string }
   | { ok: false; reason: 'not-signed-in' | 'invalid' | 'not-kept' | 'not-found' | 'failed' }
 
-/** The owner's ways to save and remove shelves, as server actions handed down by the page. */
+/** One's own ways to save and remove shelves, as server actions handed down by the page. */
 export type ShelfActions = {
   save: (input: {
     slug?: string
@@ -41,6 +43,7 @@ export function ShelvesMenu({
   current?: string
 }) {
   const t = useTranslations('Shelves')
+  const { handle } = useShelf()
 
   return (
     <DropdownMenu>
@@ -53,7 +56,10 @@ export function ShelvesMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-56">
         <DropdownMenuItem asChild>
-          <Link href="/library" aria-current={current === undefined ? 'page' : undefined}>
+          <Link
+            href={libraryHref(handle)}
+            aria-current={current === undefined ? 'page' : undefined}
+          >
             {t('all')}
           </Link>
         </DropdownMenuItem>
@@ -64,7 +70,7 @@ export function ShelvesMenu({
             {shelves.map((shelf) => (
               <DropdownMenuItem key={shelf.slug} asChild>
                 <Link
-                  href={{ pathname: '/shelves/[slug]', params: { slug: shelf.slug } }}
+                  href={smartShelfHref(handle, shelf.slug)}
                   aria-current={current === shelf.slug ? 'page' : undefined}
                   className="aria-[current=page]:font-semibold"
                 >

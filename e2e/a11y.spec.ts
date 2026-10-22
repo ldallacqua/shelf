@@ -1,5 +1,6 @@
 import {
   expectAccessible,
+  fillUntil,
   libraryViews,
   locales,
   openWithTheme,
@@ -34,20 +35,20 @@ for (const { name, path } of libraryViews) {
 
 for (const theme of themes) {
   test(`the compact shelf passes axe in ${theme}`, async ({ page }) => {
-    await openWithTheme(page, '/en/library', theme)
+    await openWithTheme(page, '/en/u/sample', theme)
     await page.getByRole('radio', { name: 'Compact' }).click()
     await expectAccessible(page)
   })
 
   test(`a game's details pass axe while open, ${theme}`, async ({ page }) => {
-    await openWithTheme(page, '/en/library', theme)
+    await openWithTheme(page, '/en/u/sample', theme)
     await page.getByRole('button', { name: /^Astro Bot/ }).click()
     await page.getByRole('dialog').waitFor()
     await expectAccessible(page, '[role="dialog"]')
   })
 
   test(`the filter panel passes axe while open, ${theme}`, async ({ page }) => {
-    await openWithTheme(page, '/en/library?q=genre%3Arpg+-theme%3Ahorror', theme)
+    await openWithTheme(page, '/en/u/sample?q=genre%3Arpg+-theme%3Ahorror', theme)
     await page.getByRole('button', { name: /^Filters/ }).click()
     const panel = page.getByRole('dialog', { name: 'Filters', exact: true })
     await panel.waitFor()
@@ -56,11 +57,34 @@ for (const theme of themes) {
     await expectAccessible(page, '[role="dialog"]')
   })
 
+  test(`sign-up passes axe with a handle that cannot be, ${theme}`, async ({ page }) => {
+    await openWithTheme(page, '/en/sign-up', theme)
+    await fillUntil(
+      page.getByRole('textbox', { name: 'Handle' }),
+      'library',
+      page.getByText('That one is kept for the site. Try another.'),
+    )
+    await expectAccessible(page)
+  })
+
   test.describe('signed in', () => {
     test.use({ signedIn: true })
 
+    test(`the account menu passes axe while open, ${theme}`, async ({ page }) => {
+      await openWithTheme(page, '/en/u/sample', theme)
+      await page.getByRole('button', { name: 'Sample, your account' }).click()
+      await page.getByRole('menu').waitFor()
+      await expectAccessible(page, '[role="menu"]')
+    })
+
+    test(`the account page passes axe, ${theme}`, async ({ page }) => {
+      await openWithTheme(page, '/en/account', theme)
+      await page.getByRole('heading', { name: 'Your shelf' }).waitFor()
+      await expectAccessible(page)
+    })
+
     test(`saving a shelf passes axe, ${theme}`, async ({ page }) => {
-      await openWithTheme(page, '/en/library?q=genre%3Arpg', theme)
+      await openWithTheme(page, '/en/u/sample?q=genre%3Arpg', theme)
       await page.getByRole('button', { name: 'Save as a shelf' }).click()
       await page.getByRole('dialog', { name: 'Save as a shelf' }).waitFor()
       await expectAccessible(page, '[role="dialog"]')
@@ -68,7 +92,7 @@ for (const theme of themes) {
 
     // Nothing below is added or saved: each stops before the button that would.
     test(`adding a game passes axe, and its calendar while open, ${theme}`, async ({ page }) => {
-      await openWithTheme(page, '/en/library', theme)
+      await openWithTheme(page, '/en/u/sample', theme)
       await page.getByRole('banner').getByRole('button', { name: 'Add', exact: true }).click()
       const sheet = page.getByRole('dialog', { name: 'Add a game' })
       await sheet.getByRole('combobox', { name: 'Search IGDB' }).fill('Half-Life')
@@ -84,7 +108,7 @@ for (const theme of themes) {
     test(`a pasted list's review passes axe, and a select while open, ${theme}`, async ({
       page,
     }) => {
-      await openWithTheme(page, '/en/library', theme)
+      await openWithTheme(page, '/en/u/sample', theme)
       await page.getByRole('banner').getByRole('button', { name: 'Add', exact: true }).click()
       const sheet = page.getByRole('dialog', { name: 'Add a game' })
       await sheet.getByRole('tab', { name: 'Paste a list' }).click()
@@ -104,7 +128,7 @@ for (const theme of themes) {
     })
 
     test(`editing a game passes axe, ${theme}`, async ({ page }) => {
-      await openWithTheme(page, '/en/game/bloodborne', theme)
+      await openWithTheme(page, '/en/u/sample/game/bloodborne', theme)
       const mine = page.locator('section[aria-busy]')
       await mine.getByRole('slider', { name: 'My rating' }).waitFor()
       await expectAccessible(page, 'section[aria-busy]')
@@ -112,7 +136,7 @@ for (const theme of themes) {
   })
 
   test(`the sort menu passes axe while open, ${theme}`, async ({ page }) => {
-    await openWithTheme(page, '/en/library', theme)
+    await openWithTheme(page, '/en/u/sample', theme)
     await page.getByRole('button', { name: /^Sort/ }).click()
     await page.getByRole('menu').waitFor()
     await expectAccessible(page, '[role="menu"]')
@@ -120,7 +144,7 @@ for (const theme of themes) {
 
   test(`the keyboard shortcuts pass axe while open, ${theme}`, async ({ page, size }) => {
     test.skip(size === 'phone', 'a phone has no keyboard')
-    await openWithTheme(page, '/en/library', theme)
+    await openWithTheme(page, '/en/u/sample', theme)
     // The library streams in after the page is live; its keys come with it.
     await page.locator('.game-box').first().waitFor()
     // WebKit sends keys to the page only once it has been clicked.
@@ -131,7 +155,7 @@ for (const theme of themes) {
   })
 
   test(`the grouping menu passes axe while open, ${theme}`, async ({ page }) => {
-    await openWithTheme(page, '/en/library', theme)
+    await openWithTheme(page, '/en/u/sample', theme)
     await page.getByRole('button', { name: /Platform/ }).click()
     await page.getByRole('menu').waitFor()
     await expectAccessible(page, '[role="menu"]')

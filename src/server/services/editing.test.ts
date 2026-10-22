@@ -3,11 +3,12 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { Db } from '@/server/db/client'
 import { readLibrary } from '@/server/library/read'
 import { LibraryError, readVersion } from '@/server/library/store'
-import { createTestDatabase } from '@/test/database'
+import { createTestAccount, createTestDatabase, sampleLibraryId } from '@/test/database'
 
 import { createEditing } from './editing'
 
 let db: Db
+let sample: string
 let editing: ReturnType<typeof createEditing>
 
 /** In the default library with a private note, two copies and tags (`seed/mine.ts`). */
@@ -16,7 +17,8 @@ const PC = 6
 
 beforeEach(async () => {
   db = await createTestDatabase('default')
-  editing = createEditing(db)
+  sample = await sampleLibraryId(db)
+  editing = createEditing(db, sample)
 })
 
 describe('a game as its owner edits it', () => {
@@ -43,12 +45,12 @@ describe('a game as its owner edits it', () => {
 
 describe('changing a game', () => {
   it('changes what is mine about it, and raises the version', async () => {
-    const before = await readVersion(db)
+    const before = await readVersion(db, sample)
     const { version } = await editing.patch(SLUG, {
       mine: { status: 'completed', completedOn: '2026-10-01', rating: 85, notesPublic: true },
     })
     expect(version).toBe(before + 1)
-    const game = (await readLibrary(db)).games.find((each) => each.slug === SLUG)
+    const game = (await readLibrary(db, sample)).games.find((each) => each.slug === SLUG)
     expect(game).toMatchObject({
       status: 'completed',
       completedOn: '2026-10-01',
@@ -94,17 +96,17 @@ describe('the versions and copies of a game', () => {
 
 describe('removing a game', () => {
   it('takes it off the shelf, and Undo puts back exactly what was there', async () => {
-    const before = await readLibrary(db)
+    const before = await readLibrary(db, sample)
     const owned = await editing.read(SLUG)
 
     const removed = await editing.remove(owned.entryId)
     expect(removed.title).toBe('Donkey Kong Country')
-    expect((await readLibrary(db)).games.some((game) => game.slug === SLUG)).toBe(false)
+    expect((await readLibrary(db, sample)).games.some((game) => game.slug === SLUG)).toBe(false)
 
     const restored = await editing.restore(removed.undo)
     expect(restored.slug).toBe(SLUG)
     expect(await editing.read(SLUG)).toEqual(owned)
-    const after = await readLibrary(db)
+    const after = await readLibrary(db, sample)
     expect(after.games.find((game) => game.slug === SLUG)).toEqual(
       before.games.find((game) => game.slug === SLUG),
     )
@@ -114,5 +116,22 @@ describe('removing a game', () => {
     const { undo } = await editing.remove(SLUG)
     await editing.restore(undo)
     await expect(editing.restore(undo)).rejects.toBeInstanceOf(LibraryError)
+  })
+})
+
+describe('another account’s editing (ADR 004)', () => {
+  it('finds none of this library’s games, by address or id, and changes nothing', async () => {
+    const owned = await editing.read(SLUG)
+    const theirs = createEditing(db, await createTestAccount(db, 'other'))
+    for (const attempt of [
+      () => theirs.read(SLUG),
+      () => theirs.read(owned.entryId),
+      () => theirs.patch(owned.entryId, { mine: { status: 'dropped' } }),
+      () => theirs.removeCopy(owned.entryId, owned.copies[0]!.id),
+      () => theirs.remove(owned.entryId),
+    ]) {
+      await expect(attempt()).rejects.toMatchObject({ code: 'not-found' })
+    }
+    expect(await editing.read(SLUG)).toEqual(owned)
   })
 })

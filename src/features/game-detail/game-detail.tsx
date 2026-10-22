@@ -9,6 +9,7 @@ import type { ListKey } from '@/domain/query/keys'
 import { Cover } from '@/features/library/cover'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
 import { StatusMark } from '@/features/library/status-mark'
+import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 
@@ -20,6 +21,8 @@ import { Screenshots } from './screenshots'
 import './game-detail.css'
 
 type GameDetailProps = {
+  /** Whose shelf the game is on: its links lead into that shelf. */
+  handle: string
   game: LibraryGame
   /** The game's tags, by name. */
   tags: readonly LibraryTag[]
@@ -39,7 +42,7 @@ type GameDetailProps = {
   heading?: (heading: ReactElement) => ReactElement
   /** What stands above the heading: on the page, the way back to the library. */
   above?: ReactNode
-  /** Editable by the owner, once the browser knows the owner is here (spec 7.3). */
+  /** Editable by its shelf's account, once the browser knows it is theirs (spec 7.3). */
   editable?: boolean
   /** After the owner removes it: where to go. */
   onRemoved?: () => void
@@ -48,10 +51,18 @@ type GameDetailProps = {
 const wash = ([accent, second, base]: Palette): string =>
   `radial-gradient(70% 90% at 20% 30%, ${accent}, transparent 70%), radial-gradient(70% 90% at 85% 70%, ${second}, transparent 65%), ${base}`
 
-/** A link to the library, filtered to what this value names. */
-function FilterLink({ filter, children }: { filter: string; children: ReactNode }) {
+/** A link to the shelf's library, filtered to what this value names. */
+function FilterLink({
+  handle,
+  filter,
+  children,
+}: {
+  handle: string
+  filter: string
+  children: ReactNode
+}) {
   return (
-    <Link href={{ pathname: '/library', query: { q: filter } }} className="game-value">
+    <Link href={libraryHref(handle, { q: filter })} className="game-value">
       {children}
     </Link>
   )
@@ -112,6 +123,7 @@ function Ghosts({ lines }: { lines: number }) {
  * that needs the browser.
  */
 export function GameDetail({
+  handle,
   game,
   tags,
   platforms,
@@ -246,7 +258,10 @@ export function GameDetail({
             <ul className="flex flex-wrap gap-1.5">
               {owned.map(({ copy, platform }) => (
                 <li key={`${copy.platform}:${copy.format}`}>
-                  <FilterLink filter={`owned:${platform.key} format:${copy.format}`}>
+                  <FilterLink
+                    handle={handle}
+                    filter={`owned:${platform.key} format:${copy.format}`}
+                  >
                     {t('copy', {
                       platform: platform.name,
                       format: library(`format.${copy.format}`),
@@ -267,7 +282,9 @@ export function GameDetail({
             <ul className="flex flex-wrap gap-1.5">
               {tags.map((tag) => (
                 <li key={tag.slug}>
-                  <FilterLink filter={`tag:${tag.slug}`}>{tag.name}</FilterLink>
+                  <FilterLink handle={handle} filter={`tag:${tag.slug}`}>
+                    {tag.name}
+                  </FilterLink>
                 </li>
               ))}
             </ul>
@@ -289,6 +306,7 @@ export function GameDetail({
 
   const mine = editable ? (
     <OwnerMine
+      handle={handle}
       slug={game.slug}
       level={level}
       minor={Minor}
@@ -377,7 +395,9 @@ export function GameDetail({
                 <ul className="flex flex-wrap gap-1.5" lang={igdbLang}>
                   {shown.map(({ named, filter }) => (
                     <li key={named.id}>
-                      <FilterLink filter={filter}>{named.name}</FilterLink>
+                      <FilterLink handle={handle} filter={filter}>
+                        {named.name}
+                      </FilterLink>
                     </li>
                   ))}
                 </ul>
@@ -392,7 +412,9 @@ export function GameDetail({
                   if (!platform) return []
                   return [
                     <li key={release.platform} className="flex flex-wrap items-baseline gap-x-2">
-                      <FilterLink filter={`platform:${platform.key}`}>{platform.name}</FilterLink>
+                      <FilterLink handle={handle} filter={`platform:${platform.key}`}>
+                        {platform.name}
+                      </FilterLink>
                       <span className="text-sm text-muted">
                         {release.day
                           ? day(release.day)
@@ -458,7 +480,7 @@ export function GameDetail({
             {t.rich('factsFailed', {
               page: (chunks) => (
                 <Link
-                  href={{ pathname: '/game/[slug]', params: { slug: game.slug } }}
+                  href={gameHref(handle, game.slug)}
                   className="text-accent underline underline-offset-4"
                 >
                   {chunks}

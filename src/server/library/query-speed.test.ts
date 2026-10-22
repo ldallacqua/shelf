@@ -8,7 +8,7 @@ import { facetCounts } from '@/domain/query/facets'
 import { listKeys } from '@/domain/query/keys'
 import { parseQuery } from '@/domain/query/parse'
 import { readLibrary } from '@/server/library/read'
-import { createTestDatabase } from '@/test/database'
+import { createTestDatabase, sampleLibraryId } from '@/test/database'
 
 /**
  * The speed budget (spec 5.6, architecture section 15): with the stress
@@ -23,7 +23,8 @@ let library: Library
 let index: LibraryIndex
 
 beforeAll(async () => {
-  library = await readLibrary(await createTestDatabase('stress'))
+  const db = await createTestDatabase('stress')
+  library = await readLibrary(db, await sampleLibraryId(db))
   index = indexOnce(library)
 }, 60_000)
 

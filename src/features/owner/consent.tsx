@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/ui/button'
 
 import { callApi } from './call-api'
-import { useOwner } from './owner'
+import { useAccount } from './account'
 
 type Client = { client_id: string; client_name?: string; client_uri?: string }
 
@@ -29,7 +29,7 @@ const hostOf = (clientId: string): string | undefined => {
 export function Consent() {
   const t = useTranslations('Consent')
   const params = useSearchParams()
-  const owner = useOwner()
+  const account = useAccount()
   const [client, setClient] = useState<Client>()
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -39,7 +39,7 @@ export function Consent() {
   const signed = params.has('sig') && clientId !== ''
 
   useEffect(() => {
-    if (!signed || owner.status !== 'owner') return
+    if (!signed || account.status !== 'signed-in') return
     let current = true
     void callApi<Client>(
       'GET',
@@ -50,11 +50,11 @@ export function Consent() {
     return () => {
       current = false
     }
-  }, [signed, clientId, owner.status])
+  }, [signed, clientId, account.status])
 
   if (!signed) return <p className="mt-6 max-w-xl text-pretty">{t('nothingAsked')}</p>
-  if (owner.status === 'checking') return <p className="mt-6 text-muted">{t('checking')}</p>
-  if (owner.status !== 'owner')
+  if (account.status === 'checking') return <p className="mt-6 text-muted">{t('checking')}</p>
+  if (account.status !== 'signed-in')
     return <p className="mt-6 max-w-xl text-pretty">{t('signInFirst')}</p>
 
   const name = client?.client_name ?? hostOf(clientId) ?? clientId
@@ -88,7 +88,7 @@ export function Consent() {
         <li>{t('change')}</li>
         {scopes.includes('offline_access') ? <li>{t('stay')}</li> : null}
       </ul>
-      <p className="text-sm text-muted">{t('signedInAs', { name: owner.name })}</p>
+      <p className="text-sm text-muted">{t('signedInAs', { name: account.name })}</p>
       {failed ? (
         <p role="alert" className="rounded-control border border-line-strong px-4 py-3">
           {t('failed')}

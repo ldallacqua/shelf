@@ -45,32 +45,46 @@ for (const era of ['modern', 'legacy'] as const) {
       ])
       expect(tools.every((tool) => tool.annotations?.readOnlyHint)).toBe(true)
 
-      // The same answers as the API.
+      // The same answers as the API, for the shelf its handle names (ADR 004).
+      const shelf = 'sample'
       const found = await client.callTool({
         name: 'search_library',
-        arguments: { q: 'status:playing', limit: 3 },
+        arguments: { shelf, q: 'status:playing', limit: 3 },
       })
       const api = (await (
-        await request.get('/api/v1/library?q=status:playing&limit=3')
+        await request.get('/api/v1/u/sample/library?q=status:playing&limit=3')
       ).json()) as Library
       expect((found.structuredContent as Library).stats).toEqual(api.stats)
       expect((found.structuredContent as Library).games.map((game) => game.slug)).toEqual(
         api.games.map((game) => game.slug),
       )
 
-      const game = await client.callTool({ name: 'get_game', arguments: { slug: 'bloodborne' } })
+      const game = await client.callTool({
+        name: 'get_game',
+        arguments: { shelf, slug: 'bloodborne' },
+      })
       expect(game.structuredContent).toMatchObject({ slug: 'bloodborne', title: 'Bloodborne' })
-      const missing = await client.callTool({ name: 'get_game', arguments: { slug: 'not-a-game' } })
+      const missing = await client.callTool({
+        name: 'get_game',
+        arguments: { shelf, slug: 'not-a-game' },
+      })
       expect(missing.isError).toBe(true)
 
-      const values = await client.callTool({ name: 'list_filter_values', arguments: {} })
+      const values = await client.callTool({ name: 'list_filter_values', arguments: { shelf } })
       expect(Object.keys((values.structuredContent as { facets: object }).facets)).toContain(
         'genre',
       )
-      const shelves = await client.callTool({ name: 'list_shelves', arguments: {} })
+      const shelves = await client.callTool({ name: 'list_shelves', arguments: { shelf } })
       expect((shelves.structuredContent as { shelves: unknown[] }).shelves.length).toBeGreaterThan(
         0,
       )
+
+      // A shelf no account has, or none named: said, not answered.
+      const nobody = await client.callTool({
+        name: 'search_library',
+        arguments: { shelf: 'no-such-shelf', q: '' },
+      })
+      expect(nobody.isError).toBe(true)
     } finally {
       await client.close()
     }

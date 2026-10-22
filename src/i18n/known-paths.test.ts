@@ -35,7 +35,26 @@ describe('isKnownPath', () => {
     expect(isKnownPath(path)).toBe(true)
   })
 
-  it.each(['/nope', '/library/extra', '/trophies2', '/Library', ''])('does not know %j', (path) => {
+  it.each([
+    '/u/sample',
+    '/u/sample/trophies',
+    '/u/sample/game/bloodborne',
+    '/u/sample/shelves/short-ones',
+  ])('knows the shelf address %s', (path) => {
+    expect(isKnownPath(path)).toBe(true)
+  })
+
+  it.each([
+    '/nope',
+    '/library/extra',
+    '/trophies2',
+    '/Library',
+    '',
+    '/u',
+    '/u/sample/extra',
+    '/u/sample/game',
+    '/u/sample/game/a/b',
+  ])('does not know %j', (path) => {
     expect(isKnownPath(path)).toBe(false)
   })
 })

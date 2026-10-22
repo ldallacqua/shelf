@@ -15,10 +15,23 @@ const meta = {
 export default meta
 type Story = StoryObj
 
-/** The header on every page. At phone width the main links fold into a menu. */
+/**
+ * The header on every page, here on a shelf: its links, and a visitor's ways
+ * in. At phone width the links and the ways in fold into a menu.
+ */
 export const SiteHeader: Story = {
   render: () => <Header />,
-  parameters: { nextjs: { navigation: { pathname: '/en/library' } } },
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: '/en/u/sample',
+        segments: [
+          ['locale', 'en'],
+          ['handle', 'sample'],
+        ],
+      },
+    },
+  },
 }
 
 export const SiteFooter: Story = { render: () => <Footer /> }

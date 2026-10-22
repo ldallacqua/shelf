@@ -30,7 +30,7 @@ test.describe('reference screenshots @visual', () => {
 
   for (const theme of themes) {
     test(`a game picked up from the shelf, ${theme}`, async ({ page }) => {
-      await openWithTheme(page, '/en/library', theme)
+      await openWithTheme(page, '/en/u/sample', theme)
       await page.evaluate(() => document.fonts.ready)
       await page.addStyleTag({ content: 'html, [data-theme] { --grain: 0 !important; }' })
       await page.getByRole('button', { name: /^Astro Bot/ }).click()

@@ -9,12 +9,15 @@ import { OwnerMine } from './owner-mine'
 
 /**
  * "Mine" on a game's page (spec 7.3): the words for a visitor, the editor for
- * the owner, and the editor's shape in its place while it comes, so nothing
- * below it moves when it arrives.
+ * the shelf's own account, and the editor's shape in its place while it
+ * comes, so nothing below it moves when it arrives.
  */
 
-const owner = vi.hoisted(() => ({ status: 'visitor' as 'visitor' | 'checking' | 'owner' }))
-vi.mock('@/features/owner/owner', () => ({ useOwner: () => ({ status: owner.status }) }))
+const account = vi.hoisted(() => ({
+  status: 'visitor' as 'visitor' | 'checking' | 'signed-in',
+  handle: 'sample',
+}))
+vi.mock('@/features/owner/account', () => ({ useAccount: () => ({ ...account }) }))
 vi.mock('./mine-editor', () => ({ MineEditor: () => <p>The editor</p> }))
 
 const ps4: LibraryPlatform = {
@@ -55,6 +58,7 @@ const game = (extra: Partial<LibraryGame> = {}): LibraryGame => ({
 
 const mine = (entry = game()) => (
   <OwnerMine
+    handle="sample"
     slug={entry.slug}
     level="h3"
     minor="h4"
@@ -66,22 +70,32 @@ const mine = (entry = game()) => (
 
 describe('OwnerMine', () => {
   it('gives a visitor the words alone, never the editor or its shape', () => {
-    owner.status = 'visitor'
+    account.status = 'visitor'
     renderWithIntl(mine())
     expect(screen.getByText('What a visitor reads')).toBeInTheDocument()
     expect(document.querySelector('[data-mine-skeleton]')).toBeNull()
   })
 
+  it('gives another account the words alone, on a shelf that is not theirs (ADR 004)', () => {
+    account.status = 'signed-in'
+    account.handle = 'someone-else'
+    renderWithIntl(mine())
+    expect(screen.getByText('What a visitor reads')).toBeInTheDocument()
+    expect(screen.queryByText('The editor')).not.toBeInTheDocument()
+    expect(document.querySelector('[data-mine-skeleton]')).toBeNull()
+    account.handle = 'sample'
+  })
+
   it('holds the editor’s place while the browser asks who is here', () => {
-    owner.status = 'checking'
+    account.status = 'checking'
     renderWithIntl(mine())
     expect(screen.queryByText('What a visitor reads')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Mine' })).toBeInTheDocument()
     expect(document.querySelector('[data-mine-skeleton]')).not.toBeNull()
   })
 
-  it('gives the owner the editor, its shape standing in until it comes', async () => {
-    owner.status = 'owner'
+  it('gives the shelf’s own account the editor, its shape standing in until it comes', async () => {
+    account.status = 'signed-in'
     renderWithIntl(mine())
     expect(document.querySelector('[data-mine-skeleton]')).not.toBeNull()
     expect(await screen.findByText('The editor')).toBeInTheDocument()

@@ -161,7 +161,7 @@ describe('videoGameData', () => {
         notesPublic: true,
       }),
     )
-    const data = videoGameData(page, 'https://shelf.test/en/game/bloodborne', {
+    const data = videoGameData(page, 'https://shelf.test/en/u/sample/game/bloodborne', {
       cover: (id) => `cover:${id}`,
       screenshot: (id) => `shot:${id}`,
     })
@@ -169,7 +169,7 @@ describe('videoGameData', () => {
       '@context': 'https://schema.org',
       '@type': 'VideoGame',
       name: 'Bloodborne',
-      url: 'https://shelf.test/en/game/bloodborne',
+      url: 'https://shelf.test/en/u/sample/game/bloodborne',
       description: 'A hunt.',
       datePublished: '2015-03-24',
       gamePlatform: ['PlayStation 4'],

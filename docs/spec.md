@@ -41,15 +41,16 @@ have been rewritten to match; everything else is as approved.
 
 ## 1. What Shelf is
 
-A personal game library. It does two things: add games, and browse them on a shelf with strong
-filters and sorting.
+A game library for anyone. It does two things: add games, and browse them on a shelf with
+strong filters and sorting. Anyone can sign up for a shelf of their own, public or private
+([ADR 004](adr/004-one-library-per-account.md)). Mine is `/u/lucas`.
 
 **Two kinds of visitor**
 
 | Who | Can do |
 | --- | --- |
-| Anyone | Browse the library, open games, filter, sort, switch views, change theme and language |
-| Me, signed in | All of that, plus add, edit and remove games, and save smart shelves |
+| Anyone | Browse any public shelf, open games, filter, sort, switch views, change theme and language; sign up |
+| An account, signed in | All of that, plus, on its own shelf: add, edit and remove games, and save smart shelves |
 
 **Principles**
 
@@ -71,18 +72,23 @@ language the browser asks for.
 | Address | What it is |
 | --- | --- |
 | `/en` | Landing page |
-| `/en/library` | The library. Filters, sort, grouping and view live in the query string. |
-| `/en/shelves/{name}` | A saved smart shelf: the library with a stored filter, sort and grouping |
-| `/en/trophies` | Trophy wall: completed games and stats |
-| `/en/game/{slug}` | A game's page. Opened from the library, it appears over the shelf; opened directly, it is a full page. |
-| `/en/sign-in` | Sign-in, with an email address and password |
+| `/en/u/{handle}` | An account's library. Filters, sort, grouping and view live in the query string. |
+| `/en/u/{handle}/shelves/{name}` | A saved smart shelf: the library with a stored filter, sort and grouping |
+| `/en/u/{handle}/trophies` | Trophy wall: completed games and stats |
+| `/en/u/{handle}/game/{slug}` | A game's page. Opened from the library, it appears over the shelf; opened directly, it is a full page. |
+| `/en/sign-up` | A shelf of one's own: name, handle, email address, password, public or private |
+| `/en/sign-in` | Sign-in, with an email address or handle, and a password |
+| `/en/account` | One's name, handle and visibility, password, sessions, and deleting the account |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
+
+The addresses from before accounts (`/en/library`, `/en/game/…`, `/en/shelves/…`,
+`/en/trophies`) move for good to the same page under `/en/u/lucas`, query string kept.
 
 Library query string, in full:
 
 ```text
-/en/library?q=status:backlog+genre:rpg+-theme:horror
-            &sort=-rating&group=platform&view=shelf
+/en/u/lucas?q=status:backlog+genre:rpg+-theme:horror
+           &sort=-rating&group=platform&view=shelf
 ```
 
 | Parameter | Values | Default |
@@ -95,8 +101,10 @@ Library query string, in full:
 
 2D or 3D is **not** in the address. It is a per-device preference ([section 3.6](#36-switching-2d-and-3d)).
 
-**Header, on every page:** the name, Library, Trophies, a search field, theme switch, language
-switch. Signed in: an Add button. **Footer:** credit to IGDB.com, and the sign-in link.
+**Header, on every page:** the name; Library and Trophies of the shelf in the address (or,
+elsewhere, one's own); a search field over it; theme switch, language switch. On the right, a
+visitor's Sign in and Create your shelf, or, signed in, a menu: My shelf, Account, Sign out.
+On one's own shelf, an Add button. **Footer:** credit to IGDB.com, and the sign-in link.
 
 **Done when**
 
@@ -681,8 +689,11 @@ immediately; if saving fails it reverts and says why.
 
 ## 8. Data model
 
-[ADR 001](adr/001-game-entry-model.md) is the decision. In short:
+[ADR 001](adr/001-game-entry-model.md) is the decision; [ADR 004](adr/004-one-library-per-account.md)
+gives each account a library of its own. In short:
 
+- A **library** is an account's: its entries, tags and smart shelves. The IGDB cache is shared
+  by all of them.
 - An **entry** is the game as I think of it: status, rating, notes, tags, dates.
 - An entry links to one or more IGDB records. One is **primary** and supplies title, cover and
   metadata. Editions, ports and remasters I fold in are the others.
@@ -759,29 +770,39 @@ English and Brazilian Portuguese from the first build.
 
 ## 11. Access
 
-| | Visitor | Me |
-| --- | --- | --- |
-| See the library, trophy wall, smart shelves, game pages | Yes | Yes |
-| See my public notes | Yes | Yes |
-| See my private notes | No | Yes |
-| Search IGDB | No | Yes |
-| Add, edit, remove games | No | Yes |
-| Save smart shelves | No | Yes |
+| | Visitor | Another account | The shelf's own account |
+| --- | --- | --- | --- |
+| See a public shelf: library, trophy wall, smart shelves, game pages | Yes | Yes | Yes |
+| See a private shelf | No: told it is private | No | Yes |
+| See public notes | Yes | Yes | Yes |
+| See private notes | No | No | Yes |
+| Search IGDB | No | For its own shelf | Yes |
+| Add, edit, remove games; save smart shelves | No | On its own shelf only | Yes |
 
-- **Sign-in** is an email address and password, for one account, made from settings on the
-  server (changed from GitHub on 21 Oct 2026). Nobody can make another account. A wrong
-  password, or any other address, is turned away with a plain message, and repeated tries are
-  slowed down.
-- **Every change** is checked on the server. Hiding a button is never the protection.
-- **IGDB search is mine alone**, so a visitor cannot spend the request allowance.
-- **Edit controls are absent** for visitors, not disabled.
-- Search engines may index the public pages.
+- **Sign-up** is open to anyone: a name, a handle (the shelf's address, `/u/{handle}`), an
+  email address and a password of 10 characters or more, and public or private, with Public
+  picked. Three new accounts an hour from one address. No email is sent yet: no confirming,
+  and no reset by email (21 Oct 2026, ADR 004).
+- **Sign-in** is an email address or handle, and the password. A wrong one is turned away with
+  a plain message, and repeated tries are slowed down.
+- **The account page** changes the name, the handle (the old address then leads nowhere), the
+  visibility and the password; signs out everywhere; and deletes the account and everything on
+  its shelf, after the password.
+- **Every change** is checked on the server, against the session's own account. A write never
+  names a library: it acts on one's own. Hiding a button is never the protection.
+- **IGDB search is for accounts**, each limited per hour, so no one spends the whole site's
+  request allowance.
+- **Edit controls are absent** for anyone but the shelf's own account, not disabled.
+- Search engines may index public shelves. A private shelf, or an address with no shelf, is
+  marked not to be.
 
 **Done when**
 
 - Every write request without a valid session is refused, tested request by request.
-- Nobody can make an account, and a wrong password cannot sign in.
-- The public pages contain no private note text, checked in the page source.
+- Another account's ids answer "not found", for every service, tested.
+- A wrong password cannot sign in.
+- The public pages contain no private note text, and a private shelf's pages and files none of
+  its games, checked in the page source.
 
 ---
 
@@ -934,13 +955,13 @@ placeholder first. Fonts are subset, preloaded, and never block text from showin
 | --- | --- |
 | **A typed core** | The rules for library, games, filters and sorting live apart from the interface, so the app, the API and an assistant all get identical answers |
 | **A documented API** | Read the library with any filter, sort and grouping; read one game; read the available filter values |
-| **An MCP server** | The same as tools: search my library, apply filters and sorting, read a game, add a game, change a status |
+| **An MCP server** | The same as tools: search a public shelf by its handle, apply filters and sorting, read a game; signed in as an account, the same on its own shelf, and add a game, change a status |
 | **The filter language** | One line of text an assistant can write and a person can read ([5.3](#53-the-filter-language)) |
 | **`llms.txt`** | What the site is and where its data lives |
 | **Structured data** | Each public page describes itself to search engines: the site, the collection, each game |
 
-Reading is open, as it is in the browser. Adding and changing need the same sign-in as the
-interface.
+Reading a public shelf is open, as it is in the browser. Adding and changing need the same
+sign-in as the interface, and act on that account's own shelf.
 
 ---
 

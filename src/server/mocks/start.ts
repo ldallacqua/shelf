@@ -6,15 +6,7 @@ import { onVercel } from '@/server/env'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { loadFixtures } from '@/server/seed/fixtures'
 
-/**
- * The owner's account while the test doubles answer: made-up values the
- * browser tests sign in with (`e2e/fixtures.ts`). Never a real address or
- * a real password.
- */
-export const MOCK_OWNER = {
-  email: 'owner@shelf.test',
-  password: 'test-doubles-only-owner-password',
-} as const
+export { MOCK_OWNER } from '@/server/mocks/owner'
 
 /**
  * Starts the test doubles inside the running server. Only when asked
@@ -29,9 +21,7 @@ export const startMocks = () => {
   // The doubles accept only these, so real credentials are never sent to them.
   process.env.TWITCH_CLIENT_ID = MOCK_CLIENT_ID
   process.env.TWITCH_CLIENT_SECRET = MOCK_CLIENT_SECRET
-  // The made-up owner is the one account; a real session secret is never needed here.
-  process.env.OWNER_EMAIL = MOCK_OWNER.email
-  process.env.OWNER_PASSWORD = MOCK_OWNER.password
+  // The sample account takes the made-up password at its first sign-in (`server/auth/auth.ts`).
   process.env.BETTER_AUTH_SECRET = 'test-doubles-only-sign-in-secret-not-a-real-one'
 
   const server = setupServer(...createHandlers(loadFixtures()))

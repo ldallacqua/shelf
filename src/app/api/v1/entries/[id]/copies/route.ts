@@ -1,5 +1,5 @@
 import { apiChanged, apiNewCopy, bodyOf, refused, written } from '@/server/api/writes'
-import { addCopyForOwner } from '@/server/services/editing'
+import { addMyCopy } from '@/server/services/editing'
 
 /** `POST /api/v1/entries/{id}/copies`: one more platform and format I own it on. The owner only. */
 export async function POST(request: Request, context: RouteContext<'/api/v1/entries/[id]/copies'>) {
@@ -8,7 +8,7 @@ export async function POST(request: Request, context: RouteContext<'/api/v1/entr
   if (!parsed.success) return refused({ ok: false, reason: 'invalid' })
   return written(
     apiChanged,
-    await addCopyForOwner(id, { platformId: parsed.data.platform, format: parsed.data.format }),
+    await addMyCopy(id, { platformId: parsed.data.platform, format: parsed.data.format }),
     201,
   )
 }

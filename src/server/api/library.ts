@@ -28,12 +28,15 @@ import {
 import { extentOf, facetCounts } from '@/domain/query/facets'
 import { dateKeys, filterWord, listKeys, numberKeys, type ListKey } from '@/domain/query/keys'
 import { parseQuery } from '@/domain/query/parse'
+import { failure } from '@/server/api/respond'
+import { findLibrary, type LibraryInfo } from '@/server/services/library'
 
 /**
- * The public API's reads (architecture, section 16): the library filtered,
- * sorted and grouped, the values a filter can take with their counts, and
- * the smart shelves. Every answer has a Zod schema here, and the OpenAPI
- * document is made from these same schemas, so the two cannot disagree.
+ * The public API's reads (architecture, section 16), of a public shelf named
+ * by its handle: the library filtered, sorted and grouped, the values a
+ * filter can take with their counts, and the smart shelves. Every answer has
+ * a Zod schema here, and the OpenAPI document is made from these same
+ * schemas, so the two cannot disagree.
  *
  * The API runs the same rules as the page: the filter language, the sort
  * and the grouping all come from `domain`.
@@ -48,7 +51,7 @@ const problem = z.object({
 
 export const apiGame = z
   .object({
-    slug: z.string().describe('The game’s address: /en/game/{slug}'),
+    slug: z.string().describe('The game’s address on its shelf: /en/u/{handle}/game/{slug}'),
     title: z.string(),
     status: z.enum(statuses),
     rating: z.number().nullable().describe('Mine, out of ten, in half steps'),
@@ -182,7 +185,7 @@ export const apiShelf = z
     query: z.string().describe('The filter, in the filter language'),
     sort: z.string(),
     group: z.enum(groupings),
-    path: z.string().describe('Its page, after the language: /shelves/{slug}'),
+    path: z.string().describe('Its page, after the language: /u/{handle}/shelves/{slug}'),
   })
   .meta({ id: 'SmartShelf' })
 
@@ -300,6 +303,18 @@ const indexFor = (library: Library, keywords: GameKeywords | undefined): Library
 /** Whether answering this filter needs the keywords file. */
 export const needsKeywords = (q: string): boolean => asksForKeywords(parseQuery(q).tree)
 
+/**
+ * The public library a handle names, for a read of the API, or the 404 to
+ * answer instead. A private library answers the same 404 as no library:
+ * whether it exists is not said (ADR 004).
+ */
+export const publicLibrary = async (handle: string): Promise<LibraryInfo | Response> => {
+  const found = await findLibrary(handle)
+  return found?.public
+    ? found
+    : failure(404, 'not-found', `There is no public shelf called ${handle}`)
+}
+
 /** `GET /library`: the matching games, a page at a time, and the shelves they make. */
 export const answerLibrary = (
   library: Library,
@@ -368,7 +383,10 @@ export const answerFacets = (
   }
 }
 
-export const toApiShelf = (shelf: SmartShelf): z.infer<typeof apiShelf> => ({
-  ...shelf,
-  path: `/shelves/${shelf.slug}`,
-})
+/** A smart shelf as the API gives it, with its page's address on the shelf of this handle. */
+export const toApiShelf =
+  (handle: string) =>
+  (shelf: SmartShelf): z.infer<typeof apiShelf> => ({
+    ...shelf,
+    path: `/u/${handle}/shelves/${shelf.slug}`,
+  })

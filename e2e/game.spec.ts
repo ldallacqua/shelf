@@ -3,6 +3,8 @@ import type { Page } from '@playwright/test'
 import {
   expect,
   expectAccessible,
+  isSnapshot,
+  libraryKey,
   openLibrary,
   openWithTheme,
   shelfSettled,
@@ -53,9 +55,9 @@ test.describe("a game's own page", () => {
   test('arrives whole, without the library file @smoke', async ({ page }) => {
     const files: string[] = []
     page.on('request', (request) => {
-      if (request.url().includes('/library/snapshot/')) files.push(request.url())
+      if (isSnapshot(request.url())) files.push(request.url())
     })
-    await page.goto('/en/game/bloodborne')
+    await page.goto('/en/u/sample/game/bloodborne')
 
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bloodborne')
     const main = page.getByRole('main')
@@ -73,10 +75,10 @@ test.describe("a game's own page", () => {
   })
 
   test('is in the HTML, with what it is for search engines', async ({ page }) => {
-    const html = await (await page.request.get('/en/game/bloodborne')).text()
+    const html = await (await page.request.get('/en/u/sample/game/bloodborne')).text()
     expect(html).toContain('<h1')
     expect(html).toContain('Bloodborne')
-    await page.goto('/en/game/bloodborne')
+    await page.goto('/en/u/sample/game/bloodborne')
     const data = JSON.parse(
       (await page.locator('script[type="application/ld+json"]').textContent()) ?? '{}',
     )
@@ -87,34 +89,34 @@ test.describe("a game's own page", () => {
       datePublished: '2015-03-24',
       gamePlatform: ['PlayStation 4'],
     })
-    expect(data.url).toMatch(/\/en\/game\/bloodborne$/)
+    expect(data.url).toMatch(/\/en\/u\/sample\/game\/bloodborne$/)
   })
 
   test('each value under Details opens the library filtered by it', async ({ page }) => {
-    await page.goto('/en/game/bloodborne')
+    await page.goto('/en/u/sample/game/bloodborne')
     await page.getByRole('main').getByRole('link', { name: 'FromSoftware' }).last().click()
-    await expect(page).toHaveURL(/\/en\/library\?q=developer%3Afromsoftware$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\?q=developer%3Afromsoftware$/)
     await expect(page.getByRole('searchbox', { name: 'Search the library' })).toHaveValue(
       'developer:fromsoftware',
     )
   })
 
   test('leads back to the library, to the shelf it was opened on', async ({ page }) => {
-    await page.goto('/en/game/bloodborne')
+    await page.goto('/en/u/sample/game/bloodborne')
     await expect(page.getByRole('link', { name: 'Library', exact: true }).first()).toBeVisible()
-    await page.goto('/en/game/bloodborne?view=wall&q=genre%3Arpg')
+    await page.goto('/en/u/sample/game/bloodborne?view=wall&q=genre%3Arpg')
     const back = page.getByRole('main').getByRole('link', { name: 'Library' })
-    await expect(back).toHaveAttribute('href', '/en/library?q=genre%3Arpg&view=wall')
+    await expect(back).toHaveAttribute('href', '/en/u/sample?q=genre%3Arpg&view=wall')
   })
 
   test('marks IGDB’s English as English on the Portuguese site', async ({ page }) => {
-    await page.goto('/pt-BR/game/bloodborne')
+    await page.goto('/pt-BR/u/sample/game/bloodborne')
     await expect(page.getByRole('heading', { name: 'Sobre' })).toBeVisible()
     await expect(page.getByText(/^An action RPG/).locator('xpath=..')).toHaveAttribute('lang', 'en')
   })
 
   test('an address with no game behind it says so, and is not indexed', async ({ page }) => {
-    await page.goto('/en/game/not-a-game')
+    await page.goto('/en/u/sample/game/not-a-game')
     await expect(
       page.getByRole('main').getByText('There is no game at this address.'),
     ).toBeVisible()
@@ -125,14 +127,15 @@ test.describe("a game's own page", () => {
   test('a visitor never sees a private note, in the page or in any file', async ({ page }) => {
     // The sample library gives Donkey Kong Country a note kept private.
     const note = 'Played it through twice, back to back.'
-    const html = await (await page.request.get('/en/game/donkey-kong-country')).text()
+    const html = await (await page.request.get('/en/u/sample/game/donkey-kong-country')).text()
     expect(html).not.toContain(note)
-    const api = await (await page.request.get('/api/v1/games/donkey-kong-country')).json()
+    const api = await (await page.request.get('/api/v1/u/sample/games/donkey-kong-country')).json()
     expect(api.notes).toBeNull()
-    const facts = await page.request.get('/api/v1/library/games/0/donkey-kong-country')
+    const key = await libraryKey(page)
+    const facts = await page.request.get(`/api/v1/libraries/${key}/games/0/donkey-kong-country`)
     expect(JSON.stringify(await facts.json())).not.toContain(note)
     // A public note is shown.
-    await page.goto('/en/game/bloodborne')
+    await page.goto('/en/u/sample/game/bloodborne')
     await expect(
       page.getByText('Borrowed this years ago and finally bought my own copy.'),
     ).toBeVisible()
@@ -141,7 +144,7 @@ test.describe("a game's own page", () => {
   test('its screenshots open full screen, and the arrow keys step through them', async ({
     page,
   }) => {
-    await page.goto('/en/game/bloodborne')
+    await page.goto('/en/u/sample/game/bloodborne')
     await page.getByRole('button', { name: /^Screenshot 1 of \d+ from Bloodborne/ }).click()
     const viewer = page.getByRole('dialog', { name: 'Screenshots from Bloodborne' })
     const count = viewer.locator('[aria-live]')
@@ -158,33 +161,35 @@ test.describe('a game opened from the library', () => {
     test(`from the ${view}, sits over it; Back closes it and the ${view} is as it was`, async ({
       page,
     }) => {
-      await openLibrary(page, `/en/library?view=${view}&group=status`)
+      await openLibrary(page, `/en/u/sample?view=${view}&group=status`)
       const box = firstGame(page, view)
       const key = await box.getAttribute('data-flip')
       const slug = key!.split(':')[0]!
       await box.click()
 
-      await expect(page).toHaveURL(new RegExp(`/en/game/${slug}\\?view=${view}&group=status$`))
+      await expect(page).toHaveURL(
+        new RegExp(`/en/u/sample/game/${slug}\\?view=${view}&group=status$`),
+      )
       await expect(panel(page)).toBeVisible()
       await expect(panel(page).getByRole('heading', { level: 2 })).not.toBeEmpty()
       // The library behind keeps its view and grouping while the game is open.
       await expect(page.locator(`.library[data-view="${view}"]`)).toBeAttached()
 
       await page.goBack()
-      await expect(page).toHaveURL(new RegExp(`/en/library\\?view=${view}&group=status$`))
+      await expect(page).toHaveURL(new RegExp(`/en/u/sample\\?view=${view}&group=status$`))
       await expect(panel(page)).toBeHidden()
       await expect(page.locator(`[data-flip="${key}"]`).first()).toBeFocused()
 
       // Forward opens it again.
       await page.goForward()
       await expect(panel(page)).toBeVisible()
-      await expect(page).toHaveURL(new RegExp(`/en/game/${slug}`))
+      await expect(page).toHaveURL(new RegExp(`/en/u/sample/game/${slug}`))
     })
   }
 
   test('its cover does not fly home, by the close button or by Back', async ({ page }) => {
     await countTransitions(page)
-    await openLibrary(page, '/en/library?view=wall')
+    await openLibrary(page, '/en/u/sample?view=wall')
     test.skip(!(await transitions(page)).supported, 'this browser has no view transitions')
     const box = firstGame(page, 'wall')
     const ways = [
@@ -198,7 +203,7 @@ test.describe('a game opened from the library', () => {
       await expect(page.locator('html')).not.toHaveAttribute('data-morph')
       await close()
       await expect(panel(page)).toBeHidden()
-      await expect(page).toHaveURL(/\/en\/library\?view=wall$/)
+      await expect(page).toHaveURL(/\/en\/u\/sample\?view=wall$/)
       // Out of its box, and not back: WebKit's page crashed as a cover flew home.
       expect((await transitions(page)).count).toBe(before + 1)
     }
@@ -210,39 +215,39 @@ test.describe('a game opened from the library', () => {
     await expect(panel(page)).toBeVisible()
     await panel(page).getByRole('button', { name: 'Close' }).click()
     await expect(panel(page)).toBeHidden()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
     // Opening another game afterwards is a new step, closed by one Back.
     await firstGame(page, 'shelf').click()
-    await expect(page).toHaveURL(/\/en\/game\//)
+    await expect(page).toHaveURL(/\/en\/u\/sample\/game\//)
     await page.goBack()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
   })
 
   test('the arrow keys step through the library’s order in one step of history', async ({
     page,
   }) => {
-    await openLibrary(page, '/en/library?group=none')
+    await openLibrary(page, '/en/u/sample?group=none')
     const keys = await page
       .locator('.game-box[data-flip]')
       .evaluateAll((boxes) => boxes.slice(0, 2).map((box) => (box as HTMLElement).dataset.flip!))
     // A box's key is its game, and the copy it stands for.
     const [first, second] = keys.map((key) => key.split(':')[0]!)
     await page.locator(`[data-flip="${keys[0]}"]`).click()
-    await expect(page).toHaveURL(new RegExp(`/en/game/${first}\\?group=none$`))
+    await expect(page).toHaveURL(new RegExp(`/en/u/sample/game/${first}\\?group=none$`))
     // The address changes as the game is asked for; the keys work once it is open.
     await expect(panel(page).getByRole('button', { name: 'Close' })).toBeFocused()
     await page.keyboard.press('ArrowRight')
-    await expect(page).toHaveURL(new RegExp(`/en/game/${second}\\?group=none$`))
+    await expect(page).toHaveURL(new RegExp(`/en/u/sample/game/${second}\\?group=none$`))
     await page.goBack()
     await expect(panel(page)).toBeHidden()
-    await expect(page).toHaveURL(/\/en\/library\?group=none$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\?group=none$/)
   })
 
   test('draws what the library knows at once, and the rest when it arrives', async ({ page }) => {
     await openLibrary(page)
     let release = () => {}
     const held = new Promise<void>((resolve) => (release = resolve))
-    await page.route('**/api/v1/library/games/**', async (route) => {
+    await page.route('**/api/v1/libraries/*/games/**', async (route) => {
       await held
       await route.continue()
     })
@@ -255,10 +260,10 @@ test.describe('a game opened from the library', () => {
   })
 
   test('a value in it opens the library filtered by it, and the game closes', async ({ page }) => {
-    await openLibrary(page, '/en/library?q=bloodborne')
+    await openLibrary(page, '/en/u/sample?q=bloodborne')
     await firstGame(page, 'shelf').click()
     await panel(page).getByRole('link', { name: 'Role-playing (RPG)' }).click()
-    await expect(page).toHaveURL(/\/en\/library\?q=genre%3Arpg$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\?q=genre%3Arpg$/)
     await expect(panel(page)).toBeHidden()
     await expect(page.getByRole('searchbox', { name: 'Search the library' })).toHaveValue(
       'genre:rpg',
@@ -268,14 +273,14 @@ test.describe('a game opened from the library', () => {
   test('its full page takes the place of the panel, and Back is the library again', async ({
     page,
   }) => {
-    await openLibrary(page, '/en/library?q=bloodborne')
+    await openLibrary(page, '/en/u/sample?q=bloodborne')
     await firstGame(page, 'shelf').click()
     await panel(page).getByRole('link', { name: 'Open the full page' }).click()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bloodborne')
     await expect(panel(page)).toBeHidden()
-    await expect(page).toHaveURL(/\/en\/game\/bloodborne\?q=bloodborne$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\/game\/bloodborne\?q=bloodborne$/)
     await page.goBack()
-    await expect(page).toHaveURL(/\/en\/library\?q=bloodborne$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\?q=bloodborne$/)
   })
 
   test('its cover grows out of its box, and simply appears under reduced motion', async ({
@@ -338,7 +343,7 @@ test.describe('a game opened from the library', () => {
       await page.locator('[data-box]').first().focus()
       await page.keyboard.press('Enter')
       await expect(panel(page)).toBeVisible()
-      await expect(page).toHaveURL(/\/en\/game\//)
+      await expect(page).toHaveURL(/\/en\/u\/sample\/game\//)
       await expect(panel(page).locator('[data-hero-cover]')).toHaveCount(0)
     })
   })
@@ -349,7 +354,7 @@ test.describe('a game opened from the library', () => {
     test('keeps its place while the editor arrives: what is below Mine never moves', async ({
       page,
     }) => {
-      await openLibrary(page, '/en/library?q=bloodborne')
+      await openLibrary(page, '/en/u/sample?q=bloodborne')
       // Where "About" stands in the game's page after every change to the page, from the
       // first: on each change, not each frame, since WebKit draws few frames while it opens.
       await page.evaluate(() => {
@@ -386,7 +391,7 @@ test.describe('a game opened from the library', () => {
 
   for (const theme of themes) {
     test(`passes axe while open, in ${theme}`, async ({ page }) => {
-      await openWithTheme(page, '/en/library', theme)
+      await openWithTheme(page, '/en/u/sample', theme)
       await page.locator('[data-enter]').first().waitFor({ state: 'detached', timeout: 10_000 })
       await firstGame(page, 'shelf').click()
       await expect(panel(page)).toBeVisible()

@@ -1,8 +1,9 @@
 # Working on Shelf
 
-Shelf is a personal game library: add games from IGDB, then browse them on a lit shelf with
-strong filters and sorting. One owner, public to read. This file is for anyone, human or AI,
-about to change the code.
+Shelf is a game library: add games from IGDB, then browse them on a lit shelf with strong
+filters and sorting. Anyone can sign up for a shelf of their own, at `/u/{handle}`, public or
+private ([ADR 004](docs/adr/004-one-library-per-account.md)). This file is for anyone, human or
+AI, about to change the code.
 
 **Picking up from another computer?** Read [the handoff note](docs/handoff.md) first: where
 the build stands, what is still unchecked, and the owner's rules that are not written
@@ -30,24 +31,25 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 
 ## Commands
 
-| Command                        | Does                                                                                                             |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                     | The app at http://localhost:3300                                                                                 |
-| `pnpm build` then `pnpm start` | A production build, same port                                                                                    |
-| `pnpm check`                   | Format, lint, types, translations, unit and component tests                                                      |
-| `pnpm verify`                  | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before merging.      |
-| `pnpm test`                    | Unit and component tests (Vitest)                                                                                |
-| `pnpm e2e`                     | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine.  |
-| `pnpm serve:test`              | The build as the browser tests use it: test doubles on, serving a migrated copy of the database (`.data/e2e.db`) |
-| `pnpm perf:js`                 | Each page's first-load JavaScript against its budget. Needs a running server.                                    |
-| `pnpm perf:lighthouse`         | Lighthouse, mobile profile. Needs a running server.                                                              |
-| `pnpm perf:3d`                 | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.      |
-| `pnpm storybook`               | The component workshop at http://localhost:6300                                                                  |
-| `pnpm i18n:check`              | Fails if the two languages disagree                                                                              |
-| `pnpm seed [set]`              | Migrates `.data/shelf.db` and fills it with a data set: `default` (230 games), `empty` or `stress` (1,280)       |
-| `pnpm db:generate`             | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`               |
-| `pnpm db:migrate`              | Applies migrations without touching the data                                                                     |
-| `pnpm fixtures:fetch`          | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff      |
+| Command                          | Does                                                                                                                  |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                       | The app at http://localhost:3300                                                                                      |
+| `pnpm build` then `pnpm start`   | A production build, same port                                                                                         |
+| `pnpm check`                     | Format, lint, types, translations, unit and component tests                                                           |
+| `pnpm verify`                    | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before merging.           |
+| `pnpm test`                      | Unit and component tests (Vitest)                                                                                     |
+| `pnpm e2e`                       | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine.       |
+| `pnpm serve:test`                | The build as the browser tests use it: test doubles on, serving a migrated copy of the database (`.data/e2e.db`)      |
+| `pnpm perf:js`                   | Each page's first-load JavaScript against its budget. Needs a running server.                                         |
+| `pnpm perf:lighthouse`           | Lighthouse, mobile profile. Needs a running server.                                                                   |
+| `pnpm perf:3d`                   | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.           |
+| `pnpm storybook`                 | The component workshop at http://localhost:6300                                                                       |
+| `pnpm i18n:check`                | Fails if the two languages disagree                                                                                   |
+| `pnpm seed [set]`                | Migrates `.data/shelf.db` and fills the sample shelf, `/u/sample`: `default` (230 games), `empty` or `stress` (1,280) |
+| `pnpm account:password <handle>` | A new random password for that account, printed once, every session ended. No email resets yet                        |
+| `pnpm db:generate`               | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`                    |
+| `pnpm db:migrate`                | Applies migrations without touching the data                                                                          |
+| `pnpm fixtures:fetch`            | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff           |
 
 Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**
 (Actions minutes are limited). **Run every test once, before merging a pull request**, not
@@ -58,7 +60,8 @@ request says what it ran. A build step is done when its pull request merges that
 start the workflow on GitHub unless the owner asks.
 
 A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app reads its
-library from `.data/shelf.db`, which is not committed.
+libraries from `.data/shelf.db`, which is not committed. A database seeded before accounts
+(ADR 004) has no sample account: seed it again.
 
 ## Where code goes
 
@@ -114,10 +117,14 @@ makes a page slower for everyone. A component that needs the address (`usePathna
 `useSearchParams`) goes inside `<Suspense>` with a plainer version of itself as the fallback.
 
 **Data.** ADR 001 is the model: one entry per game, a copy per platform and format, and an
-IGDB record belongs to one entry only. Every write goes through `src/server/library/store.ts`,
-in one transaction that ends by raising the library's version. The one exception is smart
-shelves: they are not in the library file, so a shelf write leaves the version alone and
-expires the `shelves` tag instead. Everything read from outside
+IGDB record belongs to one entry per library. ADR 004 adds the library: each account's id is
+its library's, every row that is someone's carries it (`user_id`), and the IGDB cache (`games`,
+`vocab`, `platforms`) is shared. Every store function takes the library id after the
+database, and every query on someone's rows is scoped by it: an id from another library
+answers "not found". Every write goes through `src/server/library/store.ts`, in one
+transaction that ends by raising that library's version. The one exception is smart shelves:
+they are not in the library file, so a shelf write leaves the version alone and expires the
+`shelves:{id}` tag instead. Everything read from outside
 (IGDB, settings, fixtures) passes a Zod schema first. Change the schema in
 `src/server/db/schema.ts`, run `pnpm db:generate`, and commit the SQL it writes. A migration
 must be safe for the code already deployed: add first, remove in a later release.
@@ -141,18 +148,18 @@ seed) goes through `parseLibraryQuery`. Nothing on the shelf fades in: a cover t
 counted as painted late.
 
 **A game's page.** `src/features/game-detail` draws it both as a page of its own
-(`/game/{slug}`, built on its first visit and kept: a page built ahead answers a browser's move
+(`/u/{handle}/game/{slug}`, built on its first visit and kept: a page built ahead answers a browser's move
 to it with a 404 once its tag expires) and as the panel a game opens in over the library. The panel is
 the library's own, not a route: opening a game adds its address to history with the
 library's query string kept (`game-address.ts`), and Back closes it. What the library file
 lacks (summary, screenshots, art, releases) comes from `buildGamePage`; the panel fetches it
 as the game's facts, by library version, and keeps the facts it has while a newer version's
-are fetched, so a change never takes them back to ghosts. While the owner's editor is on its
-way, `mine-skeleton.tsx` holds its place in the editor's exact shape: change
+are fetched, so a change never takes them back to ghosts. While the editor is on its way to
+the shelf's own account, `mine-skeleton.tsx` holds its place in the editor's exact shape: change
 `mine-editor.tsx` and change the skeleton with it (a test in `e2e/game.spec.ts` fails when
 they differ). The cover grows from the box through `morph.ts`,
 which names the two ends for that one view transition only. A private note never leaves the
-server except to the owner, in `GET /api/v1/entries/{id}`, which the editor reads.
+server except to its own account, in `GET /api/v1/entries/{id}`, which the editor reads.
 
 **Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
 and never throws (what it cannot read becomes a problem with a position), `write.ts` turns a
@@ -164,16 +171,26 @@ hand. A new filter key goes in `keys.ts` and gets a test in `parse.test.ts` and
 Zod schema before sending it, and the OpenAPI document is built from those schemas: change
 the schema and the document follows.
 
-**The owner.** There is one account, signed into with an email address and password: it is
-made from `OWNER_EMAIL` and `OWNER_PASSWORD` on the first sign-in (`src/server/auth/auth.ts`),
-its password follows the setting, and nobody can make another. Never print, log or test
-against a real value of either. The lock is `requireOwner()`, inside `forOwner()`, which
-compares the session's email address with `OWNER_EMAIL`, at the top of every service a route, an action
-or an MCP tool calls to change or privately read anything; `owner-only.test.ts` asks each one
-as a stranger. The browser learns it is the owner from `/api/v1/me` (`useOwner`), and only
-asks when the `shelf_owner_hint` cookie is there, so a visitor costs nothing. Edit controls
-appear only after that answer. An assistant on `/api/mcp/owner` has no cookie: the route
-checks its token and runs the tools inside `asOwner()`. Never call `asOwner()` anywhere else.
+**Accounts.** Anyone signs up (`/sign-up`) with a name, a handle, an email address and a
+password; nothing is emailed, so there is no confirming and no reset but
+`pnpm account:password` (`src/server/auth/auth.ts`, ADR 004). The handle is the shelf's
+address, `/u/{handle}`; its rules are `src/domain/accounts/handle.ts`. The lock is
+`requireAccount()`, inside `forAccount()`, at the top of every service a route, an action or an
+MCP tool calls to change or privately read anything: it hands the service the session's own
+account, and the service works on that library and no other. A write never names a library.
+`signed-out.test.ts` asks each service as nobody, and the store tests ask with another
+library's ids. The browser learns who is here from `/api/v1/me` (`useAccount`), and only asks
+when the `shelf_signed_in` cookie is there, so a visitor costs nothing. Edit controls and Add
+appear only on one's own shelf (`useIsMine`), after that answer. An assistant on
+`/api/mcp/owner` has no cookie: the route checks its token and runs the tools inside
+`asAccount()`. Never call `asAccount()` anywhere else. Test accounts in the browser tests are
+made through the real sign-up, with handles no other run can have.
+
+**A private shelf.** Its pages are frames with no data, built ahead like any other. For its
+own account the browser fills them from `/api/v1/me/…`, answered `private, no-store`; anyone
+else is told it is private. It never has a file under `/api/v1/libraries/{key}/…`, and is in no
+public API or MCP answer. Going private gives the library a new key, so the old files'
+addresses lead nowhere.
 
 **Changing the library from the page.** Adding one game and saving shelves are server actions
 (`updateTag`). Editing, adding from a list and Undo of a removal go through the API

@@ -32,7 +32,7 @@ await context.addInitScript(() => {
   window.__shelf3dProbe = {}
 })
 const page = await context.newPage()
-await page.goto(`${BASE_URL}/en/library`)
+await page.goto(`${BASE_URL}/en/u/sample`)
 await page.locator('[data-shelf-phase="3d"]').waitFor({ timeout: 60_000 })
 await page.waitForTimeout(1500)
 

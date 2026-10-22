@@ -29,27 +29,28 @@ import {
   setCopyFormat,
   setPrimary,
 } from '@/server/library/store'
-import { forOwner } from '@/server/services/for-owner'
+import { forAccount } from '@/server/services/for-account'
 
 /**
- * Editing a game in place (spec 7.3), for the owner only. Each change is one
- * write through the store, and answers with the library's new version, which
- * the page then fetches: the box on the shelf changes with it.
+ * Editing a game in place (spec 7.3), in one library: the signed-in
+ * account's own. Each change is one write through the store, and answers
+ * with the library's new version, which the page then fetches: the box on
+ * the shelf changes with it.
  */
 
-export const createEditing = (db: Db) => {
-  const changed = async (): Promise<Changed> => ({ version: await readVersion(db) })
+export const createEditing = (db: Db, libraryId: string) => {
+  const changed = async (): Promise<Changed> => ({ version: await readVersion(db, libraryId) })
 
   /** An entry by its id, or by any of its versions' addresses. */
   const entryIdFor = async (idOrSlug: string): Promise<string> => {
     if (/^[0-9a-f-]{36}$/.test(idOrSlug)) return idOrSlug
-    const entryId = await findEntryIdBySlug(db, idOrSlug)
+    const entryId = await findEntryIdBySlug(db, libraryId, idOrSlug)
     if (!entryId) throw new LibraryError('not-found', 'That game is not in the library')
     return entryId
   }
 
   const read = async (idOrSlug: string): Promise<OwnerGame> => {
-    const game = await readOwnerGame(db, await entryIdFor(idOrSlug))
+    const game = await readOwnerGame(db, libraryId, await entryIdFor(idOrSlug))
     if (!game) throw new LibraryError('not-found', 'That game is not in the library')
     return game
   }
@@ -65,7 +66,7 @@ export const createEditing = (db: Db) => {
   }
 
   const remove = async (entryId: string): Promise<Removed> => {
-    const undo = await removeEntryForUndo(db, entryId)
+    const undo = await removeEntryForUndo(db, libraryId, entryId)
     const [row] = await db
       .select({ title: removedEntries.title })
       .from(removedEntries)
@@ -74,7 +75,7 @@ export const createEditing = (db: Db) => {
   }
 
   const restore = async (undo: string): Promise<Restored> => {
-    const entryId = await restoreEntry(db, undo)
+    const entryId = await restoreEntry(db, libraryId, undo)
     const [primary] = await db
       .select({ slug: games.slug })
       .from(entryVersions)
@@ -92,21 +93,22 @@ export const createEditing = (db: Db) => {
       patch: { mine?: MinePatch; tags?: string[]; minutes?: number; mainVersion?: string },
     ) => {
       const entryId = await entryIdFor(idOrSlug)
-      if (patch.mainVersion) await setPrimary(db, entryId, patch.mainVersion)
+      if (patch.mainVersion) await setPrimary(db, libraryId, entryId, patch.mainVersion)
       const { mainVersion: _, ...rest } = patch
-      if (rest.mine || rest.tags || rest.minutes !== undefined) await patchEntry(db, entryId, rest)
+      if (rest.mine || rest.tags || rest.minutes !== undefined)
+        await patchEntry(db, libraryId, entryId, rest)
       return changed()
     },
     addCopy: async (idOrSlug: string, copy: z.infer<typeof newCopy>) => {
-      await addCopy(db, await entryIdFor(idOrSlug), copy)
+      await addCopy(db, libraryId, await entryIdFor(idOrSlug), copy)
       return changed()
     },
     setFormat: async (idOrSlug: string, copyId: string, format: Format) => {
-      await setCopyFormat(db, await copyOf(await entryIdFor(idOrSlug), copyId), format)
+      await setCopyFormat(db, libraryId, await copyOf(await entryIdFor(idOrSlug), copyId), format)
       return changed()
     },
     removeCopy: async (idOrSlug: string, copyId: string) => {
-      await removeCopy(db, await copyOf(await entryIdFor(idOrSlug), copyId))
+      await removeCopy(db, libraryId, await copyOf(await entryIdFor(idOrSlug), copyId))
       return changed()
     },
     remove: async (idOrSlug: string) => remove(await entryIdFor(idOrSlug)),
@@ -114,10 +116,9 @@ export const createEditing = (db: Db) => {
   }
 }
 
-/* For routes and actions: the owner only, on this server's database. */
+/* For routes and actions: the signed-in account, on its own library. */
 
-let shared: ReturnType<typeof createEditing> | undefined
-const editing = () => (shared ??= createEditing(database()))
+type Editing = ReturnType<typeof createEditing>
 
 const id = z.string().min(1).max(100)
 const slug = z.string().min(1).max(200)
@@ -126,22 +127,25 @@ const minutes = z.number().int().min(0).max(1_000_000)
 
 const refuse = (): Promise<Refusal> => Promise.resolve({ ok: false, reason: 'invalid' })
 
-/** Parses what the request sent, then runs it for the owner. */
+/** Parses what the request sent, then runs it on the signed-in account's library. */
 const checked =
   <Shape extends z.ZodTuple, T>(
     shape: Shape,
-    run: (...args: z.infer<Shape>) => Promise<T>,
+    run: (editing: Editing, ...args: z.infer<Shape>) => Promise<T>,
     writes = true,
   ) =>
   (...args: unknown[]) => {
     const parsed = shape.safeParse(args)
     if (!parsed.success) return refuse()
-    return forOwner(() => run(...(parsed.data as z.infer<Shape>)), writes)
+    return forAccount(
+      (account) => run(createEditing(database(), account.id), ...(parsed.data as z.infer<Shape>)),
+      writes,
+    )
   }
 
-export const ownerGame = checked(z.tuple([slug]), (s) => editing().read(s), false)
+export const myGame = checked(z.tuple([slug]), (editing, s) => editing.read(s), false)
 
-export const patchForOwner = checked(
+export const patchMine = checked(
   z.tuple([
     slug,
     z.object({
@@ -151,21 +155,22 @@ export const patchForOwner = checked(
       mainVersion: id.optional(),
     }),
   ]),
-  (s, patch) => editing().patch(s, patch),
+  (editing, s, patch) => editing.patch(s, patch),
 )
 
-export const addCopyForOwner = checked(z.tuple([slug, newCopy]), (s, copy) =>
-  editing().addCopy(s, copy),
+export const addMyCopy = checked(z.tuple([slug, newCopy]), (editing, s, copy) =>
+  editing.addCopy(s, copy),
 )
 
-export const setFormatForOwner = checked(z.tuple([slug, id, z.enum(formats)]), (s, copy, format) =>
-  editing().setFormat(s, copy, format),
+export const setMyCopyFormat = checked(
+  z.tuple([slug, id, z.enum(formats)]),
+  (editing, s, copy, format) => editing.setFormat(s, copy, format),
 )
 
-export const removeCopyForOwner = checked(z.tuple([slug, id]), (s, copy) =>
-  editing().removeCopy(s, copy),
+export const removeMyCopy = checked(z.tuple([slug, id]), (editing, s, copy) =>
+  editing.removeCopy(s, copy),
 )
 
-export const removeForOwner = checked(z.tuple([slug]), (s) => editing().remove(s))
+export const removeMine = checked(z.tuple([slug]), (editing, s) => editing.remove(s))
 
-export const restoreForOwner = checked(z.tuple([id]), (undo) => editing().restore(undo))
+export const restoreMine = checked(z.tuple([id]), (editing, undo) => editing.restore(undo))

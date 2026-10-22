@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GameFacts } from '@/domain/library/game-page'
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
+import { ShelfProvider } from '@/features/library/shelf'
+import type { ShelfInfo } from '@/features/library/shelf-address'
 import { messages, renderWithIntl } from '@/test/render'
 
 import { GameDetail } from './game-detail'
@@ -93,10 +95,25 @@ const facts = (extra: Partial<GameFacts> = {}): GameFacts => ({
 
 const tags = [{ name: 'replay someday', slug: 'replay-someday' }]
 
+/** The public shelf the panel's game is on, and where its files are. */
+const SHELF: ShelfInfo = {
+  handle: 'sample',
+  name: 'Sample',
+  public: true,
+  files: { kind: 'public', key: 'k3y' },
+}
+
 describe('GameDetail', () => {
   it('shows the game, what is recorded about it, and what IGDB says', () => {
     renderWithIntl(
-      <GameDetail layout="page" game={game()} tags={tags} platforms={platforms} facts={facts()} />,
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game()}
+        tags={tags}
+        platforms={platforms}
+        facts={facts()}
+      />,
     )
     expect(screen.getByRole('heading', { level: 1, name: 'Bloodborne' })).toBeInTheDocument()
     const mine = screen.getByRole('heading', { name: 'Mine' }).closest('section')!
@@ -122,19 +139,34 @@ describe('GameDetail', () => {
 
   it('makes every value under Details a link to the library filtered by it', () => {
     renderWithIntl(
-      <GameDetail layout="page" game={game()} tags={tags} platforms={platforms} facts={facts()} />,
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game()}
+        tags={tags}
+        platforms={platforms}
+        facts={facts()}
+      />,
     )
     const link = (name: string) => screen.getByRole('link', { name }).getAttribute('href')
-    expect(link('Role-playing (RPG)')).toBe('/en/library?q=genre%3Arpg')
-    expect(link('FromSoftware')).toBe('/en/library?q=developer%3Afromsoftware')
-    expect(link('PlayStation 4')).toBe('/en/library?q=platform%3Aps4')
-    expect(link('replay someday')).toBe('/en/library?q=tag%3Areplay-someday')
-    expect(link('PlayStation 4, Physical')).toBe('/en/library?q=owned%3Aps4+format%3Aphysical')
+    // Into the library of the shelf the game is on (ADR 004).
+    expect(link('Role-playing (RPG)')).toBe('/en/u/sample?q=genre%3Arpg')
+    expect(link('FromSoftware')).toBe('/en/u/sample?q=developer%3Afromsoftware')
+    expect(link('PlayStation 4')).toBe('/en/u/sample?q=platform%3Aps4')
+    expect(link('replay someday')).toBe('/en/u/sample?q=tag%3Areplay-someday')
+    expect(link('PlayStation 4, Physical')).toBe('/en/u/sample?q=owned%3Aps4+format%3Aphysical')
   })
 
   it('marks IGDB’s English as English on the Portuguese site', () => {
     renderWithIntl(
-      <GameDetail layout="page" game={game()} tags={tags} platforms={platforms} facts={facts()} />,
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game()}
+        tags={tags}
+        platforms={platforms}
+        facts={facts()}
+      />,
       'pt-BR',
     )
     expect(screen.getByText('A Hunter wakes in Yharnam.').closest('[lang]')).toHaveAttribute(
@@ -145,7 +177,9 @@ describe('GameDetail', () => {
   })
 
   it('waits with ghosts for what is on its way, and draws what it has at once', () => {
-    renderWithIntl(<GameDetail layout="panel" game={game()} tags={tags} platforms={platforms} />)
+    renderWithIntl(
+      <GameDetail handle="sample" layout="panel" game={game()} tags={tags} platforms={platforms} />,
+    )
     expect(screen.getByRole('heading', { level: 2, name: 'Bloodborne' })).toBeInTheDocument()
     expect(screen.getByText('PlayStation 4, Physical')).toBeInTheDocument()
     expect(screen.queryByText('A Hunter wakes in Yharnam.')).not.toBeInTheDocument()
@@ -155,6 +189,7 @@ describe('GameDetail', () => {
   it('leaves out what is not there: no notes for a visitor, no story, no screenshots', () => {
     renderWithIntl(
       <GameDetail
+        handle="sample"
         layout="page"
         game={game({ hasNotes: false, rating: undefined, completedOn: undefined })}
         tags={[]}
@@ -171,6 +206,7 @@ describe('GameDetail', () => {
   it('in 3D leaves the cover to the box pulled from the wall', () => {
     renderWithIntl(
       <GameDetail
+        handle="sample"
         layout="panel"
         game={game()}
         tags={tags}
@@ -190,7 +226,14 @@ describe('Screenshots', () => {
       // Inside the panel, whose arrows step through games.
       // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- stands in for the panel
       <div onKeyDown={onNext}>
-        <GameDetail layout="page" game={game()} tags={tags} platforms={platforms} facts={facts()} />
+        <GameDetail
+          handle="sample"
+          layout="page"
+          game={game()}
+          tags={tags}
+          platforms={platforms}
+          facts={facts()}
+        />
       </div>,
     )
     await userEvent.click(
@@ -226,15 +269,17 @@ describe('GamePanel', () => {
     handlers: { onPrevious?: () => void; onNext?: () => void } = {},
   ) =>
     renderWithIntl(
-      <GamePanel
-        item={entry}
-        version={7}
-        platforms={platforms}
-        tags={tags}
-        onClose={vi.fn()}
-        onReturnFocus={() => false}
-        {...handlers}
-      />,
+      <ShelfProvider shelf={SHELF}>
+        <GamePanel
+          item={entry}
+          version={7}
+          platforms={platforms}
+          tags={tags}
+          onClose={vi.fn()}
+          onReturnFocus={() => false}
+          {...handlers}
+        />
+      </ShelfProvider>,
     )
 
   it("is named by the game, and fetches the rest of its page for the library's version", async () => {
@@ -242,21 +287,23 @@ describe('GamePanel', () => {
     const panel = screen.getByRole('dialog', { name: 'Bloodborne' })
     expect(panel).toHaveTextContent('PlayStation 4, Physical')
     await waitFor(() => expect(panel).toHaveTextContent('A Hunter wakes in Yharnam.'))
-    expect(answer).toHaveBeenCalledWith('/api/v1/library/games/7/bloodborne')
+    expect(answer).toHaveBeenCalledWith('/api/v1/libraries/k3y/games/7/bloodborne')
   })
 
   it('keeps what it has drawn while a new version of the library fetches it again', async () => {
     const entry = item({ slug: 'nioh' })
     const panel = (version: number) => (
       <NextIntlClientProvider locale="en" messages={messages.en} timeZone="UTC">
-        <GamePanel
-          item={entry}
-          version={version}
-          platforms={platforms}
-          tags={tags}
-          onClose={vi.fn()}
-          onReturnFocus={() => false}
-        />
+        <ShelfProvider shelf={SHELF}>
+          <GamePanel
+            item={entry}
+            version={version}
+            platforms={platforms}
+            tags={tags}
+            onClose={vi.fn()}
+            onReturnFocus={() => false}
+          />
+        </ShelfProvider>
       </NextIntlClientProvider>
     )
     const { rerender } = render(panel(7))
@@ -271,7 +318,7 @@ describe('GamePanel', () => {
         }),
     )
     rerender(panel(8))
-    expect(answer).toHaveBeenCalledWith('/api/v1/library/games/8/nioh')
+    expect(answer).toHaveBeenCalledWith('/api/v1/libraries/k3y/games/8/nioh')
     const dialog = screen.getByRole('dialog')
     expect(dialog).toHaveTextContent('A Hunter wakes in Yharnam.')
     expect(dialog.querySelector('.ghost')).toBeNull()
@@ -285,7 +332,7 @@ describe('GamePanel', () => {
     open(item({ slug: 'bloodborne' }))
     expect(screen.getByRole('link', { name: 'Open the full page' })).toHaveAttribute(
       'href',
-      '/en/game/bloodborne?q=genre%3Arpg&view=wall',
+      '/en/u/sample/game/bloodborne?q=genre%3Arpg&view=wall',
     )
     address.query = ''
   })
@@ -296,7 +343,7 @@ describe('GamePanel', () => {
     const alert = await screen.findByRole('alert')
     expect(within(alert).getByRole('link', { name: 'Open its own page' })).toHaveAttribute(
       'href',
-      '/en/game/demons-souls',
+      '/en/u/sample/game/demons-souls',
     )
   })
 
@@ -337,23 +384,24 @@ describe('the address of an open game', () => {
   })
 
   it('reads a game’s slug from its address, and nothing from any other', () => {
-    expect(gameSlugIn('/en/game/bloodborne')).toBe('bloodborne')
-    expect(gameSlugIn('/pt-BR/game/caf%C3%A9/')).toBe('café')
-    expect(gameSlugIn('/en/library')).toBeUndefined()
-    expect(gameSlugIn('/en/game/a/b')).toBeUndefined()
-    expect(gameSlugIn('/en/game/%E0%A4%A')).toBeUndefined()
+    expect(gameSlugIn('/en/u/sample/game/bloodborne')).toBe('bloodborne')
+    expect(gameSlugIn('/pt-BR/u/ana/game/caf%C3%A9/')).toBe('café')
+    expect(gameSlugIn('/en/u/sample')).toBeUndefined()
+    expect(gameSlugIn('/en/game/bloodborne')).toBeUndefined()
+    expect(gameSlugIn('/en/u/sample/game/a/b')).toBeUndefined()
+    expect(gameSlugIn('/en/u/sample/game/%E0%A4%A')).toBeUndefined()
   })
 
   it('adds the game to history with the library’s query string, and steps back once to close', () => {
-    window.history.replaceState(null, '', '/pt-BR/library?view=wall&q=genre%3Arpg')
+    window.history.replaceState(null, '', '/pt-BR/u/ana?view=wall&q=genre%3Arpg')
     const before = window.history.length
     showGame('bloodborne')
     expect(window.location.pathname + window.location.search).toBe(
-      '/pt-BR/game/bloodborne?view=wall&q=genre%3Arpg',
+      '/pt-BR/u/ana/game/bloodborne?view=wall&q=genre%3Arpg',
     )
     expect(window.history.length).toBe(before + 1)
     replaceGame('sekiro')
-    expect(window.location.pathname).toBe('/pt-BR/game/sekiro')
+    expect(window.location.pathname).toBe('/pt-BR/u/ana/game/sekiro')
     expect(window.history.length).toBe(before + 1)
 
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined)
@@ -362,10 +410,10 @@ describe('the address of an open game', () => {
     expect(back).toHaveBeenCalledOnce()
     // A game opened before that Back arrives waits for it, then opens after the library.
     showGame('hades')
-    expect(window.location.pathname).toBe('/pt-BR/game/sekiro')
-    window.history.replaceState(null, '', '/pt-BR/library')
+    expect(window.location.pathname).toBe('/pt-BR/u/ana/game/sekiro')
+    window.history.replaceState(null, '', '/pt-BR/u/ana')
     historyMoved()
-    expect(window.location.pathname).toBe('/pt-BR/game/hades')
+    expect(window.location.pathname).toBe('/pt-BR/u/ana/game/hades')
     back.mockRestore()
   })
 })

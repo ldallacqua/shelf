@@ -7,6 +7,8 @@ import { useEffect, useId, useRef, useState, useTransition, type ReactNode } fro
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
 import type { Changed, EditPatch, OwnedCopy, OwnerGame } from '@/domain/library/editing'
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
+import { useShelf } from '@/features/library/shelf'
+import { libraryHref } from '@/features/library/shelf-address'
 import { DayField, RatingField, TagsField, today } from '@/features/owner/fields'
 import { announceChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
@@ -55,6 +57,7 @@ export function MineEditor({
   const library = useTranslations('Library')
   const errors = useTranslations('Add')
   const router = useRouter()
+  const { handle } = useShelf()
   const id = useId()
 
   const [owned, setOwned] = useState(() => records.get(slug))
@@ -171,7 +174,7 @@ export function MineEditor({
     })
     announceChange({ version: result.value.version })
     if (onRemoved) onRemoved()
-    else router.push('/library')
+    else router.push(libraryHref(handle))
   }
 
   return (

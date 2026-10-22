@@ -28,14 +28,43 @@ test.describe('language of the first visit', () => {
   })
 
   test('an address without a language gets one', async ({ page }) => {
-    await page.goto('/library')
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await page.goto('/u/sample')
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
+  })
+})
+
+test.describe('the addresses from before accounts (ADR 004)', () => {
+  test.skip(
+    ({ browserName, size }) => browserName !== 'chromium' || size !== 'desktop',
+    'the server answers the same to every browser',
+  )
+
+  // The library they named was the first account's: `lucas`, in production.
+  for (const [from, to] of [
+    ['/en/library', '/en/u/lucas'],
+    ['/en/library?q=genre%3Arpg&view=wall', '/en/u/lucas?q=genre%3Arpg&view=wall'],
+    ['/pt-BR/game/bloodborne', '/pt-BR/u/lucas/game/bloodborne'],
+    ['/en/shelves/short-ones', '/en/u/lucas/shelves/short-ones'],
+    ['/en/trophies', '/en/u/lucas/trophies'],
+  ] as const) {
+    test(`${from} moves for good to ${to}`, async ({ request }) => {
+      const response = await request.get(from, { maxRedirects: 0 })
+      expect(response.status()).toBe(308)
+      expect(response.headers()['location']).toBe(to)
+    })
+  }
+
+  test('one without a language gets one on the way', async ({ request }) => {
+    const first = await request.get('/library', { maxRedirects: 0 })
+    const second = await request.get(first.headers()['location']!, { maxRedirects: 0 })
+    expect(second.status()).toBe(308)
+    expect(new URL(second.headers()['location']!, 'http://x').pathname).toBe('/en/u/lucas')
   })
 })
 
 test.describe('header and footer', () => {
   test('the main links go to their pages and mark where you are @smoke', async ({ page, size }) => {
-    await page.goto('/en')
+    await page.goto('/en/u/sample/game/bloodborne')
 
     if (size === 'phone') {
       await page.getByRole('button', { name: 'Menu' }).click()
@@ -46,9 +75,9 @@ test.describe('header and footer', () => {
         .getByRole('link', { name: 'Library' })
         .click()
     }
-    await expect(page).toHaveURL(/\/en\/library$/)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Library')
-    await expect(page).toHaveTitle('Library · Shelf')
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText("Sample's shelf")
+    await expect(page).toHaveTitle("Sample's shelf · Shelf")
 
     if (size === 'phone') {
       await page.getByRole('button', { name: 'Menu' }).click()
@@ -65,11 +94,23 @@ test.describe('header and footer', () => {
       )
       await nav.getByRole('link', { name: 'Trophies' }).click()
     }
-    await expect(page).toHaveURL(/\/en\/trophies$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\/trophies$/)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trophies')
 
     await page.getByRole('link', { name: 'Shelf, home' }).click()
     await expect(page).toHaveURL(/\/en$/)
+  })
+
+  test('a visitor is offered a shelf of their own, and a way in', async ({ page, size }) => {
+    await page.goto('/en/u/sample')
+    if (size === 'phone') {
+      await page.getByRole('button', { name: 'Menu' }).click()
+      await page.getByRole('menuitem', { name: 'Create your shelf' }).click()
+    } else {
+      await page.getByRole('banner').getByRole('link', { name: 'Create your shelf' }).click()
+    }
+    await expect(page).toHaveURL(/\/en\/sign-up$/)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Create your shelf')
   })
 
   test('the footer credits IGDB on every page', async ({ page }) => {
@@ -98,7 +139,7 @@ test.describe('empty states', () => {
   // The library's own empty state needs an empty library, which these tests
   // do not have: it is covered by a component test instead.
   test('the trophy wall says nothing is finished yet', async ({ page }) => {
-    await page.goto('/en/trophies')
+    await page.goto('/en/u/sample/trophies')
     await expect(page.getByText('Nothing finished yet.')).toBeVisible()
   })
 })
@@ -115,14 +156,26 @@ test.describe('a page that does not exist', () => {
       'Esta página não está na estante.',
     )
 
-    await page.getByRole('link', { name: 'Ir para a biblioteca' }).click()
-    await expect(page).toHaveURL(/\/pt-BR\/library$/)
+    await page.getByRole('link', { name: 'Ir para o início' }).click()
+    await expect(page).toHaveURL(/\/pt-BR$/)
   })
 
   test('an unknown language is treated as a page under English', async ({ page }) => {
-    const response = await page.goto('/xx/library')
+    const response = await page.goto('/xx/u/sample')
     expect(response?.status()).toBe(404)
-    await expect(page).toHaveURL(/\/en\/xx\/library$/)
+    await expect(page).toHaveURL(/\/en\/xx\/u\/sample$/)
+  })
+
+  test('a shelf no account has says so, and is not indexed', async ({ page }) => {
+    await page.goto('/en/u/no-such-shelf')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('No shelf here')
+    await expect(
+      page.getByRole('main').getByText('There is no shelf at this address.'),
+    ).toBeVisible()
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+    await expect(
+      page.getByRole('main').getByRole('link', { name: 'Create your own shelf' }),
+    ).toHaveAttribute('href', '/en/sign-up')
   })
 
   test('the 404 page is complete before any JavaScript has run', async ({ browser }) => {
@@ -147,15 +200,15 @@ test.describe('a page that does not exist', () => {
   })
 
   test('a real page answers 200', async ({ request }) => {
-    for (const address of ['/en', '/en/library', '/pt-BR/trophies']) {
+    for (const address of ['/en', '/en/u/sample', '/pt-BR/u/sample/trophies', '/en/sign-up']) {
       const response = await request.get(address)
       expect(response.status(), address).toBe(200)
     }
   })
 
   test('a trailing slash leads to the same page', async ({ page }) => {
-    await page.goto('/en/library/')
-    await expect(page).toHaveURL(/\/en\/library$/)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Library')
+    await page.goto('/en/u/sample/')
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText("Sample's shelf")
   })
 })

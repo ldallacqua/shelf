@@ -15,7 +15,7 @@ import {
   newMockState,
 } from '@/server/mocks/handlers'
 import { loadFixtures } from '@/server/seed/fixtures'
-import { createTestDatabase } from '@/test/database'
+import { createTestAccount, createTestDatabase, sampleLibraryId } from '@/test/database'
 import { network } from '@/test/network'
 
 import { createAdding } from './adding'
@@ -49,12 +49,17 @@ const SKYRIM = 472
 const SKYRIM_SWITCH = 37034
 
 let db: Db
-let adding: ReturnType<typeof createAdding>
+/** The sample library, where the tests add. */
+let sample: string
+let forLibrary: ReturnType<typeof createAdding>
+let adding: ReturnType<ReturnType<typeof createAdding>>
 
 beforeEach(async () => {
   network.use(...handlers)
   db = await createTestDatabase('default')
-  adding = createAdding({ db, igdb: api, readArt: async () => ART })
+  sample = await sampleLibraryId(db)
+  forLibrary = createAdding({ db, igdb: api, readArt: async () => ART })
+  adding = forLibrary(sample)
 })
 
 describe('searching IGDB to add a game', () => {
@@ -88,7 +93,7 @@ describe('searching IGDB to add a game', () => {
 
 describe('adding a game', () => {
   it('makes an entry of its own, with its copies, and raises the version', async () => {
-    const before = await readVersion(db)
+    const before = await readVersion(db, sample)
     const added = await adding.add({
       igdbId: HALF_LIFE,
       status: 'backlog',
@@ -97,7 +102,7 @@ describe('adding a game', () => {
       tags: ['Classics'],
     })
     expect(added).toMatchObject({ slug: 'half-life', title: 'Half-Life', version: before + 1 })
-    const library = await readLibrary(db)
+    const library = await readLibrary(db, sample)
     const game = library.games.find((each) => each.slug === 'half-life')
     expect(game).toMatchObject({
       status: 'backlog',
@@ -110,23 +115,23 @@ describe('adding a game', () => {
   })
 
   it('undoes an add: the game and everything added with it', async () => {
-    const games0 = (await readLibrary(db)).games.length
+    const games0 = (await readLibrary(db, sample)).games.length
     const added = await adding.add({ igdbId: HALF_LIFE, status: 'wishlist', copies: [] })
-    expect((await readLibrary(db)).games).toHaveLength(games0 + 1)
+    expect((await readLibrary(db, sample)).games).toHaveLength(games0 + 1)
     await adding.undo(added.undo)
-    expect((await readLibrary(db)).games).toHaveLength(games0)
+    expect((await readLibrary(db, sample)).games).toHaveLength(games0)
     expect(await db.select().from(games).where(eq(games.igdbId, HALF_LIFE))).toEqual([])
   })
 
   it('a game already on the shelf gets only the copies it lacked, never a second entry', async () => {
-    const games0 = (await readLibrary(db)).games.length
+    const games0 = (await readLibrary(db, sample)).games.length
     const added = await adding.add({
       igdbId: SKYRIM,
       status: 'backlog',
       copies: [{ platformId: PC, format: 'physical' }],
     })
     expect(added.slug).toBe('the-elder-scrolls-v-skyrim')
-    expect((await readLibrary(db)).games).toHaveLength(games0)
+    expect((await readLibrary(db, sample)).games).toHaveLength(games0)
     expect(added.undo.newEntry).toBe(false)
   })
 
@@ -144,21 +149,21 @@ describe('adding a game', () => {
       ask: false,
     })
 
-    const games0 = (await readLibrary(db)).games.length
+    const games0 = (await readLibrary(db, sample)).games.length
     const added = await adding.add({
       igdbId: SKYRIM_SWITCH,
       status: 'backlog',
       copies: [{ platformId: SWITCH, format: 'digital' }],
     })
     expect(added.slug).toBe('the-elder-scrolls-v-skyrim')
-    expect((await readLibrary(db)).games).toHaveLength(games0)
-    const skyrim = (await readLibrary(db)).games.find((game) => game.slug === added.slug)
+    expect((await readLibrary(db, sample)).games).toHaveLength(games0)
+    const skyrim = (await readLibrary(db, sample)).games.find((game) => game.slug === added.slug)
     expect(
       skyrim?.copies.some((copy) => copy.platform === SWITCH && copy.format === 'digital'),
     ).toBe(true)
 
     await adding.undo(added.undo)
-    const after = (await readLibrary(db)).games.find((game) => game.slug === added.slug)
+    const after = (await readLibrary(db, sample)).games.find((game) => game.slug === added.slug)
     expect(
       after?.copies.some((copy) => copy.platform === SWITCH && copy.format === 'digital'),
     ).toBe(false)
@@ -171,9 +176,9 @@ describe('adding a game', () => {
     const [port] = await db.select().from(games).where(eq(games.igdbId, SKYRIM_SWITCH))
     await db.delete(copies).where(eq(copies.gameId, port!.id))
     await db.delete(entryVersions).where(eq(entryVersions.gameId, port!.id))
-    const games0 = (await readLibrary(db)).games.length
+    const games0 = (await readLibrary(db, sample)).games.length
     await adding.add({ igdbId: SKYRIM_SWITCH, status: 'backlog', copies: [], grouping: 'separate' })
-    expect((await readLibrary(db)).games).toHaveLength(games0 + 1)
+    expect((await readLibrary(db, sample)).games).toHaveLength(games0 + 1)
   })
 })
 
@@ -182,7 +187,7 @@ describe('matching a pasted list (spec 4.2)', () => {
   const NEW = ['Crysis', 'Bastion', 'Stray', 'Left 4 Dead', 'Little Nightmares']
 
   it('matches 50 known titles, every line matched or marked, ten to a request', async () => {
-    const shelf = (await readLibrary(db)).games.slice(0, 45).map((game) => game.title)
+    const shelf = (await readLibrary(db, sample)).games.slice(0, 45).map((game) => game.title)
     const lines = parseList([...shelf, ...NEW].join('\n'))
     expect(lines).toHaveLength(50)
     const before = igdbState.requests.length
@@ -224,7 +229,7 @@ describe('adding many games', () => {
     const [crysis, bastion] = (await adding.match(parseList('Crysis\nBastion'))).lines.map(
       (line) => line.candidates[0]!,
     )
-    const games0 = (await readLibrary(db)).games.length
+    const games0 = (await readLibrary(db, sample)).games.length
     const singleStart = igdbState.requests.length
     await adding.add({ igdbId: HALF_LIFE, status: 'backlog', copies: [] })
     const single = asked(singleStart)
@@ -247,8 +252,8 @@ describe('adding many games', () => {
       'bastion',
       'the-elder-scrolls-v-skyrim',
     ])
-    expect(version).toBe(await readVersion(db))
-    const library = await readLibrary(db)
+    expect(version).toBe(await readVersion(db, sample))
+    const library = await readLibrary(db, sample)
     expect(library.games).toHaveLength(games0 + 3)
     expect(library.games.find((game) => game.slug === 'bastion')?.status).toBe('completed')
   })
@@ -265,7 +270,7 @@ describe('adding many games', () => {
   })
 
   it('undoes a list: every game and everything added with it', async () => {
-    const before = await readLibrary(db)
+    const before = await readLibrary(db, sample)
     const { results } = await adding.addMany([
       { igdbId: HALF_LIFE, status: 'backlog', copies: [{ platformId: PC, format: 'digital' }] },
       { igdbId: SKYRIM, status: 'backlog', copies: [{ platformId: SWITCH, format: 'digital' }] },
@@ -275,11 +280,66 @@ describe('adding many games', () => {
     // One taken away by hand since is passed over.
     await adding.undo(undo[0]!)
     await adding.undoMany(undo)
-    const after = await readLibrary(db)
+    const after = await readLibrary(db, sample)
     expect(after.games.map((game) => game.slug)).toEqual(before.games.map((game) => game.slug))
     const skyrim = after.games.find((game) => game.slug === 'the-elder-scrolls-v-skyrim')
     expect(skyrim?.copies).toEqual(
       before.games.find((game) => game.slug === 'the-elder-scrolls-v-skyrim')?.copies,
+    )
+  })
+})
+
+describe('adding to a library of one’s own (ADR 004)', () => {
+  let mine: ReturnType<ReturnType<typeof createAdding>>
+  let me: string
+
+  beforeEach(async () => {
+    me = await createTestAccount(db, 'me')
+    mine = forLibrary(me)
+  })
+
+  it('marks only what is on my shelf, not on another’s', async () => {
+    const answer = await mine.search('Skyrim')
+    expect(answer.results.find((result) => result.igdbId === SKYRIM)?.onShelf).toBeUndefined()
+  })
+
+  it('adds a game another library has, sharing its IGDB record, and touches nothing of theirs', async () => {
+    // What is theirs about each game. The record itself is shared, and an add refreshes it.
+    const theirsOf = async () =>
+      (await readLibrary(db, sample)).games.map(({ slug, status, rating, copies, tags }) => ({
+        slug,
+        status,
+        rating,
+        copies,
+        tags,
+      }))
+    const theirs = await theirsOf()
+    const theirVersion = await readVersion(db, sample)
+    const added = await mine.add({
+      igdbId: SKYRIM,
+      status: 'playing',
+      copies: [{ platformId: PC, format: 'physical' }],
+    })
+    // Two entries now point at the one record.
+    expect(await db.select().from(games).where(eq(games.igdbId, SKYRIM))).toHaveLength(1)
+    expect((await readLibrary(db, me)).games).toEqual([
+      expect.objectContaining({ slug: added.slug, status: 'playing' }),
+    ])
+    expect(await theirsOf()).toEqual(theirs)
+    expect(await readVersion(db, sample)).toBe(theirVersion)
+
+    await mine.undo(added.undo)
+    expect((await readLibrary(db, me)).games).toEqual([])
+    // Still theirs, so the record stays.
+    expect(await db.select().from(games).where(eq(games.igdbId, SKYRIM))).toHaveLength(1)
+    expect(await theirsOf()).toEqual(theirs)
+  })
+
+  it('cannot undo another library’s add', async () => {
+    const added = await adding.add({ igdbId: HALF_LIFE, status: 'backlog', copies: [] })
+    await expect(mine.undo(added.undo)).rejects.toMatchObject({ code: 'not-found' })
+    expect((await readLibrary(db, sample)).games.some((game) => game.slug === 'half-life')).toBe(
+      true,
     )
   })
 })

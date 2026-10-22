@@ -27,7 +27,7 @@ const probe = (page: Page) =>
   )
 
 /** Opens the library in 3D, or skips the test where this browser cannot draw it. */
-async function open3d(page: Page, address = '/en/library') {
+async function open3d(page: Page, address = '/en/u/sample') {
   // The scene reports its numbers after each frame once a probe is set.
   await page.addInitScript(() => {
     window.__shelf3dProbe = {}
@@ -70,7 +70,7 @@ test.describe('which the shelf starts in (spec 3.6)', () => {
     await shelfSettled(page)
     const other = size === 'desktop' ? '2D' : '3D'
     await pair(page).getByRole('radio', { name: other }).click()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
 
     await openLibrary(page)
     const settled = await shelfSettled(page)
@@ -139,7 +139,7 @@ test.describe('the shelf in 3D', () => {
   })
 
   test('shows the games a filter and a sort pick, as 2D does (spec 5 and 6)', async ({ page }) => {
-    await open3d(page, '/en/library?q=genre%3Arpg&sort=-rating')
+    await open3d(page, '/en/u/sample?q=genre%3Arpg&sort=-rating')
     await expect(page.getByRole('group', { name: 'Library totals' })).toContainText('86 games')
     const shelves3d = await shelfNames(page)
     const games3d = await firstGames(page, 'PlayStation 5', 8)
@@ -159,7 +159,7 @@ test.describe('the shelf in 3D', () => {
   })
 
   test('switching keeps the address and the game in focus, both ways', async ({ page }) => {
-    await open3d(page, '/en/library?group=status')
+    await open3d(page, '/en/u/sample?group=status')
     const backlog = page.getByRole('list', { name: 'Games on the Backlog shelf' })
     await backlog.getByRole('button').nth(4).focus()
     const name = await focusedName(page)
@@ -168,12 +168,12 @@ test.describe('the shelf in 3D', () => {
     await page.keyboard.press('d')
     await expect(page.locator('.game-box').first()).toBeVisible()
     await expect.poll(() => focusedName(page)).toBe(name)
-    await expect(page).toHaveURL(/\/en\/library\?group=status$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\?group=status$/)
 
     await page.keyboard.press('d')
     await expect(page.locator('[data-shelf-phase="3d"]')).toBeVisible()
     await expect.poll(() => focusedName(page)).toBe(name)
-    await expect(page).toHaveURL(/\/en\/library\?group=status$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\?group=status$/)
   })
 
   test('arrows move between games, Page Down changes shelf, Enter opens, Escape puts it back', async ({
