@@ -66,7 +66,7 @@ libraries from `.data/shelf.db`, which is not committed. A database seeded befor
 ## Where code goes
 
 ```text
-src/domain/     Rules and types. Imports nothing but Zod, through `@/domain/zod`.
+src/domain/     Rules and types. Imports nothing but Zod.
 src/server/     Runs only on the server. Imports domain.
 src/ui/         The design system: tokens, fonts, buttons, menus, the shelf, the game case.
                 Imports nothing of ours and takes its text as props.

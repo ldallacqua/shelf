@@ -23,25 +23,6 @@ const only3d = {
     'three.js may only be imported inside src/features/shelf-3d, so it stays out of every other bundle.',
 }
 
-const zodThroughDomain = {
-  // The package itself, not `@/domain/zod`.
-  regex: '^zod(/.*)?$',
-  message:
-    "Import z from '@/domain/zod': it turns off Zod's compiled checks, which the site's content security policy refuses.",
-}
-
-const domainOnly = [
-  {
-    group: ['react', 'react-dom', 'react/*', 'next', 'next/*', 'next-intl', 'next-intl/*'],
-    message: 'domain holds rules only: no React, no Next.js.',
-  },
-  {
-    group: ['@/server/*', '@/features/*', '@/ui/*', '@/app/*', '@/i18n/*'],
-    message: 'domain may not import from any other layer.',
-  },
-  only3d,
-]
-
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -85,9 +66,20 @@ export default defineConfig([
   },
 
   // Import boundaries.
-  boundary(['src/domain/**'], [...domainOnly, zodThroughDomain]),
-  // The one place Zod comes in, configured for the browser.
-  boundary(['src/domain/zod.ts'], domainOnly),
+  boundary(
+    ['src/domain/**'],
+    [
+      {
+        group: ['react', 'react-dom', 'react/*', 'next', 'next/*', 'next-intl', 'next-intl/*'],
+        message: 'domain holds rules only: no React, no Next.js.',
+      },
+      {
+        group: ['@/server/*', '@/features/*', '@/ui/*', '@/app/*', '@/i18n/*'],
+        message: 'domain may not import from any other layer.',
+      },
+      only3d,
+    ],
+  ),
   boundary(
     ['src/server/**'],
     [
@@ -123,7 +115,6 @@ export default defineConfig([
       },
       { group: ['@/app/*'], message: 'features may not import from app.' },
       only3d,
-      zodThroughDomain,
     ],
   ),
   boundary(
@@ -135,7 +126,6 @@ export default defineConfig([
           'features may not import server code. Call a server action, or receive data as props.',
       },
       { group: ['@/app/*'], message: 'features may not import from app.' },
-      zodThroughDomain,
     ],
   ),
   boundary(['src/app/**', 'src/i18n/**', 'src/proxy.ts'], [only3d]),

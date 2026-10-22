@@ -1,4 +1,4 @@
-import { z } from '@/domain/zod'
+import { z } from 'zod'
 
 /**
  * The shape of what IGDB sends, for the fields Shelf asks for. Every response

@@ -50,4 +50,24 @@ test.describe('security headers', () => {
     await page.waitForLoadState('networkidle')
     expect(refused).toEqual([])
   })
+
+  test.describe('signed in', () => {
+    test.use({ signedIn: true })
+
+    test('nor is anything an account does: adding, and editing its own games', async ({ page }) => {
+      const refused = await watchRefusals(page)
+      await page.goto('/en/u/sample')
+      await page.getByRole('button', { name: 'Add', exact: true }).click()
+      const sheet = page.getByRole('dialog', { name: 'Add a game' })
+      await sheet.getByRole('combobox', { name: 'Search IGDB' }).fill('Half-Life')
+      await expect(sheet.getByRole('option').first()).toBeVisible()
+      await sheet.getByRole('tab', { name: 'Paste a list' }).click()
+      await page.keyboard.press('Escape')
+
+      await page.goto('/en/u/sample/game/bloodborne')
+      await expect(page.locator('section[aria-busy]').first()).toBeVisible()
+      await page.waitForLoadState('networkidle')
+      expect(refused).toEqual([])
+    })
+  })
 })

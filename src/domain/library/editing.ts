@@ -1,4 +1,4 @@
-import { z } from '@/domain/zod'
+import { z } from 'zod'
 
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
 import {
