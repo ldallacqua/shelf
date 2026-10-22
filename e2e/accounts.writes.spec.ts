@@ -52,9 +52,14 @@ async function addThroughApi(request: APIRequestContext, title: string): Promise
   return ((await added.json()) as { slug: string }).slug
 }
 
-/** A browser of someone else, signed in as no one. */
+/**
+ * A browser of someone else, signed in as no one. Its shelf is in 2D, as
+ * every test's is unless it asks for 3D: in 3D a box has a second button.
+ */
 async function visitorPage(browser: Browser): Promise<Page> {
-  return (await browser.newContext()).newPage()
+  const context = await browser.newContext()
+  await context.addInitScript(() => window.localStorage.setItem('shelf:dimension', '2d'))
+  return context.newPage()
 }
 
 const accountPage = async (page: Page) => {
