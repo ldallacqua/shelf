@@ -10,13 +10,19 @@ step 3. This note is what the next session needs and cannot get from the code. R
   22 Oct 2026): `/en/u/lucas` and the old addresses' redirects checked on production. The
   owner went without a Turso backup: the library there held one game. The first account was
   named by its email address, which its shelf's title showed to everyone; settling the
-  accounts now gives such an account its handle as its name.
+  accounts now gives such an account its handle as its name
+  ([#18](https://github.com/ldallacqua/shelf/pull/18)). Its merge started no production
+  build, so it was deployed through Vercel's API, as below; production's shelf now reads
+  "lucas's shelf".
 - **The landing page is a product page** (spec 15), built from an example shelf of 61 sample
   games (`pnpm landing:demo` writes `src/features/landing/demo-library.json`; run it again
   after the fixtures change). The design foundations moved to `/foundations`, unlisted. The
   site is open to search engines from this step: `robots.txt`, `sitemap.xml` (public shelves
   and their games only) and `llms.txt` are new, and the public option at sign-up says search
   engines can list a public shelf. ⏸ The owner reviews it before step 9.
+- **The landing grows with the product** (the owner's rule, 22 Oct 2026, in `AGENTS.md`):
+  every later step that adds something a visitor would choose Shelf for adds its part there.
+  Step 9's trophy wall turns part 6 into a glimpse of the wall.
 - **The trophy wall is not built yet** (step 9): `/u/{handle}/trophies` is the empty wall for
   every handle, so it is not indexed, and the landing page does not mention it.
 - **Anyone can sign up for a shelf of their own** ([ADR 004](adr/004-one-library-per-account.md),

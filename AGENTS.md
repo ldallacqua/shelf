@@ -206,6 +206,8 @@ there, in the same change, shown working on the example shelf, with its question
 if it raises one. A change to something a part shows (a filter key, a view, how copies or
 privacy work) changes that part too, and a feature that is taken away leaves the page. The
 example shelf is `pnpm landing:demo`; a part that needs a game it lacks adds the game there.
+What a link to Shelf shows is a picture of the hero (`public/share/`): after changing the
+hero, run `pnpm landing:share` against `pnpm serve:test` and look at both pictures.
 
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used

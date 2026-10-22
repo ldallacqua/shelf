@@ -109,6 +109,22 @@ test.describe('the landing page', () => {
     expect(await guide.text()).toContain('## The filter language')
   })
 
+  test('a link to it shows its first screen, in its language', async ({ page, request }) => {
+    for (const locale of ['en', 'pt-BR']) {
+      await page.goto(`/${locale}`)
+      const picture = page.locator('meta[property="og:image"]')
+      await expect(picture).toHaveAttribute('content', new RegExp(`/share/${locale}\\.jpg$`))
+      await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+        'content',
+        locale === 'en' ? /^“Every game you own/ : /^“Todos os seus jogos/,
+      )
+      await expect(page.locator('meta[name="twitter:image"]')).toHaveCount(1)
+      const answer = await request.get(`/share/${locale}.jpg`)
+      expect(answer.status()).toBe(200)
+      expect(answer.headers()['content-type']).toBe('image/jpeg')
+    }
+  })
+
   test('the design foundations are still there, unlisted', async ({ page }) => {
     const response = await page.goto('/en/foundations')
     expect(response?.status()).toBe(200)

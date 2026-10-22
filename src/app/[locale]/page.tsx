@@ -4,14 +4,29 @@ import { getTranslations } from 'next-intl/server'
 import { Landing } from '@/features/landing/landing'
 import { siteUrl } from '@/server/site-url'
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<'/[locale]'>): Promise<Metadata> {
+  const { locale } = await params
   const t = await getTranslations('Landing')
+  const meta = await getTranslations('Meta')
+  // The page's own first screen, in its language (`pnpm landing:share`).
+  const picture = {
+    url: `/share/${locale}.jpg`,
+    width: 1200,
+    height: 630,
+    type: 'image/jpeg',
+    alt: t('shareAlt'),
+  }
   return {
     title: { absolute: t('metaTitle') },
     description: t('metaDescription'),
-    // The picture is opengraph-image.png, beside this page.
-    openGraph: { type: 'website', title: t('metaTitle'), description: t('metaDescription') },
-    twitter: { card: 'summary_large_image' },
+    openGraph: {
+      type: 'website',
+      siteName: meta('siteName'),
+      title: t('metaTitle'),
+      description: t('metaDescription'),
+      images: [picture],
+    },
+    twitter: { card: 'summary_large_image', images: [picture] },
   }
 }
 
