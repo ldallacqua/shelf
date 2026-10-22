@@ -21,6 +21,8 @@ export const routing = defineRouting({
     '/sign-up': '/sign-up',
     '/account': '/account',
     '/consent': '/consent',
+    // The design foundations, for reference: not linked, not indexed.
+    '/foundations': '/foundations',
   },
 })
 

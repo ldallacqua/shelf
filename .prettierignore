@@ -7,6 +7,8 @@ test-results/
 coverage/
 pnpm-lock.yaml
 next-env.d.ts
+# written by pnpm landing:demo
+src/features/landing/demo-library.json
 
 # hand-formatted documents: their wide tables read better unpadded
 docs/
