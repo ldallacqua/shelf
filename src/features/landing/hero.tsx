@@ -11,7 +11,7 @@ import { DemoCase, type DemoGame } from './demo-case'
 
 /** How many bays the hero's shelf has, and how many games stand on each. */
 const BAYS = 3
-const PER_BAY = 9
+const PER_BAY = 8
 
 /** A case on the hero's shelf is about this wide: 135 mm at the largest `--mm`. */
 const HERO_SIZES = '(min-width: 64rem) 106px, (min-width: 40rem) 98px, 82px'
@@ -64,8 +64,9 @@ export function Hero({ games }: { games: readonly DemoGame[] }) {
                     key={game.slug}
                     game={game}
                     sizes={HERO_SIZES}
-                    // The middle of the first two bays is what a phone shows first.
-                    eager={index < 2 && place >= 2 && place <= 6}
+                    sharp
+                    // The middle of the first bay is what a phone shows first.
+                    eager={index === 0 && place >= 2 && place <= 5}
                   />
                 ))}
               </Ledge>

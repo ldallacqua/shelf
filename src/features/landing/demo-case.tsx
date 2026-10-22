@@ -33,16 +33,20 @@ export type DemoGame = {
   rating?: number
 }
 
-/** Washes the case in the cover's colors until the image arrives. */
-const wash = ([accent, second, base]: Palette): string =>
-  `radial-gradient(90% 70% at 25% 18%, ${accent}, transparent 68%), radial-gradient(85% 75% at 85% 92%, ${second}, transparent 62%), ${base}`
+/** What a case needs of its game: no more, since a scene's games are sent to the browser. */
+export type CaseGame = Pick<DemoGame, 'title' | 'cover' | 'colors' | 'led' | 'shape' | 'plastic'>
+
+/** A game in "Ask it anything": its case, and its slug, which the filters find it by. */
+export type AskGame = CaseGame & { slug: string }
 
 type DemoCaseProps = {
-  game: DemoGame
+  game: CaseGame
   /** `sizes` for the cover: how wide the case is drawn. */
   sizes: string
   /** One of the first covers on the page: fetched at once. */
   eager?: boolean
+  /** Offered at the next size up too, for a sharp screen: the first screen's cases. */
+  sharp?: boolean
   className?: string
   style?: CSSProperties
 }
@@ -50,9 +54,11 @@ type DemoCaseProps = {
 /**
  * A game case with its cover, drawn without any script: the landing page's
  * shelves are pictures of the product, so a case here is not a control.
- * Its title is the image's alternative text.
+ * Its title is the image's alternative text. A case is never drawn wider
+ * than about 110 pixels, so the cover comes in its two small sizes only,
+ * over its darkest color until it arrives.
  */
-export function DemoCase({ game, sizes, eager, className, style }: DemoCaseProps) {
+export function DemoCase({ game, sizes, eager, sharp, className, style }: DemoCaseProps) {
   return (
     <GameCase
       shape={game.shape}
@@ -61,15 +67,14 @@ export function DemoCase({ game, sizes, eager, className, style }: DemoCaseProps
       className={cn('demo-case', className)}
       style={style}
     >
-      <span className="cover" style={{ backgroundImage: wash(game.colors) }}>
+      <span className="cover" style={{ backgroundColor: game.colors[2] }}>
         {/* Covers come straight from IGDB's servers, which already resize and cache them. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           alt={game.title}
-          {...coverSources(game.cover, 'cover_big')}
+          {...coverSources(game.cover, sharp ? 'cover_big' : 'cover_small_2x')}
           sizes={sizes}
           loading={eager ? 'eager' : 'lazy'}
-          fetchPriority={eager ? 'high' : undefined}
           decoding="async"
           draggable={false}
         />

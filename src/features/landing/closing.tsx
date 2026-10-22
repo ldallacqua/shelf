@@ -1,5 +1,6 @@
 import { PlusIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { Suspense } from 'react'
 
 import { Eyebrow, Page } from '@/features/shell/page'
 import { Ledge, ShelfLabel } from '@/ui/ledge'
@@ -15,8 +16,9 @@ const QUESTIONS = ['free', 'data', 'who', 'export'] as const
 export function Closing() {
   const t = useTranslations('Landing')
   return (
-    <>
-      <section aria-labelledby="closing-title" className="py-16 sm:py-24">
+    // As each part above: hydrated on its own, and drawn only once near.
+    <Suspense>
+      <section aria-labelledby="closing-title" className="landing-part py-16 sm:py-24">
         <Page className="reveal mx-auto max-w-3xl text-center">
           <Ledge
             itemsClassName="h-32 sm:h-44"
@@ -34,7 +36,7 @@ export function Closing() {
         </Page>
       </section>
 
-      <section aria-labelledby="faq-title" className="pb-20 sm:pb-28">
+      <section aria-labelledby="faq-title" className="landing-part pb-20 sm:pb-28">
         <Page className="faq reveal mx-auto max-w-3xl">
           <Eyebrow>{t('faq.eyebrow')}</Eyebrow>
           <h2 id="faq-title" className="mt-3 title text-3xl sm:text-4xl">
@@ -53,6 +55,6 @@ export function Closing() {
           </div>
         </Page>
       </section>
-    </>
+    </Suspense>
   )
 }

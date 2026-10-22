@@ -4,7 +4,7 @@ import { StarIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 
-import { coverSources } from '@/domain/igdb/images'
+import { coverSources, imageUrl } from '@/domain/igdb/images'
 import { useFlip } from '@/features/library/use-flip'
 import { useReducedMotion } from '@/features/library/use-preference'
 import { Ledge } from '@/ui/ledge'
@@ -87,11 +87,11 @@ export function ViewsDemo({ games }: { games: readonly DemoGame[] }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   alt={game.title}
-                  {...coverSources(game.cover, 'cover_big')}
+                  {...coverSources(game.cover, 'cover_small_2x')}
                   sizes="(min-width: 40rem) 96px, 80px"
                   loading="lazy"
                   decoding="async"
-                  className="shadow-md aspect-3/4 w-full rounded-[3px] object-cover"
+                  className="aspect-3/4 w-full rounded-[3px] object-cover shadow-panel"
                   style={{ backgroundColor: game.colors[2] }}
                 />
               </li>
@@ -124,8 +124,7 @@ export function ViewsDemo({ games }: { games: readonly DemoGame[] }) {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           alt=""
-                          {...coverSources(game.cover, 'cover_small_2x')}
-                          sizes="24px"
+                          src={imageUrl(game.cover, 'cover_small')}
                           loading="lazy"
                           decoding="async"
                           className="h-8 w-6 rounded-[2px] object-cover"

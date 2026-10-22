@@ -8,7 +8,7 @@ import { useFlip } from '@/features/library/use-flip'
 import { useReducedMotion } from '@/features/library/use-preference'
 import { cn } from '@/ui/cn'
 
-import { DemoCase, type DemoGame } from './demo-case'
+import { DemoCase, type AskGame } from './demo-case'
 import { ASK_STEPS, ASK_TRIES, type AskStep } from './demo-choices'
 import { useArrived } from './reveals'
 
@@ -17,8 +17,12 @@ const STEP_MS = 2200
 
 const SIZES = '(min-width: 40rem) 72px, 60px'
 
+/** The grid shows three rows, nine boxes wide at most: no more are drawn. */
+const MOST_SHOWN = 27
+
 type AskDemoProps = {
-  games: readonly DemoGame[]
+  /** The example shelf, as its boxes need it: what a case draws, and the game's slug. */
+  games: readonly AskGame[]
   /** What each filter finds on its own, by slug. */
   matches: Record<AskStep, readonly string[]>
 }
@@ -98,7 +102,8 @@ export function AskDemo({ games, matches }: AskDemoProps) {
   }
 
   const byslug = new Map(games.map((game) => [game.slug, game]))
-  const boxes = shown.flatMap((slug) => byslug.get(slug) ?? [])
+  const matching = shown.flatMap((slug) => byslug.get(slug) ?? [])
+  const boxes = matching.slice(0, MOST_SHOWN)
 
   return (
     <div ref={scope} className="rounded-panel border border-line bg-surface/70 p-4 sm:p-6">
@@ -160,9 +165,9 @@ export function AskDemo({ games, matches }: AskDemoProps) {
         <span className="tabular-nums">
           {found?.slugs.length === 0
             ? t('none')
-            : boxes.length === games.length
+            : matching.length === games.length
               ? t('all', { total: games.length })
-              : t('count', { count: boxes.length, total: games.length })}
+              : t('count', { count: matching.length, total: games.length })}
         </span>
       </p>
 
@@ -193,7 +198,7 @@ export function AskDemo({ games, matches }: AskDemoProps) {
 
 /** The games every switched-on filter found, in the shelf's order. */
 function keepAll(
-  games: readonly DemoGame[],
+  games: readonly AskGame[],
   active: readonly AskStep[],
   matches: Record<AskStep, readonly string[]>,
 ): string[] {

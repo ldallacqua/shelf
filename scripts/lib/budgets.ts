@@ -19,7 +19,12 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // page now follows the shelf in the address (its links and search read the
   // handle in the browser) and ends in a visitor's ways in, or the account's
   // menu: 3 KB on every page below too.
-  { path: '/en', name: 'Home', kilobytes: 208 },
+  // Step 8: measured 209.1 KB, from 206.2. The landing page replaces the
+  // foundations. Its own script is the parts that play: the filters switching
+  // on (the filter language and the example shelf are fetched only when one
+  // is typed), the views turning, the figures counting, and the marker for
+  // browsers that cannot tie an animation to scrolling.
+  { path: '/en', name: 'Home', kilobytes: 211 },
   // Step 3: measured 228.9 KB. The shell (191 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.

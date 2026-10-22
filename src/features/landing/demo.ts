@@ -5,7 +5,7 @@ import type { LibraryCopy, LibraryGame } from '@/domain/library/library'
 import { libraryStats, type LibraryStats } from '@/domain/library/stats'
 
 import { demoLibrary, matchesOf } from './ask-engine'
-import type { DemoGame } from './demo-case'
+import type { AskGame, DemoGame } from './demo-case'
 import { ASK_STEPS, EVERY_COPY, type AskStep } from './demo-choices'
 
 /*
@@ -44,6 +44,21 @@ const toDemo = (game: LibraryGame, copy: LibraryCopy | undefined = game.copies[0
 
 /** Every game on the example shelf, once each, in the order the script chose them. */
 export const demoGames = (): DemoGame[] => demoLibrary.games.map((game) => toDemo(game))
+
+/**
+ * The example shelf for "Ask it anything", which is sent to the browser whole:
+ * each game as its box draws it, and no more.
+ */
+export const askGames = (): AskGame[] =>
+  demoGames().map(({ slug, title, cover, colors, led, shape, plastic }) => ({
+    slug,
+    title,
+    cover,
+    colors,
+    led,
+    shape,
+    plastic,
+  }))
 
 /**
  * What each of "Ask it anything"'s filters finds on its own. Filters side by

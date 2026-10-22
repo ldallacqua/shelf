@@ -58,7 +58,7 @@ export function FinishedWall({
               sizes="(min-width: 40rem) 96px, 80px"
               loading="lazy"
               decoding="async"
-              className="shadow-md aspect-3/4 w-full rounded-[3px] object-cover"
+              className="aspect-3/4 w-full rounded-[3px] object-cover shadow-panel"
               style={{ backgroundColor: game.colors[2] }}
             />
           </li>

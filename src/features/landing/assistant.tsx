@@ -2,7 +2,7 @@ import { SparklesIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { CSSProperties } from 'react'
 
-import { coverSources } from '@/domain/igdb/images'
+import { imageUrl } from '@/domain/igdb/images'
 
 import type { DemoGame } from './demo-case'
 import { Scene } from './scene'
@@ -44,8 +44,7 @@ export function Assistant({ picks }: { picks: readonly DemoGame[] }) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   alt=""
-                  {...coverSources(game.cover, 'cover_small_2x')}
-                  sizes="28px"
+                  src={imageUrl(game.cover, 'cover_small')}
                   loading="lazy"
                   decoding="async"
                   className="h-10 w-7 flex-none rounded-[2px] object-cover"

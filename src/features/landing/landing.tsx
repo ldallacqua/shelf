@@ -4,7 +4,7 @@ import { AddDemo } from './add-demo'
 import { AskDemo } from './ask-demo'
 import { Assistant } from './assistant'
 import { Closing } from './closing'
-import { askMatches, demoFinished, demoGames, everyCopy } from './demo'
+import { askGames, askMatches, demoFinished, demoGames, everyCopy } from './demo'
 import type { DemoGame } from './demo-case'
 import { EveryCopy } from './every-copy'
 import { FinishedWall } from './finished-wall'
@@ -17,7 +17,7 @@ import { ViewsDemo } from './views-demo'
 import './landing.css'
 
 /** The hero's games: every seventeenth of the example shelf, round, so its case shapes mix. */
-const HERO_GAMES = 27
+const HERO_GAMES = 24
 
 /** What is typed in "Add in seconds", and the list pasted there, by title and by slug. */
 const TYPED = 'zelda'
@@ -62,7 +62,7 @@ export function Landing() {
       <Reveals root="landing" />
       <Hero games={hero.filter((game) => game !== undefined)} />
       <Section id="how" eyebrow={t('ask.eyebrow')} title={t('ask.title')} body={t('ask.body')}>
-        <AskDemo games={games} matches={matches} />
+        <AskDemo games={askGames()} matches={matches} />
       </Section>
       <Section
         id="copies"

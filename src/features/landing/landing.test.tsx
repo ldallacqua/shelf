@@ -84,7 +84,7 @@ describe('the landing page', () => {
 
   it('names the example shelf, and every cover on it, for people who cannot see them', () => {
     renderWithIntl(<Landing />)
-    expect(screen.getByRole('img', { name: /^An example shelf of 27 games/ })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /^An example shelf of 24 games/ })).toBeInTheDocument()
     for (const image of document.querySelectorAll('img')) {
       // A cover beside its title, in a list, is decoration; a cover alone says which game.
       expect(image.getAttribute('alt')).not.toBeNull()

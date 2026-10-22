@@ -33,6 +33,16 @@
     position: relative;
   }
 
+  /*
+   * A part below the first screen is not styled, laid out or painted until
+   * it comes near: on a slow phone that was most of the page's first seconds.
+   * The size is a guess until it has been drawn once, then remembered.
+   */
+  .landing-part {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 52rem;
+  }
+
   .hero-bay .bay-items {
     justify-content: center;
     gap: calc(var(--mm) * 9);

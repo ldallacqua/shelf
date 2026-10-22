@@ -2,7 +2,7 @@ import { CheckIcon, ClipboardPasteIcon, SearchIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { CSSProperties } from 'react'
 
-import { coverSources } from '@/domain/igdb/images'
+import { imageUrl } from '@/domain/igdb/images'
 
 import type { DemoGame } from './demo-case'
 import { Scene } from './scene'
@@ -16,11 +16,11 @@ function Thumb({ game }: { game: DemoGame }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       alt=""
-      {...coverSources(game.cover, 'cover_small_2x')}
-      sizes="36px"
+      // 36 pixels wide: the smallest file is sharp enough on any screen.
+      src={imageUrl(game.cover, 'cover_small')}
       loading="lazy"
       decoding="async"
-      className="shadow-sm h-12 w-9 flex-none rounded-[3px] object-cover"
+      className="h-12 w-9 flex-none rounded-[3px] object-cover"
       style={{ backgroundColor: game.colors[2] }}
     />
   )
@@ -60,7 +60,7 @@ export function AddDemo({
             ))}
           </span>
         </div>
-        <ul className="mt-3 grid gap-1">
+        <ul className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-1">
           {found.map((game, index) => (
             <li
               key={game.slug}
@@ -99,7 +99,7 @@ export function AddDemo({
             {pasted.map((each) => each.line).join('\n')}
           </pre>
         </div>
-        <ul className="mt-3 grid gap-1">
+        <ul className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-1">
           {pasted.map(({ line, game }, index) => (
             <li
               key={line}
