@@ -8,7 +8,7 @@ import { IMAGE_HOST } from '@/domain/igdb/images'
 import { ShelfMissing } from '@/features/filters/shelf-missing'
 import { LibrarySkeleton } from '@/features/library/library-skeleton'
 import { NoShelf } from '@/features/library/no-shelf'
-import { PrivateLibrary } from '@/features/library/private-library'
+import { PrivateLibraryLater } from '@/features/library/private-later'
 import { ShelfProvider } from '@/features/library/shelf'
 import { Page } from '@/features/shell/page'
 import { findLibrary, getLibrary } from '@/server/services/library'
@@ -49,7 +49,7 @@ async function ShelfFrame({
   if (!library.public) {
     return (
       <ShelfProvider shelf={info}>
-        <PrivateLibrary
+        <PrivateLibraryLater
           smart={slug}
           actions={{ save: saveShelfAction, remove: removeShelfAction }}
         />

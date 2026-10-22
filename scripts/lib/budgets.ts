@@ -15,7 +15,11 @@ export const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3300'
 export const javascriptBudgets: { path: string; name: string; kilobytes: number }[] = [
   // Step 3: measured 198.0 KB. Shell, plus the foundations demos. (Messages
   // compiled at build time took 9 KB of message parser off every page.)
-  { path: '/en', name: 'Home', kilobytes: 205 },
+  // Accounts (ADR 004): measured 206.2 KB, from 203.2. The header on every
+  // page now follows the shelf in the address (its links and search read the
+  // handle in the browser) and ends in a visitor's ways in, or the account's
+  // menu: 3 KB on every page below too.
+  { path: '/en', name: 'Home', kilobytes: 208 },
   // Step 3: measured 228.9 KB. The shell (191 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
@@ -36,12 +40,22 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // file on every page, 1.8 KB, none of it the owner's code. The rest is the
   // shared text field and switch. The owner chose this over writing that
   // placing code a second time (21 Oct 2026).
-  { path: '/en/library', name: 'Library', kilobytes: 265 },
+  // Accounts (ADR 004): measured 269.9 KB, from 264.1, on the sample's shelf.
+  // The header's 3 KB (above), and which shelf the page is (its context and
+  // the addresses built from it). A private shelf's own code is fetched only
+  // when one is drawn (`private-later.tsx`): imported directly it was 2 KB
+  // more here, and 11.5 on a game's page.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 272 },
   // Step 3: measured 191.3 KB. Shell only.
-  { path: '/en/trophies', name: 'Trophies', kilobytes: 198 },
+  // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
+  // pages' error boundary, which now covers this page too (1.9 KB).
+  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 203 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
   // screenshots and their viewer, and the way back to the library.
-  { path: '/en/game/bloodborne', name: 'Game', kilobytes: 208 },
+  // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf
+  // pages' error boundary (1.9 KB), which shelf the page is, and the loader
+  // that fetches a private shelf's game only when one is drawn.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 217 },
 ]
 
 /**
@@ -49,7 +63,7 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
  * of the library page. A target set in advance (architecture, section 14),
  * not a ratchet: three.js alone is about 130 KB of it.
  */
-export const threeDBudget = { path: '/en/library', kilobytes: 300 }
+export const threeDBudget = { path: '/en/u/sample', kilobytes: 300 }
 
 /**
  * Lighthouse, mobile profile, with its throttling really applied (a slow 4G
@@ -59,7 +73,7 @@ export const threeDBudget = { path: '/en/library', kilobytes: 300 }
  * JavaScript, which it does not.
  */
 export const lighthouseBudgets = {
-  paths: ['/en', '/en/library', '/en/library?view=wall', '/en/game/bloodborne'],
+  paths: ['/en', '/en/u/sample', '/en/u/sample?view=wall', '/en/u/sample/game/bloodborne'],
   performance: 90,
   accessibility: 100,
   largestContentfulPaintMs: 2500,

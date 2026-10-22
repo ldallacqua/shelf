@@ -7,7 +7,7 @@ import { removeShelfAction, saveShelfAction } from '@/app/actions/shelves'
 import { IMAGE_HOST } from '@/domain/igdb/images'
 import { LibrarySkeleton } from '@/features/library/library-skeleton'
 import { NoShelf } from '@/features/library/no-shelf'
-import { PrivateLibrary } from '@/features/library/private-library'
+import { PrivateLibraryLater } from '@/features/library/private-later'
 import { ShelfProvider } from '@/features/library/shelf'
 import { Page } from '@/features/shell/page'
 import { findLibrary, getLibrary } from '@/server/services/library'
@@ -57,7 +57,7 @@ async function ShelfLibrary({
           />
         </Suspense>
       ) : (
-        <PrivateLibrary actions={{ save: saveShelfAction, remove: removeShelfAction }} />
+        <PrivateLibraryLater actions={{ save: saveShelfAction, remove: removeShelfAction }} />
       )}
     </ShelfProvider>
   )

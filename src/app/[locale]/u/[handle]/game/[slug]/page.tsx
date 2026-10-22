@@ -9,7 +9,7 @@ import { BackToLibrary, LibraryLink } from '@/features/game-detail/back-to-libra
 import { GameDetail } from '@/features/game-detail/game-detail'
 import { GameMissing } from '@/features/game-detail/game-missing'
 import { GameSkeleton } from '@/features/game-detail/game-skeleton'
-import { PrivateGame } from '@/features/game-detail/private-game'
+import { PrivateGameLater } from '@/features/game-detail/private-game-later'
 import { NoShelf } from '@/features/library/no-shelf'
 import { ShelfProvider } from '@/features/library/shelf'
 import { findLibrary, getGamePage } from '@/server/services/library'
@@ -63,7 +63,7 @@ async function GameFrame({
   if (!library.public) {
     return (
       <ShelfProvider shelf={shelf}>
-        <PrivateGame slug={slug} />
+        <PrivateGameLater slug={slug} />
       </ShelfProvider>
     )
   }
