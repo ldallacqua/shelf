@@ -928,6 +928,9 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
 - **Under reduced motion** nothing plays by itself. Each part is there as it ends.
 - **Nothing moves the page.** A part that rearranges or turns keeps the same room throughout.
 - The page is built ahead whole. Nothing on it asks the server anything, and no 3D code loads.
+- **It follows the product.** Every later step that adds something a visitor would choose
+  Shelf for adds its part here, and a step that changes what a part shows changes the part.
+  Step 9's trophy wall, for one, turns part 6 into a glimpse of the wall itself.
 
 **Done when**
 

@@ -200,6 +200,13 @@ replaces the shelf. After a change, call `announceChange()` with the new version
 library fetches its new file and moves to the game. Every write to the library answers with
 its new version for that.
 
+**The landing page.** `/` is where people learn what Shelf does (`src/features/landing`, spec
+15), so it grows with the product: a feature a visitor would choose Shelf for gets its part
+there, in the same change, shown working on the example shelf, with its question in the FAQ
+if it raises one. A change to something a part shows (a filter key, a view, how copies or
+privacy work) changes that part too, and a feature that is taken away leaves the page. The
+example shelf is `pnpm landing:demo`; a part that needs a game it lacks adds the game there.
+
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used
 straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
@@ -212,6 +219,7 @@ straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
 - No error in the browser console.
 - Both themes and both languages were looked at, at phone and desktop width.
 - New behavior has a test. A bug fix has a test that failed before it.
+- The landing page shows the feature, and still tells the truth about the ones it changed.
 - Reference screenshots are updated if the look changed on purpose
   ([how](docs/testing.md#reference-screenshots)).
 - One commit per build step, with a message that says what changed and why.
