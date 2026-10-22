@@ -1,10 +1,10 @@
 import 'server-only'
 
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { toGameData, type GameData, type LineageStep } from '@/domain/igdb/game'
-import type { IgdbNamed, IgdbSearchHit, VocabKind } from '@/domain/igdb/schema'
+import type { LineageStep } from '@/domain/igdb/game'
+import type { IgdbSearchHit } from '@/domain/igdb/schema'
 import { foldSearchHits, type SearchResult } from '@/domain/igdb/search'
 import {
   addInput,
@@ -37,15 +37,21 @@ import {
 } from '@/domain/library/bulk'
 import { proposeGrouping } from '@/domain/library/family'
 import type { Format } from '@/domain/library/values'
-import { toPlatform, type Platform } from '@/domain/platforms/platforms'
+import type { Platform } from '@/domain/platforms/platforms'
 import type { Account } from '@/server/auth/account'
 import { database, type Db } from '@/server/db/client'
-import { copies, entries, entryVersions, games, vocab } from '@/server/db/schema'
+import { copies, entries, entryVersions, games } from '@/server/db/schema'
 import { igdb } from '@/server/igdb'
 import type { IgdbApi } from '@/server/igdb/api'
 import { readCoverArt } from '@/server/igdb/cover-art'
 import { forAccount, refusalFor } from '@/server/services/for-account'
 import { spend } from '@/server/services/fair-use'
+import {
+  createRecords,
+  type FetchedRecords,
+  type Records,
+  type RecordsDeps,
+} from '@/server/services/igdb-records'
 import {
   addFromIgdb,
   LibraryError,
@@ -53,7 +59,6 @@ import {
   readVersion,
   removeEntry,
   undoJoin,
-  type CoverArt,
   type Placement,
 } from '@/server/library/store'
 
@@ -65,39 +70,6 @@ import {
  * allowance either, and an account spends it only so fast (`fair-use.ts`).
  */
 
-const NAMED_KINDS = [
-  ['genre', 'genres'],
-  ['theme', 'themes'],
-  ['mode', 'modes'],
-  ['perspective', 'perspectives'],
-  ['franchise', 'franchises'],
-  ['series', 'series'],
-  ['keyword', 'keywords'],
-] as const satisfies readonly (readonly [Exclude<VocabKind, 'company'>, string])[]
-
-type NamesToStore = { kind: (typeof NAMED_KINDS)[number][0]; items: IgdbNamed[] }[]
-
-/** Cover images read at once while many games are added: images.igdb.com, not the API. */
-const ART_AT_ONCE = 6
-
-/** `run` over every item, at most `limit` at a time, in order. */
-const eachLimited = async <T, R>(
-  items: readonly T[],
-  limit: number,
-  run: (item: T) => Promise<R>,
-): Promise<R[]> => {
-  const results: R[] = new Array<R>(items.length)
-  let next = 0
-  const worker = async () => {
-    while (next < items.length) {
-      const index = next++
-      results[index] = await run(items[index]!)
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
-  return results
-}
-
 const label = (platform: Platform): PlatformLabel => ({
   id: platform.igdbId,
   key: platform.key,
@@ -105,38 +77,22 @@ const label = (platform: Platform): PlatformLabel => ({
   short: platform.short,
 })
 
-export type AddingDeps = {
-  db: Db
-  igdb: IgdbApi
-  readArt: (imageId: string) => Promise<CoverArt | undefined>
-}
+export type AddingDeps = RecordsDeps
 
 /**
  * The work itself, with its database and IGDB given, so tests can give
  * their own. What it returns is asked for one library at a time.
  */
-export const createAdding = ({ db, igdb: api, readArt }: AddingDeps) => {
-  // IGDB's platforms change a few times a year: asked once per server, for every library.
-  let platformList: Promise<Map<number, Platform>> | undefined
-  const allPlatforms = () => {
-    platformList ??= api
-      .platforms()
-      .then((list) => new Map(list.map((record) => [record.id, toPlatform(record)])))
-    platformList.catch(() => (platformList = undefined))
-    return platformList
-  }
-
-  return (libraryId: string) => forLibrary(libraryId, { db, api, readArt, allPlatforms })
+export const createAdding = (deps: AddingDeps) => {
+  // One per server, for every library: it keeps IGDB's list of platforms.
+  const records = createRecords(deps)
+  return (libraryId: string) => forLibrary(libraryId, { db: deps.db, api: deps.igdb, records })
 }
 
-type LibraryDeps = {
-  db: Db
-  api: IgdbApi
-  readArt: AddingDeps['readArt']
-  allPlatforms: () => Promise<Map<number, Platform>>
-}
+type LibraryDeps = { db: Db; api: IgdbApi; records: Records }
 
-const forLibrary = (libraryId: string, { db, api, readArt, allPlatforms }: LibraryDeps) => {
+const forLibrary = (libraryId: string, { db, api, records }: LibraryDeps) => {
+  const { allPlatforms, namesOf, fetchRecords } = records
   /** Each linked IGDB record's entry, and each entry's address and title, in this library. */
   const shelfIndex = async () => {
     const [linked, primaries] = await Promise.all([
@@ -282,67 +238,8 @@ const forLibrary = (libraryId: string, { db, api, readArt, allPlatforms }: Libra
     }
   }
 
-  /** Names these records use that are not stored yet, one request a kind for all of them. */
-  const missingNames = async (records: readonly GameData[]): Promise<NamesToStore> => {
-    const wanted = new Set(
-      records.flatMap((data) => NAMED_KINDS.flatMap(([, field]) => data[field])),
-    )
-    if (wanted.size === 0) return []
-    const known = await db
-      .select({ kind: vocab.kind, id: vocab.id })
-      .from(vocab)
-      .where(inArray(vocab.id, [...wanted]))
-    const have = new Set(known.map((row) => `${row.kind}:${row.id}`))
-    return Promise.all(
-      NAMED_KINDS.map(async ([kind, field]) => {
-        const ids = [...new Set(records.flatMap((data) => data[field]))].filter(
-          (id) => !have.has(`${kind}:${id}`),
-        )
-        const items: IgdbNamed[] = ids.length > 0 ? await api.named(kind, ids) : []
-        return { kind, items }
-      }),
-    )
-  }
-
-  /** The names one record uses, of those fetched for many. */
-  const namesOf = (data: GameData, names: NamesToStore): NamesToStore =>
-    names.map(({ kind, items }) => {
-      const field = NAMED_KINDS.find(([each]) => each === kind)![1]
-      const used = new Set<number>(data[field])
-      return { kind, items: items.filter((item) => used.has(item.id)) }
-    })
-
-  /**
-   * Everything adding these games needs from IGDB, asked for all of them at
-   * once: their records, family chains, times to beat, the names they use,
-   * and their covers' colors. For one game it is the same few requests.
-   */
-  const fetchRecords = async (ids: readonly number[]) => {
-    const [records, all] = await Promise.all([api.games(ids), allPlatforms()])
-    const [lineages, times] = await Promise.all([
-      api.lineages(records),
-      api.timeToBeat(records.map((record) => record.id)),
-    ])
-    const data = new Map(
-      records.map((record) => [record.id, toGameData(record, times.get(record.id))]),
-    )
-    const [names, art] = await Promise.all([
-      missingNames([...data.values()]),
-      eachLimited(
-        [...data.values()],
-        ART_AT_ONCE,
-        async (game) =>
-          [game.igdbId, game.cover ? await readArt(game.cover.id) : undefined] as const,
-      ),
-    ])
-    return { all, lineages, data, names, art: new Map(art) }
-  }
-
   /** Stores one game, from what was fetched, where ADR 001 puts it among what is on the shelf now. */
-  const store = async (
-    input: AddInput,
-    fetched: Awaited<ReturnType<typeof fetchRecords>>,
-  ): Promise<AddedGame> => {
+  const store = async (input: AddInput, fetched: FetchedRecords): Promise<AddedGame> => {
     const data = fetched.data.get(input.igdbId)
     if (!data) throw new LibraryError('not-found', 'IGDB has no game with that id')
     const lineage = fetched.lineages.get(input.igdbId) ?? []

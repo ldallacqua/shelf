@@ -6,6 +6,8 @@ import { dirname, join, resolve } from 'node:path'
 
 import { z } from 'zod'
 
+import { MOCK_CRON_SECRET } from '@/server/mocks/owner'
+
 /**
  * Settings, read from the environment and checked before use. A missing
  * setting stops the caller with a message that names it. Values are never
@@ -65,6 +67,17 @@ export const authEnv = () => {
     'Sign-in needs a secret of at least 32 characters.',
   )
   return { secret: env.BETTER_AUTH_SECRET }
+}
+
+/**
+ * The daily refresh (architecture, section 8): the value Vercel sends with
+ * its once-a-day call, so nobody else can start it. Without one, nobody can.
+ * While the test doubles answer, it is their made-up one.
+ */
+export const cronSecret = (): string | undefined => {
+  if (mocksRequested() && !onVercel()) return MOCK_CRON_SECRET
+  const value = process.env.CRON_SECRET?.trim()
+  return value && value.length >= 16 ? value : undefined
 }
 
 export type DatabaseTarget =
