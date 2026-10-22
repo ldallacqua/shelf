@@ -103,6 +103,7 @@ test.describe('signing up', () => {
 
   test('says a handle is taken, or cannot be, as it is typed', async ({ page }) => {
     await page.goto('/en/sign-up')
+    await page.locator('html[data-ready]').waitFor({ state: 'attached' })
     const handle = page.getByRole('textbox', { name: 'Handle' })
     await handle.fill('sample')
     await expect(page.getByText('Another shelf has that one. Try another.')).toBeVisible()

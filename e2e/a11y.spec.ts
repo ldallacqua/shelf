@@ -58,6 +58,8 @@ for (const theme of themes) {
 
   test(`sign-up passes axe with a handle that cannot be, ${theme}`, async ({ page }) => {
     await openWithTheme(page, '/en/sign-up', theme)
+    // The field checks what is typed once the page is alive.
+    await page.locator('html[data-ready]').waitFor({ state: 'attached' })
     await page.getByRole('textbox', { name: 'Handle' }).fill('library')
     await page.getByText('That one is kept for the site. Try another.').waitFor()
     await expectAccessible(page)

@@ -169,7 +169,9 @@ test.describe('a page that does not exist', () => {
   test('a shelf no account has says so, and is not indexed', async ({ page }) => {
     await page.goto('/en/u/no-such-shelf')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('No shelf here')
-    await expect(page.getByText('There is no shelf at this address.')).toBeVisible()
+    await expect(
+      page.getByRole('main').getByText('There is no shelf at this address.'),
+    ).toBeVisible()
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
     await expect(
       page.getByRole('main').getByRole('link', { name: 'Create your own shelf' }),

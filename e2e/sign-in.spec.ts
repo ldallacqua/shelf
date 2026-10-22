@@ -190,7 +190,9 @@ test.describe('signed in', () => {
     await (await menu()).getByRole('menuitem', { name: 'My shelf' }).click()
     await expect(page).toHaveURL(/\/en\/u\/sample$/)
     await (await menu()).getByRole('menuitem', { name: 'Sign out' }).click()
-    await expect(page.getByRole('banner').getByRole('link', { name: 'Sign in' })).toBeVisible()
+    // The header's way in folds into the menu on a phone; the footer's is always there.
+    await expect(footer(page).getByRole('link', { name: 'Sign in' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Sample, your account' })).toHaveCount(0)
   })
 
   test('the sign-in page says who is signed in, and offers the way out', async ({ page }) => {
