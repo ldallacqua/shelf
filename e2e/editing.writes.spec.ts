@@ -120,9 +120,9 @@ test.describe('editing a game', () => {
     expect(patched.status()).toBe(200)
     const owned = (await (await page.request.get(`/api/v1/entries/${slug}`)).json()) as unknown
     expect(owned).toMatchObject({ status: 'playing', rating: 7.5, hoursPlayed: 2.5 })
-    expect(await (await page.request.get(`/api/v1/u/sample/games/${slug}`)).json()).toMatchObject({
-      hoursPlayed: 2.5,
-    })
+    // The public read is cached: one that joins a read already under way, while
+    // other tests write too, can answer from just before the change.
+    await expect.poll(game).toMatchObject({ hoursPlayed: 2.5 })
   })
 
   test('completed sets today’s date, which stays editable, and the page shows it after a reload', async ({
