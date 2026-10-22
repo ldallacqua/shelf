@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from '@/domain/zod'
 
 import type { FamilyLink } from '@/domain/igdb/game'
 import type { SearchResult } from '@/domain/igdb/search'

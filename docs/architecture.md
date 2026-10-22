@@ -221,7 +221,7 @@ docs/          This folder
 
 | Folder | Holds | May import |
 | --- | --- | --- |
-| `domain/` | `library` (entries, copies, grouping rules), `query` (the filter language: parse, evaluate, write back out), `sort`, `group`, `facets`, `stats`, `spine` (colors and layout of a generated spine), `igdb` (turning IGDB records into ours) | Nothing but Zod |
+| `domain/` | `library` (entries, copies, grouping rules), `query` (the filter language: parse, evaluate, write back out), `sort`, `group`, `facets`, `stats`, `spine` (colors and layout of a generated spine), `igdb` (turning IGDB records into ours) | Nothing but Zod, through `domain/zod.ts`, which turns off its compiled checks for the content security policy (section 20) |
 | `server/` | `db` (Drizzle schema and client), `igdb` (the client), `auth`, `services` (every read and write), `mocks` (test doubles) | `domain` |
 | `features/` | `shell` (header, footer, empty and not-found states), `library`, `shelf-2d`, `shelf-3d`, `wall`, `list`, `filters`, `add-game`, `game-detail`, `trophies`, `landing`, `theme`, `language` | `domain`, `ui`, and server actions |
 | `ui/` | Restyled shadcn components, the shelf and game-case parts, fonts, tokens | Nothing of ours |
@@ -853,14 +853,16 @@ list reacting to filter changes.
 | Cross-site requests | Server actions check the request's origin (built into Next.js). Session cookies are SameSite=Lax. API writes need the session or an OAuth token. |
 | Database | Drizzle's query builder throughout; no SQL assembled from input |
 | Content from IGDB | Rendered as text. Never inserted as HTML. |
-| Headers | `Content-Security-Policy` limiting scripts and connections to our own origin and images to ours plus `images.igdb.com`; `frame-ancestors 'none'`; `X-Content-Type-Options`; a strict `Referrer-Policy`; a `Permissions-Policy` that switches off what we do not use |
+| Headers | On every answer (`next.config.ts`): a `Content-Security-Policy` limiting scripts, styles, fonts and connections to our own origin and images to ours plus `images.igdb.com`, with no `eval`, no plugins, no frames and `frame-ancestors 'none'`; `X-Content-Type-Options: nosniff`; `Referrer-Policy: strict-origin-when-cross-origin`; a `Permissions-Policy` switching off the camera, microphone, location, payment and USB; `X-Frame-Options: DENY`; `Cross-Origin-Opener-Policy: same-origin`. Previews also allow Vercel's toolbar. Vercel sends HSTS itself. Zod's compiled checks are off (`domain/zod.ts`), since they need `eval`. `e2e/security.spec.ts` visits every page and fails on any refusal. |
 | Abuse | Public endpoints only read, and the heavy ones are cached at the edge. IGDB is unreachable without my session. The worst outcome of a flood on the free plan is a paused site, not a bill. |
 | Test doubles | Start only when `SHELF_MOCKS=1`, and refuse to start when Vercel's environment is detected |
 
 One honest limit: the strictest form of Content Security Policy needs a fresh random value in
 every response, which is incompatible with pages built ahead of time. Shelf keeps fast static
-pages and allows inline scripts from our own HTML. Next.js has an experimental
-integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
+pages and allows inline scripts from our own HTML. Next.js's experimental integrity hashes
+(`experimental.sri`) were tried at step 9 and not adopted: they mark the script files, not all
+of them, and leave Next.js's own inline scripts, 18 on the library page, needing
+`'unsafe-inline'` all the same. Without it the page never came alive.
 
 ---
 
@@ -1014,6 +1016,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 9 | **The security headers are set, and integrity hashes are not used** (section 20). Zod is imported through `domain/zod.ts` in code that may run in the browser, with its compiled checks off; lint refuses `zod` itself there. | Next.js's integrity hashes leave its inline scripts needing `'unsafe-inline'`, so they add nothing the policy can use. Zod tries `new Function`, which the policy refuses, and the browser reports even a caught refusal. |
 | Step 9 | **The daily refresh asks about IGDB's records, not one library's, and nobody refreshes one game by hand.** It shares adding's fetch (`igdb-records.ts`), keeps a game's address when IGDB changes its slug, and answers only Vercel's call with `CRON_SECRET`. | With accounts (ADR 004) the records are shared, so the oldest are the oldest across every library, and a changed one is new to every library holding it. A button for one game would let any account spend the shared allowance for little: a cache of a few thousand records comes round within weeks. |
 | Step 9 | **The trophy wall is built at step 9,** with the passes, and is worked out on the server for a public shelf (`getTrophyWall`, kept until the library changes and at most a day) and in its own browser for a private one. Its covers are the shared `Cover`: the page's script is 207.2 KB, from 201.4, and its budget 209. | Section 22 left it to no step ("after filters, with its stats"). A day's life keeps "this year" true on a shelf nobody touches; the covers are drawn by `Cover` like every other, blur and failure included. |
 | Step 9 | **The seed spreads the finish days of games added lately** over the days since they were added, with the same draws as before. | It had put every game it would have finished after its "today" on the day before, 20 of them on 30 September; the trophy wall showed it. The draws are the same, so nothing else in the sample library changed. |

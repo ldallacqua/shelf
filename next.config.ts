@@ -13,7 +13,64 @@ const withNextIntl = createNextIntlPlugin({
   },
 })
 
+const development = process.env.NODE_ENV === 'development'
+// Vercel's toolbar is offered on previews only, and comes from its own hosts.
+const preview = process.env.VERCEL_ENV === 'preview'
+const toolbar = (...sources: string[]) => (preview ? sources : [])
+
+/**
+ * What a page may load and do (architecture, section 20). Scripts and styles
+ * come from the site itself, covers from IGDB's image servers, and nothing
+ * else is fetched. Inline scripts are allowed: pages are built ahead of
+ * time, so they cannot carry a fresh nonce, and Next.js and React write
+ * inline scripts of their own. React needs `eval` while developing only.
+ */
+const contentSecurityPolicy = Object.entries({
+  'default-src': ["'self'"],
+  'script-src': [
+    "'self'",
+    "'unsafe-inline'",
+    ...(development ? ["'unsafe-eval'"] : []),
+    ...toolbar('https://vercel.live'),
+  ],
+  'style-src': ["'self'", "'unsafe-inline'", ...toolbar('https://vercel.live')],
+  'img-src': [
+    "'self'",
+    'data:',
+    'blob:',
+    'https://images.igdb.com',
+    ...toolbar('https://vercel.live', 'https://vercel.com'),
+  ],
+  'font-src': ["'self'", ...toolbar('https://vercel.live', 'https://assets.vercel.com')],
+  'connect-src': ["'self'", ...toolbar('https://vercel.live', 'wss://ws-us3.pusher.com')],
+  'frame-src': preview ? ['https://vercel.live'] : ["'none'"],
+  'object-src': ["'none'"],
+  'base-uri': ["'self'"],
+  'form-action': ["'self'"],
+  'frame-ancestors': ["'none'"],
+  'manifest-src': ["'self'"],
+})
+  .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
+  .join('; ')
+
+const securityHeaders = [
+  { key: 'Content-Security-Policy', value: contentSecurityPolicy },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  // Nothing on the site uses these; a page that is broken into cannot either.
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+  },
+  // For browsers older than `frame-ancestors`.
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+]
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders }]
+  },
   cacheComponents: true,
   partialPrefetching: true,
   reactCompiler: true,
