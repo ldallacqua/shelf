@@ -318,8 +318,7 @@ Metadata Document, so none needs registering first.
 The OpenAPI 3.1 description of everything above, with a schema for each body and answer.
 The writes are marked with the `session` cookie as their security scheme.
 
-## Still to come
+## `/llms.txt`
 
-| | Build step |
-| --- | --- |
-| `/llms.txt`: the site, the API, both MCP endpoints and the filter language, for assistants | 8 |
+The site, the API, both MCP endpoints and the filter language, in plain text for
+assistants, at the site's root rather than under `/api/v1`. Built ahead, in English.

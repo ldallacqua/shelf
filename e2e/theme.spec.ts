@@ -72,7 +72,7 @@ test.describe('changing theme', () => {
   })
 
   test('the choice carries to other pages and the other language', async ({ page }) => {
-    await page.goto('/en')
+    await page.goto('/en/foundations')
     await page.getByRole('radio', { name: 'Dark' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
 
@@ -92,7 +92,7 @@ test.describe('changing theme', () => {
   })
 
   test('a chosen theme does not follow the device', async ({ page }) => {
-    await page.goto('/en')
+    await page.goto('/en/foundations')
     await page.getByRole('radio', { name: 'Light' }).click()
 
     await page.emulateMedia({ colorScheme: 'dark' })
@@ -100,7 +100,7 @@ test.describe('changing theme', () => {
   })
 
   test('the change plays as a change of light, then settles', async ({ page }) => {
-    await page.goto('/en')
+    await page.goto('/en/foundations')
 
     // Click, and in the same breath ask the browser what it has started to
     // animate. Watching for a half-way color instead would be a race against
@@ -128,7 +128,7 @@ test.describe('changing theme', () => {
     test.use({ reducedMotion: 'reduce' })
 
     test('the change is immediate', async ({ page }) => {
-      await page.goto('/en')
+      await page.goto('/en/foundations')
       await page.getByRole('radio', { name: 'Dark' }).click()
 
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')

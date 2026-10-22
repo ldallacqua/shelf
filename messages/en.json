@@ -226,7 +226,7 @@
       "body": "You choose when you sign up, and can change it any time.",
       "public": {
         "title": "Public",
-        "body": "Anyone with the link can look. Nobody but you can change a thing.",
+        "body": "Anyone can look, and search engines can list it. Nobody but you can change a thing.",
         "address": "/u/your-name"
       },
       "private": {
@@ -263,7 +263,7 @@
       },
       "who": {
         "q": "Who can see my shelf?",
-        "a": "You choose when you sign up, and can change it any time on your account page. A public shelf is for anyone with its link; a private one is for you alone. Notes stay private unless you mark them public, game by game."
+        "a": "You choose when you sign up, and can change it any time on your account page. A public shelf is for anyone, and search engines can list it; a private one is for you alone. Notes stay private unless you mark them public, game by game."
       },
       "export": {
         "q": "Can I take my games with me?",
@@ -740,7 +740,7 @@
     "visibility": {
       "label": "Who can see your shelf",
       "public": "Public",
-      "publicBody": "Anyone with the address can see your games. Your private notes stay yours.",
+      "publicBody": "Anyone can see your games, and search engines can list them. Your private notes stay yours.",
       "private": "Private",
       "privateBody": "Only you, signed in. Anyone else is told the shelf is private."
     }

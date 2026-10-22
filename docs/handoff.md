@@ -4,8 +4,21 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: accounts for everyone (ADR 004), then the landing page (step 8)
+## Now: the landing page (step 8), after accounts for everyone (ADR 004)
 
+- **Accounts are merged and deployed** ([#17](https://github.com/ldallacqua/shelf/pull/17),
+  22 Oct 2026): `/en/u/lucas` and the old addresses' redirects checked on production. The
+  owner went without a Turso backup: the library there held one game. The first account was
+  named by its email address, which its shelf's title showed to everyone; settling the
+  accounts now gives such an account its handle as its name.
+- **The landing page is a product page** (spec 15), built from an example shelf of 61 sample
+  games (`pnpm landing:demo` writes `src/features/landing/demo-library.json`; run it again
+  after the fixtures change). The design foundations moved to `/foundations`, unlisted. The
+  site is open to search engines from this step: `robots.txt`, `sitemap.xml` (public shelves
+  and their games only) and `llms.txt` are new, and the public option at sign-up says search
+  engines can list a public shelf. ⏸ The owner reviews it before step 9.
+- **The trophy wall is not built yet** (step 9): `/u/{handle}/trophies` is the empty wall for
+  every handle, so it is not indexed, and the landing page does not mention it.
 - **Anyone can sign up for a shelf of their own** ([ADR 004](adr/004-one-library-per-account.md),
   21 Oct 2026, the owner's request and choices: anyone signs up; each picks public or private,
   Public picked for them; no email yet; their own shelf is `/u/lucas`). Every row that is

@@ -543,16 +543,16 @@ One tool per job, so nothing fights:
 | Reordering after a regroup or a change of view | The Web Animations API: each box on screen slides from where it stood (`useFlip`) | With the library |
 | Gestures: dragging a sheet, scrubbing spines | Motion, when they are built (step 9). Not installed until then. | n/a |
 | A cover growing into the open game | The browser's view transitions, named for that one change (`features/game-detail/morph.ts`) | Built in |
-| Scroll-driven scenes | GSAP with ScrollTrigger | Landing page only |
-| Smooth scrolling | Lenis | Landing page only, and not on touch |
+| The landing page's parts rising into view | CSS scroll timelines (`animation-timeline: view()`); where a browser has none, an IntersectionObserver marks each part as it arrives (`features/landing/reveals.tsx`) | Landing page only |
+| The landing page's scenes (lights coming on, filters playing, views turning) | CSS keyframes and transitions, started once a scene is in view; boxes rearrange with `useFlip` | Landing page only |
 | Anything inside the 3D scene | The render loop, with damping | With 3D only |
 
 **Durations and curves** are tokens (100, 180, 280, 480, 800 ms), shared by CSS, Motion and
 the 3D scene.
 
 **Reduced motion** is one decision, read in one place. Every animation asks it and has a
-written calm version from the spec: a crossfade, or nothing. Lenis does not start, GSAP scenes
-show their end state, the camera cuts.
+written calm version from the spec: a crossfade, or nothing. The landing page's scenes show
+their end state and play nothing by themselves; the camera cuts.
 
 **Reordering 1,000 boxes.** Only boxes on screen animate. The rest jump, unseen.
 
@@ -1014,6 +1014,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 8 | **The landing page is a product page built from an example shelf** (`features/landing`, `pnpm landing:demo`), not the owner's library, and its motion is CSS: scroll timelines where the browser has them, an IntersectionObserver elsewhere, and `useFlip` for boxes rearranging. GSAP and Lenis are not used, and no 3D code loads on it. The design foundations move to `/foundations`, unlisted. | With accounts there is no one library to show off, and no account's games may be on a page built for everyone. CSS does what the scenes need, with no library to download: the page's script is a few small parts, and its first screen has none of its own. |
 | After step 7 | **One library per account** ([ADR 004](adr/004-one-library-per-account.md)). Anyone signs up, at `/sign-up`, with a handle that is the shelf's address, `/u/{handle}`, and picks public or private. Every row that is someone's carries its account's id; the IGDB cache is shared. A library's files are addressed by a random key, not the handle. A private shelf is drawn only in its own account's browser. The old addresses move for good to `/u/lucas`. `OWNER_EMAIL` and `OWNER_PASSWORD` are no longer read. Sections 6, 7, 9 and 16 are changed to match. | The owner's request (21 Oct 2026): each person their own shelf, and a landing page that invites them to make one. |
 | After step 7 | **The JavaScript budgets rise with accounts:** home 208 KB (from 205), library 272 (265), trophies 203 (198), game page 217 (208). Each is the page as measured plus a little room; `scripts/lib/budgets.ts` says what each part is. | The header now reads the shelf in the address in the browser and ends in sign-in, sign-up or the account's menu: 3 KB on every page. A private shelf's code is fetched only when one is drawn: a page loads every client component it imports, drawn or not, and imported directly it cost a public game's page 11.5 KB. |
 | After step 7 | **The form's controls are drawn by the page, in `src/ui`:** a select whose list can show a cover and details, my rating as a slider from 0 to 10 in half steps with the number large above it, a day from a calendar, tags as chips with the ones in use offered as I type, status and platforms as chips with a tick, physical or digital as a segmented control, and a shared text field. Sign-in can show the password. The fields the Add sheet and the editor share are in `features/owner/fields.tsx`. The editor saves a rating once it has rested 400 ms. | The owner's review (21 Oct 2026): the browser's own selects, date field and checkboxes, and a rating typed as a number, did not reach the quality asked for. A rating out of ten in half steps (spec decision 10) is a number, so a slider, not stars. The filter panel's range boxes stay typed: they take dates as well as numbers, and they load with the library. |

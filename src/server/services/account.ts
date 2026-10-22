@@ -12,7 +12,7 @@ import { database } from '@/server/db/client'
 import { libraries, users } from '@/server/db/schema'
 import { bumpVersion, newLibraryKey } from '@/server/library/store'
 import { forAccount } from '@/server/services/for-account'
-import { handleTag, libraryTag, shelvesTag } from '@/server/services/tags'
+import { DIRECTORY_TAG, handleTag, libraryTag, shelvesTag } from '@/server/services/tags'
 
 /**
  * An account's own settings (ADR 004): its name, its handle, and whether its
@@ -34,7 +34,12 @@ export type AccountChange =
 
 /** Every page and file that shows this account's shelf, drawn again on its next visit. */
 const expire = (account: Account, ...handles: string[]) => {
-  for (const tag of [libraryTag(account.id), shelvesTag(account.id), ...handles.map(handleTag)]) {
+  for (const tag of [
+    libraryTag(account.id),
+    shelvesTag(account.id),
+    DIRECTORY_TAG,
+    ...handles.map(handleTag),
+  ]) {
     revalidateTag(tag, { expire: 0 })
   }
 }

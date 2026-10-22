@@ -27,6 +27,7 @@ export const SHELF = `/u/${SAMPLE}`
 /** Every page that exists, by its address after the language. */
 export const pages = [
   { name: 'home', path: '' },
+  { name: 'foundations', path: '/foundations' },
   { name: 'library', path: SHELF },
   { name: 'shelf', path: `${SHELF}/shelves/short-ones` },
   { name: 'game', path: `${SHELF}/game/bloodborne` },

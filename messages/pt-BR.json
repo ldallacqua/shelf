@@ -226,7 +226,7 @@
       "body": "Você escolhe ao criar a conta, e pode mudar quando quiser.",
       "public": {
         "title": "Pública",
-        "body": "Qualquer pessoa com o link pode ver. Ninguém além de você pode mudar nada.",
+        "body": "Qualquer pessoa pode ver, e mecanismos de busca podem listá-la. Ninguém além de você pode mudar nada.",
         "address": "/u/seu-nome"
       },
       "private": {
@@ -263,7 +263,7 @@
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
-        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa com o link; uma privada é só para você. As notas continuam privadas a menos que você as marque como públicas, jogo por jogo."
+        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As notas continuam privadas a menos que você as marque como públicas, jogo por jogo."
       },
       "export": {
         "q": "Posso levar meus jogos comigo?",
@@ -740,7 +740,7 @@
     "visibility": {
       "label": "Quem pode ver sua estante",
       "public": "Pública",
-      "publicBody": "Qualquer pessoa com o endereço vê seus jogos. Suas notas privadas continuam só suas.",
+      "publicBody": "Qualquer pessoa vê seus jogos, e mecanismos de busca podem listá-los. Suas notas privadas continuam só suas.",
       "private": "Privada",
       "privateBody": "Só você, depois de entrar. Os outros veem que a estante é privada."
     }

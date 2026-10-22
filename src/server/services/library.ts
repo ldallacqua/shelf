@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { eq } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 
 import { buildGamePage, type GamePage } from '@/domain/library/game-page'
@@ -12,7 +12,7 @@ import { database } from '@/server/db/client'
 import { libraries, users } from '@/server/db/schema'
 import { readGameExtras, readKeywords, readLibrary } from '@/server/library/read'
 import { readVersion } from '@/server/library/store'
-import { handleTag, keyTag, libraryTag } from '@/server/services/tags'
+import { DIRECTORY_TAG, handleTag, keyTag, libraryTag } from '@/server/services/tags'
 
 /**
  * Reading libraries (ADR 004). Each account has one, addressed by its
@@ -64,6 +64,30 @@ export const findLibrary = async (handle: string): Promise<LibraryInfo | undefin
   const found = await libraryInfo(eq(users.username, handle.toLowerCase()))
   if (found) cacheTag(libraryTag(found.id))
   return found
+}
+
+/** A public shelf as the sitemap lists it: its handle, and its games' addresses. */
+export type ListedShelf = { handle: string; games: string[] }
+
+/** Every public shelf (ADR 004): the sitemap. A private one is never listed. */
+export const listPublicShelves = async (): Promise<ListedShelf[]> => {
+  'use cache'
+  cacheTag(DIRECTORY_TAG)
+  cacheLife('max')
+  const owners = await database()
+    .select({ id: users.id, handle: users.username })
+    .from(users)
+    .where(eq(users.shelfPublic, true))
+    .orderBy(asc(users.username))
+  const listed: ListedShelf[] = []
+  for (const { id, handle } of owners) {
+    if (!handle) continue
+    cacheTag(libraryTag(id))
+    // The addresses the pages use, as the library's own read gives them.
+    const { games } = await getLibrary(id)
+    listed.push({ handle, games: games.map((game) => game.slug) })
+  }
+  return listed
 }
 
 /** The public library whose files this key addresses, or nothing. */

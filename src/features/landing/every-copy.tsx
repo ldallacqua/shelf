@@ -33,7 +33,7 @@ export function EveryCopy({ copies }: { copies: readonly DemoGame[] }) {
               className="scene-step flex flex-col items-center gap-2"
               style={step(index)}
             >
-              <span className="readout text-center text-[0.5625rem] whitespace-nowrap text-muted">
+              <span className="text-center readout text-[0.5625rem] whitespace-nowrap text-muted">
                 {copy.platform}
                 {' · '}
                 {t(copy.format)}

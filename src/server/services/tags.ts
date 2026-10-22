@@ -16,3 +16,6 @@ export const handleTag = (handle: string): string => `handle:${handle}`
 
 /** What a file key names, expired when a library goes private and gets a new one. */
 export const keyTag = (key: string): string => `key:${key}`
+
+/** Which shelves are public, and at which handles: the sitemap. Expired by every account change. */
+export const DIRECTORY_TAG = 'directory'
