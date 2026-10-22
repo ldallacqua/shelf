@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto'
 
 import type { APIRequestContext, Browser, Page } from '@playwright/test'
 
-import { expect, isSnapshot, OWNER, test } from './fixtures'
+import { expect, fillUntil, isSnapshot, OWNER, test } from './fixtures'
 
 /**
  * Accounts (ADR 004): anyone makes a shelf of their own, public or private,
@@ -66,9 +66,12 @@ test.describe('signing up', () => {
   test('makes a public shelf of one’s own, empty and ready to add to @smoke', async ({ page }) => {
     const who = newcomer('Ana Lima')
     await page.goto('/en/sign-up')
-    await page.locator('html[data-ready]').waitFor({ state: 'attached' })
-    await page.getByRole('textbox', { name: 'Your name' }).fill(who.name)
     // The handle follows the name until one is typed.
+    await fillUntil(
+      page.getByRole('textbox', { name: 'Your name' }),
+      who.name,
+      page.getByText('Free to take.'),
+    )
     await expect(page.getByRole('textbox', { name: 'Handle' })).toHaveValue('ana-lima')
     await page.getByRole('textbox', { name: 'Handle' }).fill(who.handle)
     await expect(page.getByText('Free to take.')).toBeVisible()
@@ -103,10 +106,8 @@ test.describe('signing up', () => {
 
   test('says a handle is taken, or cannot be, as it is typed', async ({ page }) => {
     await page.goto('/en/sign-up')
-    await page.locator('html[data-ready]').waitFor({ state: 'attached' })
     const handle = page.getByRole('textbox', { name: 'Handle' })
-    await handle.fill('sample')
-    await expect(page.getByText('Another shelf has that one. Try another.')).toBeVisible()
+    await fillUntil(handle, 'sample', page.getByText('Another shelf has that one. Try another.'))
     await handle.fill('sign-up')
     await expect(page.getByText('That one is kept for the site. Try another.')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Create my shelf' })).toBeDisabled()
@@ -121,9 +122,12 @@ test.describe('signing up', () => {
     }) => {
       const who = newcomer()
       await page.goto('/en/sign-up')
-      await page.locator('html[data-ready]').waitFor({ state: 'attached' })
+      await fillUntil(
+        page.getByRole('textbox', { name: 'Handle' }),
+        who.handle,
+        page.getByText('Free to take.'),
+      )
       await page.getByRole('textbox', { name: 'Your name' }).fill(who.name)
-      await page.getByRole('textbox', { name: 'Handle' }).fill(who.handle)
       await page.getByRole('textbox', { name: 'Email address' }).fill(OWNER.email)
       await page.getByLabel('Password', { exact: true }).fill(who.password)
       await expect(page.getByText('Free to take.')).toBeVisible()

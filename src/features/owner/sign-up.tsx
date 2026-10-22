@@ -2,7 +2,7 @@
 
 import { UserPlusIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { NAME_MAX, PASSWORD_MAX, PASSWORD_MIN } from '@/domain/accounts/account'
 import { handleFrom } from '@/domain/accounts/handle'
@@ -101,6 +101,19 @@ export function SignUp() {
   const handle = chosenHandle ?? handleFrom(name)
   const status = useHandleCheck(handle)
 
+  // Typed before the page came alive, a name or handle is in its field but
+  // not yet known to the form, which would then wait for it: take it.
+  const form = useRef<HTMLFormElement>(null)
+  useEffect(() => {
+    const typed = (field: string) =>
+      (form.current?.elements.namedItem(field) as HTMLInputElement | null)?.value ?? ''
+    const [typedName, typedHandle] = [typed('name'), typed('handle')]
+    if (typedName) setName(typedName)
+    if (typedHandle && typedHandle !== handleFrom(typedName)) {
+      setChosenHandle(typedHandle.toLowerCase())
+    }
+  }, [])
+
   if (account.status === 'signed-in') {
     return (
       <div className="mt-6 max-w-xl">
@@ -127,6 +140,7 @@ export function SignUp() {
         </p>
       ) : null}
       <form
+        ref={form}
         className="mt-8 grid gap-5"
         onSubmit={async (event) => {
           event.preventDefault()

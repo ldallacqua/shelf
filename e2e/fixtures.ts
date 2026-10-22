@@ -113,6 +113,19 @@ export async function fillSignIn(page: Page, who: string, password: string) {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
 }
 
+/**
+ * Types into a field until the page answers with `answer`. Typed in the
+ * moment a form comes alive, a letter can reach the field and not the form;
+ * cleared and typed again, it is a change the form hears.
+ */
+export async function fillUntil(field: Locator, value: string, answer: Locator) {
+  await expect(async () => {
+    await field.fill('')
+    await field.fill(value)
+    await expect(answer).toBeVisible({ timeout: 1_000 })
+  }).toPass({ timeout: 15_000 })
+}
+
 /** Opens a select and chooses the option of this name. */
 export async function choose(page: Page, select: Locator, option: string) {
   await select.click()
@@ -287,6 +300,9 @@ export async function openWithTheme(page: Page, address: string, theme: Theme) {
  * Pass a selector to check one part of the page, for example an open menu.
  */
 export async function expectAccessible(page: Page, only?: string) {
+  // Judge the page that arrived, not its skeleton: a page built on its first
+  // visit shows one while it is made.
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0, { timeout: 15_000 })
   // A group of buttons that shares one keyboard stop (Radix's roving focus) is sent with no
   // stop at all, and takes one a render after it comes alive. Judge it once it has.
   await expect(page.locator('[role="radiogroup"][tabindex="-1"]')).toHaveCount(0, {
