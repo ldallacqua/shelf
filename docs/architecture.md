@@ -523,7 +523,10 @@ pages visitors load.
 
 **Type.** Archivo for titles and interface, Martian Mono for numbers and labels, through
 `next/font`: served from our domain, subset to Latin, preloaded, with fallback metrics so
-text does not jump when the font arrives. Three small files, 58 KB together: Archivo at
+text does not jump when the font arrives. The preloads are tags at the top of `<head>`,
+not a `Link` header (`reactMaxHeadersLength: 0` in `next.config.ts`): a shelf's page is
+built again in the background after a change, and the header could be lost from that
+build, which left the library painting in fallback fonts. Three small files, 58 KB together: Archivo at
 normal width (34 KB), one wide, heavy style cut from Archivo for titles (13 KB), and one
 weight of Martian Mono (11 KB). `src/ui/fonts/README.md` says how the title file was made.
 

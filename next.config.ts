@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   typedRoutes: true,
   poweredByHeader: false,
+  // React's preloads (the fonts, the cover host) go in the page's <head>, not
+  // in a Link header. A shelf's page is built again in the background after a
+  // change, and a header can be lost from that build where a tag can't: the
+  // library then painted in fallback fonts and shifted when they swapped.
+  reactMaxHeadersLength: 0,
   // A deployment with no database connected serves a sample database that was
   // built with it (`pnpm db:prepare`). Next.js only ships files it can see
   // being imported, so the file is named here. With a database connected the
