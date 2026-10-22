@@ -52,5 +52,10 @@ export function Link({
 export const usePathname = () => state.pathname
 export const useRouter = () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() })
 export const redirect = vi.fn()
-export const getPathname = ({ href, locale }: { href: string; locale: string }) =>
-  `/${locale}${href === '/' ? '' : href}`
+export const getPathname = ({ href, locale }: { href: Href; locale: string }) => {
+  const path =
+    typeof href === 'string'
+      ? href
+      : href.pathname.replace(/\[(\w+)\]/g, (_, name: string) => href.params?.[name] ?? name)
+  return `/${locale}${path === '/' ? '' : path}`
+}

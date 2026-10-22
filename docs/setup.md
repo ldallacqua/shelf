@@ -138,9 +138,9 @@ used to warn that no database is connected, and the preview still shows the samp
 
 ## C. Sign-in
 
-**When:** before signing in on the site. Changed on 21 Oct 2026: sign-in was going to be
-GitHub, and is now one account with an email address and password, made from the settings
-below. Nobody can make another account.
+**When:** before signing in on the site. Anyone signs up on the site itself, at `/en/sign-up`
+(ADR 004); nothing here makes an account. Until 21 Oct 2026 there was one account, made from
+`OWNER_EMAIL` and `OWNER_PASSWORD`: those are no longer read, and can be deleted from Vercel.
 
 ### Settings in Vercel
 
@@ -150,8 +150,6 @@ them **Sensitive**.
 | Name | Value |
 | --- | --- |
 | `BETTER_AUTH_SECRET` | A random value, 32 characters or more |
-| `OWNER_EMAIL` | The email address you will sign in with |
-| `OWNER_PASSWORD` | Your password: 12 to 128 characters. A long one from a password manager is best. |
 | `TWITCH_CLIENT_ID` | From `.env.local` in this project (searching IGDB needs it) |
 | `TWITCH_CLIENT_SECRET` | From `.env.local` in this project |
 
@@ -159,8 +157,6 @@ From a terminal in the project folder, each of these asks for its value:
 
 ```sh
 vercel env add BETTER_AUTH_SECRET production --sensitive
-vercel env add OWNER_EMAIL production --sensitive
-vercel env add OWNER_PASSWORD production --sensitive
 vercel env add TWITCH_CLIENT_ID production --sensitive
 vercel env add TWITCH_CLIENT_SECRET production --sensitive
 ```
@@ -169,18 +165,19 @@ To make a random value, run `openssl rand -base64 32`, or, where there is no `op
 `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Use a terminal
 of your own, not the one in the Claude app: I can read that one.
 
-The account is made the first time you sign in. **To change the password,** change
-`OWNER_PASSWORD` and redeploy: the next sign-in takes the new one, and every session signed in
-with the old one ends. Five wrong tries a minute from one address, and sign-in waits.
+**To change a password,** use the account page. **A forgotten one** has no email reset yet:
+run `pnpm account:password <handle>` with the production database's settings in the
+environment. It prints a new random password once and ends every session. Five wrong tries a
+minute from one address, and sign-in waits.
 
 ### Settings on this computer
 
-Not needed: the browser tests make up an owner of their own. To sign in on `pnpm dev`, add
-`BETTER_AUTH_SECRET`, `OWNER_EMAIL` and `OWNER_PASSWORD` to `.env.local` yourself, with any
-values; I can generate the secret into the file without displaying it.
+Not needed: the browser tests sign in to the sample account with a made-up password. To sign
+up on `pnpm dev`, add `BETTER_AUTH_SECRET` to `.env.local` yourself, with any value; I can
+generate it into the file without displaying it.
 
-**Check it worked:** on production, **Sign in** asks for your email address and password, and
-the **Add** button appears once you are in. A wrong password is turned away with a plain
+**Check it worked:** on production, **Create your shelf** makes an account and opens its empty
+shelf, and the **Add** button appears on it. A wrong password is turned away with a plain
 message. To let an assistant in, add `https://shelf-ldallacqua.vercel.app/api/mcp/owner` to
 it as an MCP server: it sends you to sign in, then asks you to say yes.
 
@@ -217,6 +214,4 @@ Vercel sends this value with its once-a-day call, so nobody else can trigger the
 | `TURSO_AUTH_TOKEN` | Not used | Not yet (`shelf-preview`) | Set (`shelf-ldallacqua`) | B |
 | `SHELF_MOCKS` | Tests set it | Never | Never | none |
 | `BETTER_AUTH_SECRET` | Optional | Not yet | Paste, random | C |
-| `OWNER_EMAIL` | Optional | Not yet | Paste | C |
-| `OWNER_PASSWORD` | Optional | Not yet | Paste | C |
 | `CRON_SECRET` | Not used | Not used | Paste, random | D |

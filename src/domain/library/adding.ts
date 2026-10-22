@@ -99,10 +99,11 @@ export const refusalReasons = [
   'conflict',
   'not-kept',
   'igdb',
+  'too-many',
   'failed',
 ] as const
 
-/** Why the owner's request was not carried out, in words the interface has a sentence for. */
+/** Why an account's request was not carried out, in words the interface has a sentence for. */
 export type Refusal = { ok: false; reason: (typeof refusalReasons)[number] }
 
 export type Answer<T> = { ok: true; value: T } | Refusal

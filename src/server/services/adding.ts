@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { toGameData, type GameData, type LineageStep } from '@/domain/igdb/game'
@@ -38,12 +38,14 @@ import {
 import { proposeGrouping } from '@/domain/library/family'
 import type { Format } from '@/domain/library/values'
 import { toPlatform, type Platform } from '@/domain/platforms/platforms'
+import type { Account } from '@/server/auth/account'
 import { database, type Db } from '@/server/db/client'
-import { copies, entryVersions, games, vocab } from '@/server/db/schema'
+import { copies, entries, entryVersions, games, vocab } from '@/server/db/schema'
 import { igdb } from '@/server/igdb'
 import type { IgdbApi } from '@/server/igdb/api'
 import { readCoverArt } from '@/server/igdb/cover-art'
-import { forOwner, refusalFor } from '@/server/services/for-owner'
+import { forAccount, refusalFor } from '@/server/services/for-account'
+import { spend } from '@/server/services/fair-use'
 import {
   addFromIgdb,
   LibraryError,
@@ -56,10 +58,11 @@ import {
 } from '@/server/library/store'
 
 /**
- * Adding games (spec 4), for the owner only: searching IGDB, proposing where
- * a game goes, and storing it. Nothing a visitor can reach gets this far:
- * every function below that is exported for routes checks the owner first,
- * so a visitor cannot spend the IGDB allowance either.
+ * Adding games (spec 4) to one library, the signed-in account's own:
+ * searching IGDB, proposing where a game goes, and storing it. Nothing a
+ * visitor can reach gets this far: every function below that is exported
+ * for routes checks the account first, so a visitor cannot spend the IGDB
+ * allowance either, and an account spends it only so fast (`fair-use.ts`).
  */
 
 const NAMED_KINDS = [
@@ -108,9 +111,12 @@ export type AddingDeps = {
   readArt: (imageId: string) => Promise<CoverArt | undefined>
 }
 
-/** The work itself, with its database and IGDB given, so tests can give their own. */
+/**
+ * The work itself, with its database and IGDB given, so tests can give
+ * their own. What it returns is asked for one library at a time.
+ */
 export const createAdding = ({ db, igdb: api, readArt }: AddingDeps) => {
-  // IGDB's platforms change a few times a year: asked once per server.
+  // IGDB's platforms change a few times a year: asked once per server, for every library.
   let platformList: Promise<Map<number, Platform>> | undefined
   const allPlatforms = () => {
     platformList ??= api
@@ -120,15 +126,26 @@ export const createAdding = ({ db, igdb: api, readArt }: AddingDeps) => {
     return platformList
   }
 
-  /** Each linked IGDB record's entry, and each entry's address and title. */
+  return (libraryId: string) => forLibrary(libraryId, { db, api, readArt, allPlatforms })
+}
+
+type LibraryDeps = {
+  db: Db
+  api: IgdbApi
+  readArt: AddingDeps['readArt']
+  allPlatforms: () => Promise<Map<number, Platform>>
+}
+
+const forLibrary = (libraryId: string, { db, api, readArt, allPlatforms }: LibraryDeps) => {
+  /** Each linked IGDB record's entry, and each entry's address and title, in this library. */
   const shelfIndex = async () => {
     const [linked, primaries] = await Promise.all([
-      readLinkedMembers(db),
+      readLinkedMembers(db, libraryId),
       db
         .select({ entryId: entryVersions.entryId, slug: games.slug, title: games.title })
         .from(entryVersions)
         .innerJoin(games, eq(games.id, entryVersions.gameId))
-        .where(eq(entryVersions.relation, 'primary')),
+        .where(and(eq(entryVersions.relation, 'primary'), eq(entryVersions.userId, libraryId))),
     ])
     const entries = new Map(
       primaries.map((row) => [row.entryId, { slug: row.slug, title: row.title }]),
@@ -141,7 +158,9 @@ export const createAdding = ({ db, igdb: api, readArt }: AddingDeps) => {
     const rows = await db
       .select({ platformId: copies.platformId, format: copies.format })
       .from(copies)
-      .orderBy(copies.createdAt, sql`rowid`)
+      .innerJoin(entries, eq(entries.id, copies.entryId))
+      .where(eq(entries.userId, libraryId))
+      .orderBy(copies.createdAt, sql`${copies}.rowid`)
     const counts = new Map<number, number>()
     const formats: Record<number, Format> = {}
     for (const row of rows) {
@@ -381,6 +400,7 @@ export const createAdding = ({ db, igdb: api, readArt }: AddingDeps) => {
 
     const added = await addFromIgdb(
       db,
+      libraryId,
       { data, lineage, ...(art ? { art } : {}), names, platforms },
       placement,
     )
@@ -391,7 +411,7 @@ export const createAdding = ({ db, igdb: api, readArt }: AddingDeps) => {
     return {
       slug: entry?.slug ?? data.slug,
       title: entry?.title ?? data.title,
-      version: await readVersion(db),
+      version: await readVersion(db, libraryId),
       undo: added,
     }
   }
@@ -416,18 +436,18 @@ export const createAdding = ({ db, igdb: api, readArt }: AddingDeps) => {
         results.push(refusalFor(error))
       }
     }
-    return { results, version: await readVersion(db) }
+    return { results, version: await readVersion(db, libraryId) }
   }
 
   const undoOne = async (added: Added) => {
-    if (added.newEntry) await removeEntry(db, added.entryId)
-    else await undoJoin(db, added)
+    if (added.newEntry) await removeEntry(db, libraryId, added.entryId)
+    else await undoJoin(db, libraryId, added)
   }
 
   /** Undo (spec 4.1): the game and everything added with it. */
   const undo = async (added: Added): Promise<number> => {
     await undoOne(added)
-    return readVersion(db)
+    return readVersion(db, libraryId)
   }
 
   /**
@@ -442,17 +462,19 @@ export const createAdding = ({ db, igdb: api, readArt }: AddingDeps) => {
         if (!(error instanceof LibraryError && error.code === 'not-found')) throw error
       }
     }
-    return readVersion(db)
+    return readVersion(db, libraryId)
   }
 
   return { search, match, grouping, add, addMany, undo, undoMany }
 }
 
-/* For routes and actions: the owner only, on this server's database and IGDB. */
+/* For routes and actions: the signed-in account, on its own library, this server's IGDB. */
 
 let shared: ReturnType<typeof createAdding> | undefined
-const adding = () =>
-  (shared ??= createAdding({ db: database(), igdb: igdb(), readArt: (id) => readCoverArt(id) }))
+const adding = (account: Account) =>
+  (shared ??= createAdding({ db: database(), igdb: igdb(), readArt: (id) => readCoverArt(id) }))(
+    account.id,
+  )
 
 const searchText = z.string().trim().min(MIN_SEARCH).max(MAX_SEARCH)
 const igdbId = z.number().int().positive()
@@ -468,25 +490,34 @@ const addedShape = z.object({
 export const searchToAdd = (text: unknown) => {
   const parsed = searchText.safeParse(text)
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
-  return forOwner(() => adding().search(parsed.data))
+  return forAccount(async (account) => {
+    await spend(account, 'search')
+    return adding(account).search(parsed.data)
+  })
 }
 
 export const groupingFor = (id: unknown) => {
   const parsed = igdbId.safeParse(id)
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
-  return forOwner(() => adding().grouping(parsed.data))
+  return forAccount(async (account) => {
+    await spend(account, 'search')
+    return adding(account).grouping(parsed.data)
+  })
 }
 
-export const addGameForOwner = (input: unknown) => {
+export const addMyGame = (input: unknown) => {
   const parsed = addInput.safeParse(input)
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
-  return forOwner(() => adding().add(parsed.data), true)
+  return forAccount(async (account) => {
+    await spend(account, 'add')
+    return adding(account).add(parsed.data)
+  }, true)
 }
 
-export const undoAddForOwner = (added: unknown) => {
+export const undoMyAdd = (added: unknown) => {
   const parsed = addedShape.safeParse(added)
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
-  return forOwner(() => adding().undo(parsed.data), true)
+  return forAccount((account) => adding(account).undo(parsed.data), true)
 }
 
 /** Lines as pasted, each naming a game. */
@@ -501,22 +532,28 @@ const pastedLines = z
   .min(1)
   .max(MAX_MATCH_LINES)
 
-export const matchForOwner = (lines: unknown) => {
+export const matchMine = (lines: unknown) => {
   const parsed = pastedLines.safeParse(lines)
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
   // One answer a line: a line that is all brackets is searched as written.
   const pasted = parsed.data.map((text) => parseLine(text) ?? { text, title: text })
-  return forOwner(() => adding().match(pasted))
+  return forAccount(async (account) => {
+    await spend(account, 'match')
+    return adding(account).match(pasted)
+  })
 }
 
-export const addManyForOwner = (inputs: unknown) => {
+export const addManyOfMine = (inputs: unknown) => {
   const parsed = z.array(addInput).min(1).max(MAX_ADDITIONS).safeParse(inputs)
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
-  return forOwner(() => adding().addMany(parsed.data), true)
+  return forAccount(async (account) => {
+    await spend(account, 'add', parsed.data.length)
+    return adding(account).addMany(parsed.data)
+  }, true)
 }
 
-export const undoManyForOwner = (list: unknown) => {
+export const undoManyOfMine = (list: unknown) => {
   const parsed = z.array(addedShape).min(1).max(MAX_ADDITIONS).safeParse(list)
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
-  return forOwner(() => adding().undoMany(parsed.data), true)
+  return forAccount((account) => adding(account).undoMany(parsed.data), true)
 }

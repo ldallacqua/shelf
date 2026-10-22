@@ -28,7 +28,7 @@ const SHARED = new Set([
 ])
 
 async function openList(page: Page) {
-  await openLibrary(page, '/en/library?group=none')
+  await openLibrary(page, '/en/u/sample?group=none')
   await page.keyboard.press('a')
   await expect(sheet(page)).toBeVisible()
   await sheet(page).getByRole('tab', { name: 'Paste a list' }).click()
@@ -40,7 +40,7 @@ async function openList(page: Page) {
 test('a pasted list of 50 known titles has every line matched or marked, the ones I have left out', async ({
   page,
 }) => {
-  const library = (await (await page.request.get('/api/v1/library?limit=80')).json()) as {
+  const library = (await (await page.request.get('/api/v1/u/sample/library?limit=80')).json()) as {
     games: { title: string }[]
   }
   const mine = library.games.map((game) => game.title).filter((title) => !SHARED.has(title))

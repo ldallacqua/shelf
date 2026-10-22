@@ -7,7 +7,7 @@ import {
   toApiAdditions,
   written,
 } from '@/server/api/writes'
-import { addManyForOwner } from '@/server/services/adding'
+import { addManyOfMine } from '@/server/services/adding'
 
 /**
  * `POST /api/v1/additions`: many games at once, from a reviewed list (spec
@@ -17,9 +17,9 @@ import { addManyForOwner } from '@/server/services/adding'
 export async function POST(request: Request) {
   const parsed = apiNewGames.safeParse(await bodyOf(request))
   if (!parsed.success) return refused({ ok: false, reason: 'invalid' })
-  const result = await addManyForOwner(parsed.data.games.map(toAddInput))
+  const result = await addManyOfMine(parsed.data.games.map(toAddInput))
   return written(
     apiAdditions,
-    result.ok ? { ok: true, value: toApiAdditions(result.value) } : result,
+    result.ok ? { ...result, value: toApiAdditions(result.value) } : result,
   )
 }

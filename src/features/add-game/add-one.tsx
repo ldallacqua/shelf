@@ -15,6 +15,8 @@ import {
 } from '@/domain/library/adding'
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
 import { Cover } from '@/features/library/cover'
+import { gameHref } from '@/features/library/shelf-address'
+import { signedInAccount } from '@/features/owner/account'
 import { DayField, RatingField, TagsField, today } from '@/features/owner/fields'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -87,9 +89,10 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
   const labels = new Map((answer?.platforms ?? []).map((platform) => [platform.id, platform]))
 
   const choose = (candidate: Candidate) => {
-    if (candidate.onShelf) {
+    const mine = signedInAccount()
+    if (candidate.onShelf && mine) {
       onOpenOwned()
-      router.push({ pathname: '/game/[slug]', params: { slug: candidate.onShelf.slug } })
+      router.push(gameHref(mine.handle, candidate.onShelf.slug))
       return
     }
     setChosen(candidate)

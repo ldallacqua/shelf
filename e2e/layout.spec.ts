@@ -9,7 +9,7 @@ const beforeTheFirstBoxes = () =>
   test.describe('before the first boxes arrive', () => {
     test.use({ javaScriptEnabled: false })
 
-    for (const path of ['/en/library', '/pt-BR/shelves/short-ones']) {
+    for (const path of ['/en/u/sample', '/pt-BR/u/sample/shelves/short-ones']) {
       test(`${path} still fits`, async ({ page }) => {
         const html = await (await page.request.get(path)).text()
         const streamed = html.indexOf('<div hidden id="S:')

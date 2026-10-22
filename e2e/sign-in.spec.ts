@@ -3,34 +3,47 @@ import type { Page } from '@playwright/test'
 import { expect, fillSignIn, OWNER, signIn, test } from './fixtures'
 
 /**
- * Signing in (spec 11): one account, by email address and password, made
- * from the server's settings. Nothing here goes around sign-in: the form is
- * sent to the same code a real sign-in runs, with the test server's made-up
- * owner.
+ * Signing in (spec 11, ADR 004): by email address or handle, and password.
+ * Nothing here goes around sign-in: the form is sent to the same code a
+ * real sign-in runs, as the sample account, with the test server's made-up
+ * password. Making accounts is in `accounts.writes.spec.ts`.
  */
 
 const footer = (page: Page) => page.locator('footer')
 /** The page's own message: Next.js's route announcer is an alert too. */
 const trouble = (page: Page) => page.getByRole('main').getByRole('alert')
+const WRONG = 'That email address or handle and that password do not match. Try again.'
 
 test.describe('signing in', () => {
-  test('the owner signs in and comes back to the page they left @smoke', async ({
-    page,
-    context,
-  }) => {
-    await page.goto('/en/trophies')
+  test('signs in and comes back to the page left @smoke', async ({ page, context }) => {
+    await page.goto('/en/u/sample/trophies')
     await footer(page).getByRole('link', { name: 'Sign in' }).click()
-    await expect(page).toHaveURL(/\/en\/sign-in\?from=%2Fen%2Ftrophies$/)
+    await expect(page).toHaveURL(/\/en\/sign-in\?from=%2Fen%2Fu%2Fsample%2Ftrophies$/)
     await page.locator('html[data-ready]').waitFor({ state: 'attached' })
     await fillSignIn(page, OWNER.email, OWNER.password)
 
-    await expect(page).toHaveURL(/\/en\/trophies$/)
-    await expect(footer(page)).toContainText(`Signed in as ${OWNER.email}`)
+    await expect(page).toHaveURL(/\/en\/u\/sample\/trophies$/)
+    await expect(footer(page)).toContainText('Signed in as Sample')
     const cookies = await context.cookies()
     // The session is out of scripts' reach; only the hint is not.
     expect(cookies.find((cookie) => cookie.name === 'shelf.session_token')?.httpOnly).toBe(true)
-    expect(cookies.find((cookie) => cookie.name === 'shelf_owner_hint')?.httpOnly).toBe(false)
-    expect(await (await page.request.get('/api/v1/me')).json()).toMatchObject({ owner: true })
+    expect(cookies.find((cookie) => cookie.name === 'shelf_signed_in')?.httpOnly).toBe(false)
+    expect(await (await page.request.get('/api/v1/me')).json()).toMatchObject({
+      signedIn: true,
+      handle: 'sample',
+      name: 'Sample',
+      shelfPublic: true,
+    })
+  })
+
+  test('takes a handle in place of the email address, and goes on to one’s own shelf', async ({
+    page,
+  }) => {
+    await page.goto('/en/sign-in')
+    await page.locator('html[data-ready]').waitFor({ state: 'attached' })
+    await fillSignIn(page, 'Sample', OWNER.password)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
+    await expect(page.getByRole('button', { name: 'Sample, your account' })).toBeVisible()
   })
 
   test('the password can be shown as typed, and hidden again', async ({ page }) => {
@@ -60,41 +73,31 @@ test.describe('signing in', () => {
     }) => {
       await page.goto('/en/sign-in')
       await page.locator('html[data-ready]').waitFor({ state: 'attached' })
-      const wrong = 'That email address and password do not match. Try again.'
 
-      await fillSignIn(page, OWNER.email, 'not-the-owner-password')
-      await expect(trouble(page)).toHaveText(wrong)
+      await fillSignIn(page, OWNER.email, 'not-the-sample-password')
+      await expect(trouble(page)).toHaveText(WRONG)
       // The address stays; the password is typed again.
-      await expect(page.getByLabel('Email address')).toHaveValue(OWNER.email)
+      await expect(page.getByLabel('Email address or handle')).toHaveValue(OWNER.email)
       const password = page.getByLabel('Password', { exact: true })
       await expect(password).toHaveValue('')
       await expect(password).toBeFocused()
 
-      await fillSignIn(page, 'someone@shelf.test', OWNER.password)
-      await expect(trouble(page)).toHaveText(wrong)
+      for (const who of ['someone@shelf.test', 'no-such-handle']) {
+        await fillSignIn(page, who, OWNER.password)
+        await expect(trouble(page)).toHaveText(WRONG)
+      }
       await expect(page).toHaveURL(/\/en\/sign-in$/)
       expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain(
         'shelf.session_token',
       )
-      expect(await (await page.request.get('/api/v1/me')).json()).toEqual({ owner: false })
+      expect(await (await page.request.get('/api/v1/me')).json()).toEqual({ signedIn: false })
     })
+  })
 
-    test('nobody can make an account', async ({ page, context }) => {
-      const made = await page.request.post('/api/auth/sign-up/email', {
-        data: { email: 'someone@shelf.test', password: 'a-long-enough-password', name: 'Someone' },
-      })
-      expect(made.ok()).toBe(false)
-      expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain(
-        'shelf.session_token',
-      )
-      // Nor can that address sign in afterwards.
-      await page.goto('/en/sign-in')
-      await page.locator('html[data-ready]').waitFor({ state: 'attached' })
-      await fillSignIn(page, 'someone@shelf.test', 'a-long-enough-password')
-      await expect(trouble(page)).toHaveText(
-        'That email address and password do not match. Try again.',
-      )
-    })
+  test('offers a shelf of one’s own to someone without one', async ({ page }) => {
+    await page.goto('/en/sign-in')
+    await page.getByRole('main').getByRole('link', { name: 'Create one' }).click()
+    await expect(page).toHaveURL(/\/en\/sign-up$/)
   })
 
   test('an assistant’s request carries on to the consent page once signed in', async ({
@@ -132,7 +135,7 @@ test.describe('signing in', () => {
   })
 
   test('a visitor is offered no way to add a game, and A does nothing', async ({ page }) => {
-    await page.goto('/en/library')
+    await page.goto('/en/u/sample')
     await expect(footer(page).getByRole('link', { name: 'Sign in' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Add', exact: true })).toHaveCount(0)
     await page.keyboard.press('a')
@@ -144,7 +147,7 @@ test.describe('signing in', () => {
     page.on('request', (request) => {
       if (request.url().includes('/api/v1/me')) asked.push(request.url())
     })
-    await page.goto('/en/library')
+    await page.goto('/en/u/sample')
     await expect(footer(page).getByRole('link', { name: 'Sign in' })).toBeVisible()
     expect(asked).toEqual([])
   })
@@ -159,7 +162,7 @@ test.describe('signed in', () => {
   }) => {
     // A session of this test's own: signing out the shared one would sign out the others.
     await context.clearCookies()
-    await signIn(page, '/en/library')
+    await signIn(page, '/en/u/sample')
     await expect(page.getByRole('button', { name: 'Save as a shelf' })).toBeVisible()
 
     await footer(page).getByRole('button', { name: 'Sign out' }).click()
@@ -168,12 +171,31 @@ test.describe('signed in', () => {
     expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain(
       'shelf.session_token',
     )
-    expect(await (await page.request.get('/api/v1/me')).json()).toEqual({ owner: false })
+    expect(await (await page.request.get('/api/v1/me')).json()).toEqual({ signedIn: false })
+  })
+
+  test('the account menu leads to one’s own shelf and account, and signs out', async ({
+    page,
+    context,
+  }) => {
+    await context.clearCookies()
+    await signIn(page, '/en/u/sample/trophies')
+    const menu = async () => {
+      await page.getByRole('button', { name: 'Sample, your account' }).click()
+      return page.getByRole('menu')
+    }
+    await (await menu()).getByRole('menuitem', { name: 'Account' }).click()
+    await expect(page).toHaveURL(/\/en\/account$/)
+    await expect(page.getByRole('heading', { name: 'Your shelf' })).toBeVisible()
+    await (await menu()).getByRole('menuitem', { name: 'My shelf' }).click()
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
+    await (await menu()).getByRole('menuitem', { name: 'Sign out' }).click()
+    await expect(page.getByRole('banner').getByRole('link', { name: 'Sign in' })).toBeVisible()
   })
 
   test('the sign-in page says who is signed in, and offers the way out', async ({ page }) => {
     await page.goto('/en/sign-in')
-    await expect(page.getByText(`Signed in as ${OWNER.email}.`)).toBeVisible()
+    await expect(page.getByText('Signed in as Sample.')).toBeVisible()
     await expect(page.getByRole('main').getByRole('button', { name: 'Sign out' })).toBeVisible()
   })
 })

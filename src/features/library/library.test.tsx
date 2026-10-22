@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { thumbHashToDataURL } from 'thumbhash'
 import { createTranslator } from 'next-intl'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ShelfItem } from '@/domain/library/group'
@@ -30,6 +30,7 @@ import {
   wallSizePreference,
   writePreference,
 } from './preferences'
+import { ShelfProvider } from './shelf'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 
@@ -359,12 +360,26 @@ describe('StatsLine', () => {
 })
 
 describe('EmptyLibrary', () => {
-  it('says the shelf is being stocked, in both languages', () => {
-    const { unmount } = renderWithIntl(<EmptyLibrary />)
-    expect(screen.getByRole('heading', { level: 1, name: 'Library' })).toBeInTheDocument()
+  const onShelf = (children: ReactNode) => (
+    <ShelfProvider
+      shelf={{
+        handle: 'sample',
+        name: 'Sample',
+        public: true,
+        files: { kind: 'public', key: 'k' },
+      }}
+    >
+      {children}
+    </ShelfProvider>
+  )
+
+  it('says whose shelf is being stocked, in both languages, with nothing for a visitor to do', () => {
+    const { unmount } = renderWithIntl(onShelf(<EmptyLibrary />))
+    expect(screen.getByRole('heading', { level: 1, name: "Sample's shelf" })).toBeInTheDocument()
     expect(screen.getByText('The shelf is being stocked.')).toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
     unmount()
-    renderWithIntl(<EmptyLibrary />, 'pt-BR')
+    renderWithIntl(onShelf(<EmptyLibrary />), 'pt-BR')
     expect(screen.getByText('A estante está sendo abastecida.')).toBeInTheDocument()
   })
 })

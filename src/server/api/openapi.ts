@@ -54,17 +54,29 @@ const query = (name: string, description: string, schema: Record<string, unknown
   schema,
 })
 
-/** The owner's session: what every write takes. */
-const OWNER = [{ ownerSession: [] }]
+/** An account's session: what every write takes, and every write is to that account's own library. */
+const OWNER = [{ session: [] }]
 
 /** How a write is turned down. */
 const REFUSALS = {
   400: { description: 'The body is not one Shelf can carry out', ...json('Error') },
-  401: { description: 'Not the owner’s session', ...json('Error') },
-  404: { description: 'No such game', ...json('Error') },
+  401: { description: 'No session: sign in first', ...json('Error') },
+  404: { description: 'No such game in your library', ...json('Error') },
   409: { description: 'That is there already', ...json('Error') },
+  429: { description: 'Your hour of IGDB is spent; try later', ...json('Error') },
   503: { description: 'This deployment keeps nothing it is given', ...json('Error') },
 }
+
+/** Whose shelf a read is of: a public one's handle. */
+const HANDLE = {
+  name: 'handle',
+  in: 'path',
+  required: true,
+  description: 'The shelf’s handle, as in its address /u/{handle}. Public shelves only.',
+  schema: { type: 'string' },
+}
+
+const NO_SHELF = { description: 'No public shelf has that handle', ...json('Error') }
 
 const ENTRY = {
   name: 'id',
@@ -132,14 +144,15 @@ export const openApiDocument = () => {
       title: 'Shelf',
       version: '1',
       description:
-        'A personal game library. Every read is public. Writes are the owner’s alone: they take the session cookie that signing in on the site sets, and answer 401 without it.',
+        'Game libraries, one an account, each a shelf with a handle: /u/{handle}. Reading a public shelf takes nothing; a private one answers 404. Writes are to your own library: they take the session cookie that signing in on the site sets, and answer 401 without it.',
     },
     servers: [{ url: `${siteUrl()}/api/v1` }],
     paths: {
-      '/library': {
+      '/u/{handle}/library': {
         get: {
-          summary: 'The library, filtered, sorted and grouped',
+          summary: 'A shelf’s library, filtered, sorted and grouped',
           parameters: [
+            HANDLE,
             filter,
             query('sort', 'A sort key; `-` in front reverses it', {
               type: 'string',
@@ -168,29 +181,41 @@ export const openApiDocument = () => {
               default: 'en',
             }),
           ],
-          responses: { 200: { description: 'One page of matching games', ...json('Library') } },
+          responses: {
+            200: { description: 'One page of matching games', ...json('Library') },
+            404: NO_SHELF,
+          },
         },
       },
-      '/library/facets': {
+      '/u/{handle}/facets': {
         get: {
-          summary: 'Every value a filter can take, with how many games each would match',
-          parameters: [filter],
-          responses: { 200: { description: 'Values and counts', ...json('Facets') } },
+          summary: 'Every value a filter can take on a shelf, with how many games each would match',
+          parameters: [HANDLE, filter],
+          responses: {
+            200: { description: 'Values and counts', ...json('Facets') },
+            404: NO_SHELF,
+          },
         },
       },
-      '/games/{slug}': {
+      '/u/{handle}/games/{slug}': {
         get: {
-          summary: 'One game, with everything its page shows a visitor',
-          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          summary: 'One game on a shelf, with everything its page shows a visitor',
+          parameters: [
+            HANDLE,
+            { name: 'slug', in: 'path', required: true, schema: { type: 'string' } },
+          ],
           responses: {
             200: { description: 'The game', ...json('GamePage') },
-            404: { description: 'No game in the library has that slug', ...json('Error') },
+            404: {
+              description: 'No public shelf, or no game on it, by that name',
+              ...json('Error'),
+            },
           },
         },
       },
       '/igdb/search': {
         get: {
-          summary: 'Search IGDB for a game to add. The owner only.',
+          summary: 'Search IGDB for a game to add. Signed in.',
           security: OWNER,
           parameters: [
             {
@@ -209,8 +234,7 @@ export const openApiDocument = () => {
       },
       '/igdb/match': {
         post: {
-          summary:
-            'Match a pasted list against IGDB, up to twenty lines at a time. The owner only.',
+          summary: 'Match a pasted list against IGDB, up to twenty lines at a time. Signed in.',
           description:
             'Each line gets its match, how sure it is, and alternatives. Nothing is added: send the games chosen to POST /additions.',
           security: OWNER,
@@ -223,7 +247,7 @@ export const openApiDocument = () => {
       },
       '/additions': {
         post: {
-          summary: 'Add many games at once, up to fifty. The owner only.',
+          summary: 'Add many games at once, up to fifty. Signed in.',
           description:
             'Each is added as POST /entries would add it, in order, so a game can fold into one added before it. One that fails leaves the rest.',
           security: OWNER,
@@ -236,7 +260,7 @@ export const openApiDocument = () => {
       },
       '/additions/undo': {
         post: {
-          summary: 'Take back what POST /additions added. The owner only.',
+          summary: 'Take back what POST /additions added. Signed in.',
           security: OWNER,
           requestBody: { required: true, ...json('UndoAdditions') },
           responses: { 200: { description: 'Taken back', ...json('Changed') }, ...REFUSALS },
@@ -244,7 +268,7 @@ export const openApiDocument = () => {
       },
       '/entries': {
         post: {
-          summary: 'Add a game from IGDB. The owner only.',
+          summary: 'Add a game from IGDB. Signed in.',
           description:
             'A game related to one in the library (an edition, a port, a remaster) is folded into it or kept apart as ADR 001 proposes, unless `grouping` says otherwise. A game already in the library gets only the copies it lacked.',
           security: OWNER,
@@ -258,20 +282,20 @@ export const openApiDocument = () => {
       '/entries/{id}': {
         get: {
           summary:
-            'A game as its owner keeps it: private notes, its versions and copies, with ids. The owner only.',
+            'A game as its owner keeps it: private notes, its versions and copies, with ids. Signed in.',
           security: OWNER,
           parameters: [ENTRY],
           responses: { 200: { description: 'The game', ...json('OwnerGame') }, ...REFUSALS },
         },
         patch: {
-          summary: 'Change what is mine about a game, in one step. The owner only.',
+          summary: 'Change what is mine about a game, in one step. Signed in.',
           security: OWNER,
           parameters: [ENTRY],
           requestBody: { required: true, ...json('GamePatch') },
           responses: { 200: { description: 'Changed', ...json('Changed') }, ...REFUSALS },
         },
         delete: {
-          summary: 'Remove a game, with everything added with it. The owner only.',
+          summary: 'Remove a game, with everything added with it. Signed in.',
           security: OWNER,
           parameters: [ENTRY],
           responses: { 200: { description: 'Removed', ...json('Removed') }, ...REFUSALS },
@@ -279,7 +303,7 @@ export const openApiDocument = () => {
       },
       '/entries/{id}/copies': {
         post: {
-          summary: 'Add a copy: a platform and format I own the game on. The owner only.',
+          summary: 'Add a copy: a platform and format I own the game on. Signed in.',
           security: OWNER,
           parameters: [ENTRY],
           requestBody: { required: true, ...json('NewCopy') },
@@ -288,14 +312,14 @@ export const openApiDocument = () => {
       },
       '/entries/{id}/copies/{copy}': {
         patch: {
-          summary: 'Switch a copy between physical and digital. The owner only.',
+          summary: 'Switch a copy between physical and digital. Signed in.',
           security: OWNER,
           parameters: [ENTRY, COPY],
           requestBody: { required: true, ...json('CopyPatch') },
           responses: { 200: { description: 'Changed', ...json('Changed') }, ...REFUSALS },
         },
         delete: {
-          summary: 'Remove a copy. The owner only.',
+          summary: 'Remove a copy. Signed in.',
           security: OWNER,
           parameters: [ENTRY, COPY],
           responses: { 200: { description: 'Removed', ...json('Changed') }, ...REFUSALS },
@@ -303,7 +327,7 @@ export const openApiDocument = () => {
       },
       '/removed/{undo}': {
         post: {
-          summary: 'Put a removed game back as it was, within a day. The owner only.',
+          summary: 'Put a removed game back as it was, within a day. Signed in.',
           security: OWNER,
           parameters: [
             {
@@ -320,26 +344,37 @@ export const openApiDocument = () => {
           },
         },
       },
-      '/shelves': {
+      '/u/{handle}/shelves': {
         get: {
-          summary: 'The smart shelves',
+          summary: 'A shelf’s smart shelves',
+          parameters: [HANDLE],
           responses: {
             200: { description: 'Every smart shelf, in order', ...json('SmartShelves') },
+            404: NO_SHELF,
+          },
+        },
+      },
+      '/u/{handle}/shelves/{slug}': {
+        get: {
+          summary:
+            'One smart shelf. Its games are /u/{handle}/library with its query, sort and group.',
+          parameters: [
+            HANDLE,
+            { name: 'slug', in: 'path', required: true, schema: { type: 'string' } },
+          ],
+          responses: {
+            200: { description: 'The shelf', ...json('SmartShelf') },
+            404: {
+              description: 'No public shelf, or no smart shelf on it, by that name',
+              ...json('Error'),
+            },
           },
         },
       },
       '/shelves/{slug}': {
-        get: {
-          summary: 'One smart shelf. Its games are /library with its query, sort and group.',
-          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
-          responses: {
-            200: { description: 'The shelf', ...json('SmartShelf') },
-            404: { description: 'No shelf has that slug', ...json('Error') },
-          },
-        },
         put: {
           summary:
-            'Save a smart shelf: the one at this address, or a new one named as asked. The owner only.',
+            'Save a smart shelf: the one at this address, or a new one named as asked. Signed in.',
           security: OWNER,
           requestBody: {
             required: true,
@@ -365,22 +400,24 @@ export const openApiDocument = () => {
           },
         },
         delete: {
-          summary: 'Remove a smart shelf. The owner only.',
+          summary: 'Remove a smart shelf. Signed in.',
           security: OWNER,
           responses: { 200: { description: 'Removed' }, ...REFUSALS },
         },
       },
-      '/library/snapshot/{version}': {
+      '/libraries/{key}/snapshot/{version}': {
         get: {
-          summary: 'The whole library in one compact file, cached for a year by its version',
+          summary: 'A public library in one compact file, cached for a year by its version',
           description:
-            'What the site itself filters on the device. Its rows are positional; the format is internal and may change. Prefer /library.',
+            'What the site itself filters on the device. Its rows are positional; the format is internal and may change. The key is in the shelf’s page. Prefer /u/{handle}/library.',
           parameters: [
+            { name: 'key', in: 'path', required: true, schema: { type: 'string' } },
             { name: 'version', in: 'path', required: true, schema: { type: 'integer' } },
           ],
           responses: {
             200: { description: 'The library file' },
             307: { description: 'Sent on to the current version' },
+            404: { description: 'No public library has that key', ...json('Error') },
           },
         },
       },
@@ -388,12 +425,12 @@ export const openApiDocument = () => {
     components: {
       schemas,
       securitySchemes: {
-        ownerSession: {
+        session: {
           type: 'apiKey',
           in: 'cookie',
           name: 'shelf.session_token',
           description:
-            'Set by signing in on the site, with the owner’s email address and password. There is one account, and no way to make another. On HTTPS the cookie is named `__Secure-shelf.session_token`.',
+            'Set by signing in on the site, with your email address or handle and password. Anyone can make an account there. On HTTPS the cookie is named `__Secure-shelf.session_token`.',
         },
       },
     },

@@ -128,11 +128,19 @@ export const games = sqliteTable(
   ],
 )
 
+/**
+ * Whose library a row is in: the account's id (ADR 004). Nullable only until
+ * every row has one; the code always sets it, and a later release makes it
+ * required.
+ */
+const libraryOf = () => text().references(() => users.id, { onDelete: 'cascade' })
+
 /** The game as I think of it. Everything true of it whatever the platform. */
 export const entries = sqliteTable(
   'entries',
   {
     id: text().primaryKey(),
+    userId: libraryOf(),
     status: text().$type<Status>().notNull(),
     /** Mine, 0 to 100. */
     rating: integer(),
@@ -147,6 +155,7 @@ export const entries = sqliteTable(
     updatedAt: integer().notNull(),
   },
   (table) => [
+    index('entries_user').on(table.userId),
     check('entries_status', sql`${table.status} in (${oneOf(statuses)})`),
     check('entries_rating', sql`${table.rating} is null or (${table.rating} between 0 and 100)`),
   ],
@@ -154,7 +163,9 @@ export const entries = sqliteTable(
 
 /**
  * Which IGDB records an entry folds together. A record belongs to one entry
- * only: that is what lets search say "in library" for any version.
+ * of a library: that is what lets search say "in library" for any version.
+ * Another library may have it too. The library is the entry's, kept here as
+ * well so the database can hold that rule.
  */
 export const entryVersions = sqliteTable(
   'entry_versions',
@@ -165,11 +176,13 @@ export const entryVersions = sqliteTable(
     gameId: text()
       .notNull()
       .references(() => games.id, { onDelete: 'cascade' }),
+    userId: libraryOf(),
     relation: text().$type<Relation>().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.entryId, table.gameId] }),
-    uniqueIndex('entry_versions_game').on(table.gameId),
+    uniqueIndex('entry_versions_user_game').on(table.userId, table.gameId),
+    index('entry_versions_game').on(table.gameId),
     uniqueIndex('entry_versions_one_primary')
       .on(table.entryId)
       .where(sql`${table.relation} = 'primary'`),
@@ -245,14 +258,16 @@ export const playTime = sqliteTable(
   ],
 )
 
+/** A library's own words for its games. Two libraries may each have a "replay someday". */
 export const tags = sqliteTable(
   'tags',
   {
     id: text().primaryKey(),
+    userId: libraryOf(),
     name: text().notNull(),
     slug: text().notNull(),
   },
-  (table) => [uniqueIndex('tags_slug').on(table.slug)],
+  (table) => [uniqueIndex('tags_user_slug').on(table.userId, table.slug)],
 )
 
 export const entryTags = sqliteTable(
@@ -285,6 +300,7 @@ export const shelves = sqliteTable(
   'shelves',
   {
     id: text().primaryKey(),
+    userId: libraryOf(),
     slug: text().notNull(),
     name: text().notNull(),
     query: text().notNull().default(''),
@@ -294,7 +310,7 @@ export const shelves = sqliteTable(
     createdAt: integer().notNull(),
     updatedAt: integer().notNull(),
   },
-  (table) => [uniqueIndex('shelves_slug').on(table.slug)],
+  (table) => [uniqueIndex('shelves_user_slug').on(table.userId, table.slug)],
 )
 
 /**
@@ -306,15 +322,36 @@ export const removedEntries = sqliteTable(
   'removed_entries',
   {
     id: text().primaryKey(),
+    userId: libraryOf(),
     entryId: text().notNull(),
     title: text().notNull(),
     snapshot: text({ mode: 'json' }).$type<unknown>().notNull(),
     removedAt: integer().notNull(),
   },
-  (table) => [index('removed_entries_at').on(table.removedAt)],
+  (table) => [
+    index('removed_entries_at').on(table.removedAt),
+    index('removed_entries_user').on(table.userId),
+  ],
 )
 
-/** One row: the counter raised by every write. The library file's address contains it. */
+/**
+ * One row per account: its library's version, raised by every write to it,
+ * and the key its files are addressed by. The key changes when the library
+ * goes private, so a public file's address leads nowhere new (ADR 004).
+ */
+export const libraries = sqliteTable('libraries', {
+  userId: text()
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  version: integer().notNull().default(0),
+  key: text().notNull().unique(),
+  createdAt: integer().notNull(),
+})
+
+/**
+ * Before accounts: the one library's counter. Read once, by the step that
+ * gave that library to its account; dropped in a later release.
+ */
 export const libraryMeta = sqliteTable(
   'library_meta',
   {
@@ -336,9 +373,8 @@ export const igdbToken = sqliteTable(
 )
 
 /*
- * Sign-in (architecture, section 9). Better Auth's own tables, under the
- * names its Drizzle adapter is given in `server/auth/auth.ts`. There is one
- * account, so each holds a row or two. A seed leaves them alone.
+ * Accounts and sign-in (architecture, section 9). Better Auth's own tables,
+ * under the names its Drizzle adapter is given in `server/auth/auth.ts`.
  */
 
 /** A moment as Better Auth hands it over, a Date, stored as milliseconds like every other moment here. */
@@ -352,6 +388,10 @@ export const users = sqliteTable('users', {
   image: text(),
   createdAt: moment().notNull(),
   updatedAt: moment().notNull(),
+  /** The handle in the shelf's address, `/u/{username}`. Lowercase. Better Auth's username plugin. */
+  username: text().unique(),
+  /** Whether anyone may see the shelf, or only its owner. The owner chooses. */
+  shelfPublic: integer({ mode: 'boolean' }).notNull().default(true),
 })
 
 export const sessions = sqliteTable(

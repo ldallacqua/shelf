@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 
@@ -9,7 +9,13 @@ import type { Company, GameData, LineageStep } from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
 import type { Added } from '@/domain/library/adding'
 import type { LinkedMember } from '@/domain/library/family'
-import { cleanShelf, freeSlug, MAX_SHELF_NAME, type SmartShelf } from '@/domain/library/shelves'
+import {
+  cleanShelf,
+  freeSlug,
+  MAX_SHELF_NAME,
+  STARTER_SHELVES,
+  type SmartShelf,
+} from '@/domain/library/shelves'
 import {
   isDay,
   isFormat,
@@ -30,7 +36,7 @@ import {
   entryTags,
   entryVersions,
   games,
-  libraryMeta,
+  libraries,
   platforms,
   playTime,
   removedEntries,
@@ -40,10 +46,13 @@ import {
 } from '@/server/db/schema'
 
 /**
- * Every write to the library. Nothing here knows who is asking: the services
- * that call it check that first. Each public write runs in one transaction
- * and ends by raising the library's version, which is what tells every cache
- * and every open browser that the library changed.
+ * Every write to a library. Each takes the library it is for, an account's
+ * id (ADR 004), and reaches nothing outside it: an entry or copy of another
+ * library is "not found". Who may write to which library is the services'
+ * question, asked first. Each public write runs in one transaction and ends
+ * by raising that library's version, which is what tells every cache and
+ * every open browser that it changed. The IGDB records (`games`, `vocab`,
+ * `platforms`) are every library's.
  */
 
 export type LibraryErrorCode = 'not-found' | 'invalid' | 'conflict'
@@ -72,18 +81,25 @@ export const toSlug = (text: string): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-/** Raises the version by one. Called inside the transaction of every write. */
-export const bumpVersion = (tx: Executor) =>
+/** A key for a library's files: random, so one address can't be guessed from another. */
+export const newLibraryKey = (): string => randomBytes(12).toString('base64url')
+
+/** Raises a library's version by one. Called inside the transaction of every write to it. */
+export const bumpVersion = (tx: Executor, libraryId: string) =>
   tx
-    .insert(libraryMeta)
-    .values({ id: 1, version: 1 })
+    .insert(libraries)
+    .values({ userId: libraryId, version: 1, key: newLibraryKey(), createdAt: Date.now() })
     .onConflictDoUpdate({
-      target: libraryMeta.id,
-      set: { version: sql`${libraryMeta.version} + 1` },
+      target: libraries.userId,
+      set: { version: sql`${libraries.version} + 1` },
     })
 
-export const readVersion = async (db: Executor): Promise<number> => {
-  const [row] = await db.select({ version: libraryMeta.version }).from(libraryMeta).limit(1)
+export const readVersion = async (db: Executor, libraryId: string): Promise<number> => {
+  const [row] = await db
+    .select({ version: libraries.version })
+    .from(libraries)
+    .where(eq(libraries.userId, libraryId))
+    .limit(1)
   return row?.version ?? 0
 }
 
@@ -262,10 +278,27 @@ const withConflict = async <T>(message: string, run: () => Promise<T>): Promise<
   }
 }
 
-const requireEntry = async (tx: Executor, entryId: string) => {
-  const [entry] = await tx.select().from(entries).where(eq(entries.id, entryId)).limit(1)
+/** An entry of this library. Another library's is not found, as if it did not exist. */
+const requireEntry = async (tx: Executor, libraryId: string, entryId: string) => {
+  const [entry] = await tx
+    .select()
+    .from(entries)
+    .where(and(eq(entries.id, entryId), eq(entries.userId, libraryId)))
+    .limit(1)
   if (!entry) throw notFound('That entry')
   return entry
+}
+
+/** A copy on a game of this library. */
+const requireCopy = async (tx: Executor, libraryId: string, copyId: string) => {
+  const [copy] = await tx
+    .select({ id: copies.id, entryId: copies.entryId })
+    .from(copies)
+    .innerJoin(entries, eq(entries.id, copies.entryId))
+    .where(and(eq(copies.id, copyId), eq(entries.userId, libraryId)))
+    .limit(1)
+  if (!copy) throw notFound('That copy')
+  return copy
 }
 
 const insertCopy = async (tx: Executor, entryId: string, copy: NewCopy, now: number) => {
@@ -312,33 +345,57 @@ const cleanTagNames = (names: readonly string[]): { name: string; slug: string }
   return [...bySlug].map(([slug, name]) => ({ name, slug }))
 }
 
-const writeTags = async (tx: Executor, entryId: string, names: readonly string[]) => {
+/** A tag of this library that nothing wears is not a tag. */
+const dropUnwornTags = (tx: Executor, libraryId: string) =>
+  tx
+    .delete(tags)
+    .where(
+      and(
+        eq(tags.userId, libraryId),
+        sql`${tags.id} not in (select ${entryTags.tagId} from ${entryTags})`,
+      ),
+    )
+
+const writeTags = async (
+  tx: Executor,
+  libraryId: string,
+  entryId: string,
+  names: readonly string[],
+) => {
   const wanted = cleanTagNames(names)
   await tx.delete(entryTags).where(eq(entryTags.entryId, entryId))
   if (wanted.length > 0) {
     await tx
       .insert(tags)
-      .values(wanted.map((tag) => ({ id: randomUUID(), ...tag })))
-      .onConflictDoNothing({ target: tags.slug })
+      .values(wanted.map((tag) => ({ id: randomUUID(), userId: libraryId, ...tag })))
+      .onConflictDoNothing({ target: [tags.userId, tags.slug] })
     const stored = await tx
       .select({ id: tags.id })
       .from(tags)
       .where(
-        inArray(
-          tags.slug,
-          wanted.map((tag) => tag.slug),
+        and(
+          eq(tags.userId, libraryId),
+          inArray(
+            tags.slug,
+            wanted.map((tag) => tag.slug),
+          ),
         ),
       )
     await tx.insert(entryTags).values(stored.map((tag) => ({ entryId, tagId: tag.id })))
   }
-  // A tag nothing wears is not a tag.
-  await tx.delete(tags).where(sql`${tags.id} not in (select ${entryTags.tagId} from ${entryTags})`)
+  await dropUnwornTags(tx, libraryId)
 }
 
-const insertEntry = async (tx: Executor, input: NewEntry, now: number): Promise<string> => {
+const insertEntry = async (
+  tx: Executor,
+  libraryId: string,
+  input: NewEntry,
+  now: number,
+): Promise<string> => {
   const id = randomUUID()
   await tx.insert(entries).values({
     id,
+    userId: libraryId,
     status: input.status,
     rating: input.rating ?? null,
     notes: input.notes?.trim() || null,
@@ -351,20 +408,25 @@ const insertEntry = async (tx: Executor, input: NewEntry, now: number): Promise<
   })
   await tx
     .insert(entryVersions)
-    .values({ entryId: id, gameId: input.primaryGameId, relation: 'primary' })
+    .values({ entryId: id, gameId: input.primaryGameId, userId: libraryId, relation: 'primary' })
   for (const copy of input.copies ?? []) await insertCopy(tx, id, copy, now)
   if (input.minutes) await writeManualMinutes(tx, id, input.minutes, now)
-  if (input.tags?.length) await writeTags(tx, id, input.tags)
+  if (input.tags?.length) await writeTags(tx, libraryId, id, input.tags)
   return id
 }
 
-/** Adds a game to the library: the entry, its primary version, its copies. */
-export const createEntry = (db: Db, input: NewEntry, now = Date.now()): Promise<string> => {
+/** Adds a game to a library: the entry, its primary version, its copies. */
+export const createEntry = (
+  db: Db,
+  libraryId: string,
+  input: NewEntry,
+  now = Date.now(),
+): Promise<string> => {
   checkMine(input)
   return withConflict('That game is already in the library', () =>
     db.transaction(async (tx) => {
-      const id = await insertEntry(tx, input, now)
-      await bumpVersion(tx)
+      const id = await insertEntry(tx, libraryId, input, now)
+      await bumpVersion(tx, libraryId)
       return id
     }),
   )
@@ -401,6 +463,7 @@ export type Placement =
  */
 export const addFromIgdb = (
   db: Db,
+  libraryId: string,
   record: RecordToStore,
   placement: Placement,
   now = Date.now(),
@@ -418,18 +481,25 @@ export const addFromIgdb = (
       })
 
       if (placement.kind === 'entry') {
-        const entryId = await insertEntry(tx, { ...placement.entry, primaryGameId: gameId }, now)
+        const entryId = await insertEntry(
+          tx,
+          libraryId,
+          { ...placement.entry, primaryGameId: gameId },
+          now,
+        )
         const copyIds = (
           await tx.select({ id: copies.id }).from(copies).where(eq(copies.entryId, entryId))
         ).map((row) => row.id)
-        await bumpVersion(tx)
+        await bumpVersion(tx, libraryId)
         return { entryId, gameId, newEntry: true, newVersion: true, copyIds }
       }
 
       const { entryId } = placement
-      await requireEntry(tx, entryId)
+      await requireEntry(tx, libraryId, entryId)
       if (placement.version) {
-        await tx.insert(entryVersions).values({ entryId, gameId, relation: placement.version })
+        await tx
+          .insert(entryVersions)
+          .values({ entryId, gameId, userId: libraryId, relation: placement.version })
       }
       const copyIds: string[] = []
       for (const copy of placement.copies) {
@@ -438,10 +508,27 @@ export const addFromIgdb = (
         copyIds.push(await insertCopy(tx, entryId, { ...copy, ...version }, now))
       }
       await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
-      await bumpVersion(tx)
+      await bumpVersion(tx, libraryId)
       return { entryId, gameId, newEntry: false, newVersion: Boolean(placement.version), copyIds }
     }),
   )
+}
+
+/**
+ * Deletes these IGDB records where no library uses them any more, as a
+ * version or as a copy's exact version. Another library's are kept.
+ */
+const dropUnusedGames = async (tx: Executor, gameIds: readonly string[]) => {
+  if (gameIds.length === 0) return
+  await tx
+    .delete(games)
+    .where(
+      and(
+        inArray(games.id, [...gameIds]),
+        sql`${games.id} not in (select ${entryVersions.gameId} from ${entryVersions})`,
+        sql`${games.id} not in (select ${copies.gameId} from ${copies} where ${copies.gameId} is not null)`,
+      ),
+    )
 }
 
 /**
@@ -449,9 +536,9 @@ export const addFromIgdb = (
  * it linked, with the record when nothing else uses it. An add that made an
  * entry of its own is undone with `removeEntry`.
  */
-export const undoJoin = (db: Db, added: Added, now = Date.now()) =>
+export const undoJoin = (db: Db, libraryId: string, added: Added, now = Date.now()) =>
   db.transaction(async (tx) => {
-    await requireEntry(tx, added.entryId)
+    await requireEntry(tx, libraryId, added.entryId)
     if (added.copyIds.length > 0) {
       await tx.delete(playTime).where(inArray(playTime.copyId, added.copyIds))
       await tx
@@ -472,18 +559,10 @@ export const undoJoin = (db: Db, added: Added, now = Date.now()) =>
             sql`${entryVersions.relation} != 'primary'`,
           ),
         )
-      await tx
-        .delete(games)
-        .where(
-          and(
-            eq(games.id, added.gameId),
-            sql`${games.id} not in (select ${entryVersions.gameId} from ${entryVersions})`,
-            sql`${games.id} not in (select ${copies.gameId} from ${copies} where ${copies.gameId} is not null)`,
-          ),
-        )
+      await dropUnusedGames(tx, [added.gameId])
     }
     await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, added.entryId))
-    await bumpVersion(tx)
+    await bumpVersion(tx, libraryId)
   })
 
 export type EntryPatch = {
@@ -497,10 +576,16 @@ export type EntryPatch = {
   addedAt?: number
 }
 
-export const updateEntry = (db: Db, entryId: string, patch: EntryPatch, now = Date.now()) => {
+export const updateEntry = (
+  db: Db,
+  libraryId: string,
+  entryId: string,
+  patch: EntryPatch,
+  now = Date.now(),
+) => {
   checkMine(patch)
   return db.transaction(async (tx) => {
-    await requireEntry(tx, entryId)
+    await requireEntry(tx, libraryId, entryId)
     if (patch.displayCopyId) {
       const [copy] = await tx
         .select({ id: copies.id })
@@ -514,7 +599,7 @@ export const updateEntry = (db: Db, entryId: string, patch: EntryPatch, now = Da
       .update(entries)
       .set({ ...patch, ...(notes === undefined ? {} : { notes }), updatedAt: now })
       .where(eq(entries.id, entryId))
-    await bumpVersion(tx)
+    await bumpVersion(tx, libraryId)
   })
 }
 
@@ -525,6 +610,7 @@ export const updateEntry = (db: Db, entryId: string, patch: EntryPatch, now = Da
  */
 export const patchEntry = (
   db: Db,
+  libraryId: string,
   entryId: string,
   patch: { mine?: EntryPatch; tags?: readonly string[]; minutes?: number },
   now = Date.now(),
@@ -532,7 +618,7 @@ export const patchEntry = (
   if (patch.mine) checkMine(patch.mine)
   if (patch.minutes !== undefined) checkMine({ minutes: patch.minutes })
   return db.transaction(async (tx) => {
-    await requireEntry(tx, entryId)
+    await requireEntry(tx, libraryId, entryId)
     if (patch.mine && Object.keys(patch.mine).length > 0) {
       const notes = patch.mine.notes === undefined ? undefined : patch.mine.notes?.trim() || null
       await tx
@@ -540,16 +626,17 @@ export const patchEntry = (
         .set({ ...patch.mine, ...(notes === undefined ? {} : { notes }) })
         .where(eq(entries.id, entryId))
     }
-    if (patch.tags) await writeTags(tx, entryId, patch.tags)
+    if (patch.tags) await writeTags(tx, libraryId, entryId, patch.tags)
     if (patch.minutes !== undefined) await writeManualMinutes(tx, entryId, patch.minutes, now)
     await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
-    await bumpVersion(tx)
+    await bumpVersion(tx, libraryId)
   })
 }
 
 /** Folds another IGDB record into an entry: an edition, a port, a remaster. */
 export const addVersion = (
   db: Db,
+  libraryId: string,
   entryId: string,
   gameId: string,
   relation: Exclude<Relation, 'primary'>,
@@ -559,16 +646,23 @@ export const addVersion = (
   }
   return withConflict('That version already belongs to a game in the library', () =>
     db.transaction(async (tx) => {
-      await requireEntry(tx, entryId)
-      await tx.insert(entryVersions).values({ entryId, gameId, relation })
-      await bumpVersion(tx)
+      await requireEntry(tx, libraryId, entryId)
+      await tx.insert(entryVersions).values({ entryId, gameId, userId: libraryId, relation })
+      await bumpVersion(tx, libraryId)
     }),
   )
 }
 
 /** Makes another of the entry's versions the one that supplies title and cover. */
-export const setPrimary = (db: Db, entryId: string, gameId: string, now = Date.now()) =>
+export const setPrimary = (
+  db: Db,
+  libraryId: string,
+  entryId: string,
+  gameId: string,
+  now = Date.now(),
+) =>
   db.transaction(async (tx) => {
+    await requireEntry(tx, libraryId, entryId)
     const versions = await tx.select().from(entryVersions).where(eq(entryVersions.entryId, entryId))
     const next = versions.find((version) => version.gameId === gameId)
     if (!next) throw notFound('That version')
@@ -583,24 +677,29 @@ export const setPrimary = (db: Db, entryId: string, gameId: string, now = Date.n
       .set({ relation: 'primary' })
       .where(and(eq(entryVersions.entryId, entryId), eq(entryVersions.gameId, gameId)))
     await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
-    await bumpVersion(tx)
+    await bumpVersion(tx, libraryId)
   })
 
-export const addCopy = (db: Db, entryId: string, copy: NewCopy, now = Date.now()) =>
+export const addCopy = (
+  db: Db,
+  libraryId: string,
+  entryId: string,
+  copy: NewCopy,
+  now = Date.now(),
+) =>
   withConflict('That platform and format are already on this game', () =>
     db.transaction(async (tx) => {
-      await requireEntry(tx, entryId)
+      await requireEntry(tx, libraryId, entryId)
       const id = await insertCopy(tx, entryId, copy, now)
       await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
-      await bumpVersion(tx)
+      await bumpVersion(tx, libraryId)
       return id
     }),
   )
 
-export const removeCopy = (db: Db, copyId: string, now = Date.now()) =>
+export const removeCopy = (db: Db, libraryId: string, copyId: string, now = Date.now()) =>
   db.transaction(async (tx) => {
-    const [copy] = await tx.select().from(copies).where(eq(copies.id, copyId)).limit(1)
-    if (!copy) throw notFound('That copy')
+    const copy = await requireCopy(tx, libraryId, copyId)
     await tx.delete(playTime).where(eq(playTime.copyId, copyId))
     await tx.delete(copies).where(eq(copies.id, copyId))
     await tx
@@ -608,34 +707,47 @@ export const removeCopy = (db: Db, copyId: string, now = Date.now()) =>
       .set({ displayCopyId: null, updatedAt: now })
       .where(and(eq(entries.id, copy.entryId), eq(entries.displayCopyId, copyId)))
     await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, copy.entryId))
-    await bumpVersion(tx)
+    await bumpVersion(tx, libraryId)
   })
 
 /** Sets the minutes I typed in. Time from a future sync lives in its own rows. */
-export const setManualMinutes = (db: Db, entryId: string, minutes: number, now = Date.now()) => {
+export const setManualMinutes = (
+  db: Db,
+  libraryId: string,
+  entryId: string,
+  minutes: number,
+  now = Date.now(),
+) => {
   checkMine({ minutes })
   return db.transaction(async (tx) => {
-    await requireEntry(tx, entryId)
+    await requireEntry(tx, libraryId, entryId)
     await writeManualMinutes(tx, entryId, minutes, now)
     await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
-    await bumpVersion(tx)
+    await bumpVersion(tx, libraryId)
   })
 }
 
-export const setTags = (db: Db, entryId: string, names: readonly string[], now = Date.now()) =>
+export const setTags = (
+  db: Db,
+  libraryId: string,
+  entryId: string,
+  names: readonly string[],
+  now = Date.now(),
+) =>
   db.transaction(async (tx) => {
-    await requireEntry(tx, entryId)
-    await writeTags(tx, entryId, names)
+    await requireEntry(tx, libraryId, entryId)
+    await writeTags(tx, libraryId, entryId, names)
     await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
-    await bumpVersion(tx)
+    await bumpVersion(tx, libraryId)
   })
 
 /**
  * Removes a game and everything added with it: versions, copies, playtime,
- * tags, and the cached IGDB records only it used. Children are deleted here
- * and not left to cascades, so the result is the same on every engine.
+ * tags, and the cached IGDB records only it used: a record another library
+ * has stays. Children are deleted here and not left to cascades, so the
+ * result is the same on every engine.
  */
-const deleteEntry = async (tx: Executor, entryId: string) => {
+const deleteEntry = async (tx: Executor, libraryId: string, entryId: string) => {
   const versions = await tx
     .select({ gameId: entryVersions.gameId })
     .from(entryVersions)
@@ -645,22 +757,59 @@ const deleteEntry = async (tx: Executor, entryId: string) => {
   await tx.delete(entryTags).where(eq(entryTags.entryId, entryId))
   await tx.delete(entryVersions).where(eq(entryVersions.entryId, entryId))
   await tx.delete(entries).where(eq(entries.id, entryId))
-  if (versions.length > 0) {
-    await tx.delete(games).where(
-      inArray(
-        games.id,
-        versions.map((version) => version.gameId),
-      ),
-    )
-  }
-  await tx.delete(tags).where(sql`${tags.id} not in (select ${entryTags.tagId} from ${entryTags})`)
+  await dropUnusedGames(
+    tx,
+    versions.map((version) => version.gameId),
+  )
+  await dropUnwornTags(tx, libraryId)
 }
 
-export const removeEntry = (db: Db, entryId: string) =>
+export const removeEntry = (db: Db, libraryId: string, entryId: string) =>
   db.transaction(async (tx) => {
-    await requireEntry(tx, entryId)
-    await deleteEntry(tx, entryId)
-    await bumpVersion(tx)
+    await requireEntry(tx, libraryId, entryId)
+    await deleteEntry(tx, libraryId, entryId)
+    await bumpVersion(tx, libraryId)
+  })
+
+/**
+ * Everything a library holds, gone: for an account being deleted. The IGDB
+ * records stay where another library uses them. The version is not raised:
+ * there is no library left to show.
+ */
+/**
+ * A new account's library (ADR 004): its version and key, and the starter
+ * shelves. Run once, when the account is made; again, it changes nothing
+ * but the version.
+ */
+export const startLibrary = (db: Db, libraryId: string, now = Date.now()) =>
+  db.transaction(async (tx) => {
+    await bumpVersion(tx, libraryId)
+    await tx
+      .insert(shelves)
+      .values(
+        STARTER_SHELVES.map((shelf, position) => ({
+          id: randomUUID(),
+          userId: libraryId,
+          ...shelf,
+          position,
+          createdAt: now,
+          updatedAt: now,
+        })),
+      )
+      .onConflictDoNothing()
+  })
+
+export const removeLibrary = (db: Db, libraryId: string) =>
+  db.transaction(async (tx) => {
+    const own = await tx
+      .select({ id: entries.id })
+      .from(entries)
+      .where(eq(entries.userId, libraryId))
+    for (const { id } of own) await deleteEntry(tx, libraryId, id)
+    await tx.delete(tags).where(eq(tags.userId, libraryId))
+    await tx.delete(shelves).where(eq(shelves.userId, libraryId))
+    await tx.delete(removedEntries).where(eq(removedEntries.userId, libraryId))
+    await tx.delete(libraries).where(eq(libraries.userId, libraryId))
   })
 
 /** Everything removing a game takes away, as rows, so it can all go back. */
@@ -680,9 +829,9 @@ const KEPT_FOR_MS = 24 * 60 * 60 * 1000
  * Removes a game as `removeEntry` does, keeping what it removed for a day.
  * Returns the id Undo takes.
  */
-export const removeEntryForUndo = (db: Db, entryId: string, now = Date.now()) =>
+export const removeEntryForUndo = (db: Db, libraryId: string, entryId: string, now = Date.now()) =>
   db.transaction(async (tx) => {
-    const entry = await requireEntry(tx, entryId)
+    const entry = await requireEntry(tx, libraryId, entryId)
     const versions = await tx.select().from(entryVersions).where(eq(entryVersions.entryId, entryId))
     const ids = versions.map((version) => version.gameId)
     const snapshot: EntrySnapshot = {
@@ -702,81 +851,124 @@ export const removeEntryForUndo = (db: Db, entryId: string, now = Date.now()) =>
     const primary = snapshot.games.find(
       (game) => versions.find((version) => version.relation === 'primary')?.gameId === game.id,
     )
-    await deleteEntry(tx, entryId)
+    await deleteEntry(tx, libraryId, entryId)
     const id = randomUUID()
     await tx.insert(removedEntries).values({
       id,
+      userId: libraryId,
       entryId,
       title: primary?.title ?? '',
       snapshot,
       removedAt: now,
     })
     await tx.delete(removedEntries).where(sql`${removedEntries.removedAt} < ${now - KEPT_FOR_MS}`)
-    await bumpVersion(tx)
+    await bumpVersion(tx, libraryId)
     return id
   })
 
-/** Puts a removed game back exactly as it was. Returns its entry's id. */
-export const restoreEntry = (db: Db, removedId: string) =>
+/**
+ * Puts a removed game back exactly as it was, into the library it was
+ * removed from. Returns its entry's id. A record kept since for another
+ * library, or added again by one, is used as it is now.
+ */
+export const restoreEntry = (db: Db, libraryId: string, removedId: string) =>
   withConflict('That game is in the library again already', () =>
     db.transaction(async (tx) => {
       const [row] = await tx
         .select()
         .from(removedEntries)
-        .where(eq(removedEntries.id, removedId))
+        .where(and(eq(removedEntries.id, removedId), eq(removedEntries.userId, libraryId)))
         .limit(1)
       if (!row) throw notFound('That removed game')
       const snapshot = row.snapshot as EntrySnapshot
-      if (snapshot.games.length > 0) await tx.insert(games).values(snapshot.games)
-      await tx.insert(entries).values(snapshot.entry)
-      if (snapshot.versions.length > 0) await tx.insert(entryVersions).values(snapshot.versions)
-      if (snapshot.copies.length > 0) await tx.insert(copies).values(snapshot.copies)
+      const gameIds = new Map<string, string>()
+      for (const game of snapshot.games) {
+        await tx.insert(games).values(game).onConflictDoNothing()
+        const [stored] = await tx
+          .select({ id: games.id })
+          .from(games)
+          .where(game.igdbId === null ? eq(games.id, game.id) : eq(games.igdbId, game.igdbId))
+          .limit(1)
+        gameIds.set(game.id, stored?.id ?? game.id)
+      }
+      const gameId = (id: string) => gameIds.get(id) ?? id
+      await tx.insert(entries).values({ ...snapshot.entry, userId: libraryId })
+      if (snapshot.versions.length > 0) {
+        await tx.insert(entryVersions).values(
+          snapshot.versions.map((version) => ({
+            ...version,
+            gameId: gameId(version.gameId),
+            userId: libraryId,
+          })),
+        )
+      }
+      if (snapshot.copies.length > 0) {
+        await tx.insert(copies).values(
+          snapshot.copies.map((copy) => ({
+            ...copy,
+            gameId: copy.gameId ? gameId(copy.gameId) : null,
+          })),
+        )
+      }
       if (snapshot.playTime.length > 0) await tx.insert(playTime).values(snapshot.playTime)
-      if (snapshot.tags.length > 0) await writeTags(tx, snapshot.entry.id, snapshot.tags)
+      if (snapshot.tags.length > 0) {
+        await writeTags(tx, libraryId, snapshot.entry.id, snapshot.tags)
+      }
       await tx.delete(removedEntries).where(eq(removedEntries.id, removedId))
-      await bumpVersion(tx)
+      await bumpVersion(tx, libraryId)
       return snapshot.entry.id
     }),
   )
 
 /** Switches a copy between physical and digital. */
-export const setCopyFormat = (db: Db, copyId: string, format: Format, now = Date.now()) => {
+export const setCopyFormat = (
+  db: Db,
+  libraryId: string,
+  copyId: string,
+  format: Format,
+  now = Date.now(),
+) => {
   if (!isFormat(format)) throw invalid('A copy is physical or digital')
   return withConflict('That platform and format are already on this game', () =>
     db.transaction(async (tx) => {
-      const [copy] = await tx.select().from(copies).where(eq(copies.id, copyId)).limit(1)
-      if (!copy) throw notFound('That copy')
+      const copy = await requireCopy(tx, libraryId, copyId)
       await tx.update(copies).set({ format }).where(eq(copies.id, copyId))
       await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, copy.entryId))
-      await bumpVersion(tx)
+      await bumpVersion(tx, libraryId)
     }),
   )
 }
 
 /**
- * Every IGDB record linked to an entry, with its family chain: what the
- * grouping rule needs to recognize a relative of a game being added.
+ * Every IGDB record linked to an entry of this library, with its family
+ * chain: what the grouping rule needs to recognize a relative of a game
+ * being added.
  */
-export const readLinkedMembers = async (db: Executor): Promise<LinkedMember[]> => {
+export const readLinkedMembers = async (
+  db: Executor,
+  libraryId: string,
+): Promise<LinkedMember[]> => {
   const rows = await db
     .select({ igdbId: games.igdbId, lineage: games.lineage, entryId: entryVersions.entryId })
     .from(entryVersions)
     .innerJoin(games, eq(games.id, entryVersions.gameId))
+    .where(eq(entryVersions.userId, libraryId))
   return rows.flatMap((row) =>
     row.igdbId === null ? [] : [{ igdbId: row.igdbId, lineage: row.lineage, entryId: row.entryId }],
   )
 }
 
-/** The entry a public address belongs to, whichever of its versions the slug names. */
+/** This library's entry a game's address belongs to, whichever of its versions the slug names. */
 export const findEntryIdBySlug = async (
   db: Executor,
+  libraryId: string,
   slug: string,
 ): Promise<string | undefined> => {
   const [row] = await db
     .select({ entryId: entryVersions.entryId })
     .from(entryVersions)
     .innerJoin(games, eq(games.id, entryVersions.gameId))
-    .where(eq(games.slug, slug))
+    .where(and(eq(games.slug, slug), eq(entryVersions.userId, libraryId)))
     .limit(1)
   return row?.entryId
 }
@@ -805,6 +997,7 @@ const checkShelf = (input: ShelfInput): ShelfInput => {
  */
 export const saveShelf = (
   db: Db,
+  libraryId: string,
   input: ShelfInput & { slug?: string },
   now = Date.now(),
 ): Promise<string> =>
@@ -814,7 +1007,7 @@ export const saveShelf = (
       const changed = await tx
         .update(shelves)
         .set({ ...shelf, updatedAt: now })
-        .where(eq(shelves.slug, input.slug))
+        .where(and(eq(shelves.slug, input.slug), eq(shelves.userId, libraryId)))
         .returning({ slug: shelves.slug })
       if (changed.length === 0) throw notFound(`The shelf ${input.slug}`)
       return input.slug
@@ -822,10 +1015,12 @@ export const saveShelf = (
     const existing = await tx
       .select({ slug: shelves.slug, position: shelves.position })
       .from(shelves)
+      .where(eq(shelves.userId, libraryId))
     const slug = freeSlug(shelf.name, new Set(existing.map((row) => row.slug)))
     const position = Math.max(-1, ...existing.map((row) => row.position)) + 1
     await tx.insert(shelves).values({
       id: randomUUID(),
+      userId: libraryId,
       slug,
       ...shelf,
       position,
@@ -835,17 +1030,17 @@ export const saveShelf = (
     return slug
   })
 
-export const removeShelf = (db: Db, slug: string): Promise<void> =>
+export const removeShelf = (db: Db, libraryId: string, slug: string): Promise<void> =>
   db.transaction(async (tx) => {
     const removed = await tx
       .delete(shelves)
-      .where(eq(shelves.slug, slug))
+      .where(and(eq(shelves.slug, slug), eq(shelves.userId, libraryId)))
       .returning({ slug: shelves.slug })
     if (removed.length === 0) throw notFound(`The shelf ${slug}`)
   })
 
-/** Every smart shelf, in the order they were placed. */
-export const readShelves = async (db: Executor): Promise<SmartShelf[]> => {
+/** A library's smart shelves, in the order they were placed. */
+export const readShelves = async (db: Executor, libraryId: string): Promise<SmartShelf[]> => {
   const rows = await db
     .select({
       slug: shelves.slug,
@@ -855,6 +1050,7 @@ export const readShelves = async (db: Executor): Promise<SmartShelf[]> => {
       group: shelves.group,
     })
     .from(shelves)
+    .where(eq(shelves.userId, libraryId))
     .orderBy(shelves.position, shelves.createdAt)
   return rows.map((row) => cleanShelf(row as SmartShelf))
 }

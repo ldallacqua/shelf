@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl'
 import type { AddActions } from '@/features/add-game/actions'
 import { AddButton } from '@/features/add-game/add-button'
 import { LanguageSwitch } from '@/features/language/language-switch'
+import { AccountMenu } from '@/features/owner/account-menu'
 import { ThemeSwitch } from '@/features/theme/theme-switch'
 import { Link } from '@/i18n/navigation'
 import { LogoMark } from '@/ui/logo'
@@ -12,8 +13,9 @@ import { MobileNav } from './mobile-nav'
 import { NavLinks } from './nav-links'
 
 /**
- * The header on every page: the name, the main links, search, theme and
- * language, and, for the owner once signed in, Add.
+ * The header on every page: the name, the links into the shelf in the
+ * address (or one's own), search, theme and language, and the account's
+ * menu. Signed in, Add, for one's own shelf.
  */
 export function Header({ add }: { add?: AddActions }) {
   const t = useTranslations('Shell')
@@ -41,6 +43,7 @@ export function Header({ add }: { add?: AddActions }) {
           <HeaderSearch />
           <ThemeSwitch />
           <LanguageSwitch />
+          <AccountMenu />
           <MobileNav className="sm:hidden" />
         </div>
       </div>

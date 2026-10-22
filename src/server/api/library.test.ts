@@ -4,7 +4,7 @@ import { buildGamePage } from '@/domain/library/game-page'
 import type { Library } from '@/domain/library/library'
 import type { Db } from '@/server/db/client'
 import { readGameExtras, readKeywords, readLibrary } from '@/server/library/read'
-import { createTestDatabase } from '@/test/database'
+import { createTestDatabase, sampleLibraryId } from '@/test/database'
 
 import {
   answerFacets,
@@ -20,13 +20,15 @@ import { openApiDocument } from './openapi'
 /** The public API's reads (architecture, section 16), on the sample library. */
 
 let db: Db
+let sample: string
 let library: Library
 let keywords: Awaited<ReturnType<typeof readKeywords>>
 
 beforeAll(async () => {
   db = await createTestDatabase('default')
-  library = await readLibrary(db)
-  keywords = await readKeywords(db)
+  sample = await sampleLibraryId(db)
+  library = await readLibrary(db, sample)
+  keywords = await readKeywords(db, sample)
 })
 
 const params = (raw: Record<string, string>) => libraryParams.parse(raw)
@@ -100,7 +102,7 @@ describe('GET /library/facets', () => {
 describe('GET /games/{slug}', () => {
   it('answers one game with everything its page shows a visitor', async () => {
     const game = library.games.find((each) => each.slug === 'bloodborne')!
-    const page = buildGamePage(library, game, (await readGameExtras(db, 'bloodborne'))!)
+    const page = buildGamePage(library, game, (await readGameExtras(db, sample, 'bloodborne'))!)
     const answer = answerGame(library, page)
     expect(apiGamePage.parse(answer)).toEqual(answer)
     expect(answer).toMatchObject({
@@ -122,10 +124,11 @@ describe('the OpenAPI document', () => {
   it('describes every read and write, with the schemas the routes check against', () => {
     const document = openApiDocument()
     expect(document.openapi).toBe('3.1.0')
+    // A shelf's reads by its handle (ADR 004); writes to one's own, by the session.
     expect(Object.keys(document.paths)).toEqual([
-      '/library',
-      '/library/facets',
-      '/games/{slug}',
+      '/u/{handle}/library',
+      '/u/{handle}/facets',
+      '/u/{handle}/games/{slug}',
       '/igdb/search',
       '/igdb/match',
       '/additions',
@@ -135,9 +138,10 @@ describe('the OpenAPI document', () => {
       '/entries/{id}/copies',
       '/entries/{id}/copies/{copy}',
       '/removed/{undo}',
-      '/shelves',
+      '/u/{handle}/shelves',
+      '/u/{handle}/shelves/{slug}',
       '/shelves/{slug}',
-      '/library/snapshot/{version}',
+      '/libraries/{key}/snapshot/{version}',
     ])
     expect(Object.keys(document.components.schemas ?? {}).sort()).toEqual([
       'AddUndo',
@@ -167,7 +171,7 @@ describe('the OpenAPI document', () => {
       'SmartShelves',
       'UndoAdditions',
     ])
-    // Every write takes the owner's session; of the reads, only the owner's own do.
+    // Every write takes a session; of the reads, only those of one's own do.
     const ownerReads = ['/igdb/search', '/entries/{id}']
     for (const [path, methods] of Object.entries(document.paths)) {
       for (const [method, operation] of Object.entries(methods)) {

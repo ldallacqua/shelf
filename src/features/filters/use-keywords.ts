@@ -4,38 +4,47 @@ import { useEffect, useState } from 'react'
 
 import { decodeKeywords, type KeywordsFile } from '@/domain/library/snapshot'
 import type { GameKeywords } from '@/domain/query/evaluate'
+import { keywordsAddress, type LibraryFiles } from '@/features/library/shelf-address'
 
 /**
  * The keywords file: fetched the first time it is wanted (a filter asks for
  * a keyword, or the keyword list is opened), then kept for the visit. Like
- * the library file, its address carries the library's version.
+ * the library file, its address carries the library's version; one's own
+ * private library's is fetched fresh.
  */
 
-const files = new Map<number, Promise<GameKeywords>>()
+const fetched = new Map<string, Promise<GameKeywords>>()
 
-const load = (version: number): Promise<GameKeywords> => {
-  let file = files.get(version)
+const load = (files: LibraryFiles, version: number): Promise<GameKeywords> => {
+  const id = `${files.kind === 'public' ? files.key : 'mine'}:${version}`
+  let file = fetched.get(id)
   if (!file) {
-    file = fetch(`/api/v1/library/keywords/${version}`)
+    file = fetch(keywordsAddress(files, version), {
+      cache: files.kind === 'mine' ? 'no-store' : 'default',
+    })
       .then((response) => {
         if (!response.ok) throw new Error(`The keywords file answered ${response.status}`)
         return response.json() as Promise<KeywordsFile>
       })
       .then(decodeKeywords)
-    files.set(version, file)
+    fetched.set(id, file)
     // A failed attempt is forgotten, so wanting it again tries again.
-    file.catch(() => files.delete(version))
+    file.catch(() => fetched.delete(id))
   }
   return file
 }
 
-export function useKeywords(version: number, wanted: boolean): GameKeywords | undefined {
+export function useKeywords(
+  files: LibraryFiles,
+  version: number,
+  wanted: boolean,
+): GameKeywords | undefined {
   const [loaded, setLoaded] = useState<{ version: number; keywords: GameKeywords }>()
 
   useEffect(() => {
     if (!wanted || loaded?.version === version) return
     let current = true
-    load(version)
+    load(files, version)
       .then((keywords) => {
         if (current) setLoaded({ version, keywords })
       })
@@ -45,6 +54,8 @@ export function useKeywords(version: number, wanted: boolean): GameKeywords | un
     return () => {
       current = false
     }
+    // A shelf's files are the same for as long as its page is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, wanted, loaded?.version])
 
   return loaded?.version === version ? loaded.keywords : undefined

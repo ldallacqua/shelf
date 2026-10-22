@@ -1,22 +1,29 @@
 'use client'
 
-import { EyeIcon, EyeOffIcon, LogInIcon, LogOutIcon } from 'lucide-react'
+import { LogInIcon, LogOutIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { type Ref, useId, useRef, useState } from 'react'
+import { type Ref, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
+import { libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
 
-import { signOut, useOwner } from './owner'
+import { openAfresh, signOut, useAccount } from './account'
+import { PasswordField } from './password-field'
 
 type Trouble = 'wrong' | 'tooMany' | 'failed' | 'notSetUp'
 
-/** Where to go back to after signing in: a page of this site, or the library. */
-const destination = (from: string | null, locale: string): string =>
-  from && from.startsWith(`/${locale}/`) && !from.startsWith('//') ? from : `/${locale}/library`
+/** Where to go back to after signing in: a page of this site, or, without one, one's own shelf. */
+const destination = (from: string | null, locale: string, handle: string | undefined): string => {
+  if (from && from.startsWith(`/${locale}/`) && !from.startsWith('//')) return from
+  return handle ? `/${locale}/u/${handle}` : `/${locale}`
+}
+
+/** An email address has an @; a handle never does (`domain/accounts/handle.ts`). */
+const byEmail = (who: string) => who.includes('@')
 
 /**
  * An assistant's sign-in, when this page is part of one: Better Auth sends
@@ -27,23 +34,23 @@ const assistantRequest = (params: URLSearchParams): string | undefined =>
   params.has('sig') && params.has('client_id') ? params.toString() : undefined
 
 /**
- * Checks the email address and password. Signed in, it goes on to `from`,
- * or, for an assistant, to where Better Auth sends its request next: the
- * consent page. A whole new page either way, so all of it knows the owner
- * is here.
+ * Checks the email address or handle, and the password. Signed in, it goes
+ * on to `from`, or one's own shelf, or, for an assistant, to where Better
+ * Auth sends its request next: the consent page. A whole new page either
+ * way, so all of it knows who is here.
  */
 const signInWithPassword = async (
-  email: string,
+  who: string,
   password: string,
-  then: string,
+  then: (handle: string | undefined) => string,
   forAssistant?: string,
 ): Promise<Trouble> => {
   try {
-    const response = await fetch('/api/auth/sign-in/email', {
+    const response = await fetch(`/api/auth/sign-in/${byEmail(who) ? 'email' : 'username'}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email,
+        ...(byEmail(who) ? { email: who } : { username: who.toLowerCase() }),
         password,
         rememberMe: true,
         ...(forAssistant ? { oauth_query: forAssistant } : {}),
@@ -53,8 +60,16 @@ const signInWithPassword = async (
     if (response.status === 429) return 'tooMany'
     if (response.status === 503) return 'notSetUp'
     if (!response.ok) return 'failed'
-    const answer = (await response.json()) as { redirect?: boolean; url?: string }
-    window.location.assign(forAssistant && answer.redirect && answer.url ? answer.url : then)
+    const answer = (await response.json()) as {
+      redirect?: boolean
+      url?: string
+      user?: { username?: string | null }
+    }
+    openAfresh(
+      forAssistant && answer.redirect && answer.url
+        ? answer.url
+        : then(answer.user?.username ?? undefined),
+    )
     // The page is leaving; nothing more to say.
     return await new Promise<never>(() => {})
   } catch {
@@ -62,12 +77,12 @@ const signInWithPassword = async (
   }
 }
 
-/** Signing in (spec 11): one account, by email address and password. */
+/** Signing in (spec 11): by email address or handle, and password. */
 export function SignIn() {
   const t = useTranslations('Account')
   const locale = useLocale()
   const params = useSearchParams()
-  const owner = useOwner()
+  const account = useAccount()
   const [busy, setBusy] = useState(false)
   const [trouble, setTrouble] = useState<Trouble>()
   const password = useRef<HTMLInputElement>(null)
@@ -75,13 +90,13 @@ export function SignIn() {
   const forAssistant = assistantRequest(new URLSearchParams(params.toString()))
 
   // Signed in already, and not here for an assistant: nothing to do but go on.
-  if (owner.status === 'owner' && !forAssistant) {
+  if (account.status === 'signed-in' && !forAssistant) {
     return (
       <div className="mt-6 max-w-xl">
-        <p className="text-pretty">{t('signedIn', { name: owner.name })}</p>
+        <p className="text-pretty">{t('signedIn', { name: account.name })}</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button variant="primary" asChild>
-            <Link href="/library">{t('toLibrary')}</Link>
+            <Link href={libraryHref(account.handle)}>{t('toLibrary')}</Link>
           </Button>
           <Button
             variant="secondary"
@@ -115,9 +130,9 @@ export function SignIn() {
           const form = new FormData(event.currentTarget)
           setBusy(true)
           const answer = await signInWithPassword(
-            String(form.get('email') ?? ''),
+            String(form.get('who') ?? '').trim(),
             String(form.get('password') ?? ''),
-            destination(params.get('from'), locale),
+            (handle) => destination(params.get('from'), locale, handle),
             forAssistant,
           )
           // Drawn at once: the fields must be enabled again before one takes focus.
@@ -134,13 +149,33 @@ export function SignIn() {
       >
         <SignInFields disabled={busy} password={password} />
         <div>
-          <Button type="submit" variant="primary" disabled={busy || owner.status === 'checking'}>
+          <Button type="submit" variant="primary" disabled={busy || account.status === 'checking'}>
             <LogInIcon aria-hidden="true" />
             {busy ? t('signingIn') : t('submit')}
           </Button>
         </div>
       </form>
+      <NoShelfYet />
     </div>
+  )
+}
+
+/** The way to sign up, for someone who came to sign in without an account. */
+function NoShelfYet() {
+  const t = useTranslations('Account')
+  return (
+    <p className="mt-8 text-sm text-muted">
+      {t.rich('noShelfYet', {
+        link: (chunks) => (
+          <Link
+            href="/sign-up"
+            className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
+          >
+            {chunks}
+          </Link>
+        ),
+      })}
+    </p>
   )
 }
 
@@ -152,55 +187,28 @@ function SignInFields({
   password?: Ref<HTMLInputElement>
 }) {
   const t = useTranslations('Account')
-  const [shown, setShown] = useState(false)
-  const passwordId = useId()
   return (
     <>
       <label className="grid gap-1.5 text-sm font-medium">
-        {t('email')}
+        {t('emailOrHandle')}
         <Input
-          name="email"
-          type="email"
+          name="who"
+          type="text"
           required
           autoComplete="username"
+          autoCapitalize="none"
           spellCheck={false}
           disabled={disabled}
           className="font-normal"
         />
       </label>
-      <div className="grid gap-1.5">
-        <label htmlFor={passwordId} className="text-sm font-medium">
-          {t('password')}
-        </label>
-        <div className="relative">
-          <Input
-            ref={password}
-            id={passwordId}
-            name="password"
-            type={shown ? 'text' : 'password'}
-            required
-            autoComplete="current-password"
-            spellCheck={false}
-            disabled={disabled}
-            className="pr-12 font-normal"
-          />
-          {/* Pressed, the password shows as text; its name stays the same either way. */}
-          <button
-            type="button"
-            aria-pressed={shown}
-            aria-label={t('showPassword')}
-            disabled={disabled}
-            onClick={() => setShown((was) => !was)}
-            className="absolute inset-y-0 right-0 inline-flex w-11 items-center justify-center rounded-r-control text-muted transition-colors duration-quick ease-settle hover:text-text disabled:opacity-50"
-          >
-            {shown ? (
-              <EyeOffIcon aria-hidden="true" className="size-4" />
-            ) : (
-              <EyeIcon aria-hidden="true" className="size-4" />
-            )}
-          </button>
-        </div>
-      </div>
+      <PasswordField
+        label={t('password')}
+        name="password"
+        autoComplete="current-password"
+        disabled={disabled}
+        inputRef={password}
+      />
     </>
   )
 }

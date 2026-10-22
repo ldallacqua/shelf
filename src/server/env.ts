@@ -54,28 +54,17 @@ export const igdbEnv = () => {
   return { clientId: env.TWITCH_CLIENT_ID, clientSecret: env.TWITCH_CLIENT_SECRET }
 }
 
-/** The shortest password the owner's account takes. */
-export const OWNER_PASSWORD_MIN = 12
-
 /**
- * Sign-in (architecture, section 9): the secret sessions are signed with,
- * and the one account, by its email address and password. The account is
- * made from these, and its password follows this setting.
+ * Sign-in (architecture, section 9): the secret sessions are signed with.
+ * Accounts are made by signing up (ADR 004); `OWNER_EMAIL` and
+ * `OWNER_PASSWORD`, which made the one account before, are no longer read.
  */
 export const authEnv = () => {
   const env = read(
-    {
-      BETTER_AUTH_SECRET: z.string().trim().min(32),
-      OWNER_EMAIL: z.string().trim().pipe(z.email()),
-      // Not trimmed: a space is a character like any other in a password.
-      OWNER_PASSWORD: z.string().min(OWNER_PASSWORD_MIN).max(128),
-    },
-    `Sign-in needs a secret of at least 32 characters, the owner’s email address, and a password of ${OWNER_PASSWORD_MIN} to 128 characters.`,
+    { BETTER_AUTH_SECRET: z.string().trim().min(32) },
+    'Sign-in needs a secret of at least 32 characters.',
   )
-  return {
-    secret: env.BETTER_AUTH_SECRET,
-    owner: { email: env.OWNER_EMAIL.toLowerCase(), password: env.OWNER_PASSWORD },
-  }
+  return { secret: env.BETTER_AUTH_SECRET }
 }
 
 export type DatabaseTarget =

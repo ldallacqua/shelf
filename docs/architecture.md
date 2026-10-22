@@ -179,8 +179,8 @@ flowchart LR
 
 Three flows matter.
 
-**Reading the library.** The browser asks for `/en/library`. Vercel's edge answers at once with
-the page frame, which is built ahead of time. The server then streams the first screen of
+**Reading the library.** The browser asks for a shelf, `/en/u/lucas`. Vercel's edge answers at
+once with the page frame, built on the shelf's first visit and kept. The server then streams the first screen of
 boxes into that frame, already filtered by whatever the address says. The browser fetches the
 whole library as one compact file, and from then on every filter, sort and regroup happens on
 the device with no request at all.
@@ -245,21 +245,27 @@ that are either cached or streamed per request. This is the default for new Next
 
 | Address | Built ahead | Per request | Refreshed when |
 | --- | --- | --- | --- |
-| `/en` (landing) | Whole page, including live library numbers | Nothing | The library changes |
-| `/en/library` | Header, heading, and ghosts where the totals, the controls and the first boxes will be: cases standing on the lit boards | The first screen of boxes for this address's filter, sort and grouping, and the list of smart shelves | The library or the shelves change |
-| `/en/shelves/{name}` | The same frame with the shelf's name, per shelf there was when the site was built. A shelf saved since gets its frame on its first visit. | The first screen for the shelf, with whatever the address changes | The library or the shelves change |
-| `/en/trophies` | Whole page | Nothing | The library changes |
-| `/en/game/{slug}` | Whole page, on its first visit, and kept | Nothing. For me, "Mine" is then read from `GET /api/v1/entries/{id}`, private notes included. | The library changes |
-| `/en/sign-in`, `/en/consent` | Whole page | Nothing. Whether I am signed in is asked by the page. | Never |
+| `/en` (landing) | Whole page | Nothing | Never |
+| `/en/u/{handle}` | A frame per shelf, on its first visit: header, heading, and ghosts where the totals, the controls and the first boxes will be. A shelf with no account says so; a private one is a frame its own account fills ([ADR 004](adr/004-one-library-per-account.md)). | The first screen of boxes for this address's filter, sort and grouping, and the list of smart shelves | That library or its shelves change |
+| `/en/u/{handle}/shelves/{name}` | The same frame with the shelf's name, on its first visit | The first screen for the shelf, with whatever the address changes | That library or its shelves change |
+| `/en/u/{handle}/trophies` | Whole page, on its first visit | Nothing | That library changes |
+| `/en/u/{handle}/game/{slug}` | Whole page, on its first visit, and kept | Nothing. For the shelf's own account, "Mine" is then read from `GET /api/v1/entries/{id}`, private notes included. | That library changes |
+| `/en/sign-in`, `/en/sign-up`, `/en/account`, `/en/consent` | Whole page | Nothing. Who is signed in is asked by the page, and the account page is filled by it. | Never |
 | `/llms.txt`, `/sitemap.xml`, `/robots.txt` | Whole file | Nothing | The library changes |
 
-**How "the library changes" works.** Every cached read is tagged `library` (and
-`entry:{id}` for one game). Every write ends by expiring the tags: `updateTag` in a server
-action, so I see my own change at once; `revalidateTag` in an API route.
+No shelf is built ahead: each route's `generateStaticParams` names one reserved handle,
+`none`, so Cache Components has a frame to build from, and every real shelf is built on its
+first visit and kept.
+
+**How "the library changes" works.** Every cached read is tagged with its library,
+`library:{id}`, and a read by handle or file key also with `handle:{handle}` or `key:{key}`
+(`src/server/services/tags.ts`). Every write ends by expiring its library's tag: `updateTag`
+in a server action, so the account sees its own change at once; `revalidateTag` in an API
+route. A change to the account (its name, handle or visibility) expires its handles too.
 
 **Smart shelves are the exception.** They are not in the library file, so saving one does not
 raise the library's version (which would make every visitor download the file again for
-nothing in it). Shelf reads are tagged `shelves`, and a shelf write expires only that. A
+nothing in it). Shelf reads are tagged `shelves:{id}`, and a shelf write expires only that. A
 shelf's page reads its shelf by slug (`getShelf`), cached on its own: an address Next.js did
 not build is first answered from the route's prebuilt frame and the data cached with it,
 and a list of shelves cached then would not know a shelf saved since.
@@ -269,12 +275,12 @@ separate file, not inside the page:
 
 | | |
 | --- | --- |
-| Address | `/api/v1/library/snapshot/{version}` |
-| Version | A counter in the database, raised by one inside every write |
-| Caching | The address changes when the content does, so the file is cached for a year by the edge and by the browser. A return visit downloads nothing unless I changed the library. |
-| Built ahead | The current version's file is made when the site is built and served as a static file. A version that appears later, because I added a game, is made on its first request. Any other address is sent on to the current one. |
+| Address | `/api/v1/libraries/{key}/snapshot/{version}`. The key is random, per library, and changes when the shelf goes private, so an address that was public leads nowhere after. |
+| Version | A counter per library (`libraries.version`), raised by one inside every write to it |
+| Caching | The address changes when the content does, so the file is cached for a year by the edge and by the browser. A return visit downloads nothing unless the library changed. |
+| Built | On its first request, then kept. Any other version's address is sent on to the current one. A private library has no file here: its own account reads `/api/v1/me/library`, uncached and private. |
 | Contents | Per game: ids, title, status, rating, dates, playtime, year, IGDB rating, time to beat, cover id, three colors, a 25-byte blur hash, copies, and the ids of its genres, themes, modes, perspectives, platforms, franchises, series, studios and tags. Plus one name table per kind. |
-| Left out | Summaries, screenshots and notes. A game opened over the shelf fetches them as its facts, `/api/v1/library/games/{version}/{slug}`, cached the same way; its own page has them inside it. Keywords, which are large, are a second file, `/api/v1/library/keywords/{version}`, fetched the first time a keyword filter is used, and cached the same way. Private notes are never in any public file. |
+| Left out | Summaries, screenshots and notes. A game opened over the shelf fetches them as its facts, `/api/v1/libraries/{key}/games/{version}/{slug}`, cached the same way; its own page has them inside it. Keywords, which are large, are a second file, `/api/v1/libraries/{key}/keywords/{version}`, fetched the first time a keyword filter is used, and cached the same way. Private notes are never in any public file. |
 | Size target | 120 KB compressed per 1,000 games. A test fails the build past that. |
 
 **Address state.** `q`, `sort`, `group`, `view` and `seed` are read and written with nuqs
@@ -315,7 +321,8 @@ log, and anything that saves my own data refuses to run on it
 | Playtime | Whole minutes |
 | Enumerations | Text with a `CHECK` constraint, and a matching Zod schema |
 | IGDB lists (genres, themes and so on) | JSON arrays of IGDB ids on the `games` row, with name tables alongside. They are read whole and filtered in memory, never joined. |
-| A game's public address | The IGDB slug of its primary version: `/game/the-elder-scrolls-v-skyrim`. It is unique, because a record belongs to one entry. Entry ids never leave the server. |
+| A game's public address | The IGDB slug of its primary version, on its shelf: `/u/lucas/game/the-elder-scrolls-v-skyrim`. It is unique within a library, because a record belongs to one entry per library. Entry ids never leave the server. |
+| Whose a row is | `user_id`, the account's id, on every row that is someone's: entries, entry versions, tags, smart shelves, removed games ([ADR 004](adr/004-one-library-per-account.md)). Every query on them is scoped by it. `games`, `vocab` and `platforms` are the shared IGDB cache. |
 | Deleting | Real deletes, cascading from the entry. No soft delete. |
 
 **Tables beyond ADR 001**
@@ -323,12 +330,14 @@ log, and anything that saves my own data refuses to run on it
 | Table | Purpose |
 | --- | --- |
 | `vocab` | Names for IGDB ids: kind, id, name, slug |
-| `shelves` | Saved smart shelves: slug, name, query text, sort, group, position |
-| `library_meta` | The version counter. One row. |
+| `shelves` | Saved smart shelves: slug (unique per library), name, query text, sort, group, position |
+| `libraries` | One row per account: its library's version counter, and the random key in its files' addresses |
+| `library_meta` | The version counter from before accounts. Read once, by the migration that moved it into `libraries`; dropped later. |
 | `igdb_token` | The current Twitch token and its expiry. One row. |
-| `user`, `session`, `account`, `verification` | Better Auth's own |
-| `oauth_*` (seven tables), `jwks` | Better Auth's, for assistants signing in to the owner's MCP endpoint: clients, resources, tokens, consents; and the keys tokens are signed with |
+| `users`, `sessions`, `accounts`, `verifications` | Better Auth's own. `users` adds `username` (the handle) and `shelf_public`. |
+| `oauth_*` (seven tables), `jwks` | Better Auth's, for assistants signing in to an account's MCP endpoint: clients, resources, tokens, consents; and the keys tokens are signed with |
 | `removed_entries` | A removed game, whole, for a day, so Undo can put it back exactly |
+| `rate_limits` | Sign-in and sign-up tries, and each account's hourly IGDB use |
 
 **Indexes** go on what is looked up one row at a time: `games.igdb_id`, `games.slug`,
 `entry_versions.game_id`, `copies.entry_id`. The library itself is always read whole.
@@ -351,7 +360,9 @@ They are applied by `pnpm db:migrate`:
 A deployment that is still serving keeps running during a migration, so every migration must
 be safe for the previous version of the code: add first, remove in a later release.
 
-**Three data sets**, loaded by `pnpm seed`:
+**Three data sets**, loaded by `pnpm seed` into the sample account's library (`/u/sample`, no
+password; with the test doubles on, `MOCK_OWNER`'s). A seed replaces every library's games and
+keeps every account:
 
 | Name | What | Used by |
 | --- | --- | --- |
@@ -418,25 +429,27 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 
 | Concern | Design |
 | --- | --- |
-| Provider | An email address and password (Better Auth's own), since 21 Oct 2026; planned as GitHub |
-| Who gets in | One account, made from `OWNER_EMAIL` and `OWNER_PASSWORD` the first time anyone signs in. Its password follows the setting: a changed one is hashed again on the next sign-in, and every session signed in with the old one ends. |
-| Turning others away | There is no way to make an account: sign-up is off. Any other address, or a wrong password, gets the same plain message. Five tries a minute from one address, counted in the database (`rate_limits`), since a function's memory is gone between requests. The tests (nobody can make an account; a wrong password is turned away) are the contract. |
-| Every write | `requireOwner()` runs first in every service function that changes anything. It loads the session and compares its email address with `OWNER_EMAIL` again. Sign-in is one lock; this is the other. |
-| Assistants | The owner's MCP endpoint takes OAuth access tokens, not the session cookie. Better Auth's MCP plugin is the authorization server: an assistant is known by its Client ID Metadata Document's address, I sign in as on the site, and say yes on `/consent`. Tokens are JWTs signed with keys in the `jwks` table, for that endpoint only. The endpoint checks the token, checks its user is the owner (`ownerOfUser`, the same email comparison), and runs the tools inside `asOwner`, which `requireOwner()` honours. Only I can sign in, so only I can say yes. |
+| Provider | An email address and password (Better Auth's own), with its `username` plugin for the handle and sign-in by handle ([ADR 004](adr/004-one-library-per-account.md)) |
+| Who gets in | Anyone who signs up: a name, a handle, an email address, a password of 10 to 128 characters, and public or private. A new account gets its library row and the starter shelves in the same request (`startLibrary`). No email is sent: no confirming, and no reset but `pnpm account:password` by hand. |
+| Turning others away | A wrong password, or an unknown address or handle, gets the same plain message. Five tries at a password a minute from one address (sign-in, change of password, deleting the account), and three new accounts an hour, counted in the database (`rate_limits`), since a function's memory is gone between requests. |
+| Every write | `requireAccount()` runs first in every service function that changes or privately reads anything, inside `forAccount()`, which hands the service the session's own account. The service works on that library only; a write never names one. Sign-in is one lock; this is the other. |
+| Fairness | Beside IGDB's site-wide limit, each account may search 600 times, match 100 lists and add 300 games an hour (`fair-use.ts`). Past that, `too-many`. |
+| Assistants | The MCP endpoint for one's own shelf takes OAuth access tokens, not the session cookie. Better Auth's MCP plugin is the authorization server: an assistant is known by its Client ID Metadata Document's address, its account signs in as on the site, and says yes on `/consent`. Tokens are JWTs signed with keys in the `jwks` table, for that endpoint only. The endpoint checks the token, loads its account (`accountOfUser`), and runs the tools inside `asAccount`, which `requireAccount()` honours. |
 | Sessions | A row in the database and a cookie that scripts cannot read, sent only over HTTPS, with SameSite=Lax. Seven days, extended on use. |
 | Visitors | Carry no cookie, so they cost no session lookups |
-| Edit controls | Rendered only after the browser confirms a session. A second, harmless cookie (`shelf_owner_hint`) tells the page whether it is worth asking; visitors never trigger the question. |
+| Edit controls | Rendered only after the browser confirms a session, and only on the account's own shelf. A second, harmless cookie (`shelf_signed_in`) tells the page whether it is worth asking; visitors never trigger the question. |
 | Private notes | Never in a cached page or the library file. Fetched by a separate request that requires the session: `GET /api/v1/entries/{id}`, which the editor reads, uncached and private. |
-| Preview deployments | Sign in as production does, with settings of their own, once they have a database of their own; until then nothing to sign in to. |
-| Local work | The same three settings in `.env.local`, with any values |
+| Private shelves | Never drawn, cached or filed on the server. Their pages are frames; their own account's browser fills them from `/api/v1/me/library`, `/api/v1/me/games/{slug}`, `/keywords`, `/tags` and `/shelves`, each `private, no-store`. |
+| Preview deployments | Sign up and in as production does, once they have a database of their own; until then nothing to sign in to. |
+| Local work | `BETTER_AUTH_SECRET` in `.env.local`, with any value |
 
-**In tests,** nothing bypasses sign-in. With the test doubles on, the server makes up the
-owner's account (`MOCK_OWNER`), and the browser fills in the real form. That exercises the real
-code, including a wrong password and an attempt to make an account being refused. One sign-in
-is saved and reused by the tests that need me to be signed in. An assistant signs in the same
-way: MSW serves a test assistant's metadata document, the browser signs in and says yes on the
-consent page, and the test trades the code for a token and calls the owner's tools with the
-official MCP client.
+**In tests,** nothing bypasses sign-in. With the test doubles on, the seeded sample account
+takes a made-up password (`MOCK_OWNER`) on the first sign-in, and the browser fills in the
+real form. One sign-in is saved and reused by the tests that need the sample's shelf to be
+one's own. Tests that need accounts of their own make them through the real sign-up, with
+handles no other run can have. An assistant signs in the same way: MSW serves a test
+assistant's metadata document, the browser signs in and says yes on the consent page, and the
+test trades the code for a token and calls the tools with the official MCP client.
 
 ---
 
@@ -668,20 +681,25 @@ generated from them, so it cannot drift from the code.
 
 | Method and path | Who | Does |
 | --- | --- | --- |
-| `GET /library?q&sort&seed&group&limit&cursor&lang` | Anyone | The library, filtered, sorted and grouped |
-| `GET /library/facets?q` | Anyone | Available filter values, with counts |
-| `GET /library/snapshot/{version}` | Anyone | The whole library file |
-| `GET /library/keywords/{version}` | Anyone | The keywords file |
-| `GET /games/{slug}` | Anyone | One game, with public notes |
-| `GET /shelves`, `GET /shelves/{slug}` | Anyone | Smart shelves |
+| `GET /u/{handle}/library?q&sort&seed&group&limit&cursor&lang` | Anyone, public shelves | A library, filtered, sorted and grouped |
+| `GET /u/{handle}/facets?q` | Anyone, public shelves | Available filter values, with counts |
+| `GET /u/{handle}/games/{slug}` | Anyone, public shelves | One game, with public notes |
+| `GET /u/{handle}/shelves`, `GET /u/{handle}/shelves/{slug}` | Anyone, public shelves | Smart shelves |
+| `GET /libraries/{key}/snapshot/{version}` | Anyone with the key | A public library's whole file |
+| `GET /libraries/{key}/keywords/{version}`, `/games/{version}/{slug}` | Anyone with the key | Its keywords file, and a game's facts |
+| `GET /handles/{handle}` | Anyone | Whether a handle can be had, and if not why |
 | `GET /openapi.json` | Anyone | The API's own description |
-| `GET /igdb/search?q` | Me | Search IGDB |
-| `POST /igdb/match` | Me | Match pasted lines, twenty at a time |
-| `POST /entries`, `GET /entries/{id}`, `PATCH /entries/{id}`, `DELETE /entries/{id}` | Me | Add; read as I keep it (private notes, ids); change; remove |
-| `POST /entries/{id}/copies`, `PATCH` and `DELETE /entries/{id}/copies/{copy}` | Me | A copy: add, switch its format, remove |
-| `POST /removed/{undo}` | Me | Put a removed game back, within a day |
-| `POST /additions`, `POST /additions/undo` | Me | Add many games at once, up to fifty; take them back |
-| `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Me | Save or remove a smart shelf |
+| `GET /me`, `PATCH /me` | Signed in | Who is here; change one's name, handle or visibility |
+| `GET /me/library`, `/me/games/{slug}`, `/me/keywords`, `/me/tags`, `/me/shelves` | Signed in | One's own library, uncached: what a private shelf's pages are filled from |
+| `GET /igdb/search?q` | Signed in | Search IGDB |
+| `POST /igdb/match` | Signed in | Match pasted lines, twenty at a time |
+| `POST /entries`, `GET /entries/{id}`, `PATCH /entries/{id}`, `DELETE /entries/{id}` | Signed in | Add; read as kept (private notes, ids); change; remove |
+| `POST /entries/{id}/copies`, `PATCH` and `DELETE /entries/{id}/copies/{copy}` | Signed in | A copy: add, switch its format, remove |
+| `POST /removed/{undo}` | Signed in | Put a removed game back, within a day |
+| `POST /additions`, `POST /additions/undo` | Signed in | Add many games at once, up to fifty; take them back |
+| `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Signed in | Save or remove a smart shelf |
+
+Every write acts on the session's own library; none names one ([ADR 004](adr/004-one-library-per-account.md)).
 
 These routes are the same services as the interface, with an HTTP face. The interface uses
 server actions for adding one game and saving shelves, and these routes for editing and for
@@ -695,8 +713,8 @@ is [docs/api.md](api.md).
 
 | Endpoint | Sign-in | Tools |
 | --- | --- | --- |
-| `/api/mcp` | None | `search_library`, `get_game`, `list_filter_values`, `list_shelves` |
-| `/api/mcp/owner` | OAuth through Better Auth's MCP plugin, which signs me in with the same account | The four above, plus `search_igdb`, `add_game`, `update_entry`, `set_status` |
+| `/api/mcp` | None | `search_library`, `get_game`, `list_filter_values`, `list_shelves`, each taking a public shelf's handle |
+| `/api/mcp/owner` | OAuth through Better Auth's MCP plugin, which signs an account in as on the site | The four above, on that account's own shelf, public or private, plus `search_igdb`, `add_game`, `update_entry`, `set_status` |
 
 There are two endpoints because, in practice, an assistant only starts a sign-in when a
 server demands one. A single endpoint that allowed anonymous reads would never get to offer
@@ -828,7 +846,7 @@ list reacting to filter changes.
 | Secrets | In `.env.local` here and in Vercel's settings in production. Never in git, logs, summaries or chat. `.env.example` holds names only. |
 | Server-only code | `server-only` turns an accidental import into the browser bundle into a build error |
 | Input | Zod at every boundary: address parameters, forms, API bodies, MCP arguments, IGDB responses, environment variables at startup |
-| Writes | `requireOwner()` in every service function ([section 9](#9-sign-in-and-access)). A test walks every write route and action without a session and expects a refusal. |
+| Writes | `requireAccount()` in every service function, which then works on that account's library only ([section 9](#9-sign-in-and-access)). A test walks every write route and action without a session and expects a refusal; the store's tests ask with another library's ids and expect "not found". |
 | Cross-site requests | Server actions check the request's origin (built into Next.js). Session cookies are SameSite=Lax. API writes need the session or an OAuth token. |
 | Database | Drizzle's query builder throughout; no SQL assembled from input |
 | Content from IGDB | Rendered as text. Never inserted as HTML. |
@@ -863,8 +881,6 @@ integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
 | `TURSO_DATABASE_URL` | Database | Vercel: before step 7. Previews work without it. |
 | `TURSO_AUTH_TOKEN` | Database | Same |
 | `BETTER_AUTH_SECRET` | Signing sessions | Step 7 |
-| `OWNER_EMAIL` | The one account's email address | Step 7 |
-| `OWNER_PASSWORD` | Its password, 12 to 128 characters | Step 7 |
 | `CRON_SECRET` | The daily refresh job | Step 9 |
 
 The site's own address comes from Vercel's built-in `VERCEL_PROJECT_PRODUCTION_URL`, so there
@@ -995,6 +1011,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| After step 7 | **One library per account** ([ADR 004](adr/004-one-library-per-account.md)). Anyone signs up, at `/sign-up`, with a handle that is the shelf's address, `/u/{handle}`, and picks public or private. Every row that is someone's carries its account's id; the IGDB cache is shared. A library's files are addressed by a random key, not the handle. A private shelf is drawn only in its own account's browser. The old addresses move for good to `/u/lucas`. `OWNER_EMAIL` and `OWNER_PASSWORD` are no longer read. Sections 6, 7, 9 and 16 are changed to match. | The owner's request (21 Oct 2026): each person their own shelf, and a landing page that invites them to make one. |
 | After step 7 | **The form's controls are drawn by the page, in `src/ui`:** a select whose list can show a cover and details, my rating as a slider from 0 to 10 in half steps with the number large above it, a day from a calendar, tags as chips with the ones in use offered as I type, status and platforms as chips with a tick, physical or digital as a segmented control, and a shared text field. Sign-in can show the password. The fields the Add sheet and the editor share are in `features/owner/fields.tsx`. The editor saves a rating once it has rested 400 ms. | The owner's review (21 Oct 2026): the browser's own selects, date field and checkboxes, and a rating typed as a number, did not reach the quality asked for. A rating out of ten in half steps (spec decision 10) is a number, so a slider, not stars. The filter panel's range boxes stay typed: they take dates as well as numbers, and they load with the library. |
 | After step 7 | **A game opened over the shelf keeps its place as the rest arrives.** For the owner, "Mine" is the editor's skeleton (`mine-skeleton.tsx`) until the editor and the game's record are in: the editor's labels, and a ghost the size of each control, shaped by what the library file knows. The editor's code is fetched when a game is first reached for, and a record already read is used at once and read again behind it. A change to the library keeps the game's facts on screen while the new version's are fetched. | The owner's review (21 Oct 2026): opening a game showed the screenshots for a moment, then the editor arrived and pushed them 677 pixels down; rating a game sent the key art and the words back to ghosts for a moment, because each change is a new version and its facts were fetched from nothing. |
 | After step 7 | **The library's JavaScript budget is 265 KB, from 262.** It measures 264.1, from 261.3. | The new select and calendar place their lists with the code Radix's menus use. Shared with the owner's code, it left the menus' file for one of its own: one more file on every page, 1.8 KB, none of it the owner's code. Writing that placing code again was the other way; the owner chose the budget. |

@@ -12,11 +12,14 @@ export const routing = defineRouting({
    */
   pathnames: {
     '/': '/',
-    '/library': '/library',
-    '/shelves/[slug]': '/shelves/[slug]',
-    '/game/[slug]': '/game/[slug]',
-    '/trophies': '/trophies',
+    // Each account's shelf, by its handle (ADR 004).
+    '/u/[handle]': '/u/[handle]',
+    '/u/[handle]/shelves/[slug]': '/u/[handle]/shelves/[slug]',
+    '/u/[handle]/game/[slug]': '/u/[handle]/game/[slug]',
+    '/u/[handle]/trophies': '/u/[handle]/trophies',
     '/sign-in': '/sign-in',
+    '/sign-up': '/sign-up',
+    '/account': '/account',
     '/consent': '/consent',
   },
 })

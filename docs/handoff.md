@@ -4,13 +4,28 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 7 is merged; sign-in is a password now, with its settings on production
+## Now: accounts for everyone (ADR 004), then the landing page (step 8)
 
+- **Anyone can sign up for a shelf of their own** ([ADR 004](adr/004-one-library-per-account.md),
+  21 Oct 2026, the owner's request and choices: anyone signs up; each picks public or private,
+  Public picked for them; no email yet; their own shelf is `/u/lucas`). Every row that is
+  someone's carries its account's id; the IGDB cache is shared; a library's files are under a
+  random key; a private shelf is drawn only in its own browser. The plan is in two pull
+  requests: **A, accounts**, then **B, the landing page** (step 8, ⏸ after it for review).
+- **A local database seeded before accounts has no sample account.** Run `pnpm seed` again
+  after pulling; the browser tests serve a copy of it.
+- **Going to production:** before the accounts deploy, the owner takes a Turso backup (the
+  command is in the pull request). The deploy's migration gives every existing row to the
+  oldest account, with the handle `lucas`, and the old addresses move to `/u/lucas/…`. Check
+  `/en/u/lucas` and a redirect after. **Creating accounts on production is the owner's to
+  try:** an assistant may not make accounts there. `OWNER_EMAIL` and `OWNER_PASSWORD` are no
+  longer read and can be deleted from Vercel afterwards.
+- **A forgotten password** has no email reset: `pnpm account:password <handle>`, with the
+  database's settings in the environment, prints a new one once.
 - **Step 7 is merged** ([#11](https://github.com/ldallacqua/shelf/pull/11)).
 - **Sign-in changed from GitHub to one account with an email address and password** (21 Oct
-  2026), at the owner's request after reading what GitHub sign-in asked of them. They want
-  **proper account creation** later. That needs a decision first: whose library does a new
-  account see? Shelf is one person's library today. Ask before building it.
+  2026), at the owner's request after reading what GitHub sign-in asked of them; then to
+  accounts for anyone, above.
 - **The owner pasted part C's five settings** in [the setup checklist](setup.md) (Production
   only, 21 Oct 2026). B is half done: production's database is in São Paulo, for Production
   only, and the functions moved there with it; previews have no database yet. Never paste or
@@ -60,8 +75,8 @@ step 3. This note is what the next session needs and cannot get from the code. R
 - **Next.js is 16.4.1,** for critical security fixes in 16.4.0. 16.4.2 is out.
 - **The owner allows merging to `main` without asking** while the project is a proof of
   concept (15 Oct 2026). Still stop at every ⏸ (after step 8, and the final review).
-- **Next: step 8, the landing page** (⏸ after it), or platform sync ([ADR 003](adr/003-platform-sync.md)),
-  which the plan puts right after step 7.
+- **Next: step 8, the landing page** (⏸ after it): a product page that sells "create your
+  shelf", with a live demo shelf, then platform sync ([ADR 003](adr/003-platform-sync.md)).
 
 ## Step 7: sign-in, adding, editing, the write API, MCP
 

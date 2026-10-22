@@ -20,13 +20,15 @@ const firstBox = (page: Page) => page.locator('.game-box').first()
 
 /** The number of games the API says a filter matches: the page should say the same. */
 async function matches(page: Page, q: string): Promise<number> {
-  const answer = await page.request.get(`/api/v1/library?limit=1&q=${encodeURIComponent(q)}`)
+  const answer = await page.request.get(
+    `/api/v1/u/sample/library?limit=1&q=${encodeURIComponent(q)}`,
+  )
   return ((await answer.json()) as { stats: { games: number } }).stats.games
 }
 
 /** The first title the API gives for a sort, with one shelf of everything. */
 async function firstTitle(page: Page, sort: string): Promise<string> {
-  const answer = await page.request.get(`/api/v1/library?group=none&limit=1&sort=${sort}`)
+  const answer = await page.request.get(`/api/v1/u/sample/library?group=none&limit=1&sort=${sort}`)
   return ((await answer.json()) as { games: { title: string }[] }).games[0]!.title
 }
 
@@ -81,7 +83,7 @@ test.describe('the search field (spec 3.1)', () => {
     await search(page).pressSequentially('zelda', { delay: 40 })
     await expect(page).toHaveURL(/q=zelda/)
     await page.goBack()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
     await expect(search(page)).toHaveValue('')
     await expect(totals(page)).toContainText('230 games')
     await page.goForward()
@@ -91,7 +93,7 @@ test.describe('the search field (spec 3.1)', () => {
   test('a part it cannot understand is shown struck through, and the rest still applies', async ({
     page,
   }) => {
-    await openLibrary(page, '/en/library?q=halo%3A3+zelda')
+    await openLibrary(page, '/en/u/sample?q=halo%3A3+zelda')
     const ignored = chips(page).locator('[data-ignored]')
     await expect(ignored).toHaveText(/halo:3/)
     await expect(ignored.locator('s')).toHaveText('halo:3')
@@ -105,7 +107,7 @@ test.describe('the search field (spec 3.1)', () => {
 
   test('the filter language: or, brackets, a dash for not', async ({ page }) => {
     const q = '(genre:rpg OR genre:strategy) -status:wishlist'
-    await openLibrary(page, `/en/library?q=${encodeURIComponent(q)}`)
+    await openLibrary(page, `/en/u/sample?q=${encodeURIComponent(q)}`)
     await expect(totals(page)).toContainText(`${await matches(page, q)} games`)
     await expect(chips(page)).toContainText('Not status: Wishlist')
   })
@@ -120,16 +122,16 @@ test.describe('the search field (spec 3.1)', () => {
     await expect(page).toHaveURL(/q=zelda/)
     await page.keyboard.press('Escape')
     await expect(search(page)).toHaveValue('')
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
   })
 
   test('the search in the header opens the library with it', async ({ page, size }) => {
     test.skip(size !== 'desktop', 'the header has room for a search field only on a desktop')
-    await page.goto('/en/trophies')
+    await page.goto('/en/u/sample/trophies')
     const field = page.getByRole('searchbox', { name: 'Search the library' })
     await field.fill('zelda')
     await field.press('Enter')
-    await expect(page).toHaveURL(/\/en\/library\?q=zelda$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\?q=zelda$/)
     await expect(search(page)).toHaveValue('zelda')
     await expect(totals(page)).toContainText('9 games')
   })
@@ -147,12 +149,12 @@ test.describe('the status row', () => {
     await expect(row.getByRole('radio', { name: /^Playing/ })).toBeChecked()
 
     await row.getByRole('radio', { name: 'All', exact: true }).click()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
     await expect(totals(page)).toContainText('230 games')
   })
 
   test('its counts follow the rest of the filter', async ({ page }) => {
-    await openLibrary(page, '/en/library?q=genre%3Arpg')
+    await openLibrary(page, '/en/u/sample?q=genre%3Arpg')
     const row = page.getByRole('radiogroup', { name: 'Status' })
     const playing = await matches(page, 'genre:rpg status:playing')
     await expect(row.getByRole('radio', { name: `Playing, ${playing} games` })).toBeVisible()
@@ -161,7 +163,7 @@ test.describe('the status row', () => {
 
 test.describe('the chips (spec 3.1)', () => {
   test('one per condition, each removable, and Clear all', async ({ page }) => {
-    await openLibrary(page, '/en/library?q=genre%3Arpg+-theme%3Ahorror')
+    await openLibrary(page, '/en/u/sample?q=genre%3Arpg+-theme%3Ahorror')
     await expect(chips(page)).toContainText('Genre: Role-playing (RPG)')
     await expect(chips(page)).toContainText('Not theme: Horror')
     await expect(totals(page)).toContainText(
@@ -173,14 +175,14 @@ test.describe('the chips (spec 3.1)', () => {
     await expect(totals(page)).toContainText('86 games')
 
     await chips(page).getByRole('button', { name: 'Clear all' }).click()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
     await expect(chips(page)).toHaveCount(0)
   })
 
   test('when nothing matches, the page says so, and Clear all brings the games back', async ({
     page,
   }) => {
-    await openLibrary(page, '/en/library?q=year%3A%3C1900')
+    await openLibrary(page, '/en/u/sample?q=year%3A%3C1900')
     const empty = page.getByRole('status').filter({ hasText: 'No games match these filters.' })
     await expect(empty).toBeVisible()
     await expect(page.locator('.game-box')).toHaveCount(0)
@@ -267,7 +269,7 @@ test.describe('the filter panel (spec 5)', () => {
   test('keywords arrive only when they are asked for', async ({ page }) => {
     const asked: string[] = []
     page.on('request', (request) => {
-      if (request.url().includes('/library/keywords/')) asked.push(request.url())
+      if (/\/api\/v1\/libraries\/[^/]+\/keywords\//.test(request.url())) asked.push(request.url())
     })
     await openLibrary(page)
     expect(asked).toEqual([])
@@ -284,7 +286,7 @@ test.describe('the filter panel (spec 5)', () => {
   })
 
   test('an address with a keyword is drawn with it from the start', async ({ page }) => {
-    await openLibrary(page, '/en/library?q=keyword%3Azombies')
+    await openLibrary(page, '/en/u/sample?q=keyword%3Azombies')
     await expect(totals(page)).toContainText(`${await matches(page, 'keyword:zombies')} games`)
     await expect(chips(page)).toContainText('Keyword: zombies')
   })
@@ -292,7 +294,7 @@ test.describe('the filter panel (spec 5)', () => {
 
 test.describe('the sort (spec 6)', () => {
   test('a key from the menu, and a button that reverses it @smoke', async ({ page }) => {
-    await openLibrary(page, '/en/library?group=none')
+    await openLibrary(page, '/en/u/sample?group=none')
     await page.getByRole('button', { name: /^Sort/ }).click()
     await page.getByRole('menuitemradio', { name: 'My rating' }).click()
     // Highest first: the way a rating is usually wanted.
@@ -313,7 +315,7 @@ test.describe('the sort (spec 6)', () => {
   })
 
   test('Surprise me shuffles, and the address keeps the order', async ({ page }) => {
-    await openLibrary(page, '/en/library?group=none')
+    await openLibrary(page, '/en/u/sample?group=none')
     await page.getByRole('button', { name: /^Sort/ }).click()
     await page.getByRole('menuitemradio', { name: 'Surprise me' }).click()
     await expect(page).toHaveURL(/sort=random&seed=[a-z0-9]+/i)
@@ -328,7 +330,7 @@ test.describe('the sort (spec 6)', () => {
   })
 
   test('a heading in the list sorts by its column', async ({ page, size }) => {
-    await openLibrary(page, '/en/library?view=list&group=none')
+    await openLibrary(page, '/en/u/sample?view=list&group=none')
     const table = page.getByRole('table').first()
     const title = table.getByRole('columnheader', { name: 'Title' })
     await expect(title).toHaveAttribute('aria-sort', 'ascending')

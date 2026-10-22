@@ -7,6 +7,8 @@ import { useEffect, useRef, useState, type TouchEvent } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform, LibraryTag } from '@/domain/library/library'
+import { useShelf } from '@/features/library/shelf'
+import { gameHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Sheet, SheetContent, SheetTitle, sheetButton } from '@/ui/sheet'
@@ -64,7 +66,8 @@ export function GamePanel({
   const [shown, setShown] = useState(item)
   if (item && item !== shown) setShown(item)
   const game = shown?.game
-  const facts = useGameFacts(version, game?.slug)
+  const { handle, files } = useShelf()
+  const facts = useGameFacts(files, version, game?.slug)
   const touch = useRef<{ x: number; y: number } | undefined>(undefined)
   const panel = useRef<HTMLDivElement>(null)
   const query = keptQuery(useSearchParams())
@@ -109,7 +112,7 @@ export function GamePanel({
           actions={
             // The game's own page, in place of the panel: Back from it is the library again.
             <Link
-              href={{ pathname: '/game/[slug]', params: { slug: game.slug }, query }}
+              href={gameHref(handle, game.slug, query)}
               replace
               aria-label={t('fullPage')}
               title={t('fullPage')}
@@ -145,6 +148,7 @@ export function GamePanel({
           <GameDetail
             // A new game starts at its top.
             key={game.slug}
+            handle={handle}
             game={game}
             tags={game.tags.flatMap((position) => tags[position] ?? [])}
             platforms={platforms}

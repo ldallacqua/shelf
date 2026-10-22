@@ -1,6 +1,7 @@
 import createMiddleware from 'next-intl/middleware'
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { FIRST_HANDLE } from './domain/accounts/handle'
 import { isKnownPath, splitLocale } from './i18n/known-paths'
 import { routing } from './i18n/routing'
 
@@ -12,8 +13,25 @@ const MISSING = '/missing'
 // Marks the proxy's own request for that page, so it is let through.
 const INTERNAL = 'x-shelf-internal'
 
+/**
+ * The addresses there were before accounts (ADR 004). They were all one
+ * shelf, which is now the first account's, so a link shared then still
+ * arrives: for good, with its query string.
+ */
+const BEFORE_ACCOUNTS = /^\/(library|trophies|game\/[^/]+|shelves\/[^/]+)$/
+
+const toFirstShelf = (request: NextRequest, locale: string, rest: string): NextResponse => {
+  const target = request.nextUrl.clone()
+  target.pathname = `/${locale}/u/${FIRST_HANDLE}${rest === '/library' ? '' : rest}`
+  return NextResponse.redirect(target, 308)
+}
+
 export default async function proxy(request: NextRequest) {
   const address = splitLocale(request.nextUrl.pathname)
+
+  if (address && BEFORE_ACCOUNTS.test(address.rest)) {
+    return toFirstShelf(request, address.locale, address.rest)
+  }
 
   if (address && !isKnownPath(address.rest)) {
     if (address.rest === MISSING && request.headers.has(INTERNAL)) return NextResponse.next()

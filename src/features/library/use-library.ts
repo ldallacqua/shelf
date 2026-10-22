@@ -5,28 +5,38 @@ import { startTransition, useEffect, useState } from 'react'
 import type { Library } from '@/domain/library/library'
 import { decodeLibrary, type SnapshotFile } from '@/domain/library/snapshot'
 
+import { snapshotAddress, type LibraryFiles } from './shelf-address'
+
 /**
  * Fetches the library file: the whole library, once, cached by its version.
- * Every filter, sort and regroup after that happens on the device.
+ * Every filter, sort and regroup after that happens on the device. One's own
+ * private library is fetched fresh for each version (ADR 004), and kept in
+ * memory only for as long as the page is open.
  */
 
-const files = new Map<number, Promise<Library>>()
+const fetched = new Map<string, Promise<Library>>()
 
-const load = (version: number): Promise<Library> => {
-  let file = files.get(version)
+const load = (files: LibraryFiles, version: number): Promise<Library> => {
+  const id = `${files.kind === 'public' ? files.key : 'mine'}:${version}`
+  let file = fetched.get(id)
   if (!file) {
-    file = fetch(`/api/v1/library/snapshot/${version}`)
+    file = fetch(snapshotAddress(files, version), {
+      cache: files.kind === 'mine' ? 'no-store' : 'default',
+    })
       .then((response) => {
         if (!response.ok) throw new Error(`The library file answered ${response.status}`)
         return response.json() as Promise<SnapshotFile>
       })
       .then(decodeLibrary)
-    files.set(version, file)
+    fetched.set(id, file)
     // A failed attempt is forgotten, so "Try again" really tries again.
-    file.catch(() => files.delete(version))
+    file.catch(() => fetched.delete(id))
   }
   return file
 }
+
+/** One's own library, fetched fresh: what a private shelf's page starts from. */
+export const loadMine = (): Promise<Library> => load({ kind: 'mine' }, Date.now())
 
 export type LibraryState =
   | { status: 'loading' }
@@ -41,14 +51,18 @@ const nextTurn = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
  * before anything is drawn from it: the place for work that drawing would
  * otherwise have to stop for, such as arranging the shelves.
  */
-export function useLibrary(version: number, prepare?: (library: Library) => void): LibraryState {
+export function useLibrary(
+  files: LibraryFiles,
+  version: number,
+  prepare?: (library: Library) => void,
+): LibraryState {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState<{ key: string; library?: Library; failed?: boolean }>()
   const key = `${version}:${attempt}`
 
   useEffect(() => {
     let current = true
-    load(version)
+    load(files, version)
       .then(async (library) => {
         if (!current) return
         await nextTurn()
@@ -64,6 +78,7 @@ export function useLibrary(version: number, prepare?: (library: Library) => void
       current = false
     }
     // `prepare` is whatever it was when the request was made: it only saves work.
+    // A shelf's files are the same for as long as its page is open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, key])
 

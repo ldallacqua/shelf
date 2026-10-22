@@ -3,8 +3,9 @@ import { parseSort, writeSort } from '@/domain/library/sort'
 
 /**
  * Smart shelves (spec 5.5): a named filter with a sort and a grouping. It
- * updates itself as the library changes, and has an address of its own:
- * `/en/shelves/{slug}`. The filter is kept as text, in the filter language,
+ * updates itself as the library changes, and has an address of its own on
+ * its account's shelf: `/en/u/{handle}/shelves/{slug}`. The filter is kept
+ * as text, in the filter language,
  * so a shelf saved today still reads the same after the language grows.
  */
 

@@ -2,17 +2,13 @@
 
 import { updateTag } from 'next/cache'
 
-import {
-  addGameForOwner,
-  groupingFor,
-  searchToAdd,
-  undoAddForOwner,
-} from '@/server/services/adding'
-import { LIBRARY_TAG } from '@/server/services/library'
+import { addMyGame, groupingFor, searchToAdd, undoMyAdd } from '@/server/services/adding'
+import { libraryTag } from '@/server/services/library'
 
 /**
- * Adding games, for the interface. Each checks who is asking inside the
- * service: a server action can be called by anyone who finds its address.
+ * Adding games, for the interface, each to the signed-in account's own
+ * library. Each checks who is asking inside the service: a server action
+ * can be called by anyone who finds its address.
  */
 
 export async function searchGamesAction(text: unknown) {
@@ -24,14 +20,14 @@ export async function groupingAction(igdbId: unknown) {
 }
 
 export async function addGameAction(input: unknown) {
-  const result = await addGameForOwner(input)
-  // The owner sees the game at once, on this page and the next.
-  if (result.ok) updateTag(LIBRARY_TAG)
+  const result = await addMyGame(input)
+  // The account sees the game at once, on this page and the next.
+  if (result.ok) updateTag(libraryTag(result.libraryId))
   return result
 }
 
 export async function undoAddAction(added: unknown) {
-  const result = await undoAddForOwner(added)
-  if (result.ok) updateTag(LIBRARY_TAG)
+  const result = await undoMyAdd(added)
+  if (result.ok) updateTag(libraryTag(result.libraryId))
   return result
 }

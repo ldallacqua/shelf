@@ -172,7 +172,7 @@ test('saying yes gives the assistant a token, and with it the owner’s tools @s
     expect(updated.isError).toBeFalsy()
 
     // What anyone sees now.
-    const game = (await (await request.get(`/api/v1/games/${slug}`)).json()) as {
+    const game = (await (await request.get(`/api/v1/u/sample/games/${slug}`)).json()) as {
       status: string
       rating: number
       tags: string[]

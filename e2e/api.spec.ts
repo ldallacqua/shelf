@@ -22,10 +22,12 @@ test.describe('the public API', () => {
     'it answers the same to every browser',
   )
 
-  test('GET /library filters, sorts and pages, in the filter language @smoke', async ({
+  test('GET /u/{handle}/library filters, sorts and pages, in the filter language @smoke', async ({
     request,
   }) => {
-    const answer = await request.get('/api/v1/library?q=genre:rpg&sort=-rating&group=none&limit=5')
+    const answer = await request.get(
+      '/api/v1/u/sample/library?q=genre:rpg&sort=-rating&group=none&limit=5',
+    )
     expect(answer.status()).toBe(200)
     expect(answer.headers()['content-type']).toContain('application/json')
     expect(answer.headers()['access-control-allow-origin']).toBe('*')
@@ -42,7 +44,7 @@ test.describe('the public API', () => {
 
     const second = (await (
       await request.get(
-        `/api/v1/library?q=genre:rpg&sort=-rating&group=none&limit=5&cursor=${first.next}`,
+        `/api/v1/u/sample/library?q=genre:rpg&sort=-rating&group=none&limit=5&cursor=${first.next}`,
       )
     ).json()) as Library
     expect(second.games).toHaveLength(5)
@@ -54,24 +56,24 @@ test.describe('the public API', () => {
     request,
   }) => {
     const answer = (await (
-      await request.get(`/api/v1/library?q=${encodeURIComponent('halo:3 zelda')}`)
+      await request.get(`/api/v1/u/sample/library?q=${encodeURIComponent('halo:3 zelda')}`)
     ).json()) as Library
     expect(answer.problems).toEqual([{ text: 'halo:3', reason: 'unknown-key', from: 0, to: 6 }])
     expect(answer.stats.games).toBe(9)
   })
 
   test('takes a bad parameter as its default, and a limit within bounds', async ({ request }) => {
-    const answer = await request.get('/api/v1/library?group=cube&limit=100000')
+    const answer = await request.get('/api/v1/u/sample/library?group=cube&limit=100000')
     expect(answer.status()).toBe(200)
     const body = (await answer.json()) as Library
     expect(body.query.group).toBe('platform')
     expect(body.games.length).toBeLessThanOrEqual(200)
   })
 
-  test('GET /library/facets counts each value given the rest of the filter', async ({
+  test('GET /u/{handle}/facets counts each value given the rest of the filter', async ({
     request,
   }) => {
-    const answer = (await (await request.get('/api/v1/library/facets?q=genre:rpg')).json()) as {
+    const answer = (await (await request.get('/api/v1/u/sample/facets?q=genre:rpg')).json()) as {
       total: number
       facets: Record<string, { value: string; count: number }[]>
       ranges: Record<string, { min: number; max: number } | null>
@@ -88,33 +90,41 @@ test.describe('the public API', () => {
     expect(answer.ranges.rating).toMatchObject({ min: expect.any(Number), max: 10 })
   })
 
-  test('GET /shelves lists the smart shelves; one that is not there is a 404', async ({
+  test('GET /u/{handle}/shelves lists the smart shelves; one that is not there is a 404', async ({
     request,
   }) => {
-    const list = (await (await request.get('/api/v1/shelves')).json()) as {
+    const list = (await (await request.get('/api/v1/u/sample/shelves')).json()) as {
       shelves: { slug: string; query: string; path: string }[]
     }
     expect(list.shelves).toContainEqual(
       expect.objectContaining({
         slug: 'short-ones',
         query: 'status:backlog length:<10',
-        path: '/shelves/short-ones',
+        path: '/u/sample/shelves/short-ones',
       }),
     )
 
-    const one = await request.get('/api/v1/shelves/short-ones')
+    const one = await request.get('/api/v1/u/sample/shelves/short-ones')
     expect(one.status()).toBe(200)
     expect(await one.json()).toMatchObject({ name: 'Short ones', sort: 'length', group: 'none' })
 
-    const missing = await request.get('/api/v1/shelves/not-a-shelf')
+    const missing = await request.get('/api/v1/u/sample/shelves/not-a-shelf')
     expect(missing.status()).toBe(404)
     expect(await missing.json()).toMatchObject({ error: { code: 'not-found' } })
   })
 
-  test('GET /games/{slug} answers one game, with what its page shows a visitor', async ({
+  test('answers 404 for a shelf no account has (ADR 004)', async ({ request }) => {
+    for (const path of ['library', 'facets', 'shelves', 'games/bloodborne']) {
+      const answer = await request.get(`/api/v1/u/no-such-shelf/${path}`)
+      expect(answer.status(), path).toBe(404)
+      expect(await answer.json()).toMatchObject({ error: { code: 'not-found' } })
+    }
+  })
+
+  test('GET /u/{handle}/games/{slug} answers one game, with what its page shows a visitor', async ({
     request,
   }) => {
-    const answer = await request.get('/api/v1/games/bloodborne')
+    const answer = await request.get('/api/v1/u/sample/games/bloodborne')
     expect(answer.status()).toBe(200)
     expect(answer.headers()['access-control-allow-origin']).toBe('*')
     const game = await answer.json()
@@ -125,7 +135,7 @@ test.describe('the public API', () => {
     })
     expect(game.screenshots.length).toBeGreaterThan(0)
 
-    const missing = await request.get('/api/v1/games/not-a-game')
+    const missing = await request.get('/api/v1/u/sample/games/not-a-game')
     expect(missing.status()).toBe(404)
     expect(await missing.json()).toEqual({
       error: { code: 'not-found', message: 'There is no game called not-a-game' },
@@ -141,9 +151,9 @@ test.describe('the public API', () => {
     expect(document.openapi).toMatch(/^3\.1\./)
     expect(Object.keys(document.paths)).toEqual(
       expect.arrayContaining([
-        '/library',
-        '/library/facets',
-        '/games/{slug}',
+        '/u/{handle}/library',
+        '/u/{handle}/facets',
+        '/u/{handle}/games/{slug}',
         '/igdb/search',
         '/igdb/match',
         '/additions',
@@ -153,7 +163,8 @@ test.describe('the public API', () => {
         '/entries/{id}/copies',
         '/entries/{id}/copies/{copy}',
         '/removed/{undo}',
-        '/shelves',
+        '/u/{handle}/shelves',
+        '/u/{handle}/shelves/{slug}',
         '/shelves/{slug}',
       ]),
     )
@@ -163,10 +174,10 @@ test.describe('the public API', () => {
   })
 })
 
-/** Any id: the owner is asked for before anything is looked up. */
+/** Any id: the session is asked for before anything is looked up. */
 const ID = '00000000-0000-4000-a000-000000000000'
 
-test.describe('the API’s writes, without the owner’s session', () => {
+test.describe('the API’s writes, without a session', () => {
   test.skip(
     ({ browserName, size }) => browserName !== 'chromium' || size !== 'desktop',
     'it answers the same to every browser',
@@ -184,8 +195,14 @@ test.describe('the API’s writes, without the owner’s session', () => {
         undo: [{ entryId: ID, gameId: ID, newEntry: true, newVersion: true, copyIds: [] }],
       },
     },
-    // The owner's own read: private notes are in it.
+    // One's own reads: private notes are in them, and a private shelf's games.
     { method: 'GET', path: '/api/v1/entries/bloodborne' },
+    { method: 'GET', path: '/api/v1/me/library' },
+    { method: 'GET', path: '/api/v1/me/games/bloodborne' },
+    { method: 'GET', path: '/api/v1/me/keywords' },
+    { method: 'GET', path: '/api/v1/me/tags' },
+    { method: 'GET', path: '/api/v1/me/shelves' },
+    { method: 'PATCH', path: '/api/v1/me', data: { shelfPublic: false } },
     { method: 'PATCH', path: '/api/v1/entries/bloodborne', data: { status: 'dropped' } },
     { method: 'DELETE', path: '/api/v1/entries/bloodborne' },
     {
@@ -209,11 +226,11 @@ test.describe('the API’s writes, without the owner’s session', () => {
       request,
     }) => {
       const version = async () =>
-        new URL(
-          (await request.get('/api/v1/library/snapshot/0', { maxRedirects: 0 })).headers()
-            .location ?? '',
-          'http://x',
-        ).pathname
+        (
+          (await (await request.get('/api/v1/u/sample/library?limit=1')).json()) as {
+            version: number
+          }
+        ).version
       const before = await version()
       for (const cookie of [undefined, 'shelf.session_token=made-up.value']) {
         const response = await request.fetch(write.path, {
@@ -225,8 +242,11 @@ test.describe('the API’s writes, without the owner’s session', () => {
         expect(await response.json()).toMatchObject({ error: { code: 'not-signed-in' } })
       }
       expect(await version()).toBe(before)
-      expect((await request.get('/api/v1/games/bloodborne')).status()).toBe(200)
-      expect((await request.get('/api/v1/shelves/short-ones')).status()).toBe(200)
+      expect((await request.get('/api/v1/u/sample/games/bloodborne')).status()).toBe(200)
+      expect((await request.get('/api/v1/u/sample/shelves/short-ones')).status()).toBe(200)
+      expect(
+        ((await (await request.get('/api/v1/me')).json()) as { signedIn: boolean }).signedIn,
+      ).toBe(false)
     })
   }
 })

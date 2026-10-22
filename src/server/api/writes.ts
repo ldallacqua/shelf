@@ -22,13 +22,15 @@ import {
 import { MAX_NOTES, type OwnerGame } from '@/domain/library/editing'
 import { formats, kinds, relations, statuses } from '@/domain/library/values'
 import { failure } from '@/server/api/respond'
-import { LIBRARY_TAG } from '@/server/services/library'
+import type { Done } from '@/server/services/for-account'
+import { libraryTag } from '@/server/services/library'
 
 /**
- * The API's writes (architecture, section 16), for the owner only: search
- * IGDB, add, change and remove games. They take the owner's session, the
- * same as the interface, and run the same services. Each body and answer
- * has a schema here, which the OpenAPI document is made from.
+ * The API's writes (architecture, section 16), each to the signed-in
+ * account's own library: search IGDB, add, change and remove games. They
+ * take the session, the same as the interface, and run the same services.
+ * Each body and answer has a schema here, which the OpenAPI document is
+ * made from.
  */
 
 const platformId = z.int().positive().describe('An IGDB platform id, from GET /igdb/search')
@@ -135,7 +137,7 @@ export const apiNewGame = z
 
 export const apiAdded = z
   .object({
-    slug: z.string().describe('The game it is now, or joined: /en/game/{slug}'),
+    slug: z.string().describe('The game it is now, or joined: /en/u/{handle}/game/{slug}'),
     title: z.string(),
     version: z.int().describe('The library’s version after the change'),
   })
@@ -324,34 +326,37 @@ const STATUS: Record<Refusal['reason'], number> = {
   conflict: 409,
   'not-kept': 503,
   igdb: 502,
+  'too-many': 429,
   failed: 500,
 }
 
 const MESSAGE: Record<Refusal['reason'], string> = {
-  'not-signed-in': 'Only the owner can do this. Sign in first: the session cookie is the key.',
+  'not-signed-in':
+    'Sign in first: an account changes its own library, and the session cookie is the key.',
   invalid: 'The request is not one Shelf can carry out. See /api/v1/openapi.json.',
-  'not-found': 'There is no such game.',
+  'not-found': 'There is no such game in your library.',
   conflict: 'That is there already.',
   'not-kept': 'This deployment keeps nothing it is given, so nothing was saved.',
   igdb: 'IGDB did not answer. Try again.',
+  'too-many': 'Every account shares one IGDB allowance, and this one has used its hour. Try later.',
   failed: 'That did not work. Try again.',
 }
 
-/** Writes are never kept by anything between here and the owner. */
+/** Writes are never kept by anything between here and the account. */
 const PRIVATE = { 'Cache-Control': 'private, no-store' }
 
-/** The answer to a write: its schema checked, the library's pages drawn again on their next visit. */
+/** The answer to a write: its schema checked, its library's pages drawn again on their next visit. */
 export const written = <T extends z.ZodType>(
   schema: T,
-  result: Answer<z.input<T>>,
+  result: Done<z.input<T>>,
   status = 200,
 ): Response => {
   if (!result.ok) return refused(result)
-  revalidateTag(LIBRARY_TAG, { expire: 0 })
+  revalidateTag(libraryTag(result.libraryId), { expire: 0 })
   return Response.json(schema.parse(result.value), { status, headers: PRIVATE })
 }
 
-/** The answer to the owner's read: checked, and kept by no one. */
+/** The answer to an account's read of its own: checked, and kept by no one. */
 export const ownerRead = <T extends z.ZodType>(schema: T, result: Answer<z.input<T>>): Response =>
   result.ok ? Response.json(schema.parse(result.value), { headers: PRIVATE }) : refused(result)
 

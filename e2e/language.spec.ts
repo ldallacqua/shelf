@@ -2,29 +2,29 @@ import { expect, test } from './fixtures'
 
 test.describe('switching language', () => {
   test('keeps the page and switches every label @smoke', async ({ page }) => {
-    await page.goto('/en/library')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Library')
+    await page.goto('/en/u/sample')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText("Sample's shelf")
 
     await page.getByRole('link', { name: 'PT: Português (Brasil)' }).click()
 
-    await expect(page).toHaveURL(/\/pt-BR\/library$/)
+    await expect(page).toHaveURL(/\/pt-BR\/u\/sample$/)
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR')
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Biblioteca')
-    await expect(page).toHaveTitle('Biblioteca · Shelf')
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Estante de Sample')
+    await expect(page).toHaveTitle('Estante de Sample · Shelf')
 
     await page.getByRole('link', { name: 'EN: English' }).click()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
   })
 
   test('keeps the filters in the address', async ({ page }) => {
-    await page.goto('/en/library?q=status%3Abacklog+genre%3Arpg&sort=-rating')
+    await page.goto('/en/u/sample?q=status%3Abacklog+genre%3Arpg&sort=-rating')
 
     const link = page.getByRole('link', { name: 'PT: Português (Brasil)' })
-    await expect(link).toHaveAttribute('href', /\/pt-BR\/library\?.*sort=-rating/)
+    await expect(link).toHaveAttribute('href', /\/pt-BR\/u\/sample\?.*sort=-rating/)
     await link.click()
 
-    await expect(page).toHaveURL(/\/pt-BR\/library\?/)
+    await expect(page).toHaveURL(/\/pt-BR\/u\/sample\?/)
     const address = new URL(page.url())
     expect(address.searchParams.get('q')).toBe('status:backlog genre:rpg')
     expect(address.searchParams.get('sort')).toBe('-rating')
@@ -57,11 +57,11 @@ test.describe('switching language', () => {
   test('the link works before any JavaScript has run', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false })
     const page = await context.newPage()
-    await page.goto('/en/trophies')
+    await page.goto('/en/u/sample/trophies')
 
     await page.getByRole('link', { name: 'PT: Português (Brasil)' }).click()
 
-    await expect(page).toHaveURL(/\/pt-BR\/trophies$/)
+    await expect(page).toHaveURL(/\/pt-BR\/u\/sample\/trophies$/)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Troféus')
     await context.close()
   })

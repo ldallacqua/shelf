@@ -2,10 +2,11 @@
 
 import { PlusIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
 
 import { shortcutsOn } from '@/features/filters/shortcuts'
-import { useOwner } from '@/features/owner/owner'
+import { useIsMine } from '@/features/owner/account'
 import { Button } from '@/ui/button'
 
 import type { AddActions } from './actions'
@@ -13,7 +14,7 @@ import type { AddGame as AddGameType } from './add-game'
 
 let code: Promise<typeof AddGameType> | undefined
 
-/** The sheet's code, fetched when the owner first reaches for it. */
+/** The sheet's code, fetched when one first reaches for it. */
 const loadSheet = () => (code ??= import('./add-game').then((module) => module.AddGame))
 
 const wanted = new Set<() => void>()
@@ -30,10 +31,11 @@ const busyElsewhere = (target: EventTarget | null) =>
     ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
     Boolean(target.closest('[role="dialog"], [role="menu"]')))
 
-/** The header's Add button (spec 2): there for the owner only, once the browser knows it is them. */
-export function AddButton({ actions }: { actions: AddActions }) {
+/** Adds to the shelf in the address, when it is one's own. */
+function AddToShelf({ actions }: { actions: AddActions }) {
   const t = useTranslations('Add')
-  const owner = useOwner().status === 'owner'
+  const params = useParams<{ handle?: string }>()
+  const owner = useIsMine(typeof params?.handle === 'string' ? params.handle : undefined)
   const [AddGame, setAddGame] = useState<typeof AddGameType>()
   const [open, setOpen] = useState(false)
 
@@ -76,5 +78,17 @@ export function AddButton({ actions }: { actions: AddActions }) {
       </Button>
       {AddGame ? <AddGame open={open} onOpenChange={setOpen} actions={actions} /> : null}
     </>
+  )
+}
+
+/**
+ * The header's Add button (spec 2): there on one's own shelf only, once the
+ * browser knows whose it is (ADR 004). Until the address is known, nothing.
+ */
+export function AddButton({ actions }: { actions: AddActions }) {
+  return (
+    <Suspense fallback={null}>
+      <AddToShelf actions={actions} />
+    </Suspense>
   )
 }

@@ -48,7 +48,7 @@ test.describe('adding a game', () => {
     page,
   }, info) => {
     const title = gameToAdd(info, 0)
-    await openLibrary(page, '/en/library?group=none')
+    await openLibrary(page, '/en/u/sample?group=none')
     await findWithKeys(page, title)
     await page.keyboard.press('Enter')
 
@@ -102,7 +102,7 @@ test.describe('adding a game', () => {
 
   test('a game the filters hide says so, and Show brings it into view', async ({ page }, info) => {
     const title = gameToAdd(info, 2)
-    await openLibrary(page, '/en/library?q=status%3Aplaying')
+    await openLibrary(page, '/en/u/sample?q=status%3Aplaying')
     await page.getByRole('button', { name: 'Add', exact: true }).click()
     await sheet(page).getByRole('combobox', { name: 'Search IGDB' }).fill(title)
     await result(page, title).first().click()
@@ -151,7 +151,7 @@ test.describe('finding a game to add', () => {
     // Its Switch port is folded in, not a second result.
     await expect(skyrim).toContainText('also on')
     await skyrim.click()
-    await expect(page).toHaveURL(/\/en\/game\/the-elder-scrolls-v-skyrim$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\/game\/the-elder-scrolls-v-skyrim$/)
   })
 
   test('a game related to one I have offers to join it, as ADR 001 proposes', async ({ page }) => {

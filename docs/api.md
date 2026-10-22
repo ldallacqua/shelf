@@ -1,8 +1,10 @@
 # Shelf: the API
 
-Shelf's library can be read by other programs: a script, a spreadsheet, another site, an AI
-assistant. Reading is public, needs no key, and answers in JSON. Writing is the owner's alone
-([below](#writing-the-owner-only)), and an assistant can do both through
+Shelf's public shelves can be read by other programs: a script, a spreadsheet, another site,
+an AI assistant. Each is read by its handle, as in its address `/u/{handle}`. Reading is
+public, needs no key, and answers in JSON; a private shelf answers 404, as a shelf no account
+has does. Writing acts on one's own shelf, signed in ([below](#writing-to-ones-own-shelf)),
+and an assistant can do both through
 [MCP](#mcp-for-ai-assistants). The design is in
 [the architecture, section 16](architecture.md#16-api-mcp-and-machine-readable-pages); the
 filter language is [spec section 5.3](spec.md#53-the-filter-language).
@@ -16,7 +18,7 @@ answer is checked against before it is sent, so it cannot drift from what the AP
 | | |
 | --- | --- |
 | Address | `https://{the site}/api/v1` |
-| Sign-in | None to read. A write takes the owner's session cookie, which signing in on the site sets, and answers 401 without it. |
+| Sign-in | None to read a public shelf. A write takes the session cookie signing in on the site sets, acts on that account's own shelf, and answers 401 without it. |
 | Format | JSON, UTF-8 |
 | Other sites | Allowed: every answer carries `Access-Control-Allow-Origin: *` |
 | Caching | `s-maxage=60, stale-while-revalidate=600`: the edge keeps an answer for a minute. The library and keyword files are kept for a year, because their address changes when they do. |
@@ -50,7 +52,7 @@ The parameter `q` is a filter, exactly as the library's address and a smart shel
 
 - Values are lower case with hyphens: `developer:eidos-montreal`, `tag:couch-co-op`. The
   values a key takes, with how many games each would match, are what
-  [`/library/facets`](#get-libraryfacets) lists.
+  [`/u/{handle}/facets`](#get-uhandlefacets) lists.
 - `rating` is out of 10; `hours` and `length` (time to beat) are in hours; `igdb` is IGDB's
   rating out of 100; `copies` is how many platforms a game is owned on.
 - `owned:` takes a platform (`owned:switch`) or a family (`owned:playstation`). In one group,
@@ -60,9 +62,10 @@ The parameter `q` is a filter, exactly as the library's address and a smart shel
 - A part that cannot be understood is left out, and the answer says which in `problems`.
   The rest of the filter still applies.
 
-## `GET /library`
+## `GET /u/{handle}/library`
 
-The games a filter matches, in order, a page at a time, and the shelves they make.
+The games of a public shelf a filter matches, in order, a page at a time, and the shelves
+they make.
 
 | Parameter | | Default |
 | --- | --- | --- |
@@ -75,7 +78,7 @@ The games a filter matches, in order, a page at a time, and the shelves they mak
 | `lang` | `en` or `pt-BR`: how titles are put in order | `en` |
 
 ```text
-GET /api/v1/library?q=genre:rpg&sort=-rating&group=none&limit=1
+GET /api/v1/u/sample/library?q=genre:rpg&sort=-rating&group=none&limit=1
 ```
 
 ```json
@@ -124,7 +127,7 @@ GET /api/v1/library?q=genre:rpg&sort=-rating&group=none&limit=1
   `bad-value`, `missing-value`, `unclosed-bracket`, `stray-bracket`, `empty-brackets`,
   `dangling-or`, `nothing-to-negate`), and where it stands in `q`.
 
-## `GET /library/facets`
+## `GET /u/{handle}/facets`
 
 Every value of every list filter, with how many games it would match given the rest of `q`,
 and the range each number and date key spans.
@@ -134,7 +137,7 @@ and the range each number and date key spans.
 | `q` | A filter | Every game |
 
 ```text
-GET /api/v1/library/facets?q=genre:rpg
+GET /api/v1/u/sample/facets?q=genre:rpg
 ```
 
 ```json
@@ -157,20 +160,21 @@ GET /api/v1/library/facets?q=genre:rpg
   picking that value would give. Above, with `genre:rpg`, each genre's count is its count in
   the whole library, and `status` counts split the 86 RPGs.
 - `keyword` is left out: a library has thousands. They are in the
-  [keywords file](#get-librarykeywordsversion).
+  [keywords file](#get-librarieskeykeywordsversion).
 - `name` is the name IGDB or the library gives a value, in English. Fixed values (statuses,
   formats, kinds) are named by the value itself; the site translates them, the API does not.
 - A key with no values in the library has `null` for its range.
 
-## `GET /games/{slug}`
+## `GET /u/{handle}/games/{slug}`
 
-One game, with everything its page shows a visitor: what is in `GET /library` for it, and
-IGDB's summary and storyline, its credits, its first release on each platform, its times to
-beat, its key art and screenshots, and my notes when I have made them public. The slug is the
-game's address on the site: `/en/game/{slug}`.
+One game on a public shelf, with everything its page shows a visitor: what is in
+`GET /u/{handle}/library` for it, and IGDB's summary and storyline, its credits, its first
+release on each platform, its times to beat, its key art and screenshots, and the shelf's
+notes when they were made public. The slug is the game's address on the site:
+`/en/u/{handle}/game/{slug}`.
 
 ```text
-GET /api/v1/games/advance-wars
+GET /api/v1/u/sample/games/advance-wars
 ```
 
 ```json
@@ -200,7 +204,7 @@ GET /api/v1/games/advance-wars
 }
 ```
 
-(Shortened: every field of a game in `GET /library` is there too.)
+(Shortened: every field of a game in `GET /u/{handle}/library` is there too.)
 
 - `developers`, `publishers`, `franchises`, `series`, `modes` and `perspectives` give each
   value as its filter key takes it (`developer:intelligent-systems`) and by its name.
@@ -208,15 +212,16 @@ GET /api/v1/games/advance-wars
   folded into the game: a port released years later gives its platform its own date. `date`
   is `YYYY` when IGDB knows only the year.
 - `timesToBeat` is in hours: `hastily` (the main story), `normally` (with the extras) and
-  `completely`. `timeToBeat` is the normal one, as `GET /library` gives it.
-- `notes` is `null` unless I made my notes public for this game. Private notes are never sent.
-- A slug that is no game's answers 404, as `GET /shelves/{slug}` does. A version folded into
-  another game has no address of its own.
+  `completely`. `timeToBeat` is the normal one, as `GET /u/{handle}/library` gives it.
+- `notes` is `null` unless the notes for this game were made public. Private notes are never
+  sent.
+- A slug that is no game's answers 404, as `GET /u/{handle}/shelves/{slug}` does. A version
+  folded into another game has no address of its own.
 
-## `GET /shelves`
+## `GET /u/{handle}/shelves`
 
-The smart shelves: named filters, each with a sort and a grouping, at an address of their own
-on the site.
+A public shelf's smart shelves: named filters, each with a sort and a grouping, at an address
+of their own on the site.
 
 ```json
 {
@@ -227,16 +232,16 @@ on the site.
       "query": "status:backlog length:<10",
       "sort": "length",
       "group": "none",
-      "path": "/shelves/short-ones"
+      "path": "/u/sample/shelves/short-ones"
     }
   ]
 }
 ```
 
-A shelf's games are `GET /library` with its `query`, `sort` and `group`. Its page is `path`
-after the language: `/en/shelves/short-ones`.
+A shelf's games are `GET /u/{handle}/library` with its `query`, `sort` and `group`. Its page
+is `path` after the language: `/en/u/sample/shelves/short-ones`.
 
-## `GET /shelves/{slug}`
+## `GET /u/{handle}/shelves/{slug}`
 
 One shelf, as above. A shelf that is not there answers 404:
 
@@ -244,42 +249,54 @@ One shelf, as above. A shelf that is not there answers 404:
 { "error": { "code": "not-found", "message": "There is no shelf called not-a-shelf" } }
 ```
 
-## `GET /library/snapshot/{version}`
+## `GET /libraries/{key}/snapshot/{version}`
 
-The whole library in one compact file, as the site's own pages use it to filter in the
-browser. It is made for Shelf and its layout may change between versions of the site
-(`format` says which); use `/library` for anything else. An address with an old version is
-sent on to the current one (307).
+A public library whole, in one compact file, as the site's own pages use it to filter in the
+browser. `{key}` is the library's own, random, and changes when its shelf goes private; the
+site's pages know it. The file is made for Shelf and its layout may change between versions
+of the site (`format` says which); use `/u/{handle}/library` for anything else. An address
+with an old version is sent on to the current one (307).
 
-## `GET /library/keywords/{version}`
+## `GET /libraries/{key}/keywords/{version}`
 
 Every keyword the library's games have, and which games have each, by slug. The site fetches
 it the first time a keyword filter is used. Like the snapshot, it is kept for a year, moves
 when the library does, and an old version is sent on to the current one.
 
-## Writing (the owner only)
+## `GET /handles/{handle}`
 
-Everything the site's Add sheet and "Mine" do, with the session cookie that signing in sets.
-A write is kept by nothing between the server and the owner (`Cache-Control: private,
-no-store`), and every page and file built from the library is made again on its next visit.
-Ratings are out of ten and time is in hours, as the reads give them.
+Whether a shelf could have this handle: `{ "available": true }`, or `{ "available": false,
+"problem": "taken" }`, with `short`, `long`, `shape` or `reserved` for a handle that cannot
+be. The sign-up page asks as a handle is typed.
+
+## Writing to one's own shelf
+
+Everything the site's Add sheet and "Mine" do, with the session cookie that signing in sets,
+on that account's own shelf: a write never names a shelf, and another shelf's games answer
+`not-found`. A write is kept by nothing between the server and the account
+(`Cache-Control: private, no-store`), and every page and file built from the library is made
+again on its next visit. Ratings are out of ten and time is in hours, as the reads give them.
 
 | Method and path | Does |
 | --- | --- |
-| `GET /igdb/search?q=` | Up to eight games on IGDB, editions left out, ports folded in, each marked when the library has it |
+| `GET /me` | Who is signed in: `{ "signedIn": true, "handle", "name", "shelfPublic" }`, or `{ "signedIn": false }` |
+| `PATCH /me` | Changes the name, the handle or whether the shelf is public: `{ "name"?, "handle"?, "shelfPublic"? }`. A taken handle answers 409 `handle-taken`; one that cannot be, 400 `handle-short`, `handle-long`, `handle-shape` or `handle-reserved`. |
+| `GET /me/library`, `GET /me/games/{slug}`, `GET /me/keywords`, `GET /me/tags`, `GET /me/shelves` | One's own library, as the public files and reads give a public one, read fresh: what a private shelf's pages are filled from |
+| `GET /igdb/search?q=` | Up to eight games on IGDB, editions left out, ports folded in, each marked when one's own library has it |
 | `POST /igdb/match` | Up to twenty pasted lines (`{ "lines": ["Hollow Knight (2017) [Switch]"] }`), each with its match, how sure it is (`exact`, `close`, `none`) and up to five alternatives |
 | `POST /entries` | Adds a game: `{ "igdbId": 231, "status": "backlog", "copies": [{ "platform": 6, "format": "digital" }] }` (Half-Life, on PC). A game related to one in the library is folded into it as [ADR 001](adr/001-game-entry-model.md) proposes, unless `grouping` says `separate`. A game already there gets only the copies it lacked. |
 | `POST /additions` | Up to fifty games at once, `{ "games": [ … ] }`, each as `POST /entries` takes it. One result a game; one that fails leaves the rest. Each added game's `undo` is what `POST /additions/undo` takes back. |
-| `GET /entries/{id}` | A game as I keep it: private notes, the ids of its copies and versions |
-| `PATCH /entries/{id}` | Changes what is mine, in one step: `status`, `rating`, `completedOn`, `notes`, `notesPublic`, `tags` (replaces them all), `hoursPlayed`, `mainVersion`. Absent is unchanged; `null` clears. |
+| `GET /entries/{id}` | A game as its account keeps it: private notes, the ids of its copies and versions |
+| `PATCH /entries/{id}` | Changes what is one's own about it, in one step: `status`, `rating`, `completedOn`, `notes`, `notesPublic`, `tags` (replaces them all), `hoursPlayed`, `mainVersion`. Absent is unchanged; `null` clears. |
 | `DELETE /entries/{id}` | Removes a game and everything added with it. The answer's `undo` is kept a day. |
 | `POST /removed/{undo}` | Puts a removed game back exactly as it was |
 | `POST /entries/{id}/copies`, `PATCH` and `DELETE /entries/{id}/copies/{copy}` | A copy: add one (`{ "platform", "format" }`), switch it between physical and digital, remove it |
 | `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Saves or removes a smart shelf |
 
 `{id}` is a game's address (its slug) or its entry id. A refusal is an error as above:
-`not-signed-in` (401), `invalid` (400), `not-found` (404), `conflict` (409), `not-kept` (503,
-on a deployment with no database), `igdb` (502).
+`not-signed-in` (401), `invalid` (400), `not-found` (404), `conflict` (409), `too-many` (429,
+past an account's hourly share of IGDB: 600 searches, 100 matched lists, 300 games added),
+`not-kept` (503, on a deployment with no database), `igdb` (502).
 
 ## MCP, for AI assistants
 
@@ -287,19 +304,19 @@ Two endpoints, on the Model Context Protocol's 2026-07-28 revision and the 2025 
 
 | Endpoint | Sign-in | Tools |
 | --- | --- | --- |
-| `/api/mcp` | None | `search_library` (a filter in the filter language, sorted and grouped, a page at a time), `get_game`, `list_filter_values`, `list_shelves` |
-| `/api/mcp/owner` | The owner, through OAuth | The four above, and `search_igdb`, `add_game`, `update_entry`, `set_status` |
+| `/api/mcp` | None | `search_library` (a filter in the filter language, sorted and grouped, a page at a time), `get_game`, `list_filter_values`, `list_shelves`, each taking `shelf`: a public shelf's handle |
+| `/api/mcp/owner` | An account, through OAuth | The four above on that account's own shelf, public or private, and `search_igdb`, `add_game`, `update_entry`, `set_status` |
 
-The tools answer with the same shapes as the routes above. To use the owner's endpoint, add
-it to an assistant: the assistant is answered 401 and told where to sign in (RFC 9728), the
-owner signs in with their email address and password, says yes on the consent page, and the assistant is given a token
-for that endpoint. Assistants are known by their Client ID Metadata Document, so none needs
-registering first.
+The tools answer with the same shapes as the routes above. To use one's own endpoint, add it
+to an assistant: the assistant is answered 401 and told where to sign in (RFC 9728), the
+account signs in with its email address or handle and password, says yes on the consent page,
+and the assistant is given a token for that endpoint. Assistants are known by their Client ID
+Metadata Document, so none needs registering first.
 
 ## `GET /openapi.json`
 
 The OpenAPI 3.1 description of everything above, with a schema for each body and answer.
-The writes are marked with the `ownerSession` cookie as their security scheme.
+The writes are marked with the `session` cookie as their security scheme.
 
 ## Still to come
 

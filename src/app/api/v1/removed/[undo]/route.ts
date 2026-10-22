@@ -1,5 +1,5 @@
 import { apiRestored, written } from '@/server/api/writes'
-import { restoreForOwner } from '@/server/services/editing'
+import { restoreMine } from '@/server/services/editing'
 
 /**
  * `POST /api/v1/removed/{undo}`: puts a removed game back exactly as it was,
@@ -8,5 +8,5 @@ import { restoreForOwner } from '@/server/services/editing'
  */
 export async function POST(_request: Request, context: RouteContext<'/api/v1/removed/[undo]'>) {
   const { undo } = await context.params
-  return written(apiRestored, await restoreForOwner(undo))
+  return written(apiRestored, await restoreMine(undo))
 }

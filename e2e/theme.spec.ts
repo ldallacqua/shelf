@@ -76,7 +76,7 @@ test.describe('changing theme', () => {
     await page.getByRole('radio', { name: 'Dark' }).click()
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
 
-    await page.goto('/pt-BR/library')
+    await page.goto('/pt-BR/u/sample')
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   })
 

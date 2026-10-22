@@ -2,11 +2,11 @@
 
 /**
  * The address while a game is open over the shelf (spec 7.2). Opening it
- * adds `/game/{slug}` to the browser's history, so the address can be sent
- * and opens the game's own page; Back closes it, and the shelf is where it
- * was. The library's own query string is kept on it, so the shelf behind
- * reads the same filter, sort and view from the address while the game is
- * open.
+ * adds `/u/{handle}/game/{slug}` to the browser's history, so the address
+ * can be sent and opens the game's own page on that shelf; Back closes it,
+ * and the shelf is where it was. The library's own query string is kept on
+ * it, so the shelf behind reads the same filter, sort and view from the
+ * address while the game is open.
  *
  * The browser's history API is used directly, not the router: the game is a
  * panel drawn by the library, and asking the router for the game's page
@@ -14,11 +14,11 @@
  * with these calls.
  */
 
-const GAME_PATH = /^\/([^/]+)\/game\/([^/]+)\/?$/
+const GAME_PATH = /^\/([^/]+)\/u\/([^/]+)\/game\/([^/]+)\/?$/
 
 /** The slug of the game an address opens, if it is a game's address. */
 export const gameSlugIn = (pathname: string): string | undefined => {
-  const slug = GAME_PATH.exec(pathname)?.[2]
+  const slug = GAME_PATH.exec(pathname)?.[3]
   if (!slug) return undefined
   try {
     return decodeURIComponent(slug)
@@ -27,11 +27,15 @@ export const gameSlugIn = (pathname: string): string | undefined => {
   }
 }
 
-const languageOf = (pathname: string): string => pathname.split('/')[1] ?? ''
+/** The language and the shelf of the page: `/en/u/ana`, from `/en/u/ana/…`. */
+const shelfOf = (pathname: string): string => {
+  const [, language = '', u = '', handle = ''] = pathname.split('/')
+  return u === 'u' ? `/${language}/u/${handle}` : `/${language}`
+}
 
-/** A game's address in the language of the page, with the library's query string kept. */
+/** A game's address on the page's shelf, in its language, with the library's query string kept. */
 const gameAddress = (slug: string): string =>
-  `/${languageOf(window.location.pathname)}/game/${encodeURIComponent(slug)}${window.location.search}`
+  `${shelfOf(window.location.pathname)}/game/${encodeURIComponent(slug)}${window.location.search}`
 
 /** A Back asked for and not arrived yet. History moves arriving meanwhile wait for it. */
 let leaving = false

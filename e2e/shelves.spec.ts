@@ -20,7 +20,7 @@ test.describe('a smart shelf', () => {
     await page.getByRole('button', { name: 'Shelves' }).click()
     await page.getByRole('menuitem', { name: 'Short ones' }).click()
 
-    await expect(page).toHaveURL(/\/en\/shelves\/short-ones$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\/shelves\/short-ones$/)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Short ones')
     await expect(search(page)).toHaveValue(SHORT_ONES)
     await expect(totals(page)).toContainText('18 games')
@@ -35,13 +35,13 @@ test.describe('a smart shelf', () => {
   })
 
   test('arrives with its games already in the page', async ({ page }) => {
-    const html = await (await page.request.get('/en/shelves/short-ones')).text()
+    const html = await (await page.request.get('/en/u/sample/shelves/short-ones')).text()
     expect(html).toContain('Short ones')
     expect(html).toContain('All games')
   })
 
   test('changed on screen, it says so, and goes back to how it was saved', async ({ page }) => {
-    await openLibrary(page, '/en/shelves/short-ones')
+    await openLibrary(page, '/en/u/sample/shelves/short-ones')
     await expect(page.getByText('Changed', { exact: true })).toHaveCount(0)
 
     await page
@@ -52,32 +52,32 @@ test.describe('a smart shelf', () => {
     await expect(page.getByText('Changed', { exact: true })).toBeVisible()
 
     await page.getByRole('button', { name: 'Back to the saved shelf' }).click()
-    await expect(page).toHaveURL(/\/en\/shelves\/short-ones$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\/shelves\/short-ones$/)
     await expect(search(page)).toHaveValue(SHORT_ONES)
     await expect(page.getByText('Changed', { exact: true })).toHaveCount(0)
   })
 
   test('an address with no shelf behind it says so', async ({ page }) => {
-    await page.goto('/en/shelves/not-a-shelf')
+    await page.goto('/en/u/sample/shelves/not-a-shelf')
     await expect(
       page.getByRole('main').getByText('There is no shelf at this address.'),
     ).toBeVisible()
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
     await page.getByRole('main').getByRole('link', { name: 'Library' }).click()
-    await expect(page).toHaveURL(/\/en\/library$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
   })
 
   test('is translated, and keeps its address in either language', async ({ page }) => {
-    await openLibrary(page, '/pt-BR/shelves/short-ones')
+    await openLibrary(page, '/pt-BR/u/sample/shelves/short-ones')
     await expect(page.getByRole('group', { name: 'Totais da biblioteca' })).toContainText(
       '18 jogos',
     )
     await page.getByRole('link', { name: 'EN: English' }).click()
-    await expect(page).toHaveURL(/\/en\/shelves\/short-ones$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample\/shelves\/short-ones$/)
   })
 
   test('a visitor is offered no way to save or change one', async ({ page }) => {
-    await openLibrary(page, '/en/shelves/short-ones?sort=title')
+    await openLibrary(page, '/en/u/sample/shelves/short-ones?sort=title')
     await expect(page.getByText('Changed', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: /^(Save|Edit shelf)/ })).toHaveCount(0)
   })
@@ -91,13 +91,13 @@ test.describe('saving a shelf, as the owner', () => {
   }, testInfo) => {
     // A name of its own per project: the projects run at once, against one database.
     const name = `Test ${testInfo.project.name} ${Date.now().toString(36)}`
-    await openLibrary(page, '/en/library?q=genre%3Arpg&sort=-rating&group=none')
+    await openLibrary(page, '/en/u/sample?q=genre%3Arpg&sort=-rating&group=none')
     await page.getByRole('button', { name: 'Save as a shelf' }).click()
     const sheet = page.getByRole('dialog', { name: 'Save as a shelf' })
     await sheet.getByLabel('Name').fill(name)
     await sheet.getByRole('button', { name: 'Save as new' }).click()
 
-    await page.waitForURL(/\/en\/shelves\/[a-z0-9-]+$/)
+    await page.waitForURL(/\/en\/u\/sample\/shelves\/[a-z0-9-]+$/)
     const slug = new URL(page.url()).pathname.split('/').pop()!
     try {
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(name)
@@ -105,7 +105,7 @@ test.describe('saving a shelf, as the owner', () => {
       await expect(page.getByRole('button', { name: /^Sort/ })).toContainText('My rating')
       await expect(page.getByRole('heading', { level: 2 }).first()).toHaveText('All games')
 
-      const saved = await page.request.get(`/api/v1/shelves/${slug}`)
+      const saved = await page.request.get(`/api/v1/u/sample/shelves/${slug}`)
       expect(saved.status()).toBe(200)
       expect(await saved.json()).toMatchObject({
         slug,
@@ -119,11 +119,11 @@ test.describe('saving a shelf, as the owner', () => {
       await expect(page.getByRole('menuitem', { name })).toHaveAttribute('aria-current', 'page')
       await page.keyboard.press('Escape')
     } finally {
-      await page.goto(`/en/shelves/${slug}`)
+      await page.goto(`/en/u/sample/shelves/${slug}`)
       await page.getByRole('button', { name: 'Edit shelf' }).click()
       await page.getByRole('dialog').getByRole('button', { name: 'Remove this shelf' }).click()
-      await expect(page).toHaveURL(/\/en\/library$/)
+      await expect(page).toHaveURL(/\/en\/u\/sample$/)
     }
-    expect((await page.request.get(`/api/v1/shelves/${slug}`)).status()).toBe(404)
+    expect((await page.request.get(`/api/v1/u/sample/shelves/${slug}`)).status()).toBe(404)
   })
 })

@@ -2,6 +2,7 @@ import 'server-only'
 
 import { createHash } from 'node:crypto'
 
+import { eq, or } from 'drizzle-orm'
 import type { SQLiteTable } from 'drizzle-orm/sqlite-core'
 
 import { toGameData, type Company, type GameData } from '@/domain/igdb/game'
@@ -15,20 +16,25 @@ import {
   entryTags,
   entryVersions,
   games,
-  libraryMeta,
+  libraries,
   platforms,
   playTime,
   removedEntries,
   shelves,
   tags,
+  users,
   vocab,
 } from '@/server/db/schema'
-import { gameColumns, platformColumns, toSlug } from '@/server/library/store'
+import { gameColumns, newLibraryKey, platformColumns, toSlug } from '@/server/library/store'
+import { SAMPLE_ACCOUNT } from '@/server/mocks/owner'
 import { loadFixtures, type Fixtures } from '@/server/seed/fixtures'
 import { inventEntry, SEED_NOW, type SeedEntry } from '@/server/seed/mine'
 
 /**
- * Fills a database with one of three data sets, replacing what was there.
+ * Fills a database with one of three data sets, replacing every library
+ * that was there. The set is the sample account's library, `/u/sample`: an
+ * account with no password, so nobody signs in to it, except with the test
+ * doubles on, when the made-up owner does (`server/mocks/owner.ts`).
  *
  * | Set       | What                                   | Used by                          |
  * | --------- | -------------------------------------- | -------------------------------- |
@@ -59,7 +65,36 @@ const insertAll = async <T extends SQLiteTable>(db: Db, table: T, rows: Rows<T>,
   }
 }
 
-/** Removes everything a seed writes. Sign-in tables, when they arrive, are left alone. */
+/**
+ * The sample account, made or brought back to how a seed leaves it. One
+ * already there by its address or handle is reused, with its id, so a
+ * session signed in to it before stays signed in.
+ */
+const seedAccount = async (db: Db): Promise<string> => {
+  const [found] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(or(eq(users.email, SAMPLE_ACCOUNT.email), eq(users.username, SAMPLE_ACCOUNT.handle)))
+    .limit(1)
+  const at = new Date(SEED_NOW)
+  const fields = {
+    name: SAMPLE_ACCOUNT.name,
+    email: SAMPLE_ACCOUNT.email,
+    emailVerified: true,
+    username: SAMPLE_ACCOUNT.handle,
+    shelfPublic: true,
+    updatedAt: at,
+  }
+  if (found) {
+    await db.update(users).set(fields).where(eq(users.id, found.id))
+    return found.id
+  }
+  const id = stableId('user', SAMPLE_ACCOUNT.handle)
+  await db.insert(users).values({ id, ...fields, createdAt: at })
+  return id
+}
+
+/** Removes everything a seed writes, in every library. Accounts and their sessions stay. */
 export const clearLibrary = async (db: Db) => {
   // Children first, so it works whether or not the engine enforces foreign keys.
   for (const table of [
@@ -124,11 +159,12 @@ export const seedLibrary = async (
   db: Db,
   set: SeedSet,
   fixtures: Fixtures = loadFixtures(),
-): Promise<{ games: number; entries: number }> => {
+): Promise<{ games: number; entries: number; libraryId: string }> => {
   const plan = planSeed(set, fixtures)
   const now = SEED_NOW
 
   await clearLibrary(db)
+  const userId = await seedAccount(db)
 
   const gameId = (igdbId: number) => stableId('game', igdbId)
 
@@ -200,6 +236,7 @@ export const seedLibrary = async (
     const entryId = stableId('entry', entry.igdbId)
     entryRows.push({
       id: entryId,
+      userId,
       status: entry.status,
       rating: entry.rating ?? null,
       notes: entry.notes ?? null,
@@ -210,9 +247,14 @@ export const seedLibrary = async (
       createdAt: entry.addedAt,
       updatedAt: entry.addedAt,
     })
-    versionRows.push({ entryId, gameId: gameId(entry.igdbId), relation: 'primary' })
+    versionRows.push({ entryId, gameId: gameId(entry.igdbId), userId, relation: 'primary' })
     for (const version of entry.versions) {
-      versionRows.push({ entryId, gameId: gameId(version.igdbId), relation: version.relation })
+      versionRows.push({
+        entryId,
+        gameId: gameId(version.igdbId),
+        userId,
+        relation: version.relation,
+      })
     }
     for (const [index, copy] of entry.copies.entries()) {
       if (!knownPlatforms.has(copy.platformId)) continue
@@ -239,7 +281,7 @@ export const seedLibrary = async (
     }
     for (const name of entry.tags) {
       const slug = toSlug(name)
-      if (!tagRows.has(slug)) tagRows.set(slug, { id: stableId('tag', slug), name, slug })
+      if (!tagRows.has(slug)) tagRows.set(slug, { id: stableId('tag', slug), userId, name, slug })
       entryTagRows.push({ entryId, tagId: stableId('tag', slug) })
     }
   }
@@ -253,12 +295,13 @@ export const seedLibrary = async (
   await insertAll(db, playTime, timeRows, 500)
   await insertAll(db, tags, [...tagRows.values()], 500)
   await insertAll(db, entryTags, entryTagRows, 1000)
-  // Every set starts with the starter shelves, as a new library does (the migration's own list).
+  // Every set starts with the starter shelves, as a new library does.
   await insertAll(
     db,
     shelves,
     STARTER_SHELVES.map((shelf, position) => ({
       id: stableId('shelf', shelf.slug),
+      userId,
       ...shelf,
       position,
       createdAt: now,
@@ -267,14 +310,16 @@ export const seedLibrary = async (
     100,
   )
 
-  // A version no earlier seed or deployment has used. The library file is
-  // cached for a year under its version, so two different libraries must
-  // never share one: the time of the seed, in seconds, cannot repeat.
+  // A version no earlier seed or deployment has used, for every library the
+  // seed emptied too. A library's file is cached for a year under its
+  // version, so two different contents must never share one: the time of
+  // the seed, in seconds, cannot repeat.
   const version = Math.floor(Date.now() / 1000)
+  await db.update(libraries).set({ version })
   await db
-    .insert(libraryMeta)
-    .values({ id: 1, version })
-    .onConflictDoUpdate({ target: libraryMeta.id, set: { version } })
+    .insert(libraries)
+    .values({ userId, version, key: newLibraryKey(), createdAt: now })
+    .onConflictDoUpdate({ target: libraries.userId, set: { version } })
 
-  return { games: gameRows.length, entries: entryRows.length }
+  return { games: gameRows.length, entries: entryRows.length, libraryId: userId }
 }

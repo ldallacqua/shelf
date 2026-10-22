@@ -4,6 +4,7 @@ import { ChevronLeftIcon } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
+import { libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 
 /** What a game's address may carry over from the library it was opened on. */
@@ -21,11 +22,11 @@ export const keptQuery = (params: Pick<URLSearchParams, 'get'>): Record<string, 
 const CLASS =
   'inline-flex min-h-10 items-center gap-1.5 self-start rounded-control text-sm text-muted transition-colors duration-quick ease-settle hover:text-text pointer-coarse:min-h-11'
 
-/** The way back to the library, from a game's own page. */
-export function LibraryLink() {
+/** The way back to the shelf's library, from a game's own page. */
+export function LibraryLink({ handle }: { handle: string }) {
   const t = useTranslations('Game')
   return (
-    <Link href="/library" className={CLASS}>
+    <Link href={libraryHref(handle)} className={CLASS}>
       <ChevronLeftIcon aria-hidden="true" className="size-4" />
       {t('backToLibrary')}
     </Link>
@@ -38,11 +39,11 @@ export function LibraryLink() {
  * in its address, so a shared address leads back to the same shelf. It reads
  * the address, so the page built ahead holds `LibraryLink` in its place.
  */
-export function BackToLibrary() {
+export function BackToLibrary({ handle }: { handle: string }) {
   const t = useTranslations('Game')
   const query = keptQuery(useSearchParams())
   return (
-    <Link href={{ pathname: '/library', query }} className={CLASS}>
+    <Link href={libraryHref(handle, query)} className={CLASS}>
       <ChevronLeftIcon aria-hidden="true" className="size-4" />
       {t('backToLibrary')}
     </Link>

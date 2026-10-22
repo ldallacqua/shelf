@@ -1,5 +1,6 @@
 import { gzipSync } from 'node:zlib'
 
+import { eq } from 'drizzle-orm'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import { linkBetween } from '@/domain/library/family'
@@ -7,13 +8,14 @@ import type { Library } from '@/domain/library/library'
 import { decodeLibrary, encodeLibrary } from '@/domain/library/snapshot'
 import { statuses } from '@/domain/library/values'
 import type { Db } from '@/server/db/client'
-import { entries, games } from '@/server/db/schema'
+import { entries, games, users } from '@/server/db/schema'
 import { readLibrary } from '@/server/library/read'
 import { readLinkedMembers } from '@/server/library/store'
+import { SAMPLE_ACCOUNT } from '@/server/mocks/owner'
 import { loadFixtures } from '@/server/seed/fixtures'
 import { SEED_NOW } from '@/server/seed/mine'
 import { planSeed, seedLibrary } from '@/server/seed/seed'
-import { createTestDatabase } from '@/test/database'
+import { createTestAccount, createTestDatabase, sampleLibraryId } from '@/test/database'
 
 const fixtures = loadFixtures()
 const today = new Date(SEED_NOW).toISOString().slice(0, 10)
@@ -101,11 +103,27 @@ describe('planSeed', () => {
 
 describe('seedLibrary: default', () => {
   let db: Db
+  let sample: string
   let library: Library
 
   beforeAll(async () => {
     db = await createTestDatabase('default')
-    library = await readLibrary(db)
+    sample = await sampleLibraryId(db)
+    library = await readLibrary(db, sample)
+  })
+
+  it('fills the sample account’s library, a public shelf at /u/sample (ADR 004)', async () => {
+    const [account] = await db.select().from(users).where(eq(users.id, sample))
+    expect(account).toMatchObject({ username: SAMPLE_ACCOUNT.handle, shelfPublic: true })
+  })
+
+  it('keeps the account, and every other, when run again', async () => {
+    const other = await createTestAccount(db, 'someone')
+    const { libraryId } = await seedLibrary(db, 'default')
+    expect(libraryId).toBe(sample)
+    expect((await db.select().from(users)).map((user) => user.id).sort()).toEqual(
+      [other, sample].sort(),
+    )
   })
 
   it('makes one entry per sample game', () => {
@@ -132,7 +150,7 @@ describe('seedLibrary: default', () => {
   })
 
   it('links the Definitive Edition to Shadow of the Tomb Raider as an edition', async () => {
-    const members = await readLinkedMembers(db)
+    const members = await readLinkedMembers(db, sample)
     const base = members.find((member) => member.igdbId === 37777)
     const edition = members.find((member) => member.igdbId === 123051)
     expect(edition?.entryId).toBe(base?.entryId)
@@ -166,7 +184,7 @@ describe('seedLibrary: default', () => {
 
   it('gives the same library when run twice', async () => {
     await seedLibrary(db, 'default')
-    const again = await readLibrary(db)
+    const again = await readLibrary(db, sample)
     expect(again.games).toEqual(library.games)
     expect(again.names).toEqual(library.names)
   })
@@ -180,7 +198,7 @@ describe('seedLibrary: default', () => {
     await seedLibrary(other, 'empty')
     expect(await other.select().from(entries)).toEqual([])
     expect(await other.select().from(games)).toEqual([])
-    expect((await readLibrary(other)).games).toEqual([])
+    expect((await readLibrary(other, await sampleLibraryId(other))).games).toEqual([])
   })
 })
 
@@ -188,7 +206,8 @@ describe('seedLibrary: stress', () => {
   let library: Library
 
   beforeAll(async () => {
-    library = await readLibrary(await createTestDatabase('stress'))
+    const db = await createTestDatabase('stress')
+    library = await readLibrary(db, await sampleLibraryId(db))
   })
 
   it('holds more than a thousand games', () => {

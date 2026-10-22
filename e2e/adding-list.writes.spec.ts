@@ -29,7 +29,7 @@ type Game = {
 /** The library's game with exactly this title, if it has one. */
 async function onShelf(request: APIRequestContext, title: string): Promise<Game | undefined> {
   const answer = (await (
-    await request.get(`/api/v1/library?q=${encodeURIComponent(`"${title}"`)}`)
+    await request.get(`/api/v1/u/sample/library?q=${encodeURIComponent(`"${title}"`)}`)
   ).json()) as { games: Game[] }
   return answer.games.find((game) => game.title === title)
 }
@@ -47,7 +47,7 @@ test('a reviewed list is added at once, each row as set, and Undo takes them all
   const lines = [first, `${second} (${game.year}) [${platform.short}]`, third, 'Zzqx Nothing']
 
   // Filtered to the first: its box comes onto the shelf, and leaves it again.
-  await openLibrary(page, `/en/library?q=${encodeURIComponent(`"${first}"`)}&group=none`)
+  await openLibrary(page, `/en/u/sample?q=${encodeURIComponent(`"${first}"`)}&group=none`)
   await page.keyboard.press('a')
   await sheet(page).getByRole('tab', { name: 'Paste a list' }).click()
   await sheet(page).getByRole('textbox', { name: 'Titles, one per line' }).fill(lines.join('\n'))
