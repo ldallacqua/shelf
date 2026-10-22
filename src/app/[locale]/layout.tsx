@@ -15,6 +15,7 @@ import { Header } from '@/features/shell/header'
 import { Notices } from '@/features/shell/notices'
 import { ReadyMark } from '@/features/shell/ready-mark'
 import { MAIN_ID, SkipLink } from '@/features/shell/skip-link'
+import { ZodScript } from '@/features/shell/zod-script'
 import { ThemeScript } from '@/features/theme/theme-script'
 import { routing } from '@/i18n/routing'
 import { siteUrl } from '@/server/site-url'
@@ -59,6 +60,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
       <head>
         <ThemeScript />
         <PreferenceScript />
+        <ZodScript />
       </head>
       <body>
         <ReadyMark />

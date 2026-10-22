@@ -192,6 +192,15 @@ it as an MCP server: it sends you to sign in, then asks you to say yes.
 | `CRON_SECRET` | Production | A random value (`openssl rand -base64 32`) |
 
 Vercel sends this value with its once-a-day call, so nobody else can trigger the refresh.
+One command makes a value and stores it in Vercel without it ever being shown, from this
+folder (it is linked to the project):
+
+```bash
+openssl rand -base64 32 | vercel env add CRON_SECRET --environment production --sensitive
+```
+
+It takes effect on the next production deployment. Until then the refresh refuses every
+call, so nothing breaks while it is missing; IGDB's records just are not refreshed.
 
 ---
 

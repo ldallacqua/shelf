@@ -16,3 +16,6 @@ export const MOCK_OWNER = {
   email: SAMPLE_ACCOUNT.email,
   password: 'test-doubles-only-owner-password',
 } as const
+
+/** What the browser tests start the daily refresh with, only while the test doubles answer. */
+export const MOCK_CRON_SECRET = 'test-doubles-only-cron-secret'

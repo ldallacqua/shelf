@@ -392,12 +392,12 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 | Credentials | `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`, read on the server only |
 | Token | Twitch's client-credentials grant. The secret travels in the request body, never in the address. Stored in the database with its expiry, so a cold server does not ask for a new one. Renewed a day before it expires, or at once on a 401. Concurrent callers share one renewal. |
 | Rate | A queue that sends at most 4 requests a second with at most 4 in flight. On a 429 it waits and retries, twice. |
-| Who can trigger it | Only me. Search, add, bulk add and refresh all require my session. A visitor cannot spend the allowance. |
+| Who can trigger it | Search, add and bulk add need an account's session, and each account spends only so much (`fair-use.ts`). The refresh answers only Vercel's daily call, with `CRON_SECRET`. A visitor cannot spend the allowance. |
 | Search | `search` for the typeahead, with editions hidden and ports folded as the spec says. Results cached for a day by normalized text. |
 | Bulk add | IGDB's multi-query: 10 lookups a request, matching by name (Phase 2 found that `search` returns nothing inside a multi-query). 200 lines is 20 requests. |
 | Adding | One request for the record with everything expanded, one for its relatives. Stored in `games` before the entry is written. |
 | Reading | The library never calls IGDB. Everything shown comes from our database. |
-| Refresh | A daily job re-fetches the 100 records checked longest ago: 2 requests. A 1,000-game library is never more than 10 days stale. I can also refresh one game by hand. |
+| Refresh | A daily job (`/api/cron/refresh`, called by Vercel with `CRON_SECRET`) asks again about the 100 records checked longest ago, across every library: their records and their times to beat, 2 requests. Only a record whose IGDB stamp or time to beat changed costs more (its family chain, new names, a new cover's colors); it is stored again at the address it had, and every library holding it gets a new version. A 1,000-record cache is never more than 10 days stale. A missed or repeated run does no harm: the next takes the next oldest. |
 | Validation | Every IGDB response passes a Zod schema before anything else touches it. A record that fails is logged and skipped, not half-stored. |
 | Terms | Non-commercial use under the Twitch Developer Service Agreement. "IGDB.com" is credited in the footer of every page. |
 
@@ -853,14 +853,16 @@ list reacting to filter changes.
 | Cross-site requests | Server actions check the request's origin (built into Next.js). Session cookies are SameSite=Lax. API writes need the session or an OAuth token. |
 | Database | Drizzle's query builder throughout; no SQL assembled from input |
 | Content from IGDB | Rendered as text. Never inserted as HTML. |
-| Headers | `Content-Security-Policy` limiting scripts and connections to our own origin and images to ours plus `images.igdb.com`; `frame-ancestors 'none'`; `X-Content-Type-Options`; a strict `Referrer-Policy`; a `Permissions-Policy` that switches off what we do not use |
+| Headers | On every answer (`next.config.ts`): a `Content-Security-Policy` limiting scripts, styles, fonts and connections to our own origin and images to ours plus `images.igdb.com`, with no `eval`, no plugins, no frames and `frame-ancestors 'none'`; `X-Content-Type-Options: nosniff`; `Referrer-Policy: strict-origin-when-cross-origin`; a `Permissions-Policy` switching off the camera, microphone, location, payment and USB; `X-Frame-Options: DENY`. No `Cross-Origin-Opener-Policy`: an assistant signing in may open the consent page in a window of its own and need to hear back from it, and in Firefox it moved the page to a process that lost the browser tests' emulated dark theme. Previews also allow Vercel's toolbar. Vercel sends HSTS itself. Zod's compiled checks need `eval`, so a one-line inline script in every page's head turns them off in the browser before any code runs (`zod-script.tsx`). `e2e/security.spec.ts` visits every page, adds and edits as an account, and fails on any refusal. |
 | Abuse | Public endpoints only read, and the heavy ones are cached at the edge. IGDB is unreachable without my session. The worst outcome of a flood on the free plan is a paused site, not a bill. |
 | Test doubles | Start only when `SHELF_MOCKS=1`, and refuse to start when Vercel's environment is detected |
 
 One honest limit: the strictest form of Content Security Policy needs a fresh random value in
 every response, which is incompatible with pages built ahead of time. Shelf keeps fast static
-pages and allows inline scripts from our own HTML. Next.js has an experimental
-integrity-hash alternative; I will try it at step 9 and adopt it if it holds up.
+pages and allows inline scripts from our own HTML. Next.js's experimental integrity hashes
+(`experimental.sri`) were tried at step 9 and not adopted: they mark the script files, not all
+of them, and leave Next.js's own inline scripts, 18 on the library page, needing
+`'unsafe-inline'` all the same. Without it the page never came alive.
 
 ---
 
@@ -1014,6 +1016,8 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 9 | **The security headers are set, and integrity hashes are not used** (section 20). Zod's compiled checks are turned off in the browser by an inline script that sets its shared settings before it loads (`zod-script.tsx`). | Next.js's integrity hashes leave its inline scripts needing `'unsafe-inline'`, so they add nothing the policy can use. Zod tries `new Function` as the Add sheet and the editor build their schemas, which the policy refuses, and the browser reports even a refusal Zod catches. Setting it by importing Zod put Zod on every page: 8 to 10 KB each. |
+| Step 9 | **The daily refresh asks about IGDB's records, not one library's, and nobody refreshes one game by hand.** It shares adding's fetch (`igdb-records.ts`), keeps a game's address when IGDB changes its slug, and answers only Vercel's call with `CRON_SECRET`. | With accounts (ADR 004) the records are shared, so the oldest are the oldest across every library, and a changed one is new to every library holding it. A button for one game would let any account spend the shared allowance for little: a cache of a few thousand records comes round within weeks. |
 | Step 9 | **The trophy wall is built at step 9,** with the passes, and is worked out on the server for a public shelf (`getTrophyWall`, kept until the library changes and at most a day) and in its own browser for a private one. Its covers are the shared `Cover`: the page's script is 207.2 KB, from 201.4, and its budget 209. | Section 22 left it to no step ("after filters, with its stats"). A day's life keeps "this year" true on a shelf nobody touches; the covers are drawn by `Cover` like every other, blur and failure included. |
 | Step 9 | **The seed spreads the finish days of games added lately** over the days since they were added, with the same draws as before. | It had put every game it would have finished after its "today" on the day before, 20 of them on 30 September; the trophy wall showed it. The draws are the same, so nothing else in the sample library changed. |
 | Step 8 | **The landing page is a product page built from an example shelf** (`features/landing`, `pnpm landing:demo`), not the owner's library, and its motion is CSS: scroll timelines where the browser has them, an IntersectionObserver elsewhere, and `useFlip` for boxes rearranging. GSAP and Lenis are not used, and no 3D code loads on it. The design foundations move to `/foundations`, unlisted. | With accounts there is no one library to show off, and no account's games may be on a page built for everyone. CSS does what the scenes need, with no library to download: the page's script is a few small parts, and its first screen has none of its own. |
