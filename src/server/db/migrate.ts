@@ -2,7 +2,7 @@ import 'server-only'
 
 import { join } from 'node:path'
 
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/libsql/migrator'
 
 import { FIRST_HANDLE, handleFrom, isHandle } from '@/domain/accounts/handle'
@@ -120,6 +120,14 @@ export const settleAccounts = async (db: Db) => {
     const handle = await freeHandle(db, handleFrom(user.email.split('@')[0] ?? ''))
     await db.update(users).set({ username: handle }).where(eq(users.id, user.id))
   }
+
+  // The first account was made from settings, before sign-up asked for a
+  // name, and named by its email address. A shelf's title is its name, for
+  // everyone to read: it takes its handle instead.
+  await db
+    .update(users)
+    .set({ name: sql`${users.username}` })
+    .where(and(sql`${users.name} = ${users.email}`, isNotNull(users.username)))
 
   const withoutLibrary = await db
     .select({ id: users.id })
