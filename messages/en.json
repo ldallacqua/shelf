@@ -215,10 +215,7 @@
     "finished": {
       "eyebrow": "Progress",
       "title": "See how far you got.",
-      "body": "Mark a game finished and it counts. How many you own, how many you finished, how many hours you put in, and the finished ones a click away.",
-      "games": "Games",
-      "finished": "Finished",
-      "hours": "Hours played",
+      "body": "Mark a game finished and it goes up on your trophy wall, under its own light, in the year you finished it. Above it: how many, how many hours, and what you made of them.",
       "wall": "Games finished on the example shelf"
     },
     "privacy": {
@@ -459,10 +456,30 @@
   },
   "Trophies": {
     "metaTitle": "Trophies",
+    "shelfMetaTitle": "{name}'s trophies",
+    "metaDescription": "{count, plural, one {# game} other {# games}} {name} finished, each under its own light, by the year it was finished.",
     "title": "Trophies",
     "emptyTitle": "Nothing finished yet.",
     "emptyBody": "Completed games will stand here, each under its own light.",
-    "shelfLabel": "Finished"
+    "shelfLabel": "Finished",
+    "stats": {
+      "label": "Trophy stats",
+      "finished": "Finished",
+      "thisYear": "In {year}",
+      "hours": "Hours played",
+      "rating": "Average rating",
+      "outOfTen": "out of 10",
+      "share": "Of the games started",
+      "shareValue": "{share} finished",
+      "longest": "Played longest",
+      "platform": "Played most on",
+      "hoursOf": "{count, plural, one {# hour} other {# hours}}"
+    },
+    "undated": "Day not recorded",
+    "count": "{count, plural, one {# game} other {# games}}",
+    "finishedOn": "Finished {date}",
+    "hours": "{count, plural, =0 {Under an hour} one {# hour} other {# hours}}",
+    "rating": "{value} out of 10"
   },
   "NotFound": {
     "metaTitle": "Page not found",

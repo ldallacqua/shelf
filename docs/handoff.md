@@ -1,10 +1,22 @@
-# Handoff: 21 October 2026
+# Handoff: 22 October 2026
 
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: the landing page (step 8), after accounts for everyone (ADR 004)
+## Now: step 9, the trophy wall and the passes
+
+- **Step 8 is merged and deployed** ([#19](https://github.com/ldallacqua/shelf/pull/19),
+  22 Oct 2026, the owner's approval: "looks good, go ahead"). Then the owner asked for step 9.
+- **Step 9 starts with the trophy wall** (spec 3.9), which section 22 of the architecture
+  had left to no step. Then the passes: the daily refresh (it needs `CRON_SECRET`, [setup
+  D](setup.md#d-daily-refresh), from the owner), security headers, phone and tablet polish
+  with the gestures left from step 3, the accessibility audit, and speed work. Step 10 is the
+  final review, ⏸.
+- **Platform sync ([ADR 003](adr/003-platform-sync.md)) is still to be built.** The ADR
+  proposed it as its own step after step 7; the owner chose step 9 next.
+- **The seed's finish days changed at step 9** (architecture, section 25): run `pnpm seed`
+  again after pulling, or the browser tests serve the old days.
 
 - **Accounts are merged and deployed** ([#17](https://github.com/ldallacqua/shelf/pull/17),
   22 Oct 2026): `/en/u/lucas` and the old addresses' redirects checked on production. The
@@ -19,12 +31,10 @@ step 3. This note is what the next session needs and cannot get from the code. R
   after the fixtures change). The design foundations moved to `/foundations`, unlisted. The
   site is open to search engines from this step: `robots.txt`, `sitemap.xml` (public shelves
   and their games only) and `llms.txt` are new, and the public option at sign-up says search
-  engines can list a public shelf. ⏸ The owner reviews it before step 9.
+  engines can list a public shelf.
 - **The landing grows with the product** (the owner's rule, 22 Oct 2026, in `AGENTS.md`):
   every later step that adds something a visitor would choose Shelf for adds its part there.
-  Step 9's trophy wall turns part 6 into a glimpse of the wall.
-- **The trophy wall is not built yet** (step 9): `/u/{handle}/trophies` is the empty wall for
-  every handle, so it is not indexed, and the landing page does not mention it.
+  The trophy wall turned part 6 into a glimpse of the wall.
 - **Anyone can sign up for a shelf of their own** ([ADR 004](adr/004-one-library-per-account.md),
   21 Oct 2026, the owner's request and choices: anyone signs up; each picks public or private,
   Public picked for them; no email yet; their own shelf is `/u/lucas`). Every row that is

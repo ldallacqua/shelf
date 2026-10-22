@@ -24,11 +24,13 @@ export function SettlingNumber({
   value,
   text,
   locale,
+  className = 'title text-base text-text tabular-nums sm:text-lg',
 }: {
   value: number
   /** The final figure, as the page arrived with it. */
   text: string
   locale: string
+  className?: string
 }) {
   const ref = useRef<HTMLSpanElement>(null)
 
@@ -64,12 +66,7 @@ export function SettlingNumber({
   }, [])
 
   return (
-    <span
-      ref={ref}
-      aria-hidden="true"
-      data-settle=""
-      className="title text-base text-text tabular-nums sm:text-lg"
-    >
+    <span ref={ref} aria-hidden="true" data-settle="" className={className}>
       {text}
     </span>
   )

@@ -345,15 +345,23 @@ Both views render only the rows on screen, so 1,000 games scroll as smoothly as 
 
 **Trophy wall** (`/trophies`). Every completed game, face-out, each under its own light, grouped
 by the year I finished it, newest first. Under each: title, date finished, hours, my rating.
+The light is a small lamp above the cover throwing the game's own color down the wall, and the
+cover stands on a short plinth. A trophy opens the game's page. A game finished on a day I
+never recorded stands last, under "Day not recorded".
 
 **Stats** at the top of the trophy wall:
 
 - Games finished, in total and this year
-- Hours played
-- Average of my ratings
-- Share of started games that I finished
-- Longest game
-- Most-played platform
+- Hours played, across the whole library
+- Average of my ratings, every game I rated, finished or not, to a tenth
+- Share of started games that I finished: started is playing, finished or dropped
+- Longest game: the finished game I played longest, with its hours
+- Most-played platform: by the hours on each game's main copy, since a game's hours are not
+  kept per copy
+
+What cannot be known yet (no ratings, nothing started, no hours) is left out, not shown as
+nothing. A public wall is listed for search engines once it has a trophy; an empty one is not.
+A private shelf's wall is drawn only in its own browser (ADR 004).
 
 **In the library**, the stats line (games, finished, hours) is always visible and follows the
 current filter. Numbers count up once when first seen, and are still under reduced motion.
@@ -916,7 +924,7 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
 | **3. One game, every copy** | One game owned three ways, each copy in its platform's case, then the one box the shelf stands, with its count of copies. |
 | **4. Add in seconds** | A search typed letter by letter and the games it finds; a pasted list and the game each line matched. |
 | **5. Shelf, wall or list** | The same games three ways, turning by itself until the visitor picks one; covers travel between the shelf and the wall. |
-| **6. How far you got** | The library's line, games, finished, hours, counting up over the finished games. |
+| **6. How far you got** | A glimpse of the trophy wall: its stats counting up (finished, this year, hours, the average rating), over the example shelf's latest year of trophies, each under its own light. |
 | **7. Yours to show, or to keep** | Public or private, as sign-up offers them, and that notes stay private unless marked public. |
 | **8. Your AI assistant** | A conversation: asked for something short, not started, on the Switch, it answers from the shelf (section 17). |
 | **9. The close** | An empty lit shelf, "Your shelf is waiting.", the call to action again, and four questions: free, where game data comes from, who can see a shelf, taking the games away. |
@@ -932,7 +940,7 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
   the headline and the lit shelf (`pnpm landing:share`).
 - **It follows the product.** Every later step that adds something a visitor would choose
   Shelf for adds its part here, and a step that changes what a part shows changes the part.
-  Step 9's trophy wall, for one, turns part 6 into a glimpse of the wall itself.
+  Step 9's trophy wall, for one, turned part 6 into a glimpse of the wall itself.
 
 **Done when**
 

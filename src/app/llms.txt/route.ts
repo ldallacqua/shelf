@@ -21,6 +21,7 @@ Shelves are read by their handle. A public shelf can be read by anyone, with no 
 - [Create a shelf](${site}/en/sign-up)
 - ${site}/en/u/{handle}: a shelf. The query string holds its filter (q), sort, grouping (group) and view (shelf, wall or list)
 - ${site}/en/u/{handle}/game/{slug}: a game on a shelf
+- ${site}/en/u/{handle}/trophies: the shelf's trophy wall: every game finished, by the year it was finished, with stats
 - Every page is also in Brazilian Portuguese, under /pt-BR instead of /en
 
 ## API

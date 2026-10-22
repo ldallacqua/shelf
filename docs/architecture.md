@@ -248,7 +248,7 @@ that are either cached or streamed per request. This is the default for new Next
 | `/en` (landing) | Whole page | Nothing | Never |
 | `/en/u/{handle}` | A frame per shelf, on its first visit: header, heading, and ghosts where the totals, the controls and the first boxes will be. A shelf with no account says so; a private one is a frame its own account fills ([ADR 004](adr/004-one-library-per-account.md)). | The first screen of boxes for this address's filter, sort and grouping, and the list of smart shelves | That library or its shelves change |
 | `/en/u/{handle}/shelves/{name}` | The same frame with the shelf's name, on its first visit | The first screen for the shelf, with whatever the address changes | That library or its shelves change |
-| `/en/u/{handle}/trophies` | Whole page, on its first visit | Nothing | That library changes |
+| `/en/u/{handle}/trophies` | Whole page, on its first visit. A private one is a frame its own account fills. | Nothing | That library changes, and once a day, for "this year" |
 | `/en/u/{handle}/game/{slug}` | Whole page, on its first visit, and kept | Nothing. For the shelf's own account, "Mine" is then read from `GET /api/v1/entries/{id}`, private notes included. | That library changes |
 | `/en/sign-in`, `/en/sign-up`, `/en/account`, `/en/consent` | Whole page | Nothing. Who is signed in is asked by the page, and the account page is filled by it. | Never |
 | `/llms.txt`, `/sitemap.xml`, `/robots.txt` | Whole file | Nothing | The library changes |
@@ -912,7 +912,7 @@ IGDB yet.
 | **6** Game detail | Detail page and overlay, shared-element transitions, JSON-LD for games | Nothing |
 | **7** Sign-in and adding | Better Auth, owner guard, add and bulk add, edit, write API, both MCP endpoints | An email address and password; five settings |
 | **8** Landing page ⏸ | Landing page, scroll scenes, generated art, OG image, `llms.txt`, sitemap | Nothing |
-| **9** Passes | Phone and tablet polish, accessibility audit, speed work, the daily refresh, security headers | One setting |
+| **9** Passes | The trophy wall; phone and tablet polish, accessibility audit, speed work, the daily refresh, security headers | One setting |
 | **10** Review | Walkthrough with screenshots and video, known gaps | Nothing |
 
 Two notes on order:
@@ -1014,6 +1014,8 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 9 | **The trophy wall is built at step 9,** with the passes, and is worked out on the server for a public shelf (`getTrophyWall`, kept until the library changes and at most a day) and in its own browser for a private one. Its covers are the shared `Cover`: the page's script is 207.2 KB, from 201.4, and its budget 209. | Section 22 left it to no step ("after filters, with its stats"). A day's life keeps "this year" true on a shelf nobody touches; the covers are drawn by `Cover` like every other, blur and failure included. |
+| Step 9 | **The seed spreads the finish days of games added lately** over the days since they were added, with the same draws as before. | It had put every game it would have finished after its "today" on the day before, 20 of them on 30 September; the trophy wall showed it. The draws are the same, so nothing else in the sample library changed. |
 | Step 8 | **The landing page is a product page built from an example shelf** (`features/landing`, `pnpm landing:demo`), not the owner's library, and its motion is CSS: scroll timelines where the browser has them, an IntersectionObserver elsewhere, and `useFlip` for boxes rearranging. GSAP and Lenis are not used, and no 3D code loads on it. The design foundations move to `/foundations`, unlisted. | With accounts there is no one library to show off, and no account's games may be on a page built for everyone. CSS does what the scenes need, with no library to download: the page's script is a few small parts, and its first screen has none of its own. |
 | After step 7 | **One library per account** ([ADR 004](adr/004-one-library-per-account.md)). Anyone signs up, at `/sign-up`, with a handle that is the shelf's address, `/u/{handle}`, and picks public or private. Every row that is someone's carries its account's id; the IGDB cache is shared. A library's files are addressed by a random key, not the handle. A private shelf is drawn only in its own account's browser. The old addresses move for good to `/u/lucas`. `OWNER_EMAIL` and `OWNER_PASSWORD` are no longer read. Sections 6, 7, 9 and 16 are changed to match. | The owner's request (21 Oct 2026): each person their own shelf, and a landing page that invites them to make one. |
 | After step 7 | **The JavaScript budgets rise with accounts:** home 208 KB (from 205), library 272 (265), trophies 203 (198), game page 217 (208). Each is the page as measured plus a little room; `scripts/lib/budgets.ts` says what each part is. | The header now reads the shelf in the address in the browser and ends in sign-in, sign-up or the account's menu: 3 KB on every page. A private shelf's code is fetched only when one is drawn: a page loads every client component it imports, drawn or not, and imported directly it cost a public game's page 11.5 KB. |

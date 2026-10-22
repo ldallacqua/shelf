@@ -2,7 +2,7 @@ import 'server-only'
 
 import { ledFrom, NEUTRAL_PALETTE } from '@/domain/color/palette'
 import type { LibraryCopy, LibraryGame } from '@/domain/library/library'
-import { libraryStats, type LibraryStats } from '@/domain/library/stats'
+import { trophyWall, type TrophyStats, type TrophyYear } from '@/domain/library/trophies'
 
 import { demoLibrary, matchesOf } from './ask-engine'
 import type { AskGame, DemoGame } from './demo-case'
@@ -78,10 +78,16 @@ export const everyCopy = (): DemoGame[] => {
   return game.copies.map((copy) => toDemo(game, copy))
 }
 
-/** The games finished, the latest first, and the library's line of figures. */
-export const demoFinished = (): { games: DemoGame[]; stats: LibraryStats } => {
-  const finished = demoLibrary.games
-    .filter((game) => game.status === 'completed')
-    .toSorted((a, b) => (b.completedOn ?? '').localeCompare(a.completedOn ?? ''))
-  return { games: finished.map((game) => toDemo(game)), stats: libraryStats(demoLibrary.games) }
+/** The example shelf's trophy wall, as a glimpse: its stats, and the year it finished games most lately. */
+export const demoTrophies = (): { stats: TrophyStats; latest: TrophyYear } => {
+  // The example shelf's "this year" is the last year it finished anything, so it never reads 0.
+  const year = Math.max(
+    ...demoLibrary.games.flatMap((game) =>
+      game.completedOn ? [Number(game.completedOn.slice(0, 4))] : [],
+    ),
+  )
+  const wall = trophyWall(demoLibrary, year)
+  const latest = wall.years[0]
+  if (!latest) throw new Error('Nothing is finished on the example shelf: run pnpm landing:demo')
+  return { stats: wall.stats, latest }
 }

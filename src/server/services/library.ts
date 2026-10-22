@@ -7,6 +7,7 @@ import { buildGamePage, type GamePage } from '@/domain/library/game-page'
 import type { Library } from '@/domain/library/library'
 import { encodeKeywords, encodeLibrary } from '@/domain/library/snapshot'
 import { sortByTitle } from '@/domain/library/sort'
+import { trophyWall, type TrophyWall } from '@/domain/library/trophies'
 import type { GameKeywords } from '@/domain/query/evaluate'
 import { database } from '@/server/db/client'
 import { libraries, users } from '@/server/db/schema'
@@ -66,8 +67,8 @@ export const findLibrary = async (handle: string): Promise<LibraryInfo | undefin
   return found
 }
 
-/** A public shelf as the sitemap lists it: its handle, and its games' addresses. */
-export type ListedShelf = { handle: string; games: string[] }
+/** A public shelf as the sitemap lists it: its handle, its games' addresses, and whether its trophy wall has any. */
+export type ListedShelf = { handle: string; games: string[]; trophies: boolean }
 
 /** Every public shelf (ADR 004): the sitemap. A private one is never listed. */
 export const listPublicShelves = async (): Promise<ListedShelf[]> => {
@@ -85,7 +86,11 @@ export const listPublicShelves = async (): Promise<ListedShelf[]> => {
     cacheTag(libraryTag(id))
     // The addresses the pages use, as the library's own read gives them.
     const { games } = await getLibrary(id)
-    listed.push({ handle, games: games.map((game) => game.slug) })
+    listed.push({
+      handle,
+      games: games.map((game) => game.slug),
+      trophies: games.some((game) => game.status === 'completed'),
+    })
   }
   return listed
 }
@@ -124,6 +129,18 @@ export const getLibrary = async (libraryId: string): Promise<Library> => {
   cacheTag(libraryTag(libraryId))
   cacheLife('max')
   return inTitleOrder(await readLibrary(database(), libraryId))
+}
+
+/**
+ * A public library's trophy wall (spec 3.9). Kept until the library changes,
+ * and worked out again once a day besides, so its "this year" turns with the
+ * calendar on a shelf nobody touches.
+ */
+export const getTrophyWall = async (libraryId: string): Promise<TrophyWall> => {
+  'use cache'
+  cacheTag(libraryTag(libraryId))
+  cacheLife('days')
+  return trophyWall(await getLibrary(libraryId), new Date().getUTCFullYear())
 }
 
 /** A private library whole, for its own account only, read fresh and kept nowhere. */
