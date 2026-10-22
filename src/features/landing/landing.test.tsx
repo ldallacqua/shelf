@@ -96,7 +96,7 @@ describe('the landing page', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Todos os seus jogos, em uma estante.' }),
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'Crie a sua estante' })).toHaveLength(2)
+    expect(screen.getAllByRole('link', { name: 'Crie sua estante' })).toHaveLength(2)
     expect(screen.getByRole('region', { name: 'Pergunte o que quiser.' })).toBeInTheDocument()
   })
 })
