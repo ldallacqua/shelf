@@ -64,7 +64,8 @@ const securityHeaders = [
   },
   // For browsers older than `frame-ancestors`.
   { key: 'X-Frame-Options', value: 'DENY' },
-  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  // No `Cross-Origin-Opener-Policy`: an assistant signing in may open the
+  // consent page in a window of its own and need to hear back from it.
 ]
 
 const nextConfig: NextConfig = {
