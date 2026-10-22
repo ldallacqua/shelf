@@ -14,10 +14,6 @@ import { LightScenes } from './light-scenes'
 import { MotionDemo } from './motion-demo'
 import { TypeSpecimen } from './type-specimen'
 
-// Where the build stands. This page is replaced by the landing page at step 8.
-const BUILD_STEP = 1
-const BUILD_STEPS = 10
-
 function Section({
   id,
   title,
@@ -57,7 +53,7 @@ export function Foundations() {
   return (
     <Page>
       <div className="pt-12 sm:pt-20">
-        <Eyebrow>{t('eyebrow', { step: BUILD_STEP, total: BUILD_STEPS })}</Eyebrow>
+        <Eyebrow>{t('eyebrow')}</Eyebrow>
         <h1 className="mt-4 title text-4xl sm:text-7xl">{t('title')}</h1>
         <p className="mt-5 max-w-[54ch] text-lg text-pretty text-muted">{t('lead')}</p>
       </div>

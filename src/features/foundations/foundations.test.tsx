@@ -23,9 +23,9 @@ describe('Foundations', () => {
     }
   })
 
-  it('says which build step it belongs to', () => {
+  it('says it is for reference', () => {
     renderWithIntl(<Foundations />)
-    expect(screen.getByText('Build step 1 of 10')).toBeInTheDocument()
+    expect(screen.getByText('Design reference')).toBeInTheDocument()
   })
 
   it('describes each lit shelf for people who cannot see it', () => {
@@ -57,7 +57,7 @@ describe('Foundations', () => {
     renderWithIntl(<Foundations />, 'pt-BR')
 
     expect(screen.getByRole('heading', { level: 1, name: 'Fundamentos' })).toBeInTheDocument()
-    expect(screen.getByText('Etapa 1 de 10 da construção')).toBeInTheDocument()
+    expect(screen.getByText('Referência de design')).toBeInTheDocument()
     for (const name of ['Luz', 'Cor', 'Tipografia', 'Movimento', 'Controles']) {
       expect(screen.getByRole('region', { name })).toBeInTheDocument()
     }

@@ -37,8 +37,8 @@ export async function generateMetadata({ params }: LayoutProps<'/[locale]'>): Pr
     title: { default: t('siteName'), template: `%s · ${t('siteName')}` },
     description: t('description'),
     applicationName: t('siteName'),
-    // The site opens to search engines with the landing page, at build step 8.
-    robots: { index: false, follow: false },
+    // Open to search engines since the landing page (step 8). A page that must
+    // not be listed, such as a private shelf, says so in its own metadata.
   }
 }
 

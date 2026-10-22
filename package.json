@@ -24,6 +24,8 @@
     "seed": "tsx --conditions=react-server scripts/db.ts seed",
     "account:password": "tsx --conditions=react-server scripts/account-password.ts",
     "fixtures:fetch": "tsx --conditions=react-server --env-file=.env.local scripts/fixtures-fetch.ts",
+    "landing:demo": "tsx --conditions=react-server scripts/landing-demo.ts",
+    "landing:share": "node scripts/landing-share.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",

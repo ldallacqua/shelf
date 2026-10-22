@@ -30,7 +30,7 @@ import {
 import { authEnv, mocksRequested, onVercel } from '@/server/env'
 import { removeLibrary, startLibrary } from '@/server/library/store'
 import { MOCK_OWNER } from '@/server/mocks/owner'
-import { handleTag, libraryTag, shelvesTag } from '@/server/services/tags'
+import { DIRECTORY_TAG, handleTag, libraryTag, shelvesTag } from '@/server/services/tags'
 import { siteUrl } from '@/server/site-url'
 
 /**
@@ -134,6 +134,7 @@ const createAuth = () => {
           for (const tag of [
             libraryTag(user.id),
             shelvesTag(user.id),
+            DIRECTORY_TAG,
             ...(handle ? [handleTag(handle)] : []),
           ]) {
             revalidateTag(tag, { expire: 0 })
@@ -143,7 +144,15 @@ const createAuth = () => {
     },
     // A new account's library: its version and key, and the starter shelves.
     databaseHooks: {
-      user: { create: { after: (user) => startLibrary(database(), user.id) } },
+      user: {
+        create: {
+          after: async (user) => {
+            await startLibrary(database(), user.id)
+            // A new public shelf, for the sitemap.
+            revalidateTag(DIRECTORY_TAG, { expire: 0 })
+          },
+        },
+      },
     },
     session: { expiresIn: WEEK, updateAge: 60 * 60 * 24 },
     // Counted in the database, where every server sees the same count: five

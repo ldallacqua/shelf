@@ -24,9 +24,9 @@
   },
   "Foundations": {
     "metaTitle": "Fundamentos",
-    "eyebrow": "Etapa {step, number} de {total, number} da construção",
+    "eyebrow": "Referência de design",
     "title": "Fundamentos",
-    "lead": "Do que o Shelf é feito: luz, cor, tipografia e movimento. Estas caixas estão em branco. Os jogos de verdade e suas capas chegam na próxima etapa.",
+    "lead": "Do que o Shelf é feito: luz, cor, tipografia e movimento, mostrados em caixas em branco.",
     "hero": {
       "description": "Uma prateleira iluminada por trás com caixas de jogos em branco, de frente",
       "shelfLabel": "Caixas em branco",
@@ -142,6 +142,134 @@
       "shelf": "Estante",
       "wall": "Mural",
       "list": "Lista"
+    }
+  },
+  "Landing": {
+    "metaTitle": "Shelf: todos os seus jogos, em uma estante",
+    "metaDescription": "Coloque todos os jogos que você tem em uma estante iluminada, físicos e digitais, de todos os consoles. Encontre o próximo para jogar com uma linha de texto. De graça.",
+    "shareAlt": "“Todos os seus jogos, em uma estante.” ao lado de três prateleiras iluminadas de caixas de jogos.",
+    "create": "Crie sua estante",
+    "toShelf": "Ir para a sua estante",
+    "hero": {
+      "eyebrow": "Para quem tem muitos jogos",
+      "title": "Todos os seus jogos, em uma estante.",
+      "lead": "Físicos e digitais, de todos os consoles e de todas as gerações, iluminados como a estante que você sempre quis. Encontre o próximo para jogar em um segundo.",
+      "how": "Veja como funciona",
+      "note": "De graça. Sua estante fica pronta em um minuto.",
+      "shelf": "Uma estante de exemplo com {count, number} jogos, de frente e iluminados por trás"
+    },
+    "ask": {
+      "eyebrow": "Filtros",
+      "title": "Pergunte o que quiser.",
+      "body": "Uma linha encontra qualquer jogo: se você já começou, quanto tempo leva, em que console roda. Salve a linha, e ela vira uma prateleira só dela.",
+      "field": "Filtrar a estante de exemplo",
+      "placeholder": "Tente genre:rpg",
+      "reset": "Limpar o filtro",
+      "steps": {
+        "label": "Filtros",
+        "unplayed": "Não começados",
+        "short": "Menos de 10 horas",
+        "switch": "No Switch"
+      },
+      "example": "Estante de exemplo",
+      "all": "Todos os {total, number} jogos",
+      "count": "{count, number} de {total, number} jogos",
+      "none": "Nada aqui combina. Tente outra linha.",
+      "results": "Jogos que o filtro encontra",
+      "tries": "Experimente"
+    },
+    "copies": {
+      "eyebrow": "Cópias",
+      "title": "Um jogo. Todas as cópias.",
+      "body": "Em disco anos atrás, de novo numa promoção, mais uma vez para o Switch? Ele fica uma vez só na sua estante, com cada cópia que você tem na caixa em que veio.",
+      "yours": "Suas cópias",
+      "onShelf": "Na sua estante",
+      "physical": "Físico",
+      "digital": "Digital",
+      "together": "Uma caixa, com {count, plural, one {# cópia} other {# cópias}} dentro"
+    },
+    "add": {
+      "eyebrow": "Adicionar",
+      "title": "Adicione um jogo em segundos. Ou cem.",
+      "body": "Digite algumas letras e escolha pela capa. Ou cole uma lista inteira, um jogo por linha, e confira o que foi encontrado. Capa, ano e duração vêm com cada jogo.",
+      "one": "Um jogo",
+      "many": "Uma lista colada",
+      "added": "Adicionado",
+      "matched": "encontrado"
+    },
+    "views": {
+      "eyebrow": "Visualizações",
+      "title": "Estante, mural ou lista.",
+      "body": "Percorra como uma estante, passe os olhos como um mural de capas, ou ordene como uma lista de números. No computador, a estante pode ficar em 3D.",
+      "label": "Visualização",
+      "shelf": "Estante",
+      "wall": "Mural",
+      "list": "Lista",
+      "columns": {
+        "game": "Jogo",
+        "platform": "Plataforma",
+        "hours": "Horas",
+        "rating": "Nota"
+      }
+    },
+    "finished": {
+      "eyebrow": "Progresso",
+      "title": "Veja até onde você chegou.",
+      "body": "Marque um jogo como zerado e ele entra na conta. Quantos você tem, quantos zerou, quantas horas jogou, e os zerados a um clique.",
+      "games": "Jogos",
+      "finished": "Zerados",
+      "hours": "Horas jogadas",
+      "wall": "Jogos zerados na estante de exemplo"
+    },
+    "privacy": {
+      "eyebrow": "Privacidade",
+      "title": "Para mostrar, ou para guardar.",
+      "body": "Você escolhe ao criar a conta, e pode mudar quando quiser.",
+      "public": {
+        "title": "Pública",
+        "body": "Qualquer pessoa pode ver, e mecanismos de busca podem listá-la. Ninguém além de você pode mudar nada.",
+        "address": "/u/seu-nome"
+      },
+      "private": {
+        "title": "Privada",
+        "body": "Só você vê: nem outras pessoas, nem mecanismos de busca."
+      },
+      "notes": "As notas que você escreve sobre um jogo continuam privadas, mesmo numa estante pública, a menos que você as marque como públicas."
+    },
+    "assistant": {
+      "eyebrow": "Assistentes de IA",
+      "title": "Pergunte ao seu assistente o que jogar.",
+      "body": "Conecte o Claude, ou outro assistente de IA compatível com MCP, à sua estante. Ele lê seus jogos e responde a partir deles, e adiciona os que você contar a ele.",
+      "example": "Conversa de exemplo",
+      "question": "Algo curto que eu ainda não comecei, para jogar no Switch?",
+      "reading": "Lendo a sua estante",
+      "answer": "{count, plural, one {Um jogo da sua estante serve:} other {# jogos da sua estante servem:}}",
+      "pick": "{platform} · cerca de {hours, plural, one {# hora} other {# horas}}"
+    },
+    "closing": {
+      "label": "Sua estante",
+      "title": "Sua estante está esperando.",
+      "body": "De graça, e pronta em um minuto. Traga todos os jogos que você tem."
+    },
+    "faq": {
+      "eyebrow": "Perguntas",
+      "title": "Antes de começar",
+      "free": {
+        "q": "É de graça?",
+        "a": "Sim. Criar uma estante e guardar seus jogos nela não custa nada."
+      },
+      "data": {
+        "q": "De onde vêm as informações dos jogos?",
+        "a": "Do IGDB.com: títulos, capas, datas de lançamento e quanto tempo os jogos levam para zerar. O que é seu, você adiciona: onde você tem o jogo, até onde chegou, o que achou."
+      },
+      "who": {
+        "q": "Quem pode ver a minha estante?",
+        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As notas continuam privadas a menos que você as marque como públicas, jogo por jogo."
+      },
+      "export": {
+        "q": "Posso levar meus jogos comigo?",
+        "a": "Sua biblioteca inteira pode ser lida pela API do Shelf enquanto você está conectado. Uma exportação com um clique está nos planos."
+      }
     }
   },
   "Library": {
@@ -613,7 +741,7 @@
     "visibility": {
       "label": "Quem pode ver sua estante",
       "public": "Pública",
-      "publicBody": "Qualquer pessoa com o endereço vê seus jogos. Suas notas privadas continuam só suas.",
+      "publicBody": "Qualquer pessoa vê seus jogos, e mecanismos de busca podem listá-los. Suas notas privadas continuam só suas.",
       "private": "Privada",
       "privateBody": "Só você, depois de entrar. Os outros veem que a estante é privada."
     }

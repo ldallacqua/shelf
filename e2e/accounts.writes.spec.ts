@@ -196,6 +196,10 @@ test.describe('a private shelf', () => {
       expect(answer.status(), path).toBe(404)
     }
     expect((await visitor.request.get('/api/v1/me/library')).status()).toBe(401)
+    // Never listed for search engines; a public shelf is.
+    const sitemap = await (await visitor.request.get('/sitemap.xml')).text()
+    expect(sitemap).not.toContain(`/u/${who.handle}`)
+    expect(sitemap).toContain('/en/u/sample<')
     await visitor.context().close()
   })
 

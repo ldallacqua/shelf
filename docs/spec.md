@@ -71,7 +71,8 @@ language the browser asks for.
 
 | Address | What it is |
 | --- | --- |
-| `/en` | Landing page |
+| `/en` | Landing page: what Shelf is, told with an example shelf ([section 15](#15-landing-page)) |
+| `/en/foundations` | The design foundations, for reference: unlisted, not indexed |
 | `/en/u/{handle}` | An account's library. Filters, sort, grouping and view live in the query string. |
 | `/en/u/{handle}/shelves/{name}` | A saved smart shelf: the library with a stored filter, sort and grouping |
 | `/en/u/{handle}/trophies` | Trophy wall: completed games and stats |
@@ -903,30 +904,41 @@ reduced motion.
 
 ## 15. Landing page
 
-The first impression: the shelf, shown off. It uses my real library, so it is never a mock-up.
+A product page, for people who have not made a shelf yet (ADR 004): what Shelf does, shown
+working, part by part, with one call to action, **Create your shelf**. It is built from an
+**example shelf**, labelled as one: 61 games from the sample library, real IGDB covers, with
+what was done with each invented (`pnpm landing:demo`). No account's games are ever on it.
 
 | Part | What happens |
 | --- | --- |
-| **1. Arrival** | The wall in near darkness. The lights come on bay by bay, once. A two-tone line: "Every game I own, on one shelf." in full tone, then "Walk along it." in a quieter one. One button: Walk the shelf. |
-| **2. The walk** | The page pins. Scrolling moves the camera along the shelf. Short captions appear where they are true: how many games, how many platforms, the oldest and the newest. |
-| **3. The pull** | One featured game comes off the shelf and turns. Its title, year and my rating appear beside it. |
-| **4. Ask it anything** | Three filter chips switch on in turn as I scroll, and the shelf rearranges itself for each: a genre, "under ten hours", a platform. |
-| **5. Two ways to see it** | The wall flattens into the 2D shelf and comes back. |
-| **6. What I finished** | A glimpse of the trophy wall; the stats count up. A second button: See what I finished. |
-| **Footer** | Credit to IGDB.com, language, theme, sign-in |
+| **1. Arrival** | "Every game you own, on one shelf.", a line on physical and digital, every console, and the call to action. Beside it (under it, on a phone) three bays of real covers in near darkness; their lights come on bay by bay, once, with the flutter of a tube catching. |
+| **2. Ask it anything** | The example shelf and the real filter language. As it comes into view, three filters switch on in turn, "Not started", "Under 10 hours", "On Switch", and the boxes rearrange for each: 61, 26, 6, 3. Then it is the visitor's: a filter on or off, or typed. |
+| **3. One game, every copy** | One game owned three ways, each copy in its platform's case, then the one box the shelf stands, with its count of copies. |
+| **4. Add in seconds** | A search typed letter by letter and the games it finds; a pasted list and the game each line matched. |
+| **5. Shelf, wall or list** | The same games three ways, turning by itself until the visitor picks one; covers travel between the shelf and the wall. |
+| **6. How far you got** | The library's line, games, finished, hours, counting up over the finished games. |
+| **7. Yours to show, or to keep** | Public or private, as sign-up offers them, and that notes stay private unless marked public. |
+| **8. Your AI assistant** | A conversation: asked for something short, not started, on the Switch, it answers from the shelf (section 17). |
+| **9. The close** | An empty lit shelf, "Your shelf is waiting.", the call to action again, and four questions: free, where game data comes from, who can see a shelf, taking the games away. |
 
-- **On a phone** the same story is told with the 2D shelf and shorter pinned sections. No WebGL
-  is loaded.
-- **On desktop** a still image of the shelf shows first, and the live 3D scene replaces it once
-  ready. The page is usable before that happens.
-- **Under reduced motion** nothing is pinned or scrubbed. Each part is a still with its caption.
-- **With an empty library** the landing page shows the empty lit ledge and the same button.
+- **Signed in**, the call to action is **Go to your shelf**.
+- **Motion** is the product's own: lights, boxes rearranging, numbers counting. Parts rise into
+  place as they scroll into view, by CSS where the browser ties animations to scrolling, and
+  by a small script elsewhere. Only opacity and position move.
+- **Under reduced motion** nothing plays by itself. Each part is there as it ends.
+- **Nothing moves the page.** A part that rearranges or turns keeps the same room throughout.
+- The page is built ahead whole. Nothing on it asks the server anything, and no 3D code loads.
+- **A link to it** shows its first screen in the dark, in the link's language: the eyebrow,
+  the headline and the lit shelf (`pnpm landing:share`).
+- **It follows the product.** Every later step that adds something a visitor would choose
+  Shelf for adds its part here, and a step that changes what a part shows changes the part.
+  Step 9's trophy wall, for one, turns part 6 into a glimpse of the wall itself.
 
 **Done when**
 
 - The page scores 90 or more on Lighthouse for mobile.
-- The first view is complete, and the button works, before any 3D code has loaded.
-- Scrolling back up plays every part in reverse without a jump.
+- Its call to action leads to sign-up, and works before any script has run.
+- Every part reads the same in both themes and both languages, at every width.
 
 ---
 

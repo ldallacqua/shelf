@@ -31,7 +31,7 @@ test.describe('switching language', () => {
   })
 
   test('keeps the scroll position', async ({ page }) => {
-    await page.goto('/en')
+    await page.goto('/en/foundations')
     await page.getByRole('heading', { name: 'Motion' }).scrollIntoViewIfNeeded()
     const before = await page.evaluate(() => window.scrollY)
     expect(before).toBeGreaterThan(200)

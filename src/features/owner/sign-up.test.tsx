@@ -48,7 +48,9 @@ describe('SignUp', () => {
     renderWithIntl(<SignUp />)
     expect(screen.getByRole('radio', { name: /^Public/ })).toBeChecked()
     expect(screen.getByRole('radio', { name: /^Private/ })).not.toBeChecked()
-    expect(screen.getByText(/Anyone with the address can see your games/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Anyone can see your games, and search engines can list them/),
+    ).toBeInTheDocument()
     expect(screen.getByText(/cannot be reset by email yet/)).toBeInTheDocument()
   })
 

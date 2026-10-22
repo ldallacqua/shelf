@@ -24,9 +24,9 @@
   },
   "Foundations": {
     "metaTitle": "Foundations",
-    "eyebrow": "Build step {step, number} of {total, number}",
+    "eyebrow": "Design reference",
     "title": "Foundations",
-    "lead": "What Shelf is built from: light, color, type and motion. These are blank cases. Real games and their covers arrive at the next step.",
+    "lead": "What Shelf is built from: light, color, type and motion, shown on blank cases.",
     "hero": {
       "description": "A backlit shelf of blank game cases, facing out",
       "shelfLabel": "Blank cases",
@@ -142,6 +142,134 @@
       "shelf": "Shelf",
       "wall": "Wall",
       "list": "List"
+    }
+  },
+  "Landing": {
+    "metaTitle": "Shelf: every game you own, on one shelf",
+    "metaDescription": "Put every game you own on one lit shelf, physical and digital, from every console. Find the next one to play with a line of text. Free.",
+    "shareAlt": "“Every game you own, on one shelf.” beside three lit shelves of game boxes.",
+    "create": "Create your shelf",
+    "toShelf": "Go to your shelf",
+    "hero": {
+      "eyebrow": "For people with a lot of games",
+      "title": "Every game you own, on one shelf.",
+      "lead": "Physical and digital, every console and every generation, lit like the shelf you always wanted. Find the next one to play in a second.",
+      "how": "See how it works",
+      "note": "Free. Your shelf is ready in a minute.",
+      "shelf": "An example shelf of {count, number} games, facing out and lit from behind"
+    },
+    "ask": {
+      "eyebrow": "Filters",
+      "title": "Ask it anything.",
+      "body": "One line finds any game: whether you started it, how long it takes, what it plays on. Save the line, and it becomes a shelf of its own.",
+      "field": "Filter the example shelf",
+      "placeholder": "Try genre:rpg",
+      "reset": "Clear the filter",
+      "steps": {
+        "label": "Filters",
+        "unplayed": "Not started",
+        "short": "Under 10 hours",
+        "switch": "On Switch"
+      },
+      "example": "Example shelf",
+      "all": "All {total, number} games",
+      "count": "{count, number} of {total, number} games",
+      "none": "Nothing here matches. Try another line.",
+      "results": "Games the filter finds",
+      "tries": "Try"
+    },
+    "copies": {
+      "eyebrow": "Copies",
+      "title": "One game. Every copy.",
+      "body": "On disc years ago, again in a sale, once more for the Switch? It stands on your shelf once, with every copy you own in the case it came in.",
+      "yours": "Your copies",
+      "onShelf": "On your shelf",
+      "physical": "Physical",
+      "digital": "Digital",
+      "together": "One box, {count, plural, one {# copy} other {# copies}} in it"
+    },
+    "add": {
+      "eyebrow": "Adding",
+      "title": "Add a game in seconds. Or a hundred.",
+      "body": "Type a few letters and pick it by its cover. Or paste a whole list, a game on each line, and check the matches. Covers, years and lengths come with every game.",
+      "one": "One game",
+      "many": "A pasted list",
+      "added": "Added",
+      "matched": "matched"
+    },
+    "views": {
+      "eyebrow": "Views",
+      "title": "Shelf, wall or list.",
+      "body": "Walk it as a shelf, scan it as a wall of covers, or sort it as a list of numbers. On a computer, the shelf can stand in 3D.",
+      "label": "View",
+      "shelf": "Shelf",
+      "wall": "Wall",
+      "list": "List",
+      "columns": {
+        "game": "Game",
+        "platform": "Platform",
+        "hours": "Hours",
+        "rating": "Rating"
+      }
+    },
+    "finished": {
+      "eyebrow": "Progress",
+      "title": "See how far you got.",
+      "body": "Mark a game finished and it counts. How many you own, how many you finished, how many hours you put in, and the finished ones a click away.",
+      "games": "Games",
+      "finished": "Finished",
+      "hours": "Hours played",
+      "wall": "Games finished on the example shelf"
+    },
+    "privacy": {
+      "eyebrow": "Privacy",
+      "title": "Yours to show, or to keep.",
+      "body": "You choose when you sign up, and can change it any time.",
+      "public": {
+        "title": "Public",
+        "body": "Anyone can look, and search engines can list it. Nobody but you can change a thing.",
+        "address": "/u/your-name"
+      },
+      "private": {
+        "title": "Private",
+        "body": "Only you can see it: not other people, not search engines."
+      },
+      "notes": "Notes you write about a game stay private, on a public shelf too, unless you mark them public."
+    },
+    "assistant": {
+      "eyebrow": "AI assistants",
+      "title": "Ask your assistant what to play.",
+      "body": "Connect Claude, or another AI assistant that supports MCP, to your shelf. It reads your games and answers from them, and adds the ones you tell it about.",
+      "example": "Example conversation",
+      "question": "Something short I haven't started, that I can play on the Switch?",
+      "reading": "Reading your shelf",
+      "answer": "{count, plural, one {One game on your shelf fits:} other {# games on your shelf fit:}}",
+      "pick": "{platform} · about {hours, plural, one {# hour} other {# hours}}"
+    },
+    "closing": {
+      "label": "Your shelf",
+      "title": "Your shelf is waiting.",
+      "body": "Free, and ready in a minute. Bring every game you own."
+    },
+    "faq": {
+      "eyebrow": "Questions",
+      "title": "Before you start",
+      "free": {
+        "q": "Is it free?",
+        "a": "Yes. Making a shelf and keeping your games on it costs nothing."
+      },
+      "data": {
+        "q": "Where does the information about games come from?",
+        "a": "From IGDB.com: titles, covers, release dates, and how long games take to finish. What is yours you add: where you own a game, how far you got, what you thought of it."
+      },
+      "who": {
+        "q": "Who can see my shelf?",
+        "a": "You choose when you sign up, and can change it any time on your account page. A public shelf is for anyone, and search engines can list it; a private one is for you alone. Notes stay private unless you mark them public, game by game."
+      },
+      "export": {
+        "q": "Can I take my games with me?",
+        "a": "Your whole library can be read through Shelf's API while you are signed in. A one-click export is planned."
+      }
     }
   },
   "Library": {
@@ -613,7 +741,7 @@
     "visibility": {
       "label": "Who can see your shelf",
       "public": "Public",
-      "publicBody": "Anyone with the address can see your games. Your private notes stay yours.",
+      "publicBody": "Anyone can see your games, and search engines can list them. Your private notes stay yours.",
       "private": "Private",
       "privateBody": "Only you, signed in. Anyone else is told the shelf is private."
     }
