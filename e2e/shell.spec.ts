@@ -137,15 +137,6 @@ test.describe('header and footer', () => {
   })
 })
 
-test.describe('empty states', () => {
-  // The library's own empty state needs an empty library, which these tests
-  // do not have: it is covered by a component test instead.
-  test('the trophy wall says nothing is finished yet', async ({ page }) => {
-    await page.goto('/en/u/sample/trophies')
-    await expect(page.getByText('Nothing finished yet.')).toBeVisible()
-  })
-})
-
 test.describe('a page that does not exist', () => {
   // The browser itself logs the 404 as a failed resource; that is the point of these tests.
   test.use({ allowConsoleErrors: true })

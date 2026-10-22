@@ -54,7 +54,12 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
-  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 203 },
+  // Step 9: measured 207.2 KB, from 201.4. The wall itself (spec 3.9) is drawn
+  // on the server; its script is the covers (the shared `Cover`, with the
+  // decoder for the blurred previews of the covers below the first screen),
+  // the figures settling into place, which shelf the page is, and the loader
+  // that fetches a private shelf's wall only when one is drawn.
+  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 209 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
   // screenshots and their viewer, and the way back to the library.
   // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf

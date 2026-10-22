@@ -215,10 +215,7 @@
     "finished": {
       "eyebrow": "Progresso",
       "title": "Veja até onde você chegou.",
-      "body": "Marque um jogo como zerado e ele entra na conta. Quantos você tem, quantos zerou, quantas horas jogou, e os zerados a um clique.",
-      "games": "Jogos",
-      "finished": "Zerados",
-      "hours": "Horas jogadas",
+      "body": "Marque um jogo como zerado e ele vai para a sua parede de troféus, sob a própria luz, no ano em que você zerou. Acima, quantos, quantas horas e o que você achou deles.",
       "wall": "Jogos zerados na estante de exemplo"
     },
     "privacy": {
@@ -459,10 +456,30 @@
   },
   "Trophies": {
     "metaTitle": "Troféus",
+    "shelfMetaTitle": "Troféus de {name}",
+    "metaDescription": "{count, plural, one {# jogo zerado} other {# jogos zerados}} por {name}, cada um sob a própria luz, pelo ano em que foi zerado.",
     "title": "Troféus",
-    "emptyTitle": "Nenhum jogo terminado ainda.",
-    "emptyBody": "Os jogos concluídos ficarão aqui, cada um sob a própria luz.",
-    "shelfLabel": "Terminados"
+    "emptyTitle": "Nenhum jogo zerado ainda.",
+    "emptyBody": "Os jogos zerados ficarão aqui, cada um sob a própria luz.",
+    "shelfLabel": "Zerados",
+    "stats": {
+      "label": "Números dos troféus",
+      "finished": "Zerados",
+      "thisYear": "Em {year}",
+      "hours": "Horas jogadas",
+      "rating": "Nota média",
+      "outOfTen": "de 10",
+      "share": "Dos jogos começados",
+      "shareValue": "{share} zerados",
+      "longest": "Jogado por mais tempo",
+      "platform": "Mais jogado no",
+      "hoursOf": "{count, plural, one {# hora} other {# horas}}"
+    },
+    "undated": "Dia não registrado",
+    "count": "{count, plural, one {# jogo} other {# jogos}}",
+    "finishedOn": "Zerado em {date}",
+    "hours": "{count, plural, =0 {Menos de uma hora} one {# hora} other {# horas}}",
+    "rating": "{value} de 10"
   },
   "NotFound": {
     "metaTitle": "Página não encontrada",

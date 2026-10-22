@@ -206,11 +206,12 @@ export const inventEntry = (game: GameData): SeedEntry => {
   let rating: number | undefined
   if (status === 'completed') {
     minutes = Math.round(length * (0.8 + next() * 0.9))
-    const finished = Math.min(
-      SEED_NOW - DAY_MS,
-      addedAt + Math.floor(5 + next() ** 1.6 * 420) * DAY_MS,
-    )
-    completedOn = dayOf(finished)
+    // Finished some days after it was added. One added lately was finished some
+    // time since, not, with every other, on the day before the seed's today.
+    const draw = next() ** 1.6
+    const after = Math.floor(5 + draw * 420) * DAY_MS
+    const room = SEED_NOW - DAY_MS - addedAt
+    completedOn = dayOf(addedAt + (after <= room ? after : Math.floor(room * draw)))
     if (next() < 0.7) {
       const base = game.igdbRating ?? 78
       rating = Math.min(100, Math.max(40, Math.round((base + (next() - 0.4) * 24) / 5) * 5))

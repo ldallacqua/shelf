@@ -1,0 +1,117 @@
+/*
+ * The trophy wall (spec 3.9): every finished game face-out, each under its
+ * own light. A small lamp above each cover throws a cone of the game's own
+ * color down the wall, and the cover stands on a short plinth. The light
+ * comes from the lighting tokens, so one rule serves both themes.
+ */
+@layer components {
+  .trophy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
+    gap: 1.75rem 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-grid {
+      grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+      gap: 3rem 1.75rem;
+    }
+  }
+
+  .trophy {
+    min-width: 0;
+  }
+
+  .trophy-link {
+    display: block;
+    border-radius: var(--radius-control);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .trophy-niche {
+    position: relative;
+    display: block;
+    padding: 1.125rem 0.5rem 0;
+    isolation: isolate;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-niche {
+      padding: 1.5rem 0.875rem 0;
+    }
+  }
+
+  /*
+   * The pool of light, in the game's color, falling from the lamp. The
+   * ellipse fades out before the box's edges, so no edge of it shows.
+   */
+  .trophy-niche::before {
+    content: '';
+    position: absolute;
+    inset: 0 -0.75rem 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      50% 70% at 50% 0%,
+      color-mix(
+          in srgb,
+          var(--case-led, var(--led)) calc(var(--led-strength) * (34% + var(--glow) * 30%)),
+          transparent
+        )
+        0%,
+      color-mix(
+          in srgb,
+          var(--case-led, var(--led)) calc(var(--led-strength) * (14% + var(--glow) * 12%)),
+          transparent
+        )
+        55%,
+      transparent 100%
+    );
+  }
+
+  /* The lamp: a short bar, bright, with a little bloom. */
+  .trophy-niche::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2.75rem;
+    height: 3px;
+    border-radius: 0 0 2px 2px;
+    translate: -50% 0;
+    background: color-mix(in srgb, var(--case-led, var(--led)) 70%, white);
+    box-shadow: 0 0 calc(0.25rem + var(--glow) * 0.875rem)
+      color-mix(in srgb, var(--case-led, var(--led)) calc(30% + var(--glow) * 50%), transparent);
+  }
+
+  .trophy-cover {
+    display: block;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: var(--radius-case);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 0.75rem 1.5rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.8));
+    transition: translate var(--motion-quick) var(--ease-settle);
+  }
+
+  /* The plinth: the shelf's own board, cut short. */
+  .trophy-plinth {
+    display: block;
+    height: 0.4375rem;
+    margin-inline: -0.375rem;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--ledge-top) 0, var(--ledge) 2px, var(--ledge) 100%);
+    box-shadow: 0 0.375rem 0.75rem
+      color-mix(in srgb, var(--shadow-color) calc(var(--shadow-depth) * 100%), transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) {
+    .trophy-link:is(:hover, :focus-visible) .trophy-cover {
+      translate: 0 -0.25rem;
+    }
+  }
+}

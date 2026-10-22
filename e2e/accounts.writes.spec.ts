@@ -34,8 +34,12 @@ async function signUpThroughApi(request: APIRequestContext, who: Newcomer, shelf
 
 type Search = { results: { igdbId: number; title: string; platforms: number[] }[] }
 
-/** Adds a game to the signed-in account's own shelf. Returns its address. */
-async function addThroughApi(request: APIRequestContext, title: string): Promise<string> {
+/** Adds a game to the signed-in account's own shelf, being played or finished on a day. Returns its address. */
+async function addThroughApi(
+  request: APIRequestContext,
+  title: string,
+  finishedOn?: string,
+): Promise<string> {
   const search = (await (
     await request.get(`/api/v1/igdb/search?q=${encodeURIComponent(title)}`)
   ).json()) as Search
@@ -44,7 +48,7 @@ async function addThroughApi(request: APIRequestContext, title: string): Promise
   const added = await request.post('/api/v1/entries', {
     data: {
       igdbId: found.igdbId,
-      status: 'playing',
+      ...(finishedOn ? { status: 'completed', completedOn: finishedOn } : { status: 'playing' }),
       copies: [{ platform: found.platforms[0], format: 'digital' }],
     },
   })
@@ -166,7 +170,7 @@ test.describe('a private shelf', () => {
     const who = newcomer('Bea')
     await signUpThroughApi(page.request, who, false)
     const title = 'Half-Life'
-    const slug = await addThroughApi(page.request, title)
+    const slug = await addThroughApi(page.request, title, '2026-05-04')
 
     // Its own account sees it, drawn in the browser, and is told only it can.
     await page.goto(`/en/u/${who.handle}`)
@@ -174,6 +178,10 @@ test.describe('a private shelf', () => {
     await expect(page.getByRole('button', { name: new RegExp(`^${title}`) })).toBeVisible()
     await page.goto(`/en/u/${who.handle}/game/${slug}`)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(title)
+    await page.goto(`/en/u/${who.handle}/trophies`)
+    await expect(
+      page.getByRole('region', { name: '2026 1 game' }).getByRole('link', { name: title }),
+    ).toBeVisible()
     const own = await page.request.get('/api/v1/me/library')
     expect(own.headers()['cache-control']).toBe('private, no-store')
     expect(await own.text()).toContain(title)
@@ -184,7 +192,11 @@ test.describe('a private shelf', () => {
     visitor.on('request', (request) => {
       if (isSnapshot(request.url())) snapshots.push(request.url())
     })
-    for (const address of [`/en/u/${who.handle}`, `/en/u/${who.handle}/game/${slug}`]) {
+    for (const address of [
+      `/en/u/${who.handle}`,
+      `/en/u/${who.handle}/game/${slug}`,
+      `/en/u/${who.handle}/trophies`,
+    ]) {
       await visitor.goto(address)
       await expect(visitor.getByText('This shelf is private.')).toBeVisible()
       expect(await (await visitor.request.get(address)).text(), address).not.toContain(title)
@@ -212,6 +224,11 @@ test.describe('a private shelf', () => {
     await addThroughApi(page.request, 'Mass Effect')
 
     const visitor = await visitorPage(browser)
+    // Nothing finished yet: the wall says so, and is not offered to search engines.
+    await visitor.goto(`/en/u/${who.handle}/trophies`)
+    await expect(visitor.getByText('Nothing finished yet.')).toBeVisible()
+    await expect(visitor.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+
     const file = visitor.waitForResponse((response) => isSnapshot(response.url()))
     await visitor.goto(`/en/u/${who.handle}`)
     const before = (await file).url()

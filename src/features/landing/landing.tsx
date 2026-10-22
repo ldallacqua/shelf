@@ -4,7 +4,7 @@ import { AddDemo } from './add-demo'
 import { AskDemo } from './ask-demo'
 import { Assistant } from './assistant'
 import { Closing } from './closing'
-import { askGames, askMatches, demoFinished, demoGames, everyCopy } from './demo'
+import { askGames, askMatches, demoGames, demoTrophies, everyCopy } from './demo'
 import type { DemoGame } from './demo-case'
 import { EveryCopy } from './every-copy'
 import { FinishedWall } from './finished-wall'
@@ -42,7 +42,7 @@ export function Landing() {
   const t = useTranslations('Landing')
   const games = demoGames()
   const matches = askMatches()
-  const finished = demoFinished()
+  const trophies = demoTrophies()
 
   const hero = Array.from({ length: HERO_GAMES }, (_, index) => games[(index * 17) % games.length])
   const typed = games.filter((game) => game.title.toLowerCase().includes(TYPED)).slice(0, 3)
@@ -91,7 +91,7 @@ export function Landing() {
         title={t('finished.title')}
         body={t('finished.body')}
       >
-        <FinishedWall games={finished.games} stats={finished.stats} />
+        <FinishedWall stats={trophies.stats} latest={trophies.latest} />
       </Section>
       <Section
         id="privacy"
