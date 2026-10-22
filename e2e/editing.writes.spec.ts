@@ -142,11 +142,16 @@ test.describe('editing a game', () => {
     await expect(date).toHaveAccessibleName(`Completed on ${shownDay('2024-02-29')}`)
     await expect(mine(page)).toHaveAttribute('aria-busy', 'false')
 
-    await page.reload()
+    // The page visitors are sent is built again after a change. While other
+    // tests write too, a reload that joins a build already under way can show
+    // the one before; the next shows the change.
+    await expect(async () => {
+      await page.reload()
+      await expect(page.locator('.game-hero')).toContainText('Completed', { timeout: 1_000 })
+    }).toPass({ timeout: 15_000 })
     await expect(page.getByRole('button', { name: /^Completed on/ })).toHaveAccessibleName(
       `Completed on ${shownDay('2024-02-29')}`,
     )
-    await expect(page.locator('.game-hero')).toContainText('Completed')
   })
 
   test('a private note never reaches a visitor, in the page or any file; a public one does', async ({
@@ -178,7 +183,8 @@ test.describe('editing a game', () => {
 
     await page.getByRole('switch', { name: 'Visitors can read these notes' }).check()
     await expect(mine(page)).toHaveAttribute('aria-busy', 'false')
-    expect(await read(`/en/u/sample/game/${slug}`)).toContain(note)
+    // Built again after the change; a read joining a build under way can be the one before.
+    await expect.poll(() => read(`/en/u/sample/game/${slug}`)).toContain(note)
     await visitor.close()
   })
 
