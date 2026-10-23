@@ -21,6 +21,15 @@ import {
   setMyCopyFormat,
 } from '@/server/services/editing'
 import { removeMyShelf, saveMyShelf } from '@/server/services/shelves'
+import {
+  answerMine,
+  linkMine,
+  listMine,
+  myPlatforms,
+  setMyDaily,
+  syncMine,
+  unlinkMine,
+} from '@/server/services/sync'
 
 /**
  * Spec 11, ADR 004: every change is checked on the server. A server action
@@ -55,6 +64,11 @@ vi.mock('@/server/igdb', () => ({
     throw new Error('A refused request reached IGDB')
   },
 }))
+vi.mock('@/server/sync/steam', () => ({
+  steam: () => {
+    throw new Error('A refused request reached Steam')
+  },
+}))
 
 const ID = '00000000-0000-4000-a000-000000000000'
 
@@ -85,6 +99,13 @@ const requests: [string, () => Promise<{ ok: boolean; reason?: string }>][] = [
   ['save a shelf', () => saveMyShelf({ name: 'Mine', query: '', sort: 'title', group: 'none' })],
   ['remove a shelf', () => removeMyShelf('short-ones')],
   ['change the account', () => changeMyAccount({ handle: 'someone-else' })],
+  ['list its platforms', () => myPlatforms()],
+  ['link a Steam account', () => linkMine('steam', '76561190000000001', 'Someone')],
+  ['sync from Steam', () => syncMine('steam', { read: true })],
+  ['list what Steam listed', () => listMine('steam', 'needs-you')],
+  ['answer about a game Steam listed', () => answerMine('steam', ID, { kind: 'again' })],
+  ['switch the daily sync', () => setMyDaily('steam', { daily: false })],
+  ['unlink Steam', () => unlinkMine('steam')],
 ]
 
 describe('signed out', () => {

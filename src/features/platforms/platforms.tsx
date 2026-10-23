@@ -1,0 +1,340 @@
+'use client'
+
+import { RefreshCwIcon, UnlinkIcon } from 'lucide-react'
+import { useFormatter, useLocale, useNow, useTranslations } from 'next-intl'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+
+import type { Answer } from '@/domain/library/adding'
+import type { SyncSource } from '@/domain/library/values'
+import type { LinkView, SyncStep } from '@/domain/sync/link'
+import { Link } from '@/i18n/navigation'
+import { Button } from '@/ui/button'
+import { Switch } from '@/ui/checkbox'
+import { Progress } from '@/ui/progress'
+
+import { ItemLists } from './item-lists'
+import {
+  connectAddress,
+  readPlatforms,
+  setDaily,
+  syncStep,
+  unlink,
+  type PlatformRow,
+} from './sync-client'
+
+/** Said after an action, in the card it belongs to. */
+type Said = { tone: 'done' | 'trouble'; text: string }
+
+function Message({ said }: { said?: Said }) {
+  if (!said) return null
+  return (
+    <p
+      role={said.tone === 'trouble' ? 'alert' : 'status'}
+      className={
+        said.tone === 'trouble'
+          ? 'rounded-control border border-line-strong px-4 py-3 text-sm'
+          : 'text-sm text-muted'
+      }
+    >
+      {said.text}
+    </p>
+  )
+}
+
+type Outcome = 'linked' | 'failed'
+
+/** What "Sign in through Steam" opened with, read once from the address and then taken off it. */
+const takeOutcome = (): Outcome | undefined => {
+  const address = new URL(window.location.href)
+  const outcome = address.searchParams.get('steam')
+  if (outcome !== 'linked' && outcome !== 'failed') return undefined
+  address.searchParams.delete('steam')
+  window.history.replaceState(window.history.state, '', address)
+  return outcome
+}
+
+/** How far a sync has got: games added, of those matched so far. */
+type Running = { done: number; total: number }
+
+/**
+ * Steam, linked or not (ADR 003). Unlinked: what linking does, and the way
+ * to Steam's own sign-in. Linked: when it last synced, how many games it
+ * put on the shelf, Sync now with its progress, the daily switch, the lists
+ * of games that need an answer, and the way to disconnect.
+ */
+function SteamCard({
+  row,
+  handle,
+  outcome,
+  onChange,
+}: {
+  row: PlatformRow
+  handle: string
+  /** Back from Steam's sign-in: how it went. Linked, the first sync starts by itself. */
+  outcome?: Outcome
+  onChange: (link: LinkView | null) => void
+}) {
+  const t = useTranslations('Sync')
+  const format = useFormatter()
+  // "Last synced 3 minutes ago" moves on by itself.
+  const now = useNow({ updateInterval: 60_000 })
+  const locale = useLocale()
+  const dailyId = useId()
+  const source: SyncSource = row.source
+  const name = t(`source.${source}`)
+  const link = row.link
+  const starting = outcome === 'linked' && link !== null
+  const [running, setRunning] = useState<Running | undefined>(
+    starting ? { done: 0, total: 0 } : undefined,
+  )
+  const [said, setSaid] = useState<Said | undefined>(
+    outcome === 'failed'
+      ? { tone: 'trouble', text: t('linkFailed') }
+      : starting
+        ? { tone: 'done', text: t('linked') }
+        : undefined,
+  )
+  const [asking, setAsking] = useState(false)
+  const [stamp, setStamp] = useState(0)
+  const stopped = useRef(false)
+
+  useEffect(() => {
+    stopped.current = false
+    return () => {
+      stopped.current = true
+    }
+  }, [])
+
+  /** After the first step, the rest until nothing is left, the progress shown as they come. */
+  const steps = useCallback(
+    async (first: Answer<SyncStep>) => {
+      let done = 0
+      let answer = first
+      while (answer.ok && !stopped.current) {
+        done += answer.value.added
+        onChange(answer.value.link)
+        setRunning({ done, total: done + answer.value.link.counts.adding })
+        if (answer.value.remaining === 0) break
+        answer = await syncStep(source, false)
+      }
+      if (stopped.current) return
+      setRunning(undefined)
+      setStamp((value) => value + 1)
+      if (!answer.ok) {
+        setSaid({
+          tone: 'trouble',
+          text: answer.reason === 'too-many' ? t('tooMany') : t('failed'),
+        })
+      } else if (!answer.value.link.problem) {
+        setSaid({ tone: 'done', text: t('done', { count: done, source: name }) })
+      }
+    },
+    [name, onChange, source, t],
+  )
+
+  const sync = () => {
+    setSaid(undefined)
+    setRunning({ done: 0, total: 0 })
+    void syncStep(source, true).then(steps)
+  }
+
+  useEffect(() => {
+    if (starting) void syncStep(source, true).then(steps)
+    // Once, as the card opens back from Steam.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const refresh = useCallback(async () => {
+    const answer = await readPlatforms()
+    if (answer.ok) onChange(answer.value.find((each) => each.source === source)?.link ?? null)
+    setStamp((value) => value + 1)
+  }, [onChange, source])
+
+  return (
+    <article className="grid gap-4 rounded-panel border border-line bg-surface p-5">
+      <header className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="title text-lg">{name}</h3>
+        {link ? (
+          <p className="text-sm text-muted">
+            {link.name ? t('linkedAs', { name: link.name }) : null}
+          </p>
+        ) : null}
+      </header>
+
+      {!link ? (
+        <>
+          <p className="max-w-xl text-sm text-pretty">{t('steam.about')}</p>
+          <p className="max-w-xl text-sm text-pretty text-muted">{t('steam.public')}</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Button variant="primary" asChild>
+              {/* A plain link: the browser leaves for Steam's own page and comes back. */}
+              <a href={connectAddress(source, locale)}>{t('steam.signIn')}</a>
+            </Button>
+            <Link
+              href="/privacy"
+              className="text-sm underline decoration-1 underline-offset-4 hover:decoration-2"
+            >
+              {t('kept')}
+            </Link>
+          </div>
+          <Message said={said} />
+        </>
+      ) : (
+        <>
+          <div className="grid gap-1 text-sm">
+            <p>{t('onShelf', { count: link.counts['on-shelf'], source: name })}</p>
+            <p className="text-muted">
+              {link.syncedAt
+                ? t('syncedOn', { when: format.relativeTime(link.syncedAt, now) })
+                : t('never')}
+            </p>
+          </div>
+
+          {link.problem ? (
+            <p role="alert" className="rounded-control border border-line-strong px-4 py-3 text-sm">
+              {t(`problem.${link.problem}`, { source: name })}
+            </p>
+          ) : null}
+
+          {running ? (
+            <div className="grid max-w-md gap-2" aria-live="polite">
+              <Progress
+                value={running.done}
+                max={Math.max(running.total, 1)}
+                aria-label={t('progressLabel', { source: name })}
+              />
+              <p className="text-sm text-muted">
+                {t('progress', { done: running.done, total: running.total })}
+              </p>
+            </div>
+          ) : null}
+          <Message said={said} />
+
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <Button variant="primary" disabled={running !== undefined} onClick={sync}>
+              <RefreshCwIcon aria-hidden="true" />
+              {running ? t('syncing') : t('syncNow')}
+            </Button>
+            <label htmlFor={dailyId} className="inline-flex items-center gap-3 text-sm">
+              <Switch
+                id={dailyId}
+                checked={link.daily}
+                onChange={async (event) => {
+                  const answer = await setDaily(source, event.target.checked)
+                  if (answer.ok) onChange(answer.value)
+                  else setSaid({ tone: 'trouble', text: t('failed') })
+                }}
+              />
+              {t('daily')}
+            </label>
+          </div>
+
+          <ItemLists
+            source={source}
+            handle={handle}
+            counts={link.counts}
+            stamp={stamp}
+            onAnswered={(text) => {
+              if (text) setSaid({ tone: 'done', text })
+              void refresh()
+            }}
+          />
+
+          {asking ? (
+            <div className="grid gap-3 border-t border-line pt-4">
+              <p className="max-w-xl text-sm text-pretty">{t('disconnectAsk', { source: name })}</p>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="primary"
+                  onClick={async () => {
+                    const answer = await unlink(source)
+                    setAsking(false)
+                    if (!answer.ok) {
+                      setSaid({ tone: 'trouble', text: t('failed') })
+                      return
+                    }
+                    onChange(null)
+                    setSaid({ tone: 'done', text: t('disconnected', { source: name }) })
+                  }}
+                >
+                  <UnlinkIcon aria-hidden="true" />
+                  {t('disconnect')}
+                </Button>
+                <Button variant="secondary" onClick={() => setAsking(false)}>
+                  {t('keep')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="border-t border-line pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={running !== undefined}
+                onClick={() => setAsking(true)}
+              >
+                <UnlinkIcon aria-hidden="true" />
+                {t('disconnect')}
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </article>
+  )
+}
+
+/**
+ * The account page's Platforms (ADR 003): each store or console a shelf can
+ * be synced from. Only the ones built are offered; the rest are named as
+ * coming.
+ */
+export function Platforms({ handle }: { handle: string }) {
+  const t = useTranslations('Sync')
+  const [rows, setRows] = useState<PlatformRow[]>()
+  const [outcome, setOutcome] = useState<Outcome>()
+  const [trouble, setTrouble] = useState(false)
+
+  useEffect(() => {
+    const abort = new AbortController()
+    void readPlatforms(abort.signal).then((answer) => {
+      if (abort.signal.aborted) return
+      setOutcome(takeOutcome())
+      if (answer.ok) setRows(answer.value)
+      else setTrouble(true)
+      // The address names this section (back from Steam, or a link to it), which the browser
+      // could not find as the page opened: the account is drawn in the browser.
+      if (window.location.hash === '#platforms') {
+        document.getElementById('platforms')?.scrollIntoView()
+      }
+    })
+    return () => abort.abort()
+  }, [])
+
+  const changed = useCallback(
+    (source: SyncSource) => (link: LinkView | null) =>
+      setRows((current) => current?.map((row) => (row.source === source ? { ...row, link } : row))),
+    [],
+  )
+
+  return (
+    <section id="platforms" className="grid scroll-mt-24 gap-5 border-t border-line pt-8">
+      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+      <p className="max-w-xl text-pretty text-muted">{t('intro')}</p>
+      {trouble ? <p role="alert">{t('failed')}</p> : null}
+      {rows === undefined && !trouble ? <p className="text-sm text-muted">{t('loading')}</p> : null}
+      {rows
+        ?.filter((row) => row.ready)
+        .map((row) => (
+          <SteamCard
+            key={row.source}
+            row={row}
+            handle={handle}
+            {...(outcome ? { outcome } : {})}
+            onChange={changed(row.source)}
+          />
+        ))}
+      <p className="text-sm text-muted">{t('later')}</p>
+    </section>
+  )
+}

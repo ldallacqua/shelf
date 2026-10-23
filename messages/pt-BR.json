@@ -11,7 +11,8 @@
     "trophies": "Troféus",
     "menu": "Menu",
     "igdbCredit": "Dados e capas dos jogos: <link>IGDB.com</link>.",
-    "dismiss": "Dispensar"
+    "dismiss": "Dispensar",
+    "privacy": "Privacidade"
   },
   "Theme": {
     "label": "Tema",
@@ -197,6 +198,16 @@
       "added": "Adicionado",
       "matched": "encontrado"
     },
+    "sync": {
+      "eyebrow": "Steam",
+      "title": "Traga a sua biblioteca da Steam.",
+      "body": "Entre pela Steam, e cada jogo que você tem lá chega à sua estante com as suas horas, e depois se mantém em dia sozinho, uma vez por dia. Jogos que já estão na estante ganham uma cópia de PC, nunca uma segunda caixa. PlayStation, Xbox e Nintendo vêm a seguir.",
+      "card": "Steam, sincronizando",
+      "where": "PC · Steam",
+      "hours": "{hours} h",
+      "onShelf": "{count, plural, one {# jogo na sua estante} other {# jogos na sua estante}}",
+      "daily": "De novo amanhã, sozinho"
+    },
     "views": {
       "eyebrow": "Visualizações",
       "title": "Estante, mural ou lista.",
@@ -258,6 +269,10 @@
       "data": {
         "q": "De onde vêm as informações dos jogos?",
         "a": "Do IGDB.com: títulos, capas, datas de lançamento e quanto tempo os jogos levam para zerar. O que é seu, você adiciona: onde você tem o jogo, até onde chegou, o que achou."
+      },
+      "sync": {
+        "q": "Dá para trazer os jogos que eu já tenho?",
+        "a": "Da Steam, sim: entre pela Steam na página da sua conta, e cada jogo que você tem lá vem para a sua estante com as horas, e de novo uma vez por dia. PlayStation, Xbox e Nintendo vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
@@ -832,6 +847,112 @@
       "failed": "Não deu certo. Tente de novo."
     }
   },
+  "Sync": {
+    "source": {
+      "steam": "Steam",
+      "playstation": "PlayStation",
+      "xbox": "Xbox",
+      "nintendo": "Nintendo"
+    },
+    "title": "Plataformas",
+    "intro": "Traga para a sua estante os jogos que você tem numa plataforma, e mantenha tudo em dia.",
+    "later": "PlayStation, Xbox e Nintendo vêm a seguir.",
+    "steam": {
+      "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam. O Shelf sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega ao Shelf.",
+      "public": "A Steam precisa mostrar os detalhes dos seus jogos: na Steam, abra Editar perfil, depois Configurações de privacidade, e deixe Detalhes dos jogos como Público.",
+      "signIn": "Entrar pela Steam"
+    },
+    "kept": "O que o Shelf guarda",
+    "linkedAs": "Conectado a {name}",
+    "syncedOn": "Última sincronização {when}",
+    "never": "Ainda não sincronizado",
+    "onShelf": "{count, plural, =0 {Nenhum jogo da {source} na sua estante ainda} one {# jogo da {source} na sua estante} other {# jogos da {source} na sua estante}}",
+    "syncNow": "Sincronizar agora",
+    "syncing": "Sincronizando…",
+    "progress": "{done, plural, =0 {Encontrando seus jogos…} other {Adicionados # de {total}…}}",
+    "progressLabel": "Jogos adicionados da {source}",
+    "done": "{count, plural, =0 {Tudo em dia com a {source}.} one {# jogo veio da {source}.} other {# jogos vieram da {source}.}}",
+    "daily": "Sincronizar uma vez por dia",
+    "disconnect": "Desconectar",
+    "disconnectAsk": "Desconectar a {source}? Seus jogos continuam na sua estante, com as horas. O Shelf esquece o que a {source} listou e as suas respostas sobre isso.",
+    "disconnected": "A {source} foi desconectada. Seus jogos continuam na sua estante.",
+    "keep": "Manter",
+    "linked": "Conectado. Trazendo seus jogos…",
+    "linkFailed": "A Steam não confirmou a entrada, então nada foi conectado. Tente de novo.",
+    "problem": {
+      "private": "A Steam não está mostrando seus jogos. Deixe Detalhes dos jogos como Público nas configurações de privacidade da Steam e sincronize de novo.",
+      "unreachable": "A {source} não respondeu. Tente de novo daqui a pouco.",
+      "unset": "A sincronização com a {source} ainda não está configurada neste servidor."
+    },
+    "lists": {
+      "needs-you": "{count, plural, one {# jogo precisa de você} other {# jogos precisam de você}}",
+      "hidden": "{count, plural, one {# deixado de fora} other {# deixados de fora}}",
+      "not-seen": "{count, plural, one {# não está mais na {source}} other {# não estão mais na {source}}}"
+    },
+    "help": {
+      "needs-you": "O Shelf não teve certeza de quais jogos são estes. Encontre cada um, ou diga o que é, e o Shelf se lembra.",
+      "hidden": "O Shelf deixa estes fora da sua estante, diga a {source} o que disser.",
+      "not-seen": "Continuam na sua estante. A {source} parou de listá-los."
+    },
+    "loading": "Carregando…",
+    "hours": "{hours, number} h na {source}",
+    "unplayed": "Não jogado na {source}",
+    "find": "Encontrar",
+    "searchFor": "Buscar {title} no IGDB",
+    "search": "Buscar",
+    "searching": "Buscando…",
+    "pick": "Este",
+    "pickNamed": "Adicionar {title} ({year})",
+    "pickUndated": "Adicionar {title}",
+    "noResults": "Nada no IGDB com esse nome. Tente outro.",
+    "notAGame": "Não é um jogo",
+    "notMine": "Não é meu",
+    "askAgain": "Perguntar de novo",
+    "putBack": "Pôr de volta na estante",
+    "why": {
+      "not_a_game": "Não é um jogo",
+      "not_mine": "Não é meu",
+      "removed": "Tirado da sua estante"
+    },
+    "lastSeen": "Listado pela última vez {date}",
+    "added": "Na sua estante como {title}.",
+    "failed": "Isso não funcionou. Tente de novo.",
+    "tooMany": "É muita coisa de uma vez. O resto entra na próxima sincronização."
+  },
+  "Privacy": {
+    "metaTitle": "Privacidade",
+    "metaDescription": "O que o Shelf guarda sobre você, onde, quem pode ver e como apagar.",
+    "title": "Privacidade",
+    "updated": "Alterada em {date}",
+    "intro": "O Shelf guarda o que precisa para mostrar a sua estante, e nada para vender. Esta página diz o que é.",
+    "sections": {
+      "account": {
+        "title": "Sua conta",
+        "body": "Seu nome, seu identificador, seu e-mail e uma forma embaralhada da sua senha, que não pode ser transformada de volta nela. Seu e-mail nunca é mostrado a ninguém."
+      },
+      "shelf": {
+        "title": "Sua estante",
+        "body": "Os jogos que você adiciona e o que você diz sobre eles: onde os tem, até onde chegou, notas de avaliação, datas, tags e anotações. Uma estante pública pode ser vista por qualquer pessoa, e mecanismos de busca podem listá-la; uma privada só por você. As anotações continuam privadas a menos que você as marque como públicas."
+      },
+      "signIn": {
+        "title": "Entrar na conta",
+        "body": "Enquanto você está conectado, um cookie mantém a sua sessão, e o Shelf guarda o endereço e o navegador de onde cada sessão veio, para você poder sair de todos os aparelhos. Um segundo cookie só diz se você está conectado. Suas escolhas para a estante, como o tema, ficam no seu navegador."
+      },
+      "steam": {
+        "title": "Steam",
+        "body": "Se você conectar a Steam, o Shelf guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas e quando cada um foi jogado pela última vez. O Shelf os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Shelf. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
+      },
+      "where": {
+        "title": "Onde fica guardado",
+        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Shelf, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá."
+      },
+      "delete": {
+        "title": "Apagar",
+        "body": "Apague um jogo, e ele some. Apague a sua conta na página da sua conta, e a conta, a estante e tudo nela são apagados para sempre, inclusive a lista da Steam."
+      }
+    },
+    "account": "A página da sua conta"
+  },
   "Add": {
     "title": "Adicionar um jogo",
     "help": "Busque no IGDB, escolha o jogo e diga como você o tem.",
@@ -936,6 +1057,7 @@
     "saving": "Salvando…",
     "played": "Horas jogadas",
     "playedRange": "As horas jogadas são um número, 0 ou mais.",
+    "syncedHours": "{source}: {hours, number} h",
     "notesPublic": "Os visitantes podem ler estas notas",
     "versions": "Versões",
     "relations": {

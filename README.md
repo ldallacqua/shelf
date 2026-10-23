@@ -29,24 +29,25 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 5 | Filters, sorting, smart shelves, the public API: [`docs/api.md`](docs/api.md) | Done |
 | Step 6 | Game detail: its own page, and the same page over the shelf | Done |
 | Step 7 | Sign-in, adding one game or a pasted list, editing in place, the write API, and MCP for assistants | Done; on a deployment once sign-in is set up ([setup](docs/setup.md), part C) |
-| Sync | Steam, PlayStation and Xbox sync, and a Nintendo import: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Not started; after step 7 |
-| Step 8 | Landing page | Not started |
-| Step 9 | Phone and tablet, accessibility and speed passes | Not started |
+| Accounts | Anyone signs up for a shelf of their own, public or private: [`docs/adr/004-one-library-per-account.md`](docs/adr/004-one-library-per-account.md) | Done |
+| Step 8 | Landing page | Done |
+| Step 9 | The trophy wall; phone and tablet, accessibility and speed passes; the daily refresh | Done |
+| Sync | Steam, then Nintendo, then PlayStation and Xbox: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Steam done; Nintendo next |
 | Step 10 | Final review | Not started |
 
-What is on screen today: the library, with a sample of 230 real games, as a lit shelf, a wall
-of covers or a list, grouped by platform, status or year. On a desktop the shelf is a lit
+What is on screen today: a landing page that shows what Shelf does with an example shelf, and,
+for anyone who signs up, a library of their own at `/en/u/{handle}`, as a lit shelf, a wall
+of covers or a list, grouped by platform, status or year. A Steam library comes in through
+Steam's own sign-in, with its hours, and keeps in step once a day. On a desktop the shelf is a lit
 wall in 3D, walked sideways, and `D` switches between 2D and 3D (a phone has 2D only). It
 can be searched as you type, filtered from a panel or in a one-line filter language
 (`genre:rpg -theme:horror`), and sorted eleven ways; six smart shelves keep a filter at an
-address of their own (`/en/shelves/short-ones`). The library can be read as JSON at
+address of their own (`/en/u/sample/shelves/short-ones`). The library can be read as JSON at
 `/api/v1`. A game opens over the shelf, its cover growing out of its box, or on a page of its
-own. Signed in with an email address and password (one account only), the owner adds games
-one at a time or from a pasted list, and edits everything under "Mine" in place; an assistant
-can read the library through MCP and, once the owner says yes, add and change games too. On a
-deployment that waits for sign-in to be set up ([setup](docs/setup.md), part C). The home page is still the
-foundations page from step 1 (light, color, type, motion, controls) until the landing page
-replaces it at step 8.
+own. Signed in, an account adds games one at a time or from a pasted list, and edits everything
+under "Mine" in place; an assistant can read the library through MCP and, once its account
+says yes, add and change games too. The finished games stand on a trophy wall. The design
+foundations from step 1 are at `/en/foundations`, unlisted.
 
 ## Credits
 

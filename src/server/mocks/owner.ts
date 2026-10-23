@@ -19,3 +19,17 @@ export const MOCK_OWNER = {
 
 /** What the browser tests start the daily refresh with, only while the test doubles answer. */
 export const MOCK_CRON_SECRET = 'test-doubles-only-cron-secret'
+
+/**
+ * A made-up Steam account and key, only while the test doubles answer
+ * (`server/mocks/steam.ts`). Seventeen digits, as a SteamID64 is, but in a
+ * range Steam does not hand out.
+ */
+export const MOCK_STEAM = {
+  key: 'test-doubles-only-steam-key',
+  /** Its games are `fixtures/steam/owned-games.json`. */
+  steamId: '76561190000000001',
+  /** One whose game details are private. */
+  privateSteamId: '76561190000000002',
+  name: 'Sample on Steam',
+} as const

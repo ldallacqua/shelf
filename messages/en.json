@@ -11,7 +11,8 @@
     "trophies": "Trophies",
     "menu": "Menu",
     "igdbCredit": "Game data and covers from <link>IGDB.com</link>.",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "privacy": "Privacy"
   },
   "Theme": {
     "label": "Theme",
@@ -197,6 +198,16 @@
       "added": "Added",
       "matched": "matched"
     },
+    "sync": {
+      "eyebrow": "Steam",
+      "title": "Bring your Steam library with you.",
+      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours on it, then keeps in step by itself once a day. Games already on your shelf gain a PC copy, never a second box. PlayStation, Xbox and Nintendo come next.",
+      "card": "Steam, syncing",
+      "where": "PC · Steam",
+      "hours": "{hours} h",
+      "onShelf": "{count, plural, one {# game on your shelf} other {# games on your shelf}}",
+      "daily": "Again tomorrow, by itself"
+    },
     "views": {
       "eyebrow": "Views",
       "title": "Shelf, wall or list.",
@@ -258,6 +269,10 @@
       "data": {
         "q": "Where does the information about games come from?",
         "a": "From IGDB.com: titles, covers, release dates, and how long games take to finish. What is yours you add: where you own a game, how far you got, what you thought of it."
+      },
+      "sync": {
+        "q": "Can it bring in the games I already own?",
+        "a": "From Steam, yes: sign in through Steam on your account page, and every game you own there comes onto your shelf with its hours, then again once a day. PlayStation, Xbox and Nintendo are next. Until then, paste a list of titles, one a line."
       },
       "who": {
         "q": "Who can see my shelf?",
@@ -832,6 +847,112 @@
       "failed": "That did not work. Try again."
     }
   },
+  "Sync": {
+    "source": {
+      "steam": "Steam",
+      "playstation": "PlayStation",
+      "xbox": "Xbox",
+      "nintendo": "Nintendo"
+    },
+    "title": "Platforms",
+    "intro": "Bring the games you own on a platform onto your shelf, and keep them in step.",
+    "later": "PlayStation, Xbox and Nintendo come next.",
+    "steam": {
+      "about": "Sign in through Steam, and every game you own there goes onto your shelf as a PC copy, with Steam’s hours on it. Shelf syncs again once a day. Your Steam password never reaches Shelf.",
+      "public": "Steam has to show your game details: in Steam, open Edit Profile, then Privacy Settings, and set Game details to Public.",
+      "signIn": "Sign in through Steam"
+    },
+    "kept": "What Shelf keeps",
+    "linkedAs": "Linked to {name}",
+    "syncedOn": "Last synced {when}",
+    "never": "Not synced yet",
+    "onShelf": "{count, plural, =0 {No games on your shelf from {source} yet} one {# game on your shelf from {source}} other {# games on your shelf from {source}}}",
+    "syncNow": "Sync now",
+    "syncing": "Syncing…",
+    "progress": "{done, plural, =0 {Matching your games…} other {Added # of {total}…}}",
+    "progressLabel": "Games added from {source}",
+    "done": "{count, plural, =0 {Up to date with {source}.} one {# game came in from {source}.} other {# games came in from {source}.}}",
+    "daily": "Sync once a day",
+    "disconnect": "Disconnect",
+    "disconnectAsk": "Disconnect {source}? Your games stay on your shelf, with their hours. Shelf forgets what {source} listed, and your answers about it.",
+    "disconnected": "{source} is disconnected. Your games are still on your shelf.",
+    "keep": "Keep it",
+    "linked": "Linked. Bringing your games in…",
+    "linkFailed": "Steam did not confirm the sign-in, so nothing was linked. Try again.",
+    "problem": {
+      "private": "Steam isn’t showing your games. Set Game details to Public in Steam’s privacy settings, then sync again.",
+      "unreachable": "{source} did not answer. Try again in a while.",
+      "unset": "{source} sync isn’t set up on this server yet."
+    },
+    "lists": {
+      "needs-you": "{count, plural, one {# game needs you} other {# games need you}}",
+      "hidden": "{count, plural, other {# left out}}",
+      "not-seen": "{count, plural, other {# no longer on {source}}}"
+    },
+    "help": {
+      "needs-you": "Shelf could not be sure which games these are. Find each one, or say what it is, and Shelf remembers.",
+      "hidden": "Shelf leaves these off your shelf, whatever {source} says.",
+      "not-seen": "Still on your shelf. {source} stopped listing them."
+    },
+    "loading": "Loading…",
+    "hours": "{hours, number} h on {source}",
+    "unplayed": "Not played on {source}",
+    "find": "Find it",
+    "searchFor": "Search IGDB for {title}",
+    "search": "Search",
+    "searching": "Searching…",
+    "pick": "This one",
+    "pickNamed": "Add {title} ({year})",
+    "pickUndated": "Add {title}",
+    "noResults": "Nothing on IGDB by that name. Try another.",
+    "notAGame": "Not a game",
+    "notMine": "Not mine",
+    "askAgain": "Ask again",
+    "putBack": "Put back on my shelf",
+    "why": {
+      "not_a_game": "Not a game",
+      "not_mine": "Not mine",
+      "removed": "Taken off your shelf"
+    },
+    "lastSeen": "Last listed {date}",
+    "added": "On your shelf as {title}.",
+    "failed": "That did not work. Try again.",
+    "tooMany": "That is a lot at once. The rest come in with the next sync."
+  },
+  "Privacy": {
+    "metaTitle": "Privacy",
+    "metaDescription": "What Shelf keeps about you, where, who can see it, and how to remove it.",
+    "title": "Privacy",
+    "updated": "Last changed {date}",
+    "intro": "Shelf keeps what it needs to show you your shelf, and nothing to sell. This page says what that is.",
+    "sections": {
+      "account": {
+        "title": "Your account",
+        "body": "Your name, your handle, your email address and a scrambled form of your password, which cannot be turned back into it. Your email address is never shown to anyone."
+      },
+      "shelf": {
+        "title": "Your shelf",
+        "body": "The games you add and what you say about them: where you own them, how far you got, ratings, dates, tags and notes. A public shelf can be seen by anyone, and search engines can list it; a private one only by you. Notes stay private unless you mark them public."
+      },
+      "signIn": {
+        "title": "Signing in",
+        "body": "While you are signed in, a cookie keeps you signed in, and Shelf keeps the address and the browser each session came from, so you can sign out everywhere. A second cookie only says whether you are signed in. Your choices for the shelf, such as the theme, stay in your browser."
+      },
+      "steam": {
+        "title": "Steam",
+        "body": "If you link Steam, Shelf keeps your Steam account’s id and name, and the games Steam lists for it, with the hours played and when each was last played. Shelf reads them when you link Steam or press Sync now, and once a day while daily sync is on. Your Steam password never reaches Shelf. Disconnecting Steam deletes what Steam listed; the games it put on your shelf stay, as your own."
+      },
+      "where": {
+        "title": "Where it is kept",
+        "body": "In a database in São Paulo, Brazil (Turso), reached by Shelf’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there."
+      },
+      "delete": {
+        "title": "Removing it",
+        "body": "Delete a game, and it is gone. Delete your account on your account page, and your account, your shelf and everything in it are deleted for good, Steam’s list included."
+      }
+    },
+    "account": "Your account page"
+  },
   "Add": {
     "title": "Add a game",
     "help": "Search IGDB, pick the game, and say how you own it.",
@@ -936,6 +1057,7 @@
     "saving": "Saving…",
     "played": "Hours played",
     "playedRange": "Hours played is a number, 0 or more.",
+    "syncedHours": "{source}: {hours, number} h",
     "notesPublic": "Visitors can read these notes",
     "versions": "Versions",
     "relations": {

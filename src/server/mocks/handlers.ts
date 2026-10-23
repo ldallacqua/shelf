@@ -36,8 +36,23 @@ const tables = (fixtures: Fixtures): Record<string, Row[]> => {
   for (const ancestor of fixtures.ancestors.values()) {
     if (!known.has(ancestor.id)) games.push(ancestor)
   }
+  // IGDB's store ids, each with its game's few fields, as an expanded `game.*` query answers.
+  const externalGames: Row[] = games.flatMap((game) =>
+    ((game.external_games as Row[] | undefined) ?? []).map((external) => ({
+      uid: external.uid,
+      external_game_source: external.external_game_source,
+      game: {
+        id: game.id,
+        name: game.name,
+        game_type: game.game_type,
+        parent_game: game.parent_game,
+        version_parent: game.version_parent,
+      },
+    })),
+  )
   return {
     games,
+    external_games: externalGames.map((row, index) => ({ id: index + 1, ...row })),
     game_time_to_beats: [...fixtures.timeToBeat.values()].map((row, index) => ({
       id: index + 1,
       ...row,

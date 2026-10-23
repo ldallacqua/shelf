@@ -13,7 +13,7 @@ import {
   type LibraryPlatform,
   type Named,
 } from '@/domain/library/library'
-import { dayOf } from '@/domain/library/values'
+import { dayOf, type SyncSource } from '@/domain/library/values'
 import type { GameKeywords } from '@/domain/query/evaluate'
 import { comparePlatforms } from '@/domain/platforms/platforms'
 import type { Db, Executor } from '@/server/db/client'
@@ -100,8 +100,16 @@ export const readLibrary = async (db: Db, libraryId: string): Promise<Library> =
       .from(copies)
       .where(sql`${copies.entryId} in ${own}`)
       .orderBy(copies.createdAt, sql`rowid`),
+    // A game's hours are the larger of what I typed and what its sources
+    // report together, so a sync never counts the same play twice (ADR 003).
     db
-      .select({ entryId: playTime.entryId, minutes: sql<number>`sum(${playTime.minutes})` })
+      .select({
+        entryId: playTime.entryId,
+        minutes: sql<number>`max(
+          coalesce(sum(case when ${playTime.source} = 'manual' then ${playTime.minutes} end), 0),
+          coalesce(sum(case when ${playTime.source} != 'manual' then ${playTime.minutes} end), 0)
+        )`,
+      })
       .from(playTime)
       .where(sql`${playTime.entryId} in ${own}`)
       .groupBy(playTime.entryId),
@@ -400,9 +408,9 @@ export const readOwnerGame = async (
       .where(eq(copies.entryId, entryId))
       .orderBy(copies.createdAt, sql`rowid`),
     db
-      .select({ minutes: playTime.minutes })
+      .select({ source: playTime.source, copyId: playTime.copyId, minutes: playTime.minutes })
       .from(playTime)
-      .where(and(eq(playTime.entryId, entryId), eq(playTime.source, 'manual'))),
+      .where(eq(playTime.entryId, entryId)),
     db
       .select({ name: tags.name })
       .from(entryTags)
@@ -429,8 +437,17 @@ export const readOwnerGame = async (
     title: primary.title,
     status: entry.status,
     notesPublic: entry.notesPublic,
-    minutes: timeRows.reduce((sum, row) => sum + row.minutes, 0),
-    copies: copyRows,
+    minutes: timeRows
+      .filter((row) => row.source === 'manual')
+      .reduce((sum, row) => sum + row.minutes, 0),
+    copies: copyRows.map((copy) => {
+      const synced = timeRows.flatMap((row) =>
+        row.copyId === copy.id && row.source !== 'manual'
+          ? [{ source: row.source as SyncSource, minutes: row.minutes }]
+          : [],
+      )
+      return synced.length > 0 ? { ...copy, synced } : copy
+    }),
     tags: tagRows.map((tag) => tag.name),
     versions: [primary, ...versionRows.filter((row) => row !== primary)].map((row) => ({
       gameId: row.gameId,

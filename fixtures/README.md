@@ -14,6 +14,7 @@ these files; none of them touches the network.
 | `igdb/platforms.json` | IGDB's full platform list |
 | `covers.json` | For each cover: three colors and a ThumbHash, read from the image. No image is stored. |
 | `library/sets.json` | Which ids make up the `default` and `stress` sets, and which are extra versions |
+| `steam/owned-games.json` | What Steam's `GetOwnedGames` answers for a made-up account: 24 sample games by their real app ids, one Steam id IGDB lacks (Halo: Combat Evolved, matched by title; the app id is made up), and two nothing matches. Written by hand. |
 
 **To refresh them:** edit the list of titles in `scripts/fixtures/titles.ts` if you want
 different games, then run `pnpm fixtures:fetch`. It needs the Twitch settings in

@@ -204,6 +204,41 @@ call, so nothing breaks while it is missing; IGDB's records just are not refresh
 
 ---
 
+## E. Steam sync
+
+**When:** before the Steam sync deploys.
+
+| Name | Environment | Value |
+| --- | --- | --- |
+| `STEAM_API_KEY` | Production | Shelf's Steam Web API key |
+
+The key is Shelf's, not your account's: it reads the games of whoever links Steam on their
+account page, through Steam's own sign-in. It never signs anyone in.
+
+1. Signed in to Steam in your own browser, open https://steamcommunity.com/dev/apikey. For
+   the domain name, give `shelf-ldallacqua.vercel.app`. Agree to the Steam Web API Terms of
+   Use, and Steam shows the key. (Steam gives keys only to accounts with Steam Guard on that
+   have spent at least 5 US dollars.)
+2. In a terminal of your own, from this folder, run the command below and paste the key when
+   it asks:
+
+```bash
+vercel env add STEAM_API_KEY production --sensitive
+```
+
+3. To try a real sync on this computer, add `STEAM_API_KEY=` and the key to `.env.local`
+   yourself.
+
+It takes effect on the next production deployment. Without it, the account page offers Steam
+and says Steam sync is not set up on this server yet.
+
+**Check it worked:** on production, open your account page, then **Platforms**, then **Sign in
+through Steam**. Your games arrive with their hours. If the card says Steam is not showing
+your games, set **Game details** to **Public** in Steam's privacy settings (Edit Profile,
+Privacy Settings) and press **Sync now**.
+
+---
+
 ## Good to know
 
 - **A changed setting takes effect on the next deployment.** After pasting values, tell me and
@@ -224,3 +259,4 @@ call, so nothing breaks while it is missing; IGDB's records just are not refresh
 | `SHELF_MOCKS` | Tests set it | Never | Never | none |
 | `BETTER_AUTH_SECRET` | Optional | Not yet | Paste, random | C |
 | `CRON_SECRET` | Not used | Not used | Paste, random | D |
+| `STEAM_API_KEY` | Optional, yours to add | Not yet | Paste | E |

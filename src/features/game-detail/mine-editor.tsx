@@ -490,6 +490,7 @@ function Copies({
   const t = useTranslations('Edit')
   const game = useTranslations('Game')
   const library = useTranslations('Library')
+  const sync = useTranslations('Sync')
   const id = useId()
   const have = new Set(owned.copies.map((copy) => `${copy.platformId}:${copy.format}`))
   const open = platforms.filter((platform) =>
@@ -510,7 +511,17 @@ function Copies({
             const name = labels.get(copy.platformId)?.name ?? ''
             return (
               <li key={copy.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                <span className="min-w-28 flex-1 font-medium">{name}</span>
+                <span className="min-w-28 flex-1 font-medium">
+                  {name}
+                  {copy.synced?.map((each) => (
+                    <span key={each.source} className="ml-2 font-normal text-muted">
+                      {t('syncedHours', {
+                        source: sync(`source.${each.source}`),
+                        hours: Math.round(each.minutes / 6) / 10,
+                      })}
+                    </span>
+                  ))}
+                </span>
                 <Segmented
                   aria-label={t('formatOf', { platform: name })}
                   value={copy.format}

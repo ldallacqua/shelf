@@ -6,7 +6,7 @@ import { siteUrl } from '@/server/site-url'
 
 /**
  * Every page a search engine may list (architecture, section 16): the
- * landing page, sign-up, and each public shelf with its trophy wall and games, in both
+ * landing page, sign-up, privacy, and each public shelf with its trophy wall and games, in both
  * languages, each naming the other. A private shelf is never listed (ADR 004).
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -24,6 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     page('', 1),
     page('/sign-up', 0.8),
+    page('/privacy', 0.2),
     ...shelves.flatMap(({ handle, games, trophies }) => [
       page(`/u/${handle}`, 0.6),
       // An empty trophy wall is not indexed, so it is not listed.

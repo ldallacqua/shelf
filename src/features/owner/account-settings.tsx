@@ -6,6 +6,7 @@ import { type ReactNode, useState } from 'react'
 
 import { NAME_MAX, PASSWORD_MAX, PASSWORD_MIN } from '@/domain/accounts/account'
 import { libraryHref } from '@/features/library/shelf-address'
+import { Platforms } from '@/features/platforms/platforms'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
@@ -370,6 +371,7 @@ export function AccountSettings() {
       </p>
       {/* Saved, the fields already hold what the account now is: kept, with what was said. */}
       <ShelfSettings account={account} />
+      <Platforms handle={account.handle} />
       <PasswordSettings />
       <SignOutEverywhere />
       <DeleteAccount />

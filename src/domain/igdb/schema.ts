@@ -184,6 +184,32 @@ export const igdbSearchFields = [
   'total_rating_count',
 ] as const
 
+/**
+ * One of IGDB's store ids (`external_games`), with the few fields of its game
+ * that choosing between two games sharing one id needs.
+ */
+export const igdbExternalGameSchema = z.object({
+  id,
+  uid: z.string().min(1),
+  game: igdbGameSchema.pick({
+    id: true,
+    name: true,
+    game_type: true,
+    parent_game: true,
+    version_parent: true,
+  }),
+})
+
+export type IgdbExternalGame = z.infer<typeof igdbExternalGameSchema>
+
+export const igdbExternalGameFields = [
+  'uid',
+  'game.name',
+  'game.game_type',
+  'game.parent_game',
+  'game.version_parent',
+] as const
+
 /** How long a game takes, in seconds, from IGDB's `game_time_to_beats`. */
 export const igdbTimeToBeatSchema = z.object({
   game_id: id,

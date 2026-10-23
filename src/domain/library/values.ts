@@ -40,8 +40,16 @@ export const kinds = [
 ] as const
 export type Kind = (typeof kinds)[number]
 
-/** Where a playtime figure came from. A sync adds its own source later. */
-export const playTimeSources = ['manual'] as const
+/**
+ * The stores and consoles a library can be synced from (ADR 003). All four
+ * are here from the first, so the database's checks need no change as each
+ * one is built; `domain/sync/sources.ts` says which are ready.
+ */
+export const syncSources = ['steam', 'playstation', 'xbox', 'nintendo'] as const
+export type SyncSource = (typeof syncSources)[number]
+
+/** Where a playtime figure came from: typed by me, or reported by a source. */
+export const playTimeSources = ['manual', ...syncSources] as const
 export type PlayTimeSource = (typeof playTimeSources)[number]
 
 export const isStatus = (value: unknown): value is Status =>

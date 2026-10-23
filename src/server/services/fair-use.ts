@@ -28,6 +28,13 @@ export const FAIR_USE = {
   match: { per: HOUR, max: 100 },
   /** Games added, one or many at a time. */
   add: { per: HOUR, max: 300 },
+  /**
+   * Games a sync puts on the shelf (ADR 003): a whole Steam library at once,
+   * a few IGDB requests for every twenty. The daily sync is not counted.
+   */
+  sync: { per: HOUR, max: 2000 },
+  /** Times a source is read on my asking. */
+  read: { per: HOUR, max: 60 },
 } as const
 
 export type FairUse = keyof typeof FAIR_USE

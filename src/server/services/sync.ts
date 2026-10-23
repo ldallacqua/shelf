@@ -1,0 +1,531 @@
+import 'server-only'
+
+import { and, eq, inArray } from 'drizzle-orm'
+import { z } from 'zod'
+
+import { foldSearchHits } from '@/domain/igdb/search'
+import type { Refusal } from '@/domain/library/adding'
+import { proposeGrouping } from '@/domain/library/family'
+import type { SyncSource } from '@/domain/library/values'
+import { firstStatus, isOwnedFormat, stateOf, type Reported } from '@/domain/sync/items'
+import { chooseByStoreId } from '@/domain/sync/ladder'
+import { itemLists, type ItemList, type ItemView, type SyncStep } from '@/domain/sync/link'
+import { isSyncSource, SOURCES } from '@/domain/sync/sources'
+import { matchByTitle, strippedTitle } from '@/domain/sync/titles'
+import type { Account } from '@/server/auth/account'
+import { database, type Db } from '@/server/db/client'
+import { copies, entryVersions, games } from '@/server/db/schema'
+import { igdb } from '@/server/igdb'
+import type { IgdbApi } from '@/server/igdb/api'
+import { readCoverArt } from '@/server/igdb/cover-art'
+import {
+  addFromSource,
+  feedCopies,
+  LibraryError,
+  readLinkedMembers,
+  readVersion,
+  type Placement,
+} from '@/server/library/store'
+import { spend } from '@/server/services/fair-use'
+import { forAccount } from '@/server/services/for-account'
+import { createRecords, type Records, type RecordsDeps } from '@/server/services/igdb-records'
+import {
+  decideItem,
+  dueLinks,
+  forgetLink,
+  listItems,
+  noteRead,
+  noteSynced,
+  readItem,
+  readLink,
+  readLinks,
+  recordReport,
+  saveLink,
+  saveResolutions,
+  setDaily,
+  unmatched,
+  viewOf,
+  waitingToAdd,
+  type Item,
+  type Link,
+  type Resolved,
+} from '@/server/sync/memory'
+import { SourceError } from '@/server/sync/source-error'
+import { steam, type Steam } from '@/server/sync/steam'
+
+/**
+ * Syncing a library from a store or console (ADR 003). One step reads the
+ * source when asked, matches what it lists up the ladder, puts matched games
+ * on the shelf twenty at a time, and brings their hours up to date; the page
+ * asks for steps until nothing is left. What a source can tell is in
+ * `domain/sync/sources.ts`, how to ask it in its adapter; everything below
+ * is the same for every source.
+ */
+
+/** What the sync asks of a source. */
+type Adapter = {
+  /** Everything it lists for the account there; undefined when the account hides it. */
+  list: (externalId: string) => Promise<Reported[] | undefined>
+  /** The account's name there, for the page. */
+  name?: (externalId: string) => Promise<string | undefined>
+}
+
+/** Games put on the shelf by one step: a few IGDB requests, and a step well inside a function's time. */
+export const ADD_PER_STEP = 20
+/** Titles asked of IGDB in one step, ten to a request. */
+const TITLES_PER_STEP = 60
+/** A title IGDB did not know is asked about again after this long: IGDB grows. */
+const TITLE_AGAIN_MS = 7 * 24 * 60 * 60 * 1000
+/** "Sync now" twice inside this reads the source once. */
+const READ_AGAIN_MS = 60 * 1000
+
+export type SyncDeps = RecordsDeps & { steam: Steam }
+
+export const createSync = (deps: SyncDeps) => {
+  // One per server, for every library: it keeps IGDB's list of platforms.
+  const records = createRecords(deps)
+  const adapters: Partial<Record<SyncSource, Adapter>> = {
+    steam: { list: (id) => deps.steam.ownedGames(id), name: (id) => deps.steam.playerName(id) },
+  }
+  return (libraryId: string) =>
+    forLibrary(libraryId, { db: deps.db, api: deps.igdb, records, adapters })
+}
+
+type LibraryDeps = {
+  db: Db
+  api: IgdbApi
+  records: Records
+  adapters: Partial<Record<SyncSource, Adapter>>
+}
+
+/** Asked before games are put on the shelf, with how many; throws to refuse. */
+export type Allowance = (games: number) => Promise<void>
+
+const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDeps) => {
+  const linkOf = async (source: SyncSource): Promise<Link> => {
+    const link = await readLink(db, libraryId, source)
+    if (!link) throw new LibraryError('not-found', `This shelf is not linked to ${source}`)
+    return link
+  }
+
+  /** The source's list, remembered; the link says how it went. */
+  const read = async (link: Link, now: number): Promise<Link> => {
+    const adapter = adapters[link.source]
+    if (!adapter) throw new LibraryError('invalid', `${link.source} cannot be synced yet`)
+    try {
+      const listed = await adapter.list(link.externalId)
+      if (!listed) {
+        await noteRead(db, libraryId, link.source, { problem: 'private' })
+      } else {
+        const name = await adapter.name?.(link.externalId).catch(() => undefined)
+        await recordReport(db, libraryId, link.source, SOURCES[link.source].evidence, listed, now)
+        await noteRead(db, libraryId, link.source, { at: now, ...(name ? { name } : {}) })
+      }
+    } catch (error) {
+      if (!(error instanceof SourceError)) throw error
+      await noteRead(db, libraryId, link.source, { problem: error.problem })
+    }
+    return linkOf(link.source)
+  }
+
+  /**
+   * The ladder's second and third rungs (ADR 003, decision 1) over items no
+   * rung has matched. Store ids are asked for every such item when the list
+   * was just read, as IGDB adds them; titles for the next few not asked about
+   * this week. A matched game the source owns becomes a copy; a played one
+   * waits for my answer. Returns how many titles are left to ask about.
+   */
+  const resolve = async (source: SyncSource, allStoreIds: boolean, now: number) => {
+    const facts = SOURCES[source]
+    const decision = facts.evidence === 'owned' ? 'copy' : 'pending'
+    const resolved: Resolved[] = []
+    const take = (item: Item, igdbId: number, by: Resolved['by']) =>
+      resolved.push({ id: item.id, igdbId, by, decision })
+
+    let left = await unmatched(db, libraryId, source, 10_000)
+    const due = (item: Item) =>
+      item.titleTriedAt === null || now - item.titleTriedAt > TITLE_AGAIN_MS
+    const batch = left.filter(due).slice(0, TITLES_PER_STEP)
+
+    const byStore = allStoreIds ? left : batch.filter((item) => item.titleTriedAt === null)
+    if (facts.store && byStore.length > 0) {
+      const found = await api.byStoreIds(
+        facts.store,
+        byStore.map((item) => item.storeId),
+      )
+      for (const item of byStore) {
+        const igdbId = chooseByStoreId(found.get(item.storeId) ?? [])
+        if (igdbId !== undefined) take(item, igdbId, 'store_id')
+      }
+    }
+
+    const matched = new Set(resolved.map((item) => item.id))
+    const titled = batch.filter((item) => !matched.has(item.id))
+    const tried: string[] = []
+    if (titled.length > 0) {
+      const query = (item: Item) => ({
+        title: item.title,
+        platforms: item.platformId ? [item.platformId] : facts.platforms,
+        ...(item.year ? { year: item.year } : {}),
+      })
+      const exact = await api.findByTitles(titled.map((item) => item.title))
+      const again: Item[] = []
+      titled.forEach((item, at) => {
+        const match = matchByTitle(query(item), foldSearchHits(exact[at] ?? [], 20))
+        if (match) take(item, match.igdbId, 'title')
+        else if (strippedTitle(item.title) !== item.title.trim()) again.push(item)
+        else tried.push(item.id)
+      })
+      // Asked again without the marks and edition words, for those the title as written did not find.
+      const stripped =
+        again.length > 0
+          ? await api.findByTitles(again.map((item) => strippedTitle(item.title)))
+          : []
+      again.forEach((item, at) => {
+        const match = matchByTitle(query(item), foldSearchHits(stripped[at] ?? [], 20))
+        if (match) take(item, match.igdbId, 'title')
+        else tried.push(item.id)
+      })
+    }
+    await saveResolutions(db, resolved, tried, now)
+
+    const done = new Set([...resolved.map((item) => item.id), ...tried])
+    left = left.filter((item) => !done.has(item.id))
+    return left.filter(due).length
+  }
+
+  /** Whether the entry already has a copy on that platform, in that format. */
+  const hasCopy = async (entryId: string, platformId: number, format: string) =>
+    (
+      await db
+        .select({ id: copies.id })
+        .from(copies)
+        .where(
+          and(
+            eq(copies.entryId, entryId),
+            eq(copies.platformId, platformId),
+            eq(copies.format, format as 'physical' | 'digital'),
+          ),
+        )
+        .limit(1)
+    ).length > 0
+
+  /**
+   * Matched games onto the shelf, at most `limit` (ADR 003, decision 2): a
+   * game already there under any version gets the copy, never a second
+   * entry, and keeps everything I set; a new one starts in my backlog, or
+   * as playing if the source saw me play it in the last two weeks. Items
+   * naming the same record feed one copy.
+   */
+  const addSome = async (
+    source: SyncSource,
+    limit: number,
+    now: number,
+    allow?: Allowance,
+    only?: string,
+  ) => {
+    const facts = SOURCES[source]
+    const groups = new Map<number, Item[]>()
+    for (const item of await waitingToAdd(db, libraryId, source)) {
+      if (only && item.id !== only) continue
+      groups.set(item.igdbId!, [...(groups.get(item.igdbId!) ?? []), item])
+    }
+    const chosen = [...groups].slice(0, limit)
+    if (chosen.length === 0) return { added: 0, remaining: 0 }
+    await allow?.(chosen.length)
+    const fetched = await records.fetchRecords(chosen.map(([igdbId]) => igdbId))
+
+    let added = 0
+    for (const [igdbId, items] of chosen) {
+      const data = fetched.data.get(igdbId)
+      const first = items[0]!
+      const platformId = first.platformId ?? facts.platformId
+      const format = first.format && isOwnedFormat(first.format) ? first.format : facts.format
+      if (!data || platformId === undefined || format === undefined) {
+        // IGDB no longer has the record: the items go back to me.
+        for (const item of items) {
+          await decideItem(db, libraryId, item.id, { decision: 'pending' }, now)
+        }
+        continue
+      }
+      const lineage = fetched.lineages.get(igdbId) ?? []
+      const proposal = proposeGrouping({ igdbId, lineage }, await readLinkedMembers(db, libraryId))
+      const copy = { platformId, format }
+      let placement: Placement
+      if (proposal.action === 'already' || proposal.action === 'join') {
+        const copiesToAdd = (await hasCopy(proposal.entryId, platformId, format)) ? [] : [copy]
+        placement =
+          proposal.action === 'already'
+            ? { kind: 'join', entryId: proposal.entryId, copies: copiesToAdd }
+            : {
+                kind: 'join',
+                entryId: proposal.entryId,
+                version: proposal.relation === 'primary' ? 'other' : proposal.relation,
+                copies: copiesToAdd,
+              }
+      } else {
+        // Nothing related on the shelf, or only a game this one remakes: a game of its own.
+        const played = Math.max(0, ...items.map((item) => item.lastPlayedAt ?? 0))
+        placement = {
+          kind: 'entry',
+          entry: {
+            status: firstStatus(played ? { lastPlayedAt: played } : {}, now),
+            copies: [copy],
+          },
+        }
+      }
+      const art = fetched.art.get(igdbId)
+      const platformIds = new Set([...data.platforms, platformId])
+      await addFromSource(
+        db,
+        libraryId,
+        {
+          data,
+          lineage,
+          ...(art ? { art } : {}),
+          names: records.namesOf(data, fetched.names),
+          platforms: [...platformIds].flatMap((id) => fetched.all.get(id) ?? []),
+        },
+        placement,
+        { source, itemIds: items.map((item) => item.id), platformId, format },
+        now,
+      )
+      added += 1
+    }
+    return { added, remaining: groups.size - chosen.length }
+  }
+
+  /**
+   * One step of a sync. `read`: ask the source for its list first, unless it
+   * answered a moment ago. The page asks again while `remaining` is above 0.
+   */
+  const step = async (
+    source: SyncSource,
+    { read: wanted = false, allow }: { read?: boolean; allow?: Allowance } = {},
+    now = Date.now(),
+  ): Promise<SyncStep> => {
+    let link = await linkOf(source)
+    const fresh =
+      wanted && (link.readAt === null || link.problem !== null || now - link.readAt > READ_AGAIN_MS)
+    if (fresh) link = await read(link, now)
+    const titlesLeft = await resolve(source, fresh, now)
+    const { added, remaining } = await addSome(source, ADD_PER_STEP, now, allow)
+    await feedCopies(db, libraryId, source, now)
+    const left = titlesLeft + remaining
+    if (left === 0 && link.problem === null && link.readAt !== null) {
+      await noteSynced(db, libraryId, source, now)
+    }
+    return {
+      link: await viewOf(db, await linkOf(source)),
+      added,
+      remaining: left,
+      version: await readVersion(db, libraryId),
+    }
+  }
+
+  /** The game on my shelf a copy is part of, for the lists. */
+  const shelvedAs = async (copyIds: readonly string[]) => {
+    if (copyIds.length === 0) return new Map<string, { slug: string; title: string }>()
+    const rows = await db
+      .select({ copyId: copies.id, slug: games.slug, title: games.title })
+      .from(copies)
+      .innerJoin(entryVersions, eq(entryVersions.entryId, copies.entryId))
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(and(inArray(copies.id, [...copyIds]), eq(entryVersions.relation, 'primary')))
+    return new Map(rows.map((row) => [row.copyId, { slug: row.slug, title: row.title }]))
+  }
+
+  const toView = (item: Item, onShelf?: { slug: string; title: string }): ItemView => ({
+    id: item.id,
+    title: item.title,
+    storeId: item.storeId,
+    minutes: item.minutes,
+    lastPlayedAt: item.lastPlayedAt,
+    lastSeenAt: item.lastSeenAt,
+    state: stateOf(item),
+    decision: item.decision,
+    ...(onShelf ? { onShelf } : {}),
+  })
+
+  const list = async (source: SyncSource, which: ItemList): Promise<ItemView[]> => {
+    const items = await listItems(db, await linkOf(source), which)
+    const shelved = await shelvedAs(items.flatMap((item) => (item.copyId ? [item.copyId] : [])))
+    return items.map((item) => toView(item, item.copyId ? shelved.get(item.copyId) : undefined))
+  }
+
+  /**
+   * My answer about one item, carried out at once: a game picked for it goes
+   * on the shelf now; "not a game" and "not mine" are never asked again;
+   * "ask again" undoes either, and puts back a game I removed.
+   */
+  const answer = async (
+    source: SyncSource,
+    itemId: string,
+    choice: Answer,
+    allow?: Allowance,
+    now = Date.now(),
+  ): Promise<{ item: ItemView; version: number }> => {
+    const item = await readItem(db, libraryId, itemId)
+    if (!item || item.source !== source) {
+      throw new LibraryError('not-found', 'That item is not this shelf’s')
+    }
+    if (item.copyId) throw new LibraryError('conflict', 'That game is on the shelf already')
+    if (choice.kind === 'pick') {
+      await decideItem(db, libraryId, item.id, { decision: 'copy', igdbId: choice.igdbId }, now)
+    } else if (choice.kind === 'dismiss') {
+      await decideItem(db, libraryId, item.id, { decision: choice.as }, now)
+    } else {
+      const owned = SOURCES[item.source].evidence === 'owned'
+      await decideItem(
+        db,
+        libraryId,
+        item.id,
+        { decision: owned && item.igdbId !== null ? 'copy' : 'pending' },
+        now,
+      )
+    }
+    await addSome(item.source, 1, now, allow, item.id)
+    const after = (await readItem(db, libraryId, item.id))!
+    const shelved = after.copyId ? (await shelvedAs([after.copyId])).get(after.copyId) : undefined
+    return { item: toView(after, shelved), version: await readVersion(db, libraryId) }
+  }
+
+  const links = async () =>
+    Promise.all((await readLinks(db, libraryId)).map((link) => viewOf(db, link)))
+
+  return { step, list, answer, links, linkOf }
+}
+
+export type Answer =
+  | { kind: 'pick'; igdbId: number }
+  | { kind: 'dismiss'; as: 'not_a_game' | 'not_mine' }
+  | { kind: 'again' }
+
+/* For routes: the signed-in account, on its own library, this server's IGDB and sources. */
+
+let shared: ReturnType<typeof createSync> | undefined
+export const syncFor = (libraryId: string) =>
+  (shared ??= createSync({
+    db: database(),
+    igdb: igdb(),
+    readArt: (id) => readCoverArt(id),
+    steam: steam(),
+  }))(libraryId)
+
+const sourceParam = z.custom<SyncSource>(isSyncSource)
+
+const ready = (source: unknown): SyncSource | undefined => {
+  const parsed = sourceParam.safeParse(source)
+  return parsed.success && SOURCES[parsed.data].ready ? parsed.data : undefined
+}
+
+const invalid = (): Promise<Refusal> => Promise.resolve({ ok: false, reason: 'invalid' })
+
+/** Every source, and this account's link to each. */
+export const myPlatforms = () =>
+  forAccount(async (account) => {
+    const links = await syncFor(account.id).links()
+    return (Object.keys(SOURCES) as SyncSource[]).map((source) => ({
+      source,
+      ready: SOURCES[source].ready,
+      link: links.find((link) => link.source === source) ?? null,
+    }))
+  })
+
+/** Links the account to the account at a source that the source's own sign-in vouched for. */
+export const linkMine = (source: unknown, externalId: string, name: string | undefined) => {
+  const which = ready(source)
+  if (!which) return invalid()
+  return forAccount((account) => saveLink(database(), account.id, which, externalId, name), true)
+}
+
+const allowance =
+  (account: Account): Allowance =>
+  (count) =>
+    spend(account, 'sync', count)
+
+export const syncMine = (source: unknown, body: unknown) => {
+  const which = ready(source)
+  const parsed = z.object({ read: z.boolean().default(false) }).safeParse(body ?? {})
+  if (!which || !parsed.success) return invalid()
+  return forAccount(async (account) => {
+    if (parsed.data.read) await spend(account, 'read')
+    return syncFor(account.id).step(which, { read: parsed.data.read, allow: allowance(account) })
+  }, true)
+}
+
+export const listMine = (source: unknown, which: unknown) => {
+  const from = ready(source)
+  const parsed = z.enum(itemLists).safeParse(which)
+  if (!from || !parsed.success) return invalid()
+  return forAccount((account) => syncFor(account.id).list(from, parsed.data))
+}
+
+const answerShape = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('pick'), igdbId: z.number().int().positive() }),
+  z.object({ kind: z.literal('dismiss'), as: z.enum(['not_a_game', 'not_mine']) }),
+  z.object({ kind: z.literal('again') }),
+])
+
+export const answerMine = (source: unknown, itemId: unknown, body: unknown) => {
+  const which = ready(source)
+  const id = z.string().min(1).max(64).safeParse(itemId)
+  const parsed = answerShape.safeParse(body)
+  if (!which || !id.success || !parsed.success) return invalid()
+  return forAccount(
+    (account) => syncFor(account.id).answer(which, id.data, parsed.data, allowance(account)),
+    true,
+  )
+}
+
+export const setMyDaily = (source: unknown, body: unknown) => {
+  const which = ready(source)
+  const parsed = z.object({ daily: z.boolean() }).safeParse(body)
+  if (!which || !parsed.success) return invalid()
+  return forAccount(async (account) => {
+    const sync = syncFor(account.id)
+    await sync.linkOf(which)
+    await setDaily(database(), account.id, which, parsed.data.daily)
+    return viewOf(database(), await sync.linkOf(which))
+  }, true)
+}
+
+export const unlinkMine = (source: unknown) => {
+  const which = sourceParam.safeParse(source)
+  if (!which.success) return invalid()
+  return forAccount(
+    (account) => forgetLink(database(), account.id, which.data).then(() => true),
+    true,
+  )
+}
+
+/** Links the daily sync looks at in one run. */
+const DAILY_LINKS = 200
+
+/**
+ * The daily sync (ADR 003, decision 6), which Vercel starts once a day:
+ * every link that asks for it, the longest unsynced first, step after step
+ * until each is done or the run's time is spent. What is left waits for
+ * the next day, or for "Sync now". Returns the libraries whose version moved.
+ */
+export const syncDaily = async (budgetMs = 240_000) => {
+  const started = Date.now()
+  const inTime = () => Date.now() - started < budgetMs
+  const changed: string[] = []
+  let synced = 0
+  for (const link of await dueLinks(database(), DAILY_LINKS)) {
+    if (!inTime()) break
+    if (!SOURCES[link.source].ready) continue
+    const library = syncFor(link.userId)
+    try {
+      const before = await readVersion(database(), link.userId)
+      let step = await library.step(link.source, { read: true })
+      while (step.remaining > 0 && inTime()) step = await library.step(link.source)
+      if (step.version !== before) changed.push(link.userId)
+      synced += 1
+    } catch (error) {
+      console.error('A daily sync failed', link.source, error)
+    }
+  }
+  return { synced, libraries: changed }
+}
