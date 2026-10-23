@@ -4,6 +4,7 @@ import { setupServer } from 'msw/node'
 
 import { onVercel } from '@/server/env'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
+import { createSteamHandlers } from '@/server/mocks/steam'
 import { loadFixtures } from '@/server/seed/fixtures'
 
 export { MOCK_OWNER } from '@/server/mocks/owner'
@@ -24,11 +25,11 @@ export const startMocks = () => {
   // The sample account takes the made-up password at its first sign-in (`server/auth/auth.ts`).
   process.env.BETTER_AUTH_SECRET = 'test-doubles-only-sign-in-secret-not-a-real-one'
 
-  const server = setupServer(...createHandlers(loadFixtures()))
-  // Everything that is not IGDB or Twitch goes through untouched.
+  const server = setupServer(...createHandlers(loadFixtures()), ...createSteamHandlers())
+  // Everything that is not IGDB, Twitch or Steam goes through untouched.
   server.listen({ onUnhandledFrame: 'bypass' })
   console.warn(
-    'Test doubles are answering for IGDB and Twitch, with a made-up owner (SHELF_MOCKS=1).',
+    'Test doubles are answering for IGDB, Twitch and Steam, with a made-up owner (SHELF_MOCKS=1).',
   )
   return server
 }

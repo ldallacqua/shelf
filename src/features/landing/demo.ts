@@ -91,3 +91,19 @@ export const demoTrophies = (): { stats: TrophyStats; latest: TrophyYear } => {
   if (!latest) throw new Error('Nothing is finished on the example shelf: run pnpm landing:demo')
   return { stats: wall.stats, latest }
 }
+
+/** IGDB's id for PC, where every game from Steam goes. */
+const PC = 6
+
+/**
+ * "Bring your Steam library": these games as a sync from Steam brings them
+ * in, and how many of the example shelf's games are on PC, as if all of them
+ * came from Steam.
+ */
+export const steamSync = (slugs: readonly string[]) => ({
+  games: slugs.flatMap((slug) => {
+    const game = bySlug.get(slug)
+    return game ? [toDemo(game)] : []
+  }),
+  count: demoLibrary.games.filter((game) => game.platforms.includes(PC)).length,
+})

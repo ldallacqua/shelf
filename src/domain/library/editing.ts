@@ -9,6 +9,7 @@ import {
   type Kind,
   type Relation,
   type Status,
+  type SyncSource,
 } from '@/domain/library/values'
 
 /**
@@ -17,7 +18,13 @@ import {
  * versions), and the changes it can send.
  */
 
-export type OwnedCopy = { id: string; platformId: number; format: Format }
+export type OwnedCopy = {
+  id: string
+  platformId: number
+  format: Format
+  /** Hours a sync reports on this copy, by source (ADR 003). */
+  synced?: { source: SyncSource; minutes: number }[]
+}
 
 export type OwnedVersion = {
   gameId: string

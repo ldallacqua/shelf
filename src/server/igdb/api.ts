@@ -1,7 +1,9 @@
 import 'server-only'
 
-import { isGame } from '@/domain/igdb/game'
+import { igdbSourceOf, isGame, type StoreSource } from '@/domain/igdb/game'
 import {
+  igdbExternalGameFields,
+  igdbExternalGameSchema,
   igdbGameFields,
   igdbGameSchema,
   igdbLineageFields,
@@ -15,6 +17,7 @@ import {
   igdbTimeToBeatFields,
   igdbTimeToBeatSchema,
   vocabEndpoints,
+  type IgdbExternalGame,
   type IgdbGame,
   type IgdbLineage,
   type IgdbNamed,
@@ -181,5 +184,35 @@ export const createIgdbApi = (client: IgdbClient) => {
     return batches.flat().map((hits) => hits.filter(isGame))
   }
 
-  return { games, timeToBeat, lineages, named, platforms, search, findByTitles }
+  /**
+   * The games carrying these ids of one store (the ladder's second rung,
+   * ADR 003), 200 ids to a request, so the rows for them fit in one page.
+   * Each id maps to every game IGDB lists for it; usually one.
+   */
+  const byStoreIds = async (
+    store: StoreSource,
+    uids: readonly string[],
+  ): Promise<Map<string, IgdbExternalGame['game'][]>> => {
+    const wanted = [...new Set(uids)].filter((uid) => uid.trim() !== '')
+    const rows = (
+      await Promise.all(
+        chunk(wanted, 200).map((batch) =>
+          client.query(
+            'external_games',
+            `fields ${igdbExternalGameFields.join(',')}; where external_game_source = ${igdbSourceOf(store)} & uid = (${batch.map(quote).join(',')}); limit ${PAGE};`,
+            igdbExternalGameSchema,
+          ),
+        ),
+      )
+    ).flat()
+    const found = new Map<string, IgdbExternalGame['game'][]>()
+    for (const row of rows) {
+      const games = found.get(row.uid) ?? []
+      if (!games.some((game) => game.id === row.game.id)) games.push(row.game)
+      found.set(row.uid, games)
+    }
+    return found
+  }
+
+  return { games, timeToBeat, lineages, named, platforms, search, findByTitles, byStoreIds }
 }

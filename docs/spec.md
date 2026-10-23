@@ -79,7 +79,8 @@ language the browser asks for.
 | `/en/u/{handle}/game/{slug}` | A game's page. Opened from the library, it appears over the shelf; opened directly, it is a full page. |
 | `/en/sign-up` | A shelf of one's own: name, handle, email address, password, public or private |
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
-| `/en/account` | One's name, handle and visibility, password, sessions, and deleting the account |
+| `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
+| `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
 
 The addresses from before accounts (`/en/library`, `/en/game/…`, `/en/shelves/…`,
@@ -105,7 +106,7 @@ Library query string, in full:
 **Header, on every page:** the name; Library and Trophies of the shelf in the address (or,
 elsewhere, one's own); a search field over it; theme switch, language switch. On the right, a
 visitor's Sign in and Create your shelf, or, signed in, a menu: My shelf, Account, Sign out.
-On one's own shelf, an Add button. **Footer:** credit to IGDB.com, and the sign-in link.
+On one's own shelf, an Add button. **Footer:** credit to IGDB.com, Privacy, and the sign-in link.
 
 **Done when**
 
@@ -458,6 +459,48 @@ seconds to about a minute within IGDB's limit of four requests per second.
 | IGDB is down | "Game search is unavailable right now", with Try again. The library itself keeps working, because it reads from our own copy. |
 | Rate limit reached | Requests queue and continue; the bulk progress bar says it is waiting |
 
+### 4.4 From a store or console
+
+On the account page, under **Platforms** ([ADR 003](adr/003-platform-sync.md)). Steam is built;
+PlayStation, Xbox and Nintendo come next, and the page says so.
+
+1. **Link.** "Sign in through Steam" goes to Steam's own sign-in page and back. Shelf never
+   sees the Steam password. Steam has to show the account's game details publicly; the card
+   says where that is set.
+2. **The first sync** starts by itself on the way back. Every game the account owns on Steam,
+   free games it has played among them, is matched to IGDB: by Steam's own id first, then by
+   a strict title match on PC. Matched games go on the shelf at once, twenty at a time, with
+   progress: "Added 120 of 480…".
+   - **A game already on the shelf**, under any version, gains a PC digital copy, or feeds
+     the one it has. Never a second box. Its status, rating, notes, tags and dates are never
+     touched.
+   - **A game new to the shelf** starts in the backlog, or as playing if Steam saw it played
+     in the last two weeks.
+   - **Steam's hours** go on the copy, in Steam's own row. A game shows the larger of the hours
+     I typed and what its sources report together, so nothing is counted twice; the editor
+     shows Steam's hours beside the copy.
+3. **What it could not match** waits under "2 games need you": **Find it** (IGDB searched by
+   the title, which I can change), **Not a game**, **Not mine**. Every answer is kept.
+4. **Afterwards:** **Sync now**, and once a day by itself while **Sync once a day** is on. A
+   game I take off my shelf stays off. A game Steam stops listing stays on the shelf, under
+   "No longer on Steam", for me to decide. **Disconnect** forgets what Steam listed and my
+   answers about it; the games stay, with their hours.
+
+| Problem | Behavior |
+| --- | --- |
+| Steam's game details are private | "Steam isn't showing your games", with where to change it |
+| Steam does not answer | Said on the card; the next sync tries again |
+| A very large library | The rest of the games come with the next step, or the next sync, past 2,000 an hour |
+
+**Done when**
+
+- A first sync puts every matched Steam game on an empty shelf, as a PC digital copy with
+  Steam's hours.
+- A game already on the shelf gains a copy, never a second entry, and keeps its status.
+- A game I removed is not put back by the next sync.
+- Steam's hours never overwrite or add to the hours I typed.
+- The sign-in links nothing for an answer the browser did not ask for, or one used before.
+
 **Done when**
 
 - A game can be found and added using only the keyboard.
@@ -708,7 +751,11 @@ gives each account a library of its own. In short:
 - An entry links to one or more IGDB records. One is **primary** and supplies title, cover and
   metadata. Editions, ports and remasters I fold in are the others.
 - A **copy** is one thing I own: a platform plus physical or digital.
-- **Playtime** is stored per source, so a future sync never overwrites what I typed.
+- **Playtime** is stored per source, so a sync never overwrites what I typed. A game shows the
+  larger of what I typed and what its sources report together.
+- A **source item** is a game a store or console listed, and what was decided about it
+  ([ADR 003](adr/003-platform-sync.md)): the IGDB record it matched, and the copy it feeds, or
+  "not a game", "not mine", "removed".
 - IGDB data for my games is **cached** in our own database. The library never waits on IGDB.
 
 Two additions the brief did not ask for, both small:
@@ -802,6 +849,9 @@ English and Brazilian Portuguese from the first build.
   names a library: it acts on one's own. Hiding a button is never the protection.
 - **IGDB search is for accounts**, each limited per hour, so no one spends the whole site's
   request allowance.
+- **A linked platform is one's own.** Its link, what it listed and the answers about it are
+  read and changed only by its account, and a platform account is linked only through the
+  platform's own sign-in.
 - **Edit controls are absent** for anyone but the shelf's own account, not disabled.
 - Search engines may index public shelves. A private shelf, or an address with no shelf, is
   marked not to be.
@@ -924,11 +974,12 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
 | **2. Ask it anything** | The example shelf and the real filter language. As it comes into view, three filters switch on in turn, "Not started", "Under 10 hours", "On Switch", and the boxes rearrange for each: 61, 26, 6, 3. Then it is the visitor's: a filter on or off, or typed. |
 | **3. One game, every copy** | One game owned three ways, each copy in its platform's case, then the one box the shelf stands, with its count of copies. |
 | **4. Add in seconds** | A search typed letter by letter and the games it finds; a pasted list and the game each line matched. |
-| **5. Shelf, wall or list** | The same games three ways, turning by itself until the visitor picks one; covers travel between the shelf and the wall. |
-| **6. How far you got** | A glimpse of the trophy wall: its stats counting up (finished, this year, hours, the average rating), over the example shelf's latest year of trophies, each under its own light. |
-| **7. Yours to show, or to keep** | Public or private, as sign-up offers them, and that notes stay private unless marked public. |
-| **8. Your AI assistant** | A conversation: asked for something short, not started, on the Switch, it answers from the shelf (section 17). |
-| **9. The close** | An empty lit shelf, "Your shelf is waiting.", the call to action again, and four questions: free, where game data comes from, who can see a shelf, taking the games away. |
+| **5. Bring your Steam library** | Games arriving from Steam one by one, each with its hours, then the count, and "Again tomorrow, by itself". |
+| **6. Shelf, wall or list** | The same games three ways, turning by itself until the visitor picks one; covers travel between the shelf and the wall. |
+| **7. How far you got** | A glimpse of the trophy wall: its stats counting up (finished, this year, hours, the average rating), over the example shelf's latest year of trophies, each under its own light. |
+| **8. Yours to show, or to keep** | Public or private, as sign-up offers them, and that notes stay private unless marked public. |
+| **9. Your AI assistant** | A conversation: asked for something short, not started, on the Switch, it answers from the shelf (section 17). |
+| **10. The close** | An empty lit shelf, "Your shelf is waiting.", the call to action again, and five questions: free, where game data comes from, bringing in games one already owns, who can see a shelf, taking the games away. |
 
 - **Signed in**, the call to action is **Go to your shelf**.
 - **Motion** is the product's own: lights, boxes rearranging, numbers counting. Parts rise into
@@ -941,7 +992,8 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
   the headline and the lit shelf (`pnpm landing:share`).
 - **It follows the product.** Every later step that adds something a visitor would choose
   Shelf for adds its part here, and a step that changes what a part shows changes the part.
-  Step 9's trophy wall, for one, turned part 6 into a glimpse of the wall itself.
+  Step 9's trophy wall, for one, turned part 7 into a glimpse of the wall itself, and the
+  Steam sync added part 5.
 
 **Done when**
 
@@ -994,7 +1046,7 @@ Not built now. The design leaves room for each.
 | --- | --- |
 | Export and import, backups | Stable ids; every table holds plain data; filters are text |
 | Importing from the reference app | Entries link to IGDB ids, which the reference app also stores |
-| Steam, PlayStation, Xbox and Nintendo sync | Copies, per-source playtime, cached store ids ([ADR 001](adr/001-game-entry-model.md)); how each source is matched: [ADR 003](adr/003-platform-sync.md), built after step 7 |
+| PlayStation, Xbox and Nintendo sync | Steam is built ([section 4.4](#44-from-a-store-or-console)). The others plug into the same matcher and memory; how each is read: [ADR 003](adr/003-platform-sync.md) |
 | Installable app, offline use | The library is one loaded data set filtered on the device |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |

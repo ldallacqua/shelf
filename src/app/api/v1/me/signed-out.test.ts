@@ -3,6 +3,13 @@ import { describe, expect, it, vi } from 'vitest'
 import type * as Accounts from '@/server/auth/account'
 
 import { GET as myGame } from './games/[slug]/route'
+import { GET as connect } from './platforms/[source]/connect/route'
+import { POST as answerItem } from './platforms/[source]/items/[id]/route'
+import { GET as listItems } from './platforms/[source]/items/route'
+import { DELETE as unlink, PATCH as setDaily } from './platforms/[source]/route'
+import { GET as backFromSteam } from './platforms/[source]/return/route'
+import { POST as syncStep } from './platforms/[source]/sync/route'
+import { GET as myPlatforms } from './platforms/route'
 import { GET as myKeywords } from './keywords/route'
 import { GET as myLibrary } from './library/route'
 import { GET as me, PATCH as changeMe } from './route'
@@ -27,6 +34,12 @@ vi.mock('@/server/auth/account', async (actual) => {
   }
 })
 
+// Outside a request, as here, Next.js has no request to wait for.
+vi.mock('next/server', async (actual) => ({
+  ...(await actual<object>()),
+  connection: async () => undefined,
+}))
+
 vi.mock('@/server/db/client', () => ({
   database: () => {
     throw new Error('A refused request reached the database')
@@ -35,6 +48,12 @@ vi.mock('@/server/db/client', () => ({
 }))
 
 const asked = (path: string, init?: RequestInit) => new Request(`http://localhost${path}`, init)
+const post = (body: unknown): RequestInit => ({
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+})
+const steamParams = { params: Promise.resolve({ source: 'steam' }) }
 
 const reads: [string, () => Promise<Response>][] = [
   ['its own library', () => myLibrary(asked('/api/v1/me/library'))],
@@ -48,6 +67,34 @@ const reads: [string, () => Promise<Response>][] = [
   ['its keywords', () => myKeywords(asked('/api/v1/me/keywords'))],
   ['its tags', () => myTags(asked('/api/v1/me/tags'))],
   ['its smart shelves', () => myShelves(asked('/api/v1/me/shelves'))],
+  ['its platforms', () => myPlatforms()],
+  [
+    'a sync step',
+    () => syncStep(asked('/api/v1/me/platforms/steam/sync', post({ read: true })), steamParams),
+  ],
+  [
+    'what Steam listed',
+    () => listItems(asked('/api/v1/me/platforms/steam/items?list=needs-you'), steamParams),
+  ],
+  [
+    'an answer about it',
+    () =>
+      answerItem(asked('/api/v1/me/platforms/steam/items/x', post({ kind: 'again' })), {
+        params: Promise.resolve({ source: 'steam', id: 'x' }),
+      }),
+  ],
+  [
+    'the daily sync',
+    () =>
+      setDaily(
+        asked('/api/v1/me/platforms/steam', { ...post({ daily: false }), method: 'PATCH' }),
+        steamParams,
+      ),
+  ],
+  [
+    'unlinking',
+    () => unlink(asked('/api/v1/me/platforms/steam', { method: 'DELETE' }), steamParams),
+  ],
   [
     'a change to the account',
     () =>
@@ -70,6 +117,29 @@ describe('signed out, one’s own library', () => {
       expect(await response.json()).toMatchObject({ error: { code: 'not-signed-in' } })
     })
   }
+
+  it('sends someone signed out to sign in before Steam, not to Steam', async () => {
+    const response = await connect(
+      asked('/api/v1/me/platforms/steam/connect?locale=pt-BR'),
+      steamParams,
+    )
+    expect(response.status).toBe(303)
+    expect(response.headers.get('Location')).toBe(
+      'http://localhost/pt-BR/sign-in?from=%2Fpt-BR%2Faccount',
+    )
+    expect(response.headers.get('Set-Cookie')).toBeNull()
+  })
+
+  it('links nothing for an answer from Steam that this browser did not ask for', async () => {
+    const response = await backFromSteam(
+      asked('/api/v1/me/platforms/steam/return?state=made-up&locale=en'),
+      steamParams,
+    )
+    expect(response.status).toBe(303)
+    expect(response.headers.get('Location')).toBe(
+      'http://localhost/en/account?steam=failed#platforms',
+    )
+  })
 
   it('says who is asking: nobody, and only to this browser', async () => {
     const response = await me(asked('/api/v1/me'))

@@ -1,10 +1,11 @@
 import { useTranslations } from 'next-intl'
 
 import { AccountLink } from '@/features/owner/account-link'
+import { Link } from '@/i18n/navigation'
 
 /**
  * The footer on every page: the credit IGDB's terms ask for wherever its
- * data is shown, and the way to sign in.
+ * data is shown, what Shelf keeps, and the way to sign in.
  */
 export function Footer() {
   const t = useTranslations('Shell')
@@ -25,7 +26,15 @@ export function Footer() {
             ),
           })}
         </p>
-        <AccountLink />
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+          <Link
+            href="/privacy"
+            className="rounded-[2px] underline decoration-1 underline-offset-4 hover:text-text hover:decoration-2"
+          >
+            {t('privacy')}
+          </Link>
+          <AccountLink />
+        </div>
       </div>
     </footer>
   )

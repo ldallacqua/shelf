@@ -25,7 +25,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
    [`design/assets/PROMPTS.md`](design/assets/PROMPTS.md).
 4. **It must read as games, not books.** Covers face out. No serif type. See
    [ADR 002](docs/adr/002-visual-direction.md) for what went wrong the first time.
-5. **Tests never talk to the real IGDB.** They use fixtures.
+5. **Tests never talk to the real IGDB, or to Steam.** They use fixtures.
 6. **No bot commits.** Vercel's free plan only deploys commits authored by the owner's
    account.
 
@@ -212,6 +212,19 @@ privacy work) changes that part too, and a feature that is taken away leaves the
 example shelf is `pnpm landing:demo`; a part that needs a game it lacks adds the game there.
 What a link to Shelf shows is a picture of the hero (`public/share/`): after changing the
 hero, run `pnpm landing:share` against `pnpm serve:test` and look at both pictures.
+
+**Syncing.** A store or console fills a shelf through one matcher and one memory
+([ADR 003](docs/adr/003-platform-sync.md)). What a source can tell (owned, played, or nothing)
+is `src/domain/sync/sources.ts`; how to ask it is its adapter in `src/server/sync/` (Steam's
+is `steam.ts`, the only code that knows Steam's addresses); the ladder, the steps and the
+answers are `src/server/services/sync.ts`, the same for every source. What a source listed and
+what was decided about it are `source_items`, the sync's own rows, written by
+`server/sync/memory.ts`; a game onto the shelf, or hours onto a copy, go through the store
+(`addFromSource`, `feedCopies`) like every other write. A sync never changes what I set, never
+deletes, and never puts back a game I took off (`removed`). A platform account is linked only
+through the platform's own sign-in. Tests never talk to Steam: `fixtures/steam/` and the
+double in `server/mocks/steam.ts` answer, and with the test doubles on, "Sign in through
+Steam" comes straight back with the made-up account.
 
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used

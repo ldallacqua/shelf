@@ -7,7 +7,7 @@ import { Ledge, ShelfLabel } from '@/ui/ledge'
 
 import { CreateShelf } from './create-shelf'
 
-const QUESTIONS = ['free', 'data', 'who', 'export'] as const
+const QUESTIONS = ['free', 'data', 'sync', 'who', 'export'] as const
 
 /**
  * The end of the page: an empty, lit shelf waiting for its first game, the

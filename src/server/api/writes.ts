@@ -20,7 +20,7 @@ import {
   type MatchAnswer,
 } from '@/domain/library/bulk'
 import { MAX_NOTES, type OwnerGame } from '@/domain/library/editing'
-import { formats, kinds, relations, statuses } from '@/domain/library/values'
+import { formats, kinds, relations, statuses, syncSources } from '@/domain/library/values'
 import { failure } from '@/server/api/respond'
 import type { Done } from '@/server/services/for-account'
 import { libraryTag } from '@/server/services/library'
@@ -216,6 +216,10 @@ export const apiOwnerGame = z
         id: z.string().describe('For PATCH and DELETE /entries/{id}/copies/{copy}'),
         platform: platformId,
         format: z.enum(formats),
+        synced: z
+          .array(z.object({ source: z.enum(syncSources), hours: z.number().min(0) }))
+          .optional()
+          .describe('Hours a sync reports on this copy, by source'),
       }),
     ),
     tags: z.array(z.string()),
@@ -316,7 +320,14 @@ export const toApiOwnerGame = ({
   ...rest,
   ...(rating === undefined ? {} : { rating: rating / 10 }),
   hoursPlayed: minutes / 60,
-  copies: copies.map(({ id, platformId, format }) => ({ id, platform: platformId, format })),
+  copies: copies.map(({ id, platformId, format, synced }) => ({
+    id,
+    platform: platformId,
+    format,
+    ...(synced
+      ? { synced: synced.map(({ source, minutes }) => ({ source, hours: minutes / 60 })) }
+      : {}),
+  })),
 })
 
 const STATUS: Record<Refusal['reason'], number> = {

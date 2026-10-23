@@ -293,6 +293,24 @@ again on its next visit. Ratings are out of ten and time is in hours, as the rea
 | `POST /entries/{id}/copies`, `PATCH` and `DELETE /entries/{id}/copies/{copy}` | A copy: add one (`{ "platform", "format" }`), switch it between physical and digital, remove it |
 | `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Saves or removes a smart shelf |
 
+**Syncing from a store or console** ([ADR 003](adr/003-platform-sync.md)), on one's own shelf,
+uncached. `{source}` is `steam`; PlayStation, Xbox and Nintendo come later and answer
+`invalid` until then.
+
+| Method and path | Does |
+| --- | --- |
+| `GET /me/platforms` | Every source, whether it is built, and one's link to each: the account there, when it was synced, what went wrong (`private`, `unreachable`, `unset`), and how many of its games are on the shelf, need an answer, were left out, or are no longer listed |
+| `GET /me/platforms/{source}/connect?locale=` | Off to the source's own sign-in, which comes back to `…/return` and then the account page. A browser link, not a call: Steam's page must be seen. |
+| `POST /me/platforms/{source}/sync` | One step: `{ "read": true }` asks the source for its list first. At most twenty games go on the shelf a step; ask again while `remaining` is above 0. Answers the link, `added` and the library's `version`. |
+| `GET /me/platforms/{source}/items?list=` | The games it listed that need an answer (`needs-you`), were left out (`hidden`) or are no longer listed (`not-seen`), with their hours there |
+| `POST /me/platforms/{source}/items/{id}` | An answer, carried out at once: `{ "kind": "pick", "igdbId" }` puts that game on the shelf; `{ "kind": "dismiss", "as": "not_a_game" }` or `"not_mine"`; `{ "kind": "again" }` undoes either, and puts back a game taken off the shelf |
+| `PATCH /me/platforms/{source}` | `{ "daily": false }`: no sync once a day |
+| `DELETE /me/platforms/{source}` | Disconnects: forgets what it listed and the answers. Its games stay on the shelf, with their hours. |
+
+`GET /entries/{id}` gives each copy the hours a sync reports on it, by source (`synced`). A
+game's `hoursPlayed` in the library is the larger of what was typed and what its sources
+report together.
+
 `{id}` is a game's address (its slug) or its entry id. A refusal is an error as above:
 `not-signed-in` (401), `invalid` (400), `not-found` (404), `conflict` (409), `too-many` (429,
 past an account's hourly share of IGDB: 600 searches, 100 matched lists, 300 games added),

@@ -1,7 +1,7 @@
 'use client'
 
 import type { EditActions, EditPatch, OwnerGame } from '@/domain/library/editing'
-import type { Format } from '@/domain/library/values'
+import type { Format, SyncSource } from '@/domain/library/values'
 import { callApi as call } from '@/features/owner/call-api'
 
 /**
@@ -23,14 +23,31 @@ const toApi = ({ rating, minutes, ...rest }: EditPatch) => ({
 type ApiOwnerGame = Omit<OwnerGame, 'rating' | 'minutes' | 'copies'> & {
   rating?: number
   hoursPlayed: number
-  copies: { id: string; platform: number; format: Format }[]
+  copies: {
+    id: string
+    platform: number
+    format: Format
+    synced?: { source: SyncSource; hours: number }[]
+  }[]
 }
 
 const fromApi = ({ rating, hoursPlayed, copies, ...rest }: ApiOwnerGame): OwnerGame => ({
   ...rest,
   ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
   minutes: Math.round(hoursPlayed * 60),
-  copies: copies.map(({ id, platform, format }) => ({ id, platformId: platform, format })),
+  copies: copies.map(({ id, platform, format, synced }) => ({
+    id,
+    platformId: platform,
+    format,
+    ...(synced
+      ? {
+          synced: synced.map(({ source, hours }) => ({
+            source,
+            minutes: Math.round(hours * 60),
+          })),
+        }
+      : {}),
+  })),
 })
 
 const entry = (entryId: string) => `/api/v1/entries/${encodeURIComponent(entryId)}`

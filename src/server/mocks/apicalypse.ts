@@ -5,7 +5,7 @@
  * works against the double cannot slip through.
  */
 
-type Value = number | string | null | number[]
+type Value = number | string | null | number[] | string[]
 
 export type Condition = {
   field: string
@@ -39,6 +39,14 @@ const parseValue = (raw: string): Value => {
   if (text === 'null') return null
   const quoted = unquote(text)
   if (quoted !== undefined) return quoted
+  // A list of store ids: `("750920","1091500")`.
+  if (/^\(\s*".*"\s*\)$/s.test(text)) {
+    return split(text.slice(1, -1), ',').map((part) => {
+      const item = unquote(part)
+      if (item === undefined) throw new QueryError(`Cannot read the value ${text}`)
+      return item
+    })
+  }
   const list = /^\(([\d\s,]*)\)$/.exec(text)
   if (list) {
     return (list[1] ?? '')
@@ -140,9 +148,10 @@ const matches = (row: Row, condition: Condition): boolean => {
   if (value === null) return op === '=' ? missing : !missing
   if (missing) return false
   if (Array.isArray(value)) {
+    const wanted = new Set<unknown>(value)
     const found = Array.isArray(actual)
-      ? actual.some((item) => value.includes(item as number))
-      : value.includes(actual as number)
+      ? actual.some((item) => wanted.has(item))
+      : wanted.has(typeof value[0] === 'string' ? String(actual) : actual)
     return op === '!=' ? !found : found
   }
   if (typeof value === 'string') {

@@ -337,7 +337,9 @@ log, and anything that saves my own data refuses to run on it
 | `users`, `sessions`, `accounts`, `verifications` | Better Auth's own. `users` adds `username` (the handle) and `shelf_public`. |
 | `oauth_*` (seven tables), `jwks` | Better Auth's, for assistants signing in to an account's MCP endpoint: clients, resources, tokens, consents; and the keys tokens are signed with |
 | `removed_entries` | A removed game, whole, for a day, so Undo can put it back exactly |
-| `rate_limits` | Sign-in and sign-up tries, and each account's hourly IGDB use |
+| `rate_limits` | Sign-in and sign-up tries, and each account's hourly IGDB use and syncing |
+| `platform_links` | An account's link to a store or console it syncs from ([ADR 003](adr/003-platform-sync.md)): its id and name there, daily or not, when it was read and synced, and what went wrong |
+| `source_items` | Each game a source listed to an account: as the source gave it, the IGDB record it matched and how, what was decided (`pending`, `copy`, `not_mine`, `not_a_game`, `removed`), and the copy it feeds |
 
 **Indexes** go on what is looked up one row at a time: `games.igdb_id`, `games.slug`,
 `entry_versions.game_id`, `copies.entry_id`. The library itself is always read whole.
@@ -439,6 +441,7 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 | Visitors | Carry no cookie, so they cost no session lookups |
 | Edit controls | Rendered only after the browser confirms a session, and only on the account's own shelf. A second, harmless cookie (`shelf_signed_in`) tells the page whether it is worth asking; visitors never trigger the question. |
 | Private notes | Never in a cached page or the library file. Fetched by a separate request that requires the session: `GET /api/v1/entries/{id}`, which the editor reads, uncached and private. |
+| Platforms | Linked through the platform's own sign-in: for Steam, "Sign in through Steam" (OpenID 2.0), which vouches for the account's SteamID64. The round trip is tied to the browser by a random value in a cookie (`shelf_link_state`, ten minutes, its own path) and to the account by the session; Steam is asked to confirm each answer, and confirms each once (`server/sync/connect.ts`). |
 | Private shelves | Never drawn, cached or filed on the server. Their pages are frames; their own account's browser fills them from `/api/v1/me/library`, `/api/v1/me/games/{slug}`, `/keywords`, `/tags` and `/shelves`, each `private, no-store`. |
 | Preview deployments | Sign up and in as production does, once they have a database of their own; until then nothing to sign in to. |
 | Local work | `BETTER_AUTH_SECRET` in `.env.local`, with any value |
@@ -702,6 +705,10 @@ generated from them, so it cannot drift from the code.
 | `POST /removed/{undo}` | Signed in | Put a removed game back, within a day |
 | `POST /additions`, `POST /additions/undo` | Signed in | Add many games at once, up to fifty; take them back |
 | `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Signed in | Save or remove a smart shelf |
+| `GET /me/platforms`, `PATCH` and `DELETE /me/platforms/{source}` | Signed in | Every source and one's link to each; daily sync on or off; disconnect |
+| `GET /me/platforms/{source}/connect`, `GET …/return` | Signed in | Off to the source's own sign-in, and back from it |
+| `POST /me/platforms/{source}/sync` | Signed in | One step of a sync, reading the source first when asked |
+| `GET /me/platforms/{source}/items?list`, `POST …/items/{id}` | Signed in | The games it listed that need an answer, were left out or are no longer listed; an answer |
 
 Every write acts on the session's own library; none names one ([ADR 004](adr/004-one-library-per-account.md)).
 
@@ -850,6 +857,7 @@ list reacting to filter changes.
 | Secrets | In `.env.local` here and in Vercel's settings in production. Never in git, logs, summaries or chat. `.env.example` holds names only. |
 | Server-only code | `server-only` turns an accidental import into the browser bundle into a build error |
 | Input | Zod at every boundary: address parameters, forms, API bodies, MCP arguments, IGDB responses, environment variables at startup |
+| Linking a platform | Only through the platform's own sign-in, tied to the browser and the session ([section 9](#9-sign-in-and-access)). An answer the browser did not ask for, for another return address, or used before links nothing (`server/sync/connect.test.ts`). Steam's key is the server's and is sent only to Steam, in the address Steam asks for, which is never logged. |
 | Writes | `requireAccount()` in every service function, which then works on that account's library only ([section 9](#9-sign-in-and-access)). A test walks every write route and action without a session and expects a refusal; the store's tests ask with another library's ids and expect "not found". |
 | Cross-site requests | Server actions check the request's origin (built into Next.js). Session cookies are SameSite=Lax. API writes need the session or an OAuth token. |
 | Database | Drizzle's query builder throughout; no SQL assembled from input |
@@ -887,7 +895,8 @@ of them, and leave Next.js's own inline scripts, 18 on the library page, needing
 | `TURSO_DATABASE_URL` | Database | Vercel: before step 7. Previews work without it. |
 | `TURSO_AUTH_TOKEN` | Database | Same |
 | `BETTER_AUTH_SECRET` | Signing sessions | Step 7 |
-| `CRON_SECRET` | The daily refresh job | Step 9 |
+| `CRON_SECRET` | The daily refresh and the daily sync | Step 9 |
+| `STEAM_API_KEY` | Reading the games of an account linked through Steam | Steam sync |
 
 The site's own address comes from Vercel's built-in `VERCEL_PROJECT_PRODUCTION_URL`, so there
 is nothing to set for it, and sign-in uses the same value. Assistants need no setting either:
@@ -916,6 +925,7 @@ IGDB yet.
 | **7** Sign-in and adding | Better Auth, owner guard, add and bulk add, edit, write API, both MCP endpoints | An email address and password; five settings |
 | **8** Landing page ⏸ | Landing page, scroll scenes, generated art, OG image, `llms.txt`, sitemap | Nothing |
 | **9** Passes | The trophy wall; phone and tablet polish, accessibility audit, speed work, the daily refresh, security headers | One setting |
+| **Sync** | Platform sync ([ADR 003](adr/003-platform-sync.md)): Steam, then Nintendo, then PlayStation and Xbox; the privacy page | A Steam Web API key |
 | **10** Review | Walkthrough with screenshots and video, known gaps | Nothing |
 
 Two notes on order:
@@ -1017,6 +1027,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Sync | **Steam sync** ([ADR 003](adr/003-platform-sync.md), "Built: Steam"): Steam's own sign-in links an account; one step puts at most twenty games on the shelf; a game shows the larger of typed and synced hours; a removed game stays removed; a second daily job syncs; `/privacy`. `play_time`'s check accepts every source, so the table was rebuilt once by its migration. | The owner asked for sync after step 9, Steam then Nintendo, with every source in mind. Accounts came after ADR 003, so a link is an account's. A function has minutes, a Steam library can be a thousand games. Typed and synced hours summed would count a game twice. Steam's terms ask for a privacy policy. |
 | Step 9 | **A library's page names the covers it opens with in its `<head>`** (`opening-covers.ts`), from the part built ahead, for the library's own address. **Martian Mono's stand-in is a system monospace at its width**, not next/font's scaled Arial (`ui/fonts/README.md`). | The covers came only after the page's React payload, 200 KB into the page: the largest paint waited 0.74 s for its request to begin. Named in the head, the library's largest paint at 8 times slower came at 1.98 s, from 2.46, and the wall's at 1.89, from 2.21. The part built ahead cannot see the address, so a filtered or sorted address fetches these six for nothing. Asked for first, the covers made the fonts arrive after the first paint, and scaled Arial drew the stats line's labels half as wide again: it broke onto two lines and moved the shelf, a layout shift of 0.18. At the same width, it breaks where Martian Mono will. |
 | Step 9 | **The stylesheet is written into each page** (`experimental.inlineCss`), and partial prefetching stays on. | On a phone's speed, Chrome holds a page's scripts back until a linked stylesheet in its head has arrived: every library script started at 1.9 s, and React's own finished at 4.0. Measured alternating with the linked file, at 8 times slower: the landing page paints in 1.36 s in place of 1.86 and scores 91 in place of 81; the library paints in 1.20 in place of 2.16, its largest paint in 2.60 in place of 2.90. Next.js also writes the styles into the page's React payload, so the library's HTML is 48.5 KB with Brotli in place of 31.5; payloads for moving between pages carry none. Turning partial prefetching off, to save the library's second copy of its payload, made every page slower: the links in view were fetched in full as the page started. |
 | Step 9 | **The 3D stage is never taller than 3:2** (`shelf-3d.css`); it still fills the window below the controls where the window is wide. | The camera stands back far enough to see a bay and a bit across, so in a stage as tall as it is wide (a tablet held upright, 720 by 784) the wall filled 60% of its height and sat in empty wall, with its lowest ledge below the window. At 3:2 the wall fills the stage, 720 by 480, and the whole of it is in the window. |

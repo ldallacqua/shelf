@@ -21,6 +21,8 @@ export const routing = defineRouting({
     '/sign-up': '/sign-up',
     '/account': '/account',
     '/consent': '/consent',
+    // What Shelf keeps, and how to remove it: Steam's terms ask for one (ADR 003).
+    '/privacy': '/privacy',
     // The design foundations, for reference: not linked, not indexed.
     '/foundations': '/foundations',
   },

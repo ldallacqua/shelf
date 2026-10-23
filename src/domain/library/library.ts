@@ -25,7 +25,7 @@ export type LibraryGame = {
   rating?: number
   addedOn: Day
   completedOn?: Day
-  /** Total minutes played, across every source. */
+  /** Minutes played: the larger of what I typed and what every source reports together. */
   minutes: number
   releasedOn?: Day
   year?: number

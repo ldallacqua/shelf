@@ -1,10 +1,39 @@
-# Handoff: 22 October 2026
+# Handoff: 23 October 2026
 
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: step 9, the trophy wall and the passes
+## Now: platform sync, Steam first
+
+- **The owner asked for sync after step 9** (23 Oct 2026): "start with steam. deploy, then
+  let's do nintendo", built so that every platform fits, Steam and Nintendo first "since they
+  are the platforms I use". Step 10, the final review, waits until sync is done.
+- **Steam is built** ([ADR 003](adr/003-platform-sync.md), "Built: Steam"; spec 4.4): linked on
+  the account page through Steam's own sign-in, a first sync that puts every matched game on
+  the shelf as a PC digital copy with Steam's hours, a list of what needs an answer, Sync now
+  and a daily job (`/api/cron/sync`, 07:00 UTC), a privacy page Steam's terms ask for, and the
+  landing page's part 5 and a question in its FAQ.
+- **It needs `STEAM_API_KEY` in Vercel** ([setup E](setup.md#e-steam-sync)), from the owner.
+  Without it, production offers Steam and says it is not set up. The daily sync needs
+  `CRON_SECRET` too, still to be set ([setup D](setup.md#d-daily-refresh)).
+- **Linking on production is the owner's to try**, with their own Steam account: an assistant
+  never signs in to Steam. Locally, with the test doubles on, "Sign in through Steam" comes
+  straight back with a made-up account (`MOCK_STEAM`), whose games are
+  `fixtures/steam/owned-games.json`.
+- **Valve asks for its own "Sign in through Steam" button image** where its sign-in is used.
+  The button is drawn by `src/ui` for now, in words, until the owner says the image may be
+  downloaded into `public/`.
+- **Nintendo is next.** ADR 003 found no way to read a Nintendo library (14 Oct 2026) and
+  planned an import of pasted titles, every match confirmed. Look again at what exists now
+  before planning it: the platform's own apps have grown play history since.
+- **Checked:** `pnpm verify --skip-browser` (see the pull request); the whole flow by hand in
+  a production build with the test doubles (link, first sync of 27 listed games: 25 on the
+  shelf, 2 to answer; Find it, Not a game, the editor's Steam hours), screenshots in both
+  themes, both languages and a phone. The browser pane in the app pauses animation frames
+  and scroll-driven reveals while hidden: pictures were taken with Chromium from a script.
+
+## Step 9, the trophy wall and the passes
 
 - **Step 8 is merged and deployed** ([#19](https://github.com/ldallacqua/shelf/pull/19),
   22 Oct 2026, the owner's approval: "looks good, go ahead"). Then the owner asked for step 9.
@@ -35,8 +64,8 @@ step 3. This note is what the next session needs and cannot get from the code. R
   stylesheet into each page (2,571 tests). Since then the cover preloads, the font stand-in
   and the workers setting (`playwright.config.ts`: half the threads, the tests that write
   three at a time, untried) have not met the browser tests.
-- **Platform sync ([ADR 003](adr/003-platform-sync.md)) is still to be built.** The ADR
-  proposed it as its own step after step 7; the owner chose step 9 next.
+- **Platform sync ([ADR 003](adr/003-platform-sync.md))** came after step 9, at the owner's
+  asking: see the top of this note.
 - **The seed's finish days changed at step 9** (architecture, section 25): run `pnpm seed`
   again after pulling, or the browser tests serve the old days.
 

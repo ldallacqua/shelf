@@ -134,6 +134,10 @@ const STORE_BY_SOURCE: Record<number, StoreSource> = {
   36: 'playstation',
 }
 
+/** IGDB's number for one of our stores, for asking it which game carries a store's id. */
+export const igdbSourceOf = (store: StoreSource): number =>
+  Number(Object.entries(STORE_BY_SOURCE).find(([, name]) => name === store)![0])
+
 // IGDB's `game_release_formats`.
 const FORMAT_BY_CODE: Record<number, Format> = { 1: 'digital', 2: 'physical' }
 

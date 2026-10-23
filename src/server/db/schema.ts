@@ -25,13 +25,25 @@ import {
   playTimeSources,
   relations,
   statuses,
+  syncSources,
   type Day,
   type Format,
   type Kind,
   type PlayTimeSource,
   type Relation,
   type Status,
+  type SyncSource,
 } from '@/domain/library/values'
+import {
+  decisions,
+  itemFormats,
+  resolutions,
+  type Decision,
+  type ItemFormat,
+  type Resolution,
+} from '@/domain/sync/items'
+import { linkProblems, type LinkProblem } from '@/domain/sync/link'
+import { evidences, type Evidence } from '@/domain/sync/sources'
 import {
   caseShapes,
   families,
@@ -347,6 +359,98 @@ export const libraries = sqliteTable('libraries', {
   key: text().notNull().unique(),
   createdAt: integer().notNull(),
 })
+
+/**
+ * An account's link to a store or console it syncs from (ADR 003): its
+ * account there, and how the last sync went. One per source.
+ */
+export const platformLinks = sqliteTable(
+  'platform_links',
+  {
+    userId: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    source: text().$type<SyncSource>().notNull(),
+    /** Its account's id there: for Steam, the SteamID64 that Steam's sign-in vouched for. Not a secret. */
+    externalId: text().notNull(),
+    /** Its name there, as last read, for the page. */
+    name: text(),
+    /** Synced again once a day, with the daily refresh. */
+    daily: integer({ mode: 'boolean' }).notNull().default(true),
+    linkedAt: integer().notNull(),
+    /** When the source last answered with its list. */
+    readAt: integer(),
+    /** When a sync last left nothing to add. */
+    syncedAt: integer(),
+    /** Why the last read failed, in words the page has a sentence for. Null when it worked. */
+    problem: text().$type<LinkProblem>(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.source] }),
+    index('platform_links_synced').on(table.syncedAt),
+    check('platform_links_source', sql`${table.source} in (${oneOf(syncSources)})`),
+    check(
+      'platform_links_problem',
+      sql`${table.problem} is null or ${table.problem} in (${oneOf(linkProblems)})`,
+    ),
+  ],
+)
+
+/**
+ * The sync's memory (ADR 003, decision 3): each game a source reported to
+ * an account, the IGDB record it was matched to, and what was decided
+ * about it. An item can be decided before it has a copy, or decided as "not
+ * a game" and never have one.
+ */
+export const sourceItems = sqliteTable(
+  'source_items',
+  {
+    id: text().primaryKey(),
+    userId: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    source: text().$type<SyncSource>().notNull(),
+    /** The source's own id: a Steam app id. */
+    storeId: text().notNull(),
+    /** As the source gave them. */
+    title: text().notNull(),
+    platformId: integer(),
+    year: integer(),
+    evidence: text().$type<Evidence>().notNull(),
+    minutes: integer().notNull().default(0),
+    lastPlayedAt: integer(),
+    firstSeenAt: integer().notNull(),
+    /** When the source last listed it. Older than the link's last read: no longer listed. */
+    lastSeenAt: integer().notNull(),
+    /** The IGDB record it was matched to. Its `games` row exists once it is on the shelf. */
+    igdbId: integer(),
+    resolvedBy: text().$type<Resolution>(),
+    /** When the title rung last found nothing for it, so a daily sync does not ask IGDB again every day. */
+    titleTriedAt: integer(),
+    decision: text().$type<Decision>().notNull().default('pending'),
+    /** A played game's answer: how I own it. */
+    format: text().$type<ItemFormat>(),
+    /** The copy it feeds. Cleared, with the decision `removed`, when I take that copy off my shelf. */
+    copyId: text().references(() => copies.id, { onDelete: 'set null' }),
+    decidedAt: integer(),
+  },
+  (table) => [
+    uniqueIndex('source_items_user_store').on(table.userId, table.source, table.storeId),
+    index('source_items_copy').on(table.copyId),
+    check('source_items_source', sql`${table.source} in (${oneOf(syncSources)})`),
+    check('source_items_evidence', sql`${table.evidence} in (${oneOf(evidences)})`),
+    check('source_items_decision', sql`${table.decision} in (${oneOf(decisions)})`),
+    check(
+      'source_items_resolved_by',
+      sql`${table.resolvedBy} is null or ${table.resolvedBy} in (${oneOf(resolutions)})`,
+    ),
+    check(
+      'source_items_format',
+      sql`${table.format} is null or ${table.format} in (${oneOf(itemFormats)})`,
+    ),
+    check('source_items_minutes', sql`${table.minutes} >= 0`),
+  ],
+)
 
 /**
  * Before accounts: the one library's counter. Read once, by the step that

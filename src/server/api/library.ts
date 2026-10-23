@@ -58,7 +58,11 @@ export const apiGame = z
     year: z.int().nullable(),
     releasedOn: z.string().nullable().describe('YYYY-MM-DD'),
     igdbRating: z.int().nullable().describe('IGDB’s, out of 100'),
-    hoursPlayed: z.number().describe('Hours played, to one decimal'),
+    hoursPlayed: z
+      .number()
+      .describe(
+        'Hours played, to one decimal: the larger of what was typed and what its sources report',
+      ),
     timeToBeat: z.number().nullable().describe('Hours for a normal playthrough, from IGDB'),
     addedOn: z.string().describe('YYYY-MM-DD'),
     completedOn: z.string().nullable(),

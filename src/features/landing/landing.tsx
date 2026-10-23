@@ -4,7 +4,7 @@ import { AddDemo } from './add-demo'
 import { AskDemo } from './ask-demo'
 import { Assistant } from './assistant'
 import { Closing } from './closing'
-import { askGames, askMatches, demoGames, demoTrophies, everyCopy } from './demo'
+import { askGames, askMatches, demoGames, demoTrophies, everyCopy, steamSync } from './demo'
 import type { DemoGame } from './demo-case'
 import { EveryCopy } from './every-copy'
 import { FinishedWall } from './finished-wall'
@@ -12,6 +12,7 @@ import { Hero } from './hero'
 import { Privacy } from './privacy'
 import { Reveals } from './reveals'
 import { Section } from './section'
+import { SyncDemo } from './sync-demo'
 import { ViewsDemo } from './views-demo'
 
 import './landing.css'
@@ -29,6 +30,9 @@ const PASTED = [
   ['Inside', 'inside'],
 ] as const
 
+/** The games "Bring your Steam library" shows coming in, by slug: PC games with hours. */
+const FROM_STEAM = ['hollow-knight', 'stardew-valley', 'hades--1', 'elden-ring', 'half-life-2']
+
 const pick = (games: readonly DemoGame[], slugs: readonly string[]): DemoGame[] =>
   slugs.flatMap((slug) => games.find((game) => game.slug === slug) ?? [])
 
@@ -43,6 +47,7 @@ export function Landing() {
   const games = demoGames()
   const matches = askMatches()
   const trophies = demoTrophies()
+  const steam = steamSync(FROM_STEAM)
 
   const hero = Array.from({ length: HERO_GAMES }, (_, index) => games[(index * 17) % games.length])
   const typed = games.filter((game) => game.title.toLowerCase().includes(TYPED)).slice(0, 3)
@@ -77,8 +82,16 @@ export function Landing() {
         <AddDemo query={TYPED} found={typed} pasted={pasted} />
       </Section>
       <Section
-        id="views"
+        id="sync"
         flip
+        eyebrow={t('sync.eyebrow')}
+        title={t('sync.title')}
+        body={t('sync.body')}
+      >
+        <SyncDemo games={steam.games} count={steam.count} />
+      </Section>
+      <Section
+        id="views"
         eyebrow={t('views.eyebrow')}
         title={t('views.title')}
         body={t('views.body')}
@@ -87,6 +100,7 @@ export function Landing() {
       </Section>
       <Section
         id="finished"
+        flip
         eyebrow={t('finished.eyebrow')}
         title={t('finished.title')}
         body={t('finished.body')}
@@ -95,7 +109,6 @@ export function Landing() {
       </Section>
       <Section
         id="privacy"
-        flip
         eyebrow={t('privacy.eyebrow')}
         title={t('privacy.title')}
         body={t('privacy.body')}
@@ -104,6 +117,7 @@ export function Landing() {
       </Section>
       <Section
         id="assistant"
+        flip
         eyebrow={t('assistant.eyebrow')}
         title={t('assistant.title')}
         body={t('assistant.body')}

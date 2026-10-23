@@ -199,3 +199,48 @@ the proposed answers:
    registered for Shelf (no third party, more to set up) and OpenXBL (a key and done, but a
    third party sees the token and its free tier is limited). The leaning is the first.
 3. **Subscriptions on the shelf:** shown, marked, not counted as owned.
+
+## Built: Steam (23 Oct 2026)
+
+The owner asked for sync after step 9, Steam first and Nintendo next ("the most important ones
+are Steam and Nintendo since they are the platforms I use"), with the architecture ready for
+all four. Accounts had come since this record ([ADR 004](004-one-library-per-account.md)), so
+a link and its memory are an account's, like everything else that is someone's. What
+building settled:
+
+- **One account links its own Steam account, through Steam's own sign-in** (OpenID 2.0, the
+  "Sign in through Steam" Valve offers). Steam vouches for the SteamID64; Shelf never sees a
+  Steam password, and nobody can link someone else's Steam to their shelf by typing a profile
+  address. The round trip is tied to the browser that started it by a random value in a
+  cookie, and to the account by its session; Steam answers each sign-in's check once.
+- **Shelf has one Steam Web API key** (`STEAM_API_KEY`, the owner's to paste), which reads the
+  owned games of whichever account signed in. No per-account secret exists for Steam.
+- **The memory is two tables:** `platform_links` (an account's link per source: its id and
+  name there, daily or not, when it was read and synced, and what went wrong) and
+  `source_items` (decision 3, with the account's id, and the IGDB id it matched rather than a
+  `games` row, which exists only once the game is on the shelf).
+- **A fifth decision, `removed`.** Taking a synced copy off the shelf marks its items removed,
+  so the next sync does not put the game back. Undo of the removal puts them back to feeding
+  the copy. Disconnecting forgets the link and the items; the games stay, with their hours.
+- **Rung 2 picks among several records** carrying one store id: the game over an edition of
+  it, a game over a bundle; anything still undecided goes to rung 3, then to me.
+- **Rung 3 asks the title as written, then stripped** of marks, edition words ("Game of the
+  Year Edition", "Director's Cut", "Deluxe Edition" but not "Deluxe" alone) and platform
+  suffixes, and answers only for exactly one candidate on the source's platforms. A title it
+  could not match is asked about again after a week, as IGDB grows.
+- **A game new to the shelf starts in the backlog**, or as playing if the source saw it played
+  in the last 14 days, Steam's own window. Nothing a sync does changes a status afterwards.
+- **Hours:** a source's minutes are a `play_time` row of that source on the copy, summed over
+  the items feeding it. A game shows the larger of what I typed and what its sources report
+  together, never the sum, so a figure typed before linking is not counted twice.
+- **Steps.** A sync is steps of at most twenty games put on the shelf, each one request, so a
+  large library never outlasts a function; the page asks for steps until none is left. A
+  second daily job (`/api/cron/sync`) runs every link that asks for it, longest unsynced
+  first, within four minutes. Asked twice inside a minute, Steam is read once. Each account
+  may put 2,000 games an hour on its shelf by syncing, and read its source 60 times.
+- **Steam's terms** ask a site that keeps Steam data to say what it keeps: the privacy page
+  (`/privacy`) says it, and is linked from the footer and from the Steam card.
+- **Everything that differs per source** is in `domain/sync/sources.ts` (what it can tell)
+  and its adapter in `server/sync/` (how to ask it). PlayStation, Xbox and Nintendo are listed
+  there already, not ready; the database's checks accept all four, so adding one needs no
+  migration of those tables.
