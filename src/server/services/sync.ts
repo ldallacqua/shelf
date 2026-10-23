@@ -7,7 +7,13 @@ import { foldSearchHits } from '@/domain/igdb/search'
 import type { Refusal } from '@/domain/library/adding'
 import { proposeGrouping } from '@/domain/library/family'
 import type { SyncSource } from '@/domain/library/values'
-import { firstStatus, isOwnedFormat, stateOf, type Reported } from '@/domain/sync/items'
+import {
+  firstStatus,
+  isOwnedFormat,
+  stateOf,
+  type Reported,
+  type StoreKindOf,
+} from '@/domain/sync/items'
 import { chooseByStoreId } from '@/domain/sync/ladder'
 import { itemLists, type ItemList, type ItemView, type SyncStep } from '@/domain/sync/link'
 import { isSyncSource, SOURCES } from '@/domain/sync/sources'
@@ -40,9 +46,11 @@ import {
   readLink,
   readLinks,
   recordReport,
+  saveKinds,
   saveLink,
   saveResolutions,
   setDaily,
+  unclassified,
   unmatched,
   viewOf,
   waitingToAdd,
@@ -68,12 +76,18 @@ type Adapter = {
   list: (externalId: string) => Promise<Reported[] | undefined>
   /** The account's name there, for the page. */
   name?: (externalId: string) => Promise<string | undefined>
+  /** What its store says each item is; one it could not ask about is left out. */
+  kinds?: (
+    items: readonly { storeId: string; title: string }[],
+  ) => Promise<Map<string, StoreKindOf>>
 }
 
 /** Games put on the shelf by one step: a few IGDB requests, and a step well inside a function's time. */
 export const ADD_PER_STEP = 20
 /** Titles asked of IGDB in one step, ten to a request. */
 const TITLES_PER_STEP = 60
+/** Items the store is asked about in one step: a library as large as fair use lets in at once. */
+const KINDS_PER_STEP = 2_000
 /** A title IGDB did not know is asked about again after this long: IGDB grows. */
 const TITLE_AGAIN_MS = 7 * 24 * 60 * 60 * 1000
 /** "Sync now" twice inside this reads the source once. */
@@ -85,7 +99,11 @@ export const createSync = (deps: SyncDeps) => {
   // One per server, for every library: it keeps IGDB's list of platforms.
   const records = createRecords(deps)
   const adapters: Partial<Record<SyncSource, Adapter>> = {
-    steam: { list: (id) => deps.steam.ownedGames(id), name: (id) => deps.steam.playerName(id) },
+    steam: {
+      list: (id) => deps.steam.ownedGames(id),
+      name: (id) => deps.steam.playerName(id),
+      kinds: (items) => deps.steam.appKinds(items),
+    },
   }
   return (libraryId: string) =>
     forLibrary(libraryId, { db: deps.db, api: deps.igdb, records, adapters })
@@ -129,6 +147,24 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
   }
 
   /**
+   * Before the ladder: what the store says each new item is. A demo, software
+   * or a video is left out as "not a game"; a part is matched by its game.
+   * When the store does not answer, the ladder goes on without it, and the
+   * next step asks again.
+   */
+  const classify = async (source: SyncSource, now: number) => {
+    const ask = adapters[source]?.kinds
+    if (!ask) return
+    const items = await unclassified(db, libraryId, source, KINDS_PER_STEP)
+    if (items.length === 0) return
+    const kinds = await ask(items).catch((error: unknown) => {
+      if (error instanceof SourceError) return new Map<string, StoreKindOf>()
+      throw error
+    })
+    await saveKinds(db, libraryId, items, kinds, now)
+  }
+
+  /**
    * The ladder's second and third rungs (ADR 003, decision 1) over items no
    * rung has matched. Store ids are asked for every such item when the list
    * was just read, as IGDB adds them; titles for the next few not asked about
@@ -148,13 +184,13 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     const batch = left.filter(due).slice(0, TITLES_PER_STEP)
 
     const byStore = allStoreIds ? left : batch.filter((item) => item.titleTriedAt === null)
+    // A part is its game's: a multiplayer mode's hours belong on the game's copy.
+    const storeIdOf = (item: Item) =>
+      item.kind === 'part' && item.parentStoreId ? item.parentStoreId : item.storeId
     if (facts.store && byStore.length > 0) {
-      const found = await api.byStoreIds(
-        facts.store,
-        byStore.map((item) => item.storeId),
-      )
+      const found = await api.byStoreIds(facts.store, byStore.map(storeIdOf))
       for (const item of byStore) {
-        const igdbId = chooseByStoreId(found.get(item.storeId) ?? [])
+        const igdbId = chooseByStoreId(found.get(storeIdOf(item)) ?? [])
         if (igdbId !== undefined) take(item, igdbId, 'store_id')
       }
     }
@@ -308,6 +344,7 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     const fresh =
       wanted && (link.readAt === null || link.problem !== null || now - link.readAt > READ_AGAIN_MS)
     if (fresh) link = await read(link, now)
+    await classify(source, now)
     const titlesLeft = await resolve(source, fresh, now)
     const { added, remaining } = await addSome(source, ADD_PER_STEP, now, allow)
     await feedCopies(db, libraryId, source, now)
@@ -344,6 +381,7 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     lastSeenAt: item.lastSeenAt,
     state: stateOf(item),
     decision: item.decision,
+    kind: item.kind,
     ...(onShelf ? { onShelf } : {}),
   })
 

@@ -5,6 +5,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { useEffect, useId, useState } from 'react'
 
 import type { SyncSource } from '@/domain/library/values'
+import { isSetAside } from '@/domain/sync/items'
 import type { ItemCounts, ItemList, ItemView } from '@/domain/sync/link'
 import { strippedTitle } from '@/domain/sync/titles'
 import { Link } from '@/i18n/navigation'
@@ -202,7 +203,12 @@ function Row({
             <span className="font-medium">{item.title}</span>
           )}
           <span className="block">
-            {list === 'hidden' && item.decision !== 'pending' && item.decision !== 'copy' ? (
+            {list === 'hidden' && item.decision === 'not_a_game' && isSetAside(item.kind) ? (
+              // Left out by the sync itself, or by me: either way, what the store calls it.
+              <span className="text-muted">
+                {t(`kind.${item.kind}`, { source: t(`source.${source}`) })}
+              </span>
+            ) : list === 'hidden' && item.decision !== 'pending' && item.decision !== 'copy' ? (
               <span className="text-muted">{t(`why.${item.decision}`)}</span>
             ) : list === 'not-seen' ? (
               <span className="text-muted">

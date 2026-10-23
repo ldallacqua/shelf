@@ -15,9 +15,10 @@ type StatusRowProps = {
 }
 
 /**
- * All, Playing, Backlog, Completed, Dropped, Wishlist (spec 3.1): the
- * commonest filter gets the shortest path. One tap sets the status, in every
- * group of the filter; All takes it away. On a phone the row scrolls sideways.
+ * All, Playing, Backlog, Completed, Dropped, Wishlist, and Unsorted while a
+ * sync's games wait (spec 3.1): the commonest filter gets the shortest path.
+ * One tap sets the status, in every group of the filter; All takes it away.
+ * On a phone the row scrolls sideways.
  */
 export function StatusRow({ value, counts, onChange }: StatusRowProps) {
   const t = useTranslations('Filters')
@@ -41,6 +42,8 @@ export function StatusRow({ value, counts, onChange }: StatusRowProps) {
       </SegmentedItem>
       {statuses.map((status) => {
         const count = counts?.[status]
+        // Only a shelf a sync brought games into has unsorted ones: elsewhere it would always say 0.
+        if (status === 'unsorted' && !count && value !== 'unsorted') return null
         return (
           <SegmentedItem
             key={status}

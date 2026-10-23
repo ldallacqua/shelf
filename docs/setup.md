@@ -199,7 +199,14 @@ folder (it is linked to the project):
 openssl rand -base64 32 | vercel env add CRON_SECRET --environment production --sensitive
 ```
 
-It takes effect on the next production deployment. Until then the refresh refuses every
+Windows has no `openssl`. In PowerShell, the same:
+
+```powershell
+$bytes = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); [Convert]::ToBase64String($bytes) | vercel env add CRON_SECRET --environment production --sensitive
+```
+
+The Vercel CLI drops the line break PowerShell adds to piped text. It takes effect on the
+next production deployment. Until then the refresh refuses every
 call, so nothing breaks while it is missing; IGDB's records just are not refreshed.
 
 ---

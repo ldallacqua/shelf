@@ -57,6 +57,13 @@
       "when": 1792770464777,
       "tag": "0007_platform-sync",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1792787519999,
+      "tag": "0008_sorting",
+      "breakpoints": true
     }
   ]
 }

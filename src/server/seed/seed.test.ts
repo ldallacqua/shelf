@@ -57,12 +57,16 @@ describe('planSeed', () => {
     expect(planSeed('empty', fixtures)).toEqual({ games: [], entries: [] })
   })
 
-  it('uses every status, with backlog and completed the largest', () => {
+  it('uses every status a library kept by hand has, with backlog and completed the largest', () => {
     const { entries: planned } = planSeed('default', fixtures)
     const counts = Object.fromEntries(
       statuses.map((status) => [status, planned.filter((e) => e.status === status).length]),
     )
-    for (const status of statuses) expect(counts[status]).toBeGreaterThan(0)
+    // Only a sync brings games in unsorted, and the sample library was never synced.
+    for (const status of statuses) {
+      if (status === 'unsorted') expect(counts[status]).toBe(0)
+      else expect(counts[status]).toBeGreaterThan(0)
+    }
     expect(counts.backlog).toBeGreaterThan(counts.dropped ?? 0)
     expect(counts.completed).toBeGreaterThan(counts.playing ?? 0)
   })

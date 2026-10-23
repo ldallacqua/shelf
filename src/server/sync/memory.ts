@@ -5,7 +5,14 @@ import { randomUUID } from 'node:crypto'
 import { and, asc, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
 
 import type { SyncSource } from '@/domain/library/values'
-import { stateOf, type Decision, type Reported, type Resolution } from '@/domain/sync/items'
+import {
+  isSetAside,
+  stateOf,
+  type Decision,
+  type Reported,
+  type Resolution,
+  type StoreKindOf,
+} from '@/domain/sync/items'
 import type { ItemCounts, ItemList, LinkProblem, LinkView } from '@/domain/sync/link'
 import { MAX_LISTED } from '@/domain/sync/link'
 import type { Evidence } from '@/domain/sync/sources'
@@ -195,6 +202,74 @@ export const saveResolutions = async (
             .where(inArray(sourceItems.id, [...triedByTitle])),
         ]
       : []),
+  ]
+  const [first, ...rest] = statements
+  if (first) await db.batch([first, ...rest])
+}
+
+/** Items the store has not been asked about yet, oldest first. */
+export const unclassified = (db: Executor, userId: string, source: SyncSource, limit: number) =>
+  db
+    .select({ id: sourceItems.id, storeId: sourceItems.storeId, title: sourceItems.title })
+    .from(sourceItems)
+    .where(and(ofSource(userId, source), isNull(sourceItems.kind)))
+    .orderBy(asc(sourceItems.firstSeenAt), asc(sourceItems.storeId))
+    .limit(limit)
+
+/**
+ * What the store said each item is. One it says is a demo, software or a
+ * video, that nothing has matched and I have not answered, is left out as
+ * "not a game": what I would have answered. "Ask again" undoes it, and the
+ * store is not asked a second time.
+ */
+export const saveKinds = async (
+  db: Db,
+  userId: string,
+  items: readonly { id: string; storeId: string }[],
+  kinds: ReadonlyMap<string, StoreKindOf>,
+  now = Date.now(),
+) => {
+  // One statement for each kind (and a part's game), a hundred items at a time.
+  const groups = new Map<string, { said: StoreKindOf; ids: string[] }>()
+  const asides: string[] = []
+  for (const item of items) {
+    const said = kinds.get(item.storeId)
+    if (!said) continue
+    const key = `${said.kind} ${said.parentStoreId ?? ''}`
+    const group = groups.get(key) ?? { said, ids: [] }
+    group.ids.push(item.id)
+    groups.set(key, group)
+    if (isSetAside(said.kind)) asides.push(item.id)
+  }
+  const chunks = (ids: readonly string[]) => {
+    const out: string[][] = []
+    for (let at = 0; at < ids.length; at += ROWS_AT_ONCE) out.push(ids.slice(at, at + ROWS_AT_ONCE))
+    return out
+  }
+  const mine = (ids: readonly string[]) =>
+    and(eq(sourceItems.userId, userId), inArray(sourceItems.id, [...ids]))
+  const statements = [
+    ...[...groups.values()].flatMap(({ said, ids }) =>
+      chunks(ids).map((chunk) =>
+        db
+          .update(sourceItems)
+          .set({ kind: said.kind, parentStoreId: said.parentStoreId ?? null })
+          .where(mine(chunk)),
+      ),
+    ),
+    ...chunks(asides).map((chunk) =>
+      db
+        .update(sourceItems)
+        .set({ decision: 'not_a_game', decidedAt: now })
+        .where(
+          and(
+            mine(chunk),
+            eq(sourceItems.decision, 'pending'),
+            isNull(sourceItems.igdbId),
+            isNull(sourceItems.copyId),
+          ),
+        ),
+    ),
   ]
   const [first, ...rest] = statements
   if (first) await db.batch([first, ...rest])

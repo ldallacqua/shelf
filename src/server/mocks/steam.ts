@@ -11,7 +11,8 @@ import { STEAM_API } from '@/server/sync/steam'
 /**
  * A test double for Steam, answering as Steam answers: the made-up
  * account's games from `fixtures/steam/`, an empty answer for its private
- * twin, and Steam's sign-in check for answers this double signed. Any other
+ * twin, the store's word on what kind of app each is, and Steam's sign-in
+ * check for answers this double signed. Any other
  * key, account or address is refused, so a test can never be talking to the
  * real Steam.
  */
@@ -39,6 +40,11 @@ const read = (file: string): Record<string, unknown> =>
 
 export const createSteamHandlers = (state: SteamMockState = newSteamMockState()) => {
   const owned = read('owned-games.json')
+  const store = new Map(
+    (
+      read('store-items.json') as { response: { store_items: { id: number }[] } }
+    ).response.store_items.map((item) => [item.id, item]),
+  )
 
   const keyed = (request: Request) => {
     const address = new URL(request.url)
@@ -74,6 +80,22 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
               personaname: MOCK_STEAM.name,
               communityvisibilitystate: 3,
             })),
+        },
+      })
+    }),
+
+    // The store, item by item for the apps asked; one it has no page for, as Steam answers it.
+    http.get(`${STEAM_API}/IStoreBrowseService/GetItems/v1/`, ({ request }) => {
+      const { refused, address } = keyed(request)
+      if (refused) return refused
+      const question = JSON.parse(address.searchParams.get('input_json') ?? '{}') as {
+        ids?: { appid: number }[]
+      }
+      return HttpResponse.json({
+        response: {
+          store_items: (question.ids ?? []).map(
+            ({ appid }) => store.get(appid) ?? { id: appid, success: 15 },
+          ),
         },
       })
     }),

@@ -39,9 +39,15 @@ const WITCHER_3 = 1942
 const SKYRIM = 472
 const HALO = 740
 const ALAN_WAKE_2 = 185246
-/** In `fixtures/steam/owned-games.json`: 24 matched by Steam id, one by title, two by nothing. */
+const HALF_LIFE_2 = 233
+/**
+ * In `fixtures/steam/owned-games.json`: 24 matched by Steam id, one by
+ * title, two by nothing. Of those two, the store calls Wallpaper Engine
+ * software (`fixtures/steam/store-items.json`), so it is left out by itself.
+ */
 const BY_STORE_ID = 24
 const LISTED = 27
+const SOFTWARE = 1
 
 /** Three days after the made-up account last played Halo, three weeks and more after the rest. */
 const NOW = (1_760_000_000 + 24 * 86_400) * 1000
@@ -123,6 +129,37 @@ const loadOwned = (): { response: { game_count: number; games: Record<string, un
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   structuredClone(require('../../../fixtures/steam/owned-games.json'))
 
+/** The store answering as `fixtures/steam/store-items.json` does, with these apps' items in place. */
+const storeAnswers = (items: Record<number, Record<string, unknown>>) => {
+  type Fixture = { response: { store_items: { id: number }[] } }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const fixture = require('../../../fixtures/steam/store-items.json') as Fixture
+  const known = new Map(fixture.response.store_items.map((item) => [item.id, item]))
+  network.use(
+    http.get(`${STEAM_API}/IStoreBrowseService/GetItems/v1/`, ({ request }) => {
+      const asked = JSON.parse(new URL(request.url).searchParams.get('input_json') ?? '{}') as {
+        ids: { appid: number }[]
+      }
+      return HttpResponse.json({
+        response: {
+          store_items: asked.ids.map(
+            ({ appid }) => items[appid] ?? known.get(appid) ?? { id: appid, success: 15 },
+          ),
+        },
+      })
+    }),
+  )
+}
+
+const itemOf = async (libraryId: string, storeId: string) => {
+  const [row] = await db
+    .select()
+    .from(sourceItems)
+    .where(and(eq(sourceItems.userId, libraryId), eq(sourceItems.storeId, storeId)))
+    .limit(1)
+  return row!
+}
+
 describe('a first sync from Steam', () => {
   it('puts every game it can match on an empty shelf, as a PC digital copy', async () => {
     const me = await linked()
@@ -130,7 +167,8 @@ describe('a first sync from Steam', () => {
 
     expect(step.remaining).toBe(0)
     expect(step.link.counts['on-shelf']).toBe(BY_STORE_ID + 1)
-    expect(step.link.counts['needs-you']).toBe(LISTED - BY_STORE_ID - 1)
+    expect(step.link.counts['needs-you']).toBe(LISTED - BY_STORE_ID - 1 - SOFTWARE)
+    expect(step.link.counts.hidden).toBe(SOFTWARE)
     expect(await entriesOf(me)).toHaveLength(BY_STORE_ID + 1)
     const owned = await copiesOf(me)
     expect(owned).toHaveLength(BY_STORE_ID + 1)
@@ -149,7 +187,7 @@ describe('a first sync from Steam', () => {
       igdbId: HALO,
       resolvedBy: 'title',
     })
-    expect(await itemNamed(me, 'Wallpaper Engine')).toMatchObject({
+    expect(await itemNamed(me, 'Alan Wake 2')).toMatchObject({
       igdbId: null,
       decision: 'pending',
     })
@@ -164,14 +202,15 @@ describe('a first sync from Steam', () => {
     expect(rows).toEqual([expect.objectContaining({ source: 'steam', minutes: halfLife.minutes })])
   })
 
-  it('starts a game played in the last two weeks as playing, and the rest in the backlog', async () => {
+  it('starts a game played in the last two weeks as playing, and the rest unsorted, for me to place', async () => {
     const me = await linked()
     await syncAll(me)
     const statuses = new Map((await entriesOf(me)).map((entry) => [entry.id, entry.status]))
     const halo = await entryOf(me, HALO)
     // Halo was played three days before NOW; Portal three weeks before.
     expect(statuses.get(halo!)).toBe('playing')
-    expect(statuses.get((await entryOf(me, 71))!)).toBe('backlog')
+    expect(statuses.get((await entryOf(me, 71))!)).toBe('unsorted')
+    expect([...statuses.values()].filter((status) => status === 'backlog')).toEqual([])
   })
 
   it('adds a game already on the shelf as a copy of it, never as a second game, and keeps what I set', async () => {
@@ -291,7 +330,7 @@ describe('a later sync', () => {
 
     const step = await syncAll(me, NOW + 86_400_000)
     expect(await entryOf(me, WITCHER_3)).toBeUndefined()
-    expect(step.link.counts.hidden).toBe(1)
+    expect(step.link.counts.hidden).toBe(SOFTWARE + 1)
   })
 
   it('feeds the copy again when a removed game is put back with Undo', async () => {
@@ -302,6 +341,102 @@ describe('a later sync', () => {
     const item = await itemNamed(me, 'The Witcher 3: Wild Hunt')
     expect(item.decision).toBe('copy')
     expect(item.copyId).toBeTruthy()
+  })
+})
+
+describe('what Steam’s store says each game is', () => {
+  it('leaves out what it calls software, as not a game, and the list says what it is', async () => {
+    const me = await linked()
+    await syncAll(me)
+    expect(await itemNamed(me, 'Wallpaper Engine')).toMatchObject({
+      kind: 'software',
+      decision: 'not_a_game',
+      igdbId: null,
+    })
+    expect(await sync(me).list('steam', 'hidden')).toEqual([
+      expect.objectContaining({ title: 'Wallpaper Engine', kind: 'software' }),
+    ])
+  })
+
+  it('leaves out a demo and a playtest, even one whose title IGDB would match', async () => {
+    steamAnswers((games) => [
+      ...games,
+      { appid: 9900010, name: 'Portal', playtime_forever: 30 },
+      { appid: 9900011, name: 'Outer Wilds Playtest', playtime_forever: 45 },
+    ])
+    storeAnswers({
+      9900010: { id: 9900010, success: 1, type: 1, related_items: { parent_appid: 52003 } },
+    })
+    const me = await linked()
+    const step = await syncAll(me)
+
+    expect(await itemOf(me, '9900010')).toMatchObject({ kind: 'demo', decision: 'not_a_game' })
+    expect(await itemOf(me, '9900011')).toMatchObject({ kind: 'demo', decision: 'not_a_game' })
+    expect(step.link.counts['on-shelf']).toBe(BY_STORE_ID + 1)
+    expect(step.link.counts.hidden).toBe(SOFTWARE + 2)
+    // Portal itself is on the shelf, fed by its own app alone.
+    expect((await itemOf(me, '52003')).copyId).toBeTruthy()
+    expect((await itemOf(me, '9900010')).copyId).toBeNull()
+  })
+
+  it('matches a mode it lists apart to the game it names, and adds its hours to that copy', async () => {
+    steamAnswers((games) => [
+      ...games,
+      { appid: 9900012, name: 'Half-Life 2: Deathmatch', playtime_forever: 120 },
+    ])
+    storeAnswers({
+      9900012: { id: 9900012, success: 1, type: 14, related_items: { parent_appid: 220 } },
+    })
+    const me = await linked()
+    await syncAll(me)
+
+    const game = await itemOf(me, '220')
+    expect(await itemOf(me, '9900012')).toMatchObject({
+      kind: 'part',
+      parentStoreId: '220',
+      igdbId: HALF_LIFE_2,
+      copyId: game.copyId,
+    })
+    const rows = await db.select().from(playTime).where(eq(playTime.copyId, game.copyId!))
+    expect(rows).toEqual([
+      expect.objectContaining({ source: 'steam', minutes: game.minutes + 120 }),
+    ])
+    expect(await entriesOf(me)).toHaveLength(BY_STORE_ID + 1)
+  })
+
+  it('goes on without the store when it does not answer, and asks it at the next sync', async () => {
+    network.use(
+      http.get(
+        `${STEAM_API}/IStoreBrowseService/GetItems/v1/`,
+        () => new HttpResponse(null, { status: 503 }),
+      ),
+    )
+    const me = await linked()
+    const step = await syncAll(me)
+    expect(step.link.counts['on-shelf']).toBe(BY_STORE_ID + 1)
+    expect(await itemNamed(me, 'Wallpaper Engine')).toMatchObject({
+      kind: null,
+      decision: 'pending',
+    })
+
+    network.use(...createSteamHandlers(steamState))
+    await syncAll(me, NOW + 86_400_000)
+    expect(await itemNamed(me, 'Wallpaper Engine')).toMatchObject({
+      kind: 'software',
+      decision: 'not_a_game',
+    })
+  })
+
+  it('keeps my "ask again" about what it left out: the store is asked about a game once', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const item = await itemNamed(me, 'Wallpaper Engine')
+    await sync(me).answer('steam', item.id, { kind: 'again' })
+    await syncAll(me, NOW + 86_400_000)
+    expect(await itemNamed(me, 'Wallpaper Engine')).toMatchObject({
+      kind: 'software',
+      decision: 'pending',
+    })
   })
 })
 
@@ -322,17 +457,17 @@ describe('my answers', () => {
   it('never asks again about what I said is not a game, until I ask it to', async () => {
     const me = await linked()
     await syncAll(me)
-    const item = await itemNamed(me, 'Wallpaper Engine')
+    const item = await itemNamed(me, 'Alan Wake 2')
     await sync(me).answer('steam', item.id, { kind: 'dismiss', as: 'not_a_game' })
     let step = await syncAll(me, NOW + 86_400_000)
-    expect(step.link.counts.hidden).toBe(1)
-    expect((await sync(me).list('steam', 'hidden')).map((each) => each.title)).toEqual([
-      'Wallpaper Engine',
-    ])
+    expect(step.link.counts.hidden).toBe(SOFTWARE + 1)
+    expect((await sync(me).list('steam', 'hidden')).map((each) => each.title)).toContain(
+      'Alan Wake 2',
+    )
 
     await sync(me).answer('steam', item.id, { kind: 'again' })
     step = await syncAll(me, NOW + 2 * 86_400_000)
-    expect(step.link.counts.hidden).toBe(0)
+    expect(step.link.counts.hidden).toBe(SOFTWARE)
   })
 
   it('answers "not found" for another shelf’s item', async () => {

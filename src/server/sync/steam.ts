@@ -1,26 +1,33 @@
 import 'server-only'
 
-import type { Reported } from '@/domain/sync/items'
+import type { Reported, StoreKindOf } from '@/domain/sync/items'
 import {
   checkAuthenticationBody,
   claimedSteamId,
   isValidAnswer,
+  kindsFromSteam,
   reportedFromSteam,
   STEAM_OPENID,
   steamOwnedGamesSchema,
   steamPlayersSchema,
+  steamStoreItemsSchema,
+  storeItemsQuestion,
 } from '@/domain/sync/steam'
 import { steamKey } from '@/server/env'
 import { SourceError } from '@/server/sync/source-error'
 
 /**
  * Steam, the first source (ADR 003): the only code that knows Steam's
- * addresses. It asks two things of the Web API, with Shelf's key, about an
- * account that signed in through Steam, and checks that sign-in with Steam
- * itself. Nothing here writes; the sync decides what the answers become.
+ * addresses. It asks the Web API, with Shelf's key, what an account that
+ * signed in through Steam owns and what it is called, and the store what
+ * kind of app each game is; and it checks that sign-in with Steam itself.
+ * Nothing here writes; the sync decides what the answers become.
  */
 
 export const STEAM_API = 'https://api.steampowered.com'
+
+/** Apps asked of the store in one request: the question travels in the address. */
+const APPS_PER_REQUEST = 100
 
 export type SteamDeps = {
   key: () => string | undefined
@@ -76,6 +83,38 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000 }: SteamDeps
   }
 
   /**
+   * What kind of app each of these is, by the store: a game, a demo,
+   * software. The apps go a hundred to a request, four requests at a time;
+   * an app whose request failed is left out of the answer, to be asked again.
+   */
+  const appKinds = async (
+    apps: readonly { storeId: string; title: string }[],
+  ): Promise<Map<string, StoreKindOf>> => {
+    const batches: (typeof apps)[] = []
+    for (let i = 0; i < apps.length; i += APPS_PER_REQUEST) {
+      batches.push(apps.slice(i, i + APPS_PER_REQUEST))
+    }
+    const kinds = new Map<string, StoreKindOf>()
+    for (let i = 0; i < batches.length; i += 4) {
+      const answers = await Promise.allSettled(
+        batches.slice(i, i + 4).map(async (batch) => {
+          const parsed = steamStoreItemsSchema.safeParse(
+            await ask('/IStoreBrowseService/GetItems/v1/', {
+              input_json: storeItemsQuestion(batch.map((app) => app.storeId)),
+            }),
+          )
+          return parsed.success ? kindsFromSteam(parsed.data, batch) : new Map()
+        }),
+      )
+      for (const answer of answers) {
+        if (answer.status === 'fulfilled')
+          for (const [id, kind] of answer.value) kinds.set(id, kind)
+      }
+    }
+    return kinds
+  }
+
+  /**
    * The account a "Sign in through Steam" answer is for, once Steam has said
    * it sent that answer; undefined for anything else. Steam answers each
    * answer's question once, so an answer cannot be used twice.
@@ -101,7 +140,7 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000 }: SteamDeps
     return isValidAnswer(await response.text()) ? claimed : undefined
   }
 
-  return { ownedGames, playerName, verifySignIn }
+  return { ownedGames, playerName, appKinds, verifySignIn }
 }
 
 export type Steam = ReturnType<typeof createSteam>

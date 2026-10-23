@@ -3,7 +3,7 @@ import 'server-only'
 import { z } from 'zod'
 
 import { syncSources } from '@/domain/library/values'
-import { decisions } from '@/domain/sync/items'
+import { decisions, storeKinds } from '@/domain/sync/items'
 import { linkProblems } from '@/domain/sync/link'
 
 /**
@@ -66,6 +66,12 @@ export const apiSourceItem = z
     lastSeenAt: z.int(),
     state: z.enum(['on-shelf', 'adding', 'needs-you', 'hidden']),
     decision: z.enum(decisions),
+    kind: z
+      .enum(storeKinds)
+      .nullable()
+      .describe(
+        'What the store says it is, null until asked. A demo, software or media is left out by itself, as not a game; a part is matched by the game it belongs to',
+      ),
     onShelf: z
       .object({ slug: z.string(), title: z.string() })
       .optional()

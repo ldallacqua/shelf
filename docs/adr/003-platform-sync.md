@@ -223,13 +223,29 @@ building settled:
   so the next sync does not put the game back. Undo of the removal puts them back to feeding
   the copy. Disconnecting forgets the link and the items; the games stay, with their hours.
 - **Rung 2 picks among several records** carrying one store id: the game over an edition of
-  it, a game over a bundle; anything still undecided goes to rung 3, then to me.
+  it, a game over a bundle; anything still undecided goes to rung 3, then to me. When IGDB
+  files a store id under one add-on alone (FreshWomen's second season is a DLC there, an app
+  on Steam), the add-on is the game: a store lists what I launch, with its own hours.
+- **Before the ladder, the store says what each item is** (`kind` on the item, asked once;
+  Steam's `IStoreBrowseService/GetItems`, a hundred apps to a request). A demo, a playtest,
+  software or a video or soundtrack is left out by itself as "not a game", before anything
+  can match it: playing a demo is not owning the game. A mode the store lists apart from its
+  game (Modern Warfare 2's multiplayer) names that game, and rung 2 matches it by the game's
+  id, so its hours join the game's copy. A playtest has no store page; its name says what it
+  is. When the store does not answer, the ladder goes on without it and the next step asks
+  again. "Ask again" on what it left out is kept: the store is not asked twice. Found on the
+  owner's first sync (23 Oct 2026), where most of what needed an answer was software, demos,
+  playtests and modes, and games IGDB does not have.
 - **Rung 3 asks the title as written, then stripped** of marks, edition words ("Game of the
   Year Edition", "Director's Cut", "Deluxe Edition" but not "Deluxe" alone) and platform
   suffixes, and answers only for exactly one candidate on the source's platforms. A title it
   could not match is asked about again after a week, as IGDB grows.
-- **A game new to the shelf starts in the backlog**, or as playing if the source saw it played
-  in the last 14 days, Steam's own window. Nothing a sync does changes a status afterwards.
+- **A game new to the shelf starts unsorted**, or as playing if the source saw it played in
+  the last 14 days, Steam's own window. Nothing a sync does changes a status afterwards.
+  (Built first as the backlog; the owner, after the first real sync: "they are actually in a
+  waiting state, or unassigned state". `unsorted` is a sixth status, last in the list, and
+  migration 0008 moved the games a sync had put in the backlog, untouched since, to it.
+  Placing them, with a rating, is the review the handoff note describes.)
 - **Hours:** a source's minutes are a `play_time` row of that source on the copy, summed over
   the items feeding it. A game shows the larger of what I typed and what its sources report
   together, never the sum, so a figure typed before linking is not counted twice.

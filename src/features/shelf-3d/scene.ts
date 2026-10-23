@@ -155,6 +155,8 @@ const STATUS_CODE: Record<Status, number> = {
   completed: 2,
   dropped: 3,
   wishlist: 4,
+  // Drawn as a backlog game is: the shader marks only completed and wishlist games.
+  unsorted: 5,
 }
 
 type ShapeMesh = {
