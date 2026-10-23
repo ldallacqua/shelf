@@ -14,9 +14,7 @@ test.describe('scrubbing a compact shelf', () => {
     'touches are sent through Chromium, on a phone',
   )
 
-  test('opens the spine the finger lifts from, showing each title on the way', async ({
-    page,
-  }) => {
+  test('opens the spine the finger lifts from, showing each title on the way', async ({ page }) => {
     await page.addInitScript(() => window.localStorage.setItem('shelf:density', 'compact'))
     await openLibrary(page)
     const shelf = page.locator('.shelf-panel').first()

@@ -116,7 +116,9 @@ test.describe('keyboard (spec 3.11)', () => {
     const first = page.getByRole('list', { name: 'Games on the PlayStation 5 shelf' })
     await first.getByRole('button').first().focus()
     await page.keyboard.press('Tab')
-    await expect(page.getByRole('button', { name: 'Fold the PlayStation 4 shelf away' })).toBeFocused()
+    await expect(
+      page.getByRole('button', { name: 'Fold the PlayStation 4 shelf away' }),
+    ).toBeFocused()
     await page.keyboard.press('Tab')
     const second = page.getByRole('list', { name: 'Games on the PlayStation 4 shelf' })
     await expect(second.getByRole('button').first()).toBeFocused()
