@@ -4,34 +4,78 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: platform sync, Steam first
+## Now: Steam is done and in use; Nintendo is parked
+
+**If you are picking this up to do Nintendo, read this section, then ADR 003 whole (its last
+part, "Built: Steam", is how a source is added), then `src/server/services/sync.ts`.**
 
 - **The owner asked for sync after step 9** (23 Oct 2026): "start with steam. deploy, then
   let's do nintendo", built so that every platform fits, Steam and Nintendo first "since they
   are the platforms I use". Step 10, the final review, waits until sync is done.
-- **Steam is built** ([ADR 003](adr/003-platform-sync.md), "Built: Steam"; spec 4.4): linked on
-  the account page through Steam's own sign-in, a first sync that puts every matched game on
-  the shelf as a PC digital copy with Steam's hours, a list of what needs an answer, Sync now
-  and a daily job (`/api/cron/sync`, 07:00 UTC), a privacy page Steam's terms ask for, and the
+- **Steam is built and deployed** ([#24](https://github.com/ldallacqua/shelf/pull/24), then
+  this pull request: Valve's button, and Steam offered on an empty shelf). [ADR
+  003](adr/003-platform-sync.md), "Built: Steam"; spec 4.4. Linked on the account page
+  (Platforms) through Steam's own sign-in; a first sync puts every matched game on the shelf
+  as a PC digital copy with Steam's hours; a list of what needs an answer; Sync now and a
+  daily job (`/api/cron/sync`, 07:00 UTC); `/privacy`, which Steam's terms ask for; the
   landing page's part 5 and a question in its FAQ.
-- **It needs `STEAM_API_KEY` in Vercel** ([setup E](setup.md#e-steam-sync)), from the owner.
-  Without it, production offers Steam and says it is not set up. The daily sync needs
-  `CRON_SECRET` too, still to be set ([setup D](setup.md#d-daily-refresh)).
-- **Linking on production is the owner's to try**, with their own Steam account: an assistant
+- **The owner wants to start using it.** Production needs, from the owner, `STEAM_API_KEY`
+  ([setup E](setup.md#e-steam-sync)) and `CRON_SECRET` ([setup D](setup.md#d-daily-refresh)),
+  then a redeploy. Without the key, the Steam card says sync is not set up on this server.
+  Linking on production is the owner's to do, with their own Steam account: an assistant
   never signs in to Steam. Locally, with the test doubles on, "Sign in through Steam" comes
   straight back with a made-up account (`MOCK_STEAM`), whose games are
   `fixtures/steam/owned-games.json`.
-- **Valve asks for its own "Sign in through Steam" button image** where its sign-in is used.
-  The button is drawn by `src/ui` for now, in words, until the owner says the image may be
-  downloaded into `public/`.
-- **Nintendo is next.** ADR 003 found no way to read a Nintendo library (14 Oct 2026) and
-  planned an import of pasted titles, every match confirmed. Look again at what exists now
-  before planning it: the platform's own apps have grown play history since.
-- **Checked:** `pnpm verify --skip-browser` (see the pull request); the whole flow by hand in
-  a production build with the test doubles (link, first sync of 27 listed games: 25 on the
-  shelf, 2 to answer; Find it, Not a game, the editor's Steam hours), screenshots in both
-  themes, both languages and a phone. The browser pane in the app pauses animation frames
-  and scroll-driven reveals while hidden: pictures were taken with Chromium from a script.
+- **The button is Valve's own** (`public/platforms/sign-in-through-steam.png`, `sits_01.png`
+  from steamcommunity.com/dev, downloaded with the owner's yes, 23 Oct 2026): Valve asks for
+  it where its sign-in is used, and it says the site is not associated with Valve.
+- **Things learned on the way, worth knowing for the next source:**
+  - A route handler that reads nothing from its request is built ahead by Next.js, once:
+    `GET /me/platforms` would have answered every visitor as signed out. It calls
+    `connection()` first; a test that calls it outside a request mocks that.
+  - next-intl's `relativeTime` needs a "now" in a client component (`useNow`), or it logs an
+    error on every draw.
+  - The browser pane in the desktop app pauses animation frames, idle callbacks and
+    scroll-driven reveals while it is hidden: the game editor and the landing parts then
+    never appear. Pictures were taken with Chromium from a script instead (headless pages
+    count as visible).
+  - Python writing files on this computer can leave Windows line endings: `pnpm check`'s
+    Prettier step finds them; `prettier --write` fixes them.
+
+### Nintendo, parked (the owner, 23 Oct 2026)
+
+"let's park nintendo, we need to review how other places does it because I know for example
+that exophase.com allows connecting nintendo just by passing the friend code." The owner
+resumes it with another assistant. What is known so far:
+
+- **Exophase** links a Nintendo account by its **friend code** alone (the owner's profile
+  there lists it under Nintendo) and shows the owner's Switch and Switch 2 games with hours
+  played and the day last played, for 38 games (screenshots the owner sent, 23 Oct 2026).
+  How it gets that from a friend code is the first thing to find out: it is the lead the
+  owner wants followed. Whatever it is, check what it asks of the person (a friend request
+  to a bot account? settings on the console?), whether it gives hours and last played for
+  every game or only recent ones, and how often it updates.
+- **Nintendo's own play history.** Since late 2025 the Nintendo Store app shows play history
+  for every game: first and last played and time played, back to 3DS and Wii U ([Seth
+  Larson](https://sethmlarson.dev/nintendo-switch-play-activity-ocr)). A community script,
+  [ns-play-history](https://github.com/sibylsea-hub/ns-play-history), reads it: the person
+  signs in on Nintendo's own page with the Store app's client id, copies the "Select this
+  account" link, and the script exchanges it at `accounts.nintendo.com` for a session token
+  (about two years) and access tokens (15 minutes), then reads
+  `app-api.znej.nintendo.com/api/v2.0/users/me/play_histories`. Unofficial; Shelf would keep
+  that session token, encrypted.
+- **The Switch's own "20 most recent" list** (console and Nintendo Switch app) and the
+  Parental Controls app's daily reports are too partial to sync from.
+- **The fallback** ADR 003 planned: an import of pasted titles, every match confirmed.
+- **Whichever it is,** a Nintendo source is "played", not "owned": a cartridge and a download
+  look the same, so each game asks once (cartridge, download, not mine) before its copy is
+  made (ADR 003, decision 2). IGDB holds no Nintendo store ids, so matching is the title rung
+  on the Switch platforms, and ADR 003 asks for every Nintendo match to be confirmed. What
+  is already in place for it: `nintendo` in `domain/sync/sources.ts` (not ready, evidence
+  `listed`: change it to `played` if the source reports play), the `format` column and the
+  `pending` decision in `source_items`, and the `answer` service. Still to build: the format
+  question in the lists (answerable for many at once), the adapter, and its link.
+- **Then PlayStation and Xbox,** as ADR 003 lays out.
 
 ## Step 9, the trophy wall and the passes
 

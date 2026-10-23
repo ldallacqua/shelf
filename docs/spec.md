@@ -464,9 +464,10 @@ seconds to about a minute within IGDB's limit of four requests per second.
 On the account page, under **Platforms** ([ADR 003](adr/003-platform-sync.md)). Steam is built;
 PlayStation, Xbox and Nintendo come next, and the page says so.
 
-1. **Link.** "Sign in through Steam" goes to Steam's own sign-in page and back. Shelf never
-   sees the Steam password. Steam has to show the account's game details publicly; the card
-   says where that is set.
+1. **Link.** "Sign in through Steam", Valve's own button, goes to Steam's own sign-in page and
+   back. Shelf never sees the Steam password. Steam has to show the account's game details
+   publicly; the card says where that is set. An empty shelf offers it too, beside "Add your
+   first game".
 2. **The first sync** starts by itself on the way back. Every game the account owns on Steam,
    free games it has played among them, is matched to IGDB: by Steam's own id first, then by
    a strict title match on PC. Matched games go on the shelf at once, twenty at a time, with
