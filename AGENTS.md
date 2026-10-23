@@ -57,7 +57,10 @@ at each commit or push: the full run is long, and the owner asked that it not ho
 (21 Oct 2026). While working, run what helps: the tests for what you are changing, a type
 check. Before merging, `pnpm verify` must pass on the branch's last commit, and the pull
 request says what it ran. A build step is done when its pull request merges that way. Never
-start the workflow on GitHub unless the owner asks.
+start the workflow on GitHub unless the owner asks. **Until the MVP is done, no Playwright
+browser tests run** (the owner's rule, 23 Oct 2026): verify runs as `pnpm verify
+--skip-browser`, and the pull request says the browser tests were skipped. Unit tests,
+Lighthouse and the rest still run.
 
 A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app reads its
 libraries from `.data/shelf.db`, which is not committed. A database seeded before accounts

@@ -180,8 +180,16 @@ passing.
 pnpm verify                       # everything; about 20 minutes
 pnpm verify --quick               # format to unit tests, build, JavaScript budgets, smoke tests
 pnpm verify --skip-linux          # everything but the Docker pass (say so in the summary)
+pnpm verify --skip-browser        # no browser tests and no Docker pass: until the MVP is done
 pnpm verify --update-screenshots  # the Linux pass makes new reference screenshots
 ```
+
+**Until the MVP is done, the browser tests do not run** (the owner's rule, 23 Oct 2026): a
+run took 27 minutes at 3 workers, and at 8 the tests that change the library outran the one
+test server. Merges use `pnpm verify --skip-browser`. The browser tests run at half the
+machine's threads, the tests that change the library at most three at a time
+(`playwright.config.ts`); that arrangement is untried, and is the first thing to run when
+they come back.
 
 In order, stopping at the first failure: `pnpm check` (format, lint, types, translations,
 unit and component tests); a production build, served on port 3300 with the IGDB test

@@ -19,6 +19,8 @@
  *
  *   --quick               steps 1 to 3 and the @smoke browser tests in Chromium
  *   --skip-linux          no Docker pass (it needs Docker running)
+ *   --skip-browser        no browser tests (steps 4 and 5): the owner's rule until the
+ *                         MVP is done, 23 Oct 2026. Lighthouse and Storybook still run
  *   --update-screenshots  the Linux pass makes new reference screenshots
  *                         instead of comparing; look at them, then commit them
  *
@@ -31,7 +33,8 @@ import { BASE_URL } from './lib/budgets.ts'
 
 const flags = new Set(process.argv.slice(2))
 const quick = flags.has('--quick')
-const linux = !quick && !flags.has('--skip-linux')
+const browser = !flags.has('--skip-browser')
+const linux = !quick && browser && !flags.has('--skip-linux')
 const updateScreenshots = flags.has('--update-screenshots')
 const windows = process.platform === 'win32'
 /** On Windows pnpm is a .cmd file, which Node starts only through a shell. */
@@ -118,14 +121,15 @@ const browserEnv = { BASE_URL }
 run('JavaScript budgets', 'pnpm', ['perf:js'])
 
 if (quick) {
-  run(
-    'Smoke tests in Chromium, phone and desktop',
-    'pnpm',
-    ['e2e', '--project=chromium-phone', '--project=chromium-desktop', '--grep', '@smoke'],
-    browserEnv,
-  )
+  if (browser)
+    run(
+      'Smoke tests in Chromium, phone and desktop',
+      'pnpm',
+      ['e2e', '--project=chromium-phone', '--project=chromium-desktop', '--grep', '@smoke'],
+      browserEnv,
+    )
 } else {
-  run('Browser tests: three engines at three widths', 'pnpm', ['e2e'], browserEnv)
+  if (browser) run('Browser tests: three engines at three widths', 'pnpm', ['e2e'], browserEnv)
 
   if (linux) {
     const docker = spawnSync('docker', ['info'], { stdio: 'ignore' })
@@ -168,4 +172,5 @@ if (quick) {
 stopServer()
 console.log('\n✓ Every step passed\n')
 for (const { step, seconds } of done) console.log(`  ${String(seconds).padStart(4)} s  ${step}`)
-if (!quick && !linux) console.log('\n  The Linux pass was skipped.')
+if (!browser) console.log('\n  The browser tests were skipped.')
+else if (!quick && !linux) console.log('\n  The Linux pass was skipped.')
