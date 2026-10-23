@@ -541,7 +541,8 @@ One tool per job, so nothing fights:
 | Hover, press, focus, simple state | CSS transitions | Always |
 | Menus and sheets | CSS animations on Radix primitives | With the library |
 | Reordering after a regroup or a change of view | The Web Animations API: each box on screen slides from where it stood (`useFlip`) | With the library |
-| Gestures: dragging a sheet, scrubbing spines | Motion, when they are built (step 9). Not installed until then. | n/a |
+| Gestures: dragging a game's sheet between its two heights | Pointer events moving one custom property, `--sheet-drag`, written straight to the sheet; letting go eases it to a height with a CSS transition (`features/game-detail/game-panel.tsx`). Motion is not used. | With the library |
+| Gestures: scrubbing a compact ledge | Touch events: a press that rests 250 ms, then a slide that `preventDefault`s the page's scroll; the spine under the finger is the shelf's box in focus, and its title is written straight into one label (`features/library/scrub.ts`) | With the library |
 | A cover growing into the open game | The browser's view transitions, named for that one change (`features/game-detail/morph.ts`) | Built in |
 | The landing page's parts rising into view | CSS scroll timelines (`animation-timeline: view()`); where a browser has none, an IntersectionObserver marks each part as it arrives (`features/landing/reveals.tsx`) | Landing page only |
 | The landing page's scenes (lights coming on, filters playing, views turning) | CSS keyframes and transitions, started once a scene is in view; boxes rearrange with `useFlip` | Landing page only |
@@ -580,7 +581,7 @@ baseline.
 | First paint | The server sends the first 48 boxes inside the page, or the first 12 to a phone, and the first six covers are fetched ahead of everything else. The whole library follows as the library file. |
 | Phone | One shelf per screen with sideways scroll snapping, each shelf scrolling by itself; tabs for the same move; controls at the bottom |
 | Wall and List | The same shelves and the same open game through different renderers. List is a real table, one per shelf. |
-| A game picked up | Its page, in a sheet from the bottom on a phone and a panel from the right otherwise, at its own address, with steps to its neighbors and a button to the full page (`features/game-detail`). |
+| A game picked up | Its page, in a sheet from the bottom on a phone or a tablet held upright (`SHEET_FROM_BOTTOM`) and a panel from the right otherwise, at its own address, with steps to its neighbors and a button to the full page (`features/game-detail`). |
 
 ---
 
@@ -1016,6 +1017,8 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Step 9 | **The 3D stage is never taller than 3:2** (`shelf-3d.css`); it still fills the window below the controls where the window is wide. | The camera stands back far enough to see a bay and a bit across, so in a stage as tall as it is wide (a tablet held upright, 720 by 784) the wall filled 60% of its height and sat in empty wall, with its lowest ledge below the window. At 3:2 the wall fills the stage, 720 by 480, and the whole of it is in the window. |
+| Step 9 | **The phone's gestures are built without Motion:** a game's sheet has two heights, dragged by pointer events; a compact ledge is scrubbed by touch events (`scrub.ts`); and a shelf folds away from tablet width up, in every view, remembered on the device (`collapsed.ts`) and hidden before the first paint by the head script. | Each gesture moves one thing and lets CSS ease the rest: a gesture library would be the largest file for that. A phone shows one shelf at a time, so folding means nothing there. |
 | Step 9 | **The security headers are set, and integrity hashes are not used** (section 20). Zod's compiled checks are turned off in the browser by an inline script that sets its shared settings before it loads (`zod-script.tsx`). | Next.js's integrity hashes leave its inline scripts needing `'unsafe-inline'`, so they add nothing the policy can use. Zod tries `new Function` as the Add sheet and the editor build their schemas, which the policy refuses, and the browser reports even a refusal Zod catches. Setting it by importing Zod put Zod on every page: 8 to 10 KB each. |
 | Step 9 | **The daily refresh asks about IGDB's records, not one library's, and nobody refreshes one game by hand.** It shares adding's fetch (`igdb-records.ts`), keeps a game's address when IGDB changes its slug, and answers only Vercel's call with `CRON_SECRET`. | With accounts (ADR 004) the records are shared, so the oldest are the oldest across every library, and a changed one is new to every library holding it. A button for one game would let any account spend the shared allowance for little: a cache of a few thousand records comes round within weeks. |
 | Step 9 | **The trophy wall is built at step 9,** with the passes, and is worked out on the server for a public shelf (`getTrophyWall`, kept until the library changes and at most a day) and in its own browser for a private one. Its covers are the shared `Cover`: the page's script is 207.2 KB, from 201.4, and its budget 209. | Section 22 left it to no step ("after filters, with its stats"). A day's life keeps "this year" true on a shelf nobody touches; the covers are drawn by `Cover` like every other, blur and failure included. |

@@ -20,6 +20,16 @@ import {
 
 const panel = (page: Page) => page.getByRole('dialog')
 
+/**
+ * Shows all of the open game where it rises short from the bottom (a phone, a
+ * tablet held upright), as a tap on it would; a panel down the side has it all.
+ */
+async function showAll(page: Page) {
+  await expect(panel(page)).toBeVisible()
+  const grip = panel(page).getByRole('button', { name: 'Show all of this game' })
+  if (await grip.isVisible()) await grip.click()
+}
+
 /** The first game in a view: a box on the shelf, a cover on the wall, a title in the list. */
 const firstGame = (page: Page, view: 'shelf' | 'wall' | 'list') =>
   page
@@ -262,6 +272,7 @@ test.describe('a game opened from the library', () => {
   test('a value in it opens the library filtered by it, and the game closes', async ({ page }) => {
     await openLibrary(page, '/en/u/sample?q=bloodborne')
     await firstGame(page, 'shelf').click()
+    await showAll(page)
     await panel(page).getByRole('link', { name: 'Role-playing (RPG)' }).click()
     await expect(page).toHaveURL(/\/en\/u\/sample\?q=genre%3Arpg$/)
     await expect(panel(page)).toBeHidden()

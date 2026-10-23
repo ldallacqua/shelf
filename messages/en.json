@@ -369,7 +369,9 @@
       "all": "All games",
       "count": "{count, plural, one {# game} other {# games}}",
       "playing": "{count} playing",
-      "games": "Games on the {shelf} shelf"
+      "games": "Games on the {shelf} shelf",
+      "fold": "Fold the {shelf} shelf away",
+      "unfold": "Show the {shelf} shelf"
     },
     "box": {
       "titled": "{title} ({year})",
@@ -408,6 +410,8 @@
     "panelHelp": "This game's page. The left and right arrows go to the game before and after.",
     "close": "Close",
     "fullPage": "Open the full page",
+    "showAll": "Show all of this game",
+    "showLess": "Show less of this game",
     "previous": "Previous",
     "next": "Next",
     "hours": "{count, plural, one {# hour} other {# hours}}",
@@ -663,7 +667,9 @@
     "ascending": "{key}, ascending",
     "descending": "{key}, descending",
     "reverse": "Reverse the order",
-    "shuffle": "Shuffle again"
+    "shuffle": "Shuffle again",
+    "result": "{count, plural, one {# game} other {# games}}, sorted by {order}",
+    "shuffled": "{count, plural, one {# game} other {# games}}, shuffled"
   },
   "Shelves": {
     "open": "Shelves",

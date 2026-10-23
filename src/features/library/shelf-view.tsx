@@ -9,6 +9,7 @@ import { shareFirstBoxes } from '@/domain/library/view'
 import { caseShapes } from '@/ui/game-case'
 
 import { describeBox, shelfName } from './describe'
+import { FoldBody, FoldToggle } from './fold-toggle'
 import type { Density } from './preferences'
 import { ShelfGrid } from './shelf-grid'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
@@ -78,9 +79,11 @@ function ShelfSection({
     <section
       className="shelf-panel sm:mt-10 sm:first:mt-6"
       data-scroll-root=""
+      data-shelf={shelf.key}
       aria-labelledby={headingId}
     >
       <header className="flex items-baseline gap-3 pt-3 pb-1 sm:pt-0">
+        <FoldToggle shelfKey={shelf.key} name={name} controls={`${headingId}-games`} />
         <h2 id={headingId} className="title text-lg sm:text-xl">
           {name}
         </h2>
@@ -97,23 +100,25 @@ function ShelfSection({
           </span>
         ) : null}
       </header>
-      <ShelfGrid
-        shelfKey={shelf.key}
-        items={shelf.items}
-        total={shelf.total}
-        unmeasured={unmeasured}
-        platforms={platforms}
-        density={density}
-        {...sizeOf(shelf)}
-        label={t('shelf.games', { shelf: name })}
-        describe={describe}
-        openIndex={openIndex}
-        eager={position === 0 ? EAGER : 0}
-        enter={enter}
-        position={position}
-        onOpen={onOpen}
-        onLeave={onLeave}
-      />
+      <FoldBody shelfKey={shelf.key} id={`${headingId}-games`}>
+        <ShelfGrid
+          shelfKey={shelf.key}
+          items={shelf.items}
+          total={shelf.total}
+          unmeasured={unmeasured}
+          platforms={platforms}
+          density={density}
+          {...sizeOf(shelf)}
+          label={t('shelf.games', { shelf: name })}
+          describe={describe}
+          openIndex={openIndex}
+          eager={position === 0 ? EAGER : 0}
+          enter={enter}
+          position={position}
+          onOpen={onOpen}
+          onLeave={onLeave}
+        />
+      </FoldBody>
     </section>
   )
 }
@@ -173,10 +178,15 @@ export function ShelfView({
     element.scrollTo({ left: index * element.clientWidth, behavior: calm ? 'auto' : 'smooth' })
   }
 
-  /** Page Up or Page Down from a shelf: focus moves to the one before or after. */
+  /** Page Up or Page Down from a shelf: focus moves to the one before or after, past any folded away. */
   const leave = (from: number, direction: -1 | 1) => {
-    const panel = pager.current?.children[from + direction]
-    panel?.querySelector<HTMLElement>('.game-box[tabindex="0"]')?.focus()
+    const panels = pager.current?.children
+    for (let at = from + direction; panels && at >= 0 && at < panels.length; at += direction) {
+      const box = panels[at]?.querySelector<HTMLElement>(
+        '[data-shelf-body]:not([hidden]) .game-box[tabindex="0"]',
+      )
+      if (box) return box.focus()
+    }
   }
 
   // Before a shelf has measured itself it draws its share of the first screen.

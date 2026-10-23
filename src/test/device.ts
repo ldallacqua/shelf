@@ -1,15 +1,17 @@
 import { vi } from 'vitest'
 
-type Device = { dark: boolean; reducedMotion: boolean }
+/** `phone`: a window narrower than 40rem, as `(width < 40rem)` asks. */
+type Device = { dark: boolean; reducedMotion: boolean; phone: boolean }
 
 type Listener = (event: { matches: boolean }) => void
 
-const state: Device = { dark: false, reducedMotion: false }
+const state: Device = { dark: false, reducedMotion: false, phone: false }
 const listeners = new Map<string, Set<Listener>>()
 
 function matches(query: string): boolean {
   if (query.includes('prefers-color-scheme: dark')) return state.dark
   if (query.includes('prefers-reduced-motion: reduce')) return state.reducedMotion
+  if (query.includes('width < 40rem')) return state.phone
   return false
 }
 

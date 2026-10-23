@@ -110,11 +110,15 @@ test.describe('keyboard (spec 3.11)', () => {
     await expect(first).toBeFocused()
   })
 
-  test('Tab stops once per shelf', async ({ page, size }) => {
+  test('Tab stops once per shelf, after its fold', async ({ page, size }) => {
     test.skip(size === 'phone', 'a phone has no keyboard')
     await openLibrary(page)
     const first = page.getByRole('list', { name: 'Games on the PlayStation 5 shelf' })
     await first.getByRole('button').first().focus()
+    await page.keyboard.press('Tab')
+    await expect(
+      page.getByRole('button', { name: 'Fold the PlayStation 4 shelf away' }),
+    ).toBeFocused()
     await page.keyboard.press('Tab')
     const second = page.getByRole('list', { name: 'Games on the PlayStation 4 shelf' })
     await expect(second.getByRole('button').first()).toBeFocused()
@@ -271,10 +275,11 @@ test.describe('on a phone (spec 3.4)', () => {
     const sheet = page.getByRole('dialog', { name: 'Astro Bot' })
     await expect(sheet).toBeVisible()
     const height = page.viewportSize()?.height ?? 0
-    // Once it has slid in, it sits on the bottom edge and leaves the top of the shelf in view.
+    // Once it has slid in, its buttons sit on the bottom edge, and it leaves the top of the shelf in view.
+    const footer = sheet.locator('[data-sheet-footer]')
     await expect
       .poll(async () => {
-        const box = await sheet.boundingBox()
+        const box = await footer.boundingBox()
         return Math.round((box?.y ?? 0) + (box?.height ?? 0))
       })
       .toBe(height)

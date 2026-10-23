@@ -7,8 +7,16 @@
 @layer components {
   .shelf-3d {
     position: relative;
-    /* The wall fills the window below the controls, and never gets too short to walk along. */
-    height: clamp(30rem, calc(100dvh - 15rem), 60rem);
+    /*
+     * The wall fills the window below the controls, and never gets too short to walk along.
+     * Nor taller than the wall itself: a bay and a bit across, by three ledges and a label, is
+     * about 3:2, and a taller stage (a tablet held upright) is empty wall above and below.
+     */
+    /* The width is set, so the limits on height don't narrow it through the ratio. */
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    min-height: 30rem;
+    max-height: clamp(30rem, calc(100dvh - 15rem), 60rem);
     margin-top: 1.5rem;
     overflow: hidden;
     border-radius: var(--radius-panel);

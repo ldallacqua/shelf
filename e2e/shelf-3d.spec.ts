@@ -254,6 +254,16 @@ test.describe('the shelf in 3D', () => {
     await expect(pair(page).getByRole('radio', { name: '3D' })).toBeChecked()
   })
 
+  test('held upright, a tablet’s stage is the wall’s shape, and fits in the window', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 768, height: 1024 })
+    await open3d(page)
+    const stage = (await page.locator('[data-shelf-3d]').boundingBox())!
+    expect(stage.width / stage.height).toBeCloseTo(1.5, 1)
+    expect(stage.y + stage.height).toBeLessThanOrEqual(1024)
+  })
+
   test('stays within its draw-call and texture budgets (architecture, section 14)', async ({
     page,
   }) => {

@@ -23,7 +23,7 @@ Element.prototype.hasPointerCapture = () => false
 Element.prototype.setPointerCapture = () => {}
 Element.prototype.releasePointerCapture = () => {}
 
-setDevice({ dark: false, reducedMotion: false })
+setDevice({ dark: false, reducedMotion: false, phone: false })
 
 afterEach(() => {
   cleanup()
@@ -32,5 +32,5 @@ afterEach(() => {
     if (name.startsWith('data-')) document.documentElement.removeAttribute(name)
   }
   document.head.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove())
-  setDevice({ dark: false, reducedMotion: false })
+  setDevice({ dark: false, reducedMotion: false, phone: false })
 })

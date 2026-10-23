@@ -11,6 +11,7 @@ import { shareFirstBoxes } from '@/domain/library/view'
 
 import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
+import { FoldBody, FoldToggle } from './fold-toggle'
 import { dateOf, hoursOf, outOfTen } from './format'
 import { platformFor } from './game-box'
 import { GhostHeading, ghostOrder } from './ghosts'
@@ -353,8 +354,14 @@ export function ListView({
         const name = shelfName(shelf, t)
         const headingId = `list-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
         return (
-          <section key={shelf.key} aria-labelledby={headingId} className="mt-8 first:mt-4">
+          <section
+            key={shelf.key}
+            aria-labelledby={headingId}
+            data-shelf={shelf.key}
+            className="mt-8 first:mt-4"
+          >
             <header className="flex items-baseline gap-3 pb-1">
+              <FoldToggle shelfKey={shelf.key} name={name} controls={`${headingId}-games`} />
               <h2 id={headingId} className="title text-base sm:text-lg">
                 {name}
               </h2>
@@ -362,16 +369,18 @@ export function ListView({
                 {t('shelf.count', { count: shelf.total })}
               </span>
             </header>
-            <ListTable
-              shelf={shelf}
-              platforms={platforms}
-              caption={t('shelf.games', { shelf: name })}
-              unmeasured={shares[index] ?? 0}
-              open={open}
-              onOpen={onOpen}
-              sort={sort}
-              onSort={onSort}
-            />
+            <FoldBody shelfKey={shelf.key} id={`${headingId}-games`}>
+              <ListTable
+                shelf={shelf}
+                platforms={platforms}
+                caption={t('shelf.games', { shelf: name })}
+                unmeasured={shares[index] ?? 0}
+                open={open}
+                onOpen={onOpen}
+                sort={sort}
+                onSort={onSort}
+              />
+            </FoldBody>
           </section>
         )
       })}

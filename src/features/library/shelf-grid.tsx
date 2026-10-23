@@ -9,6 +9,7 @@ import type { LibraryPlatform } from '@/domain/library/library'
 import { GameBox, platformFor } from './game-box'
 import { GhostCase } from './ghosts'
 import type { Density } from './preferences'
+import { useScrub } from './scrub'
 import { boardsOf, piecesOf, runsOf } from './shelf-layout'
 import { useRowWindow } from './use-row-window'
 import type { OpenBox } from './view-props'
@@ -78,6 +79,7 @@ export function ShelfGrid({
   onLeave,
 }: ShelfGridProps) {
   const ref = useRef<HTMLUListElement>(null)
+  const scrubTitle = useRef<HTMLLIElement>(null)
   const rowWindow = useRowWindow(ref, total)
   /** The box under the pointer or in focus. */
   const [hot, setHot] = useState<number>()
@@ -137,6 +139,14 @@ export function ShelfGrid({
   // One function for the whole shelf, the same from one drawing to the next,
   // so a box that did not change is not drawn again.
   const openAt = (index: number) => onOpen({ key: shelfKey, index })
+
+  // Spines are narrow: pressing and sliding along the ledge picks one precisely.
+  useScrub(ref, scrubTitle, {
+    enabled: density === 'compact',
+    titleOf: (index) => items[index]?.game.title,
+    onHot: setHot,
+    onPick: openAt,
+  })
 
   const indexOf = (target: EventTarget | null): number | undefined => {
     const box = (target as HTMLElement | null)?.closest?.<HTMLElement>('[data-index]')
@@ -241,6 +251,10 @@ export function ShelfGrid({
       <li className="shelf-bays" aria-hidden="true">
         {bays}
       </li>
+      {density === 'compact' ? (
+        // The title of the spine under a scrubbing finger, above it (`useScrub`).
+        <li ref={scrubTitle} className="scrub-title" aria-hidden="true" hidden />
+      ) : null}
     </ul>
   )
 }
