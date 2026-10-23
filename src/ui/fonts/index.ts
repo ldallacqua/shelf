@@ -25,12 +25,16 @@ export const archivoTitle = localFont({
   fallback: ['ui-sans-serif', 'system-ui', 'sans-serif'],
 })
 
-// Numbers, counts and small labels: one weight.
+// Numbers, counts and small labels: one weight. Until it arrives, its stand-in is a
+// system monospace at its width (`globals.css`, and README.md here), not the
+// Arial next/font would scale to it.
 export const martianMono = Martian_Mono({
   subsets: ['latin'],
   weight: '500',
   variable: '--font-martian-mono',
   display: 'swap',
+  adjustFontFallback: false,
+  fallback: ['Martian Mono Stand-in'],
 })
 
 export const fontVariables = `${archivo.variable} ${archivoTitle.variable} ${martianMono.variable}`

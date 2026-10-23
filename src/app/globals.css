@@ -8,6 +8,25 @@
 @import '../ui/room.css';
 @import '../ui/shelf.css';
 
+/*
+ * Martian Mono's stand-in while it loads (`ui/fonts`). Every Martian Mono
+ * character is 0.7 em wide; these system monospaces are 0.6, so scaled to
+ * 116.67% each line is as wide as it will be, breaks where it will, and
+ * moves nothing below it when the real font swaps in. The height is Martian
+ * Mono's: 1.0 em above the baseline and 0.2 below, before the scaling.
+ */
+@font-face {
+  font-family: 'Martian Mono Stand-in';
+  src:
+    local('Courier New'), local('CourierNewPSMT'), local('Menlo Regular'), local('Menlo-Regular'),
+    local('Lucida Console'), local('DejaVu Sans Mono'), local('Liberation Mono'),
+    local('Droid Sans Mono'), local('Noto Sans Mono');
+  size-adjust: 116.67%;
+  ascent-override: 85.71%;
+  descent-override: 17.14%;
+  line-gap-override: 0%;
+}
+
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 @custom-variant pointer-coarse (@media (pointer: coarse));
 /* A window too small for the 3D shelf: TOO_SMALL_FOR_3D in features/library/preferences.ts. */

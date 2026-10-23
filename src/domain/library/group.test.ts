@@ -16,6 +16,7 @@ import {
   firstScreenShelves,
   indexOnce,
   keepFirstScreen,
+  openingCovers,
   parseLibraryQuery,
   shareFirstBoxes,
 } from '@/domain/library/view'
@@ -328,6 +329,26 @@ describe('the first screen', () => {
       { key: 'platform:none', count: 1, known: 0 },
     ])
     expect(first.games.map((item) => item.title)).toEqual(['Astro Bot', 'Celeste'])
+  })
+
+  it('names the covers its first shelf opens with at the library’s own address', () => {
+    const covered = {
+      version: 9,
+      names,
+      games: [
+        {
+          ...hades,
+          cover: 'hades',
+          copies: [{ platform: 130, format: 'physical' as const, cover: 'hades-switch' }],
+        },
+        { ...celeste, cover: 'celeste' },
+        game('Untitled', on(130)),
+        { ...witcher, cover: 'witcher' },
+      ],
+    }
+    // The Switch shelf comes first here; a copy's own cover is the one its box shows.
+    expect(openingCovers(covered, 'en', 6)).toEqual(['celeste', 'hades-switch'])
+    expect(openingCovers(covered, 'en', 1)).toEqual(['celeste'])
   })
 
   it('counts each status for the status row as the device would, filter and all', () => {

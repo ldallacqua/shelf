@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import { preconnect } from 'react-dom'
 
@@ -7,6 +7,7 @@ import { removeShelfAction, saveShelfAction } from '@/app/actions/shelves'
 import { IMAGE_HOST } from '@/domain/igdb/images'
 import { LibrarySkeleton } from '@/features/library/library-skeleton'
 import { NoShelf } from '@/features/library/no-shelf'
+import { preloadOpeningCovers } from '@/features/library/opening-covers'
 import { PrivateLibraryLater } from '@/features/library/private-later'
 import { ShelfProvider } from '@/features/library/shelf'
 import { Page } from '@/features/shell/page'
@@ -43,6 +44,8 @@ async function ShelfLibrary({
   if (!library) return <NoShelf />
   const shelf = shelfInfoOf(library)
   const t = await getTranslations('Library')
+  // Built ahead with the frame, so the covers are asked for as the page starts to arrive.
+  if (library.public) preloadOpeningCovers(await getLibrary(library.id), await getLocale())
   return (
     <ShelfProvider shelf={shelf}>
       {library.public ? (

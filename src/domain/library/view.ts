@@ -300,6 +300,16 @@ export const buildFirstScreen = (
 }
 
 /**
+ * The covers the first shelf opens with at the library's own address, in
+ * order: what a box there shows, a copy's own cover first. The page names
+ * them to the browser before the boxes that draw them arrive.
+ */
+export const openingCovers = (library: Library, locale: string, count: number): string[] =>
+  (arrangeLibrary(library.games, library.names, parseLibraryQuery({}), locale)[0]?.items ?? [])
+    .slice(0, count)
+    .flatMap((item) => item.copy?.cover ?? item.game.cover ?? [])
+
+/**
  * The whole library, once its file has arrived, holding on to what came with
  * the page: a game or platform already drawn keeps the very object it was
  * drawn from. The file says the same about it (same version, same words), so

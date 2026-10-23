@@ -9,6 +9,7 @@ import type { LibraryPlatform } from '@/domain/library/library'
 import { caseShapes, GameCase, plastics, type CaseShape } from '@/ui/game-case'
 
 import { Cover } from './cover'
+import { SHELF_SIZES } from './opening-covers'
 import type { Density } from './preferences'
 
 /** What a box is drawn as when nothing says otherwise: a game with no platform known. */
@@ -36,13 +37,6 @@ const inkOn = (hex: string): string => {
   const [r, g, b] = fromHex(hex)
   return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? '#14171f' : '#ffffff'
 }
-
-/**
- * `sizes` for a cover on the shelf: how wide a case is drawn at each scale
- * (see `--mm` in shelf.css), a little under, so a screen twice as sharp takes
- * the next file down and not the next up.
- */
-const SHELF_SIZES = '(min-width: 64rem) 128px, (min-width: 40rem) 116px, 100px'
 
 export type GameBoxProps = {
   item: ShelfItem

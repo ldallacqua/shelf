@@ -6,6 +6,18 @@
 | Titles | Archivo at width 118, weight 800 | `archivo-title.woff2`, 13 KB | `next/font/local` |
 | Numbers and labels | Martian Mono, weight 500 | From Google Fonts at build time | `next/font/google` |
 
+## Martian Mono's stand-in
+
+next/font gives each Google font a stand-in while it loads: Arial, scaled so its average
+character is as wide. For a monospace that is far off. Every Martian Mono character is
+0.7 em wide, and scaled Arial drew an uppercase label half as wide again ("GAMES" was
+65.7 pixels, not 41.8), so the stats line above the shelf broke onto a second line and the
+whole shelf moved down when the real font arrived: a layout shift of 0.18 on a phone.
+
+So Martian Mono's stand-in is a system monospace instead, defined in `globals.css`: Courier
+New, Menlo, Lucida Console, or the monospace of Linux or Android, whichever the device has.
+Each is 0.6 em wide, so at 116.67% every character is exactly as wide as Martian Mono's.
+
 ## Why the title font is a file in this folder
 
 Archivo's width axis is what makes a title wide. The whole family with that axis is 88 KB,
