@@ -16,8 +16,10 @@ step 3. This note is what the next session needs and cannot get from the code. R
 - **Done so far at step 9:** the trophy wall ([#20](https://github.com/ldallacqua/shelf/pull/20));
   the daily refresh and the security headers ([#21](https://github.com/ldallacqua/shelf/pull/21));
   the phone's gestures (a game's sheet at two heights, scrubbing a compact ledge), folding a
-  shelf away wider than a phone, and the 3D wall on a tablet held upright. Left: the
-  accessibility audit, and speed work.
+  shelf away wider than a phone, and the 3D wall on a tablet held upright. From the
+  accessibility audit, against spec 12 and 13: a filter or sort change now says what it left
+  ("42 games, sorted by My rating, descending"), and a tablet held upright opens a game as a
+  sheet from the bottom, at the phone's two heights. Left: speed work.
 - **Platform sync ([ADR 003](adr/003-platform-sync.md)) is still to be built.** The ADR
   proposed it as its own step after step 7; the owner chose step 9 next.
 - **The seed's finish days changed at step 9** (architecture, section 25): run `pnpm seed`

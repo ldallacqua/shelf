@@ -1,4 +1,4 @@
-import { expect, locales, pages, sidewaysOverflow, test } from './fixtures'
+import { expect, locales, pages, SHELF, sidewaysOverflow, test } from './fixtures'
 
 /**
  * What a visitor sees while the server works on the rest: the part built
@@ -54,21 +54,37 @@ test.describe('layout', () => {
   // At each project's own width too: a tablet's toolbar wraps, and its ghosts must as well.
   beforeTheFirstBoxes()
 
-  test('every control is at least 24 by 24 pixels', async ({ page }) => {
-    await page.goto('/en')
-    const small = await page.evaluate(() =>
-      [...document.querySelectorAll('a[href], button, [role="radio"]')]
-        .filter((element) => {
-          const box = element.getBoundingClientRect()
-          if (box.width === 0 || box.height === 0) return false
-          // A link inside a sentence is exempt: its line of text is the target.
-          if (element.closest('p')) return false
-          // Visually hidden until focused.
-          if (element.classList.contains('sr-only')) return false
-          return box.width < 24 || box.height < 24
-        })
-        .map((element) => element.outerHTML.slice(0, 80)),
-    )
-    expect(small).toEqual([])
-  })
+  // Spines too, in the compact shelf (spec 13).
+  for (const [name, path, density] of [
+    ['the landing page', '', 'covers'],
+    ['the shelf', SHELF, 'covers'],
+    ['the compact shelf', SHELF, 'compact'],
+    ['the wall', `${SHELF}?view=wall`, 'covers'],
+    ['the list', `${SHELF}?view=list`, 'covers'],
+    ['a game', `${SHELF}/game/bloodborne`, 'covers'],
+    ['the trophies', `${SHELF}/trophies`, 'covers'],
+  ] as const) {
+    test(`every control on ${name} is at least 24 by 24 pixels`, async ({ page }) => {
+      await page.addInitScript((chosen) => localStorage.setItem('shelf:density', chosen), density)
+      await page.goto(`/en${path}`)
+      await expect(page.locator('[aria-busy="true"]')).toHaveCount(0)
+      const small = await page.evaluate(() =>
+        [...document.querySelectorAll('a[href], button, [role="radio"], [role="tab"]')]
+          .filter((element) => {
+            const box = element.getBoundingClientRect()
+            if (box.width === 0 || box.height === 0) return false
+            if (getComputedStyle(element).visibility === 'hidden') return false
+            // A link inside a sentence is exempt: its line of text is the target.
+            if (element.closest('p')) return false
+            // Visually hidden until focused.
+            if (element.classList.contains('sr-only')) return false
+            // A list row's title, whose target is stretched over the whole row.
+            if (element.classList.contains('game-link')) return false
+            return box.width < 24 || box.height < 24
+          })
+          .map((element) => element.outerHTML.slice(0, 80)),
+      )
+      expect(small).toEqual([])
+    })
+  }
 })
