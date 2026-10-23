@@ -15,9 +15,9 @@ step 3. This note is what the next session needs and cannot get from the code. R
   final review, ⏸.
 - **Done so far at step 9:** the trophy wall ([#20](https://github.com/ldallacqua/shelf/pull/20));
   the daily refresh and the security headers ([#21](https://github.com/ldallacqua/shelf/pull/21));
-  the phone's gestures (a game's sheet at two heights, scrubbing a compact ledge) and folding a
-  shelf away wider than a phone. Left: the tablet's portrait 3D wall, the accessibility audit,
-  and speed work.
+  the phone's gestures (a game's sheet at two heights, scrubbing a compact ledge), folding a
+  shelf away wider than a phone, and the 3D wall on a tablet held upright. Left: the
+  accessibility audit, and speed work.
 - **Platform sync ([ADR 003](adr/003-platform-sync.md)) is still to be built.** The ADR
   proposed it as its own step after step 7; the owner chose step 9 next.
 - **The seed's finish days changed at step 9** (architecture, section 25): run `pnpm seed`
@@ -256,8 +256,8 @@ step 3. This note is what the next session needs and cannot get from the code. R
   2D shelf's own file, redrawn at the size each box appears, so they are sharp on the first
   frame and come from the cache. A phone, held either way, is never offered 3D (owner's
   call: "if not possible to make a good experience in mobile just not show this view").
-  Tablets keep 3D as a choice; in portrait the wall is small and sits low with empty space
-  above, worth a look at step 9.
+  Tablets keep 3D as a choice; in portrait the wall was small and sat low with empty space
+  above. Fixed at step 9: the stage is never taller than the wall's 3:2.
 - **Checked on the last code commit:** `pnpm verify --skip-linux` passed every step: checks
   (536 unit and component tests), build, JavaScript budgets (library 233.4 of 240 KB, 3D
   147 of 300), 928 browser tests in all nine projects with 0 failed, Lighthouse, Storybook.
