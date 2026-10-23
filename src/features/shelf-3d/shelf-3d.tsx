@@ -18,6 +18,7 @@ import { describeBox, shelfName } from '@/features/library/describe'
 import { platformFor, platformsOwned } from '@/features/library/game-box'
 import type { Density } from '@/features/library/preferences'
 import type { DrawnShelf, OpenBox } from '@/features/library/view-props'
+import { SHEET_FROM_BOTTOM } from '@/ui/sheet-from-bottom'
 
 import { wheelDistance } from './camera-rig'
 import { fontsReady, readFonts, type LabelText } from './labels'
@@ -63,13 +64,16 @@ export type Shelf3DProps = {
 const SWITCH_MS = 700
 /** A pointer that moves further than this between press and release was dragging, not clicking. */
 const DRAG_SLOP = 5
-/** The game panel's width, which a pulled box keeps clear of: 26rem, and 32rem on a large screen. */
+/**
+ * The game panel's width, which a pulled box keeps clear of: 26rem, and 32rem
+ * on a large screen. None where the game rises from the bottom instead.
+ */
 const panelWidth = (): number =>
-  window.matchMedia('(min-width: 64rem)').matches
-    ? 512
-    : window.matchMedia('(min-width: 40rem)').matches
-      ? 416
-      : 0
+  window.matchMedia(SHEET_FROM_BOTTOM).matches
+    ? 0
+    : window.matchMedia('(min-width: 64rem)').matches
+      ? 512
+      : 416
 
 const keyOf = (item: ShelfItem) =>
   item.copy ? `${item.game.slug}:${item.copy.platform}` : item.game.slug

@@ -462,14 +462,16 @@ describe('GamePanel', () => {
       expect(panel).toHaveAttribute('data-height', 'short')
     })
 
-    it('is one height wider than a phone, where it is a panel down the side', async () => {
+    it('is one height where it is a panel down the side', async () => {
       setDevice({ phone: false })
       open(item({ slug: 'bloodborne' }))
       const panel = screen.getByRole('dialog')
       drag(500, 300)
       expect(panel).toHaveAttribute('data-height', 'short')
-      // The grip is for a phone only: drawn there, and hidden by style anywhere wider.
-      expect(screen.getByRole('button', { name: 'Show all of this game' })).toHaveClass('sm:hidden')
+      // The grip is for a sheet from the bottom only: drawn there, and hidden by style on the side.
+      expect(screen.getByRole('button', { name: 'Show all of this game' })).toHaveClass(
+        'sheet-side:hidden',
+      )
     })
   })
 })

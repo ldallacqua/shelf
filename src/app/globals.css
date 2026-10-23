@@ -17,6 +17,17 @@
     @slot;
   }
 }
+/* Where a game's sheet rises from the bottom, and where it stands down the right: SHEET_FROM_BOTTOM in ui/sheet-from-bottom.ts. */
+@custom-variant sheet-bottom {
+  @media (width < 40rem), ((width < 64rem) and (orientation: portrait)) {
+    @slot;
+  }
+}
+@custom-variant sheet-side {
+  @media (width >= 64rem), ((width >= 40rem) and (orientation: landscape)) {
+    @slot;
+  }
+}
 
 @theme inline {
   --color-wall: var(--wall);

@@ -581,7 +581,7 @@ baseline.
 | First paint | The server sends the first 48 boxes inside the page, or the first 12 to a phone, and the first six covers are fetched ahead of everything else. The whole library follows as the library file. |
 | Phone | One shelf per screen with sideways scroll snapping, each shelf scrolling by itself; tabs for the same move; controls at the bottom |
 | Wall and List | The same shelves and the same open game through different renderers. List is a real table, one per shelf. |
-| A game picked up | Its page, in a sheet from the bottom on a phone and a panel from the right otherwise, at its own address, with steps to its neighbors and a button to the full page (`features/game-detail`). |
+| A game picked up | Its page, in a sheet from the bottom on a phone or a tablet held upright (`SHEET_FROM_BOTTOM`) and a panel from the right otherwise, at its own address, with steps to its neighbors and a button to the full page (`features/game-detail`). |
 
 ---
 

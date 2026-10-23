@@ -12,6 +12,7 @@ import { gameHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Sheet, SheetContent, SheetTitle, sheetButton } from '@/ui/sheet'
+import { SHEET_FROM_BOTTOM } from '@/ui/sheet-from-bottom'
 
 import { keptQuery } from './back-to-library'
 import { GameDetail } from './game-detail'
@@ -27,12 +28,13 @@ const DRAG = 56
 const TAP = 8
 
 /**
- * On a phone the sheet has two heights (spec 3.4): short, with the cover,
- * the title, the status and the platforms; and the whole page.
+ * Rising from the bottom, on a phone or a tablet held upright, the sheet has
+ * two heights (spec 3.4): short, with the cover, the title, the status and the
+ * platforms; and the whole page.
  */
 type Height = 'short' | 'full'
 
-const onPhone = () => window.matchMedia('(width < 40rem)').matches
+const fromBottom = () => window.matchMedia(SHEET_FROM_BOTTOM).matches
 
 /** Where a press on the sheet started, while it may yet become a drag. */
 type Press = { id: number; x: number; y: number; from: Height; onGrip: boolean; moved: boolean }
@@ -58,8 +60,9 @@ type GamePanelProps = {
 }
 
 /**
- * The game opened over the shelf (spec 7.2): its page, in a panel from the
- * right on a desktop or tablet and a sheet from the bottom on a phone. What
+ * The game opened over the shelf (spec 7.2): its page, in a sheet from the
+ * bottom on a phone or a tablet held upright, and a panel from the right
+ * otherwise (spec 12). What
  * the library file knows is drawn at once; the summary, screenshots and the
  * rest follow as the game's facts arrive. The arrow keys, or a sideways
  * swipe on a phone, step through the library's current order.
@@ -109,7 +112,7 @@ export function GamePanel({
   }
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (!onPhone() || event.button !== 0) return
+    if (!fromBottom() || event.button !== 0) return
     const target = event.target as Element
     const onGrip = Boolean(target.closest('[data-sheet-grip]'))
     // Short, the whole sheet is a handle; full, only its grip is, since the rest scrolls.
@@ -196,14 +199,15 @@ export function GamePanel({
           description={t('panelHelp')}
           closeLabel={t('close')}
           scrim={!pulled}
-          className="max-sm:h-[92dvh] max-sm:max-h-[92dvh] lg:w-[32rem]"
+          className="lg:w-[32rem] sheet-bottom:h-[92dvh] sheet-bottom:max-h-[92dvh]"
+          upright
           data-game={game.slug}
           data-height={height}
           grip={
             <button
               type="button"
               data-sheet-grip=""
-              className="sheet-grip sm:hidden"
+              className="sheet-grip sheet-side:hidden"
               aria-expanded={height === 'full'}
               aria-label={height === 'full' ? t('showLess') : t('showAll')}
               onClick={() => setHeight(height === 'full' ? 'short' : 'full')}

@@ -238,12 +238,13 @@
   }
 
   /*
-   * The game's sheet on a phone has two heights (spec 3.4). Short, it rests
-   * low, showing the cover, the title, the status and the platforms; tapped,
-   * or dragged up, it is the whole page. Only its position moves, and the
-   * row of buttons at its foot stays at the screen's edge either way.
+   * The game's sheet from the bottom, on a phone or a tablet held upright, has
+   * two heights (spec 3.4). Short, it rests low, showing the cover, the title,
+   * the status and the platforms; tapped, or dragged up, it is the whole page.
+   * Only its position moves, and the row of buttons at its foot stays at the
+   * screen's edge either way. The query is SHEET_FROM_BOTTOM (`ui/sheet-from-bottom.ts`).
    */
-  @media (width < 40rem) {
+  @media (width < 40rem), ((width < 64rem) and (orientation: portrait)) {
     [data-slot='sheet'][data-height] {
       --sheet-rest: 0px;
       translate: 0 calc(var(--sheet-rest) + var(--sheet-drag, 0px));
@@ -362,7 +363,7 @@
   animation: none !important;
 }
 
-/* From the bottom on a phone, from the right on anything wider: as the sheet itself moves. */
+/* From the bottom on a phone or a tablet held upright, from the right otherwise: as the sheet itself moves. */
 @keyframes game-panel-in {
   from {
     translate: 0 100%;
@@ -375,7 +376,7 @@
   }
 }
 
-@media (width >= 40rem) {
+@media (width >= 64rem), ((width >= 40rem) and (orientation: landscape)) {
   @keyframes game-panel-in {
     from {
       translate: 100% 0;

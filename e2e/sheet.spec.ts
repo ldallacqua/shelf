@@ -3,12 +3,12 @@ import type { Locator, Page } from '@playwright/test'
 import { expect, openLibrary, test } from './fixtures'
 
 /**
- * A game's sheet on a phone (spec 3.4 and 12): it rises short, with the
- * cover, the title, the status and the platforms; a tap or a drag up shows
- * all of it, and a drag down takes it back, or away.
+ * A game's sheet on a phone, and on a tablet held upright (spec 3.4 and 12):
+ * it rises short, with the cover, the title, the status and the platforms; a
+ * tap or a drag up shows all of it, and a drag down takes it back, or away.
  */
-test.describe('a game’s sheet on a phone', () => {
-  test.skip(({ size }) => size !== 'phone', 'wider than a phone, a game opens in a side panel')
+test.describe('a game’s sheet from the bottom', () => {
+  test.skip(({ size }) => size === 'desktop', 'on a desktop, a game opens in a side panel')
 
   const sheet = (page: Page) => page.getByRole('dialog')
 
@@ -63,6 +63,17 @@ test.describe('a game’s sheet on a phone', () => {
 
     await drag(page, sheet(page).getByRole('heading', { level: 2 }), -140)
     await expect(sheet(page)).toHaveAttribute('data-height', 'full')
+  })
+
+  test('on a tablet on its side, stands down the right edge instead', async ({ page, size }) => {
+    test.skip(size !== 'tablet', 'turning sideways is checked on a tablet')
+    await page.setViewportSize({ width: 1180, height: 820 })
+    await open(page)
+    await expect(sheet(page).getByRole('button', { name: 'Show all of this game' })).toBeHidden()
+    const box = (await sheet(page).boundingBox())!
+    expect(box.y).toBe(0)
+    expect(box.height).toBe(820)
+    expect(box.x).toBeGreaterThan(1180 / 2)
   })
 
   test('goes away when dragged down while short', async ({ page }) => {

@@ -7,8 +7,9 @@ import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '@/ui/cn'
 
 /**
- * A panel that slides in over the page: up from the bottom on a phone, in
- * from the right on anything wider. It holds focus while open, closes on
+ * A panel that slides in over the page: up from the bottom on a phone (and,
+ * `upright`, on a tablet held upright), in from the right on anything wider.
+ * It holds focus while open, closes on
  * Escape or a click outside, and hands focus back to what opened it.
  */
 const Sheet = Dialog.Root
@@ -53,6 +54,30 @@ type SheetContentProps = Omit<ComponentProps<typeof Dialog.Content>, 'title'> & 
    * after the close button, so focus starts there; place it with its own style.
    */
   grip?: ReactNode
+  /**
+   * On a tablet held upright too, it rises from the bottom as on a phone
+   * (`SHEET_FROM_BOTTOM`), for content the page behind should stay wide for.
+   */
+  upright?: boolean
+}
+
+/**
+ * What a sheet draws once it stands down the right edge: from tablet width
+ * up, or, `upright`, only where `sheet-side` says.
+ */
+const placing = {
+  phone: {
+    from: '[--sheet-from:0_100%] sm:[--sheet-from:100%_0]',
+    side: 'sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-[26rem] sm:max-w-[90vw] sm:rounded-none sm:border-t-0 sm:border-l sm:pb-0',
+    bottomOnly: 'sm:hidden',
+    header: 'sm:pt-5',
+  },
+  upright: {
+    from: '[--sheet-from:0_100%] sheet-side:[--sheet-from:100%_0]',
+    side: 'sheet-side:inset-y-0 sheet-side:right-0 sheet-side:left-auto sheet-side:max-h-none sheet-side:w-[26rem] sheet-side:max-w-[90vw] sheet-side:rounded-none sheet-side:border-t-0 sheet-side:border-l sheet-side:pb-0',
+    bottomOnly: 'sheet-side:hidden',
+    header: 'sheet-side:pt-5',
+  },
 }
 
 /** The look of the close button, for buttons and links beside it. */
@@ -76,8 +101,10 @@ function SheetContent({
   bleed,
   actions,
   grip,
+  upright,
   ...props
 }: SheetContentProps) {
+  const place = placing[upright ? 'upright' : 'phone']
   // The close button comes first, where focus starts; the rest stand to its left.
   const buttons = (
     <div
@@ -107,11 +134,11 @@ function SheetContent({
         data-slot="sheet"
         className={cn(
           'fixed z-50 flex flex-col overflow-hidden border-line bg-surface text-text shadow-panel',
-          '[--sheet-from:0_100%] sm:[--sheet-from:100%_0]',
+          place.from,
           // Phone: from the bottom, as tall as its content up to most of the screen.
           'inset-x-0 bottom-0 max-h-[86dvh] rounded-t-panel border-t pb-[env(safe-area-inset-bottom)]',
           // Wider: a column down the right edge.
-          'sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-[26rem] sm:max-w-[90vw] sm:rounded-none sm:border-t-0 sm:border-l sm:pb-0',
+          place.side,
           'motion-safe:data-[state=closed]:animate-sheet-out motion-safe:data-[state=open]:animate-sheet-in',
           'motion-reduce:data-[state=closed]:animate-sheet-fade-out motion-reduce:data-[state=open]:animate-fade-in',
           className,
@@ -123,7 +150,8 @@ function SheetContent({
           <span
             aria-hidden="true"
             className={cn(
-              'mx-auto mt-2 h-1 w-9 flex-none rounded-full bg-line-strong sm:hidden',
+              'mx-auto mt-2 h-1 w-9 flex-none rounded-full bg-line-strong',
+              place.bottomOnly,
               bleed && 'absolute inset-x-0 top-0 z-10 bg-text/40',
             )}
           />
@@ -134,7 +162,12 @@ function SheetContent({
             {buttons}
           </>
         ) : (
-          <div className="flex flex-none items-start justify-between gap-3 px-5 pt-3 sm:pt-5">
+          <div
+            className={cn(
+              'flex flex-none items-start justify-between gap-3 px-5 pt-3',
+              place.header,
+            )}
+          >
             {title === undefined ? null : (
               <Dialog.Title className={cn('title text-xl text-balance', titleHidden && 'sr-only')}>
                 {title}
