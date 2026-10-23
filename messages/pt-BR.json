@@ -369,7 +369,9 @@
       "all": "Todos os jogos",
       "count": "{count, plural, one {# jogo} other {# jogos}}",
       "playing": "{count} jogando",
-      "games": "Jogos na prateleira {shelf}"
+      "games": "Jogos na prateleira {shelf}",
+      "fold": "Recolher a prateleira {shelf}",
+      "unfold": "Mostrar a prateleira {shelf}"
     },
     "box": {
       "titled": "{title} ({year})",
@@ -408,6 +410,8 @@
     "panelHelp": "A página deste jogo. As setas para a esquerda e para a direita vão ao jogo anterior e ao próximo.",
     "close": "Fechar",
     "fullPage": "Abrir a página completa",
+    "showAll": "Mostrar tudo deste jogo",
+    "showLess": "Mostrar menos deste jogo",
     "previous": "Anterior",
     "next": "Próximo",
     "hours": "{count, plural, one {# hora} other {# horas}}",

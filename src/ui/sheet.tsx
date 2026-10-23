@@ -47,6 +47,12 @@ type SheetContentProps = Omit<ComponentProps<typeof Dialog.Content>, 'title'> & 
    * reached after it. Give each the look of `sheetButton`.
    */
   actions?: ReactNode
+  /**
+   * In place of the grip drawn at the top on a phone: one that does
+   * something, such as a button that changes the sheet's height. It comes
+   * after the close button, so focus starts there; place it with its own style.
+   */
+  grip?: ReactNode
 }
 
 /** The look of the close button, for buttons and links beside it. */
@@ -69,6 +75,7 @@ function SheetContent({
   footer,
   bleed,
   actions,
+  grip,
   ...props
 }: SheetContentProps) {
   // The close button comes first, where focus starts; the rest stand to its left.
@@ -112,13 +119,15 @@ function SheetContent({
         {...props}
       >
         {/* A grip, on a phone, where a thumb expects one. */}
-        <span
-          aria-hidden="true"
-          className={cn(
-            'mx-auto mt-2 h-1 w-9 flex-none rounded-full bg-line-strong sm:hidden',
-            bleed && 'absolute inset-x-0 top-0 z-10 bg-text/40',
-          )}
-        />
+        {grip ? null : (
+          <span
+            aria-hidden="true"
+            className={cn(
+              'mx-auto mt-2 h-1 w-9 flex-none rounded-full bg-line-strong sm:hidden',
+              bleed && 'absolute inset-x-0 top-0 z-10 bg-text/40',
+            )}
+          />
+        )}
         {bleed ? (
           <>
             {title === undefined ? null : <Dialog.Title className="sr-only">{title}</Dialog.Title>}
@@ -134,6 +143,8 @@ function SheetContent({
             {buttons}
           </div>
         )}
+        {/* After the close button, where focus starts; placed at the top by its own style. */}
+        {grip}
         {description ? (
           <Dialog.Description className="sr-only">{description}</Dialog.Description>
         ) : null}
@@ -147,7 +158,10 @@ function SheetContent({
           {children}
         </div>
         {footer ? (
-          <div className="flex flex-none items-center justify-between gap-3 border-t border-line px-5 pt-3 pb-4">
+          <div
+            data-sheet-footer=""
+            className="flex flex-none items-center justify-between gap-3 border-t border-line bg-surface px-5 pt-3 pb-4"
+          >
             {footer}
           </div>
         ) : null}

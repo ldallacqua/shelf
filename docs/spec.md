@@ -313,7 +313,8 @@ choice, it is not in the address, and it works in both 2D and 3D.
   in filters count it once.
 - Empty shelves are not shown.
 - The sort applies inside each shelf.
-- A shelf can be collapsed. Collapsed shelves are remembered on this device.
+- A shelf can be collapsed, on anything wider than a phone (a phone shows one shelf at a
+  time). Collapsed shelves are remembered on this device.
 
 ### 3.8 Wall and List
 

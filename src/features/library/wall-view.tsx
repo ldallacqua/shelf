@@ -10,6 +10,7 @@ import { shareFirstBoxes } from '@/domain/library/view'
 
 import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
+import { FoldBody, FoldToggle } from './fold-toggle'
 import { platformFor } from './game-box'
 import { GhostHeading, ghostOrder } from './ghosts'
 import type { WallSize } from './preferences'
@@ -222,8 +223,9 @@ function WallSection({ shelf, ...grid }: Omit<WallGridProps, 'label'>) {
   const headingId = `wall-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
 
   return (
-    <section aria-labelledby={headingId} className="mt-6 first:mt-4">
+    <section aria-labelledby={headingId} data-shelf={shelf.key} className="mt-6 first:mt-4">
       <header className="wall-label">
+        <FoldToggle shelfKey={shelf.key} name={name} controls={`${headingId}-games`} />
         <h2 id={headingId} className="title text-base sm:text-lg">
           {name}
         </h2>
@@ -231,7 +233,9 @@ function WallSection({ shelf, ...grid }: Omit<WallGridProps, 'label'>) {
           {t('shelf.count', { count: shelf.total })}
         </span>
       </header>
-      <WallGrid shelf={shelf} label={t('shelf.games', { shelf: name })} {...grid} />
+      <FoldBody shelfKey={shelf.key} id={`${headingId}-games`}>
+        <WallGrid shelf={shelf} label={t('shelf.games', { shelf: name })} {...grid} />
+      </FoldBody>
     </section>
   )
 }

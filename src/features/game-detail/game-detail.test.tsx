@@ -8,6 +8,7 @@ import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
 import { ShelfProvider } from '@/features/library/shelf'
 import type { ShelfInfo } from '@/features/library/shelf-address'
+import { setDevice } from '@/test/device'
 import { messages, renderWithIntl } from '@/test/render'
 
 import { GameDetail } from './game-detail'
@@ -374,6 +375,102 @@ describe('GamePanel', () => {
     open(item({ slug: 'sekiro' }))
     expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+  })
+
+  describe('on a phone, at two heights (spec 3.4)', () => {
+    beforeEach(() => setDevice({ phone: true }))
+
+    const drag = (from: number, to: number, on = screen.getByRole('dialog')) => {
+      fireEvent.pointerDown(on, { pointerId: 1, button: 0, clientX: 200, clientY: from })
+      fireEvent.pointerMove(on, { pointerId: 1, clientX: 200, clientY: (from + to) / 2 })
+      fireEvent.pointerMove(on, { pointerId: 1, clientX: 200, clientY: to })
+      fireEvent.pointerUp(on, { pointerId: 1, clientX: 200, clientY: to })
+    }
+
+    it('opens short, and its grip shows all of it and then less', async () => {
+      open(item({ slug: 'bloodborne' }))
+      const panel = screen.getByRole('dialog')
+      expect(panel).toHaveAttribute('data-height', 'short')
+      // Focus starts on Close, not on the grip.
+      expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Show all of this game' }))
+      expect(panel).toHaveAttribute('data-height', 'full')
+      const grip = screen.getByRole('button', { name: 'Show less of this game' })
+      expect(grip).toHaveAttribute('aria-expanded', 'true')
+      await userEvent.click(grip)
+      expect(panel).toHaveAttribute('data-height', 'short')
+    })
+
+    it('shows all of it when the short sheet is tapped, or dragged up', () => {
+      open(item({ slug: 'bloodborne' }))
+      const panel = screen.getByRole('dialog')
+      const heading = screen.getByRole('heading', { level: 2, name: 'Bloodborne' })
+      fireEvent.pointerDown(heading, { pointerId: 1, button: 0, clientX: 100, clientY: 300 })
+      fireEvent.pointerUp(heading, { pointerId: 1, clientX: 101, clientY: 301 })
+      expect(panel).toHaveAttribute('data-height', 'full')
+
+      // Down a little from full is nothing; down from its grip is short again.
+      drag(300, 320, screen.getByRole('button', { name: 'Show less of this game' }))
+      expect(panel).toHaveAttribute('data-height', 'full')
+      drag(300, 420, screen.getByRole('button', { name: 'Show less of this game' }))
+      expect(panel).toHaveAttribute('data-height', 'short')
+      drag(500, 380)
+      expect(panel).toHaveAttribute('data-height', 'full')
+    })
+
+    it('closes when the short sheet is dragged down', () => {
+      const onClose = vi.fn()
+      renderWithIntl(
+        <ShelfProvider shelf={SHELF}>
+          <GamePanel
+            item={item({ slug: 'bloodborne' })}
+            version={7}
+            platforms={platforms}
+            tags={tags}
+            onClose={onClose}
+            onReturnFocus={() => false}
+          />
+        </ShelfProvider>,
+      )
+      drag(400, 520)
+      expect(onClose).toHaveBeenCalledOnce()
+    })
+
+    it('shows all of it when focus moves to what the short sheet hides, and only then', () => {
+      open(item({ slug: 'bloodborne' }))
+      const panel = screen.getByRole('dialog')
+      // Safari focuses the sheet itself on a tap, wherever its edge is.
+      fireEvent.focus(panel)
+      expect(panel).toHaveAttribute('data-height', 'short')
+
+      const footer = panel.querySelector<HTMLElement>('[data-sheet-footer]')!
+      vi.spyOn(footer, 'getBoundingClientRect').mockReturnValue({ top: 600 } as DOMRect)
+      const hidden = within(panel).getAllByRole('link').at(-1)!
+      vi.spyOn(hidden, 'getBoundingClientRect').mockReturnValue({ bottom: 900 } as DOMRect)
+      fireEvent.focus(hidden)
+      expect(panel).toHaveAttribute('data-height', 'full')
+    })
+
+    it('leaves a sideways swipe to the step to the next game', () => {
+      const onNext = vi.fn()
+      open(item({ slug: 'bloodborne' }), { onNext })
+      const panel = screen.getByRole('dialog')
+      fireEvent.pointerDown(panel, { pointerId: 1, button: 0, clientX: 300, clientY: 400 })
+      fireEvent.pointerMove(panel, { pointerId: 1, clientX: 120, clientY: 410 })
+      fireEvent.pointerUp(panel, { pointerId: 1, clientX: 120, clientY: 410 })
+      expect(panel).toHaveAttribute('data-height', 'short')
+    })
+
+    it('is one height wider than a phone, where it is a panel down the side', async () => {
+      setDevice({ phone: false })
+      open(item({ slug: 'bloodborne' }))
+      const panel = screen.getByRole('dialog')
+      drag(500, 300)
+      expect(panel).toHaveAttribute('data-height', 'short')
+      // The grip is for a phone only: drawn there, and hidden by style anywhere wider.
+      expect(screen.getByRole('button', { name: 'Show all of this game' })).toHaveClass('sm:hidden')
+    })
   })
 })
 

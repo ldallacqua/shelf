@@ -236,6 +236,72 @@
       will-change: transform;
     }
   }
+
+  /*
+   * The game's sheet on a phone has two heights (spec 3.4). Short, it rests
+   * low, showing the cover, the title, the status and the platforms; tapped,
+   * or dragged up, it is the whole page. Only its position moves, and the
+   * row of buttons at its foot stays at the screen's edge either way.
+   */
+  @media (width < 40rem) {
+    [data-slot='sheet'][data-height] {
+      --sheet-rest: 0px;
+      translate: 0 calc(var(--sheet-rest) + var(--sheet-drag, 0px));
+      transition: translate var(--motion-base) var(--ease-settle);
+    }
+
+    /* The sheet is 92dvh tall (`game-panel.tsx`); short, this much of it shows. */
+    [data-slot='sheet'][data-height='short'] {
+      --sheet-rest: calc(92dvh - min(62dvh, 32rem));
+    }
+
+    /* Short, the page does not scroll: a drag anywhere on it moves the sheet. */
+    [data-slot='sheet'][data-height='short'] [data-sheet-body] {
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    [data-slot='sheet'][data-height] [data-sheet-footer] {
+      translate: 0 calc(-1 * var(--sheet-rest));
+      transition: translate var(--motion-base) var(--ease-settle);
+    }
+
+    [data-slot='sheet'][data-dragging],
+    [data-slot='sheet'][data-dragging] [data-sheet-footer] {
+      transition: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot='sheet'][data-height],
+    [data-slot='sheet'][data-height] [data-sheet-footer] {
+      transition: none;
+    }
+  }
+
+  /* The grip: a bar a thumb expects, in a button wide enough to press, or to drag by. */
+  .sheet-grip {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    z-index: 10;
+    display: flex;
+    width: 6rem;
+    height: 1.75rem;
+    translate: -50% 0;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0.5rem;
+    touch-action: none;
+  }
+
+  .sheet-grip > span {
+    display: block;
+    width: 2.25rem;
+    height: 0.25rem;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--text) 45%, transparent);
+  }
 }
 
 /*

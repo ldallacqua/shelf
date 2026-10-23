@@ -13,6 +13,11 @@ step 3. This note is what the next session needs and cannot get from the code. R
   D](setup.md#d-daily-refresh), from the owner), security headers, phone and tablet polish
   with the gestures left from step 3, the accessibility audit, and speed work. Step 10 is the
   final review, ⏸.
+- **Done so far at step 9:** the trophy wall ([#20](https://github.com/ldallacqua/shelf/pull/20));
+  the daily refresh and the security headers ([#21](https://github.com/ldallacqua/shelf/pull/21));
+  the phone's gestures (a game's sheet at two heights, scrubbing a compact ledge) and folding a
+  shelf away wider than a phone. Left: the tablet's portrait 3D wall, the accessibility audit,
+  and speed work.
 - **Platform sync ([ADR 003](adr/003-platform-sync.md)) is still to be built.** The ADR
   proposed it as its own step after step 7; the owner chose step 9 next.
 - **The seed's finish days changed at step 9** (architecture, section 25): run `pnpm seed`
