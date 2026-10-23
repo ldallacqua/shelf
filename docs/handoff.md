@@ -4,6 +4,41 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## First: review #26 before building on it (the owner's ask, 23 Oct 2026)
+
+[#26](https://github.com/ldallacqua/shelf/pull/26) (Unsorted, and Steam's store leaving out
+what is not a game) was merged and deployed without the last checks, because the assistant
+that built it was running out of room: "just merge everything to main ... another AI will
+take the work of reviewing this". Do these before anything below, and fix what they find:
+
+- **Read the diff** (`git show 30d2bf8`) against ADR 003's "Built: Steam" and spec 4.4.
+- **Look at it** with the test doubles (`pnpm serve:test`, port 3300): sign in as the
+  made-up owner, link Steam from the account page, and check, in both themes, both languages
+  and on a phone:
+  - "Left out" lists Wallpaper Engine as "Software on Steam";
+  - the status row shows Unsorted with a count only while there are unsorted games;
+  - an unsorted game's box, wall tile and list row carry the Inbox mark;
+  - the editor offers Unsorted among the statuses;
+  - the 3D shelf draws unsorted games as it draws backlog ones.
+
+  Pictures come from a headless Chromium script (the desktop app's browser pane pauses
+  while hidden; see "Things learned" below).
+- **Measure Lighthouse at 8×** (`LIGHTHOUSE_SLOWDOWN=8 pnpm perf:lighthouse`), step 9's
+  measure. It was stopped before it finished; the 19× run missed as on main.
+- **On production, after the owner's next sync** (Sync now, or the daily job at 07:00 UTC):
+  - the store was asked about every app (no item left with `kind` null);
+  - software, demos and playtests moved to "left out";
+  - Modern Warfare 2's multiplayer and Black Ops II's zombies matched their games, and
+    their hours joined those copies;
+  - FreshWomen – Season 2 matched.
+
+  An assistant cannot read Turso; the owner's account page and the public
+  `/api/v1/u/lucas/library` show it. Right after the migration, the first page of that
+  answer was 49 unsorted games and 1 playing, of 471.
+- **Two choices to confirm with the owner:**
+  - A game played on Steam in the last two weeks still starts as Playing, not Unsorted.
+  - The add-game forms and the editor offer Unsorted, since every list of statuses does.
+
 ## Next: the review of unsorted games (the owner's ask, 23 Oct 2026; not built)
 
 **Do not lose this one.** After the owner's first real Steam sync: "Recently imported games
