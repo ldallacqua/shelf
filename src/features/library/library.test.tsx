@@ -34,6 +34,9 @@ import { ShelfProvider } from './shelf'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 
+// The empty shelf links to the account page.
+vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
+
 const ps5: LibraryPlatform = {
   id: 167,
   key: 'ps5',
