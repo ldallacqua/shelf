@@ -49,6 +49,7 @@ import { mentions, type QueryNode } from '@/domain/query/tree'
 import { FilterChips } from '@/features/filters/filter-chips'
 import { FilterPanel } from '@/features/filters/filter-panel'
 import { NoResults } from '@/features/filters/no-results'
+import { ResultStatus } from '@/features/filters/result-status'
 import { SaveShelf } from '@/features/filters/save-shelf'
 import { SEARCH_ID, SearchField } from '@/features/filters/search-field'
 import { ShelvesMenu, type ShelfActions } from '@/features/filters/shelf-controls'
@@ -780,6 +781,7 @@ export function LibraryView({
         className="mt-3 flex-none"
       />
 
+      <ResultStatus q={drawnQ} sort={sort} count={matching?.length} />
       {view === 'shelf' && fallback ? (
         <p role="status" className="mt-3 text-sm text-muted">
           {t(`shelf3d.fallback.${fallback}`)}

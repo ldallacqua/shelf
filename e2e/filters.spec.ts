@@ -69,8 +69,13 @@ test.describe('the search field (spec 3.1)', () => {
     await openLibrary(page)
     await search(page).fill('zelda')
     await expect(page).toHaveURL(/[?&]q=zelda(&|$)/)
-    await expect(totals(page)).toContainText(`${await matches(page, 'zelda')} games`)
+    const found = await matches(page, 'zelda')
+    await expect(totals(page)).toContainText(`${found} games`)
     await expect(firstBox(page)).toHaveAccessibleName(/Zelda/)
+    // And says so, once the typing stops (spec 13).
+    await expect(page.getByRole('status').filter({ hasText: 'sorted by' })).toHaveText(
+      `${found} games, sorted by Title, ascending`,
+    )
 
     // The address is the state: a reload, or a link, shows the same.
     await page.reload()
@@ -301,6 +306,9 @@ test.describe('the sort (spec 6)', () => {
     await expect(page).toHaveURL(/sort=-rating/)
     await expect(firstBox(page)).toHaveAccessibleName(
       new RegExp(`^${escape(await firstTitle(page, '-rating'))} `),
+    )
+    await expect(page.getByRole('status').filter({ hasText: 'sorted by' })).toHaveText(
+      /^\d+ games, sorted by My rating, descending$/,
     )
 
     await page.getByRole('button', { name: 'My rating, descending' }).click()

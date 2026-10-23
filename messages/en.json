@@ -667,7 +667,9 @@
     "ascending": "{key}, ascending",
     "descending": "{key}, descending",
     "reverse": "Reverse the order",
-    "shuffle": "Shuffle again"
+    "shuffle": "Shuffle again",
+    "result": "{count, plural, one {# game} other {# games}}, sorted by {order}",
+    "shuffled": "{count, plural, one {# game} other {# games}}, shuffled"
   },
   "Shelves": {
     "open": "Shelves",

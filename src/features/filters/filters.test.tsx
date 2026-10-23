@@ -2,7 +2,7 @@ import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NextIntlClientProvider } from 'next-intl'
 import type { ReactElement } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Sort } from '@/domain/library/sort'
 import { testGame, testLibrary } from '@/domain/library/testing'
@@ -12,6 +12,7 @@ import { messages, renderWithIntl } from '@/test/render'
 
 import { FilterChips } from './filter-chips'
 import { ListSection } from './list-section'
+import { ResultStatus } from './result-status'
 import { SearchField } from './search-field'
 import { SortControl } from './sort-control'
 import { StatusRow } from './status-row'
@@ -177,6 +178,48 @@ describe('SortControl', () => {
     const { onShuffle } = sortControl({ key: 'random', descending: false })
     await userEvent.click(screen.getByRole('button', { name: 'Shuffle again' }))
     expect(onShuffle).toHaveBeenCalled()
+  })
+})
+
+describe('ResultStatus', () => {
+  const title: Sort = { key: 'title', descending: false }
+  const said = () => screen.getByRole('status')
+  const settle = () => act(() => vi.advanceTimersByTime(1000))
+  afterEach(() => vi.useRealTimers())
+
+  it('says nothing for the address the page opened at', () => {
+    vi.useFakeTimers()
+    render(intl(<ResultStatus q="" sort={title} count={230} />))
+    settle()
+    expect(said()).toBeEmptyDOMElement()
+  })
+
+  it('says what a filter or a sort leaves, once it settles (spec 13)', () => {
+    vi.useFakeTimers()
+    const { rerender } = render(intl(<ResultStatus q="" sort={title} count={230} />))
+    rerender(intl(<ResultStatus q="genre:rpg" sort={title} count={42} />))
+    // Not at each letter typed.
+    expect(said()).toBeEmptyDOMElement()
+    settle()
+    expect(said()).toHaveTextContent('42 games, sorted by Title, ascending')
+
+    const rating: Sort = { key: 'rating', descending: true }
+    rerender(intl(<ResultStatus q="genre:rpg" sort={rating} count={42} />))
+    settle()
+    expect(said()).toHaveTextContent('42 games, sorted by My rating, descending')
+
+    // Back where it opened is a change too.
+    rerender(intl(<ResultStatus q="" sort={{ key: 'random', descending: false }} count={1} />))
+    settle()
+    expect(said()).toHaveTextContent('1 game, shuffled')
+  })
+
+  it('leaves no match to the empty shelf to say', () => {
+    vi.useFakeTimers()
+    const { rerender } = render(intl(<ResultStatus q="" sort={title} count={230} />))
+    rerender(intl(<ResultStatus q="zzz" sort={title} count={0} />))
+    settle()
+    expect(said()).toBeEmptyDOMElement()
   })
 })
 

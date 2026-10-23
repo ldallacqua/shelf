@@ -667,7 +667,9 @@
     "ascending": "{key}, crescente",
     "descending": "{key}, decrescente",
     "reverse": "Inverter a ordem",
-    "shuffle": "Embaralhar de novo"
+    "shuffle": "Embaralhar de novo",
+    "result": "{count, plural, one {# jogo, ordenado por {order}} other {# jogos, ordenados por {order}}}",
+    "shuffled": "{count, plural, one {# jogo, embaralhado} other {# jogos, embaralhados}}"
   },
   "Shelves": {
     "open": "Prateleiras",
