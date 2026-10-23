@@ -32,7 +32,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Accounts | Anyone signs up for a shelf of their own, public or private: [`docs/adr/004-one-library-per-account.md`](docs/adr/004-one-library-per-account.md) | Done |
 | Step 8 | Landing page | Done |
 | Step 9 | The trophy wall; phone and tablet, accessibility and speed passes; the daily refresh | Done |
-| Sync | Steam, then Nintendo, then PlayStation and Xbox: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Steam done; Nintendo next |
+| Sync | Steam, then Nintendo, then PlayStation and Xbox: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Steam done; Nintendo parked, to research first ([handoff](docs/handoff.md)) |
 | Step 10 | Final review | Not started |
 
 What is on screen today: a landing page that shows what Shelf does with an example shelf, and,

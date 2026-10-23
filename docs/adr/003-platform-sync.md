@@ -239,7 +239,11 @@ building settled:
   first, within four minutes. Asked twice inside a minute, Steam is read once. Each account
   may put 2,000 games an hour on its shelf by syncing, and read its source 60 times.
 - **Steam's terms** ask a site that keeps Steam data to say what it keeps: the privacy page
-  (`/privacy`) says it, and is linked from the footer and from the Steam card.
+  (`/privacy`) says it, and is linked from the footer and from the Steam card. Valve asks for
+  its own sign-in button, which is served from Shelf (`public/platforms/`).
+- **Nintendo is parked** (the owner, 23 Oct 2026), to look first at how other sites read a
+  Nintendo account, Exophase from a friend code among them. The handoff note has what is
+  known.
 - **Everything that differs per source** is in `domain/sync/sources.ts` (what it can tell)
   and its adapter in `server/sync/` (how to ask it). PlayStation, Xbox and Nintendo are listed
   there already, not ready; the database's checks accept all four, so adding one needs no

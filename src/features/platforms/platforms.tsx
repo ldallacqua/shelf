@@ -166,10 +166,25 @@ function SteamCard({
           <p className="max-w-xl text-sm text-pretty">{t('steam.about')}</p>
           <p className="max-w-xl text-sm text-pretty text-muted">{t('steam.public')}</p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <Button variant="primary" asChild>
-              {/* A plain link: the browser leaves for Steam's own page and comes back. */}
-              <a href={connectAddress(source, locale)}>{t('steam.signIn')}</a>
-            </Button>
+            {/*
+             * A plain link: the browser leaves for Steam's own page and comes back.
+             * Valve asks for its own button where its sign-in is offered: this is
+             * sits_01.png from steamcommunity.com/dev, served from here, as the
+             * pages' rules allow images only from our own origin and IGDB's.
+             */}
+            <a
+              href={connectAddress(source, locale)}
+              className="inline-flex rounded-[3px] transition-[filter] duration-quick ease-settle hover:brightness-125"
+            >
+              {/* Valve's fixed artwork at its own size: next/image would only add a request. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/platforms/sign-in-through-steam.png"
+                width={180}
+                height={35}
+                alt={t('steam.signIn')}
+              />
+            </a>
             <Link
               href="/privacy"
               className="text-sm underline decoration-1 underline-offset-4 hover:decoration-2"
