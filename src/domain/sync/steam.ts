@@ -1,12 +1,13 @@
 import { z } from 'zod'
 
-import type { Reported } from '@/domain/sync/items'
+import type { Reported, StoreKind, StoreKindOf } from '@/domain/sync/items'
 
 /**
- * What Steam sends, for the two questions a sync asks it (ADR 003): the
- * games an account owns (`IPlayerService/GetOwnedGames`) and the account's
- * name (`ISteamUser/GetPlayerSummaries`). Every answer passes these schemas
- * first.
+ * What Steam sends, for the three questions a sync asks it (ADR 003): the
+ * games an account owns (`IPlayerService/GetOwnedGames`), the account's
+ * name (`ISteamUser/GetPlayerSummaries`), and what kind of app each one is
+ * (`IStoreBrowseService/GetItems`, the store's own). Every answer passes
+ * these schemas first.
  */
 
 /** A SteamID64: seventeen digits, the form Steam's sign-in vouches for. */
@@ -62,6 +63,93 @@ export const reportedFromSteam = (answer: SteamOwnedGames): Reported[] | undefin
     if (game.rtime_last_played) reported.lastPlayedAt = game.rtime_last_played * 1000
     return [reported]
   })
+}
+
+/**
+ * The store's answer about some apps, one item per app asked, in any order.
+ * `success` is 1 for an app with a store page; anything else (15 for one
+ * Steam does not know) has only the `id` asked.
+ */
+export const steamStoreItemsSchema = z.object({
+  response: z.object({
+    store_items: z
+      .array(
+        z.object({
+          id: z.number().int().nonnegative(),
+          success: z.number().int(),
+          /** The store's app type: see `STORE_KIND`. */
+          type: z.number().int().nonnegative().optional(),
+          related_items: z
+            .object({ parent_appid: z.number().int().positive().optional() })
+            .optional(),
+        }),
+      )
+      .default([]),
+  }),
+})
+
+export type SteamStoreItems = z.infer<typeof steamStoreItemsSchema>
+
+/** The question to the store about these apps, as `GetItems` takes it. */
+export const storeItemsQuestion = (appIds: readonly string[]): string =>
+  JSON.stringify({
+    ids: appIds.map((appid) => ({ appid: Number(appid) })),
+    context: { language: 'english', country_code: 'US' },
+    data_request: {},
+  })
+
+/**
+ * The store's app types (Valve's `EStoreAppType`), as the sync reads them.
+ * A mod, and a DLC that Steam lists as an app of its own, may be games:
+ * IGDB decides those. A type not here is taken as a game too.
+ */
+const STORE_KIND: Record<number, StoreKind> = {
+  0: 'game',
+  1: 'demo',
+  2: 'game', // a mod
+  3: 'media', // a film
+  4: 'game', // a DLC with hours of its own: something I launch
+  5: 'media', // a guide
+  6: 'software',
+  7: 'media', // a video
+  8: 'media', // a series
+  9: 'media', // an episode
+  10: 'software', // hardware's own app
+  11: 'media', // a soundtrack
+  12: 'demo', // a beta
+  13: 'software', // a tool
+  14: 'game', // a store page for something else: a part, when it names its game
+}
+
+/** Steam names a playtest "<Game> Playtest", and gives it no store page. */
+const PLAYTEST = /\bplaytest\s*$/i
+
+/**
+ * Each app's kind, from the store's answer. An app the answer has no page
+ * for is a playtest when its name says so, and unknown otherwise. An app the
+ * answer leaves out is left out here too, to be asked again.
+ */
+export const kindsFromSteam = (
+  answer: SteamStoreItems,
+  apps: readonly { storeId: string; title: string }[],
+): Map<string, StoreKindOf> => {
+  const byId = new Map(answer.response.store_items.map((item) => [String(item.id), item]))
+  const kinds = new Map<string, StoreKindOf>()
+  for (const { storeId, title } of apps) {
+    const item = byId.get(storeId)
+    if (!item) continue
+    if (item.success !== 1) {
+      kinds.set(storeId, { kind: PLAYTEST.test(title) ? 'demo' : 'unknown' })
+      continue
+    }
+    const kind = STORE_KIND[item.type ?? 0] ?? 'game'
+    const parent = item.related_items?.parent_appid
+    kinds.set(
+      storeId,
+      item.type === 14 && parent ? { kind: 'part', parentStoreId: String(parent) } : { kind },
+    )
+  }
+  return kinds
 }
 
 /** Steam's OpenID 2.0 provider, the "Sign in through Steam" page. */

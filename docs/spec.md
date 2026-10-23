@@ -163,7 +163,7 @@ Phone:
 
 | Control | Does |
 | --- | --- |
-| Status row | One tap filters to a status. The commonest filter gets the shortest path. |
+| Status row | One tap filters to a status. The commonest filter gets the shortest path. Unsorted is in it only while a shelf has unsorted games. |
 | Filters | Opens the filter panel. Shows how many conditions are active. |
 | Group | None, platform, status, year |
 | Sort | The sort key and direction |
@@ -306,7 +306,7 @@ choice, it is not in the address, and it works in both 2D and 3D.
 | Group by | Shelves | Order |
 | --- | --- | --- |
 | Platform | One per platform I own games on, plus "Not owned" | By family, newest generation first |
-| Status | Playing, Backlog, Completed, Dropped, Wishlist | That order |
+| Status | Playing, Backlog, Completed, Dropped, Wishlist, Unsorted | That order |
 | Year | One per release year | Newest first |
 | None | One shelf | |
 
@@ -475,8 +475,14 @@ PlayStation, Xbox and Nintendo come next, and the page says so.
    - **A game already on the shelf**, under any version, gains a PC digital copy, or feeds
      the one it has. Never a second box. Its status, rating, notes, tags and dates are never
      touched.
-   - **A game new to the shelf** starts in the backlog, or as playing if Steam saw it played
-     in the last two weeks.
+   - **A game new to the shelf** starts **unsorted**, waiting for me to place it, or as
+     playing if Steam saw it played in the last two weeks. Owning a game on Steam does not
+     make it my backlog. Placing them, with a rating, one after another, is the review
+     below.
+   - **What Steam's store says is not a game** is left out by itself, before anything is
+     matched: demos, playtests, software, videos and soundtracks. "Left out" says what Steam
+     calls each one, and **Ask again** brings it back for good. A mode Steam lists apart from
+     its game (a multiplayer, a zombies mode) goes on that game's copy, hours and all.
    - **Steam's hours** go on the copy, in Steam's own row. A game shows the larger of the hours
      I typed and what its sources report together, so nothing is counted twice; the editor
      shows Steam's hours beside the copy.
@@ -501,6 +507,38 @@ PlayStation, Xbox and Nintendo come next, and the page says so.
 - A game I removed is not put back by the next sync.
 - Steam's hours never overwrite or add to the hours I typed.
 - The sign-in links nothing for an answer the browser did not ask for, or one used before.
+- A synced game starts unsorted or playing, never in the backlog; demos, playtests and
+  software never reach the shelf.
+
+### 4.5 Placing what a sync brought in (next: not built yet)
+
+The owner asked for it on 23 Oct 2026, after their first Steam sync, with Minimap's "Rate my
+games" page as the model: games a platform brought in "are actually in a waiting state, or
+unassigned state, we will in a next step, add a review experience where we will allow the
+user to assign a score to the game and which status they have." Until it exists, unsorted
+games are placed one at a time in each game's editor.
+
+- **A page of its own** for my unsorted games, reached from the Steam card ("240 games to
+  place") and from Unsorted in the status row.
+- **One row per game:** cover, title, the platform, hours on the source and when last
+  played. Longest played first, as Minimap opens; also by most recently played, by title,
+  and by date added.
+- **On each row, my rating and a status, one tap each, saved at once,** with the controls the
+  editor uses: the rating out of ten, and Playing, Backlog, Completed, Dropped, Wishlist as
+  shapes and words. A game with a status leaves the list, with Undo; a rating alone leaves it
+  where it is. Nothing else about the game changes.
+- **A tally beside the list,** as Minimap's has: how many games are in each status, and how
+  many are still unsorted, moving as I place them.
+- **Many at once:** select rows, or "everything under an hour", and give them one status.
+- **Leaving one unsorted is fine:** it stays in the list for another day.
+- Keyboard all the way: the list is one stop, arrows move through it, and each row's
+  controls can be reached without a pointer. Both themes, both languages, a phone.
+
+**Done when**
+
+- Every unsorted game can be given a status and a rating from one page, without opening it.
+- A game given a status leaves the list at once, and Undo puts it back.
+- The tally always agrees with the shelf.
 
 **Done when**
 
@@ -660,7 +698,7 @@ the next frame. There is no Apply button and no spinner.
 | IGDB rating | `igdb` | |
 | Playtime | `hours` | |
 | Completion date | `completed` | |
-| Status | `status` | Playing, Backlog, Completed, Dropped, Wishlist |
+| Status | `status` | Playing, Backlog, Completed, Dropped, Wishlist, Unsorted |
 | Surprise me | `random` | A shuffle. The address keeps a seed, so a shared link shows the same order. Shuffling again picks a new seed. |
 
 Two more that the data makes cheap. Say if you do not want them:

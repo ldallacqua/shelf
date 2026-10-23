@@ -38,9 +38,11 @@ import {
   decisions,
   itemFormats,
   resolutions,
+  storeKinds,
   type Decision,
   type ItemFormat,
   type Resolution,
+  type StoreKind,
 } from '@/domain/sync/items'
 import { linkProblems, type LinkProblem } from '@/domain/sync/link'
 import { evidences, type Evidence } from '@/domain/sync/sources'
@@ -433,6 +435,10 @@ export const sourceItems = sqliteTable(
     /** The copy it feeds. Cleared, with the decision `removed`, when I take that copy off my shelf. */
     copyId: text().references(() => copies.id, { onDelete: 'set null' }),
     decidedAt: integer(),
+    /** What the store says it is (`storeKinds`), asked once. Null until then. */
+    kind: text().$type<StoreKind>(),
+    /** A part's game, by the store's own id: the ladder matches that one. */
+    parentStoreId: text(),
   },
   (table) => [
     uniqueIndex('source_items_user_store').on(table.userId, table.source, table.storeId),
@@ -449,6 +455,10 @@ export const sourceItems = sqliteTable(
       sql`${table.format} is null or ${table.format} in (${oneOf(itemFormats)})`,
     ),
     check('source_items_minutes', sql`${table.minutes} >= 0`),
+    check(
+      'source_items_kind',
+      sql`${table.kind} is null or ${table.kind} in (${oneOf(storeKinds)})`,
+    ),
   ],
 )
 

@@ -1,5 +1,5 @@
 import type { SyncSource } from '@/domain/library/values'
-import type { Decision, ItemState } from '@/domain/sync/items'
+import type { Decision, ItemState, StoreKind } from '@/domain/sync/items'
 
 /**
  * An account's link to a source as the account page shows it, and what one
@@ -53,6 +53,8 @@ export type ItemView = {
   lastSeenAt: number
   state: ItemState
   decision: Decision
+  /** What the store says it is; null until asked. */
+  kind: StoreKind | null
   /** Its game on my shelf, for a link to it. */
   onShelf?: { slug: string; title: string }
 }

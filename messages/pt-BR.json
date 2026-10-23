@@ -367,7 +367,8 @@
       "backlog": "Na fila",
       "completed": "Zerado",
       "dropped": "Abandonado",
-      "wishlist": "Lista de desejos"
+      "wishlist": "Lista de desejos",
+      "unsorted": "A definir"
     },
     "format": {
       "physical": "Físico",
@@ -891,7 +892,7 @@
     },
     "help": {
       "needs-you": "O Shelf não teve certeza de quais jogos são estes. Encontre cada um, ou diga o que é, e o Shelf se lembra.",
-      "hidden": "O Shelf deixa estes fora da sua estante, diga a {source} o que disser.",
+      "hidden": "O Shelf deixa estes fora da sua estante, diga a {source} o que disser. Demos, playtests e programas vêm para cá sozinhos.",
       "not-seen": "Continuam na sua estante. A {source} parou de listá-los."
     },
     "loading": "Carregando…",
@@ -913,6 +914,11 @@
       "not_a_game": "Não é um jogo",
       "not_mine": "Não é meu",
       "removed": "Tirado da sua estante"
+    },
+    "kind": {
+      "demo": "Uma demo ou playtest na {source}",
+      "software": "Um programa na {source}",
+      "media": "Um vídeo ou trilha sonora na {source}"
     },
     "lastSeen": "Listado pela última vez {date}",
     "added": "Na sua estante como {title}.",
@@ -940,7 +946,7 @@
       },
       "steam": {
         "title": "Steam",
-        "body": "Se você conectar a Steam, o Shelf guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas e quando cada um foi jogado pela última vez. O Shelf os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Shelf. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
+        "body": "Se você conectar a Steam, o Shelf guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas, quando cada um foi jogado pela última vez e o que a loja da Steam diz que cada um é (um jogo, uma demo, um programa). O Shelf os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Shelf. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
       },
       "where": {
         "title": "Onde fica guardado",

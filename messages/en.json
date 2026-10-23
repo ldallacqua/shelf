@@ -367,7 +367,8 @@
       "backlog": "Backlog",
       "completed": "Completed",
       "dropped": "Dropped",
-      "wishlist": "Wishlist"
+      "wishlist": "Wishlist",
+      "unsorted": "Unsorted"
     },
     "format": {
       "physical": "Physical",
@@ -891,7 +892,7 @@
     },
     "help": {
       "needs-you": "Shelf could not be sure which games these are. Find each one, or say what it is, and Shelf remembers.",
-      "hidden": "Shelf leaves these off your shelf, whatever {source} says.",
+      "hidden": "Shelf leaves these off your shelf, whatever {source} says. Demos, playtests and software come here by themselves.",
       "not-seen": "Still on your shelf. {source} stopped listing them."
     },
     "loading": "Loading…",
@@ -913,6 +914,11 @@
       "not_a_game": "Not a game",
       "not_mine": "Not mine",
       "removed": "Taken off your shelf"
+    },
+    "kind": {
+      "demo": "A demo or playtest on {source}",
+      "software": "Software on {source}",
+      "media": "A video or soundtrack on {source}"
     },
     "lastSeen": "Last listed {date}",
     "added": "On your shelf as {title}.",
@@ -940,7 +946,7 @@
       },
       "steam": {
         "title": "Steam",
-        "body": "If you link Steam, Shelf keeps your Steam account’s id and name, and the games Steam lists for it, with the hours played and when each was last played. Shelf reads them when you link Steam or press Sync now, and once a day while daily sync is on. Your Steam password never reaches Shelf. Disconnecting Steam deletes what Steam listed; the games it put on your shelf stay, as your own."
+        "body": "If you link Steam, Shelf keeps your Steam account’s id and name, and the games Steam lists for it, with the hours played, when each was last played, and what Steam’s store calls each one (a game, a demo, software). Shelf reads them when you link Steam or press Sync now, and once a day while daily sync is on. Your Steam password never reaches Shelf. Disconnecting Steam deletes what Steam listed; the games it put on your shelf stay, as your own."
       },
       "where": {
         "title": "Where it is kept",

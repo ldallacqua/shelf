@@ -381,6 +381,7 @@ describe('counts beside every value (spec 5.4)', () => {
       completed: 3,
       dropped: 1,
       wishlist: 1,
+      unsorted: 0,
     })
     expect(counts('genre:rpg', 'status')).toEqual({
       playing: 0,
@@ -388,6 +389,7 @@ describe('counts beside every value (spec 5.4)', () => {
       completed: 1,
       dropped: 1,
       wishlist: 0,
+      unsorted: 0,
     })
   })
 

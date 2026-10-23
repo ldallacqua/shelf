@@ -3,6 +3,7 @@ import {
   CheckIcon,
   CircleDashedIcon,
   CircleSlashIcon,
+  InboxIcon,
   PlayIcon,
   type LucideIcon,
 } from 'lucide-react'
@@ -16,6 +17,8 @@ const icons: Record<Status, LucideIcon> = {
   completed: CheckIcon,
   dropped: CircleSlashIcon,
   wishlist: BookmarkIcon,
+  // Came in from a sync, waiting for me to place it.
+  unsorted: InboxIcon,
 }
 
 type StatusMarkProps = {

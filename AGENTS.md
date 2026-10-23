@@ -221,7 +221,10 @@ answers are `src/server/services/sync.ts`, the same for every source. What a sou
 what was decided about it are `source_items`, the sync's own rows, written by
 `server/sync/memory.ts`; a game onto the shelf, or hours onto a copy, go through the store
 (`addFromSource`, `feedCopies`) like every other write. A sync never changes what I set, never
-deletes, and never puts back a game I took off (`removed`). A platform account is linked only
+deletes, and never puts back a game I took off (`removed`). A game it adds starts `unsorted`
+(or playing, if played these two weeks), never in the backlog: owning a game says nothing of
+where it stands with me. Before matching, the store says what each item is (`kind`), and
+demos, playtests and software are left out by themselves. A platform account is linked only
 through the platform's own sign-in. Tests never talk to Steam: `fixtures/steam/` and the
 double in `server/mocks/steam.ts` answer, and with the test doubles on, "Sign in through
 Steam" comes straight back with the made-up account.

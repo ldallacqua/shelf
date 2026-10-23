@@ -4,8 +4,20 @@
  * labels are all built from these.
  */
 
-/** Where a game stands with me. The order is the order shelves appear in. */
-export const statuses = ['playing', 'backlog', 'completed', 'dropped', 'wishlist'] as const
+/**
+ * Where a game stands with me. The order is the order shelves appear in.
+ * `unsorted` is a game a sync brought in that I have not placed yet: not my
+ * backlog until I say so. It comes last, so the data files' numbers for the
+ * others stay as they were.
+ */
+export const statuses = [
+  'playing',
+  'backlog',
+  'completed',
+  'dropped',
+  'wishlist',
+  'unsorted',
+] as const
 export type Status = (typeof statuses)[number]
 
 /** How a copy is owned. */

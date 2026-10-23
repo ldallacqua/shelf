@@ -4,6 +4,33 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Next: the review of unsorted games (the owner's ask, 23 Oct 2026; not built)
+
+**Do not lose this one.** After the owner's first real Steam sync: "Recently imported games
+from a platform should not be assigned to backlog. They are actually in a waiting state, or
+unassigned state, we will in a next step, add a review experience where we will allow the
+user to assign a score to the game and which status they have. Like what minimap does
+(document this so the other AI won't forget to do it)".
+
+- **Done already** (the pull request after #25): the waiting state. `unsorted` is a sixth
+  status, last in `statuses` so the data files' numbers for the others did not move. A sync
+  puts a new game there (or in Playing, if played these two weeks), never in the backlog.
+  Migration 0008 moved the owner's synced games that were still in the backlog the sync had
+  put them in, untouched since, to it. It has the Inbox icon, shows in the status row only
+  while a shelf has some, draws like a backlog game in 3D, and is `status:unsorted` in the
+  filter language. Every place that lists statuses lists it, the editors included, so a game
+  can be put back to Unsorted.
+- **To build: the review page,** [spec 4.5](spec.md#45-placing-what-a-sync-brought-in-next-not-built-yet).
+  The model is Minimap's "Rate my games" (`minimap.net/rating/rateLibrary`, the owner's
+  screenshot): a list of the library's games, longest played first, each a card with its
+  cover, title, hours on the platform, five stars for a rating and one button per status;
+  beside it, a tally per status and the unplaced count. Shelf's own version: one row per
+  unsorted game, my rating and a status one tap each, saved at once; a placed game leaves the
+  list, with Undo; select many and give them one status; reached from the Steam card and
+  from Unsorted in the status row. The editor's rating and status controls, the existing
+  `PATCH /entries/{id}` write and `useAccount()` are what it needs; no new table.
+- **Then Nintendo,** below.
+
 ## Now: Steam is done and in use; Nintendo is parked
 
 **If you are picking this up to do Nintendo, read this section, then ADR 003 whole (its last
@@ -19,13 +46,23 @@ part, "Built: Steam", is how a source is added), then `src/server/services/sync.
   as a PC digital copy with Steam's hours; a list of what needs an answer; Sync now and a
   daily job (`/api/cron/sync`, 07:00 UTC); `/privacy`, which Steam's terms ask for; the
   landing page's part 5 and a question in its FAQ.
-- **The owner wants to start using it.** Production needs, from the owner, `STEAM_API_KEY`
-  ([setup E](setup.md#e-steam-sync)) and `CRON_SECRET` ([setup D](setup.md#d-daily-refresh)),
-  then a redeploy. Without the key, the Steam card says sync is not set up on this server.
-  Linking on production is the owner's to do, with their own Steam account: an assistant
-  never signs in to Steam. Locally, with the test doubles on, "Sign in through Steam" comes
-  straight back with a made-up account (`MOCK_STEAM`), whose games are
-  `fixtures/steam/owned-games.json`.
+- **The owner uses it.** Production has `STEAM_API_KEY` and `CRON_SECRET` (both set 23 Oct
+  2026, and deployed), so the daily refresh and the daily sync run. The owner linked their
+  own Steam account; an assistant never signs in to Steam. Locally, with the test doubles on,
+  "Sign in through Steam" comes straight back with a made-up account (`MOCK_STEAM`), whose
+  games are `fixtures/steam/owned-games.json`, and the store's word on each is
+  `fixtures/steam/store-items.json`.
+- **What the first real sync taught** (the owner's list of what needed an answer, 23 Oct
+  2026). Being an adult game was never the reason: IGDB serves those (HuniePop matches by
+  its Steam id). What was left was, in order of size: games IGDB does not have at all
+  (FlipWitch, Scarlet Maiden, Sin Spire and others: nothing to match, so Find it cannot find
+  them either; adding a game IGDB lacks is not built); software (Wallpaper Engine, ShareX,
+  Lossless Scaling); demos and playtests; modes Steam sells as their own app (Modern Warfare
+  2's multiplayer, Black Ops II's zombies); and one season IGDB files as a DLC. The pull
+  request after #25 answers all but the first: Steam's store (`IStoreBrowseService/GetItems`,
+  public) says each app's type, so software, demos, playtests and media are left out by
+  themselves, a mode joins its game, and an add-on IGDB alone holds a store id for is taken
+  as the game (ADR 003, "Built: Steam").
 - **The button is Valve's own** (`public/platforms/sign-in-through-steam.png`, `sits_01.png`
   from steamcommunity.com/dev, downloaded with the owner's yes, 23 Oct 2026): Valve asks for
   it where its sign-in is used, and it says the site is not associated with Valve.
