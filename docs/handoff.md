@@ -19,7 +19,14 @@ step 3. This note is what the next session needs and cannot get from the code. R
   shelf away wider than a phone, and the 3D wall on a tablet held upright. From the
   accessibility audit, against spec 12 and 13: a filter or sort change now says what it left
   ("42 games, sorted by My rating, descending"), and a tablet held upright opens a game as a
-  sheet from the bottom, at the phone's two heights. Left: speed work.
+  sheet from the bottom, at the phone's two heights ([#22](https://github.com/ldallacqua/shelf/pull/22)).
+  Speed: the stylesheet is written into each page (architecture, section 25).
+- **Lighthouse on this computer:** its benchmark (about 5,100) asks for a slowdown of
+  19.5 times, from the calculator's last step carried past where it was read, and every
+  page fails there. At 8 times, the measure used for step 9's choices, the landing page
+  scores about 90 and the library about 80: its largest paint waits for the covers, which
+  the page names only after its React payload, and its blocked time is React drawing the
+  shelves twice, as the page starts and when the library file arrives.
 - **Platform sync ([ADR 003](adr/003-platform-sync.md)) is still to be built.** The ADR
   proposed it as its own step after step 7; the owner chose step 9 next.
 - **The seed's finish days changed at step 9** (architecture, section 25): run `pnpm seed`
