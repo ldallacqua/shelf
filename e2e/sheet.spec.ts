@@ -12,18 +12,28 @@ test.describe('a game’s sheet from the bottom', () => {
 
   const sheet = (page: Page) => page.getByRole('dialog')
 
+  /** Waits for the sheet to come to rest: its position eases for a moment after each change. */
+  const rest = async (page: Page) => {
+    await expect(sheet(page)).not.toHaveAttribute('data-dragging')
+    await expect
+      .poll(async () => {
+        const before = (await sheet(page).boundingBox())?.y
+        await page.waitForTimeout(100)
+        return (await sheet(page).boundingBox())?.y === before
+      })
+      .toBe(true)
+  }
+
   /** Where the sheet's top edge is, as a share of the window's height, once it has come to rest. */
   const topOf = async (page: Page) => {
-    const box = sheet(page)
-    await expect(box).not.toHaveAttribute('data-dragging')
-    // Its position eases for a moment after a change.
-    await page.waitForTimeout(400)
-    const top = (await box.boundingBox())!.y
+    await rest(page)
+    const top = (await sheet(page).boundingBox())!.y
     return top / page.viewportSize()!.height
   }
 
-  /** Drags with a pointer from the middle of `from`, by `by` pixels down (up when negative). */
+  /** Drags with a pointer from the middle of `from`, at rest, by `by` pixels down (up when negative). */
   const drag = async (page: Page, from: Locator, by: number) => {
+    await rest(page)
     const box = (await from.boundingBox())!
     const x = box.x + box.width / 2
     const y = box.y + box.height / 2
