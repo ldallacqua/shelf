@@ -31,13 +31,22 @@ const reading: Project[] = browsers.flatMap((browserName) =>
  * The same nine, for the tests that change the library. They start once
  * every test that reads it has finished, so no count or shelf a reading
  * test checks can change under it. Run one alone with `--no-deps`.
+ *
+ * Three at a time at most: each engine's three run one after another, one
+ * test at a time. They make the one test server write, build pages again
+ * and forget them, and with eight at once it fell behind (an old address
+ * still served for seconds, a connection reset).
  */
-const writing: Project[] = reading.map((project) => ({
+const writing: Project[] = reading.map((project, at) => ({
   ...project,
   name: `${project.name}-writes`,
   testIgnore: undefined,
   testMatch: WRITES,
-  dependencies: reading.map((each) => each.name!),
+  workers: 1,
+  dependencies:
+    at % Object.keys(sizes).length === 0
+      ? reading.map((each) => each.name!)
+      : [`${reading[at - 1]!.name}-writes`],
 }))
 
 const projects = [...reading, ...writing]
@@ -47,7 +56,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 2 : 3,
+  // Half the machine's threads: the rest serve the pages, and the browsers draw them.
+  workers: process.env.CI ? 2 : '50%',
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   // Reference screenshots are made on Linux only, so their names carry no platform.
   snapshotPathTemplate: 'e2e/__screenshots__/{projectName}/{testFileName}/{arg}{ext}',

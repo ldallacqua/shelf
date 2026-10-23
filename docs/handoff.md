@@ -19,7 +19,22 @@ step 3. This note is what the next session needs and cannot get from the code. R
   shelf away wider than a phone, and the 3D wall on a tablet held upright. From the
   accessibility audit, against spec 12 and 13: a filter or sort change now says what it left
   ("42 games, sorted by My rating, descending"), and a tablet held upright opens a game as a
-  sheet from the bottom, at the phone's two heights. Left: speed work.
+  sheet from the bottom, at the phone's two heights ([#22](https://github.com/ldallacqua/shelf/pull/22)).
+  Speed: the stylesheet is written into each page, a library's page names its first covers
+  in its head, and Martian Mono's stand-in no longer moves the shelf when the font arrives
+  (architecture, section 25). Step 9 is done; step 10, the final review, is next, ⏸.
+- **Lighthouse on this computer:** its benchmark (about 5,100: a Ryzen 9800X3D is among the
+  fastest single cores there are) asks for a slowdown of 19.5 times, from the calculator's
+  last step carried past where it was read, and every page fails there. At 8 times, the
+  measure used for step 9's choices: landing page 92, library 84, wall 87, game 93, every
+  largest paint under 2.5 s and no layout shift. What holds the library and the wall under
+  90 is blocked time, 500 to 600 ms: React drawing the shelves as the page starts and again
+  when the library file arrives. That is the next speed work, with a profile.
+- **No browser tests until the MVP is done** (the owner, 23 Oct 2026): merges run
+  `pnpm verify --skip-browser`. The last full run passed on the commit that wrote the
+  stylesheet into each page (2,571 tests). Since then the cover preloads, the font stand-in
+  and the workers setting (`playwright.config.ts`: half the threads, the tests that write
+  three at a time, untried) have not met the browser tests.
 - **Platform sync ([ADR 003](adr/003-platform-sync.md)) is still to be built.** The ADR
   proposed it as its own step after step 7; the owner chose step 9 next.
 - **The seed's finish days changed at step 9** (architecture, section 25): run `pnpm seed`

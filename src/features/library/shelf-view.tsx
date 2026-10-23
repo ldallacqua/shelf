@@ -10,6 +10,7 @@ import { caseShapes } from '@/ui/game-case'
 
 import { describeBox, shelfName } from './describe'
 import { FoldBody, FoldToggle } from './fold-toggle'
+import { EAGER_COVERS } from './opening-covers'
 import type { Density } from './preferences'
 import { ShelfGrid } from './shelf-grid'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
@@ -22,13 +23,6 @@ const sizeOf = (shelf: DrawnShelf): { slot: number; tall: number } => {
   const shape = caseShapes[shelf.platform.shape]
   return { slot: shape.width, tall: shape.height }
 }
-
-/**
- * How many of the first covers are fetched ahead of the rest: the first two
- * rows on a phone, most of the first on a desktop. More would compete with
- * each other on a slow connection and all arrive later.
- */
-const EAGER = 6
 
 type ShelfViewProps = ViewProps & { density: Density }
 
@@ -112,7 +106,7 @@ function ShelfSection({
           label={t('shelf.games', { shelf: name })}
           describe={describe}
           openIndex={openIndex}
-          eager={position === 0 ? EAGER : 0}
+          eager={position === 0 ? EAGER_COVERS : 0}
           enter={enter}
           position={position}
           onOpen={onOpen}

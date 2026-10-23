@@ -75,7 +75,20 @@ const nextConfig: NextConfig = {
     return [{ source: '/((?!_next/static/).*)', headers: securityHeaders }]
   },
   cacheComponents: true,
+  // A page with a part made per visit (the library) carries a second copy of its
+  // React payload, for the browser's cache of what links lead to. Without it,
+  // every link in view is prefetched as the page starts: measured at step 9 on
+  // a phone's speed, that blocked the library 758 ms in place of 511, and the
+  // landing page 595 in place of 322.
   partialPrefetching: true,
+  experimental: {
+    // The stylesheet is written into each page, not linked from it: the first
+    // paint no longer waits for a second file. Measured at step 9 on a phone's
+    // speed, alternating with the linked file: the landing page painted in
+    // 1.36 s in place of 1.86, the library in 1.20 in place of 2.16. A page
+    // loaded again carries its 18 KB again; moving between pages does not.
+    inlineCss: true,
+  },
   reactCompiler: true,
   typedRoutes: true,
   poweredByHeader: false,
