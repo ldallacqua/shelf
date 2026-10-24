@@ -323,6 +323,12 @@ Nintendo's own page and Shelf keeps the session token, encrypted." What building
 - **The games Shelf matched are listed first**, each needing only Cartridge or Download, then
   those it could not find, under a heading of their own. The card says how many wait for an
   answer; it never says "up to date" while any do.
+- **A game Nintendo lists twice is one row** (the owner's ask, 24 Oct 2026). Nintendo gave
+  Warframe two title ids, "Warframe for Nintendo Switch" and "Warframe", and both matched
+  Warframe. The list shows the items matched to one record as one game, its hours summed and
+  its other names under it; an answer goes to each item, the first making the copy and the
+  rest feeding it. The card's counts are games, not items: waiting, by the record matched;
+  on the shelf, by the copy. What is left out still counts by item.
 - **A new game starts unsorted, or playing** if last played these two weeks, as Steam's do.
   The hours are Nintendo's row on the copy, as Steam's are.
 - **Tests never talk to Nintendo.** `fixtures/nintendo/play-history.json` and the double in

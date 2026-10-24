@@ -927,6 +927,7 @@
     },
     "unfound": "{count, plural, one {Shelf could not find this game} other {Shelf could not find these # games}}",
     "unfoundHelp": "Find each one, or say it is not a game or not yours.",
+    "alsoListed": "{source} also lists it as {titles}.",
     "loading": "Loading…",
     "hours": "{hours, number} h on {source}",
     "unplayed": "Not played on {source}",

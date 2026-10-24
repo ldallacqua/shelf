@@ -370,23 +370,31 @@ export const confirmItems = async (
   if (first) await db.batch([first, ...rest])
 }
 
-/** How many items are in each state, and how many on the shelf the source no longer lists. */
+/**
+ * How many games are in each state, and how many on the shelf the source no
+ * longer lists. A game the source lists twice, as Nintendo lists Warframe
+ * for the Switch and the Switch 2, counts once: on the shelf by its copy,
+ * waiting by the record it was matched to. What is left out counts by item.
+ */
 export const countItems = async (db: Executor, link: Link): Promise<ItemCounts> => {
+  const game = sql`case when ${sourceItems.decision} in ('pending', 'copy')
+    then coalesce(${sourceItems.copyId}, 'game:' || ${sourceItems.igdbId}, ${sourceItems.id})
+    else ${sourceItems.id} end`
   const rows = await db
     .select({
       decision: sourceItems.decision,
       shelved: sql<number>`${sourceItems.copyId} is not null`,
-      unseen: sql<number>`${sourceItems.lastSeenAt} < ${link.readAt ?? 0}`,
-      count: sql<number>`count(*)`,
+      count: sql<number>`count(distinct ${game})`,
+      unseen: sql<number>`count(distinct case when ${sourceItems.lastSeenAt} < ${link.readAt ?? 0} then ${game} end)`,
     })
     .from(sourceItems)
     .where(ofSource(link.userId, link.source))
-    .groupBy(sql`1, 2, 3`)
+    .groupBy(sql`1, 2`)
   const counts: ItemCounts = { 'on-shelf': 0, adding: 0, 'needs-you': 0, hidden: 0, notSeen: 0 }
   for (const row of rows) {
     const state = stateOf({ decision: row.decision, copyId: Number(row.shelved) ? 'yes' : null })
     counts[state] += Number(row.count)
-    if (state === 'on-shelf' && Number(row.unseen)) counts.notSeen += Number(row.count)
+    if (state === 'on-shelf') counts.notSeen += Number(row.unseen)
   }
   return counts
 }

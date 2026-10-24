@@ -77,11 +77,14 @@ const sent: { path: string; method: string; body?: unknown }[] = []
 let platforms: PlatformRow[]
 let steps: SyncStep[]
 let pasted: NintendoLinkOutcome
+/** What the needs-you list answers with. */
+let listed: ItemView[]
 
 beforeEach(() => {
   sent.length = 0
   steps = []
   pasted = 'linked'
+  listed = PLAYED
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const path = String(input)
     const method = init?.method ?? 'GET'
@@ -93,7 +96,7 @@ beforeEach(() => {
       if (pasted === 'linked') platforms = rows(null, NINTENDO)
       return Response.json({ outcome: pasted })
     }
-    if (path === '/api/v1/me/platforms/nintendo/items?list=needs-you') return Response.json(PLAYED)
+    if (path === '/api/v1/me/platforms/nintendo/items?list=needs-you') return Response.json(listed)
     if (path.startsWith('/api/v1/me/platforms/nintendo/items/')) {
       return Response.json({ item: { ...PLAYED[0], state: 'on-shelf' }, version: 9 })
     }
@@ -238,6 +241,36 @@ describe('Nintendo', () => {
       expect(after(cartridge, heading)).toBe(true)
     }
     expect(after(heading, screen.getByRole('button', { name: 'Find it' }))).toBe(true)
+  })
+
+  it('shows a game Nintendo lists twice as one, with both its hours, and answers for both', async () => {
+    platforms = rows(null, NINTENDO)
+    listed = [
+      ...PLAYED,
+      played('kart-2', 'Mario Kart 8 Deluxe – Nintendo Switch 2 Edition', PLAYED[0]!.match),
+    ]
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByText('3 games need you'))
+    expect(
+      await screen.findAllByText('Shelf thinks it is Mario Kart 8 Deluxe (2017)'),
+    ).toHaveLength(1)
+    expect(
+      screen.getByText(
+        'Nintendo also lists it as Mario Kart 8 Deluxe – Nintendo Switch 2 Edition.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByText('20 h on Nintendo')).toBeInTheDocument()
+    expect(screen.getByText('All 2 games Shelf found are:')).toBeInTheDocument()
+    const [cartridge] = screen.getAllByRole('button', { name: 'Cartridge' })
+    await userEvent.click(cartridge!)
+    await waitFor(() =>
+      expect(
+        sent.filter((each) => each.method === 'POST' && each.path.includes('/items/')),
+      ).toEqual([
+        expect.objectContaining({ path: expect.stringMatching(/\/items\/kart$/) }),
+        expect.objectContaining({ path: expect.stringMatching(/\/items\/kart-2$/) }),
+      ]),
+    )
   })
 
   it('says how many games wait for me, not that all is up to date', async () => {

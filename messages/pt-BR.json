@@ -927,6 +927,7 @@
     },
     "unfound": "{count, plural, one {O Shelf não achou este jogo} other {O Shelf não achou estes # jogos}}",
     "unfoundHelp": "Encontre cada um, ou diga que não é um jogo ou que não é seu.",
+    "alsoListed": "A {source} também lista como {titles}.",
     "loading": "Carregando…",
     "hours": "{hours, number} h na {source}",
     "unplayed": "Não jogado na {source}",

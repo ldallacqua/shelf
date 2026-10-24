@@ -31,6 +31,9 @@ Nintendo"; how it looks and behaves is spec 4.4.
     Devil May Cry 3 Special Edition, DEAD OR ALIVE Xtreme 3 Scarlet, This War of Mine:
     Complete Edition, Vampire Crawlers and one more, which need Find it. Resident Evil 4 (2011)
     and Devil May Cry 1 and 2 (2012) are IGDB's records of the HD versions Switch has.
+  - After #30 deployed, the owner's list matched 30 of 38, the six expected. Warframe came
+    twice, under two title ids; [#31](https://github.com/ldallacqua/shelf/pull/31) shows such
+    a game as one row, answered once, and counts it once.
 - **`PLATFORM_TOKEN_KEY`** ([setup F](setup.md#f-nintendo-sync)) seals Nintendo's session.
   Never change it now that the owner has linked Nintendo.
 - **An assistant never signs in to Nintendo.** The sign-in, the token exchange and the play
