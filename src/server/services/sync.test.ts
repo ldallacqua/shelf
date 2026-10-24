@@ -404,16 +404,50 @@ describe('what Steam’s store says each game is', () => {
     expect(await entriesOf(me)).toHaveLength(BY_STORE_ID + 1)
   })
 
+  it('matches a mode whose game the store does not name to the game I own under its title', async () => {
+    steamAnswers((games) => [
+      ...games,
+      { appid: 9900013, name: 'Half-Life 2 - Zombies', playtime_forever: 90 },
+    ])
+    // As Black Ops II's zombies: a page for something else, with no game named.
+    storeAnswers({ 9900013: { id: 9900013, success: 1, type: 14 } })
+    const me = await linked()
+    await syncAll(me)
+
+    const game = await itemOf(me, '220')
+    expect(await itemOf(me, '9900013')).toMatchObject({
+      kind: 'part',
+      parentStoreId: '220',
+      igdbId: HALF_LIFE_2,
+      copyId: game.copyId,
+    })
+    expect(await entriesOf(me)).toHaveLength(BY_STORE_ID + 1)
+  })
+
+  it('takes a mode as a game of its own when nothing I own starts its title', async () => {
+    steamAnswers((games) => [
+      ...games,
+      { appid: 9900014, name: 'Gone Game - Multiplayer', playtime_forever: 90 },
+    ])
+    storeAnswers({ 9900014: { id: 9900014, success: 1, type: 14 } })
+    const me = await linked()
+    await syncAll(me)
+    expect(await itemOf(me, '9900014')).toMatchObject({ kind: 'game', parentStoreId: null })
+  })
+
   it('goes on without the store when it does not answer, and asks it at the next sync', async () => {
+    let asked = 0
     network.use(
-      http.get(
-        `${STEAM_API}/IStoreBrowseService/GetItems/v1/`,
-        () => new HttpResponse(null, { status: 503 }),
-      ),
+      http.get(`${STEAM_API}/IStoreBrowseService/GetItems/v1/`, () => {
+        asked += 1
+        return new HttpResponse(null, { status: 503 })
+      }),
     )
     const me = await linked()
     const step = await syncAll(me)
     expect(step.link.counts['on-shelf']).toBe(BY_STORE_ID + 1)
+    // Once for the sync, on the step that read the list: not again at every step after it.
+    expect(asked).toBe(1)
     expect(await itemNamed(me, 'Wallpaper Engine')).toMatchObject({
       kind: null,
       decision: 'pending',

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { caseShapes, families, plastics } from '@/domain/platforms/platforms'
 import { openDatabase } from '@/server/db/client'
 import { migrateDatabase } from '@/server/db/migrate'
-import { entries, libraries, users } from '@/server/db/schema'
+import { entries, libraries, sourceItems, users } from '@/server/db/schema'
 import { createTestAccount, createTestDatabase } from '@/test/database'
 
 const nameOf = async (db: Awaited<ReturnType<typeof createTestDatabase>>, id: string) =>
@@ -82,6 +82,47 @@ describe('games a sync brought in before "unsorted" (0008)', () => {
         .from(libraries)
         .where(eq(libraries.userId, me))
       expect(after?.version).toBe(version + 1)
+    } finally {
+      rmSync(before, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('Steam items the store called a game and nothing matched (0009)', () => {
+  it('are asked about again, and nothing else is', async () => {
+    const before = migrationsBefore('0009_modes-again')
+    const db = openDatabase({ kind: 'memory' })
+    try {
+      await migrateDatabase(db, before)
+      const me = await createTestAccount(db, 'lucas')
+      // Each item: what the store said, the decision, and the record matched.
+      const made: Record<string, [string, string, number | null]> = {
+        zombies: ['game', 'pending', null],
+        matched: ['game', 'copy', 233],
+        software: ['software', 'not_a_game', null],
+        unknown: ['unknown', 'pending', null],
+        dismissed: ['game', 'not_mine', null],
+      }
+      for (const [id, [kind, decision, igdbId]] of Object.entries(made)) {
+        await db.run(sql`insert into source_items (id, user_id, source, store_id, title, evidence,
+            first_seen_at, last_seen_at, decision, igdb_id, kind)
+          values (${id}, ${me}, 'steam', ${id}, ${id}, 'owned', 1, 1, ${decision}, ${igdbId}, ${kind})`)
+      }
+
+      await migrateDatabase(db)
+
+      const kinds = Object.fromEntries(
+        (await db.select({ id: sourceItems.id, kind: sourceItems.kind }).from(sourceItems)).map(
+          (row) => [row.id, row.kind],
+        ),
+      )
+      expect(kinds).toEqual({
+        zombies: null,
+        matched: 'game',
+        software: 'software',
+        unknown: 'unknown',
+        dismissed: 'game',
+      })
     } finally {
       rmSync(before, { recursive: true, force: true })
     }

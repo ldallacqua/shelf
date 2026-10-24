@@ -207,6 +207,13 @@ export const saveResolutions = async (
   if (first) await db.batch([first, ...rest])
 }
 
+/** Every item's store id and title: where a mode the store names no game for looks for it. */
+export const listedTitles = (db: Executor, userId: string, source: SyncSource) =>
+  db
+    .select({ storeId: sourceItems.storeId, title: sourceItems.title })
+    .from(sourceItems)
+    .where(ofSource(userId, source))
+
 /** Items the store has not been asked about yet, oldest first. */
 export const unclassified = (db: Executor, userId: string, source: SyncSource, limit: number) =>
   db

@@ -17,7 +17,7 @@ import {
 import { chooseByStoreId } from '@/domain/sync/ladder'
 import { itemLists, type ItemList, type ItemView, type SyncStep } from '@/domain/sync/link'
 import { isSyncSource, SOURCES } from '@/domain/sync/sources'
-import { matchByTitle, strippedTitle } from '@/domain/sync/titles'
+import { gameOfMode, matchByTitle, strippedTitle } from '@/domain/sync/titles'
 import type { Account } from '@/server/auth/account'
 import { database, type Db } from '@/server/db/client'
 import { copies, entryVersions, games } from '@/server/db/schema'
@@ -39,6 +39,7 @@ import {
   decideItem,
   dueLinks,
   forgetLink,
+  listedTitles,
   listItems,
   noteRead,
   noteSynced,
@@ -150,7 +151,7 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
    * Before the ladder: what the store says each new item is. A demo, software
    * or a video is left out as "not a game"; a part is matched by its game.
    * When the store does not answer, the ladder goes on without it, and the
-   * next step asks again.
+   * next read of the list asks again.
    */
   const classify = async (source: SyncSource, now: number) => {
     const ask = adapters[source]?.kinds
@@ -161,6 +162,19 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
       if (error instanceof SourceError) return new Map<string, StoreKindOf>()
       throw error
     })
+    // A mode the store names no game for joins the game I have under the title it starts
+    // with; with none, the ladder takes it as a game of its own.
+    const orphans = items.filter((item) => {
+      const said = kinds.get(item.storeId)
+      return said?.kind === 'part' && !said.parentStoreId
+    })
+    if (orphans.length > 0) {
+      const listed = await listedTitles(db, libraryId, source)
+      for (const item of orphans) {
+        const game = gameOfMode(item.title, listed)
+        kinds.set(item.storeId, game ? { kind: 'part', parentStoreId: game } : { kind: 'game' })
+      }
+    }
     await saveKinds(db, libraryId, items, kinds, now)
   }
 
@@ -343,8 +357,12 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     let link = await linkOf(source)
     const fresh =
       wanted && (link.readAt === null || link.problem !== null || now - link.readAt > READ_AGAIN_MS)
-    if (fresh) link = await read(link, now)
-    await classify(source, now)
+    if (fresh) {
+      link = await read(link, now)
+      // Only after a read, which is all that brings new items: a store that is
+      // down then costs one wait a sync, not one a step.
+      await classify(source, now)
+    }
     const titlesLeft = await resolve(source, fresh, now)
     const { added, remaining } = await addSome(source, ADD_PER_STEP, now, allow)
     await feedCopies(db, libraryId, source, now)

@@ -118,7 +118,7 @@ const STORE_KIND: Record<number, StoreKind> = {
   11: 'media', // a soundtrack
   12: 'demo', // a beta
   13: 'software', // a tool
-  14: 'game', // a store page for something else: a part, when it names its game
+  14: 'part', // a store page for a mode of another app: see `kindsFromSteam`
 }
 
 /** Steam names a playtest "<Game> Playtest", and gives it no store page. */
@@ -144,10 +144,13 @@ export const kindsFromSteam = (
     }
     const kind = STORE_KIND[item.type ?? 0] ?? 'game'
     const parent = item.related_items?.parent_appid
-    kinds.set(
-      storeId,
-      item.type === 14 && parent ? { kind: 'part', parentStoreId: String(parent) } : { kind },
-    )
+    if (item.type !== 14) kinds.set(storeId, { kind })
+    // A mode's page that names no game (Black Ops II's zombies): the sync looks for it by title.
+    else
+      kinds.set(
+        storeId,
+        parent ? { kind: 'part', parentStoreId: String(parent) } : { kind: 'part' },
+      )
   }
   return kinds
 }

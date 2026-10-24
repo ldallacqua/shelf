@@ -64,6 +64,32 @@ export const strippedTitle = (title: string): string => {
   return rest
 }
 
+/** What follows a game's title in the title of a mode sold apart: " - Zombies", ": Multiplayer". */
+const AFTER_GAME = /^\s*[-–—:]\s*\S/
+
+/**
+ * The item a mode sold apart belongs to, when the store does not name it:
+ * the item whose whole title starts the mode's, followed by a dash or a
+ * colon. "Call of Duty: Black Ops II - Zombies" is Black Ops II's; the
+ * longest title wins, so it is not Black Ops'.
+ */
+export const gameOfMode = (
+  mode: string,
+  items: readonly { storeId: string; title: string }[],
+): string | undefined => {
+  const plain = (title: string) =>
+    title.replace(MARKS, '').replace(/\s+/g, ' ').trim().toLowerCase()
+  const wanted = plain(mode)
+  let best: { storeId: string; length: number } | undefined
+  for (const item of items) {
+    const title = plain(item.title)
+    if (!title || !wanted.startsWith(title) || !AFTER_GAME.test(wanted.slice(title.length)))
+      continue
+    if (!best || title.length > best.length) best = { storeId: item.storeId, length: title.length }
+  }
+  return best?.storeId
+}
+
 /** A stripped title, compared as `titleKeyOf` compares: what the rung matches on. */
 export const bareTitle = (title: string): string => titleKeyOf(strippedTitle(title))
 

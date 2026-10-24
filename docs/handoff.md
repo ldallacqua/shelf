@@ -1,10 +1,42 @@
-# Handoff: 23 October 2026
+# Handoff: 24 October 2026
 
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## First: review #26 before building on it (the owner's ask, 23 Oct 2026)
+## Now: Nintendo, from the Store app's play history (the owner's choice, 24 Oct 2026)
+
+After the review of #26 below, the owner chose the route for Nintendo: "Build Nintendo from
+the Store app's play history: I sign in on Nintendo's own page and Shelf keeps the session
+token, encrypted. Fix the #26 findings first." Not the friend code (Exophase's way: it needs
+a Nintendo account of Shelf's own on the phone app's private API, sees only the capped,
+recent play activity, and is no sign-in), and the review of unsorted games below waits until
+Nintendo is in. What is known about the route is under "Nintendo" further down.
+
+## Done: #26 reviewed (24 Oct 2026)
+
+[#26](https://github.com/ldallacqua/shelf/pull/26) was merged without its last checks; they
+were run on 24 Oct 2026. `pnpm check` passed on `main`; with the test doubles, in both themes,
+both languages and on a phone, "Left out" says Wallpaper Engine is software on Steam, Unsorted
+is in the status row only on a shelf with unsorted games, wall tiles and list rows carry the
+Inbox mark (a box on the shelf carries no mark for any status; its name says it), the editor
+offers and saves Unsorted, and 3D draws it as backlog; no console error. Lighthouse at 8×:
+home 91, library 83, wall 85, game page 95, as at step 9. On production, 500 of 518 games
+were unsorted, the software was off the shelf, FreshWomen: Season 2 had matched, and eight
+add-ons sold as games (Kane's Wrath, Zero Hour, Portal with RTX…) were games.
+
+Fixed after it ([#28](https://github.com/ldallacqua/shelf/pull/28)): the
+store was asked again at every step while it was down (now once a read); Unsorted left the
+status row under a filter that matched none of them, and sat past a phone's edge when pressed;
+Black Ops II's zombies, whose store page names no game, did not join Black Ops II (it now
+joins the game whose title starts its own; migration 0009 asks the store again about Steam
+games nothing matched). Seen and not from #26: in headless Chromium the phone's wall draws
+the shelf's title over the top of its first row, for any filter; look on a real phone.
+
+Still the owner's: on the account page, nothing left unclassified and Modern Warfare 2's
+multiplayer hours on its copy (an assistant cannot read Turso); and the two choices below.
+
+### What the review was asked to do (the owner's ask, 23 Oct 2026)
 
 [#26](https://github.com/ldallacqua/shelf/pull/26) (Unsorted, and Steam's store leaving out
 what is not a game) was merged and deployed without the last checks, because the assistant

@@ -43,7 +43,11 @@ export type Decision = (typeof decisions)[number]
 export const storeKinds = ['game', 'demo', 'software', 'media', 'part', 'unknown'] as const
 export type StoreKind = (typeof storeKinds)[number]
 
-/** What the store said about one item: its kind, and for a part, the store's id for its game. */
+/**
+ * What the store said about one item: its kind, and for a part, the store's
+ * id for its game. A part the store names no game for is matched to one of
+ * my items by title (`gameOfMode`), or taken as a game.
+ */
 export type StoreKindOf = { kind: StoreKind; parentStoreId?: string }
 
 /** Kinds the sync leaves out by itself, as if I had answered "not a game". */

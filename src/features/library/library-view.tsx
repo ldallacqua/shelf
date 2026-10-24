@@ -617,6 +617,11 @@ export function LibraryView({
     : query.q === builtFor.q
       ? first.statusCounts
       : undefined
+  // Unsorted stays in the row while the shelf has any, whatever the filter matches. Until the
+  // library arrives, the counts sent with the page are the best word on it.
+  const unsortedOnShelf = library
+    ? library.games.some((game) => game.status === 'unsorted')
+    : (first.statusCounts.unsorted ?? 0) > 0
   const conditions = chipsOf(parsed.tree).reduce((total, chips) => total + chips.length, 0)
 
   // The totals follow the filter. The server drew them for the address the page came
@@ -715,6 +720,7 @@ export function LibraryView({
         <StatusRow
           value={statusValue}
           counts={statusCounts}
+          unsortedOnShelf={unsortedOnShelf}
           onChange={(status) =>
             writeTree(
               setListEverywhere(

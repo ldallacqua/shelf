@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SearchResult } from '@/domain/igdb/search'
-import { bareTitle, matchByTitle, strippedTitle } from '@/domain/sync/titles'
+import { bareTitle, gameOfMode, matchByTitle, strippedTitle } from '@/domain/sync/titles'
 
 const PC = 6
 const SWITCH = 130
@@ -114,5 +114,24 @@ describe('the title rung', () => {
   it('does not answer with a title that is only close', () => {
     const portal2 = result(72, 'Portal 2')
     expect(matchByTitle({ title: 'Portal', platforms: [PC] }, [portal2])).toBeUndefined()
+  })
+})
+
+describe('the game a mode sold apart belongs to', () => {
+  const owned = [
+    { storeId: '202970', title: 'Call of Duty®: Black Ops II' },
+    { storeId: '42700', title: 'Call of Duty: Black Ops' },
+    { storeId: '311210', title: 'Call of Duty: Black Ops III' },
+  ]
+
+  it('is the game whose whole title starts the mode’s, before a dash or a colon', () => {
+    expect(gameOfMode('Call of Duty: Black Ops II - Zombies', owned)).toBe('202970')
+    expect(gameOfMode('Call of Duty: Black Ops: Multiplayer', owned)).toBe('42700')
+  })
+
+  it('is no game when the title only goes on, or names no game I have', () => {
+    expect(gameOfMode('Call of Duty: Black Ops III', owned.slice(0, 1))).toBeUndefined()
+    expect(gameOfMode('Call of Duty: Black Ops II', owned.slice(0, 1))).toBeUndefined()
+    expect(gameOfMode('Half-Life 2: Deathmatch', owned)).toBeUndefined()
   })
 })
