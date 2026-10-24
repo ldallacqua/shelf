@@ -9,6 +9,8 @@ import {
   emptyTally,
   type Placing,
   type PlayedOn,
+  type Standing,
+  type Tally,
   type UnsortedGame,
 } from '@/domain/library/placing'
 import {
@@ -498,6 +500,33 @@ export const readOwnerGame = async (
  * the library has in each status. One batch, so the tally and the list are
  * the same moment's.
  */
+/** How many games stand in each status: the library's own counts, filter or none. */
+const statusCounts = (db: Db, libraryId: string) =>
+  db
+    .select({ status: entries.status, count: sql<number>`count(*)` })
+    .from(entries)
+    .where(eq(entries.userId, libraryId))
+    .groupBy(entries.status)
+
+const tallyOf = (rows: readonly { status: string; count: number }[]): Tally => {
+  const tally = emptyTally()
+  for (const row of rows) if (isStatus(row.status)) tally[row.status] = Number(row.count)
+  return tally
+}
+
+/** The tally alone, for the page that sets a new shelf up: no game is read. */
+export const readStanding = async (db: Db, libraryId: string): Promise<Standing> => {
+  const [versionRow, statusRows] = await db.batch([
+    db
+      .select({ version: libraries.version })
+      .from(libraries)
+      .where(eq(libraries.userId, libraryId))
+      .limit(1),
+    statusCounts(db, libraryId),
+  ])
+  return { version: versionRow[0]?.version ?? 0, tally: tallyOf(statusRows) }
+}
+
 export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> => {
   const waiting = sql`(select ${entries.id} from ${entries} where ${entries.userId} = ${libraryId} and ${entries.status} = 'unsorted')`
   const [versionRow, statusRows, entryRows, copyRows, timeRows, playedRows, platformRows] =
@@ -507,11 +536,7 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
         .from(libraries)
         .where(eq(libraries.userId, libraryId))
         .limit(1),
-      db
-        .select({ status: entries.status, count: sql<number>`count(*)` })
-        .from(entries)
-        .where(eq(entries.userId, libraryId))
-        .groupBy(entries.status),
+      statusCounts(db, libraryId),
       db
         .select({
           entryId: entries.id,
@@ -559,8 +584,7 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
       db.select().from(platforms),
     ])
 
-  const tally = emptyTally()
-  for (const row of statusRows) if (isStatus(row.status)) tally[row.status] = Number(row.count)
+  const tally = tallyOf(statusRows)
 
   // The copy shown when the game stands once comes first, as on the shelf.
   const shownCopy = new Map(entryRows.map((row) => [row.entryId, row.displayCopyId]))

@@ -48,6 +48,12 @@ export type Placing = {
   platforms: PlatformLabel[]
 }
 
+/** How the library stands, without its games: what the page that sets a new shelf up reads. */
+export type Standing = {
+  version: number
+  tally: Tally
+}
+
 /** Where a game can be placed: every status but the one it waits in. */
 export const placements = statuses.filter(
   (status): status is Exclude<Status, 'unsorted'> => status !== 'unsorted',

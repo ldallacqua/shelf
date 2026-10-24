@@ -7,6 +7,16 @@ import type { Decision, ItemState, StoreKind } from '@/domain/sync/items'
  */
 
 /**
+ * The page a platform is linked from, which its sign-in comes back to: the
+ * account page, or the page that sets a new shelf up.
+ */
+export const linkPages = ['account', 'start'] as const
+export type LinkPage = (typeof linkPages)[number]
+
+export const isLinkPage = (value: unknown): value is LinkPage =>
+  typeof value === 'string' && (linkPages as readonly string[]).includes(value)
+
+/**
  * Why a source's list could not be read:
  * - `private`: the account there hides its games (Steam: "Game details" is not public).
  * - `unreachable`: the source did not answer, or answered with an error.

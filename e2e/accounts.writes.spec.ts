@@ -89,6 +89,10 @@ test.describe('signing up', () => {
     await expect(page.getByRole('radio', { name: /^Public/ })).toBeChecked()
     await page.getByRole('button', { name: 'Create my shelf' }).click()
 
+    // A new shelf is empty: the page that fills it comes first, and leads to it.
+    await expect(page).toHaveURL(/\/en\/account\/start$/)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Set up your shelf')
+    await page.getByRole('link', { name: 'See my shelf' }).click()
     await expect(page).toHaveURL(new RegExp(`/en/u/${who.handle}$`))
     await expect(page.getByRole('heading', { level: 1 })).toHaveText("Ana Lima's shelf")
     await expect(page.getByText('Your shelf is empty.')).toBeVisible()

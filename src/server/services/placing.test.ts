@@ -6,7 +6,7 @@ import type { Db } from '@/server/db/client'
 import { entries, sourceItems } from '@/server/db/schema'
 import { createIgdbApi } from '@/server/igdb/api'
 import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
-import { readUnsorted } from '@/server/library/read'
+import { readStanding, readUnsorted } from '@/server/library/read'
 import { LibraryError, patchEntry, readVersion, setStatuses } from '@/server/library/store'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { MOCK_STEAM } from '@/server/mocks/owner'
@@ -121,6 +121,22 @@ describe('the games a sync left unsorted', () => {
     expect(placing.games).toEqual([])
     expect(placing.tally.unsorted).toBe(0)
     expect(placing.tally.backlog).toBeGreaterThan(0)
+  })
+})
+
+describe('the tally alone', () => {
+  it('is the placing page’s, and the library’s version, without reading a game', async () => {
+    const placing = await readUnsorted(db, player)
+    expect(await readStanding(db, player)).toEqual({
+      version: placing.version,
+      tally: placing.tally,
+    })
+  })
+
+  it('counts nothing for a new shelf', async () => {
+    const fresh = await createTestAccount(db, 'fresh')
+    const standing = await readStanding(db, fresh)
+    expect(Object.values(standing.tally)).toEqual(statuses.map(() => 0))
   })
 })
 

@@ -146,6 +146,14 @@ describe('Platforms', () => {
     expect(screen.queryByRole('link', { name: /to place/ })).not.toBeInTheDocument()
   })
 
+  it('never says a sync was in the future, when the server’s clock runs ahead', async () => {
+    platforms = rows({ ...LINK, syncedAt: Date.now() + 5000 })
+    renderWithIntl(<Platforms handle="ana" />)
+    await screen.findByText('25 games on your shelf from Steam')
+    expect(screen.getByText(/^Last synced/)).not.toHaveTextContent(/in \d+ second/)
+    expect(screen.getByText(/^Last synced/)).toHaveTextContent('Last synced now')
+  })
+
   it('says how to fix an account that hides its games', async () => {
     platforms = rows({ ...LINK, problem: 'private' })
     renderWithIntl(<Platforms handle="ana" />)

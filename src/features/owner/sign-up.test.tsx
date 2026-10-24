@@ -99,7 +99,8 @@ describe('SignUp', () => {
     await screen.findByText('Disponível.')
     await userEvent.click(screen.getByRole('button', { name: 'Criar minha estante' }))
 
-    await waitFor(() => expect(opened).toHaveBeenCalledWith('/pt-BR/u/new-shelf'))
+    // A new shelf is empty: the page that fills it comes first.
+    await waitFor(() => expect(opened).toHaveBeenCalledWith('/pt-BR/account/start'))
     expect(sent.find((each) => each.path === '/api/auth/sign-up/email')?.body).toEqual({
       name: 'New Shelf',
       username: 'new-shelf',

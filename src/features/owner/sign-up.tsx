@@ -71,7 +71,8 @@ const createAccount = async (fields: NewAccount, locale: string): Promise<Troubl
       const answer = (await response.json().catch(() => undefined)) as { code?: string } | undefined
       return TROUBLE_BY_CODE[answer?.code ?? ''] ?? 'failed'
     }
-    openAfresh(`/${locale}/u/${fields.handle}`)
+    // A new shelf starts empty: the page that fills it comes first.
+    openAfresh(`/${locale}/account/start`)
     // The page is leaving; nothing more to say.
     return await new Promise<never>(() => {})
   } catch {

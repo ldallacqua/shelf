@@ -273,7 +273,7 @@
       },
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",
-        "a": "Da Steam e da Nintendo, sim: conecte as duas na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
+        "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
@@ -887,7 +887,35 @@
     "left": "{count, plural, =0 {Nada para organizar.} one {Falta # jogo para organizar.} other {Faltam # jogos para organizar.}}",
     "placedShare": "Jogos com status",
     "toPlace": "{count, plural, one {# jogo para organizar} other {# jogos para organizar}}",
-    "placeThese": "Organizar estes jogos"
+    "placeWaiting": "{count, plural, one {Organizar o jogo sem status} other {Organizar os # jogos sem status}}"
+  },
+  "Start": {
+    "metaTitle": "Monte sua estante",
+    "title": "Monte sua estante",
+    "intro": "Traga seus jogos e diga em que pé está cada um. Cada passo se marca sozinho quando estiver feito, e nenhum precisa ser terminado de uma vez.",
+    "signInFirst": "Entre para montar sua estante.",
+    "steps": "Passos",
+    "done": "Feito",
+    "failed": "O Shelf não conseguiu ler sua estante agora.",
+    "retry": "Tentar de novo",
+    "bring": {
+      "title": "Traga seus jogos",
+      "body": "Conecte uma plataforma e o Shelf traz todos os jogos que você tem lá, e mantém tudo em dia. O que ele não conseguir reconhecer, ou quiser que você confirme, espera no cartão da plataforma pela sua resposta.",
+      "byHand": "Prefere adicionar você mesmo? Adicione um jogo, ou cole uma lista inteira, na <shelf>sua estante</shelf>.",
+      "onShelf": "{count, plural, one {# jogo na sua estante.} other {# jogos na sua estante.}}",
+      "waiting": "{count, plural, one {# jogo espera sua resposta aí em cima.} other {# jogos esperam sua resposta aí em cima.}}"
+    },
+    "place": {
+      "title": "Diga onde cada jogo está",
+      "body": "Os jogos que uma plataforma traz ficam A definir até você dar um status a cada um: Jogando, Na fila, Zerado, Abandonado ou Lista de desejos. Dá para dar nota no mesmo lugar.",
+      "nothingYet": "Os jogos que chegarem sem status vão esperar aqui.",
+      "left": "{count, plural, one {# dos seus {total, number} jogos ainda está sem status.} other {# dos seus {total, number} jogos ainda estão sem status.}}",
+      "share": "Jogos com status",
+      "go": "Organizar meus jogos",
+      "later": "Deixar alguns para outro dia não tem problema: eles esperam lá.",
+      "none": "{count, plural, one {Seu # jogo tem status.} other {Todos os seus # jogos têm status.}}"
+    },
+    "toShelf": "Ver minha estante"
   },
   "Sync": {
     "source": {
@@ -1091,7 +1119,7 @@
       "failed": "Não deu certo. Tente de novo."
     },
     "first": "Adicione seu primeiro jogo",
-    "fromSteam": "Trazer sua biblioteca da Steam",
+    "bringIn": "Trazer seus jogos de uma plataforma",
     "tabs": "Como adicionar",
     "one": "Um jogo",
     "list": {

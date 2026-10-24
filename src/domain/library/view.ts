@@ -310,6 +310,22 @@ export const openingCovers = (library: Library, locale: string, count: number): 
     .flatMap((item) => item.copy?.cover ?? item.game.cover ?? [])
 
 /**
+ * How many games on the whole shelf wait for a status, whatever the address
+ * filters. Once the library has arrived it says; until then the counts sent
+ * with the page say it only for an address with no filter, and otherwise
+ * nothing is known yet.
+ */
+export const unsortedOnShelf = (
+  library: Library | undefined,
+  first: FirstScreen,
+): number | undefined =>
+  library
+    ? library.games.reduce((sum, game) => sum + (game.status === 'unsorted' ? 1 : 0), 0)
+    : first.query.q === ''
+      ? (first.statusCounts.unsorted ?? 0)
+      : undefined
+
+/**
  * The whole library, once its file has arrived, holding on to what came with
  * the page: a game or platform already drawn keeps the very object it was
  * drawn from. The file says the same about it (same version, same words), so

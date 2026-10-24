@@ -4,7 +4,50 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: the page for placing a sync's games is built (24 Oct 2026)
+## Now: a new shelf is set up on a page of its own (24 Oct 2026)
+
+The owner asked for an onboarding page, and for something saying how many games have no
+status, "mas não quero que vc fique adicionando botões a torto e a direito". Researched first
+(Nielsen Norman Group on tutorials and indicators, Shopify's setup guide, GitHub's Primer),
+proposed with a sketch, and approved: "Sim, pode começar como proposto." What it does is
+[spec 4.6](spec.md#46-setting-a-new-shelf-up); why it is built so, architecture section 25's
+first row.
+
+- **`/account/start`, "Set up your shelf"**, where sign-up now leads (it used to open the
+  empty shelf), and where the empty shelf's second button goes ("Bring your games from a
+  platform", which went to the account page). Two steps, each checked off by what is true:
+  the platform cards, then the way to placing. "See my shelf" ends it.
+- **The cards are the account page's** (`PlatformCards`, split out of `Platforms`). On this
+  page a card leaves "N games to place" to step 2. Steam's sign-in started here comes back
+  here: `back=start` rides in the return address Steam signs (`server/sync/connect.ts`), and
+  anything else there means the account page.
+- **`GET /api/v1/me/tally`** (`readStanding`): the count per status and the version, no games.
+  Read again whenever a card's counts move.
+- **On the shelf, one line under the status row**, "Place the 180 games with no status"
+  (`PlaceWaiting`), whenever any game is unsorted, whatever the filter, in place of the
+  button that showed only while Unsorted was pressed. On a phone Unsorted is past the row's
+  edge, which is why the owner could not find the way. Counted by `unsortedOnShelf` in
+  `domain/library/view.ts`.
+- **Deliberately not added:** a badge in the header (leaving games unsorted is allowed, so it
+  would never go), a banner on the shelf, a menu item for the page, a tour.
+- **Fixed on the way:** a card said "Last synced in 2 seconds" when the server's clock ran
+  ahead; it is clamped to now.
+- **Seen with the test doubles** (headless Chromium, a new account made through the real
+  sign-up on `serve:test`): sign-up lands here; the empty shelf leads here; Steam linked from
+  here comes back here and its first sync fills step 1 (1 game left waiting for an answer
+  keeps it open); step 2 led to placing, one game placed, and the count here moved to "24 of
+  your 25"; the shelf's line, with and without a filter, leads to placing. Both themes, both
+  languages, a desktop and a phone, no sideways scroll, no console error. JavaScript budgets
+  unchanged: library 274.7 of 275 KB.
+- **Not seen:** on production, nobody's sign-up (an assistant makes no accounts there), and
+  the owner's shelf line with their real count. Browser tests: `accounts.writes.spec.ts`
+  now expects the new landing, but no Playwright test runs until the MVP.
+- **Not built, and asked about:** fixing a game a sync matched to the wrong IGDB record
+  ("Não é este jogo" on the placing page, keeping the copy and its hours). Today the way is to
+  remove it and add the right one by hand, which loses the source's hours.
+- **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
+
+## Before: the page for placing a sync's games is built (24 Oct 2026)
 
 The owner's ask from 23 Oct 2026 (below, "Next: the review of unsorted games"), started with
 "Usa o de 0-10 que a gente já tem. Pode começar": the rating is the editor's, out of ten, not
@@ -14,7 +57,7 @@ is built so, architecture section 25's first row.
 - **`/account/unsorted`**, drawn in the browser for the account signed in, as the account
   page is. Each platform's card links to it ("240 games to place": that source's games still
   unsorted, `counts.unsorted`), and so does the shelf while Unsorted is pressed in the status
-  row ("Place these games").
+  row ("Place these games"; since replaced by a line under the row, above).
 - **Its reads and writes:** `GET /api/v1/me/unsorted` (`readUnsorted` in
   `server/library/read.ts`: the unsorted games with each source's minutes and last play, and
   the tally, in one batch); one game's status or rating through the editor's own `PATCH
@@ -36,7 +79,7 @@ is built so, architecture section 25's first row.
   Playwright test does.
 - **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
-## Before: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
+## Earlier: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
 
 After the review of #26 below, the owner chose the route for Nintendo: "Build Nintendo from
 the Store app's play history: I sign in on Nintendo's own page and Shelf keeps the session

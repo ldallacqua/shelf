@@ -6,7 +6,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 
 import type { Answer } from '@/domain/library/adding'
 import type { SyncSource } from '@/domain/library/values'
-import type { LinkView, SyncStep } from '@/domain/sync/link'
+import type { LinkPage, LinkView, SyncStep } from '@/domain/sync/link'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Switch } from '@/ui/checkbox'
@@ -67,11 +67,14 @@ type Running = { done: number; total: number }
 function PlatformCard({
   row,
   handle,
+  page,
   outcome,
   onChange,
 }: {
   row: PlatformRow
   handle: string
+  /** The page the card is on, which Steam's sign-in comes back to. */
+  page: LinkPage
   /** Back from Steam's sign-in: how it went. Linked, the first sync starts by itself. */
   outcome?: Outcome
   onChange: (link: LinkView | null) => void
@@ -207,7 +210,7 @@ function PlatformCard({
              * pages' rules allow images only from our own origin and IGDB's.
              */}
             <a
-              href={connectAddress(source, locale)}
+              href={connectAddress(source, locale, page)}
               className="inline-flex rounded-[3px] transition-[filter] duration-quick ease-settle hover:brightness-125"
             >
               {/* Valve's fixed artwork at its own size: next/image would only add a request. */}
@@ -234,7 +237,10 @@ function PlatformCard({
             <p>{t('onShelf', { count: link.counts['on-shelf'], source: name })}</p>
             <p className="text-muted">
               {link.syncedAt
-                ? t('syncedOn', { when: format.relativeTime(link.syncedAt, now) })
+                ? t('syncedOn', {
+                    // The server's clock may run a moment ahead of this one: never "in 2 seconds".
+                    when: format.relativeTime(Math.min(link.syncedAt, now.getTime()), now),
+                  })
                 : t('never')}
             </p>
           </div>
@@ -267,8 +273,9 @@ function PlatformCard({
               <RefreshCwIcon aria-hidden="true" />
               {running ? t('syncing') : t('syncNow')}
             </Button>
-            {link.counts.unsorted > 0 ? (
-              // What it brought in waits for me to say where each game stands (spec 4.5).
+            {link.counts.unsorted > 0 && page === 'account' ? (
+              // What it brought in waits for me to say where each game stands (spec 4.5). On the
+              // page that sets a shelf up, its next step leads there, for every platform at once.
               <Button asChild>
                 <Link href="/account/unsorted">
                   <InboxIcon aria-hidden="true" />
@@ -353,11 +360,20 @@ function PlatformCard({
 }
 
 /**
- * The account page's Platforms (ADR 003): each store or console a shelf can
- * be synced from. Only the ones built are offered; the rest are named as
- * coming.
+ * Each store or console a shelf can be synced from, as cards (ADR 003): the
+ * account page's, and the first step of setting a new shelf up. Only the
+ * ones built are offered; the rest are named as coming. Whoever holds them
+ * hears of every link as it changes.
  */
-export function Platforms({ handle }: { handle: string }) {
+export function PlatformCards({
+  handle,
+  page = 'account',
+  onRows,
+}: {
+  handle: string
+  page?: LinkPage
+  onRows?: (rows: PlatformRow[]) => void
+}) {
   const t = useTranslations('Sync')
   const [rows, setRows] = useState<PlatformRow[]>()
   const [outcome, setOutcome] = useState<Outcome>()
@@ -379,6 +395,10 @@ export function Platforms({ handle }: { handle: string }) {
     return () => abort.abort()
   }, [])
 
+  useEffect(() => {
+    if (rows) onRows?.(rows)
+  }, [rows, onRows])
+
   const changed = useCallback(
     (source: SyncSource) => (link: LinkView | null) =>
       setRows((current) => current?.map((row) => (row.source === source ? { ...row, link } : row))),
@@ -386,9 +406,7 @@ export function Platforms({ handle }: { handle: string }) {
   )
 
   return (
-    <section id="platforms" className="grid scroll-mt-24 gap-5 border-t border-line pt-8">
-      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
-      <p className="max-w-xl text-pretty text-muted">{t('intro')}</p>
+    <>
       {trouble ? <p role="alert">{t('failed')}</p> : null}
       {rows === undefined && !trouble ? <p className="text-sm text-muted">{t('loading')}</p> : null}
       {rows
@@ -398,12 +416,25 @@ export function Platforms({ handle }: { handle: string }) {
             key={row.source}
             row={row}
             handle={handle}
+            page={page}
             // Back from Steam's sign-in: Steam's card is the one it was for.
             {...(outcome && row.source === 'steam' ? { outcome } : {})}
             onChange={changed(row.source)}
           />
         ))}
       <p className="text-sm text-muted">{t('later')}</p>
+    </>
+  )
+}
+
+/** The account page's Platforms (ADR 003). */
+export function Platforms({ handle }: { handle: string }) {
+  const t = useTranslations('Sync')
+  return (
+    <section id="platforms" className="grid scroll-mt-24 gap-5 border-t border-line pt-8">
+      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+      <p className="max-w-xl text-pretty text-muted">{t('intro')}</p>
+      <PlatformCards handle={handle} />
     </section>
   )
 }

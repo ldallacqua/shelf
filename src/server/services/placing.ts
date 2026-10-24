@@ -2,9 +2,9 @@ import 'server-only'
 
 import type { Refusal } from '@/domain/library/adding'
 import type { Changed } from '@/domain/library/editing'
-import { placeMany, type Placing } from '@/domain/library/placing'
+import { placeMany, type Placing, type Standing } from '@/domain/library/placing'
 import { database } from '@/server/db/client'
-import { readUnsorted } from '@/server/library/read'
+import { readStanding, readUnsorted } from '@/server/library/read'
 import { readVersion, setStatuses } from '@/server/library/store'
 import { forAccount, type Done } from '@/server/services/for-account'
 
@@ -18,6 +18,10 @@ import { forAccount, type Done } from '@/server/services/for-account'
 /** My unsorted games, and how many games stand in each status. */
 export const myUnsorted = (): Promise<Done<Placing>> =>
   forAccount((account) => readUnsorted(database(), account.id))
+
+/** How many of my games stand in each status, and nothing else: what setting a shelf up reads. */
+export const myTally = (): Promise<Done<Standing>> =>
+  forAccount((account) => readStanding(database(), account.id))
 
 /** Many of my games given one status, in one write; or none, if any is not mine. */
 export const placeMine = (body: unknown): Promise<Done<Changed>> => {

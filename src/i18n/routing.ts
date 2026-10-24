@@ -20,6 +20,8 @@ export const routing = defineRouting({
     '/sign-in': '/sign-in',
     '/sign-up': '/sign-up',
     '/account': '/account',
+    // Setting a new shelf up, where signing up leads.
+    '/account/start': '/account/start',
     // Placing the games a sync brought in (spec 4.5).
     '/account/unsorted': '/account/unsorted',
     '/consent': '/consent',

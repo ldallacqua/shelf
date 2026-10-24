@@ -80,6 +80,7 @@ language the browser asks for.
 | `/en/sign-up` | A shelf of one's own: name, handle, email address, password, public or private |
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
 | `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
+| `/en/account/start` | Setting a new shelf up, where signing up leads: the platforms to bring games in from, and the way to placing them ([section 4.6](#46-setting-a-new-shelf-up)) |
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once ([section 4.5](#45-placing-what-a-sync-brought-in)) |
 | `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
@@ -374,7 +375,7 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | Situation | What appears |
 | --- | --- |
 | Loading | The wall and ledges first, then boxes arriving in a short stagger. Blurred color placeholders stand in for covers. |
-| Empty library, signed in | An illustration of an empty lit ledge and one button: Add your first game |
+| Empty library, signed in | An illustration of an empty lit ledge, Add your first game, and Bring your games from a platform, which leads to the page that sets a new shelf up ([section 4.6](#46-setting-a-new-shelf-up)) |
 | Empty library, visitor | The same ledge and one line saying the shelf is being stocked |
 | No results | "No games match these filters", the active filters as removable chips, and Clear all |
 | A cover fails to load | The generated spine colors with the title set in type |
@@ -470,13 +471,15 @@ seconds to about a minute within IGDB's limit of four requests per second.
 
 ### 4.4 From a store or console
 
-On the account page, under **Platforms** ([ADR 003](adr/003-platform-sync.md)). Steam and
-Nintendo are built; PlayStation and Xbox come next, and the page says so.
+On the account page, under **Platforms** ([ADR 003](adr/003-platform-sync.md)), and as the
+first step of setting a new shelf up ([section 4.6](#46-setting-a-new-shelf-up)): the same
+cards in both. Steam and Nintendo are built; PlayStation and Xbox come next, and the page says
+so.
 
 1. **Link.** "Sign in through Steam", Valve's own button, goes to Steam's own sign-in page and
    back. Shelf never sees the Steam password. Steam has to show the account's game details
-   publicly; the card says where that is set. An empty shelf offers it too, beside "Add your
-   first game".
+   publicly; the card says where that is set. Steam's sign-in comes back to the page it left.
+   An empty shelf leads to these cards too, beside "Add your first game".
 2. **The first sync** starts by itself on the way back. Every game the account owns on Steam,
    free games it has played among them, is matched to IGDB: by Steam's own id first, then by
    a strict title match on PC. Matched games go on the shelf at once, twenty at a time, with
@@ -574,8 +577,10 @@ out of ten, not Minimap's five stars (the owner, 24 Oct 2026: "Usa o de 0-10 que
 tem"). Built 24 Oct 2026.
 
 - **A page of its own**, `/account/unsorted`, for my unsorted games, reached from each
-  platform's card ("240 games to place", the games that source brought in still unsorted) and,
-  on my own shelf, from Unsorted in the status row ("Place these games", while it is pressed).
+  platform's card ("240 games to place", the games that source brought in still unsorted); on
+  my own shelf, from one line under the status row, "Place the 180 games with no status",
+  there whenever any game waits, whatever the filter, and gone when none does; and from the
+  page that sets a new shelf up (4.6).
 - **One row per game:** cover, title and year, the platforms of its copies, hours on each
   source that feeds a copy and when I last played it there ("Not played on Steam" when it
   never was), or the hours I typed when no source reported any. Longest played first, as
@@ -603,6 +608,43 @@ tem"). Built 24 Oct 2026.
 - Every unsorted game can be given a status and a rating from one page, without opening it.
 - A game given a status leaves the list at once, and Undo puts it back.
 - The tally always agrees with the shelf.
+
+### 4.6 Setting a new shelf up
+
+The owner asked for it on 24 Oct 2026: "precisamos de uma pagina de onboarding. Essa pagina o
+usuário que acabou de criar uma conta vai poder fazer algumas ações. Tipo importar seus games,
+ir na lista e arrumar os jogos que estão errados durante o import". They also asked for
+something that says how many games have no status, but "não quero que vc fique adicionando
+botões a torto e a direito": the line under the status row (4.5) is that, and nothing else
+was added.
+
+- **A page of its own**, `/account/start`, titled "Set up your shelf", where signing up leads.
+  An empty shelf leads there too.
+- **Two steps,** each checked off by what is true of the shelf, never by a box I tick:
+  1. **Bring your games in:** the platform cards of 4.4, working here as on the account page:
+     linking, the first sync with its progress, and the games that need my answer, answered
+     in the card; a card's "240 games to place" is left to the next step here. Or by hand, on
+     my shelf. Done once the shelf has a game and no platform
+     waits for an answer ("3 games are waiting for your answer above").
+  2. **Say where each game stands:** how many games have no status yet, of how many, with a
+     bar, and the way to the page for placing them (4.5). Done once none is unsorted. Leaving
+     some for another day is fine, and the step says so.
+- **See my shelf** ends the page, its main action once both steps are done.
+- **Nothing else points here:** no badge, no banner, no menu item. What waits has its own
+  place: platforms on the account page, unsorted games in the line under the status row. A
+  badge would never go, since leaving games unsorted is allowed; a banner would push the
+  games down to say what the line says; a tour teaches less than doing (Nielsen Norman Group
+  found that deck-of-cards tutorials did not help people finish tasks, and made the tasks
+  seem harder).
+
+While building it, "Last synced in 2 seconds" showed on the first sync: the server's clock ran
+a moment ahead of the browser's. A sync is never said to be in the future.
+
+**Done when**
+
+- Signing up leads here, and Steam's sign-in started here comes back here.
+- Each step checks itself off as the shelf changes, a sync's progress included.
+- Both themes, both languages, a phone.
 
 ---
 
@@ -934,7 +976,8 @@ English and Brazilian Portuguese from the first build.
 - **Sign-up** is open to anyone: a name, a handle (the shelf's address, `/u/{handle}`), an
   email address and a password of 10 characters or more, and public or private, with Public
   picked. Three new accounts an hour from one address. No email is sent yet: no confirming,
-  and no reset by email (21 Oct 2026, ADR 004).
+  and no reset by email (21 Oct 2026, ADR 004). Signing up leads to the page that sets the
+  new shelf up (4.6).
 - **Sign-in** is an email address or handle, and the password. A wrong one is turned away with
   a plain message, and repeated tries are slowed down.
 - **The account page** changes the name, the handle (the old address then leads nowhere), the
