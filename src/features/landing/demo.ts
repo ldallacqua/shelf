@@ -92,18 +92,26 @@ export const demoTrophies = (): { stats: TrophyStats; latest: TrophyYear } => {
   return { stats: wall.stats, latest }
 }
 
-/** IGDB's id for PC, where every game from Steam goes. */
+/** IGDB's ids for PC, where every game from Steam goes, and the Switches, where Nintendo's do. */
 const PC = 6
+const SWITCHES = [130, 508]
 
 /**
- * "Bring your Steam library": these games as a sync from Steam brings them
- * in, and how many of the example shelf's games are on PC, as if all of them
- * came from Steam.
+ * "Bring your games with you": these games as a sync from Steam and one
+ * from Nintendo bring them in, and how many of the example shelf's games are
+ * on PC or a Switch, as if all of them came from the two.
  */
-export const steamSync = (slugs: readonly string[]) => ({
-  games: slugs.flatMap((slug) => {
-    const game = bySlug.get(slug)
-    return game ? [toDemo(game)] : []
-  }),
-  count: demoLibrary.games.filter((game) => game.platforms.includes(PC)).length,
-})
+export const platformSync = (steam: readonly string[], nintendo: readonly string[]) => {
+  const games = (slugs: readonly string[]) =>
+    slugs.flatMap((slug) => {
+      const game = bySlug.get(slug)
+      return game ? [toDemo(game)] : []
+    })
+  return {
+    steam: games(steam),
+    nintendo: games(nintendo),
+    count: demoLibrary.games.filter((game) =>
+      game.platforms.some((id) => id === PC || SWITCHES.includes(id)),
+    ).length,
+  }
+}

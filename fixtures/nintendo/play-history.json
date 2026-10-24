@@ -1,0 +1,117 @@
+{
+  "playHistories": [
+    {
+      "titleId": "01007EF00011E000",
+      "titleName": "The Legend of Zelda: Breath of the Wild",
+      "platform": "HAC",
+      "imageUrl": "https://example.test/nintendo/botw.jpg",
+      "totalPlayedMinutes": 7800,
+      "totalPlayedDays": 140,
+      "firstPlayedAt": "2017-03-03T12:00:00Z",
+      "lastPlayedAt": "2023-04-30T20:00:00Z"
+    },
+    {
+      "titleId": "0100F2C0115B6000",
+      "titleName": "The Legend of Zelda: Tears of the Kingdom",
+      "platform": "HAC",
+      "imageUrl": "https://example.test/nintendo/totk.jpg",
+      "totalPlayedMinutes": 5400,
+      "totalPlayedDays": 70,
+      "firstPlayedAt": "2023-05-12T10:00:00Z",
+      "lastPlayedAt": "2025-05-30T21:00:00Z"
+    },
+    {
+      "titleId": "0100F2C0115B6000",
+      "titleName": "The Legend of Zelda: Tears of the Kingdom",
+      "platform": "BEE",
+      "imageUrl": "https://example.test/nintendo/totk.jpg",
+      "totalPlayedMinutes": 600,
+      "totalPlayedDays": 9,
+      "firstPlayedAt": "2025-06-05T10:00:00Z",
+      "lastPlayedAt": "2025-07-10T21:00:00Z"
+    },
+    {
+      "titleId": "0100152000022000",
+      "titleName": "Mario Kart 8 Deluxe",
+      "platform": "HAC",
+      "imageUrl": "https://example.test/nintendo/mk8d.jpg",
+      "totalPlayedMinutes": 2400,
+      "totalPlayedDays": 95,
+      "firstPlayedAt": "2017-04-28T18:00:00Z",
+      "lastPlayedAt": "2025-10-30T20:00:00Z"
+    },
+    {
+      "titleId": "0100000000010000",
+      "titleName": "Super Mario Odyssey",
+      "platform": "BEE",
+      "imageUrl": "https://example.test/nintendo/smo.jpg",
+      "totalPlayedMinutes": 900,
+      "totalPlayedDays": 14,
+      "firstPlayedAt": "2025-06-10T15:00:00Z",
+      "lastPlayedAt": "2025-08-01T19:00:00Z"
+    },
+    {
+      "titleId": "01004D300C5AE000",
+      "titleName": "Kirby and the Forgotten Land",
+      "platform": "HAC",
+      "imageUrl": "https://example.test/nintendo/kirby.jpg",
+      "totalPlayedMinutes": 720,
+      "totalPlayedDays": 12,
+      "firstPlayedAt": "2022-03-25T16:00:00Z",
+      "lastPlayedAt": "2022-04-20T18:00:00Z"
+    },
+    {
+      "titleId": "010093801237C000",
+      "titleName": "Metroid Dread",
+      "platform": "HAC",
+      "imageUrl": "https://example.test/nintendo/dread.jpg",
+      "totalPlayedMinutes": 840,
+      "totalPlayedDays": 10,
+      "firstPlayedAt": "2021-10-08T20:00:00Z",
+      "lastPlayedAt": "2021-10-30T22:00:00Z"
+    },
+    {
+      "titleId": "0100633007D48000",
+      "titleName": "Hollow Knight",
+      "platform": "HAC",
+      "imageUrl": "https://example.test/nintendo/hollow.jpg",
+      "totalPlayedMinutes": 2100,
+      "totalPlayedDays": 30,
+      "firstPlayedAt": "2018-06-12T20:00:00Z",
+      "lastPlayedAt": "2019-01-05T22:00:00Z"
+    },
+    {
+      "titleId": "0100D870045B6000",
+      "titleName": "Nintendo Entertainment System - Nintendo Switch Online",
+      "platform": "HAC",
+      "imageUrl": "https://example.test/nintendo/nes.jpg",
+      "totalPlayedMinutes": 300,
+      "totalPlayedDays": 11,
+      "firstPlayedAt": "2018-09-19T20:00:00Z",
+      "lastPlayedAt": "2024-12-24T22:00:00Z"
+    },
+    {
+      "titleId": "0100A3D008C5C000",
+      "titleName": "Mario Kart World",
+      "platform": "BEE",
+      "imageUrl": "https://example.test/nintendo/mkw.jpg",
+      "totalPlayedMinutes": 1200,
+      "totalPlayedDays": 20,
+      "firstPlayedAt": "2025-06-05T09:00:00Z",
+      "lastPlayedAt": "2025-09-28T20:00:00Z"
+    }
+  ],
+  "recentPlayHistories": [
+    {
+      "playedDate": "2025-10-30",
+      "dailyPlayHistories": [
+        {
+          "titleId": "0100152000022000",
+          "titleName": "Mario Kart 8 Deluxe",
+          "totalPlayedMinutes": 45
+        }
+      ]
+    }
+  ],
+  "hiddenTitleList": []
+}

@@ -25,7 +25,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
    [`design/assets/PROMPTS.md`](design/assets/PROMPTS.md).
 4. **It must read as games, not books.** Covers face out. No serif type. See
    [ADR 002](docs/adr/002-visual-direction.md) for what went wrong the first time.
-5. **Tests never talk to the real IGDB, or to Steam.** They use fixtures.
+5. **Tests never talk to the real IGDB, Steam or Nintendo.** They use fixtures.
 6. **No bot commits.** Vercel's free plan only deploys commits authored by the owner's
    account.
 
@@ -216,7 +216,7 @@ hero, run `pnpm landing:share` against `pnpm serve:test` and look at both pictur
 **Syncing.** A store or console fills a shelf through one matcher and one memory
 ([ADR 003](docs/adr/003-platform-sync.md)). What a source can tell (owned, played, or nothing)
 is `src/domain/sync/sources.ts`; how to ask it is its adapter in `src/server/sync/` (Steam's
-is `steam.ts`, the only code that knows Steam's addresses); the ladder, the steps and the
+is `steam.ts`, Nintendo's `nintendo.ts`, each the only code that knows its addresses); the ladder, the steps and the
 answers are `src/server/services/sync.ts`, the same for every source. What a source listed and
 what was decided about it are `source_items`, the sync's own rows, written by
 `server/sync/memory.ts`; a game onto the shelf, or hours onto a copy, go through the store
@@ -224,10 +224,16 @@ what was decided about it are `source_items`, the sync's own rows, written by
 deletes, and never puts back a game I took off (`removed`). A game it adds starts `unsorted`
 (or playing, if played these two weeks), never in the backlog: owning a game says nothing of
 where it stands with me. Before matching, the store says what each item is (`kind`), and
-demos, playtests and software are left out by themselves. A platform account is linked only
-through the platform's own sign-in. Tests never talk to Steam: `fixtures/steam/` and the
-double in `server/mocks/steam.ts` answer, and with the test doubles on, "Sign in through
-Steam" comes straight back with the made-up account.
+demos, playtests and software are left out by themselves. A source that lists what was
+played (Nintendo) puts nothing on the shelf by itself: each match waits for me to say how I
+own it (`confirm`, one at a time or many at once). A platform account is linked only through
+the platform's own sign-in; Nintendo's page cannot come back, so its button's link is pasted
+into the account page (`server/sync/connect.ts`). What a sign-in gives Shelf to keep (Nintendo's
+session) is stored sealed (`server/sync/sealed.ts`, `PLATFORM_TOKEN_KEY`), opened only to
+read the source, and never sent to a browser. Tests never talk to Steam or Nintendo:
+`fixtures/steam/`, `fixtures/nintendo/` and the doubles in `server/mocks/` answer; with the
+test doubles on, "Sign in through Steam" comes straight back with the made-up account, and
+"Sign in on Nintendo's page" opens a stand-in whose button links to the made-up one.
 
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used

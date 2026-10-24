@@ -4,14 +4,38 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: Nintendo, from the Store app's play history (the owner's choice, 24 Oct 2026)
+## Now: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)); the owner's to try
 
 After the review of #26 below, the owner chose the route for Nintendo: "Build Nintendo from
 the Store app's play history: I sign in on Nintendo's own page and Shelf keeps the session
 token, encrypted. Fix the #26 findings first." Not the friend code (Exophase's way: it needs
 a Nintendo account of Shelf's own on the phone app's private API, sees only the capped,
-recent play activity, and is no sign-in), and the review of unsorted games below waits until
-Nintendo is in. What is known about the route is under "Nintendo" further down.
+recent play activity, and is no sign-in). What was built and why is ADR 003, "Built:
+Nintendo"; how it looks and behaves is spec 4.4.
+
+- **Before it works on production, the owner pastes one setting:** `PLATFORM_TOKEN_KEY`
+  ([setup F](setup.md#f-nintendo-sync), 32 random bytes; the command makes them). It seals
+  Nintendo's session. Never change it once anyone has linked Nintendo. Without it, pasting
+  the link says Nintendo sync is not set up.
+- **Then the owner links their own Nintendo account** on production; an assistant never signs
+  in to Nintendo. **Nothing here has met the real Nintendo yet:** the sign-in, the token
+  exchange and the play history follow ns-play-history (read 24 Oct 2026, last changed 7 Oct
+  2026), and the tests answer with a double. Things to watch on the first real link: Nintendo
+  accepting the code (`code-refused` means the paste was too late or used twice); the account's
+  nickname on the card (Shelf reads `api.accounts.nintendo.com/2.0.0/users/me`, and falls back
+  to the id token's subject); the play history's console codes (`HAC` and `BEE` are known;
+  `WUP`, `CTR` and `KTR` are guesses, and a game on an unknown code is matched on all of
+  Nintendo's consoles); and how many games match by title. If the card says Nintendo did not
+  answer, `server/sync/nintendo.ts` is the place to look.
+- **Locally,** with the test doubles on (`pnpm serve:test`), "Sign in on Nintendo's page" opens
+  a stand-in page whose "Select this account" button links to the made-up account
+  (`fixtures/nintendo/play-history.json`): copy its link and paste it into the card.
+- **Lighthouse was not measured on #29:** the computer was busy with a game, and verify's run
+  read every page low (library 75, wall 75, home 86; game page 91). The JavaScript budgets did
+  not move (library 274.5 of 275 KB), and nothing Nintendo adds is on those pages but the
+  landing's words. Measure again on a quiet machine, side by side with #28's commit.
+- **Next: the review of unsorted games** (below), which a Nintendo sync makes more useful still:
+  everything it brings in is unsorted.
 
 ## Done: #26 reviewed (24 Oct 2026)
 
@@ -96,9 +120,9 @@ user to assign a score to the game and which status they have. Like what minimap
   list, with Undo; select many and give them one status; reached from the Steam card and
   from Unsorted in the status row. The editor's rating and status controls, the existing
   `PATCH /entries/{id}` write and `useAccount()` are what it needs; no new table.
-- **Then Nintendo,** below.
+- **Then Nintendo:** built since, above.
 
-## Now: Steam is done and in use; Nintendo is parked
+## Steam is done and in use; Nintendo was parked, then built (above)
 
 **If you are picking this up to do Nintendo, read this section, then ADR 003 whole (its last
 part, "Built: Steam", is how a source is added), then `src/server/services/sync.ts`.**
@@ -146,7 +170,7 @@ part, "Built: Steam", is how a source is added), then `src/server/services/sync.
   - Python writing files on this computer can leave Windows line endings: `pnpm check`'s
     Prettier step finds them; `prettier --write` fixes them.
 
-### Nintendo, parked (the owner, 23 Oct 2026)
+### Nintendo, parked (the owner, 23 Oct 2026), as it stood before it was built
 
 "let's park nintendo, we need to review how other places does it because I know for example
 that exophase.com allows connecting nintendo just by passing the friend code." The owner

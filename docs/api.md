@@ -294,16 +294,19 @@ again on its next visit. Ratings are out of ten and time is in hours, as the rea
 | `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Saves or removes a smart shelf |
 
 **Syncing from a store or console** ([ADR 003](adr/003-platform-sync.md)), on one's own shelf,
-uncached. `{source}` is `steam`; PlayStation, Xbox and Nintendo come later and answer
-`invalid` until then.
+uncached. `{source}` is `steam` or `nintendo`; PlayStation and Xbox come later and answer
+`invalid` until then. Steam lists what is owned, so a matched game goes on the shelf at once;
+Nintendo lists what was played, so each game waits for an answer saying how it is owned.
 
 | Method and path | Does |
 | --- | --- |
-| `GET /me/platforms` | Every source, whether it is built, and one's link to each: the account there, when it was synced, what went wrong (`private`, `unreachable`, `unset`), and how many of its games are on the shelf, need an answer, were left out, or are no longer listed |
-| `GET /me/platforms/{source}/connect?locale=` | Off to the source's own sign-in, which comes back to `…/return` and then the account page. A browser link, not a call: Steam's page must be seen. |
+| `GET /me/platforms` | Every source, whether it is built, and one's link to each: the account there, when it was synced, what went wrong (`private`, `unreachable`, `unset`, `signed-out`: Nintendo ended Shelf's session, sign in again), and how many of its games are on the shelf, need an answer, were left out, or are no longer listed |
+| `GET /me/platforms/{source}/connect?locale=` | Off to the source's own sign-in. A browser link, not a call: the source's page must be seen. Steam's comes back to `…/return` and then the account page. Nintendo's never comes back: its "Select this account" button links to an address only Nintendo's app opens, which is pasted into `…/link`. |
+| `POST /me/platforms/nintendo/link` | `{ "link" }`, the link copied from Nintendo's button, in the browser that started the sign-in. Answers `{ "outcome" }`: `linked`, `not-the-link`, `another-sign-in`, `code-refused` (each link works once, for a few minutes), `unset` or `unreachable`. Linking keeps Nintendo's session sealed; it is never sent back. |
 | `POST /me/platforms/{source}/sync` | One step: `{ "read": true }` asks the source for its list first. At most twenty games go on the shelf a step; ask again while `remaining` is above 0. Answers the link, `added` and the library's `version`. |
-| `GET /me/platforms/{source}/items?list=` | The games it listed that need an answer (`needs-you`), were left out (`hidden`) or are no longer listed (`not-seen`), with their hours there and what the store says each is (`kind`: `game`, `demo`, `software`, `media`, `part`, `unknown`, or null until asked). A demo, software or media is left out by itself. |
-| `POST /me/platforms/{source}/items/{id}` | An answer, carried out at once: `{ "kind": "pick", "igdbId" }` puts that game on the shelf; `{ "kind": "dismiss", "as": "not_a_game" }` or `"not_mine"`; `{ "kind": "again" }` undoes either, and puts back a game taken off the shelf |
+| `GET /me/platforms/{source}/items?list=` | The games it listed that need an answer (`needs-you`), were left out (`hidden`) or are no longer listed (`not-seen`), with their hours there and what the store says each is (`kind`: `game`, `demo`, `software`, `media`, `part`, `unknown`, or null until asked). A demo, software or media is left out by itself. A game Nintendo saw played that Shelf matched comes with its `match`: the IGDB game, title, year and cover, waiting to be confirmed. |
+| `POST /me/platforms/{source}/items/{id}` | An answer, carried out at once: `{ "kind": "pick", "igdbId" }` puts that game on the shelf (for Nintendo, with `"format": "physical"` or `"digital"`; without, the pick becomes the match, waiting); `{ "kind": "confirm", "format" }` takes the match as the game, owned that way; `{ "kind": "dismiss", "as": "not_a_game" }` or `"not_mine"`; `{ "kind": "again" }` undoes either, and puts back a game taken off the shelf |
+| `POST /me/platforms/{source}/answers` | One answer for many matches: `{ "ids", "answer": { "kind": "confirm", "format" } }`, up to 200 items. Items with no match are left as they are. Answers a step, as `…/sync` does; ask for more while `remaining` is above 0. |
 | `PATCH /me/platforms/{source}` | `{ "daily": false }`: no sync once a day |
 | `DELETE /me/platforms/{source}` | Disconnects: forgets what it listed and the answers. Its games stay on the shelf, with their hours. |
 

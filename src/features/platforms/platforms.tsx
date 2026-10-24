@@ -13,6 +13,7 @@ import { Switch } from '@/ui/checkbox'
 import { Progress } from '@/ui/progress'
 
 import { ItemLists } from './item-lists'
+import { NintendoSignIn } from './nintendo-sign-in'
 import {
   connectAddress,
   readPlatforms,
@@ -57,12 +58,13 @@ const takeOutcome = (): Outcome | undefined => {
 type Running = { done: number; total: number }
 
 /**
- * Steam, linked or not (ADR 003). Unlinked: what linking does, and the way
- * to Steam's own sign-in. Linked: when it last synced, how many games it
- * put on the shelf, Sync now with its progress, the daily switch, the lists
- * of games that need an answer, and the way to disconnect.
+ * One platform, linked or not (ADR 003). Unlinked: what linking does, and
+ * the way to the platform's own sign-in: Steam's button, or Nintendo's page
+ * and the link to paste back. Linked: when it last synced, how many games
+ * it put on the shelf, Sync now with its progress, the daily switch, the
+ * lists of games that need an answer, and the way to disconnect.
  */
-function SteamCard({
+function PlatformCard({
   row,
   handle,
   outcome,
@@ -138,6 +140,14 @@ function SteamCard({
     void syncStep(source, true).then(steps)
   }
 
+  /** Signed in on Nintendo's page and pasted back: the link as it is now, then its first sync. */
+  const linked = async () => {
+    const answer = await readPlatforms()
+    if (answer.ok) onChange(answer.value.find((each) => each.source === source)?.link ?? null)
+    sync()
+    setSaid({ tone: 'done', text: t('linked') })
+  }
+
   useEffect(() => {
     if (starting) void syncStep(source, true).then(steps)
     // Once, as the card opens back from Steam.
@@ -161,7 +171,19 @@ function SteamCard({
         ) : null}
       </header>
 
-      {!link ? (
+      {!link && source === 'nintendo' ? (
+        <>
+          <p className="max-w-xl text-sm text-pretty">{t('nintendo.about')}</p>
+          <NintendoSignIn onLinked={() => void linked()} />
+          <Link
+            href="/privacy"
+            className="w-fit text-sm underline decoration-1 underline-offset-4 hover:decoration-2"
+          >
+            {t('kept')}
+          </Link>
+          <Message said={said} />
+        </>
+      ) : !link ? (
         <>
           <p className="max-w-xl text-sm text-pretty">{t('steam.about')}</p>
           <p className="max-w-xl text-sm text-pretty text-muted">{t('steam.public')}</p>
@@ -210,6 +232,9 @@ function SteamCard({
               {t(`problem.${link.problem}`, { source: name })}
             </p>
           ) : null}
+          {link.problem === 'signed-out' && source === 'nintendo' ? (
+            <NintendoSignIn again onLinked={() => void linked()} />
+          ) : null}
 
           {running ? (
             <div className="grid max-w-md gap-2" aria-live="polite">
@@ -249,9 +274,16 @@ function SteamCard({
             handle={handle}
             counts={link.counts}
             stamp={stamp}
+            busy={running !== undefined}
             onAnswered={(text) => {
               if (text) setSaid({ tone: 'done', text })
               void refresh()
+            }}
+            onSteps={(first) => {
+              // Many answered at once: the games go on the shelf in steps, as after a read.
+              setSaid(undefined)
+              setRunning({ done: 0, total: 0 })
+              void steps(first)
             }}
           />
 
@@ -341,11 +373,12 @@ export function Platforms({ handle }: { handle: string }) {
       {rows
         ?.filter((row) => row.ready)
         .map((row) => (
-          <SteamCard
+          <PlatformCard
             key={row.source}
             row={row}
             handle={handle}
-            {...(outcome ? { outcome } : {})}
+            // Back from Steam's sign-in: Steam's card is the one it was for.
+            {...(outcome && row.source === 'steam' ? { outcome } : {})}
             onChange={changed(row.source)}
           />
         ))}

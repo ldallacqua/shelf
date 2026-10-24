@@ -461,8 +461,8 @@ seconds to about a minute within IGDB's limit of four requests per second.
 
 ### 4.4 From a store or console
 
-On the account page, under **Platforms** ([ADR 003](adr/003-platform-sync.md)). Steam is built;
-PlayStation, Xbox and Nintendo come next, and the page says so.
+On the account page, under **Platforms** ([ADR 003](adr/003-platform-sync.md)). Steam and
+Nintendo are built; PlayStation and Xbox come next, and the page says so.
 
 1. **Link.** "Sign in through Steam", Valve's own button, goes to Steam's own sign-in page and
    back. Shelf never sees the Steam password. Steam has to show the account's game details
@@ -509,6 +509,39 @@ PlayStation, Xbox and Nintendo come next, and the page says so.
 - The sign-in links nothing for an answer the browser did not ask for, or one used before.
 - A synced game starts unsorted or playing, never in the backlog; demos, playtests and
   software never reach the shelf.
+
+**Nintendo** reads the play history Nintendo keeps for the account, the one the Nintendo Store
+app shows: every game played on a Switch or a Switch 2, with its hours.
+
+1. **Link.** Nintendo's page cannot send the browser back, so the card says three steps:
+   **Sign in on Nintendo's page** (a new tab); when Nintendo shows "Select this account", do not
+   press it, copy its link (right-click, or press and hold on a phone); paste it into the card
+   and **Link Nintendo**. A wrong paste says what was wrong: not the button's link, a link from
+   another sign-in, or one Nintendo no longer takes (each works once, for a few minutes).
+   Shelf never sees the Nintendo password; it keeps the session Nintendo gives, sealed.
+2. **The first sync** starts once linked. Nintendo lists what was played, not what is owned,
+   so nothing goes on the shelf by itself: every game is matched by title on the consoles that
+   play it, and waits under "9 games need you" with the game Shelf took it for, its cover and
+   year. **Cartridge** or **Download** puts it on the shelf; **Not this game** opens Find it;
+   **Not mine**. One line answers every match at once: "All 7 games Shelf found are:
+   **Cartridges** / **Downloads**". A game I find becomes the match, and waits the same way.
+   - A game played on a Switch and then a Switch 2 is one game, its hours summed. A Switch
+     game played on a Switch 2 is a Switch copy; a Switch 2 game, a Switch 2 copy.
+   - A game already on the shelf gains the copy, never a second box; a new one starts
+     unsorted, or playing if played these two weeks. Nintendo's hours go on the copy, as
+     Steam's do.
+3. **Afterwards** as Steam: Sync now, once a day, Disconnect. When Nintendo ends Shelf's
+   session (it lasts about two years), the card says so and shows the three steps again;
+   signing in again keeps every answer.
+
+**Done when**
+
+- Linking takes the link from Nintendo's button, pasted in the browser that signed in, and
+  nothing else.
+- No game Nintendo lists reaches the shelf before I say how I own it.
+- One answer can place every match at once.
+- A Switch game played on a Switch 2 lands on the Switch shelf.
+- The session is stored sealed, and is never sent to a browser.
 
 ### 4.5 Placing what a sync brought in (next: not built yet)
 

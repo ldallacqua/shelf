@@ -13,6 +13,7 @@ import { MOCK_STEAM } from '@/server/mocks/owner'
 import { createSteamHandlers, newSteamMockState } from '@/server/mocks/steam'
 import { loadFixtures } from '@/server/seed/fixtures'
 import { readLink, saveLink } from '@/server/sync/memory'
+import { createNintendo } from '@/server/sync/nintendo'
 import { createSteam, STEAM_API } from '@/server/sync/steam'
 import { createTestAccount, createTestDatabase, sampleLibraryId } from '@/test/database'
 import { network } from '@/test/network'
@@ -28,6 +29,7 @@ const api = createIgdbApi(
   }),
 )
 const steam = createSteam({ key: () => MOCK_STEAM.key })
+const nintendo = createNintendo()
 const ART = {
   colors: ['#112233', '#445566', '#778899'] as [string, string, string],
   thumbhash: 'aGFzaA==',
@@ -60,13 +62,13 @@ beforeEach(async () => {
   steamState = newSteamMockState()
   network.use(...createHandlers(loadFixtures()), ...createSteamHandlers(steamState))
   db = await createTestDatabase('default')
-  sync = createSync({ db, igdb: api, readArt: async () => ART, steam })
+  sync = createSync({ db, igdb: api, readArt: async () => ART, steam, nintendo })
 })
 
 /** An account with an empty shelf, linked to the made-up Steam account. */
 const linked = async (handle = 'player', steamId: string = MOCK_STEAM.steamId) => {
   const id = await createTestAccount(db, handle)
-  await saveLink(db, id, 'steam', steamId, undefined)
+  await saveLink(db, id, 'steam', { externalId: steamId })
   return id
 }
 
@@ -215,7 +217,7 @@ describe('a first sync from Steam', () => {
 
   it('adds a game already on the shelf as a copy of it, never as a second game, and keeps what I set', async () => {
     const sample = await sampleLibraryId(db)
-    await saveLink(db, sample, 'steam', MOCK_STEAM.steamId, undefined)
+    await saveLink(db, sample, 'steam', { externalId: MOCK_STEAM.steamId })
     const before = await entriesOf(sample)
 
     await syncAll(sample)
@@ -519,7 +521,7 @@ describe('the link', () => {
   it('forgets what another Steam account reported when I link a different one', async () => {
     const me = await linked()
     await syncAll(me)
-    await saveLink(db, me, 'steam', MOCK_STEAM.privateSteamId, undefined)
+    await saveLink(db, me, 'steam', { externalId: MOCK_STEAM.privateSteamId })
     const items = await db.select().from(sourceItems).where(eq(sourceItems.userId, me))
     expect(items).toHaveLength(0)
     expect((await readLink(db, me, 'steam'))?.readAt).toBeNull()

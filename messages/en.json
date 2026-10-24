@@ -199,11 +199,12 @@
       "matched": "matched"
     },
     "sync": {
-      "eyebrow": "Steam",
-      "title": "Bring your Steam library with you.",
-      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours on it, then keeps in step by itself once a day. Games already on your shelf gain a PC copy, never a second box. PlayStation, Xbox and Nintendo come next.",
-      "card": "Steam, syncing",
+      "eyebrow": "Steam and Nintendo",
+      "title": "Bring your Steam and Switch games with you.",
+      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours on it. Link Nintendo, and the games you played on a Switch or a Switch 2 come too, once you say whether each is a cartridge or a download. Then both keep in step by themselves once a day. Games already on your shelf gain a copy, never a second box. PlayStation and Xbox come next.",
+      "card": "Steam and Nintendo, syncing",
       "where": "PC · Steam",
+      "whereNintendo": "Switch · Nintendo · cartridge",
       "hours": "{hours} h",
       "onShelf": "{count, plural, one {# game on your shelf} other {# games on your shelf}}",
       "daily": "Again tomorrow, by itself"
@@ -272,7 +273,7 @@
       },
       "sync": {
         "q": "Can it bring in the games I already own?",
-        "a": "From Steam, yes: sign in through Steam on your account page, and every game you own there comes onto your shelf with its hours, then again once a day. PlayStation, Xbox and Nintendo are next. Until then, paste a list of titles, one a line."
+        "a": "From Steam and Nintendo, yes: link them on your account page. Every game you own on Steam comes onto your shelf with its hours; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
       },
       "who": {
         "q": "Who can see my shelf?",
@@ -857,11 +858,38 @@
     },
     "title": "Platforms",
     "intro": "Bring the games you own on a platform onto your shelf, and keep them in step.",
-    "later": "PlayStation, Xbox and Nintendo come next.",
+    "later": "PlayStation and Xbox come next.",
     "steam": {
       "about": "Sign in through Steam, and every game you own there goes onto your shelf as a PC copy, with Steam’s hours on it. Shelf syncs again once a day. Your Steam password never reaches Shelf.",
       "public": "Steam has to show your game details: in Steam, open Edit Profile, then Privacy Settings, and set Game details to Public.",
       "signIn": "Sign in through Steam"
+    },
+    "nintendo": {
+      "about": "Shelf reads the play history Nintendo keeps for your account: every game you have played on a Switch or a Switch 2, with your hours. Nintendo lists what you played, not what you own, so Shelf asks once whether each game is a cartridge or a download. Your Nintendo password never reaches Shelf.",
+      "how": "Nintendo does not send you back to Shelf, so linking takes one copy and paste:",
+      "again": "Sign in on Nintendo’s page again, and paste the new link here:",
+      "step1": "Sign in on Nintendo’s page. It opens in a new tab.",
+      "signIn": "Sign in on Nintendo’s page",
+      "step2": "When Nintendo shows “Select this account”, do not press it. Copy its link instead: right-click it and choose Copy link address, or on a phone, press and hold it.",
+      "step3": "Paste the link here.",
+      "link": "Link Nintendo",
+      "linking": "Linking…",
+      "outcome": {
+        "not-the-link": "That is not the link from Nintendo’s “Select this account” button. Copy the button’s link, not the page’s address.",
+        "another-sign-in": "That link is from another sign-in. Sign in on Nintendo’s page again, and paste the link it gives.",
+        "code-refused": "Nintendo did not take that link: each one works once, for a few minutes. Sign in on Nintendo’s page again.",
+        "unset": "Nintendo sync isn’t set up on this server yet.",
+        "unreachable": "Nintendo did not answer. Try again in a while."
+      },
+      "help": "{source} lists what you played, not what you own. Say whether each game is a cartridge or a download, or that it is not yours, and Shelf remembers.",
+      "matched": "Shelf thinks it is {title}",
+      "matchedYear": "Shelf thinks it is {title} ({year})",
+      "physical": "Cartridge",
+      "digital": "Download",
+      "notThis": "Not this game",
+      "all": "{count, plural, other {All # games Shelf found are:}}",
+      "allPhysical": "Cartridges",
+      "allDigital": "Downloads"
     },
     "kept": "What Shelf keeps",
     "linkedAs": "Linked to {name}",
@@ -883,7 +911,8 @@
     "problem": {
       "private": "Steam isn’t showing your games. Set Game details to Public in Steam’s privacy settings, then sync again.",
       "unreachable": "{source} did not answer. Try again in a while.",
-      "unset": "{source} sync isn’t set up on this server yet."
+      "unset": "{source} sync isn’t set up on this server yet.",
+      "signed-out": "Nintendo ended Shelf’s sign-in, which lasts about two years. Sign in on Nintendo’s page again."
     },
     "lists": {
       "needs-you": "{count, plural, one {# game needs you} other {# games need you}}",
@@ -948,13 +977,17 @@
         "title": "Steam",
         "body": "If you link Steam, Shelf keeps your Steam account’s id and name, and the games Steam lists for it, with the hours played, when each was last played, and what Steam’s store calls each one (a game, a demo, software). Shelf reads them when you link Steam or press Sync now, and once a day while daily sync is on. Your Steam password never reaches Shelf. Disconnecting Steam deletes what Steam listed; the games it put on your shelf stay, as your own."
       },
+      "nintendo": {
+        "title": "Nintendo",
+        "body": "If you link Nintendo, Shelf keeps your Nintendo Account’s id and nickname, the games your Nintendo play history lists, with the hours played and when each was last played, and the sign-in Nintendo gives Shelf to read them. That sign-in is kept sealed: what is in the database alone cannot be used. Nintendo’s page names it “Nintendo Store”, as Shelf reads the history that app shows. Shelf reads the history when you link Nintendo or press Sync now, and once a day while daily sync is on. Your Nintendo password never reaches Shelf. Disconnecting Nintendo deletes the sign-in and what Nintendo listed; the games it put on your shelf stay, as your own."
+      },
       "where": {
         "title": "Where it is kept",
         "body": "In a database in São Paulo, Brazil (Turso), reached by Shelf’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there."
       },
       "delete": {
         "title": "Removing it",
-        "body": "Delete a game, and it is gone. Delete your account on your account page, and your account, your shelf and everything in it are deleted for good, Steam’s list included."
+        "body": "Delete a game, and it is gone. Delete your account on your account page, and your account, your shelf and everything in it are deleted for good, what Steam and Nintendo listed included."
       }
     },
     "account": "Your account page"

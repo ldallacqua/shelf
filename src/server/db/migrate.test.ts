@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { caseShapes, families, plastics } from '@/domain/platforms/platforms'
 import { openDatabase } from '@/server/db/client'
 import { migrateDatabase } from '@/server/db/migrate'
-import { entries, libraries, sourceItems, users } from '@/server/db/schema'
+import { entries, libraries, platformLinks, sourceItems, users } from '@/server/db/schema'
 import { createTestAccount, createTestDatabase } from '@/test/database'
 
 const nameOf = async (db: Awaited<ReturnType<typeof createTestDatabase>>, id: string) =>
@@ -123,6 +123,38 @@ describe('Steam items the store called a game and nothing matched (0009)', () =>
         unknown: 'unknown',
         dismissed: 'game',
       })
+    } finally {
+      rmSync(before, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('links made before platforms kept secrets (0010)', () => {
+  it('are kept as they were, with no secret', async () => {
+    const before = migrationsBefore('0010_nintendo')
+    const db = openDatabase({ kind: 'memory' })
+    try {
+      await migrateDatabase(db, before)
+      const me = await createTestAccount(db, 'lucas')
+      await db.run(sql`insert into platform_links (user_id, source, external_id, name, linked_at,
+          read_at, synced_at, problem)
+        values (${me}, 'steam', '76561197960287930', 'lucas', 1, 2, 3, 'private')`)
+
+      await migrateDatabase(db)
+
+      expect(await db.select().from(platformLinks)).toEqual([
+        expect.objectContaining({
+          userId: me,
+          source: 'steam',
+          externalId: '76561197960287930',
+          name: 'lucas',
+          daily: true,
+          readAt: 2,
+          syncedAt: 3,
+          problem: 'private',
+          secret: null,
+        }),
+      ])
     } finally {
       rmSync(before, { recursive: true, force: true })
     }

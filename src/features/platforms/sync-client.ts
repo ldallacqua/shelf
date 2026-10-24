@@ -1,8 +1,14 @@
 'use client'
 
 import type { Answer } from '@/domain/library/adding'
-import type { SyncSource } from '@/domain/library/values'
-import type { ItemList, ItemView, LinkView, SyncStep } from '@/domain/sync/link'
+import type { Format, SyncSource } from '@/domain/library/values'
+import type {
+  ItemList,
+  ItemView,
+  LinkView,
+  NintendoLinkOutcome,
+  SyncStep,
+} from '@/domain/sync/link'
 import { callApi } from '@/features/owner/call-api'
 
 /**
@@ -17,7 +23,10 @@ const base = (source: SyncSource) => `/api/v1/me/platforms/${source}`
 export const readPlatforms = (signal?: AbortSignal) =>
   callApi<PlatformRow[]>('GET', '/api/v1/me/platforms', undefined, signal)
 
-/** Where "Sign in through Steam" goes: a plain link, so the browser leaves for Steam and comes back. */
+/**
+ * Where "Sign in through Steam" goes: a plain link, so the browser leaves for
+ * Steam and comes back. For Nintendo, the page it opens gives a link to paste.
+ */
 export const connectAddress = (source: SyncSource, locale: string) =>
   `${base(source)}/connect?locale=${encodeURIComponent(locale)}`
 
@@ -27,8 +36,13 @@ export const syncStep = (source: SyncSource, read: boolean, signal?: AbortSignal
 export const readItems = (source: SyncSource, list: ItemList, signal?: AbortSignal) =>
   callApi<ItemView[]>('GET', `${base(source)}/items?list=${list}`, undefined, signal)
 
+/** The link copied from Nintendo's "Select this account" button, and how linking with it went. */
+export const pasteNintendoLink = (link: string) =>
+  callApi<{ outcome: NintendoLinkOutcome }>('POST', `${base('nintendo')}/link`, { link })
+
 export type ItemAnswer =
-  | { kind: 'pick'; igdbId: number }
+  | { kind: 'pick'; igdbId: number; format?: Format }
+  | { kind: 'confirm'; format: Format }
   | { kind: 'dismiss'; as: 'not_a_game' | 'not_mine' }
   | { kind: 'again' }
 
@@ -38,6 +52,13 @@ export const answerItem = (source: SyncSource, id: string, answer: ItemAnswer) =
     `${base(source)}/items/${encodeURIComponent(id)}`,
     answer,
   )
+
+/** One format for many matched games: the first step of putting them on the shelf. */
+export const confirmMany = (source: SyncSource, ids: readonly string[], format: Format) =>
+  callApi<SyncStep>('POST', `${base(source)}/answers`, {
+    ids,
+    answer: { kind: 'confirm', format },
+  })
 
 export const setDaily = (source: SyncSource, daily: boolean) =>
   callApi<LinkView>('PATCH', base(source), { daily })

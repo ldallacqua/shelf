@@ -21,6 +21,8 @@ Three rules I keep throughout:
 | [B](#b-turso-databases) | Create two Turso databases, paste 2 settings | Build step 7 (sooner if you like) | 10 min |
 | [C](#c-sign-in) | Choose your email address and password, paste 5 settings | Build step 7 | 5 min |
 | [D](#d-daily-refresh) | Paste 1 setting | Build step 9 | 2 min |
+| [E](#e-steam-sync) | Get a Steam key, paste 1 setting | Steam sync | 5 min |
+| [F](#f-nintendo-sync) | Paste 1 setting, random | Nintendo sync | 2 min |
 
 Steps 2, 3, 4, 5, 6, 8 and 10 need nothing from you but review.
 
@@ -246,6 +248,43 @@ Privacy Settings) and press **Sync now**.
 
 ---
 
+## F. Nintendo sync
+
+**When:** before the Nintendo sync deploys.
+
+| Name | Environment | Value |
+| --- | --- | --- |
+| `PLATFORM_TOKEN_KEY` | Production | 32 random bytes, in base64 |
+
+Linking Nintendo gives Shelf a session that reads the person's play history for about two
+years. Shelf keeps it sealed with this key, so the database alone cannot be used to read
+anyone's Nintendo account. Nothing else is needed: Nintendo has no key to apply for.
+
+In a terminal of your own, from this folder:
+
+```bash
+openssl rand -base64 32 | vercel env add PLATFORM_TOKEN_KEY production --sensitive
+```
+
+Windows has no `openssl`. In PowerShell, the same:
+
+```powershell
+$bytes = New-Object byte[] 32; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes); [Convert]::ToBase64String($bytes) | vercel env add PLATFORM_TOKEN_KEY production --sensitive
+```
+
+It takes effect on the next production deployment. Without it, the account page offers
+Nintendo, and pasting the link says Nintendo sync is not set up on this server yet. **Never
+change the key once Nintendo is linked:** every sealed session stops opening, and each person
+has to sign in on Nintendo's page again.
+
+**Check it worked:** on production, open your account page, then **Platforms**, then **Sign in
+on Nintendo's page**. Sign in there; when Nintendo shows **Select this account**, copy the
+button's link instead of pressing it (right-click, Copy link address; on a phone, press and
+hold), and paste it into the card. Your Switch games arrive under "games need you", each with
+the game Shelf took it for: say **Cartridge** or **Download**, or answer them all at once.
+
+---
+
 ## Good to know
 
 - **A changed setting takes effect on the next deployment.** After pasting values, tell me and
@@ -267,3 +306,4 @@ Privacy Settings) and press **Sync now**.
 | `BETTER_AUTH_SECRET` | Optional | Not yet | Paste, random | C |
 | `CRON_SECRET` | Not used | Not used | Paste, random | D |
 | `STEAM_API_KEY` | Optional, yours to add | Not yet | Paste | E |
+| `PLATFORM_TOKEN_KEY` | Not used (the doubles bring their own) | Not yet | Paste, random | F |

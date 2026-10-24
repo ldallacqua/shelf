@@ -9,6 +9,7 @@ import {
   isSetAside,
   stateOf,
   type Decision,
+  type ItemFormat,
   type Reported,
   type Resolution,
   type StoreKindOf,
@@ -48,32 +49,35 @@ export const readLink = async (
 export const readLinks = (db: Executor, userId: string): Promise<Link[]> =>
   db.select().from(platformLinks).where(eq(platformLinks.userId, userId))
 
+/** The account at a source that its sign-in vouched for, and what it gave Shelf to keep, sealed. */
+export type Linked = { externalId: string; name?: string; sealed?: string }
+
 /**
- * Links an account to its account at a source. Linking another account at
- * the same source forgets what the first one reported: its games stay on
- * the shelf, but its answers were about someone else's list.
+ * Links an account to its account at a source, or signs it in there again.
+ * A new sign-in clears what went wrong with the last. Linking another
+ * account at the same source forgets what the first one reported: its games
+ * stay on the shelf, but its answers were about someone else's list.
  */
 export const saveLink = async (
   db: Db,
   userId: string,
   source: SyncSource,
-  externalId: string,
-  name: string | undefined,
+  { externalId, name, sealed }: Linked,
   now = Date.now(),
 ) => {
   const before = await readLink(db, userId, source)
   const another = before !== undefined && before.externalId !== externalId
+  const signIn = { externalId, name: name ?? null, secret: sealed ?? null, problem: null }
   await db.batch([
     db
       .insert(platformLinks)
-      .values({ userId, source, externalId, name: name ?? null, linkedAt: now })
+      .values({ userId, source, ...signIn, linkedAt: now })
       .onConflictDoUpdate({
         target: [platformLinks.userId, platformLinks.source],
         set: {
-          externalId,
-          name: name ?? null,
+          ...signIn,
           linkedAt: now,
-          ...(another ? { readAt: null, syncedAt: null, problem: null } : {}),
+          ...(another ? { readAt: null, syncedAt: null } : {}),
         },
       }),
     ...(another ? [db.delete(sourceItems).where(ofSource(userId, source))] : []),
@@ -313,12 +317,12 @@ export const readItem = async (db: Executor, userId: string, id: string) => {
   return row
 }
 
-/** My answer about one item. */
+/** My answer about one item: what it is, the game it is, how I own it. */
 export const decideItem = (
   db: Db,
   userId: string,
   id: string,
-  patch: { decision: Decision; igdbId?: number; by?: Resolution },
+  patch: { decision: Decision; igdbId?: number; by?: Resolution; format?: ItemFormat },
   now = Date.now(),
 ) =>
   db
@@ -329,8 +333,42 @@ export const decideItem = (
       ...(patch.igdbId === undefined
         ? {}
         : { igdbId: patch.igdbId, resolvedBy: patch.by ?? 'owner' }),
+      ...(patch.format === undefined ? {} : { format: patch.format }),
     })
     .where(and(eq(sourceItems.userId, userId), eq(sourceItems.id, id)))
+
+/**
+ * One answer for many items: each matched one still waiting for me is the
+ * game it was matched to, owned this way. Any other is left as it is.
+ */
+export const confirmItems = async (
+  db: Db,
+  userId: string,
+  source: SyncSource,
+  ids: readonly string[],
+  format: ItemFormat,
+  now = Date.now(),
+) => {
+  const statements = []
+  for (let at = 0; at < ids.length; at += ROWS_AT_ONCE) {
+    statements.push(
+      db
+        .update(sourceItems)
+        .set({ decision: 'copy', format, decidedAt: now })
+        .where(
+          and(
+            ofSource(userId, source),
+            inArray(sourceItems.id, ids.slice(at, at + ROWS_AT_ONCE)),
+            eq(sourceItems.decision, 'pending'),
+            isNotNull(sourceItems.igdbId),
+            isNull(sourceItems.copyId),
+          ),
+        ),
+    )
+  }
+  const [first, ...rest] = statements
+  if (first) await db.batch([first, ...rest])
+}
 
 /** How many items are in each state, and how many on the shelf the source no longer lists. */
 export const countItems = async (db: Executor, link: Link): Promise<ItemCounts> => {

@@ -22,7 +22,7 @@ Shelves are read by their handle. A public shelf can be read by anyone, with no 
 - ${site}/en/u/{handle}: a shelf. The query string holds its filter (q), sort, grouping (group) and view (shelf, wall or list)
 - ${site}/en/u/{handle}/game/{slug}: a game on a shelf
 - ${site}/en/u/{handle}/trophies: the shelf's trophy wall: every game finished, by the year it was finished, with stats
-- ${site}/en/account: one's account, where a Steam library is linked through Steam's own sign-in and synced once a day
+- ${site}/en/account: one's account, where a Steam library is linked through Steam's own sign-in, and a Nintendo play history through Nintendo's, each synced once a day
 - [Privacy](${site}/en/privacy): what Shelf keeps, and how to remove it
 - Every page is also in Brazilian Portuguese, under /pt-BR instead of /en
 
