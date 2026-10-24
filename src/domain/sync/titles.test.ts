@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SearchResult } from '@/domain/igdb/search'
-import { bareTitle, gameOfMode, matchByTitle, strippedTitle } from '@/domain/sync/titles'
+import {
+  bareTitle,
+  gameOfMode,
+  matchByTitle,
+  spellingsOf,
+  strippedTitle,
+} from '@/domain/sync/titles'
 
 const PC = 6
 const SWITCH = 130
+const SWITCH_2 = 508
 
 const result = (igdbId: number, title: string, more: Partial<SearchResult> = {}): SearchResult => ({
   igdbId,
@@ -51,6 +58,20 @@ describe('a bare title', () => {
     expect(bareTitle('Shadows')).toBe('shadows')
   })
 
+  it('drops the console Nintendo names at the end, and what comes bundled after a plus', () => {
+    expect(bareTitle('The Legend of Zelda: Breath of the Wild – Nintendo Switch 2 Edition')).toBe(
+      'the legend of zelda breath of the wild',
+    )
+    expect(bareTitle('Trails in the Sky 1st Chapter Nintendo Switch 2 Edition')).toBe(
+      'trails in the sky 1st chapter',
+    )
+    expect(bareTitle('Super Mario Party Jamboree – Nintendo Switch 2 Edition + Jamboree TV')).toBe(
+      'super mario party jamboree',
+    )
+    expect(bareTitle('Warframe for Nintendo Switch')).toBe('warframe')
+    expect(bareTitle('Nintendo Switch Sports')).toBe('nintendo switch sports')
+  })
+
   it('is never emptied by its own words', () => {
     expect(bareTitle('Deluxe Edition')).toBe('deluxe edition')
   })
@@ -66,10 +87,43 @@ describe('a stripped title', () => {
   })
 })
 
+describe('the spellings of a title', () => {
+  it('are the title as written, and with each dash between words as a hyphen or a colon', () => {
+    expect(spellingsOf('Super Mario Party Jamboree – Nintendo Switch 2 Edition')).toEqual([
+      'Super Mario Party Jamboree – Nintendo Switch 2 Edition',
+      'Super Mario Party Jamboree - Nintendo Switch 2 Edition',
+      'Super Mario Party Jamboree: Nintendo Switch 2 Edition',
+    ])
+    expect(spellingsOf('Call of Duty: Black Ops II - Zombies')).toEqual([
+      'Call of Duty: Black Ops II - Zombies',
+      'Call of Duty: Black Ops II: Zombies',
+    ])
+  })
+
+  it('are one for a title with no dash between words', () => {
+    expect(spellingsOf('  Half-Life  2 ')).toEqual(['Half-Life 2'])
+  })
+})
+
 describe('the title rung', () => {
   it('answers with the one candidate of that title on the platform', () => {
     const hollow = result(1, 'Hollow Knight', { platforms: [PC, SWITCH] })
     expect(matchByTitle({ title: 'Hollow Knight', platforms: [PC] }, [hollow])).toBe(hollow)
+  })
+
+  it('takes a Switch 2 Edition for its own record, where IGDB keeps one', () => {
+    const edition = result(
+      338072,
+      'The Legend of Zelda: Breath of the Wild - Nintendo Switch 2 Edition',
+      {
+        platforms: [SWITCH_2],
+      },
+    )
+    const query = {
+      title: 'The Legend of Zelda: Breath of the Wild – Nintendo Switch 2 Edition',
+      platforms: [SWITCH, SWITCH_2],
+    }
+    expect(matchByTitle(query, [edition])).toBe(edition)
   })
 
   it('matches through the edition words and the marks', () => {

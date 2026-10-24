@@ -901,6 +901,7 @@
     "progress": "{done, plural, =0 {Matching your games…} other {Added # of {total}…}}",
     "progressLabel": "Games added from {source}",
     "done": "{count, plural, =0 {Up to date with {source}.} one {# game came in from {source}.} other {# games came in from {source}.}}",
+    "waiting": "{count, plural, one {# game waits for your answer.} other {# games wait for your answer.}}",
     "daily": "Sync once a day",
     "disconnect": "Disconnect",
     "disconnectAsk": "Disconnect {source}? Your games stay on your shelf, with their hours. Shelf forgets what {source} listed, and your answers about it.",
@@ -924,6 +925,8 @@
       "hidden": "Shelf leaves these off your shelf, whatever {source} says. Demos, playtests and software come here by themselves.",
       "not-seen": "Still on your shelf. {source} stopped listing them."
     },
+    "unfound": "{count, plural, one {Shelf could not find this game} other {Shelf could not find these # games}}",
+    "unfoundHelp": "Find each one, or say it is not a game or not yours.",
     "loading": "Loading…",
     "hours": "{hours, number} h on {source}",
     "unplayed": "Not played on {source}",

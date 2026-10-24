@@ -403,7 +403,11 @@ export const viewOf = async (db: Executor, link: Link): Promise<LinkView> => ({
   counts: await countItems(db, link),
 })
 
-/** One of the page's lists of items. */
+/**
+ * One of the page's lists of items, the most played first. Those waiting
+ * for me start with the ones Shelf matched, which need only how I own
+ * them, before the ones it could not find.
+ */
 export const listItems = (db: Executor, link: Link, list: ItemList) => {
   const where =
     list === 'needs-you'
@@ -415,7 +419,11 @@ export const listItems = (db: Executor, link: Link, list: ItemList) => {
     .select()
     .from(sourceItems)
     .where(and(ofSource(link.userId, link.source), where))
-    .orderBy(sql`${sourceItems.minutes} desc`, asc(sourceItems.title))
+    .orderBy(
+      ...(list === 'needs-you' ? [sql`${sourceItems.igdbId} is null`] : []),
+      sql`${sourceItems.minutes} desc`,
+      asc(sourceItems.title),
+    )
     .limit(MAX_LISTED)
 }
 

@@ -309,6 +309,20 @@ Nintendo's own page and Shelf keeps the session token, encrypted." What building
   games of the one before it (`plays` in `domain/sync/sources.ts`): a game played on a
   Switch 2 is searched for on the Switch too, and its copy goes on the Switch when its record
   is a Switch game, on the Switch 2 when it is a Switch 2 game only.
+- **Nintendo's names, as IGDB writes them** (added 24 Oct 2026, after the owner's first
+  link left 14 of 38 games unmatched). IGDB finds a name only as written, so the title rung
+  asks for each spelling (`spellingsOf` in `domain/sync/titles.ts`): as the source wrote it,
+  and with each dash between words as a hyphen or a colon. Nintendo writes "Breath of the
+  Wild – Nintendo Switch 2 Edition" where IGDB has "- Nintendo Switch 2 Edition". The
+  console Nintendo names at the end ("Nintendo Switch 2 Edition", with what comes bundled
+  after a "+", and "for Nintendo Switch") is a platform suffix, left out when the title is
+  stripped. **A Switch 2 Edition is its own record where IGDB keeps one**, the owner's
+  choice: a shelf can hold a game on the Switch 2 and on the PC. Its copy then goes on the
+  Switch 2. Where IGDB keeps none, it is the game itself. Migration 0011 has the next sync
+  look again at every title nothing matched.
+- **The games Shelf matched are listed first**, each needing only Cartridge or Download, then
+  those it could not find, under a heading of their own. The card says how many wait for an
+  answer; it never says "up to date" while any do.
 - **A new game starts unsorted, or playing** if last played these two weeks, as Steam's do.
   The hours are Nintendo's row on the copy, as Steam's are.
 - **Tests never talk to Nintendo.** `fixtures/nintendo/play-history.json` and the double in

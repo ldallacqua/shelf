@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm'
+import { http, HttpResponse } from 'msw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Db } from '@/server/db/client'
@@ -8,9 +9,9 @@ import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { createNintendoHandlers, newNintendoMockState } from '@/server/mocks/nintendo'
 import { MOCK_NINTENDO, MOCK_STEAM } from '@/server/mocks/owner'
-import { loadFixtures } from '@/server/seed/fixtures'
+import { type Fixtures, loadFixtures } from '@/server/seed/fixtures'
 import { readLink, saveLink } from '@/server/sync/memory'
-import { createNintendo } from '@/server/sync/nintendo'
+import { createNintendo, NINTENDO_STORE_API } from '@/server/sync/nintendo'
 import { seal } from '@/server/sync/sealed'
 import { createSteam } from '@/server/sync/steam'
 import { createTestAccount, createTestDatabase } from '@/test/database'
@@ -137,6 +138,16 @@ describe('a first sync from Nintendo', () => {
       minutes: 2100,
     })
     expect(await itemNamed(me, 'Mario Kart World')).toMatchObject({ igdbId: null })
+  })
+
+  it('lists the games it matched before the ones it could not find', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const listed = await sync(me).list('nintendo', 'needs-you')
+    expect(listed.map((item) => item.match !== undefined)).toEqual([
+      ...Array<boolean>(MATCHED).fill(true),
+      ...Array<boolean>(PLAYED - MATCHED).fill(false),
+    ])
   })
 
   it('lists each match with its game, for me to confirm', async () => {
@@ -295,5 +306,94 @@ describe('the Nintendo session', () => {
     })
     expect((await readLink(db, me, 'nintendo'))?.problem).toBeNull()
     expect((await syncAll(me)).link.counts['needs-you']).toBe(PLAYED)
+  })
+})
+
+describe('the names Nintendo gives its games', () => {
+  const SWITCH_2 = 508
+  /** IGDB's own record for Breath of the Wild's Switch 2 Edition, which the fixtures leave out. */
+  const SWITCH_2_EDITION = 338072
+
+  /** The fixtures, with that record: IGDB writes a hyphen where Nintendo writes a dash. */
+  const withEdition = (): Fixtures => {
+    const fixtures = loadFixtures()
+    const games = new Map(fixtures.games)
+    games.set(SWITCH_2_EDITION, {
+      ...fixtures.games.get(BREATH_OF_THE_WILD)!,
+      id: SWITCH_2_EDITION,
+      name: 'The Legend of Zelda: Breath of the Wild - Nintendo Switch 2 Edition',
+      slug: 'the-legend-of-zelda-breath-of-the-wild-nintendo-switch-2-edition',
+      platforms: [SWITCH_2],
+      first_release_date: Date.parse('2025-06-05T00:00:00Z') / 1000,
+    })
+    return { ...fixtures, games }
+  }
+
+  const played = (titleId: string, titleName: string, platform: string) => ({
+    titleId,
+    titleName,
+    platform,
+    totalPlayedMinutes: 600,
+    firstPlayedAt: '2025-06-05T12:00:00Z',
+    lastPlayedAt: '2025-07-01T12:00:00Z',
+  })
+
+  beforeEach(() => {
+    network.use(
+      ...createHandlers(withEdition()),
+      http.get(`${NINTENDO_STORE_API}/users/me/play_histories`, () =>
+        HttpResponse.json({
+          playHistories: [
+            played(
+              '0100A3D008C5C000',
+              'The Legend of Zelda: Breath of the Wild – Nintendo Switch 2 Edition',
+              'BEE',
+            ),
+            played('0100E8C00A0E4000', 'Super Mario Odyssey – Nintendo Switch 2 Edition', 'BEE'),
+            played('0100633007D48000', 'Hollow Knight for Nintendo Switch', 'HAC'),
+          ],
+        }),
+      ),
+    )
+  })
+
+  it('finds a Switch 2 Edition as IGDB keeps it, its own record, however the dash is written', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const zelda = await itemNamed(
+      me,
+      'The Legend of Zelda: Breath of the Wild – Nintendo Switch 2 Edition',
+    )
+    expect(zelda).toMatchObject({ igdbId: SWITCH_2_EDITION, resolvedBy: 'title' })
+  })
+
+  it('finds the game itself where IGDB keeps no record of the edition, or Nintendo names the console', async () => {
+    const me = await linked()
+    await syncAll(me)
+    expect(await itemNamed(me, 'Super Mario Odyssey – Nintendo Switch 2 Edition')).toMatchObject({
+      igdbId: SUPER_MARIO_ODYSSEY,
+    })
+    expect(await itemNamed(me, 'Hollow Knight for Nintendo Switch')).toMatchObject({
+      igdbId: HOLLOW_KNIGHT,
+    })
+  })
+
+  it('puts a confirmed Switch 2 Edition on the Switch 2', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const zelda = await itemNamed(
+      me,
+      'The Legend of Zelda: Breath of the Wild – Nintendo Switch 2 Edition',
+    )
+    await sync(me).answer(
+      'nintendo',
+      zelda.id,
+      { kind: 'confirm', format: 'digital' },
+      undefined,
+      NOW,
+    )
+    expect(await shelved(me, SWITCH_2_EDITION)).toEqual([
+      expect.objectContaining({ platformId: SWITCH_2, format: 'digital' }),
+    ])
   })
 })

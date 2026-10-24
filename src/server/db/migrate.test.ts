@@ -176,3 +176,37 @@ describe('settling accounts', () => {
     expect(await nameOf(db, other)).toBe('Ana')
   })
 })
+
+describe('titles nothing matched, now spelled more ways (0011)', () => {
+  it('are tried again at the next sync, and nothing else is', async () => {
+    const before = migrationsBefore('0011_titles-again')
+    const db = openDatabase({ kind: 'memory' })
+    try {
+      await migrateDatabase(db, before)
+      const me = await createTestAccount(db, 'lucas')
+      // Each item: its source, the decision, and the record matched.
+      const made: Record<string, [string, string, number | null]> = {
+        edition: ['nintendo', 'pending', null],
+        matched: ['nintendo', 'pending', 7346],
+        unmatched: ['steam', 'pending', null],
+        dismissed: ['nintendo', 'not_a_game', null],
+      }
+      for (const [id, [source, decision, igdbId]] of Object.entries(made)) {
+        await db.run(sql`insert into source_items (id, user_id, source, store_id, title, evidence,
+            first_seen_at, last_seen_at, decision, igdb_id, title_tried_at)
+          values (${id}, ${me}, ${source}, ${id}, ${id}, 'played', 1, 1, ${decision}, ${igdbId}, 5)`)
+      }
+
+      await migrateDatabase(db)
+
+      const tried = Object.fromEntries(
+        (
+          await db.select({ id: sourceItems.id, tried: sourceItems.titleTriedAt }).from(sourceItems)
+        ).map((row) => [row.id, row.tried]),
+      )
+      expect(tried).toEqual({ edition: null, matched: 5, unmatched: null, dismissed: 5 })
+    } finally {
+      rmSync(before, { recursive: true, force: true })
+    }
+  })
+})

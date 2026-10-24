@@ -44,9 +44,13 @@ const EDITION = new RegExp(
   'i',
 )
 
-/** A platform named at the end of a store's title: "(PC)", "for Windows", "- Windows 10 Edition". */
+/**
+ * A platform named at the end of a store's title: "(PC)", "for Windows",
+ * "- Windows 10 Edition", and Nintendo's "for Nintendo Switch" and
+ * "– Nintendo Switch 2 Edition", with what comes bundled after a "+".
+ */
 const PLATFORM_SUFFIX =
-  /[\s:–—-]+(?:\((?:pc|windows|mac|linux)\)|(?:for\s+)?windows(?:\s+10)?(?:\s+edition)?|pc\s+edition)\s*$/i
+  /[\s:–—-]+(?:\((?:pc|windows|mac|linux)\)|(?:for\s+)?windows(?:\s+10)?(?:\s+edition)?|pc\s+edition|for\s+nintendo\s+switch(?:\s+2)?|nintendo\s+switch\s+2\s+edition(?:\s*\+.+)?)\s*$/i
 
 /**
  * A title with its marks, edition words and platform suffix removed, as
@@ -62,6 +66,22 @@ export const strippedTitle = (title: string): string => {
     rest = next
   }
   return rest
+}
+
+/** A dash between words, as stores write it: " – ", " — " or " - ". */
+const DASH = /\s+[–—-]\s+/g
+
+/**
+ * The ways to ask IGDB for a title, which it finds only as written: as the
+ * source wrote it, and with each dash between words as IGDB writes it, a
+ * hyphen or a colon. Nintendo writes "Breath of the Wild – Nintendo Switch 2
+ * Edition" where IGDB has "- Nintendo Switch 2 Edition", and "Jamboree –
+ * Nintendo Switch 2 Edition" where it has "Jamboree: Nintendo Switch 2
+ * Edition".
+ */
+export const spellingsOf = (title: string): string[] => {
+  const written = title.replace(/\s+/g, ' ').trim()
+  return [...new Set([written, written.replace(DASH, ' - '), written.replace(DASH, ': ')])]
 }
 
 /** What follows a game's title in the title of a mode sold apart: " - Zombies", ": Multiplayer". */
