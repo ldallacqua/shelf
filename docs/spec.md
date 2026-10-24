@@ -528,6 +528,9 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
    The matched games come first; those Shelf could not find follow, under "Shelf could not
    find these 2 games", each with Find it, Not a game and Not mine. The card says "9 games
    wait for your answer", never "up to date" while any do.
+   - A game Nintendo lists under two names (Warframe for Nintendo Switch, and Warframe) is
+     one row: "Nintendo also lists it as Warframe.", the hours of both, one answer for both,
+     and one game in every count.
    - Nintendo's names are matched as IGDB writes them: "– Nintendo Switch 2 Edition" finds
      IGDB's "- Nintendo Switch 2 Edition", its own record, where IGDB keeps one, and the game
      itself where it does not; "for Nintendo Switch" is left out.

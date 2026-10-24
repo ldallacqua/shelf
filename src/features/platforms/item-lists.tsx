@@ -186,14 +186,29 @@ function FindIt({
   )
 }
 
+/**
+ * The items a list shows as one row: a game a source lists more than once,
+ * as Nintendo lists Warframe for the Switch and the Switch 2, is one game,
+ * matched once and answered once. The most played comes first.
+ */
+const asGames = (items: readonly ItemView[]): ItemView[][] => {
+  const games = new Map<string, ItemView[]>()
+  for (const item of items) {
+    const key = item.match ? `game:${item.match.igdbId}` : item.id
+    games.set(key, [...(games.get(key) ?? []), item])
+  }
+  return [...games.values()]
+}
+
 function Row({
-  item,
+  game,
   list,
   source,
   handle,
   onAnswered,
 }: {
-  item: ItemView
+  /** One game's items, the first shown: usually one. */
+  game: readonly ItemView[]
   list: ItemList
   source: SyncSource
   handle: string
@@ -205,23 +220,30 @@ function Row({
   const [finding, setFinding] = useState(false)
   const [busy, setBusy] = useState(false)
   const [said, setSaid] = useState<{ tone: 'done' | 'trouble'; text: string }>()
+  const item = game[0]!
+  const minutes = game.reduce((sum, each) => sum + each.minutes, 0)
 
+  /** The answer, for each of the game's items in turn: the first makes the copy, the rest feed it. */
   const answer = async (choice: ItemAnswer) => {
     setBusy(true)
     setSaid(undefined)
-    const result = await answerItem(source, item.id, choice)
-    setBusy(false)
-    if (!result.ok) {
-      setSaid({
-        tone: 'trouble',
-        text: result.reason === 'too-many' ? t('tooMany') : t('failed'),
-      })
-      return
+    let shelved: string | undefined
+    for (const each of game) {
+      const result = await answerItem(source, each.id, choice)
+      if (!result.ok) {
+        setBusy(false)
+        setSaid({
+          tone: 'trouble',
+          text: result.reason === 'too-many' ? t('tooMany') : t('failed'),
+        })
+        return
+      }
+      shelved = result.value.item.onShelf?.title ?? shelved
     }
+    setBusy(false)
     setFinding(false)
-    const shelved = result.value.item.onShelf
     // The list is fetched again, and this row may leave it: the card says what happened.
-    onAnswered(shelved ? t('added', { title: shelved.title }) : undefined)
+    onAnswered(shelved ? t('added', { title: shelved }) : undefined)
   }
 
   return (
@@ -254,9 +276,17 @@ function Row({
                 {t('lastSeen', { date: format.dateTime(item.lastSeenAt, { dateStyle: 'medium' }) })}
               </span>
             ) : (
-              <Hours item={item} source={source} />
+              <Hours item={{ ...item, minutes }} source={source} />
             )}
           </span>
+          {game.length > 1 ? (
+            <span className="block text-muted">
+              {t('alsoListed', {
+                source: t(`source.${source}`),
+                titles: format.list(game.slice(1).map((each) => each.title)),
+              })}
+            </span>
+          ) : null}
           {list === 'needs-you' && item.match ? <Match match={item.match} /> : null}
         </span>
         {list === 'needs-you' && item.match && playedOn(source) ? (
@@ -370,7 +400,8 @@ function AllAtOnce({
   const t = useTranslations('Sync')
   const [sending, setSending] = useState(false)
   const matched = items.filter((item) => item.match)
-  if (matched.length < 2) return null
+  const games = new Set(matched.map((item) => item.match!.igdbId)).size
+  if (games < 2) return null
   const send = async (format: Format) => {
     setSending(true)
     const first = await confirmMany(
@@ -383,7 +414,7 @@ function AllAtOnce({
   }
   return (
     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-control border border-line px-3 py-2 text-sm">
-      <span className="flex-1">{t('nintendo.all', { count: matched.length })}</span>
+      <span className="flex-1">{t('nintendo.all', { count: games })}</span>
       <span className="flex flex-wrap gap-2">
         <Button
           size="sm"
@@ -450,10 +481,10 @@ function List({
   if (count === 0) return null
   const rows = (some: readonly ItemView[]) => (
     <ul className="mt-2">
-      {some.map((item) => (
+      {asGames(some).map((game) => (
         <Row
-          key={item.id}
-          item={item}
+          key={game[0]!.id}
+          game={game}
           list={list}
           source={source}
           handle={handle}

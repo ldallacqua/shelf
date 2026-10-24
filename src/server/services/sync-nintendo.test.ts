@@ -351,6 +351,8 @@ describe('the names Nintendo gives its games', () => {
             ),
             played('0100E8C00A0E4000', 'Super Mario Odyssey – Nintendo Switch 2 Edition', 'BEE'),
             played('0100633007D48000', 'Hollow Knight for Nintendo Switch', 'HAC'),
+            // The same game again, under a title id of its own.
+            played('0100633007D48001', 'Hollow Knight', 'BEE'),
           ],
         }),
       ),
@@ -376,6 +378,29 @@ describe('the names Nintendo gives its games', () => {
     expect(await itemNamed(me, 'Hollow Knight for Nintendo Switch')).toMatchObject({
       igdbId: HOLLOW_KNIGHT,
     })
+  })
+
+  it('counts a game Nintendo lists twice once, and makes it one copy with both its hours', async () => {
+    const me = await linked()
+    const step = await syncAll(me)
+    expect(step.link.counts['needs-you']).toBe(3)
+    for (const title of ['Hollow Knight for Nintendo Switch', 'Hollow Knight']) {
+      const item = await itemNamed(me, title)
+      await sync(me).answer(
+        'nintendo',
+        item.id,
+        { kind: 'confirm', format: 'digital' },
+        undefined,
+        NOW,
+      )
+    }
+    const [copy, ...more] = await shelved(me, HOLLOW_KNIGHT)
+    expect(more).toEqual([])
+    expect(copy).toMatchObject({ platformId: SWITCH, format: 'digital' })
+    const hours = await db.select().from(playTime).where(eq(playTime.copyId, copy!.copyId))
+    expect(hours).toEqual([expect.objectContaining({ source: 'nintendo', minutes: 1200 })])
+    const link = await sync(me).step('nintendo', {}, NOW)
+    expect(link.link.counts).toMatchObject({ 'on-shelf': 1, 'needs-you': 2 })
   })
 
   it('puts a confirmed Switch 2 Edition on the Switch 2', async () => {
