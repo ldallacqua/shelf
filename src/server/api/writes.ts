@@ -210,6 +210,23 @@ export const apiStatusPatch = z
   .describe('Many games given one status. If any is not in the library, none changes.')
   .meta({ id: 'StatusPatch' })
 
+export const apiRematch = z
+  .object({ igdbId: z.int().positive().describe('The game on IGDB it is') })
+  .describe(
+    'Which game on IGDB this one is, when a sync took it for another. Its status, rating, notes, tags, copies and hours stay. If that game is in the library already, under any version, this one folds into it.',
+  )
+  .meta({ id: 'Rematch' })
+
+export const apiRematched = z
+  .object({
+    version: z.int().describe('The library’s version after the change'),
+    entryId: z.string().describe('The entry it is now: another, when it folded into one'),
+    slug: z.string(),
+    title: z.string(),
+    merged: z.boolean().describe('It folded into the game already in the library'),
+  })
+  .meta({ id: 'Rematched' })
+
 export const apiOwnerGame = z
   .object({
     entryId: z.string(),

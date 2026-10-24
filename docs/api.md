@@ -293,6 +293,7 @@ again on its next visit. Ratings are out of ten and time is in hours, as the rea
 | `PATCH /entries` | Many games given one status at once: `{ "entries": ["…"], "status": "backlog" }`, entries by their ids, up to a thousand, in one write. Nothing else about them changes. If any is not in one's library, none changes (404). |
 | `DELETE /entries/{id}` | Removes a game and everything added with it. The answer's `undo` is kept a day. |
 | `POST /removed/{undo}` | Puts a removed game back exactly as it was |
+| `PUT /entries/{id}/game` | Which game on IGDB it is, when a sync took it for another: `{ "igdbId": 231 }`. Everything one's own about it stays: status, rating, notes, tags, copies and their hours, and the sync's memory names the new game. If that game is in the library already, under any version, this one folds into it (`merged`): its copies join, its hours with them, and its entry goes. Answers with the entry it is now, its `slug` and `title`. Spends the hour's IGDB allowance as adding does. |
 | `POST /entries/{id}/copies`, `PATCH` and `DELETE /entries/{id}/copies/{copy}` | A copy: add one (`{ "platform", "format" }`), switch it between physical and digital, remove it |
 | `PUT /shelves/{slug}`, `DELETE /shelves/{slug}` | Saves or removes a smart shelf |
 

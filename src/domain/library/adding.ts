@@ -92,6 +92,20 @@ export type Added = {
 
 export type AddedGame = { slug: string; title: string; version: number; undo: Added }
 
+/**
+ * A game taken for the wrong one, now the one I said: the entry it is
+ * (another, when it folded into the game already on my shelf), and its
+ * address and title as the shelf shows them.
+ */
+export type Rematched = {
+  version: number
+  entryId: string
+  slug: string
+  title: string
+  /** It folded into the game already on my shelf. */
+  merged: boolean
+}
+
 export const refusalReasons = [
   'not-signed-in',
   'invalid',

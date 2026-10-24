@@ -21,6 +21,8 @@ import { StatusMark } from '@/features/library/status-mark'
 import { useAccount } from '@/features/owner/account'
 import { SavedRating } from '@/features/owner/fields'
 import { announceChange } from '@/features/owner/library-change'
+import { FindIt } from '@/features/platforms/find-it'
+import type { Found } from '@/features/platforms/sync-client'
 import { notify } from '@/features/shell/notices'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -29,7 +31,7 @@ import { ToggleChip } from '@/ui/chip'
 import { Progress } from '@/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
 
-import { placeGame, placeGames, rateGame, readUnsorted } from './placing-client'
+import { placeGame, placeGames, rateGame, readUnsorted, rematchGame } from './placing-client'
 
 /**
  * Placing what a sync brought in (spec 4.5), after Minimap's "Rate my
@@ -37,7 +39,9 @@ import { placeGame, placeGames, rateGame, readUnsorted } from './placing-client'
  * source, my rating and a status one tap each, saved at once. A game given
  * a status stays in the list, showing it, until the page is opened again:
  * a wrong status is one tap to change, and its pressed status taps it back
- * to unsorted. Many can be given one status at once. Beside the list, how
+ * to unsorted. A game the sync took for the wrong one is searched for and
+ * made the right one, its copy and hours kept. Many can be given one status
+ * at once. Beside the list, how
  * many games stand in each status, moving as they are placed.
  *
  * The list is one stop for the keyboard: Tab reaches the checkbox of the
@@ -72,6 +76,12 @@ type RowProps = {
   platforms: Map<number, PlatformLabel>
   /** The row the keyboard is on: its controls are in the Tab order. */
   current: boolean
+  /** Its search for the game it really is is open. */
+  finding: boolean
+  /** Saying which game it is, a moment. */
+  busy: boolean
+  onFind: () => void
+  onPick: (found: Found) => void
   selected: boolean
   onSelect: (selected: boolean) => void
   onPlace: (status: Status) => void
@@ -123,6 +133,10 @@ function Row({
   handle,
   platforms,
   current,
+  finding,
+  busy,
+  onFind,
+  onPick,
   selected,
   onSelect,
   onPlace,
@@ -182,6 +196,19 @@ function Row({
         </h3>
         {shorts.length > 0 ? <p className="text-sm text-muted">{shorts.join(' · ')}</p> : null}
         <Played game={game} />
+        {/* A game the sync took for the wrong one, while it still waits: given a status, it is placed. */}
+        {given ? null : (
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto min-h-6 justify-self-start px-0"
+            tabIndex={tab}
+            aria-expanded={finding}
+            onClick={onFind}
+          >
+            {t('notThis')}
+          </Button>
+        )}
       </div>
       {/* Under the title beside the cover; on a phone, the row's whole width. */}
       <div className="col-span-3 mt-4 grid gap-x-8 gap-y-3 sm:col-span-1 sm:col-start-3 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
@@ -203,6 +230,20 @@ function Row({
           ))}
         </div>
       </div>
+      {finding ? (
+        <div className="col-span-3 mt-4 sm:col-span-2 sm:col-start-2">
+          <FindIt
+            title={game.title}
+            onPick={onPick}
+            busy={busy}
+            pickLabel={(found) =>
+              found.year
+                ? t('isThis', { title: found.title, year: found.year })
+                : t('isThisUndated', { title: found.title })
+            }
+          />
+        </div>
+      ) : null}
     </li>
   )
 }
@@ -254,6 +295,9 @@ function PlacingList({ handle }: { handle: string }) {
   const [limit, setLimit] = useState(STEP)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [active, setActive] = useState<string>()
+  // The row whose search for the game it really is is open, and whether its answer is on its way.
+  const [finding, setFinding] = useState<string>()
+  const [rematching, setRematching] = useState(false)
   const rows = useRef(new Map<string, HTMLLIElement>())
   // The row to move focus to once it is drawn, after an arrow.
   const focusNext = useRef<string>(undefined)
@@ -373,6 +417,52 @@ function PlacingList({ handle }: { handle: string }) {
           },
         },
       ],
+    })
+  }
+
+  /**
+   * A game made the one I picked: the list read again, keeping the games
+   * given a status on this visit, which it no longer has. One that folded
+   * into a game on my shelf goes; what that game is now, the answer says.
+   */
+  const rematch = async (game: UnsortedGame, found: Found) => {
+    setRematching(true)
+    const answer = await rematchGame(game.entryId, found.igdbId)
+    if (!answer.ok) {
+      setRematching(false)
+      notify({ message: errors(`errors.${answer.reason}`) })
+      return
+    }
+    announceChange({ version: answer.value.version })
+    const fresh = await readUnsorted()
+    setRematching(false)
+    setFinding(undefined)
+    if (fresh.ok) {
+      setLoaded((now) => {
+        if (!now) return now
+        const there = new Set(fresh.value.games.map((each) => each.entryId))
+        const kept = now.games.filter(
+          (each) =>
+            now.given.has(each.entryId) &&
+            !there.has(each.entryId) &&
+            each.entryId !== game.entryId,
+        )
+        const given = new Map([...now.given].filter(([id]) => id !== game.entryId))
+        return {
+          games: [...fresh.value.games, ...kept],
+          tally: fresh.value.tally,
+          platforms: new Map([
+            ...now.platforms,
+            ...fresh.value.platforms.map((platform) => [platform.id, platform] as const),
+          ]),
+          given,
+        }
+      })
+    }
+    notify({
+      message: answer.value.merged
+        ? t('rematchedInto', { title: answer.value.title })
+        : t('rematched', { title: answer.value.title }),
     })
   }
 
@@ -516,6 +606,10 @@ function PlacingList({ handle }: { handle: string }) {
               handle={handle}
               platforms={loaded.platforms}
               current={game.entryId === current}
+              finding={finding === game.entryId}
+              busy={rematching}
+              onFind={() => setFinding((now) => (now === game.entryId ? undefined : game.entryId))}
+              onPick={(found) => void rematch(game, found)}
               selected={selected.has(game.entryId)}
               onSelect={(on) =>
                 setSelected((now) => {

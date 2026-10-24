@@ -7,6 +7,7 @@ import {
   addMyGame,
   groupingFor,
   matchMine,
+  rematchMine,
   searchToAdd,
   undoManyOfMine,
   undoMyAdd,
@@ -78,6 +79,7 @@ const requests: [string, () => Promise<{ ok: boolean; reason?: string }>][] = [
   ['search IGDB', () => searchToAdd('hades')],
   ['ask where a game goes', () => groupingFor(231)],
   ['add a game', () => addMyGame({ igdbId: 231, status: 'backlog', copies: [] })],
+  ['say which game one of its games is', () => rematchMine('bloodborne', { igdbId: 231 })],
   [
     'undo an add',
     () => undoMyAdd({ entryId: ID, gameId: ID, newEntry: true, newVersion: true, copyIds: [] }),

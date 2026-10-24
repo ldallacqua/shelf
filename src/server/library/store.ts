@@ -22,6 +22,7 @@ import {
   isRating,
   isStatus,
   relations,
+  syncSources,
   type Day,
   type Format,
   type Relation,
@@ -458,6 +459,18 @@ export type Placement =
       copies: readonly Omit<NewCopy, 'gameId'>[]
     }
 
+/** Stores a record and the names and platforms it uses: our id for it. */
+const storeRecord = async (tx: Executor, record: RecordToStore, now: number): Promise<string> => {
+  await savePlatforms(tx, record.platforms)
+  await saveCompanies(tx, record.data.companies)
+  for (const { kind, items } of record.names) await saveVocab(tx, kind, items)
+  return saveGame(tx, record.data, {
+    lineage: record.lineage,
+    ...(record.art ? { art: record.art } : {}),
+    now,
+  })
+}
+
 /** Stores a record and places it, inside a transaction that raises the version after. */
 const placeRecord = async (
   tx: Executor,
@@ -466,14 +479,7 @@ const placeRecord = async (
   placement: Placement,
   now: number,
 ): Promise<Added> => {
-  await savePlatforms(tx, record.platforms)
-  await saveCompanies(tx, record.data.companies)
-  for (const { kind, items } of record.names) await saveVocab(tx, kind, items)
-  const gameId = await saveGame(tx, record.data, {
-    lineage: record.lineage,
-    ...(record.art ? { art: record.art } : {}),
-    now,
-  })
+  const gameId = await storeRecord(tx, record, now)
 
   if (placement.kind === 'entry') {
     const entryId = await insertEntry(
@@ -894,6 +900,164 @@ export const setPrimary = (
     await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
     await bumpVersion(tx, libraryId)
   })
+
+/**
+ * Where a game taken for the wrong one goes once I say which it is: the
+ * entry already on the shelf that has that game, as it or as a version of
+ * it. Absent, the game stays an entry of its own.
+ */
+export type RematchInto = { entryId: string; version?: Exclude<Relation, 'primary'> }
+
+/**
+ * A game a sync took for the wrong one, made the game I say it is, in one
+ * transaction (spec 4.5, "Not this game"). Everything I set and own stays:
+ * status, rating, notes, tags, copies and their hours. When the right game
+ * is on the shelf already, under any version, this one folds into it as the
+ * sync would have folded it: its copies join (one already there on the same
+ * platform and format is fed, not doubled), its hours with them, and the
+ * entry goes; what the other lacks of mine (a status, a rating, notes) it
+ * takes. Either way the sync's items now name the right record.
+ */
+export const rematchEntry = (
+  db: Db,
+  libraryId: string,
+  entryId: string,
+  record: RecordToStore,
+  into: RematchInto | undefined,
+  now = Date.now(),
+): Promise<{ entryId: string; merged: boolean }> =>
+  withConflict('That game is already in the library', () =>
+    db.transaction(async (tx) => {
+      const wrong = await requireEntry(tx, libraryId, entryId)
+      if (into?.entryId === entryId) throw invalid('A game cannot fold into itself')
+      const gameId = await storeRecord(tx, record, now)
+      const versions = await tx
+        .select()
+        .from(entryVersions)
+        .where(eq(entryVersions.entryId, entryId))
+      const primary = versions.find((version) => version.relation === 'primary')
+      if (!into && primary?.gameId === gameId) return { entryId, merged: false }
+      const owned = await tx.select().from(copies).where(eq(copies.entryId, entryId))
+      if (owned.length > 0) {
+        await tx
+          .update(sourceItems)
+          .set({ igdbId: record.data.igdbId, resolvedBy: 'owner' })
+          .where(
+            and(
+              eq(sourceItems.userId, libraryId),
+              inArray(
+                sourceItems.copyId,
+                owned.map((copy) => copy.id),
+              ),
+            ),
+          )
+      }
+
+      if (!into) {
+        // The record it was taken for steps out; the one I said it is takes its place.
+        await tx
+          .delete(entryVersions)
+          .where(and(eq(entryVersions.entryId, entryId), eq(entryVersions.relation, 'primary')))
+        if (versions.some((version) => version.gameId === gameId)) {
+          await tx
+            .update(entryVersions)
+            .set({ relation: 'primary' })
+            .where(and(eq(entryVersions.entryId, entryId), eq(entryVersions.gameId, gameId)))
+        } else {
+          await tx
+            .insert(entryVersions)
+            .values({ entryId, gameId, userId: libraryId, relation: 'primary' })
+        }
+        await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
+        if (primary) await dropUnusedGames(tx, [primary.gameId])
+        await bumpVersion(tx, libraryId)
+        return { entryId, merged: false }
+      }
+
+      const target = await requireEntry(tx, libraryId, into.entryId)
+      if (into.version) {
+        await tx
+          .insert(entryVersions)
+          .values({ entryId: target.id, gameId, userId: libraryId, relation: into.version })
+      }
+      const [exact] = await tx
+        .select({ relation: entryVersions.relation })
+        .from(entryVersions)
+        .where(and(eq(entryVersions.entryId, target.id), eq(entryVersions.gameId, gameId)))
+      // A copy of a version names it; a copy of the entry's own record does not need to.
+      const copyGameId = exact && exact.relation !== 'primary' ? gameId : null
+      const theirs = await tx.select().from(copies).where(eq(copies.entryId, target.id))
+      const fed: string[] = []
+      for (const copy of owned) {
+        const same = theirs.find(
+          (each) => each.platformId === copy.platformId && each.format === copy.format,
+        )
+        if (same) {
+          await tx
+            .update(sourceItems)
+            .set({ copyId: same.id })
+            .where(eq(sourceItems.copyId, copy.id))
+          await tx.delete(playTime).where(eq(playTime.copyId, copy.id))
+          await tx.delete(copies).where(eq(copies.id, copy.id))
+          fed.push(same.id)
+        } else {
+          await tx
+            .update(copies)
+            .set({ entryId: target.id, gameId: copyGameId })
+            .where(eq(copies.id, copy.id))
+          await tx.update(playTime).set({ entryId: target.id }).where(eq(playTime.copyId, copy.id))
+        }
+      }
+      // A copy fed by both games' items has their hours together.
+      for (const source of fed.length > 0 ? syncSources : []) {
+        await writeSourceMinutes(
+          tx,
+          libraryId,
+          source,
+          await sourceMinutes(tx, libraryId, source, fed),
+          now,
+        )
+      }
+      const typed = (id: string) =>
+        tx
+          .select({ id: playTime.id })
+          .from(playTime)
+          .where(
+            and(eq(playTime.entryId, id), eq(playTime.source, 'manual'), isNull(playTime.copyId)),
+          )
+      const [mine] = await typed(entryId)
+      const [kept] = await typed(target.id)
+      if (mine && !kept) {
+        await tx.update(playTime).set({ entryId: target.id }).where(eq(playTime.id, mine.id))
+      }
+      const worn = await tx
+        .select({ tagId: entryTags.tagId })
+        .from(entryTags)
+        .where(eq(entryTags.entryId, entryId))
+      if (worn.length > 0) {
+        await tx
+          .insert(entryTags)
+          .values(worn.map((tag) => ({ entryId: target.id, tagId: tag.tagId })))
+          .onConflictDoNothing()
+      }
+      await tx
+        .update(entries)
+        .set({
+          ...(target.status === 'unsorted' ? { status: wrong.status } : {}),
+          ...(target.rating === null ? { rating: wrong.rating } : {}),
+          ...(target.notes === null ? { notes: wrong.notes, notesPublic: wrong.notesPublic } : {}),
+          updatedAt: now,
+        })
+        .where(eq(entries.id, target.id))
+      await tx.delete(entries).where(eq(entries.id, entryId))
+      await dropUnusedGames(
+        tx,
+        versions.map((version) => version.gameId),
+      )
+      await bumpVersion(tx, libraryId)
+      return { entryId: target.id, merged: true }
+    }),
+  )
 
 export const addCopy = (
   db: Db,

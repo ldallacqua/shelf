@@ -1,6 +1,6 @@
 'use client'
 
-import type { Answer } from '@/domain/library/adding'
+import type { Answer, Rematched } from '@/domain/library/adding'
 import type { Changed } from '@/domain/library/editing'
 import type { Placing, Standing } from '@/domain/library/placing'
 import type { Status } from '@/domain/library/values'
@@ -21,6 +21,10 @@ export const placeGame = (entryId: string, status: Status): Promise<Answer<Chang
 
 export const placeGames = (entries: readonly string[], status: Status): Promise<Answer<Changed>> =>
   callApi<Changed>('PATCH', '/api/v1/entries', { entries, status })
+
+/** Which game on IGDB one is, when a sync took it for another (spec 4.5). */
+export const rematchGame = (entryId: string, igdbId: number): Promise<Answer<Rematched>> =>
+  callApi<Rematched>('PUT', `/api/v1/entries/${encodeURIComponent(entryId)}/game`, { igdbId })
 
 /** Out of a hundred, as stored; null takes it away. */
 export const rateGame = (entryId: string, rating: number | null): Promise<Answer<Changed>> =>

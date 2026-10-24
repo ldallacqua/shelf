@@ -25,8 +25,8 @@ vi.mock('@/features/shell/notices', () => ({
 /**
  * Placing what a sync brought in (spec 4.5): the list, the tally, one game
  * placed and staying with its status shown, changed and taken back, many
- * placed at once with Undo, a rating beside a status, and the keyboard's
- * way through.
+ * placed at once with Undo, a rating beside a status, a game the sync took
+ * for the wrong one made the right one, and the keyboard's way through.
  */
 
 const LAST_PLAYED = Date.UTC(2025, 9, 9)
@@ -61,6 +61,15 @@ const PLACING: Placing = {
 const sent: { path: string; method: string; body?: unknown }[] = []
 let placing: Placing
 let fails: boolean
+/** What saying which game one is answers with; undefined refuses it. */
+let rematched: { entryId: string; slug: string; title: string; merged: boolean } | undefined
+/** What the list is read again as, after. */
+let afterwards: Placing | undefined
+
+const FOUND = [
+  { igdbId: 119_133, title: 'Hades II', year: 2024, cover: null },
+  { igdbId: 1_942, title: 'Hades', year: 2018, cover: null },
+]
 
 beforeEach(() => {
   who = { status: 'signed-in', handle: 'ana', name: 'Ana', shelfPublic: true }
@@ -68,11 +77,19 @@ beforeEach(() => {
   notices.length = 0
   placing = PLACING
   fails = false
+  rematched = undefined
+  afterwards = undefined
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const path = String(input)
     const method = init?.method ?? 'GET'
     sent.push({ path, method, body: init?.body ? JSON.parse(String(init.body)) : undefined })
     if (path === '/api/v1/me/unsorted') return Response.json(placing)
+    if (path.startsWith('/api/v1/igdb/search')) return Response.json({ results: FOUND })
+    if (path.endsWith('/game') && method === 'PUT') {
+      if (!rematched) return Response.json({ error: { code: 'too-many' } }, { status: 429 })
+      if (afterwards) placing = afterwards
+      return Response.json({ version: 9, ...rematched })
+    }
     if (path.startsWith('/api/v1/entries') && method === 'PATCH') {
       if (fails) return new Response(null, { status: 500 })
       return Response.json({ version: 8 })
@@ -292,8 +309,10 @@ describe('PlaceGames', () => {
     await user.keyboard(' ')
     expect(box('Portal')).toBeChecked()
 
-    // Placed from the keyboard, the row stays, and focus with it.
+    // Placed from the keyboard, the row stays, and focus with it: past its title, "Not this
+    // game" and its rating, the first status.
     box('Hades').focus()
+    await user.tab()
     await user.tab()
     await user.tab()
     await user.tab()
@@ -301,6 +320,100 @@ describe('PlaceGames', () => {
     expect(chip('Hades', 'Playing')).toHaveFocus()
     expect(chip('Hades', 'Playing')).toHaveAttribute('aria-pressed', 'true')
     expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal'])
+  })
+
+  it('makes a game the sync took for the wrong one the game I pick, keeping its place', async () => {
+    const user = userEvent.setup()
+    rematched = { entryId: 'hades', slug: 'hades-ii', title: 'Hades II', merged: false }
+    afterwards = {
+      ...PLACING,
+      games: PLACING.games.map((each) =>
+        each.entryId === 'hades'
+          ? { ...each, slug: 'hades-ii', title: 'Hades II', year: 2024 }
+          : each,
+      ),
+    }
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+
+    const open = within(rowOf('Hades')).getByRole('button', { name: 'Not this game' })
+    await user.click(open)
+    expect(open).toHaveAttribute('aria-expanded', 'true')
+    // Searched at once for the title the shelf has.
+    expect(
+      within(rowOf('Hades')).getByRole('textbox', { name: 'Search IGDB for Hades' }),
+    ).toHaveValue('Hades')
+    await user.click(
+      await within(rowOf('Hades')).findByRole('button', { name: 'This one: Hades II (2024)' }),
+    )
+
+    await waitFor(() =>
+      expect(notices.at(-1)?.message).toBe('It is Hades II now, with its copy and hours.'),
+    )
+    expect(sent.find((each) => each.method === 'PUT')).toEqual({
+      path: '/api/v1/entries/hades/game',
+      method: 'PUT',
+      body: { igdbId: 119_133 },
+    })
+    expect(titles()).toEqual(['Hades II2024', 'Celeste', 'Portal'])
+    expect(within(rowOf('Hades II')).getByRole('link', { name: 'Hades II' })).toHaveAttribute(
+      'href',
+      '/en/u/ana/game/hades-ii',
+    )
+    expect(within(rowOf('Hades II')).queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('takes a game out of the list when it folds into one already on my shelf', async () => {
+    const user = userEvent.setup()
+    rematched = { entryId: 'elsewhere', slug: 'hades', title: 'Hades', merged: true }
+    afterwards = {
+      ...PLACING,
+      games: PLACING.games.filter((each) => each.entryId !== 'celeste'),
+      tally: { ...PLACING.tally, unsorted: 2 },
+    }
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+
+    await user.click(within(rowOf('Celeste')).getByRole('button', { name: 'Not this game' }))
+    await user.click(
+      await within(rowOf('Celeste')).findByRole('button', { name: 'This one: Hades (2018)' }),
+    )
+
+    await waitFor(() =>
+      expect(notices.at(-1)?.message).toBe(
+        'Hades was on your shelf already: the copy and its hours joined it.',
+      ),
+    )
+    expect(titles()).toEqual(['Hades2020', 'Portal'])
+    expect(within(tally()).getByText('2 games left to place.')).toBeInTheDocument()
+  })
+
+  it('keeps the game as it was, saying why, when it cannot be changed', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+    await user.click(within(rowOf('Hades')).getByRole('button', { name: 'Not this game' }))
+    await user.click(
+      await within(rowOf('Hades')).findByRole('button', { name: 'This one: Hades II (2024)' }),
+    )
+    await waitFor(() =>
+      expect(notices.at(-1)?.message).toBe(
+        'You have done a lot of that this hour. Wait a while, then try again.',
+      ),
+    )
+    expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal'])
+  })
+
+  it('offers no other game for one given a status here: placed, it is what it is', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+    await user.click(chip('Hades', 'Backlog'))
+    expect(within(rowOf('Hades')).queryByRole('button', { name: 'Not this game' })).toBeNull()
+    await user.click(chip('Hades', 'Backlog'))
+    expect(
+      within(rowOf('Hades')).getByRole('button', { name: 'Not this game' }),
+    ).toBeInTheDocument()
   })
 
   it('says nothing is waiting, beside the tally', async () => {

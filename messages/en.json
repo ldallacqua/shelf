@@ -273,7 +273,7 @@
       },
       "sync": {
         "q": "Can it bring in the games I already own?",
-        "a": "From Steam and Nintendo, yes: link them right after signing up, or later on your account page. Every game you own on Steam comes onto your shelf with its hours; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them and give each a status. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
+        "a": "From Steam and Nintendo, yes: link them right after signing up, or later on your account page. Every game you own on Steam comes onto your shelf with its hours; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them, give each a status, and put right one taken for the wrong game. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
       },
       "who": {
         "q": "Who can see my shelf?",
@@ -881,6 +881,11 @@
     "undoneMany": "{count, plural, one {# game is as it was.} other {# games are as they were.}}",
     "notPlaced": "{title} could not be placed. Try again.",
     "notRated": "The rating for {title} was not saved. Try again.",
+    "notThis": "Not this game",
+    "isThis": "This one: {title} ({year})",
+    "isThisUndated": "This one: {title}",
+    "rematched": "It is {title} now, with its copy and hours.",
+    "rematchedInto": "{title} was on your shelf already: the copy and its hours joined it.",
     "tally": "Your games by status",
     "left": "{count, plural, =0 {Nothing left to place.} one {# game left to place.} other {# games left to place.}}",
     "placedShare": "Games with a status",

@@ -20,6 +20,7 @@ import {
   type OnShelf,
   type PlatformLabel,
   type Refusal,
+  type Rematched,
   type SearchAnswer,
 } from '@/domain/library/adding'
 import {
@@ -54,12 +55,15 @@ import {
 } from '@/server/services/igdb-records'
 import {
   addFromIgdb,
+  findEntryIdBySlug,
   LibraryError,
   readLinkedMembers,
   readVersion,
+  rematchEntry,
   removeEntry,
   undoJoin,
   type Placement,
+  type RematchInto,
 } from '@/server/library/store'
 
 /**
@@ -362,7 +366,60 @@ const forLibrary = (libraryId: string, { db, api, records }: LibraryDeps) => {
     return readVersion(db, libraryId)
   }
 
-  return { search, match, grouping, add, addMany, undo, undoMany }
+  /**
+   * A game on my shelf that is not the game it was taken for (spec 4.5,
+   * "Not this game"), made the one I pick: where ADR 001 puts that game
+   * among the rest of my shelf, as a sync would have put it, leaving out
+   * the entry it was.
+   */
+  const rematch = async (idOrSlug: string, igdbId: number): Promise<Rematched> => {
+    const entryId = /^[0-9a-f-]{36}$/.test(idOrSlug)
+      ? idOrSlug
+      : await findEntryIdBySlug(db, libraryId, idOrSlug)
+    if (!entryId) throw new LibraryError('not-found', 'That game is not in the library')
+    const fetched = await fetchRecords([igdbId])
+    const data = fetched.data.get(igdbId)
+    if (!data) throw new LibraryError('not-found', 'IGDB has no game with that id')
+    const lineage = fetched.lineages.get(igdbId) ?? []
+    // The entry's own records are the wrong game's: they draw nothing to them.
+    const others = (await readLinkedMembers(db, libraryId)).filter(
+      (member) => member.entryId !== entryId,
+    )
+    const proposal = proposeGrouping({ igdbId, lineage }, others)
+    const into: RematchInto | undefined =
+      proposal.action === 'already'
+        ? { entryId: proposal.entryId }
+        : proposal.action === 'join'
+          ? {
+              entryId: proposal.entryId,
+              version: proposal.relation === 'primary' ? 'other' : proposal.relation,
+            }
+          : undefined
+    const art = fetched.art.get(igdbId)
+    const done = await rematchEntry(
+      db,
+      libraryId,
+      entryId,
+      {
+        data,
+        lineage,
+        ...(art ? { art } : {}),
+        names: namesOf(data, fetched.names),
+        platforms: data.platforms.flatMap((id) => fetched.all.get(id) ?? []),
+      },
+      into,
+    )
+    const shown = (await shelfIndex()).entries.get(done.entryId)
+    return {
+      version: await readVersion(db, libraryId),
+      entryId: done.entryId,
+      slug: shown?.slug ?? data.slug,
+      title: shown?.title ?? data.title,
+      merged: done.merged,
+    }
+  }
+
+  return { search, match, grouping, add, addMany, undo, undoMany, rematch }
 }
 
 /* For routes and actions: the signed-in account, on its own library, this server's IGDB. */
@@ -446,6 +503,20 @@ export const addManyOfMine = (inputs: unknown) => {
   return forAccount(async (account) => {
     await spend(account, 'add', parsed.data.length)
     return adding(account).addMany(parsed.data)
+  }, true)
+}
+
+/** Which game on IGDB one of my games is. */
+const rematchInput = z.tuple([z.string().min(1).max(200), z.object({ igdbId })])
+
+/** One of my games taken for the wrong one, made the game I pick (spec 4.5). */
+export const rematchMine = (id: unknown, body: unknown) => {
+  const parsed = rematchInput.safeParse([id, body])
+  if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
+  const [entry, { igdbId: picked }] = parsed.data
+  return forAccount(async (account) => {
+    await spend(account, 'add')
+    return adding(account).rematch(entry, picked)
   }, true)
 }
 
