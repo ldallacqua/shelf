@@ -597,6 +597,16 @@ pagina e voltar pro organize seus jogos ai beleza".
   the status is taken back, saying so. The next time the page is opened, it lists only the
   games still unsorted. Nothing else about the game changes: Completed here sets no completion
   day.
+- **Not this game,** on a row still waiting, for a game the sync took for the wrong one (the
+  owner, 24 Oct 2026: "build 'Não é este jogo' on the placing page, to fix games the sync
+  matched wrong while keeping the copy and the hours"). IGDB is searched for its title, which
+  I can change, and the game I pick is what it is from then on: its status, rating, notes,
+  tags, copy and hours stay, the record it was taken for leaves the shelf, and the sync
+  remembers the game I picked, so the next sync keeps it. When that game is on my shelf
+  already, under any version, this one folds into it as a sync would have put it there: its
+  copy joins (one already there on the same platform and format is fed, its hours added),
+  what the other lacks of mine (a status, a rating, notes) it takes, and the row leaves the
+  list. A row given a status here is placed: tapping its status again brings the choice back.
 - **A tally beside the list,** as Minimap's has: how many games are in each status, and how
   many are still unsorted, moving as I place them. On a phone it sits above the list, the
   statuses on one wrapping line.
@@ -614,6 +624,8 @@ pagina e voltar pro organize seus jogos ai beleza".
 - Every unsorted game can be given a status and a rating from one page, without opening it.
 - A game given a status stays, showing it, until the page is opened again; one tap changes
   it, and its own status taken back makes it unsorted.
+- A game the sync took for the wrong one becomes the right one from its row, with its copy
+  and hours; when the right one is on the shelf, it takes them in, and no second box appears.
 - The tally always agrees with the shelf.
 
 ### 4.6 Setting a new shelf up

@@ -4,7 +4,27 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: a placed game stays on the placing page (24 Oct 2026)
+## Now: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)
+
+The owner: "Yes, build 'Não é este jogo' on the placing page, to fix games the sync matched
+wrong while keeping the copy and the hours." [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in)
+says what it does; architecture section 25's first row, why it is built so.
+
+- **On the placing page,** a row still waiting has "Not this game": the sync lists' `FindIt`
+  (now `features/platforms/find-it.tsx`, shared) searches IGDB for its title, and the pick
+  is `PUT /api/v1/entries/{id}/game`. The page then reads the list again, keeping the rows
+  given a status on this visit.
+- **On the server,** `rematch` in `services/adding.ts` fetches the record and asks
+  `proposeGrouping` where it goes, leaving the entry's own (wrong) records out; `rematchEntry`
+  in the store does it in one transaction: the entry takes the record as its primary, or
+  folds into the game already on the shelf (copies joined or fed, hours recomputed, the
+  manual hours, tags, status, rating and notes it lacks moved over). The sync's items name the
+  new record, so a sync keeps it. It spends the hour's IGDB allowance as an add does.
+- **Seen with the test doubles** (headless Chromium, `serve:test`): see the pull request.
+- **Not seen:** the owner's own list on production; the click is theirs.
+- **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
+
+## Before: a placed game stays on the placing page (24 Oct 2026)
 
 The owner, having used the placing page: "não quero que o jogo desapareça depois de eu colocar
 um status nele imediatamente [...] Se eu atualizar a pagina e voltar pro organize seus jogos ai
@@ -19,9 +39,8 @@ beleza". [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in) says what it does
   hour" count only the games still waiting.
 - **Lighthouse from #34 still to measure on a quiet machine:** verify read the library at 89
   while the machine was busy; main, measured right after, read 84, and the branch again 86.
-- **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
-## Before: a new shelf is set up on a page of its own (24 Oct 2026)
+## Earlier: a new shelf is set up on a page of its own (24 Oct 2026)
 
 The owner asked for an onboarding page, and for something saying how many games have no
 status, "mas não quero que vc fique adicionando botões a torto e a direito". Researched first
@@ -64,7 +83,7 @@ first row.
   remove it and add the right one by hand, which loses the source's hours.
 - **Lighthouse was not measured on a quiet machine:** see the section above.
 
-## Earlier: the page for placing a sync's games is built (24 Oct 2026)
+## Earlier still: the page for placing a sync's games is built (24 Oct 2026)
 
 The owner's ask from 23 Oct 2026 (below, "Next: the review of unsorted games"), started with
 "Usa o de 0-10 que a gente já tem. Pode começar": the rating is the editor's, out of ten, not
@@ -96,7 +115,7 @@ is built so, architecture section 25's first row.
   Playwright test does.
 - **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
-## Earlier still: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
+## Before that: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
 
 After the review of #26 below, the owner chose the route for Nintendo: "Build Nintendo from
 the Store app's play history: I sign in on Nintendo's own page and Shelf keeps the session

@@ -34,6 +34,8 @@ import {
   apiRestored,
   apiSearchAnswer,
   apiSearchResult,
+  apiRematch,
+  apiRematched,
   apiStatusPatch,
   apiUndoAdditions,
 } from './writes'
@@ -113,6 +115,8 @@ export const openApiDocument = () => {
     apiAdded,
     apiGamePatch,
     apiStatusPatch,
+    apiRematch,
+    apiRematched,
     apiChanged,
     apiRemoved,
     apiOwnerGame,
@@ -309,6 +313,18 @@ export const openApiDocument = () => {
           security: OWNER,
           parameters: [ENTRY],
           responses: { 200: { description: 'Removed', ...json('Removed') }, ...REFUSALS },
+        },
+      },
+      '/entries/{id}/game': {
+        put: {
+          summary:
+            'Say which game on IGDB this one is, when a sync took it for another. Signed in.',
+          description:
+            'Everything that is yours about it stays: status, rating, notes, tags, copies and their hours. If that game is in the library already, under any version, this one folds into it: its copies join it, its hours with them, and the entry it was goes.',
+          security: OWNER,
+          parameters: [ENTRY],
+          requestBody: { required: true, ...json('Rematch') },
+          responses: { 200: { description: 'Changed', ...json('Rematched') }, ...REFUSALS },
         },
       },
       '/entries/{id}/copies': {

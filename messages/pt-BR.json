@@ -273,7 +273,7 @@
       },
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",
-        "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
+        "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um, e corrigir um jogo reconhecido errado. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
@@ -881,6 +881,11 @@
     "undoneMany": "{count, plural, one {# jogo voltou a ser como era.} other {# jogos voltaram a ser como eram.}}",
     "notPlaced": "Não deu para mudar o status de {title}. Tente de novo.",
     "notRated": "A nota de {title} não foi salva. Tente de novo.",
+    "notThis": "Não é este jogo",
+    "isThis": "Este: {title} ({year})",
+    "isThisUndated": "Este: {title}",
+    "rematched": "Agora é {title}, com a cópia e as horas.",
+    "rematchedInto": "{title} já estava na sua estante: a cópia e as horas foram para lá.",
     "tally": "Seus jogos por status",
     "left": "{count, plural, =0 {Nada para organizar.} one {Falta # jogo para organizar.} other {Faltam # jogos para organizar.}}",
     "placedShare": "Jogos com status",
