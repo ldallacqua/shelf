@@ -99,6 +99,45 @@ describe('StatusRow', () => {
     renderWithIntl(<StatusRow value={undefined} onChange={() => {}} />)
     expect(screen.queryByRole('radio', { checked: true })).toBeNull()
   })
+
+  it('shows Unsorted only on a shelf that has unsorted games, even where the filter matches none', () => {
+    const counts = {
+      playing: 6,
+      backlog: 92,
+      completed: 79,
+      dropped: 20,
+      wishlist: 33,
+      unsorted: 0,
+    }
+    const { rerender } = render(intl(<StatusRow value="all" counts={counts} onChange={() => {}} />))
+    expect(screen.queryByRole('radio', { name: /Unsorted/ })).toBeNull()
+    rerender(intl(<StatusRow value="all" counts={counts} unsortedOnShelf onChange={() => {}} />))
+    expect(screen.getByRole('radio', { name: 'Unsorted, 0 games' })).toBeInTheDocument()
+  })
+
+  it('scrolls the row, and only the row, to the status pressed past its edge', () => {
+    const at = (left: number, width: number) => ({ left, right: left + width }) as DOMRect
+    const rects = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      // A phone's row, 390 pixels wide, with Unsorted 500 pixels along it and All at its start.
+      if (this.getAttribute('role') === 'radiogroup') return at(0, 390)
+      return this.textContent?.startsWith('Unsorted') ? at(500, 90) : at(16, 40)
+    })
+    const counts = {
+      playing: 6,
+      backlog: 92,
+      completed: 79,
+      dropped: 20,
+      wishlist: 33,
+      unsorted: 7,
+    }
+    const { rerender } = render(intl(<StatusRow value="all" counts={counts} onChange={() => {}} />))
+    const row = screen.getByRole('radiogroup', { name: 'Status' })
+    rerender(intl(<StatusRow value="unsorted" counts={counts} onChange={() => {}} />))
+    expect(row.scrollLeft).toBe(500 + 90 - 390 + 16)
+    rects.mockRestore()
+  })
 })
 
 describe('FilterChips', () => {

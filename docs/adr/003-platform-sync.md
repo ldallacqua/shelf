@@ -231,11 +231,15 @@ building settled:
   software or a video or soundtrack is left out by itself as "not a game", before anything
   can match it: playing a demo is not owning the game. A mode the store lists apart from its
   game (Modern Warfare 2's multiplayer) names that game, and rung 2 matches it by the game's
-  id, so its hours join the game's copy. A playtest has no store page; its name says what it
-  is. When the store does not answer, the ladder goes on without it and the next step asks
-  again. "Ask again" on what it left out is kept: the store is not asked twice. Found on the
-  owner's first sync (23 Oct 2026), where most of what needed an answer was software, demos,
-  playtests and modes, and games IGDB does not have.
+  id, so its hours join the game's copy. A mode's page that names no game (Black Ops II's
+  zombies) joins the item I own whose whole title starts its own, before a dash or a colon;
+  with none, it is a game like any other. A playtest has no store page; its name says what it
+  is. The store is asked on the step that reads the list, the only one that brings new items:
+  when it does not answer, the ladder goes on without it and the next read asks again, so an
+  outage costs one wait a sync, not one a step. "Ask again" on what it left out is kept: the
+  store is not asked twice. Found on the owner's first sync (23 Oct 2026), where most of what
+  needed an answer was software, demos, playtests and modes, and games IGDB does not have;
+  migration 0009 asked once more about the games nothing had matched, for the modes.
 - **Rung 3 asks the title as written, then stripped** of marks, edition words ("Game of the
   Year Edition", "Director's Cut", "Deluxe Edition" but not "Deluxe" alone) and platform
   suffixes, and answers only for exactly one candidate on the source's platforms. A title it

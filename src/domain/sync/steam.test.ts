@@ -100,9 +100,9 @@ describe('what Steam’s store says each app is', () => {
     expect(kinds.get('4046730')).toEqual({ kind: 'media' })
   })
 
-  it('takes a mode listed apart as a part of the game it names, and one that names none as a game', () => {
+  it('takes a mode listed apart as a part of its game, named or, for the sync to find, not', () => {
     expect(kinds.get('10190')).toEqual({ kind: 'part', parentStoreId: '10180' })
-    expect(kinds.get('212910')).toEqual({ kind: 'game' })
+    expect(kinds.get('212910')).toEqual({ kind: 'part' })
   })
 
   it('leaves a DLC with hours of its own to IGDB, as a game', () => {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useFormatter, useTranslations } from 'next-intl'
+import { useEffect, useRef } from 'react'
 
 import { statuses, type Status } from '@/domain/library/values'
 import { cn } from '@/ui/cn'
@@ -11,22 +12,41 @@ type StatusRowProps = {
   value: Status | 'all' | undefined
   /** Games per status, given the rest of the filter. Unknown until the library has arrived. */
   counts?: Partial<Record<Status, number>>
+  /** Whether the shelf has unsorted games at all, whatever the filter matches. */
+  unsortedOnShelf?: boolean
   onChange: (status: Status | 'all') => void
 }
+
+/** The row's own padding on a phone, kept beside a status scrolled into sight. */
+const EDGE_PX = 16
 
 /**
  * All, Playing, Backlog, Completed, Dropped, Wishlist, and Unsorted while a
  * sync's games wait (spec 3.1): the commonest filter gets the shortest path.
  * One tap sets the status, in every group of the filter; All takes it away.
- * On a phone the row scrolls sideways.
+ * On a phone the row scrolls sideways, and keeps the pressed status in sight.
  */
-export function StatusRow({ value, counts, onChange }: StatusRowProps) {
+export function StatusRow({ value, counts, unsortedOnShelf, onChange }: StatusRowProps) {
   const t = useTranslations('Filters')
   const library = useTranslations('Library')
   const format = useFormatter()
+  const row = useRef<HTMLDivElement>(null)
+
+  // Unsorted is last, past a phone's edge: an address that opens on it shows it pressed.
+  // Only the row scrolls, never the page, and at once: a jump, not a movement.
+  useEffect(() => {
+    const group = row.current
+    const pressed = group?.querySelector<HTMLElement>('[data-state="on"]')
+    if (!group || !pressed) return
+    const shown = group.getBoundingClientRect()
+    const item = pressed.getBoundingClientRect()
+    if (item.right > shown.right) group.scrollLeft += item.right - shown.right + EDGE_PX
+    else if (item.left < shown.left) group.scrollLeft -= shown.left - item.left + EDGE_PX
+  }, [value])
 
   return (
     <Segmented
+      ref={row}
       aria-label={t('status.label')}
       // When the filter says something the row cannot show, nothing is pressed.
       value={(value ?? '') as Status | 'all'}
@@ -43,7 +63,8 @@ export function StatusRow({ value, counts, onChange }: StatusRowProps) {
       {statuses.map((status) => {
         const count = counts?.[status]
         // Only a shelf a sync brought games into has unsorted ones: elsewhere it would always say 0.
-        if (status === 'unsorted' && !count && value !== 'unsorted') return null
+        // Where it has some, Unsorted stays while a filter matches none of them, saying 0.
+        if (status === 'unsorted' && !count && !unsortedOnShelf && value !== 'unsorted') return null
         return (
           <SegmentedItem
             key={status}
