@@ -249,7 +249,8 @@ building settled:
   (Built first as the backlog; the owner, after the first real sync: "they are actually in a
   waiting state, or unassigned state". `unsorted` is a sixth status, last in the list, and
   migration 0008 moved the games a sync had put in the backlog, untouched since, to it.
-  Placing them, with a rating, is the review the handoff note describes.)
+  Placing them, with a rating, is a page of its own, `/account/unsorted` (spec 4.5): each
+  platform's card says how many of its games wait there.)
 - **Hours:** a source's minutes are a `play_time` row of that source on the copy, summed over
   the items feeding it. A game shows the larger of what I typed and what its sources report
   together, never the sum, so a figure typed before linking is not counted twice.

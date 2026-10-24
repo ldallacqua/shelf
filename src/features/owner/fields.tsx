@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import type { Day } from '@/ui/calendar'
 import { DatePicker } from '@/ui/date-picker'
@@ -28,9 +28,10 @@ type RatingFieldProps = {
   /** Once a value comes to rest, or is taken away: when to save. */
   onCommit?: (value: number | undefined) => void
   disabled?: boolean
+  tabIndex?: number
 }
 
-export function RatingField({ value, onChange, onCommit, disabled }: RatingFieldProps) {
+export function RatingField({ value, onChange, onCommit, disabled, tabIndex }: RatingFieldProps) {
   const t = useTranslations('Fields')
   const format = useFormatter()
   const write = (rating: number) => format.number(rating, { maximumFractionDigits: 1 })
@@ -50,6 +51,60 @@ export function RatingField({ value, onChange, onCommit, disabled }: RatingField
       valueText={(rating) => t('ratingValue', { value: write(rating) })}
       format={write}
       disabled={disabled}
+      tabIndex={tabIndex}
+    />
+  )
+}
+
+/** How long a rating rests before it is saved: the arrow keys commit at every press. */
+const RATING_REST_MS = 400
+
+/**
+ * My rating, saved once it comes to rest: let go of, or the keys left alone
+ * for a moment. Leaving the page first saves it at once.
+ */
+export function SavedRating({
+  score,
+  onSave,
+  tabIndex,
+}: {
+  /** Out of a hundred, as stored. */
+  score: number | undefined
+  onSave: (score: number | null) => void
+  tabIndex?: number
+}) {
+  // While it moves, the field shows where it is, not what was saved.
+  const [moving, setMoving] = useState<{ value: number | undefined }>()
+  const pending = useRef<{ score: number | null }>(undefined)
+  const timer = useRef(0)
+  const save = useRef(onSave)
+  useEffect(() => {
+    save.current = onSave
+  })
+
+  const flush = () => {
+    window.clearTimeout(timer.current)
+    const waiting = pending.current
+    pending.current = undefined
+    setMoving(undefined)
+    if (waiting && waiting.score !== (score ?? null)) save.current(waiting.score)
+  }
+  const latestFlush = useRef(flush)
+  useEffect(() => {
+    latestFlush.current = flush
+  })
+  useEffect(() => () => latestFlush.current(), [])
+
+  return (
+    <RatingField
+      value={moving ? moving.value : score === undefined ? undefined : score / 10}
+      onChange={(value) => setMoving({ value })}
+      onCommit={(value) => {
+        pending.current = { score: value === undefined ? null : Math.round(value * 10) }
+        window.clearTimeout(timer.current)
+        timer.current = window.setTimeout(flush, RATING_REST_MS)
+      }}
+      tabIndex={tabIndex}
     />
   )
 }

@@ -282,12 +282,14 @@ again on its next visit. Ratings are out of ten and time is in hours, as the rea
 | `GET /me` | Who is signed in: `{ "signedIn": true, "handle", "name", "shelfPublic" }`, or `{ "signedIn": false }` |
 | `PATCH /me` | Changes the name, the handle or whether the shelf is public: `{ "name"?, "handle"?, "shelfPublic"? }`. A taken handle answers 409 `handle-taken`; one that cannot be, 400 `handle-short`, `handle-long`, `handle-shape` or `handle-reserved`. |
 | `GET /me/library`, `GET /me/games/{slug}`, `GET /me/keywords`, `GET /me/tags`, `GET /me/shelves` | One's own library, as the public files and reads give a public one, read fresh: what a private shelf's pages are filled from |
+| `GET /me/unsorted` | One's unsorted games, what the page for placing a sync's games lists ([spec 4.5](spec.md#45-placing-what-a-sync-brought-in)): each with its entry id, cover, the platforms of its copies, its minutes and, on every source that feeds a copy, its minutes there and when it was last played; and how many games stand in each status (`tally`). In the library file's units: a rating out of 100, minutes. |
 | `GET /igdb/search?q=` | Up to eight games on IGDB, editions left out, ports folded in, each marked when one's own library has it |
 | `POST /igdb/match` | Up to twenty pasted lines (`{ "lines": ["Hollow Knight (2017) [Switch]"] }`), each with its match, how sure it is (`exact`, `close`, `none`) and up to five alternatives |
 | `POST /entries` | Adds a game: `{ "igdbId": 231, "status": "backlog", "copies": [{ "platform": 6, "format": "digital" }] }` (Half-Life, on PC). A game related to one in the library is folded into it as [ADR 001](adr/001-game-entry-model.md) proposes, unless `grouping` says `separate`. A game already there gets only the copies it lacked. |
 | `POST /additions` | Up to fifty games at once, `{ "games": [ … ] }`, each as `POST /entries` takes it. One result a game; one that fails leaves the rest. Each added game's `undo` is what `POST /additions/undo` takes back. |
 | `GET /entries/{id}` | A game as its account keeps it: private notes, the ids of its copies and versions |
 | `PATCH /entries/{id}` | Changes what is one's own about it, in one step: `status`, `rating`, `completedOn`, `notes`, `notesPublic`, `tags` (replaces them all), `hoursPlayed`, `mainVersion`. Absent is unchanged; `null` clears. |
+| `PATCH /entries` | Many games given one status at once: `{ "entries": ["…"], "status": "backlog" }`, entries by their ids, up to a thousand, in one write. Nothing else about them changes. If any is not in one's library, none changes (404). |
 | `DELETE /entries/{id}` | Removes a game and everything added with it. The answer's `undo` is kept a day. |
 | `POST /removed/{undo}` | Puts a removed game back exactly as it was |
 | `POST /entries/{id}/copies`, `PATCH` and `DELETE /entries/{id}/copies/{copy}` | A copy: add one (`{ "platform", "format" }`), switch it between physical and digital, remove it |

@@ -819,6 +819,35 @@ export const patchEntry = (
   })
 }
 
+/** How many ids one query names: well under SQLite's limit on a statement's values. */
+const IDS_PER_QUERY = 200
+
+/**
+ * Gives many games one status in one write (spec 4.5): placing what a sync
+ * brought in, or taking that back. Nothing else about them changes. Every
+ * one must be the library's own, or none is changed.
+ */
+export const setStatuses = async (
+  db: Db,
+  libraryId: string,
+  entryIds: readonly string[],
+  status: Status,
+  now = Date.now(),
+) => {
+  if (!isStatus(status)) throw invalid('No such status')
+  const ids = [...new Set(entryIds)]
+  await db.transaction(async (tx) => {
+    for (let at = 0; at < ids.length; at += IDS_PER_QUERY) {
+      const some = ids.slice(at, at + IDS_PER_QUERY)
+      const own = and(eq(entries.userId, libraryId), inArray(entries.id, some))
+      const found = await tx.select({ id: entries.id }).from(entries).where(own)
+      if (found.length !== some.length) throw notFound('A game')
+      await tx.update(entries).set({ status, updatedAt: now }).where(own)
+    }
+    await bumpVersion(tx, libraryId)
+  })
+}
+
 /** Folds another IGDB record into an entry: an edition, a port, a remaster. */
 export const addVersion = (
   db: Db,

@@ -1,6 +1,6 @@
 'use client'
 
-import { RefreshCwIcon, UnlinkIcon } from 'lucide-react'
+import { InboxIcon, RefreshCwIcon, UnlinkIcon } from 'lucide-react'
 import { useFormatter, useLocale, useNow, useTranslations } from 'next-intl'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 
@@ -77,6 +77,7 @@ function PlatformCard({
   onChange: (link: LinkView | null) => void
 }) {
   const t = useTranslations('Sync')
+  const placing = useTranslations('Placing')
   const format = useFormatter()
   // "Last synced 3 minutes ago" moves on by itself.
   const now = useNow({ updateInterval: 60_000 })
@@ -266,6 +267,15 @@ function PlatformCard({
               <RefreshCwIcon aria-hidden="true" />
               {running ? t('syncing') : t('syncNow')}
             </Button>
+            {link.counts.unsorted > 0 ? (
+              // What it brought in waits for me to say where each game stands (spec 4.5).
+              <Button asChild>
+                <Link href="/account/unsorted">
+                  <InboxIcon aria-hidden="true" />
+                  {placing('toPlace', { count: link.counts.unsorted })}
+                </Link>
+              </Button>
+            ) : null}
             <label htmlFor={dailyId} className="inline-flex items-center gap-3 text-sm">
               <Switch
                 id={dailyId}

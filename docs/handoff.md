@@ -4,7 +4,39 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
+## Now: the page for placing a sync's games is built (24 Oct 2026)
+
+The owner's ask from 23 Oct 2026 (below, "Next: the review of unsorted games"), started with
+"Usa o de 0-10 que a gente já tem. Pode começar": the rating is the editor's, out of ten, not
+Minimap's stars. What it does is [spec 4.5](spec.md#45-placing-what-a-sync-brought-in); why it
+is built so, architecture section 25's first row.
+
+- **`/account/unsorted`**, drawn in the browser for the account signed in, as the account
+  page is. Each platform's card links to it ("240 games to place": that source's games still
+  unsorted, `counts.unsorted`), and so does the shelf while Unsorted is pressed in the status
+  row ("Place these games").
+- **Its reads and writes:** `GET /api/v1/me/unsorted` (`readUnsorted` in
+  `server/library/read.ts`: the unsorted games with each source's minutes and last play, and
+  the tally, in one batch); one game's status or rating through the editor's own `PATCH
+  /entries/{id}`; many at once through the new `PATCH /entries` (`setStatuses` in the store,
+  one transaction, one version). No new table, no migration.
+- **Shared with the editor:** `SavedRating` moved to `features/owner/fields.tsx`, and the
+  rating's slider takes a `tabIndex` (a row not in focus keeps its controls out of the Tab
+  order). Passing `tabIndex={undefined}` to Radix's thumb would have taken away its own stop:
+  only a value given replaces it.
+- **Seen with the test doubles** (headless Chromium; the sample owner, Steam linked, 31 games
+  put back to Unsorted through the API, since the sample shelf already had every Steam game
+  and a sync never changes a status): both themes, both languages, a desktop and a phone (no
+  sideways scroll at 390 px), one game placed and taken back with Undo, the three under an
+  hour selected, the arrows and Tab through the list, the card's and the shelf's links. No
+  console error. JavaScript budgets: library 274.7 of 275 KB (from 274.5: the shelf's link),
+  home 209.6, trophies 207.8, game page 215.9.
+- **Not seen:** the owner's own list on production (the click is theirs, as on the Nintendo
+  card). Browser tests for the page are not written: they wait for the MVP, as every
+  Playwright test does.
+- **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
+
+## Before: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
 
 After the review of #26 below, the owner chose the route for Nintendo: "Build Nintendo from
 the Store app's play history: I sign in on Nintendo's own page and Shelf keeps the session
@@ -53,8 +85,7 @@ Nintendo"; how it looks and behaves is spec 4.4.
   busy with a game and every page read low): home 91, library 85, wall 86, game page 95, the
   near misses of step 9 (91, 83, 85, 95). Nintendo cost the pages nothing. The JavaScript
   budgets did not move (library 274.5 of 275 KB).
-- **Next: the review of unsorted games** (below), which a Nintendo sync makes more useful still:
-  everything it brings in is unsorted.
+- **Then: the review of unsorted games** (below), built since (above).
 
 ## Done: #26 reviewed (24 Oct 2026)
 
@@ -114,9 +145,9 @@ take the work of reviewing this". Do these before anything below, and fix what t
   - A game played on Steam in the last two weeks still starts as Playing, not Unsorted.
   - The add-game forms and the editor offer Unsorted, since every list of statuses does.
 
-## Next: the review of unsorted games (the owner's ask, 23 Oct 2026; not built)
+## The review of unsorted games (the owner's ask, 23 Oct 2026; built 24 Oct 2026, above)
 
-**Do not lose this one.** After the owner's first real Steam sync: "Recently imported games
+After the owner's first real Steam sync: "Recently imported games
 from a platform should not be assigned to backlog. They are actually in a waiting state, or
 unassigned state, we will in a next step, add a review experience where we will allow the
 user to assign a score to the game and which status they have. Like what minimap does
@@ -130,7 +161,7 @@ user to assign a score to the game and which status they have. Like what minimap
   while a shelf has some, draws like a backlog game in 3D, and is `status:unsorted` in the
   filter language. Every place that lists statuses lists it, the editors included, so a game
   can be put back to Unsorted.
-- **To build: the review page,** [spec 4.5](spec.md#45-placing-what-a-sync-brought-in-next-not-built-yet).
+- **The review page, built since** (above): [spec 4.5](spec.md#45-placing-what-a-sync-brought-in).
   The model is Minimap's "Rate my games" (`minimap.net/rating/rateLibrary`, the owner's
   screenshot): a list of the library's games, longest played first, each a card with its
   cover, title, hours on the platform, five stars for a rating and one button per status;

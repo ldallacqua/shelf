@@ -34,6 +34,7 @@ import {
   apiRestored,
   apiSearchAnswer,
   apiSearchResult,
+  apiStatusPatch,
   apiUndoAdditions,
 } from './writes'
 
@@ -111,6 +112,7 @@ export const openApiDocument = () => {
     apiNewGame,
     apiAdded,
     apiGamePatch,
+    apiStatusPatch,
     apiChanged,
     apiRemoved,
     apiOwnerGame,
@@ -277,6 +279,14 @@ export const openApiDocument = () => {
             201: { description: 'Added', ...json('Added') },
             ...REFUSALS,
           },
+        },
+        patch: {
+          summary: 'Give many games one status at once, up to a thousand. Signed in.',
+          description:
+            'What placing the games a sync brought in does (status `unsorted` until then). Nothing else about them changes. If any is not in the library, none changes.',
+          security: OWNER,
+          requestBody: { required: true, ...json('StatusPatch') },
+          responses: { 200: { description: 'Changed', ...json('Changed') }, ...REFUSALS },
         },
       },
       '/entries/{id}': {

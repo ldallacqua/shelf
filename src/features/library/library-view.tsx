@@ -1,6 +1,6 @@
 'use client'
 
-import { BookmarkPlusIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { BookmarkPlusIcon, InboxIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsString, parseAsStringLiteral, useQueryState, useQueryStates } from 'nuqs'
@@ -72,7 +72,7 @@ import { signedInAccount, useIsMine } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
-import { useRouter } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 
 import { GhostShelves } from './ghosts'
@@ -201,6 +201,7 @@ export function LibraryView({
   const added = useTranslations('Add')
   const filters = useTranslations('Filters')
   const shelfWords = useTranslations('Shelves')
+  const placing = useTranslations('Placing')
   const locale = useLocale()
   const router = useRouter()
 
@@ -731,6 +732,15 @@ export function LibraryView({
             )
           }
         />
+        {/* On my own shelf, the unsorted games lead to the page for placing them (spec 4.5). */}
+        {actions && statusValue === 'unsorted' && unsortedOnShelf ? (
+          <Button asChild size="sm" className="justify-self-start">
+            <Link href="/account/unsorted">
+              <InboxIcon aria-hidden="true" />
+              {placing('placeThese')}
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       <Toolbar
