@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto'
 
 import { z } from 'zod'
 
-import type { NintendoLinkOutcome } from '@/domain/sync/link'
+import { isLinkPage, type LinkPage, type NintendoLinkOutcome } from '@/domain/sync/link'
 import { codeFromLink, MAX_PASTED_LINK, NINTENDO_REDIRECT } from '@/domain/sync/nintendo'
 import { steamSignInAddress } from '@/domain/sync/steam'
 import { routing, type Locale } from '@/i18n/routing'
@@ -45,9 +45,17 @@ const cookie = (value: string, maxAge: number) =>
     ...(onVercel() ? ['Secure'] : []),
   ].join('; ')
 
-/** The address Steam sends the browser back to: exactly this, which Steam signs. */
-const returnAddress = (origin: string, state: string, locale: Locale) =>
-  `${origin}/api/v1/me/platforms/steam/return?state=${state}&locale=${locale}`
+/** The page linking began on, as the address names it: the account page unless it says otherwise. */
+const pageOf = (value: string | null): LinkPage => (isLinkPage(value) ? value : 'account')
+
+/**
+ * The address Steam sends the browser back to: exactly this, which Steam
+ * signs, so the page to come back to cannot be changed on the way.
+ */
+const returnAddress = (origin: string, state: string, locale: Locale, page: LinkPage) =>
+  `${origin}/api/v1/me/platforms/steam/return?state=${state}&locale=${locale}${
+    page === 'account' ? '' : `&back=${page}`
+  }`
 
 const go = (location: string, cookies: string[] = []) => {
   const headers = new Headers({ Location: location, 'Cache-Control': 'no-store' })
@@ -55,20 +63,27 @@ const go = (location: string, cookies: string[] = []) => {
   return new Response(null, { status: 303, headers })
 }
 
-const accountPage = (origin: string, locale: Locale, outcome: 'linked' | 'failed') =>
-  `${origin}/${locale}/account?steam=${outcome}#platforms`
+/** Where the browser lands with how linking went: back on the page it began on. */
+const pageAfter = (origin: string, locale: Locale, page: LinkPage, outcome: 'linked' | 'failed') =>
+  page === 'start'
+    ? `${origin}/${locale}/account/start?steam=${outcome}`
+    : `${origin}/${locale}/account?steam=${outcome}#platforms`
+
+/** Signing in to Shelf first, then back to the page linking began on. */
+const signInFirst = (origin: string, locale: Locale, page: LinkPage) => {
+  const from = encodeURIComponent(`/${locale}/account${page === 'start' ? '/start' : ''}`)
+  return `${origin}/${locale}/sign-in?from=${from}`
+}
 
 /** Off to Steam's sign-in page, for a signed-in account; anyone else, to sign in first. */
 export const startSteamLink = async (request: Request): Promise<Response> => {
   const address = new URL(request.url)
   const locale = localeOf(address.searchParams.get('locale'))
+  const page = pageOf(address.searchParams.get('back'))
   const { account } = await checkAccount(request.headers)
-  if (!account) {
-    const from = encodeURIComponent(`/${locale}/account`)
-    return go(`${address.origin}/${locale}/sign-in?from=${from}`)
-  }
+  if (!account) return go(signInFirst(address.origin, locale, page))
   const state = randomBytes(24).toString('base64url')
-  const returnTo = returnAddress(address.origin, state, locale)
+  const returnTo = returnAddress(address.origin, state, locale, page)
   // While the test doubles answer, Steam's page is skipped: its answer comes straight back.
   const next =
     mocksRequested() && !onVercel()
@@ -77,10 +92,11 @@ export const startSteamLink = async (request: Request): Promise<Response> => {
   return go(next, [cookie(state, 10 * 60)])
 }
 
-/** Back from Steam: the answer checked with Steam, then the link saved, then the account page. */
+/** Back from Steam: the answer checked with Steam, then the link saved, then the page it began on. */
 export const finishSteamLink = async (request: Request): Promise<Response> => {
   const address = new URL(request.url)
   const locale = localeOf(address.searchParams.get('locale'))
+  const page = pageOf(address.searchParams.get('back'))
   const state = address.searchParams.get('state') ?? ''
   const expected = request.headers
     .get('cookie')
@@ -88,14 +104,14 @@ export const finishSteamLink = async (request: Request): Promise<Response> => {
     .find((part) => part.startsWith(`${LINK_STATE_COOKIE}=`))
     ?.slice(LINK_STATE_COOKIE.length + 1)
   const cleared = cookie('', 0)
-  const failed = () => go(accountPage(address.origin, locale, 'failed'), [cleared])
+  const failed = () => go(pageAfter(address.origin, locale, page, 'failed'), [cleared])
 
   if (!STATE.test(state) || state !== expected) return failed()
   let steamId: string | undefined
   try {
     steamId = await steam().verifySignIn(
       address.searchParams,
-      returnAddress(address.origin, state, locale),
+      returnAddress(address.origin, state, locale, page),
     )
   } catch (error) {
     if (!(error instanceof SourceError)) throw error
@@ -107,12 +123,11 @@ export const finishSteamLink = async (request: Request): Promise<Response> => {
   const saved = await linkMine('steam', { externalId: steamId, ...(name ? { name } : {}) })
   if (!saved.ok) {
     if (saved.reason === 'not-signed-in') {
-      const from = encodeURIComponent(`/${locale}/account`)
-      return go(`${address.origin}/${locale}/sign-in?from=${from}`, [cleared])
+      return go(signInFirst(address.origin, locale, page), [cleared])
     }
     return failed()
   }
-  return go(accountPage(address.origin, locale, 'linked'), [cleared])
+  return go(pageAfter(address.origin, locale, page, 'linked'), [cleared])
 }
 
 /*

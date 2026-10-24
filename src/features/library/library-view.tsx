@@ -1,6 +1,6 @@
 'use client'
 
-import { BookmarkPlusIcon, InboxIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { BookmarkPlusIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsString, parseAsStringLiteral, useQueryState, useQueryStates } from 'nuqs'
@@ -29,6 +29,7 @@ import {
   keywordIndexOnce,
   parseLibraryQuery,
   selectOnce,
+  unsortedOnShelf,
   views,
   type FirstScreen,
   type View,
@@ -72,12 +73,13 @@ import { signedInAccount, useIsMine } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
-import { Link, useRouter } from '@/i18n/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 
 import { GhostShelves } from './ghosts'
 import { GhostList, ListView } from './list-view'
 import { markPageLive } from './live'
+import { PlaceWaiting } from './place-waiting'
 import type { Dimension } from './preferences'
 import { anchorIn2d, ShelfStage } from './shelf-stage'
 import { StatsLine } from './stats-line'
@@ -201,7 +203,6 @@ export function LibraryView({
   const added = useTranslations('Add')
   const filters = useTranslations('Filters')
   const shelfWords = useTranslations('Shelves')
-  const placing = useTranslations('Placing')
   const locale = useLocale()
   const router = useRouter()
 
@@ -620,9 +621,9 @@ export function LibraryView({
       : undefined
   // Unsorted stays in the row while the shelf has any, whatever the filter matches. Until the
   // library arrives, the counts sent with the page are the best word on it.
-  const unsortedOnShelf = library
-    ? library.games.some((game) => game.status === 'unsorted')
-    : (first.statusCounts.unsorted ?? 0) > 0
+  const unsortedCount = unsortedOnShelf(library, first)
+  const anyUnsorted =
+    unsortedCount === undefined ? (first.statusCounts.unsorted ?? 0) > 0 : unsortedCount > 0
   const conditions = chipsOf(parsed.tree).reduce((total, chips) => total + chips.length, 0)
 
   // The totals follow the filter. The server drew them for the address the page came
@@ -721,7 +722,7 @@ export function LibraryView({
         <StatusRow
           value={statusValue}
           counts={statusCounts}
-          unsortedOnShelf={unsortedOnShelf}
+          unsortedOnShelf={anyUnsorted}
           onChange={(status) =>
             writeTree(
               setListEverywhere(
@@ -732,15 +733,12 @@ export function LibraryView({
             )
           }
         />
-        {/* On my own shelf, the unsorted games lead to the page for placing them (spec 4.5). */}
-        {actions && statusValue === 'unsorted' && unsortedOnShelf ? (
-          <Button asChild size="sm" className="justify-self-start">
-            <Link href="/account/unsorted">
-              <InboxIcon aria-hidden="true" />
-              {placing('placeThese')}
-            </Link>
-          </Button>
-        ) : null}
+        {/*
+         * On my own shelf, while any game waits for a status, one line under the row that counts
+         * them leads to the page for placing them (spec 4.5), whatever the filter. It goes when
+         * the last one is placed.
+         */}
+        {actions && unsortedCount ? <PlaceWaiting count={unsortedCount} /> : null}
       </div>
 
       <Toolbar

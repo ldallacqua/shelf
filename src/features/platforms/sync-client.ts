@@ -5,6 +5,7 @@ import type { Format, SyncSource } from '@/domain/library/values'
 import type {
   ItemList,
   ItemView,
+  LinkPage,
   LinkView,
   NintendoLinkOutcome,
   SyncStep,
@@ -25,10 +26,11 @@ export const readPlatforms = (signal?: AbortSignal) =>
 
 /**
  * Where "Sign in through Steam" goes: a plain link, so the browser leaves for
- * Steam and comes back. For Nintendo, the page it opens gives a link to paste.
+ * Steam and comes back, to the page it left. For Nintendo, the page it opens
+ * gives a link to paste.
  */
-export const connectAddress = (source: SyncSource, locale: string) =>
-  `${base(source)}/connect?locale=${encodeURIComponent(locale)}`
+export const connectAddress = (source: SyncSource, locale: string, page: LinkPage = 'account') =>
+  `${base(source)}/connect?locale=${encodeURIComponent(locale)}${page === 'account' ? '' : `&back=${page}`}`
 
 export const syncStep = (source: SyncSource, read: boolean, signal?: AbortSignal) =>
   callApi<SyncStep>('POST', `${base(source)}/sync`, { read }, signal)

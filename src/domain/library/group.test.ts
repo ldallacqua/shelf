@@ -19,6 +19,7 @@ import {
   openingCovers,
   parseLibraryQuery,
   shareFirstBoxes,
+  unsortedOnShelf,
 } from '@/domain/library/view'
 import { facetCounts } from '@/domain/query/facets'
 import { parseQuery } from '@/domain/query/parse'
@@ -359,6 +360,25 @@ describe('the first screen', () => {
         Object.fromEntries(counts.map((value) => [value.word, value.count])),
       )
     }
+  })
+
+  it('counts the games waiting for a status on the whole shelf, whatever the address filters', () => {
+    const waiting = {
+      ...library,
+      games: [
+        ...all,
+        game('Portal', { ...on(6), status: 'unsorted' }),
+        game('Doom', { ...on(6), status: 'unsorted' }),
+      ],
+    }
+    const plain = buildFirstScreen(waiting, { group: 'platform' }, 'en', 2)
+    const filtered = buildFirstScreen(waiting, { group: 'platform', q: 'platform:switch' }, 'en', 2)
+    // Before the library arrives, the page's own counts say it, for an address with no filter.
+    expect(unsortedOnShelf(undefined, plain)).toBe(2)
+    expect(unsortedOnShelf(undefined, filtered)).toBeUndefined()
+    // Once it has arrived, the library says it, filter or none.
+    expect(unsortedOnShelf(waiting, filtered)).toBe(2)
+    expect(unsortedOnShelf(library, plain)).toBe(0)
   })
 
   it('draws each shelf with exactly the boxes it was sent, in their final places', () => {

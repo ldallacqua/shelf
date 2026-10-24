@@ -12,6 +12,8 @@ import { statuses, syncSources } from '@/domain/library/values'
  * kept by no one.
  */
 
+const tally = z.record(z.enum(statuses), z.int().min(0))
+
 export const apiUnsorted = z.object({
   version: z.int(),
   games: z.array(
@@ -36,8 +38,11 @@ export const apiUnsorted = z.object({
       ),
     }),
   ),
-  tally: z.record(z.enum(statuses), z.int().min(0)),
+  tally,
   platforms: z.array(
     z.object({ id: z.int(), key: z.string(), name: z.string(), short: z.string() }),
   ),
 })
+
+/** How many games stand in each status, without the games: what the page that sets a shelf up reads. */
+export const apiTally = z.object({ version: z.int(), tally })

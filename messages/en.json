@@ -273,7 +273,7 @@
       },
       "sync": {
         "q": "Can it bring in the games I already own?",
-        "a": "From Steam and Nintendo, yes: link them on your account page. Every game you own on Steam comes onto your shelf with its hours; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them and give each a status. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
+        "a": "From Steam and Nintendo, yes: link them right after signing up, or later on your account page. Every game you own on Steam comes onto your shelf with its hours; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them and give each a status. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
       },
       "who": {
         "q": "Who can see my shelf?",
@@ -887,7 +887,35 @@
     "left": "{count, plural, =0 {Nothing left to place.} one {# game left to place.} other {# games left to place.}}",
     "placedShare": "Games with a status",
     "toPlace": "{count, plural, one {# game to place} other {# games to place}}",
-    "placeThese": "Place these games"
+    "placeWaiting": "{count, plural, one {Place the game with no status} other {Place the # games with no status}}"
+  },
+  "Start": {
+    "metaTitle": "Set up your shelf",
+    "title": "Set up your shelf",
+    "intro": "Bring your games in, then say where each one stands. Each step checks itself off once it is done, and none has to be finished in one go.",
+    "signInFirst": "Sign in to set up your shelf.",
+    "steps": "Steps",
+    "done": "Done",
+    "failed": "Shelf could not read your shelf just now.",
+    "retry": "Try again",
+    "bring": {
+      "title": "Bring your games in",
+      "body": "Link a platform and Shelf brings in every game you have there, then keeps it up to date. Whatever it cannot match, or wants you to confirm, waits in that platform's card for your answer.",
+      "byHand": "Rather add them yourself? Add one game, or paste a whole list, on <shelf>your shelf</shelf>.",
+      "onShelf": "{count, plural, one {# game on your shelf.} other {# games on your shelf.}}",
+      "waiting": "{count, plural, one {# game is waiting for your answer above.} other {# games are waiting for your answer above.}}"
+    },
+    "place": {
+      "title": "Say where each game stands",
+      "body": "Games a platform brings in wait under Unsorted until you give each one a status: Playing, Backlog, Completed, Dropped or Wishlist. You can rate them in the same place.",
+      "nothingYet": "Games that come in without a status will wait here.",
+      "left": "{count, plural, one {# of your {total, number} games has no status yet.} other {# of your {total, number} games have no status yet.}}",
+      "share": "Games with a status",
+      "go": "Place my games",
+      "later": "Leaving some for another day is fine: they wait there.",
+      "none": "{count, plural, one {Your # game has a status.} other {All # of your games have a status.}}"
+    },
+    "toShelf": "See my shelf"
   },
   "Sync": {
     "source": {
@@ -1091,7 +1119,7 @@
       "failed": "That did not work. Try again."
     },
     "first": "Add your first game",
-    "fromSteam": "Bring in your Steam library",
+    "bringIn": "Bring your games from a platform",
     "tabs": "How to add",
     "one": "One game",
     "list": {

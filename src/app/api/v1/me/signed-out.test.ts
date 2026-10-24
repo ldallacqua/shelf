@@ -17,6 +17,7 @@ import { GET as myLibrary } from './library/route'
 import { GET as me, PATCH as changeMe } from './route'
 import { GET as myShelves } from './shelves/route'
 import { GET as myTags } from './tags/route'
+import { GET as myTally } from './tally/route'
 import { GET as myUnsorted } from './unsorted/route'
 
 /**
@@ -73,6 +74,7 @@ const reads: [string, () => Promise<Response>][] = [
   ['its smart shelves', () => myShelves(asked('/api/v1/me/shelves'))],
   ['its platforms', () => myPlatforms()],
   ['its unsorted games', () => myUnsorted()],
+  ['its games by status', () => myTally()],
   [
     'a sync step',
     () => syncStep(asked('/api/v1/me/platforms/steam/sync', post({ read: true })), steamParams),

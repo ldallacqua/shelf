@@ -12,8 +12,8 @@ import { openAddGame } from './add-button'
 
 /**
  * The empty library's actions, on one's own shelf (spec 3.10): add a game,
- * or bring a whole Steam library in from the account page (spec 4.4). There
- * is nothing for a visitor to do.
+ * or bring a whole library in from a platform, on the page that sets a new
+ * shelf up. There is nothing for a visitor to do.
  */
 export function AddFirstGame() {
   const t = useTranslations('Add')
@@ -25,7 +25,7 @@ export function AddFirstGame() {
         {t('first')}
       </Button>
       <Button variant="secondary" asChild>
-        <Link href={{ pathname: '/account', hash: 'platforms' }}>{t('fromSteam')}</Link>
+        <Link href="/account/start">{t('bringIn')}</Link>
       </Button>
     </div>
   )

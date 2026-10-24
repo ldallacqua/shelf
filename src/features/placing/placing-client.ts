@@ -2,7 +2,7 @@
 
 import type { Answer } from '@/domain/library/adding'
 import type { Changed } from '@/domain/library/editing'
-import type { Placing } from '@/domain/library/placing'
+import type { Placing, Standing } from '@/domain/library/placing'
 import type { Status } from '@/domain/library/values'
 import { editClient } from '@/features/game-detail/edit-client'
 import { callApi } from '@/features/owner/call-api'
@@ -25,3 +25,7 @@ export const placeGames = (entries: readonly string[], status: Status): Promise<
 /** Out of a hundred, as stored; null takes it away. */
 export const rateGame = (entryId: string, rating: number | null): Promise<Answer<Changed>> =>
   editClient.update(entryId, { rating })
+
+/** How many of my games stand in each status, without the games. */
+export const readTally = (signal?: AbortSignal): Promise<Answer<Standing>> =>
+  callApi<Standing>('GET', '/api/v1/me/tally', undefined, signal)

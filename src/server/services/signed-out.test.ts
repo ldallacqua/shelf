@@ -20,7 +20,7 @@ import {
   restoreMine,
   setMyCopyFormat,
 } from '@/server/services/editing'
-import { myUnsorted, placeMine } from '@/server/services/placing'
+import { myTally, myUnsorted, placeMine } from '@/server/services/placing'
 import { removeMyShelf, saveMyShelf } from '@/server/services/shelves'
 import {
   answerMine,
@@ -99,6 +99,7 @@ const requests: [string, () => Promise<{ ok: boolean; reason?: string }>][] = [
   ['remove a game', () => removeMine('bloodborne')],
   ['put a removed game back', () => restoreMine(ID)],
   ['list its unsorted games', () => myUnsorted()],
+  ['count its games by status', () => myTally()],
   ['place many games at once', () => placeMine({ entries: [ID], status: 'backlog' })],
   ['save a shelf', () => saveMyShelf({ name: 'Mine', query: '', sort: 'title', group: 'none' })],
   ['remove a shelf', () => removeMyShelf('short-ones')],
