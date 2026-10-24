@@ -901,6 +901,7 @@
     "progress": "{done, plural, =0 {Encontrando seus jogos…} other {Adicionados # de {total}…}}",
     "progressLabel": "Jogos adicionados da {source}",
     "done": "{count, plural, =0 {Tudo em dia com a {source}.} one {# jogo veio da {source}.} other {# jogos vieram da {source}.}}",
+    "waiting": "{count, plural, one {# jogo espera sua resposta.} other {# jogos esperam sua resposta.}}",
     "daily": "Sincronizar uma vez por dia",
     "disconnect": "Desconectar",
     "disconnectAsk": "Desconectar a {source}? Seus jogos continuam na sua estante, com as horas. O Shelf esquece o que a {source} listou e as suas respostas sobre isso.",
@@ -924,6 +925,8 @@
       "hidden": "O Shelf deixa estes fora da sua estante, diga a {source} o que disser. Demos, playtests e programas vêm para cá sozinhos.",
       "not-seen": "Continuam na sua estante. A {source} parou de listá-los."
     },
+    "unfound": "{count, plural, one {O Shelf não achou este jogo} other {O Shelf não achou estes # jogos}}",
+    "unfoundHelp": "Encontre cada um, ou diga que não é um jogo ou que não é seu.",
     "loading": "Carregando…",
     "hours": "{hours, number} h na {source}",
     "unplayed": "Não jogado na {source}",

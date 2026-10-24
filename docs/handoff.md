@@ -4,7 +4,7 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)); the owner's to try
+## Now: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
 
 After the review of #26 below, the owner chose the route for Nintendo: "Build Nintendo from
 the Store app's play history: I sign in on Nintendo's own page and Shelf keeps the session
@@ -13,27 +13,40 @@ a Nintendo account of Shelf's own on the phone app's private API, sees only the 
 recent play activity, and is no sign-in). What was built and why is ADR 003, "Built:
 Nintendo"; how it looks and behaves is spec 4.4.
 
-- **Before it works on production, the owner pastes one setting:** `PLATFORM_TOKEN_KEY`
-  ([setup F](setup.md#f-nintendo-sync), 32 random bytes; the command makes them). It seals
-  Nintendo's session. Never change it once anyone has linked Nintendo. Without it, pasting
-  the link says Nintendo sync is not set up.
-- **Then the owner links their own Nintendo account** on production; an assistant never signs
-  in to Nintendo. **Nothing here has met the real Nintendo yet:** the sign-in, the token
-  exchange and the play history follow ns-play-history (read 24 Oct 2026, last changed 7 Oct
-  2026), and the tests answer with a double. Things to watch on the first real link: Nintendo
-  accepting the code (`code-refused` means the paste was too late or used twice); the account's
-  nickname on the card (Shelf reads `api.accounts.nintendo.com/2.0.0/users/me`, and falls back
-  to the id token's subject); the play history's console codes (`HAC` and `BEE` are known;
-  `WUP`, `CTR` and `KTR` are guesses, and a game on an unknown code is matched on all of
-  Nintendo's consoles); and how many games match by title. If the card says Nintendo did not
+- **The first real link worked (24 Oct 2026).** The owner pasted `PLATFORM_TOKEN_KEY` into
+  Vercel, production was redeployed with it, and the owner linked their Nintendo account. The
+  real play history listed 38 games; 24 matched. The owner expected games on the shelf: none
+  go there before Cartridge or Download, and the card said "Up to date" with 38 waiting, and
+  mixed the matched games with the unmatched ones. [#30](https://github.com/ldallacqua/shelf/pull/30)
+  fixed what that showed:
+  - Nintendo's spellings (ADR 003, "Nintendo's names, as IGDB writes them"): an en dash where
+    IGDB has a hyphen or a colon, and "Nintendo Switch 2 Edition" or "for Nintendo Switch" at
+    the end. Six more should match at the next sync (migration 0011 has it look again).
+    **A Switch 2 Edition is its own record where IGDB keeps one**, the owner's choice: "como o
+    shelf é uma estante e vc pode ter o jogo tanto do switch 2 quanto no pc".
+  - The owner's ask for the list: "Mostre tudo o que preciso escolher cartucho ou download
+    primeiro. Depois as opções que ele não achou". The matched games come first; the rest
+    follow under "Shelf could not find these N games". The card says how many wait.
+  - Left for the owner's answers: YouTube and the two "Nintendo Classics" apps (Not a game);
+    Devil May Cry 3 Special Edition, DEAD OR ALIVE Xtreme 3 Scarlet, This War of Mine:
+    Complete Edition, Vampire Crawlers and one more, which need Find it. Resident Evil 4 (2011)
+    and Devil May Cry 1 and 2 (2012) are IGDB's records of the HD versions Switch has.
+- **`PLATFORM_TOKEN_KEY`** ([setup F](setup.md#f-nintendo-sync)) seals Nintendo's session.
+  Never change it now that the owner has linked Nintendo.
+- **An assistant never signs in to Nintendo.** The sign-in, the token exchange and the play
+  history follow ns-play-history (read 24 Oct 2026, last changed 7 Oct 2026), and the tests
+  answer with a double. The first real link confirmed the code exchange, the nickname on the
+  card ("Conectado a Dall'Acqua") and the play history. Still unconfirmed: the console codes
+  `WUP`, `CTR` and `KTR` (guesses; a game on an unknown code is matched on all of Nintendo's
+  consoles), and a session Nintendo ends (`signed-out`). If the card says Nintendo did not
   answer, `server/sync/nintendo.ts` is the place to look.
 - **Locally,** with the test doubles on (`pnpm serve:test`), "Sign in on Nintendo's page" opens
   a stand-in page whose "Select this account" button links to the made-up account
   (`fixtures/nintendo/play-history.json`): copy its link and paste it into the card.
-- **Lighthouse was not measured on #29:** the computer was busy with a game, and verify's run
-  read every page low (library 75, wall 75, home 86; game page 91). The JavaScript budgets did
-  not move (library 274.5 of 275 KB), and nothing Nintendo adds is on those pages but the
-  landing's words. Measure again on a quiet machine, side by side with #28's commit.
+- **Lighthouse on #30, with #29 in it** (the computer quiet this time; on #29 itself it was
+  busy with a game and every page read low): home 91, library 85, wall 86, game page 95, the
+  near misses of step 9 (91, 83, 85, 95). Nintendo cost the pages nothing. The JavaScript
+  budgets did not move (library 274.5 of 275 KB).
 - **Next: the review of unsorted games** (below), which a Nintendo sync makes more useful still:
   everything it brings in is unsorted.
 

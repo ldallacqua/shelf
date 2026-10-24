@@ -227,6 +227,29 @@ describe('Nintendo', () => {
     expect(screen.getAllByRole('button', { name: 'Find it' })).toHaveLength(1)
   })
 
+  it('lists the games Shelf matched first, then those it could not find, under a heading of their own', async () => {
+    platforms = rows(null, NINTENDO)
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByText('3 games need you'))
+    const heading = await screen.findByRole('heading', { name: 'Shelf could not find this game' })
+    const after = (one: Node, other: Node) =>
+      Boolean(one.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING)
+    for (const cartridge of screen.getAllByRole('button', { name: 'Cartridge' })) {
+      expect(after(cartridge, heading)).toBe(true)
+    }
+    expect(after(heading, screen.getByRole('button', { name: 'Find it' }))).toBe(true)
+  })
+
+  it('says how many games wait for me, not that all is up to date', async () => {
+    platforms = rows(null, NINTENDO)
+    steps = [step({})]
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Sync now' }))
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('3 games wait for your answer.'),
+    )
+  })
+
   it('says one format for every match at once, then puts them on the shelf in steps', async () => {
     platforms = rows(null, NINTENDO)
     steps = [step({ adding: 1 }, 1, 1), step({ 'on-shelf': 2, 'needs-you': 1 }, 1, 0)]
@@ -235,7 +258,9 @@ describe('Nintendo', () => {
     expect(await screen.findByText('All 2 games Shelf found are:')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Downloads' }))
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('2 games came in from Nintendo.'),
+      expect(screen.getByRole('status')).toHaveTextContent(
+        '2 games came in from Nintendo. 1 game waits for your answer.',
+      ),
     )
     expect(sent.find((each) => each.path.endsWith('/answers'))?.body).toEqual({
       ids: ['kart', 'dread'],

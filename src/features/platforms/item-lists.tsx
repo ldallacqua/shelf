@@ -448,6 +448,23 @@ function List({
   }, [open, source, list, stamp])
 
   if (count === 0) return null
+  const rows = (some: readonly ItemView[]) => (
+    <ul className="mt-2">
+      {some.map((item) => (
+        <Row
+          key={item.id}
+          item={item}
+          list={list}
+          source={source}
+          handle={handle}
+          onAnswered={onAnswered}
+        />
+      ))}
+    </ul>
+  )
+  // The matched games first, which need only how I own them; then those Shelf could not find.
+  const found = items?.filter((item) => item.match) ?? []
+  const unfound = items?.filter((item) => !item.match) ?? []
   return (
     <details
       className="rounded-panel border border-line bg-surface/60 px-4"
@@ -469,19 +486,17 @@ function List({
         {items === undefined && !trouble ? (
           <p className="mt-3 text-sm text-muted">{t('loading')}</p>
         ) : null}
-        {items ? (
-          <ul className="mt-2">
-            {items.map((item) => (
-              <Row
-                key={item.id}
-                item={item}
-                list={list}
-                source={source}
-                handle={handle}
-                onAnswered={onAnswered}
-              />
-            ))}
-          </ul>
+        {items && found.length > 0 && unfound.length > 0 ? (
+          <>
+            {rows(found)}
+            <h4 className="mt-3 border-t border-line pt-4 text-sm font-medium">
+              {t('unfound', { count: unfound.length })}
+            </h4>
+            <p className="mt-1 text-sm text-pretty text-muted">{t('unfoundHelp')}</p>
+            {rows(unfound)}
+          </>
+        ) : items ? (
+          rows(items)
         ) : null}
       </div>
     </details>

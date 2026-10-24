@@ -525,6 +525,12 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
    year. **Cartridge** or **Download** puts it on the shelf; **Not this game** opens Find it;
    **Not mine**. One line answers every match at once: "All 7 games Shelf found are:
    **Cartridges** / **Downloads**". A game I find becomes the match, and waits the same way.
+   The matched games come first; those Shelf could not find follow, under "Shelf could not
+   find these 2 games", each with Find it, Not a game and Not mine. The card says "9 games
+   wait for your answer", never "up to date" while any do.
+   - Nintendo's names are matched as IGDB writes them: "– Nintendo Switch 2 Edition" finds
+     IGDB's "- Nintendo Switch 2 Edition", its own record, where IGDB keeps one, and the game
+     itself where it does not; "for Nintendo Switch" is left out.
    - A game played on a Switch and then a Switch 2 is one game, its hours summed. A Switch
      game played on a Switch 2 is a Switch copy; a Switch 2 game, a Switch 2 copy.
    - A game already on the shelf gains the copy, never a second box; a new one starts
@@ -540,7 +546,8 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
   nothing else.
 - No game Nintendo lists reaches the shelf before I say how I own it.
 - One answer can place every match at once.
-- A Switch game played on a Switch 2 lands on the Switch shelf.
+- A Switch game played on a Switch 2 lands on the Switch shelf; a Switch 2 Edition IGDB keeps
+  a record of, on the Switch 2 shelf.
 - The session is stored sealed, and is never sent to a browser.
 
 ### 4.5 Placing what a sync brought in (next: not built yet)

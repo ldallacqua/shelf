@@ -23,7 +23,7 @@ import {
   type SyncStep,
 } from '@/domain/sync/link'
 import { copyPlatform, isSyncSource, platformsFor, SOURCES } from '@/domain/sync/sources'
-import { gameOfMode, matchByTitle, strippedTitle } from '@/domain/sync/titles'
+import { gameOfMode, matchByTitle, spellingsOf, strippedTitle } from '@/domain/sync/titles'
 import type { Account } from '@/server/auth/account'
 import { imageUrl } from '@/domain/igdb/images'
 import { database, type Db } from '@/server/db/client'
@@ -247,7 +247,14 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
         platforms: platformsFor(source, item.platformId),
         ...(item.year ? { year: item.year } : {}),
       })
-      const exact = await api.findByTitles(titled.map((item) => item.title))
+      // IGDB's games named any way each title may be spelled, one list a title.
+      const named = async (titles: readonly string[]) => {
+        const spellings = titles.map(spellingsOf)
+        const found = await api.findByTitles(spellings.flat())
+        let at = 0
+        return spellings.map((each) => each.flatMap(() => found[at++] ?? []))
+      }
+      const exact = await named(titled.map((item) => item.title))
       const again: Item[] = []
       titled.forEach((item, at) => {
         const match = matchByTitle(query(item), foldSearchHits(exact[at] ?? [], 20))
@@ -257,9 +264,7 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
       })
       // Asked again without the marks and edition words, for those the title as written did not find.
       const stripped =
-        again.length > 0
-          ? await api.findByTitles(again.map((item) => strippedTitle(item.title)))
-          : []
+        again.length > 0 ? await named(again.map((item) => strippedTitle(item.title))) : []
       again.forEach((item, at) => {
         const match = matchByTitle(query(item), foldSearchHits(stripped[at] ?? [], 20))
         if (match) take(item, match.igdbId, 'title')

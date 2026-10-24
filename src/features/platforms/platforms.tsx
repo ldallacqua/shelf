@@ -128,7 +128,18 @@ function PlatformCard({
           text: answer.reason === 'too-many' ? t('tooMany') : t('failed'),
         })
       } else if (!answer.value.link.problem) {
-        setSaid({ tone: 'done', text: t('done', { count: done, source: name }) })
+        // Games waiting for me are not "up to date": the card says how many.
+        const waiting = answer.value.link.counts['needs-you']
+        const came = t('done', { count: done, source: name })
+        setSaid({
+          tone: 'done',
+          text:
+            waiting === 0
+              ? came
+              : done === 0
+                ? t('waiting', { count: waiting })
+                : `${came} ${t('waiting', { count: waiting })}`,
+        })
       }
     },
     [name, onChange, source, t],
