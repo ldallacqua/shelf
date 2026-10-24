@@ -222,16 +222,25 @@ function Row({
   const [said, setSaid] = useState<{ tone: 'done' | 'trouble'; text: string }>()
   const item = game[0]!
   const minutes = game.reduce((sum, each) => sum + each.minutes, 0)
+  // Answered, the row leaves at once rather than when the list comes back; an error brings it back.
+  const [leaving, setLeaving] = useState(false)
+  // A game picked for a source that saw me play it stays, waiting for its format: until the
+  // list brings it back with its new match, it is not answered again.
+  const [answered, setAnswered] = useState<ItemView>()
+  const still = busy || answered === item
 
   /** The answer, for each of the game's items in turn: the first makes the copy, the rest feed it. */
   const answer = async (choice: ItemAnswer) => {
+    const stays = choice.kind === 'pick' && playedOn(source) && choice.format === undefined
     setBusy(true)
+    setLeaving(!stays)
     setSaid(undefined)
     let shelved: string | undefined
     for (const each of game) {
       const result = await answerItem(source, each.id, choice)
       if (!result.ok) {
         setBusy(false)
+        setLeaving(false)
         setSaid({
           tone: 'trouble',
           text: result.reason === 'too-many' ? t('tooMany') : t('failed'),
@@ -241,11 +250,13 @@ function Row({
       shelved = result.value.item.onShelf?.title ?? shelved
     }
     setBusy(false)
+    setAnswered(item)
     setFinding(false)
-    // The list is fetched again, and this row may leave it: the card says what happened.
+    // The list is fetched again, which this row has left: the card says what happened.
     onAnswered(shelved ? t('added', { title: shelved }) : undefined)
   }
 
+  if (leaving) return null
   return (
     <li className="grid gap-2 border-t border-line py-3 first:border-t-0">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
@@ -297,7 +308,7 @@ function Row({
                 size="sm"
                 variant="secondary"
                 aria-describedby={titleId}
-                disabled={busy}
+                disabled={still}
                 onClick={() => void answer({ kind: 'confirm', format })}
               >
                 {t(`nintendo.${format}`)}
@@ -308,7 +319,7 @@ function Row({
               variant="ghost"
               aria-describedby={titleId}
               aria-expanded={finding}
-              disabled={busy}
+              disabled={still}
               onClick={() => setFinding((open) => !open)}
             >
               {t('nintendo.notThis')}
@@ -317,7 +328,7 @@ function Row({
               size="sm"
               variant="ghost"
               aria-describedby={titleId}
-              disabled={busy}
+              disabled={still}
               onClick={() => void answer({ kind: 'dismiss', as: 'not_mine' })}
             >
               {t('notMine')}
@@ -330,7 +341,7 @@ function Row({
               variant={finding ? 'ghost' : 'secondary'}
               aria-describedby={titleId}
               aria-expanded={finding}
-              disabled={busy}
+              disabled={still}
               onClick={() => setFinding((open) => !open)}
             >
               {t('find')}
@@ -339,7 +350,7 @@ function Row({
               size="sm"
               variant="ghost"
               aria-describedby={titleId}
-              disabled={busy}
+              disabled={still}
               onClick={() => void answer({ kind: 'dismiss', as: 'not_a_game' })}
             >
               {t('notAGame')}
@@ -348,7 +359,7 @@ function Row({
               size="sm"
               variant="ghost"
               aria-describedby={titleId}
-              disabled={busy}
+              disabled={still}
               onClick={() => void answer({ kind: 'dismiss', as: 'not_mine' })}
             >
               {t('notMine')}
@@ -359,7 +370,7 @@ function Row({
             size="sm"
             variant="secondary"
             aria-describedby={titleId}
-            disabled={busy}
+            disabled={still}
             onClick={() => void answer({ kind: 'again' })}
           >
             {item.decision === 'removed' ? t('putBack') : t('askAgain')}
@@ -369,7 +380,7 @@ function Row({
       {finding ? (
         <FindIt
           item={item}
-          busy={busy}
+          busy={still}
           onPick={(found) => void answer({ kind: 'pick', igdbId: found.igdbId })}
         />
       ) : null}

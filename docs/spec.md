@@ -531,6 +531,8 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
    - A game Nintendo lists under two names (Warframe for Nintendo Switch, and Warframe) is
      one row: "Nintendo also lists it as Warframe.", the hours of both, one answer for both,
      and one game in every count.
+   - An answered game leaves the list the moment it is answered, not when the list comes
+     back; it returns, saying what went wrong, only if the answer fails.
    - Nintendo's names are matched as IGDB writes them: "– Nintendo Switch 2 Edition" finds
      IGDB's "- Nintendo Switch 2 Edition", its own record, where IGDB keeps one, and the game
      itself where it does not; "for Nintendo Switch" is left out.

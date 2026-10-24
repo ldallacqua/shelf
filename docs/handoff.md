@@ -34,6 +34,9 @@ Nintendo"; how it looks and behaves is spec 4.4.
   - After #30 deployed, the owner's list matched 30 of 38, the six expected. Warframe came
     twice, under two title ids; [#31](https://github.com/ldallacqua/shelf/pull/31) shows such
     a game as one row, answered once, and counts it once.
+  - The owner then saw a row's buttons come back for a second before it left the list;
+    [#32](https://github.com/ldallacqua/shelf/pull/32) takes it off the list the moment it is
+    answered, and puts it back only if the answer fails.
 - **`PLATFORM_TOKEN_KEY`** ([setup F](setup.md#f-nintendo-sync)) seals Nintendo's session.
   Never change it now that the owner has linked Nintendo.
 - **An assistant never signs in to Nintendo.** The sign-in, the token exchange and the play

@@ -79,12 +79,17 @@ let steps: SyncStep[]
 let pasted: NintendoLinkOutcome
 /** What the needs-you list answers with. */
 let listed: ItemView[]
+/** Held, an answer about an item waits for it; failing, it is refused. */
+let answerHeld: Promise<unknown> | undefined
+let answerFails: boolean
 
 beforeEach(() => {
   sent.length = 0
   steps = []
   pasted = 'linked'
   listed = PLAYED
+  answerHeld = undefined
+  answerFails = false
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const path = String(input)
     const method = init?.method ?? 'GET'
@@ -98,6 +103,8 @@ beforeEach(() => {
     }
     if (path === '/api/v1/me/platforms/nintendo/items?list=needs-you') return Response.json(listed)
     if (path.startsWith('/api/v1/me/platforms/nintendo/items/')) {
+      await answerHeld
+      if (answerFails) return new Response(null, { status: 500 })
       return Response.json({ item: { ...PLAYED[0], state: 'on-shelf' }, version: 9 })
     }
     return new Response(null, { status: 404 })
@@ -271,6 +278,37 @@ describe('Nintendo', () => {
         expect.objectContaining({ path: expect.stringMatching(/\/items\/kart-2$/) }),
       ]),
     )
+  })
+
+  it('takes a game off the list the moment I answer, before Shelf has finished', async () => {
+    platforms = rows(null, NINTENDO)
+    let release = () => {}
+    answerHeld = new Promise<void>((resolve) => (release = resolve))
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByText('3 games need you'))
+    await screen.findByText('Shelf thinks it is Mario Kart 8 Deluxe (2017)')
+    const [cartridge] = screen.getAllByRole('button', { name: 'Cartridge' })
+    await userEvent.click(cartridge!)
+    expect(screen.queryByText('Shelf thinks it is Mario Kart 8 Deluxe (2017)')).toBeNull()
+    expect(screen.getByText('Shelf thinks it is Metroid Dread (2021)')).toBeInTheDocument()
+    release()
+    // Answered, the list is fetched again; the game stays off it.
+    await waitFor(() =>
+      expect(sent.filter((each) => each.path.endsWith('/items?list=needs-you'))).toHaveLength(2),
+    )
+    expect(screen.queryByText('Shelf thinks it is Mario Kart 8 Deluxe (2017)')).toBeNull()
+  })
+
+  it('puts a game back on the list, saying so, when the answer fails', async () => {
+    platforms = rows(null, NINTENDO)
+    answerFails = true
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByText('3 games need you'))
+    const [cartridge] = await screen.findAllByRole('button', { name: 'Cartridge' })
+    await userEvent.click(cartridge!)
+    expect(await screen.findByRole('alert')).toHaveTextContent('That did not work. Try again.')
+    expect(screen.getByText('Shelf thinks it is Mario Kart 8 Deluxe (2017)')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Cartridge' })[0]).toBeEnabled()
   })
 
   it('says how many games wait for me, not that all is up to date', async () => {
