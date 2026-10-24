@@ -201,7 +201,7 @@
     "sync": {
       "eyebrow": "Steam and Nintendo",
       "title": "Bring your Steam and Switch games with you.",
-      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours on it. Link Nintendo, and the games you played on a Switch or a Switch 2 come too, once you say whether each is a cartridge or a download. Then both keep in step by themselves once a day. Games already on your shelf gain a copy, never a second box. PlayStation and Xbox come next.",
+      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours on it. Link Nintendo, and the games you played on a Switch or a Switch 2 come too, once you say whether each is a cartridge or a download. Then both keep in step by themselves once a day. Games already on your shelf gain a copy, never a second box. The new ones wait, unsorted, on a page where you rate them and say where each stands, one tap at a time or many at once. PlayStation and Xbox come next.",
       "card": "Steam and Nintendo, syncing",
       "where": "PC · Steam",
       "whereNintendo": "Switch · Nintendo · cartridge",
@@ -273,7 +273,7 @@
       },
       "sync": {
         "q": "Can it bring in the games I already own?",
-        "a": "From Steam and Nintendo, yes: link them on your account page. Every game you own on Steam comes onto your shelf with its hours; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
+        "a": "From Steam and Nintendo, yes: link them on your account page. Every game you own on Steam comes onto your shelf with its hours; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them and give each a status. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
       },
       "who": {
         "q": "Who can see my shelf?",
@@ -848,6 +848,46 @@
       "tooMany": "Too many tries. Wait a minute, then try again.",
       "failed": "That did not work. Try again."
     }
+  },
+  "Placing": {
+    "metaTitle": "Place your games",
+    "title": "Place your games",
+    "intro": "The games a sync brought onto your shelf wait here, unsorted, until you say where each one stands. Give a game a status and it leaves the list; a rating alone leaves it here. Leaving one for another day is fine.",
+    "signInFirst": "Sign in to place your games.",
+    "loading": "Loading your games…",
+    "failed": "Shelf could not read your games. Try again.",
+    "retry": "Try again",
+    "list": "Unsorted games",
+    "empty": "Nothing is waiting: every game on your shelf has a status.",
+    "toShelf": "Go to your shelf",
+    "sort": "Order",
+    "sorts": {
+      "played": "Longest played",
+      "recent": "Last played",
+      "title": "Title",
+      "added": "Last added"
+    },
+    "select": "Select {title}",
+    "selectAll": "{count, plural, one {Select the # game} other {Select all # games}}",
+    "underAnHour": "{count, plural, one {Select the # game under an hour} other {Select the # games under an hour}}",
+    "selected": "{count, plural, one {# game selected} other {# games selected}}",
+    "putThem": "Give them a status:",
+    "clear": "Clear the selection",
+    "statusOf": "Status for {title}",
+    "hours": "{hours, number} h played",
+    "lastPlayed": "last played {day}",
+    "more": "Show {count, number} more",
+    "placed": "Put {title} in {status}.",
+    "placedMany": "{count, plural, one {Put # game in {status}.} other {Put # games in {status}.}}",
+    "putBack": "{title} is back in the list.",
+    "putBackMany": "{count, plural, one {# game is back in the list.} other {# games are back in the list.}}",
+    "notPlaced": "{title} could not be placed. Try again.",
+    "notRated": "The rating for {title} was not saved. Try again.",
+    "tally": "Your games by status",
+    "left": "{count, plural, =0 {Nothing left to place.} one {# game left to place.} other {# games left to place.}}",
+    "placedShare": "Games with a status",
+    "toPlace": "{count, plural, one {# game to place} other {# games to place}}",
+    "placeThese": "Place these games"
   },
   "Sync": {
     "source": {

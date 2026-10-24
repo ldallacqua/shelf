@@ -6,6 +6,12 @@ import { lengthMinutes } from '@/domain/igdb/game'
 import type { OwnerGame } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
 import {
+  emptyTally,
+  type Placing,
+  type PlayedOn,
+  type UnsortedGame,
+} from '@/domain/library/placing'
+import {
   emptyNames,
   type Library,
   type LibraryCopy,
@@ -13,7 +19,7 @@ import {
   type LibraryPlatform,
   type Named,
 } from '@/domain/library/library'
-import { dayOf, type SyncSource } from '@/domain/library/values'
+import { dayOf, isStatus, type SyncSource } from '@/domain/library/values'
 import type { GameKeywords } from '@/domain/query/evaluate'
 import { comparePlatforms } from '@/domain/platforms/platforms'
 import type { Db, Executor } from '@/server/db/client'
@@ -26,6 +32,7 @@ import {
   libraries,
   platforms,
   playTime,
+  sourceItems,
   tags,
   vocab,
 } from '@/server/db/schema'
@@ -483,4 +490,154 @@ export const readOwnerGame = async (
   if (entry.completedOn) owned.completedOn = entry.completedOn
   if (entry.notes) owned.notes = entry.notes
   return owned
+}
+
+/**
+ * My unsorted games, with what helps me place them (spec 4.5): each one's
+ * hours and last play on every source that reported it, and how many games
+ * the library has in each status. One batch, so the tally and the list are
+ * the same moment's.
+ */
+export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> => {
+  const waiting = sql`(select ${entries.id} from ${entries} where ${entries.userId} = ${libraryId} and ${entries.status} = 'unsorted')`
+  const [versionRow, statusRows, entryRows, copyRows, timeRows, playedRows, platformRows] =
+    await db.batch([
+      db
+        .select({ version: libraries.version })
+        .from(libraries)
+        .where(eq(libraries.userId, libraryId))
+        .limit(1),
+      db
+        .select({ status: entries.status, count: sql<number>`count(*)` })
+        .from(entries)
+        .where(eq(entries.userId, libraryId))
+        .groupBy(entries.status),
+      db
+        .select({
+          entryId: entries.id,
+          rating: entries.rating,
+          addedAt: entries.addedAt,
+          displayCopyId: entries.displayCopyId,
+          slug: games.slug,
+          title: games.title,
+          year: games.year,
+          cover: games.cover,
+          colors: games.colors,
+          thumbhash: games.thumbhash,
+        })
+        .from(entries)
+        .innerJoin(
+          entryVersions,
+          and(eq(entryVersions.entryId, entries.id), eq(entryVersions.relation, 'primary')),
+        )
+        .innerJoin(games, eq(games.id, entryVersions.gameId))
+        .where(and(eq(entries.userId, libraryId), eq(entries.status, 'unsorted'))),
+      db
+        .select({ id: copies.id, entryId: copies.entryId, platformId: copies.platformId })
+        .from(copies)
+        .where(sql`${copies.entryId} in ${waiting}`)
+        .orderBy(copies.createdAt, sql`rowid`),
+      db
+        .select({
+          entryId: playTime.entryId,
+          source: playTime.source,
+          minutes: sql<number>`sum(${playTime.minutes})`,
+        })
+        .from(playTime)
+        .where(sql`${playTime.entryId} in ${waiting}`)
+        .groupBy(playTime.entryId, playTime.source),
+      db
+        .select({
+          entryId: copies.entryId,
+          source: sourceItems.source,
+          last: sql<number | null>`max(${sourceItems.lastPlayedAt})`,
+        })
+        .from(sourceItems)
+        .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+        .where(and(eq(sourceItems.userId, libraryId), sql`${copies.entryId} in ${waiting}`))
+        .groupBy(copies.entryId, sourceItems.source),
+      db.select().from(platforms),
+    ])
+
+  const tally = emptyTally()
+  for (const row of statusRows) if (isStatus(row.status)) tally[row.status] = Number(row.count)
+
+  // The copy shown when the game stands once comes first, as on the shelf.
+  const shownCopy = new Map(entryRows.map((row) => [row.entryId, row.displayCopyId]))
+  const platformsOf = new Map<string, number[]>()
+  for (const copy of copyRows) {
+    const list = platformsOf.get(copy.entryId) ?? []
+    if (copy.id === shownCopy.get(copy.entryId)) list.unshift(copy.platformId)
+    else list.push(copy.platformId)
+    platformsOf.set(copy.entryId, list)
+  }
+
+  const playedOf = new Map<string, Map<SyncSource, PlayedOn>>()
+  const playedOn = (entryId: string, source: SyncSource): PlayedOn => {
+    const bySource = playedOf.get(entryId) ?? new Map<SyncSource, PlayedOn>()
+    playedOf.set(entryId, bySource)
+    const found = bySource.get(source) ?? { source, minutes: 0 }
+    bySource.set(source, found)
+    return found
+  }
+  const manual = new Map<string, number>()
+  for (const row of timeRows) {
+    const minutes = Number(row.minutes) || 0
+    if (row.source === 'manual') manual.set(row.entryId, minutes)
+    else playedOn(row.entryId, row.source).minutes += minutes
+  }
+  // Every source that feeds a copy says so, played there or not.
+  for (const row of playedRows) {
+    const played = playedOn(row.entryId, row.source)
+    if (row.last !== null && row.last > 0) played.lastPlayedAt = row.last
+  }
+
+  const unsorted = entryRows.map((row): UnsortedGame => {
+    const played = [...(playedOf.get(row.entryId)?.values() ?? [])]
+    const reported = played.reduce((sum, each) => sum + each.minutes, 0)
+    const game: UnsortedGame = {
+      entryId: row.entryId,
+      slug: row.slug,
+      title: row.title,
+      addedOn: dayOf(row.addedAt),
+      // The shelf's rule: the larger of what I typed and what the sources report together.
+      minutes: Math.max(manual.get(row.entryId) ?? 0, reported),
+      platforms: [...new Set(platformsOf.get(row.entryId) ?? [])],
+      played: played.sort((a, b) => b.minutes - a.minutes),
+    }
+    if (row.year !== null) game.year = row.year
+    if (row.rating !== null) game.rating = row.rating
+    if (row.cover) game.cover = row.cover.id
+    if (row.colors) game.colors = row.colors
+    if (row.thumbhash) game.hash = row.thumbhash
+    return game
+  })
+
+  const used = new Set(unsorted.flatMap((game) => game.platforms))
+  const labels = platformRows
+    .filter((row) => used.has(row.igdbId))
+    .map((row) => ({
+      igdbId: row.igdbId,
+      key: row.key,
+      name: row.name,
+      short: row.short,
+      family: row.family,
+      shape: row.shape,
+      plastic: row.plastic,
+      ...(row.generation === null ? {} : { generation: row.generation }),
+    }))
+    .sort(comparePlatforms)
+    .map((platform) => ({
+      id: platform.igdbId,
+      key: platform.key,
+      name: platform.name,
+      short: platform.short,
+    }))
+
+  return {
+    version: versionRow[0]?.version ?? 0,
+    games: unsorted,
+    tally,
+    platforms: labels,
+  }
 }

@@ -25,7 +25,7 @@ const LINK: LinkView = {
   readAt: 2,
   syncedAt: 3,
   problem: null,
-  counts: { 'on-shelf': 25, adding: 0, 'needs-you': 2, hidden: 0, notSeen: 0 },
+  counts: { 'on-shelf': 25, adding: 0, 'needs-you': 2, hidden: 0, notSeen: 0, unsorted: 0 },
 }
 
 const NINTENDO: LinkView = {
@@ -33,7 +33,7 @@ const NINTENDO: LinkView = {
   source: 'nintendo',
   externalId: 'a0b1c2d3e4f5a6b7',
   name: 'Ana',
-  counts: { 'on-shelf': 0, adding: 0, 'needs-you': 3, hidden: 0, notSeen: 0 },
+  counts: { 'on-shelf': 0, adding: 0, 'needs-you': 3, hidden: 0, notSeen: 0, unsorted: 0 },
 }
 
 const rows = (link: LinkView | null, nintendo: LinkView | null = null): PlatformRow[] => [
@@ -129,6 +129,21 @@ describe('Platforms', () => {
     expect(screen.getByText('Linked to Ana on Steam')).toBeInTheDocument()
     expect(screen.getByText('2 games need you')).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: 'Sync once a day' })).toBeChecked()
+  })
+
+  it('leads to the page for placing the games it brought in that wait', async () => {
+    platforms = rows({ ...LINK, counts: { ...LINK.counts, unsorted: 240 } })
+    renderWithIntl(<Platforms handle="ana" />, 'pt-BR')
+    const place = await screen.findByRole('link', { name: '240 jogos para organizar' })
+    // The stand-in for the router writes every link in English.
+    expect(place).toHaveAttribute('href', '/en/account/unsorted')
+  })
+
+  it('offers no such page while nothing waits', async () => {
+    platforms = rows(LINK)
+    renderWithIntl(<Platforms handle="ana" />)
+    await screen.findByText('25 games on your shelf from Steam')
+    expect(screen.queryByRole('link', { name: /to place/ })).not.toBeInTheDocument()
   })
 
   it('says how to fix an account that hides its games', async () => {

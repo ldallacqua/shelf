@@ -20,6 +20,8 @@ export const routing = defineRouting({
     '/sign-in': '/sign-in',
     '/sign-up': '/sign-up',
     '/account': '/account',
+    // Placing the games a sync brought in (spec 4.5).
+    '/account/unsorted': '/account/unsorted',
     '/consent': '/consent',
     // What Shelf keeps, and how to remove it: Steam's terms ask for one (ADR 003).
     '/privacy': '/privacy',

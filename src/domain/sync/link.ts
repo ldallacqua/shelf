@@ -20,6 +20,8 @@ export type LinkProblem = (typeof linkProblems)[number]
 export type ItemCounts = Record<ItemState, number> & {
   /** On my shelf, but no longer listed by the source. */
   notSeen: number
+  /** Games it brought onto my shelf that I have not placed yet (spec 4.5). */
+  unsorted: number
 }
 
 export type LinkView = {

@@ -17,6 +17,7 @@ import { GET as myLibrary } from './library/route'
 import { GET as me, PATCH as changeMe } from './route'
 import { GET as myShelves } from './shelves/route'
 import { GET as myTags } from './tags/route'
+import { GET as myUnsorted } from './unsorted/route'
 
 /**
  * ADR 004: a private shelf is read through `/api/v1/me/…`, for its own
@@ -71,6 +72,7 @@ const reads: [string, () => Promise<Response>][] = [
   ['its tags', () => myTags(asked('/api/v1/me/tags'))],
   ['its smart shelves', () => myShelves(asked('/api/v1/me/shelves'))],
   ['its platforms', () => myPlatforms()],
+  ['its unsorted games', () => myUnsorted()],
   [
     'a sync step',
     () => syncStep(asked('/api/v1/me/platforms/steam/sync', post({ read: true })), steamParams),

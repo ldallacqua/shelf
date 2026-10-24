@@ -8,9 +8,11 @@ import { Rating } from './rating'
 function Mine({
   start,
   onCommit,
+  tabIndex,
 }: {
   start?: number
   onCommit?: (value: number | undefined) => void
+  tabIndex?: number
 }) {
   const [value, setValue] = useState(start)
   return (
@@ -28,6 +30,7 @@ function Mine({
       outOf="/10"
       valueText={(rating) => `${rating} out of 10`}
       format={String}
+      tabIndex={tabIndex}
     />
   )
 }
@@ -68,6 +71,20 @@ describe('Rating', () => {
     expect(slider()).toHaveAttribute('aria-valuenow', '10')
     await userEvent.keyboard('{Home}')
     expect(slider()).toHaveAttribute('aria-valuenow', '0')
+  })
+
+  it('is a stop for Tab, unless a list that is one stop takes it out', async () => {
+    const { unmount } = render(<Mine start={6} />)
+    await userEvent.tab()
+    expect(slider()).toHaveFocus()
+    unmount()
+
+    render(<Mine start={6} tabIndex={-1} />)
+    expect(slider()).toHaveAttribute('tabindex', '-1')
+    expect(screen.getByRole('button', { name: 'Take the rating away' })).toHaveAttribute(
+      'tabindex',
+      '-1',
+    )
   })
 
   it('takes a rating away with the button beside the number', async () => {

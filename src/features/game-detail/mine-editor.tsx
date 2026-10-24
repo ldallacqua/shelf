@@ -9,7 +9,7 @@ import type { Changed, EditPatch, OwnedCopy, OwnerGame } from '@/domain/library/
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
 import { useShelf } from '@/features/library/shelf'
 import { libraryHref } from '@/features/library/shelf-address'
-import { DayField, RatingField, TagsField, today } from '@/features/owner/fields'
+import { DayField, SavedRating, TagsField, today } from '@/features/owner/fields'
 import { announceChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
 import { useRouter } from '@/i18n/navigation'
@@ -418,56 +418,6 @@ function SavedField({
         />
       )}
     </label>
-  )
-}
-
-/** How long a rating rests before it is saved: the arrow keys commit at every press. */
-const RATING_REST_MS = 400
-
-/**
- * My rating, saved once it comes to rest: let go of, or the keys left alone
- * for a moment. Leaving the page first saves it at once.
- */
-function SavedRating({
-  score,
-  onSave,
-}: {
-  /** Out of a hundred, as stored. */
-  score: number | undefined
-  onSave: (score: number | null) => void
-}) {
-  // While it moves, the field shows where it is, not what was saved.
-  const [moving, setMoving] = useState<{ value: number | undefined }>()
-  const pending = useRef<{ score: number | null }>(undefined)
-  const timer = useRef(0)
-  const save = useRef(onSave)
-  useEffect(() => {
-    save.current = onSave
-  })
-
-  const flush = () => {
-    window.clearTimeout(timer.current)
-    const waiting = pending.current
-    pending.current = undefined
-    setMoving(undefined)
-    if (waiting && waiting.score !== (score ?? null)) save.current(waiting.score)
-  }
-  const latestFlush = useRef(flush)
-  useEffect(() => {
-    latestFlush.current = flush
-  })
-  useEffect(() => () => latestFlush.current(), [])
-
-  return (
-    <RatingField
-      value={moving ? moving.value : score === undefined ? undefined : score / 10}
-      onChange={(value) => setMoving({ value })}
-      onCommit={(value) => {
-        pending.current = { score: value === undefined ? null : Math.round(value * 10) }
-        window.clearTimeout(timer.current)
-        timer.current = window.setTimeout(flush, RATING_REST_MS)
-      }}
-    />
   )
 }
 

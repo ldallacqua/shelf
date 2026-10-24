@@ -18,7 +18,7 @@ import type { ItemCounts, ItemList, LinkProblem, LinkView } from '@/domain/sync/
 import { MAX_LISTED } from '@/domain/sync/link'
 import type { Evidence } from '@/domain/sync/sources'
 import type { Db, Executor } from '@/server/db/client'
-import { platformLinks, sourceItems } from '@/server/db/schema'
+import { copies, entries, platformLinks, sourceItems } from '@/server/db/schema'
 
 /**
  * The sync's own rows (ADR 003, decision 3): each account's links to its
@@ -390,7 +390,21 @@ export const countItems = async (db: Executor, link: Link): Promise<ItemCounts> 
     .from(sourceItems)
     .where(ofSource(link.userId, link.source))
     .groupBy(sql`1, 2`)
-  const counts: ItemCounts = { 'on-shelf': 0, adding: 0, 'needs-you': 0, hidden: 0, notSeen: 0 }
+  // The games it fed that still wait for me to place them, each once.
+  const [waiting] = await db
+    .select({ count: sql<number>`count(distinct ${copies.entryId})` })
+    .from(sourceItems)
+    .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+    .innerJoin(entries, eq(entries.id, copies.entryId))
+    .where(and(ofSource(link.userId, link.source), eq(entries.status, 'unsorted')))
+  const counts: ItemCounts = {
+    'on-shelf': 0,
+    adding: 0,
+    'needs-you': 0,
+    hidden: 0,
+    notSeen: 0,
+    unsorted: Number(waiting?.count ?? 0),
+  }
   for (const row of rows) {
     const state = stateOf({ decision: row.decision, copyId: Number(row.shelved) ? 'yes' : null })
     counts[state] += Number(row.count)

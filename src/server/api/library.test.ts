@@ -169,6 +169,7 @@ describe('the OpenAPI document', () => {
       'ShelfOutline',
       'SmartShelf',
       'SmartShelves',
+      'StatusPatch',
       'UndoAdditions',
     ])
     // Every write takes a session; of the reads, only those of one's own do.

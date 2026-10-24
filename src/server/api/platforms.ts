@@ -21,6 +21,7 @@ const counts = z.object({
   'needs-you': z.int().describe('No match, or a question for the owner'),
   hidden: z.int().describe('Not a game, not mine, or taken off the shelf'),
   notSeen: z.int().describe('On the shelf, but no longer listed by the source'),
+  unsorted: z.int().describe('On the shelf from this source, and not placed yet: status unsorted'),
 })
 
 export const apiLink = z

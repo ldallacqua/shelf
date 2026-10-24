@@ -80,6 +80,7 @@ language the browser asks for.
 | `/en/sign-up` | A shelf of one's own: name, handle, email address, password, public or private |
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
 | `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
+| `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once ([section 4.5](#45-placing-what-a-sync-brought-in)) |
 | `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
 
@@ -451,6 +452,14 @@ Up to 200 lines at a time. A check against IGDB today showed exact-title lookups
 ten to a request, and anything fuzzier needs its own request, so 200 titles take from a few
 seconds to about a minute within IGDB's limit of four requests per second.
 
+**Done when**
+
+- A game can be found and added using only the keyboard.
+- Two same-titled games are distinguishable in the results without opening either.
+- Adding a second platform to a game I own never creates a second entry.
+- A pasted list of 50 known titles produces a review table with every line matched or marked.
+- Undo removes the game and everything added with it.
+
 ### 4.3 When IGDB misbehaves
 
 | Problem | Behavior |
@@ -477,8 +486,8 @@ Nintendo are built; PlayStation and Xbox come next, and the page says so.
      touched.
    - **A game new to the shelf** starts **unsorted**, waiting for me to place it, or as
      playing if Steam saw it played in the last two weeks. Owning a game on Steam does not
-     make it my backlog. Placing them, with a rating, one after another, is the review
-     below.
+     make it my backlog. Placing them, with a rating, one after another, is section
+     4.5's page.
    - **What Steam's store says is not a game** is left out by itself, before anything is
      matched: demos, playtests, software, videos and soundtracks. "Left out" says what Steam
      calls each one, and **Ask again** brings it back for good. A mode Steam lists apart from
@@ -555,43 +564,45 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
   a record of, on the Switch 2 shelf.
 - The session is stored sealed, and is never sent to a browser.
 
-### 4.5 Placing what a sync brought in (next: not built yet)
+### 4.5 Placing what a sync brought in
 
 The owner asked for it on 23 Oct 2026, after their first Steam sync, with Minimap's "Rate my
 games" page as the model: games a platform brought in "are actually in a waiting state, or
 unassigned state, we will in a next step, add a review experience where we will allow the
-user to assign a score to the game and which status they have." Until it exists, unsorted
-games are placed one at a time in each game's editor.
+user to assign a score to the game and which status they have." The rating is the editor's,
+out of ten, not Minimap's five stars (the owner, 24 Oct 2026: "Usa o de 0-10 que a gente já
+tem"). Built 24 Oct 2026.
 
-- **A page of its own** for my unsorted games, reached from the Steam card ("240 games to
-  place") and from Unsorted in the status row.
-- **One row per game:** cover, title, the platform, hours on the source and when last
-  played. Longest played first, as Minimap opens; also by most recently played, by title,
-  and by date added.
+- **A page of its own**, `/account/unsorted`, for my unsorted games, reached from each
+  platform's card ("240 games to place", the games that source brought in still unsorted) and,
+  on my own shelf, from Unsorted in the status row ("Place these games", while it is pressed).
+- **One row per game:** cover, title and year, the platforms of its copies, hours on each
+  source that feeds a copy and when I last played it there ("Not played on Steam" when it
+  never was), or the hours I typed when no source reported any. Longest played first, as
+  Minimap opens; also by last played, by title, and by last added. The first 50 are drawn, and
+  50 more at a time.
 - **On each row, my rating and a status, one tap each, saved at once,** with the controls the
   editor uses: the rating out of ten, and Playing, Backlog, Completed, Dropped, Wishlist as
-  shapes and words. A game with a status leaves the list, with Undo; a rating alone leaves it
-  where it is. Nothing else about the game changes.
+  shapes and words. A game with a status leaves the list at once, with Undo; if saving fails
+  it comes back, saying so. A rating alone leaves it where it is. Nothing else about the game
+  changes: Completed here sets no completion day.
 - **A tally beside the list,** as Minimap's has: how many games are in each status, and how
-  many are still unsorted, moving as I place them.
-- **Many at once:** select rows, or "everything under an hour", and give them one status.
+  many are still unsorted, moving as I place them. On a phone it sits above the list, the
+  statuses on one wrapping line.
+- **Many at once:** select rows, "the N games under an hour", or all of them, and give them
+  one status, in one write, with Undo. The bar that does it stays under the header while the
+  list scrolls.
 - **Leaving one unsorted is fine:** it stays in the list for another day.
-- Keyboard all the way: the list is one stop, arrows move through it, and each row's
-  controls can be reached without a pointer. Both themes, both languages, a phone.
+- Keyboard all the way: the list is one stop (each row's checkbox), the arrows move through
+  it, Home and End go to either end, Space selects, and Tab goes on into the row's link,
+  rating and statuses. When the row in focus leaves, focus goes to the one that takes its
+  place. Both themes, both languages, a phone.
 
 **Done when**
 
 - Every unsorted game can be given a status and a rating from one page, without opening it.
 - A game given a status leaves the list at once, and Undo puts it back.
 - The tally always agrees with the shelf.
-
-**Done when**
-
-- A game can be found and added using only the keyboard.
-- Two same-titled games are distinguishable in the results without opening either.
-- Adding a second platform to a game I own never creates a second entry.
-- A pasted list of 50 known titles produces a review table with every line matched or marked.
-- Undo removes the game and everything added with it.
 
 ---
 

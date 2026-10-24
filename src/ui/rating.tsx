@@ -26,6 +26,8 @@ type RatingProps = {
   /** A value as the page's language writes it: 8.5, or 8,5. */
   format: (value: number) => string
   disabled?: boolean
+  /** -1 keeps it out of the Tab order: in a list that is one stop, a row not in focus. */
+  tabIndex?: number
   className?: string
 }
 
@@ -49,6 +51,7 @@ function Rating({
   valueText,
   format,
   disabled,
+  tabIndex,
   className,
 }: RatingProps) {
   const labelId = useId()
@@ -93,6 +96,8 @@ function Rating({
             <Slider.Range className="absolute h-full bg-accent group-data-[unrated]:opacity-0" />
           </Slider.Track>
           <Slider.Thumb
+            // Radix makes the thumb a stop of its own: only a value given replaces that.
+            {...(tabIndex === undefined ? {} : { tabIndex })}
             aria-labelledby={labelId}
             aria-valuetext={rated ? valueText(value) : unrated}
             className={cn(
@@ -107,6 +112,7 @@ function Rating({
             type="button"
             aria-label={clearLabel}
             disabled={disabled}
+            tabIndex={tabIndex}
             onClick={onClear}
             className="inline-flex size-8 flex-none items-center justify-center rounded-control text-muted transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text disabled:opacity-50 pointer-coarse:size-10"
           >

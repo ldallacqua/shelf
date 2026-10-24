@@ -20,6 +20,7 @@ import {
   type MatchAnswer,
 } from '@/domain/library/bulk'
 import { MAX_NOTES, type OwnerGame } from '@/domain/library/editing'
+import { MAX_PLACED } from '@/domain/library/placing'
 import { formats, kinds, relations, statuses, syncSources } from '@/domain/library/values'
 import { failure } from '@/server/api/respond'
 import type { Done } from '@/server/services/for-account'
@@ -196,6 +197,18 @@ export const apiGamePatch = z
       .describe('A version’s id, from GET /entries/{id}: it names the game and gives its cover'),
   })
   .meta({ id: 'GamePatch' })
+
+export const apiStatusPatch = z
+  .object({
+    entries: z
+      .array(z.string().min(1).max(100))
+      .min(1)
+      .max(MAX_PLACED)
+      .describe('Entries’ ids, from GET /entries/{id}'),
+    status: z.enum(statuses),
+  })
+  .describe('Many games given one status. If any is not in the library, none changes.')
+  .meta({ id: 'StatusPatch' })
 
 export const apiOwnerGame = z
   .object({
