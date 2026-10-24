@@ -199,11 +199,12 @@
       "matched": "encontrado"
     },
     "sync": {
-      "eyebrow": "Steam",
-      "title": "Traga a sua biblioteca da Steam.",
-      "body": "Entre pela Steam, e cada jogo que você tem lá chega à sua estante com as suas horas, e depois se mantém em dia sozinho, uma vez por dia. Jogos que já estão na estante ganham uma cópia de PC, nunca uma segunda caixa. PlayStation, Xbox e Nintendo vêm a seguir.",
-      "card": "Steam, sincronizando",
+      "eyebrow": "Steam e Nintendo",
+      "title": "Traga seus jogos da Steam e do Switch com você.",
+      "body": "Entre pela Steam, e cada jogo que você tem lá chega à sua estante com as suas horas. Conecte a Nintendo, e os jogos que você jogou num Switch ou num Switch 2 vêm também, assim que você disser se cada um é um cartucho ou um download. Depois, as duas se mantêm em dia sozinhas, uma vez por dia. Jogos que já estão na sua estante ganham uma cópia, nunca uma segunda caixa. PlayStation e Xbox vêm a seguir.",
+      "card": "Steam e Nintendo, sincronizando",
       "where": "PC · Steam",
+      "whereNintendo": "Switch · Nintendo · cartucho",
       "hours": "{hours} h",
       "onShelf": "{count, plural, one {# jogo na sua estante} other {# jogos na sua estante}}",
       "daily": "De novo amanhã, sozinho"
@@ -272,7 +273,7 @@
       },
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",
-        "a": "Da Steam, sim: entre pela Steam na página da sua conta, e cada jogo que você tem lá vem para a sua estante com as horas, e de novo uma vez por dia. PlayStation, Xbox e Nintendo vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
+        "a": "Da Steam e da Nintendo, sim: conecte as duas na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
@@ -857,11 +858,38 @@
     },
     "title": "Plataformas",
     "intro": "Traga para a sua estante os jogos que você tem numa plataforma, e mantenha tudo em dia.",
-    "later": "PlayStation, Xbox e Nintendo vêm a seguir.",
+    "later": "PlayStation e Xbox vêm a seguir.",
     "steam": {
       "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam. O Shelf sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega ao Shelf.",
       "public": "A Steam precisa mostrar os detalhes dos seus jogos: na Steam, abra Editar perfil, depois Configurações de privacidade, e deixe Detalhes dos jogos como Público.",
       "signIn": "Entrar pela Steam"
+    },
+    "nintendo": {
+      "about": "O Shelf lê o histórico de jogo que a Nintendo guarda para a sua conta: cada jogo que você jogou num Switch ou num Switch 2, com as suas horas. A Nintendo lista o que você jogou, não o que você tem, então o Shelf pergunta uma vez se cada jogo é um cartucho ou um download. Sua senha da Nintendo nunca chega ao Shelf.",
+      "how": "A Nintendo não manda você de volta ao Shelf, então conectar leva um copiar e colar:",
+      "again": "Entre de novo pela página da Nintendo e cole aqui o novo link:",
+      "step1": "Entre pela página da Nintendo. Ela abre numa nova aba.",
+      "signIn": "Entrar pela página da Nintendo",
+      "step2": "Quando a Nintendo mostrar “Selecionar esta conta”, não aperte. Copie o link do botão: clique nele com o botão direito e escolha Copiar endereço do link, ou, num celular, mantenha o dedo sobre ele.",
+      "step3": "Cole o link aqui.",
+      "link": "Conectar a Nintendo",
+      "linking": "Conectando…",
+      "outcome": {
+        "not-the-link": "Esse não é o link do botão “Selecionar esta conta” da Nintendo. Copie o link do botão, não o endereço da página.",
+        "another-sign-in": "Esse link é de outro acesso. Entre de novo pela página da Nintendo e cole o link que ela der.",
+        "code-refused": "A Nintendo não aceitou esse link: cada um funciona uma vez, por poucos minutos. Entre de novo pela página da Nintendo.",
+        "unset": "A sincronização com a Nintendo ainda não está configurada neste servidor.",
+        "unreachable": "A Nintendo não respondeu. Tente de novo daqui a pouco."
+      },
+      "help": "A {source} lista o que você jogou, não o que você tem. Diga se cada jogo é um cartucho ou um download, ou que não é seu, e o Shelf se lembra.",
+      "matched": "O Shelf acha que é {title}",
+      "matchedYear": "O Shelf acha que é {title} ({year})",
+      "physical": "Cartucho",
+      "digital": "Download",
+      "notThis": "Não é este jogo",
+      "all": "{count, plural, other {Todos os # jogos que o Shelf achou são:}}",
+      "allPhysical": "Cartuchos",
+      "allDigital": "Downloads"
     },
     "kept": "O que o Shelf guarda",
     "linkedAs": "Conectado a {name}",
@@ -883,7 +911,8 @@
     "problem": {
       "private": "A Steam não está mostrando seus jogos. Deixe Detalhes dos jogos como Público nas configurações de privacidade da Steam e sincronize de novo.",
       "unreachable": "A {source} não respondeu. Tente de novo daqui a pouco.",
-      "unset": "A sincronização com a {source} ainda não está configurada neste servidor."
+      "unset": "A sincronização com a {source} ainda não está configurada neste servidor.",
+      "signed-out": "A Nintendo encerrou o acesso do Shelf, que dura cerca de dois anos. Entre de novo pela página da Nintendo."
     },
     "lists": {
       "needs-you": "{count, plural, one {# jogo precisa de você} other {# jogos precisam de você}}",
@@ -948,13 +977,17 @@
         "title": "Steam",
         "body": "Se você conectar a Steam, o Shelf guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas, quando cada um foi jogado pela última vez e o que a loja da Steam diz que cada um é (um jogo, uma demo, um programa). O Shelf os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Shelf. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
       },
+      "nintendo": {
+        "title": "Nintendo",
+        "body": "Se você conectar a Nintendo, o Shelf guarda o id e o apelido da sua Conta Nintendo, os jogos que o seu histórico de jogo da Nintendo lista, com as horas jogadas e quando cada um foi jogado pela última vez, e o acesso que a Nintendo dá ao Shelf para lê-los. Esse acesso fica selado: o que está no banco de dados, sozinho, não serve para nada. A página da Nintendo o chama de “Nintendo Store”, porque o Shelf lê o histórico que esse app mostra. O Shelf lê o histórico quando você conecta a Nintendo ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Nintendo nunca chega ao Shelf. Desconectar a Nintendo apaga o acesso e o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
+      },
       "where": {
         "title": "Onde fica guardado",
         "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Shelf, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá."
       },
       "delete": {
         "title": "Apagar",
-        "body": "Apague um jogo, e ele some. Apague a sua conta na página da sua conta, e a conta, a estante e tudo nela são apagados para sempre, inclusive a lista da Steam."
+        "body": "Apague um jogo, e ele some. Apague a sua conta na página da sua conta, e a conta, a estante e tudo nela são apagados para sempre, inclusive o que a Steam e a Nintendo listaram."
       }
     },
     "account": "A página da sua conta"

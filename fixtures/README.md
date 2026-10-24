@@ -15,6 +15,7 @@ these files; none of them touches the network.
 | `covers.json` | For each cover: three colors and a ThumbHash, read from the image. No image is stored. |
 | `library/sets.json` | Which ids make up the `default` and `stress` sets, and which are extra versions |
 | `steam/owned-games.json` | What Steam's `GetOwnedGames` answers for a made-up account: 24 sample games by their real app ids, one Steam id IGDB lacks (Halo: Combat Evolved, matched by title; the app id is made up), and two nothing matches. Written by hand. |
+| `nintendo/play-history.json` | What the Nintendo Store app's play history answers for a made-up account: nine Switch games, Tears of the Kingdom played on a Switch and then a Switch 2, Super Mario Odyssey on a Switch 2 alone, Mario Kart 8 Deluxe played two days before the tests' clock, and two titles IGDB's fixtures lack (Nintendo Switch Online's NES app, Mario Kart World). Written by hand. |
 | `steam/store-items.json` | What Steam's store (`IStoreBrowseService/GetItems`) answers about those apps: each a game (type 0), but Wallpaper Engine software (type 6), and Halo's made-up id with no store page (success 15). Written by hand. |
 
 **To refresh them:** edit the list of titles in `scripts/fixtures/titles.ts` if you want

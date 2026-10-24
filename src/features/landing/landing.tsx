@@ -4,7 +4,7 @@ import { AddDemo } from './add-demo'
 import { AskDemo } from './ask-demo'
 import { Assistant } from './assistant'
 import { Closing } from './closing'
-import { askGames, askMatches, demoGames, demoTrophies, everyCopy, steamSync } from './demo'
+import { askGames, askMatches, demoGames, demoTrophies, everyCopy, platformSync } from './demo'
 import type { DemoGame } from './demo-case'
 import { EveryCopy } from './every-copy'
 import { FinishedWall } from './finished-wall'
@@ -31,7 +31,9 @@ const PASTED = [
 ] as const
 
 /** The games "Bring your Steam library" shows coming in, by slug: PC games with hours. */
-const FROM_STEAM = ['hollow-knight', 'stardew-valley', 'hades--1', 'elden-ring', 'half-life-2']
+const FROM_STEAM = ['hollow-knight', 'hades--1', 'elden-ring', 'half-life-2']
+/** Switch games of the example shelf, as Nintendo's play history brings them, cartridges once said. */
+const FROM_NINTENDO = ['the-legend-of-zelda-breath-of-the-wild', 'animal-crossing-new-horizons']
 
 const pick = (games: readonly DemoGame[], slugs: readonly string[]): DemoGame[] =>
   slugs.flatMap((slug) => games.find((game) => game.slug === slug) ?? [])
@@ -47,7 +49,7 @@ export function Landing() {
   const games = demoGames()
   const matches = askMatches()
   const trophies = demoTrophies()
-  const steam = steamSync(FROM_STEAM)
+  const synced = platformSync(FROM_STEAM, FROM_NINTENDO)
 
   const hero = Array.from({ length: HERO_GAMES }, (_, index) => games[(index * 17) % games.length])
   const typed = games.filter((game) => game.title.toLowerCase().includes(TYPED)).slice(0, 3)
@@ -88,7 +90,7 @@ export function Landing() {
         title={t('sync.title')}
         body={t('sync.body')}
       >
-        <SyncDemo games={steam.games} count={steam.count} />
+        <SyncDemo steam={synced.steam} nintendo={synced.nintendo} count={synced.count} />
       </Section>
       <Section
         id="views"

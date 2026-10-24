@@ -32,13 +32,14 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Accounts | Anyone signs up for a shelf of their own, public or private: [`docs/adr/004-one-library-per-account.md`](docs/adr/004-one-library-per-account.md) | Done |
 | Step 8 | Landing page | Done |
 | Step 9 | The trophy wall; phone and tablet, accessibility and speed passes; the daily refresh | Done |
-| Sync | Steam, then Nintendo, then PlayStation and Xbox: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Steam done; Nintendo parked, to research first ([handoff](docs/handoff.md)) |
+| Sync | Steam, then Nintendo, then PlayStation and Xbox: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md) | Steam done; Nintendo built, waiting for its first real link ([handoff](docs/handoff.md)) |
 | Step 10 | Final review | Not started |
 
 What is on screen today: a landing page that shows what Shelf does with an example shelf, and,
 for anyone who signs up, a library of their own at `/en/u/{handle}`, as a lit shelf, a wall
 of covers or a list, grouped by platform, status or year. A Steam library comes in through
-Steam's own sign-in, with its hours, and keeps in step once a day. On a desktop the shelf is a lit
+Steam's own sign-in, with its hours, and keeps in step once a day; so does a Nintendo play
+history, through Nintendo's, each game placed once its owner says cartridge or download. On a desktop the shelf is a lit
 wall in 3D, walked sideways, and `D` switches between 2D and 3D (a phone has 2D only). It
 can be searched as you type, filtered from a panel or in a one-line filter language
 (`genre:rpg -theme:horror`), and sorted eleven ways; six smart shelves keep a filter at an

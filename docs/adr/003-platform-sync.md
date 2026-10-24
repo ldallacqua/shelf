@@ -261,10 +261,59 @@ building settled:
 - **Steam's terms** ask a site that keeps Steam data to say what it keeps: the privacy page
   (`/privacy`) says it, and is linked from the footer and from the Steam card. Valve asks for
   its own sign-in button, which is served from Shelf (`public/platforms/`).
-- **Nintendo is parked** (the owner, 23 Oct 2026), to look first at how other sites read a
-  Nintendo account, Exophase from a friend code among them. The handoff note has what is
-  known.
+- **Nintendo was parked** (the owner, 23 Oct 2026), to look first at how other sites read a
+  Nintendo account, Exophase from a friend code among them; then built, below.
 - **Everything that differs per source** is in `domain/sync/sources.ts` (what it can tell)
   and its adapter in `server/sync/` (how to ask it). PlayStation, Xbox and Nintendo are listed
   there already, not ready; the database's checks accept all four, so adding one needs no
   migration of those tables.
+
+## Built: Nintendo (24 Oct 2026)
+
+Decision 4 planned Nintendo as an import, because Nintendo offered nothing to read. Since late
+2025 it does, for its own apps: the Nintendo Store app shows every game played on the account,
+with the time played and when it was first and last played. The owner chose that over the
+friend code (24 Oct 2026): "Build Nintendo from the Store app's play history: I sign in on
+Nintendo's own page and Shelf keeps the session token, encrypted." What building settled:
+
+- **Not the friend code.** Exophase links a Switch by its friend code alone. It reads the
+  profile's play activity, which the person must set to be seen by everyone, through the
+  Nintendo Switch app's private API, from a Nintendo account of its own, with an outside
+  service signing that app in. That list is capped and can be cleared, and it is no sign-in:
+  anyone could type someone else's code. The play history is the whole list, and the person
+  signs in.
+- **Shelf signs in as the Nintendo Store app does** (client id `5c38e31cd085304b`, PKCE), as
+  the community script [ns-play-history](https://github.com/sibylsea-hub/ns-play-history)
+  does, read 24 Oct 2026. Nintendo's page says the account is linked to "Nintendo Store". Its
+  answer goes to an address only that app opens, so it never comes back to Shelf by itself:
+  the person copies the link of the page's "Select this account" button and pastes it into
+  the account page. The round trip's state and secret wait in a cookie only this browser
+  sends back (`shelf_nintendo_trip`, fifteen minutes), so a link from another sign-in links
+  nothing.
+- **The session is kept sealed.** The link's code becomes a session of about two years; each
+  read trades it for a token of fifteen minutes and asks for the play history. The session is
+  the one secret a link holds (`platform_links.secret`, migration 0010), sealed with
+  AES-256-GCM under `PLATFORM_TOKEN_KEY` and bound to the account and the source, so the
+  database alone opens nothing and a sealed value moved to another link opens nowhere. When
+  Nintendo ends the session, or the key changes, the link says `signed-out` and the card asks
+  to sign in on Nintendo's page again; that keeps every answer. Of what Nintendo says about
+  the account, only its id and nickname are read.
+- **Nintendo is "played", as decision 2 has it for PlayStation and Xbox.** A cartridge and a
+  download look the same in the play history. Every game is matched by title (rung 3, on the
+  consoles that play it), and every match waits for me, as decision 4 asks: the list shows
+  the game Shelf took it for, with **Cartridge**, **Download**, **Not this game** and **Not
+  mine**, and one answer for every match at once ("all of these are downloads"). A game I
+  find myself becomes the match, and waits the same way. Nothing goes on the shelf before.
+- **One game, whatever the console.** The play history has an entry per game per console;
+  they are one item, by Nintendo's title id, with the minutes summed. A console plays the
+  games of the one before it (`plays` in `domain/sync/sources.ts`): a game played on a
+  Switch 2 is searched for on the Switch too, and its copy goes on the Switch when its record
+  is a Switch game, on the Switch 2 when it is a Switch 2 game only.
+- **A new game starts unsorted, or playing** if last played these two weeks, as Steam's do.
+  The hours are Nintendo's row on the copy, as Steam's are.
+- **Tests never talk to Nintendo.** `fixtures/nintendo/play-history.json` and the double in
+  `server/mocks/nintendo.ts` answer; with the test doubles on, "Sign in on Nintendo's page"
+  opens a stand-in page of Shelf's own whose button links to the made-up account.
+- **What can break:** none of this is documented by Nintendo. If Nintendo changes the sign-in
+  or the play history, the card says Nintendo did not answer, and the adapter
+  (`server/sync/nintendo.ts`, the only code that knows Nintendo's addresses) is what changes.

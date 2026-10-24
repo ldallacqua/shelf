@@ -6,7 +6,7 @@ import { dirname, join, resolve } from 'node:path'
 
 import { z } from 'zod'
 
-import { MOCK_CRON_SECRET, MOCK_STEAM } from '@/server/mocks/owner'
+import { MOCK_CRON_SECRET, MOCK_STEAM, MOCK_TOKEN_KEY } from '@/server/mocks/owner'
 
 /**
  * Settings, read from the environment and checked before use. A missing
@@ -89,6 +89,22 @@ export const cronSecret = (): string | undefined => {
 export const steamKey = (): string | undefined => {
   if (mocksRequested() && !onVercel()) return MOCK_STEAM.key
   return process.env.STEAM_API_KEY?.trim() || undefined
+}
+
+/**
+ * The key that seals what a platform's sign-in gives Shelf to keep (ADR
+ * 003, "Built: Nintendo"): 32 random bytes, in base64. Nintendo's session
+ * token is stored sealed with it, so the database alone never holds a way
+ * into anyone's Nintendo account. Undefined without one: Nintendo is then
+ * offered but cannot be linked, and says so. While the test doubles answer,
+ * it is their made-up one.
+ */
+export const platformTokenKey = (): Buffer | undefined => {
+  const value =
+    mocksRequested() && !onVercel() ? MOCK_TOKEN_KEY : process.env.PLATFORM_TOKEN_KEY?.trim()
+  if (!value) return undefined
+  const key = Buffer.from(value, 'base64')
+  return key.length === 32 ? key : undefined
 }
 
 export type DatabaseTarget =

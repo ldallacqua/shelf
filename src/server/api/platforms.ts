@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { syncSources } from '@/domain/library/values'
 import { decisions, storeKinds } from '@/domain/sync/items'
-import { linkProblems } from '@/domain/sync/link'
+import { linkProblems, nintendoLinkOutcomes } from '@/domain/sync/link'
 
 /**
  * What the account page's Platforms section is answered with (ADR 003):
@@ -26,7 +26,9 @@ const counts = z.object({
 export const apiLink = z
   .object({
     source: z.enum(syncSources),
-    externalId: z.string().describe('The account’s id at the source: a SteamID64'),
+    externalId: z
+      .string()
+      .describe('The account’s id at the source: a SteamID64, a Nintendo Account id'),
     name: z.string().nullable().describe('The account’s name there'),
     daily: z.boolean().describe('Synced again once a day'),
     linkedAt: z.int(),
@@ -76,9 +78,25 @@ export const apiSourceItem = z
       .object({ slug: z.string(), title: z.string() })
       .optional()
       .describe('The game on the shelf it feeds'),
+    match: z
+      .object({
+        igdbId: z.int(),
+        title: z.string(),
+        year: z.int().nullable(),
+        cover: z.string().nullable().describe('An address on IGDB’s image servers'),
+      })
+      .optional()
+      .describe(
+        'For a game a source saw played: the game Shelf takes it for, which waits for the owner to confirm it and say how they own it',
+      ),
   })
   .meta({ id: 'SourceItem' })
 
 export const apiSourceItems = z.array(apiSourceItem)
 
 export const apiAnswered = z.object({ item: apiSourceItem, version: z.int() })
+
+/** How pasting the link from Nintendo’s “Select this account” button went. */
+export const apiNintendoLinked = z
+  .object({ outcome: z.enum(nintendoLinkOutcomes) })
+  .meta({ id: 'NintendoLinked' })

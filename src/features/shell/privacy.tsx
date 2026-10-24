@@ -3,9 +3,9 @@ import { getFormatter, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 
 /** When this page last changed what it says. */
-const CHANGED = new Date('2026-10-23T00:00:00Z')
+const CHANGED = new Date('2026-10-24T00:00:00Z')
 
-const SECTIONS = ['account', 'shelf', 'signIn', 'steam', 'where', 'delete'] as const
+const SECTIONS = ['account', 'shelf', 'signIn', 'steam', 'nintendo', 'where', 'delete'] as const
 
 /**
  * What Shelf keeps about a person, where, who sees it, and how to remove it.

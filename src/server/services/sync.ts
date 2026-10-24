@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { foldSearchHits } from '@/domain/igdb/search'
 import type { Refusal } from '@/domain/library/adding'
 import { proposeGrouping } from '@/domain/library/family'
-import type { SyncSource } from '@/domain/library/values'
+import { isFormat, type Format, type SyncSource } from '@/domain/library/values'
 import {
   firstStatus,
   isOwnedFormat,
@@ -15,10 +15,17 @@ import {
   type StoreKindOf,
 } from '@/domain/sync/items'
 import { chooseByStoreId } from '@/domain/sync/ladder'
-import { itemLists, type ItemList, type ItemView, type SyncStep } from '@/domain/sync/link'
-import { isSyncSource, SOURCES } from '@/domain/sync/sources'
+import {
+  itemLists,
+  type ItemList,
+  type ItemMatch,
+  type ItemView,
+  type SyncStep,
+} from '@/domain/sync/link'
+import { copyPlatform, isSyncSource, platformsFor, SOURCES } from '@/domain/sync/sources'
 import { gameOfMode, matchByTitle, strippedTitle } from '@/domain/sync/titles'
 import type { Account } from '@/server/auth/account'
+import { imageUrl } from '@/domain/igdb/images'
 import { database, type Db } from '@/server/db/client'
 import { copies, entryVersions, games } from '@/server/db/schema'
 import { igdb } from '@/server/igdb'
@@ -36,6 +43,7 @@ import { spend } from '@/server/services/fair-use'
 import { forAccount } from '@/server/services/for-account'
 import { createRecords, type Records, type RecordsDeps } from '@/server/services/igdb-records'
 import {
+  confirmItems,
   decideItem,
   dueLinks,
   forgetLink,
@@ -57,8 +65,11 @@ import {
   waitingToAdd,
   type Item,
   type Link,
+  type Linked,
   type Resolved,
 } from '@/server/sync/memory'
+import { nintendo, type Nintendo } from '@/server/sync/nintendo'
+import { open, seal } from '@/server/sync/sealed'
 import { SourceError } from '@/server/sync/source-error'
 import { steam, type Steam } from '@/server/sync/steam'
 
@@ -71,10 +82,13 @@ import { steam, type Steam } from '@/server/sync/steam'
  * is the same for every source.
  */
 
+/** The account at a source, as the sync reads it: its id there, and its sign-in's secret, opened. */
+type SourceAccount = { externalId: string; secret?: string }
+
 /** What the sync asks of a source. */
 type Adapter = {
   /** Everything it lists for the account there; undefined when the account hides it. */
-  list: (externalId: string) => Promise<Reported[] | undefined>
+  list: (account: SourceAccount) => Promise<Reported[] | undefined>
   /** The account's name there, for the page. */
   name?: (externalId: string) => Promise<string | undefined>
   /** What its store says each item is; one it could not ask about is left out. */
@@ -94,16 +108,23 @@ const TITLE_AGAIN_MS = 7 * 24 * 60 * 60 * 1000
 /** "Sync now" twice inside this reads the source once. */
 const READ_AGAIN_MS = 60 * 1000
 
-export type SyncDeps = RecordsDeps & { steam: Steam }
+export type SyncDeps = RecordsDeps & { steam: Steam; nintendo: Nintendo }
 
 export const createSync = (deps: SyncDeps) => {
   // One per server, for every library: it keeps IGDB's list of platforms.
   const records = createRecords(deps)
   const adapters: Partial<Record<SyncSource, Adapter>> = {
     steam: {
-      list: (id) => deps.steam.ownedGames(id),
+      list: ({ externalId }) => deps.steam.ownedGames(externalId),
       name: (id) => deps.steam.playerName(id),
       kinds: (items) => deps.steam.appKinds(items),
+    },
+    nintendo: {
+      list: ({ secret }) => {
+        if (!secret)
+          throw new SourceError('signed-out', 'There is no Nintendo session to read with.')
+        return deps.nintendo.playHistory(secret)
+      },
     },
   }
   return (libraryId: string) =>
@@ -132,7 +153,15 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     const adapter = adapters[link.source]
     if (!adapter) throw new LibraryError('invalid', `${link.source} cannot be synced yet`)
     try {
-      const listed = await adapter.list(link.externalId)
+      // A secret this server cannot open (another key, another link) is a sign-in to make again.
+      const secret = link.secret ? open(link.secret, libraryId, link.source) : undefined
+      if (link.secret && secret === undefined) {
+        throw new SourceError('signed-out', 'The sealed session does not open here.')
+      }
+      const listed = await adapter.list({
+        externalId: link.externalId,
+        ...(secret ? { secret } : {}),
+      })
       if (!listed) {
         await noteRead(db, libraryId, link.source, { problem: 'private' })
       } else {
@@ -215,7 +244,7 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     if (titled.length > 0) {
       const query = (item: Item) => ({
         title: item.title,
-        platforms: item.platformId ? [item.platformId] : facts.platforms,
+        platforms: platformsFor(source, item.platformId),
         ...(item.year ? { year: item.year } : {}),
       })
       const exact = await api.findByTitles(titled.map((item) => item.title))
@@ -263,9 +292,10 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
   /**
    * Matched games onto the shelf, at most `limit` (ADR 003, decision 2): a
    * game already there under any version gets the copy, never a second
-   * entry, and keeps everything I set; a new one starts in my backlog, or
-   * as playing if the source saw me play it in the last two weeks. Items
-   * naming the same record feed one copy.
+   * entry, and keeps everything I set; a new one starts unsorted, or as
+   * playing if the source saw me play it in the last two weeks. Items
+   * naming the same record feed one copy, on the platform the record is on
+   * of those the item's console plays (`copyPlatform`).
    */
   const addSome = async (
     source: SyncSource,
@@ -289,7 +319,7 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     for (const [igdbId, items] of chosen) {
       const data = fetched.data.get(igdbId)
       const first = items[0]!
-      const platformId = first.platformId ?? facts.platformId
+      const platformId = data ? copyPlatform(source, first.platformId, data.platforms) : undefined
       const format = first.format && isOwnedFormat(first.format) ? first.format : facts.format
       if (!data || platformId === undefined || format === undefined) {
         // IGDB no longer has the record: the items go back to me.
@@ -403,16 +433,52 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     ...(onShelf ? { onShelf } : {}),
   })
 
+  /**
+   * The games items waiting for me were matched to, as the lists show them.
+   * IGDB not answering leaves them without: the rows then ask as unmatched ones do.
+   */
+  const matchesOf = async (items: readonly Item[]): Promise<Map<number, ItemMatch>> => {
+    const ids = [
+      ...new Set(
+        items.flatMap((item) =>
+          item.decision === 'pending' && item.igdbId !== null ? [item.igdbId] : [],
+        ),
+      ),
+    ]
+    if (ids.length === 0) return new Map()
+    const found = await api.games(ids).catch(() => [])
+    return new Map(
+      found.map((game) => [
+        game.id,
+        {
+          igdbId: game.id,
+          title: game.name,
+          year: game.first_release_date
+            ? new Date(game.first_release_date * 1000).getUTCFullYear()
+            : null,
+          cover: game.cover?.image_id ? imageUrl(game.cover.image_id, 'cover_big') : null,
+        },
+      ]),
+    )
+  }
+
   const list = async (source: SyncSource, which: ItemList): Promise<ItemView[]> => {
     const items = await listItems(db, await linkOf(source), which)
     const shelved = await shelvedAs(items.flatMap((item) => (item.copyId ? [item.copyId] : [])))
-    return items.map((item) => toView(item, item.copyId ? shelved.get(item.copyId) : undefined))
+    const matches = which === 'needs-you' ? await matchesOf(items) : new Map<number, ItemMatch>()
+    return items.map((item) => {
+      const view = toView(item, item.copyId ? shelved.get(item.copyId) : undefined)
+      const match = item.igdbId === null ? undefined : matches.get(item.igdbId)
+      return match ? { ...view, match } : view
+    })
   }
 
   /**
    * My answer about one item, carried out at once: a game picked for it goes
    * on the shelf now; "not a game" and "not mine" are never asked again;
-   * "ask again" undoes either, and puts back a game I removed.
+   * "ask again" undoes either, and puts back a game I removed. For a game a
+   * source saw me play, a copy needs to know how I own it: a game picked
+   * without saying waits for me to confirm it with a cartridge or a download.
    */
   const answer = async (
     source: SyncSource,
@@ -426,12 +492,28 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
       throw new LibraryError('not-found', 'That item is not this shelf’s')
     }
     if (item.copyId) throw new LibraryError('conflict', 'That game is on the shelf already')
+    const owned = SOURCES[item.source].evidence === 'owned'
     if (choice.kind === 'pick') {
-      await decideItem(db, libraryId, item.id, { decision: 'copy', igdbId: choice.igdbId }, now)
+      const sure = owned || choice.format !== undefined
+      await decideItem(
+        db,
+        libraryId,
+        item.id,
+        {
+          decision: sure ? 'copy' : 'pending',
+          igdbId: choice.igdbId,
+          ...(choice.format ? { format: choice.format } : {}),
+        },
+        now,
+      )
+    } else if (choice.kind === 'confirm') {
+      if (item.igdbId === null || item.decision !== 'pending') {
+        throw new LibraryError('conflict', 'That item has no game waiting to be confirmed')
+      }
+      await decideItem(db, libraryId, item.id, { decision: 'copy', format: choice.format }, now)
     } else if (choice.kind === 'dismiss') {
       await decideItem(db, libraryId, item.id, { decision: choice.as }, now)
     } else {
-      const owned = SOURCES[item.source].evidence === 'owned'
       await decideItem(
         db,
         libraryId,
@@ -446,14 +528,35 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     return { item: toView(after, shelved), version: await readVersion(db, libraryId) }
   }
 
+  /**
+   * One answer for many games a source saw me play, matched and waiting for
+   * me: "all of these are downloads" (ADR 003). Each is confirmed with that
+   * format, then a step puts the first of them on the shelf; the page asks
+   * for more steps while some remain, as after a read.
+   */
+  const confirmMany = async (
+    source: SyncSource,
+    itemIds: readonly string[],
+    format: Format,
+    allow?: Allowance,
+    now = Date.now(),
+  ): Promise<SyncStep> => {
+    await linkOf(source)
+    await confirmItems(db, libraryId, source, itemIds, format, now)
+    return step(source, allow ? { allow } : {}, now)
+  }
+
   const links = async () =>
     Promise.all((await readLinks(db, libraryId)).map((link) => viewOf(db, link)))
 
-  return { step, list, answer, links, linkOf }
+  return { step, list, answer, confirmMany, links, linkOf }
 }
 
 export type Answer =
-  | { kind: 'pick'; igdbId: number }
+  /** This game; and, for a game a source saw me play, how I own it, or nothing yet. */
+  | { kind: 'pick'; igdbId: number; format?: Format }
+  /** The game Shelf matched is the one, and I own it this way. */
+  | { kind: 'confirm'; format: Format }
   | { kind: 'dismiss'; as: 'not_a_game' | 'not_mine' }
   | { kind: 'again' }
 
@@ -466,6 +569,7 @@ export const syncFor = (libraryId: string) =>
     igdb: igdb(),
     readArt: (id) => readCoverArt(id),
     steam: steam(),
+    nintendo: nintendo(),
   }))(libraryId)
 
 const sourceParam = z.custom<SyncSource>(isSyncSource)
@@ -488,11 +592,24 @@ export const myPlatforms = () =>
     }))
   })
 
-/** Links the account to the account at a source that the source's own sign-in vouched for. */
-export const linkMine = (source: unknown, externalId: string, name: string | undefined) => {
+/**
+ * Links the account to the account at a source that the source's own
+ * sign-in vouched for, keeping what the sign-in gave to read it with sealed.
+ */
+export const linkMine = (
+  source: unknown,
+  { secret, ...linked }: Omit<Linked, 'sealed'> & { secret?: string },
+) => {
   const which = ready(source)
   if (!which) return invalid()
-  return forAccount((account) => saveLink(database(), account.id, which, externalId, name), true)
+  return forAccount(
+    (account) =>
+      saveLink(database(), account.id, which, {
+        ...linked,
+        ...(secret ? { sealed: seal(secret, account.id, which) } : {}),
+      }),
+    true,
+  )
 }
 
 const allowance =
@@ -517,8 +634,15 @@ export const listMine = (source: unknown, which: unknown) => {
   return forAccount((account) => syncFor(account.id).list(from, parsed.data))
 }
 
+const format = z.custom<Format>(isFormat)
+
 const answerShape = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('pick'), igdbId: z.number().int().positive() }),
+  z.object({
+    kind: z.literal('pick'),
+    igdbId: z.number().int().positive(),
+    format: format.optional(),
+  }),
+  z.object({ kind: z.literal('confirm'), format }),
   z.object({ kind: z.literal('dismiss'), as: z.enum(['not_a_game', 'not_mine']) }),
   z.object({ kind: z.literal('again') }),
 ])
@@ -530,6 +654,30 @@ export const answerMine = (source: unknown, itemId: unknown, body: unknown) => {
   if (!which || !id.success || !parsed.success) return invalid()
   return forAccount(
     (account) => syncFor(account.id).answer(which, id.data, parsed.data, allowance(account)),
+    true,
+  )
+}
+
+/** Most items one answer confirms at once: a page of a list. */
+export const CONFIRM_AT_ONCE = 200
+
+const manyShape = z.object({
+  ids: z.array(z.string().min(1).max(64)).min(1).max(CONFIRM_AT_ONCE),
+  answer: z.object({ kind: z.literal('confirm'), format }),
+})
+
+export const confirmManyMine = (source: unknown, body: unknown) => {
+  const which = ready(source)
+  const parsed = manyShape.safeParse(body)
+  if (!which || !parsed.success) return invalid()
+  return forAccount(
+    (account) =>
+      syncFor(account.id).confirmMany(
+        which,
+        parsed.data.ids,
+        parsed.data.answer.format,
+        allowance(account),
+      ),
     true,
   )
 }

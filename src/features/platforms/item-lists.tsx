@@ -4,22 +4,72 @@ import { SearchIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
 import { useEffect, useId, useState } from 'react'
 
-import type { SyncSource } from '@/domain/library/values'
+import type { Answer } from '@/domain/library/adding'
+import type { Format, SyncSource } from '@/domain/library/values'
 import { isSetAside } from '@/domain/sync/items'
-import type { ItemCounts, ItemList, ItemView } from '@/domain/sync/link'
+import type { ItemCounts, ItemList, ItemMatch, ItemView, SyncStep } from '@/domain/sync/link'
+import { SOURCES } from '@/domain/sync/sources'
 import { strippedTitle } from '@/domain/sync/titles'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
 
-import { answerItem, readItems, searchIgdb, type Found, type ItemAnswer } from './sync-client'
+import {
+  answerItem,
+  confirmMany,
+  readItems,
+  searchIgdb,
+  type Found,
+  type ItemAnswer,
+} from './sync-client'
 
 /**
  * The games a source listed that are not simply on the shelf (ADR 003):
  * the ones Shelf could not match, which wait for me; the ones left off;
- * and the ones on the shelf the source no longer lists. Each list is
- * fetched when it is opened, and every answer is kept.
+ * and the ones on the shelf the source no longer lists. A source that saw
+ * me play a game, as Nintendo does, cannot say how I own it: each game
+ * waits, its match shown, for a cartridge or a download, one at a time or
+ * all at once. Each list is fetched when it is opened, and every answer is
+ * kept.
  */
+
+/** How a game a source saw me play is owned, as its row asks it. */
+const FORMATS: readonly Format[] = ['physical', 'digital']
+
+/** A source that lists what was played: its copies wait for how I own each game. */
+const playedOn = (source: SyncSource) => SOURCES[source].evidence === 'played'
+
+/** The cover, or a blur of nothing where IGDB has none. */
+function Thumb({ cover }: { cover: string | null }) {
+  return cover ? (
+    // Covers come straight from IGDB's servers, which already resize and cache them.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      alt=""
+      src={cover}
+      loading="lazy"
+      decoding="async"
+      className="h-12 w-9 flex-none rounded-[3px] object-cover"
+    />
+  ) : (
+    <span aria-hidden="true" className="h-12 w-9 flex-none rounded-[3px] bg-line" />
+  )
+}
+
+/** The game Shelf took an item for, which I confirm by saying how I own it. */
+function Match({ match }: { match: ItemMatch }) {
+  const t = useTranslations('Sync')
+  return (
+    <span className="mt-2 flex items-center gap-3">
+      <Thumb cover={match.cover} />
+      <span className="text-muted">
+        {match.year
+          ? t('nintendo.matchedYear', { title: match.title, year: match.year })
+          : t('nintendo.matched', { title: match.title })}
+      </span>
+    </span>
+  )
+}
 
 const COUNT_OF: Record<ItemList, keyof ItemCounts> = {
   'needs-you': 'needs-you',
@@ -110,19 +160,7 @@ function FindIt({
         <ul className="grid gap-2" aria-live="polite">
           {found.map((each) => (
             <li key={each.igdbId} className="flex items-center gap-3">
-              {each.cover ? (
-                // Covers come straight from IGDB's servers, which already resize and cache them.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  alt=""
-                  src={each.cover}
-                  loading="lazy"
-                  decoding="async"
-                  className="h-12 w-9 flex-none rounded-[3px] object-cover"
-                />
-              ) : (
-                <span aria-hidden="true" className="h-12 w-9 flex-none rounded-[3px] bg-line" />
-              )}
+              <Thumb cover={each.cover} />
               <span className="min-w-0 flex-1 text-sm">
                 <span className="font-medium">{each.title}</span>
                 {each.year ? <span className="ml-2 text-muted">{each.year}</span> : null}
@@ -180,6 +218,7 @@ function Row({
       })
       return
     }
+    setFinding(false)
     const shelved = result.value.item.onShelf
     // The list is fetched again, and this row may leave it: the card says what happened.
     onAnswered(shelved ? t('added', { title: shelved.title }) : undefined)
@@ -218,8 +257,43 @@ function Row({
               <Hours item={item} source={source} />
             )}
           </span>
+          {list === 'needs-you' && item.match ? <Match match={item.match} /> : null}
         </span>
-        {list === 'needs-you' ? (
+        {list === 'needs-you' && item.match && playedOn(source) ? (
+          <span className="flex flex-wrap gap-2">
+            {FORMATS.map((format) => (
+              <Button
+                key={format}
+                size="sm"
+                variant="secondary"
+                aria-describedby={titleId}
+                disabled={busy}
+                onClick={() => void answer({ kind: 'confirm', format })}
+              >
+                {t(`nintendo.${format}`)}
+              </Button>
+            ))}
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-describedby={titleId}
+              aria-expanded={finding}
+              disabled={busy}
+              onClick={() => setFinding((open) => !open)}
+            >
+              {t('nintendo.notThis')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-describedby={titleId}
+              disabled={busy}
+              onClick={() => void answer({ kind: 'dismiss', as: 'not_mine' })}
+            >
+              {t('notMine')}
+            </Button>
+          </span>
+        ) : list === 'needs-you' ? (
           <span className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -278,6 +352,60 @@ function Row({
   )
 }
 
+/**
+ * Every match in a list, given one format: "all of these are downloads"
+ * (ADR 003). The games then go on the shelf in steps, as after a read.
+ */
+function AllAtOnce({
+  source,
+  items,
+  busy,
+  onSteps,
+}: {
+  source: SyncSource
+  items: readonly ItemView[]
+  busy: boolean
+  onSteps: (first: Answer<SyncStep>) => void
+}) {
+  const t = useTranslations('Sync')
+  const [sending, setSending] = useState(false)
+  const matched = items.filter((item) => item.match)
+  if (matched.length < 2) return null
+  const send = async (format: Format) => {
+    setSending(true)
+    const first = await confirmMany(
+      source,
+      matched.map((item) => item.id),
+      format,
+    )
+    setSending(false)
+    onSteps(first)
+  }
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-control border border-line px-3 py-2 text-sm">
+      <span className="flex-1">{t('nintendo.all', { count: matched.length })}</span>
+      <span className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={busy || sending}
+          onClick={() => void send('physical')}
+        >
+          {t('nintendo.allPhysical')}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={busy || sending}
+          onClick={() => void send('digital')}
+        >
+          {t('nintendo.allDigital')}
+        </Button>
+      </span>
+    </div>
+  )
+}
+
 /** One list, fetched when opened, and again after every answer and every sync. */
 function List({
   list,
@@ -285,7 +413,9 @@ function List({
   handle,
   counts,
   stamp,
+  busy,
   onAnswered,
+  onSteps,
 }: {
   list: ItemList
   source: SyncSource
@@ -293,7 +423,10 @@ function List({
   counts: ItemCounts
   /** Changes when the lists may have: after a sync or an answer. */
   stamp: number
+  /** A sync is running: answering many at once waits for it. */
+  busy: boolean
   onAnswered: (said?: string) => void
+  onSteps: (first: Answer<SyncStep>) => void
 }) {
   const t = useTranslations('Sync')
   const [open, setOpen] = useState(false)
@@ -301,6 +434,7 @@ function List({
   const [trouble, setTrouble] = useState(false)
   const count = counts[COUNT_OF[list]]
   const name = t(`source.${source}`)
+  const played = playedOn(source)
 
   useEffect(() => {
     if (!open) return
@@ -323,7 +457,14 @@ function List({
         {t(`lists.${list}`, { count, source: name })}
       </summary>
       <div className="pb-3">
-        <p className="text-sm text-pretty text-muted">{t(`help.${list}`, { source: name })}</p>
+        <p className="text-sm text-pretty text-muted">
+          {played && list === 'needs-you'
+            ? t('nintendo.help', { source: name })
+            : t(`help.${list}`, { source: name })}
+        </p>
+        {played && list === 'needs-you' && items ? (
+          <AllAtOnce source={source} items={items} busy={busy} onSteps={onSteps} />
+        ) : null}
         {trouble ? <p role="alert">{t('failed')}</p> : null}
         {items === undefined && !trouble ? (
           <p className="mt-3 text-sm text-muted">{t('loading')}</p>
@@ -352,7 +493,9 @@ export function ItemLists(props: {
   handle: string
   counts: ItemCounts
   stamp: number
+  busy: boolean
   onAnswered: (said?: string) => void
+  onSteps: (first: Answer<SyncStep>) => void
 }) {
   return (
     <div className="grid gap-3">

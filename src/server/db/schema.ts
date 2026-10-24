@@ -386,6 +386,12 @@ export const platformLinks = sqliteTable(
     syncedAt: integer(),
     /** Why the last read failed, in words the page has a sentence for. Null when it worked. */
     problem: text().$type<LinkProblem>(),
+    /**
+     * What the source's sign-in gave Shelf to read it with, sealed with this
+     * server's key (`server/sync/sealed.ts`): Nintendo's session token. Null
+     * for a source read with Shelf's own key, as Steam is.
+     */
+    secret: text(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.source] }),

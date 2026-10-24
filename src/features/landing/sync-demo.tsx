@@ -10,21 +10,29 @@ import { Scene } from './scene'
 const step = (value: number) => ({ '--step': value }) as CSSProperties
 
 /**
- * A Steam library coming in, played out: games arriving on the shelf one by
- * one, each with its hours, then the count, and the promise of tomorrow's
- * sync. A picture of the account page's Steam card, with the example shelf's
- * covers and hours.
+ * Steam and Nintendo libraries coming in, played out: games arriving on the
+ * shelf one by one, each with its hours and where it came from (a Switch
+ * game said to be a cartridge, as Nintendo's are once asked), then the
+ * count, and the promise of tomorrow's sync. A picture of the account
+ * page's platform cards, with the example shelf's covers and hours.
  */
 export function SyncDemo({
-  games,
+  steam,
+  nintendo,
   count,
 }: {
-  /** Games the sync brings in, with their hours. */
-  games: readonly DemoGame[]
-  /** How many games it puts on the shelf in all. */
+  /** Games a sync from Steam brings in, with their hours. */
+  steam: readonly DemoGame[]
+  /** Games a sync from Nintendo brings in, once each is said to be a cartridge. */
+  nintendo: readonly DemoGame[]
+  /** How many games they put on the shelf in all. */
   count: number
 }) {
   const t = useTranslations('Landing.sync')
+  const rows = [
+    ...steam.map((game) => ({ game, where: t('where') })),
+    ...nintendo.map((game) => ({ game, where: t('whereNintendo') })),
+  ]
   return (
     <Scene>
       <figure className="min-w-0 rounded-panel border border-line bg-surface/80 p-4">
@@ -33,7 +41,7 @@ export function SyncDemo({
           {t('card')}
         </figcaption>
         <ul className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-1">
-          {games.map((game, index) => (
+          {rows.map(({ game, where }, index) => (
             <li
               key={game.slug}
               className="scene-step flex items-center gap-3 px-2 py-1.5"
@@ -51,7 +59,7 @@ export function SyncDemo({
               />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium">{game.title}</span>
-                <span className="block text-xs text-muted">{t('where')}</span>
+                <span className="block text-xs text-muted">{where}</span>
               </span>
               <span className="flex-none font-mono text-xs text-muted">
                 {t('hours', { hours: game.hours })}
@@ -62,7 +70,7 @@ export function SyncDemo({
         </ul>
         <p
           className="scene-step mt-3 flex flex-wrap items-baseline justify-between gap-2 border-t border-line px-2 pt-3 text-sm"
-          style={step(1 + games.length * 0.6 + 0.4)}
+          style={step(1 + rows.length * 0.6 + 0.4)}
         >
           <span className="font-medium">{t('onShelf', { count })}</span>
           <span className="text-xs text-muted">{t('daily')}</span>

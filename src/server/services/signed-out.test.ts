@@ -23,6 +23,7 @@ import {
 import { removeMyShelf, saveMyShelf } from '@/server/services/shelves'
 import {
   answerMine,
+  confirmManyMine,
   linkMine,
   listMine,
   myPlatforms,
@@ -100,12 +101,24 @@ const requests: [string, () => Promise<{ ok: boolean; reason?: string }>][] = [
   ['remove a shelf', () => removeMyShelf('short-ones')],
   ['change the account', () => changeMyAccount({ handle: 'someone-else' })],
   ['list its platforms', () => myPlatforms()],
-  ['link a Steam account', () => linkMine('steam', '76561190000000001', 'Someone')],
+  [
+    'link a Steam account',
+    () => linkMine('steam', { externalId: '76561190000000001', name: 'Someone' }),
+  ],
   ['sync from Steam', () => syncMine('steam', { read: true })],
   ['list what Steam listed', () => listMine('steam', 'needs-you')],
   ['answer about a game Steam listed', () => answerMine('steam', ID, { kind: 'again' })],
   ['switch the daily sync', () => setMyDaily('steam', { daily: false })],
   ['unlink Steam', () => unlinkMine('steam')],
+  [
+    'link a Nintendo account',
+    () => linkMine('nintendo', { externalId: 'a0b1c2d3e4f5a6b7', secret: 'a-session' }),
+  ],
+  [
+    'confirm games Nintendo listed',
+    () =>
+      confirmManyMine('nintendo', { ids: [ID], answer: { kind: 'confirm', format: 'digital' } }),
+  ],
 ]
 
 describe('signed out', () => {

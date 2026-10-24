@@ -3,9 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 import type * as Accounts from '@/server/auth/account'
 
 import { GET as myGame } from './games/[slug]/route'
+import { POST as answerMany } from './platforms/[source]/answers/route'
 import { GET as connect } from './platforms/[source]/connect/route'
 import { POST as answerItem } from './platforms/[source]/items/[id]/route'
 import { GET as listItems } from './platforms/[source]/items/route'
+import { POST as pasteLink } from './platforms/[source]/link/route'
 import { DELETE as unlink, PATCH as setDaily } from './platforms/[source]/route'
 import { GET as backFromSteam } from './platforms/[source]/return/route'
 import { POST as syncStep } from './platforms/[source]/sync/route'
@@ -54,6 +56,7 @@ const post = (body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 })
 const steamParams = { params: Promise.resolve({ source: 'steam' }) }
+const nintendoParams = { params: Promise.resolve({ source: 'nintendo' }) }
 
 const reads: [string, () => Promise<Response>][] = [
   ['its own library', () => myLibrary(asked('/api/v1/me/library'))],
@@ -82,6 +85,25 @@ const reads: [string, () => Promise<Response>][] = [
       answerItem(asked('/api/v1/me/platforms/steam/items/x', post({ kind: 'again' })), {
         params: Promise.resolve({ source: 'steam', id: 'x' }),
       }),
+  ],
+  [
+    'one answer for many',
+    () =>
+      answerMany(
+        asked(
+          '/api/v1/me/platforms/nintendo/answers',
+          post({ ids: ['x'], answer: { kind: 'confirm', format: 'digital' } }),
+        ),
+        nintendoParams,
+      ),
+  ],
+  [
+    'the link pasted from Nintendo’s page',
+    () =>
+      pasteLink(
+        asked('/api/v1/me/platforms/nintendo/link', post({ link: 'npf5c38e31cd085304b://auth#' })),
+        nintendoParams,
+      ),
   ],
   [
     'the daily sync',
@@ -126,6 +148,17 @@ describe('signed out, one’s own library', () => {
     expect(response.status).toBe(303)
     expect(response.headers.get('Location')).toBe(
       'http://localhost/pt-BR/sign-in?from=%2Fpt-BR%2Faccount',
+    )
+    expect(response.headers.get('Set-Cookie')).toBeNull()
+  })
+
+  it('sends someone signed out to sign in before Nintendo, not to Nintendo', async () => {
+    const response = await connect(
+      asked('/api/v1/me/platforms/nintendo/connect?locale=en'),
+      nintendoParams,
+    )
+    expect(response.headers.get('Location')).toBe(
+      'http://localhost/en/sign-in?from=%2Fen%2Faccount',
     )
     expect(response.headers.get('Set-Cookie')).toBeNull()
   })
