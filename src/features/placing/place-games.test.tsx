@@ -24,8 +24,9 @@ vi.mock('@/features/shell/notices', () => ({
 
 /**
  * Placing what a sync brought in (spec 4.5): the list, the tally, one game
- * placed with Undo, many placed at once, a rating that keeps a game in the
- * list, and the keyboard's way through.
+ * placed and staying with its status shown, changed and taken back, many
+ * placed at once with Undo, a rating beside a status, and the keyboard's
+ * way through.
  */
 
 const LAST_PLAYED = Date.UTC(2025, 9, 9)
@@ -91,6 +92,8 @@ const rowOf = (title: string) =>
     within(row).getByRole('heading', { level: 3 }).textContent?.startsWith(title),
   )!
 const tally = () => screen.getByRole('complementary', { name: 'Your games by status' })
+const chip = (title: string, status: string) =>
+  within(rowOf(title)).getByRole('button', { name: status })
 const patches = () => sent.filter((each) => each.method === 'PATCH')
 
 describe('PlaceGames', () => {
@@ -108,37 +111,68 @@ describe('PlaceGames', () => {
     expect(within(tally()).getByText('3 games left to place.')).toBeInTheDocument()
   })
 
-  it('places a game with one tap: it leaves the list, the tally moves, and Undo puts it back', async () => {
+  it('places a game with one tap: it stays, showing its status, and the tally moves', async () => {
     const user = userEvent.setup()
     renderWithIntl(<PlaceGames />)
     await screen.findByRole('list', { name: 'Unsorted games' })
 
-    await user.click(within(rowOf('Hades')).getByRole('button', { name: 'Backlog' }))
-    expect(titles()).toEqual(['Celeste', 'Portal'])
+    await user.click(chip('Hades', 'Backlog'))
+    // It stays where it was, its status shown, until the page is opened again.
+    expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal'])
+    expect(chip('Hades', 'Backlog')).toHaveAttribute('aria-pressed', 'true')
+    expect(chip('Hades', 'Playing')).toHaveAttribute('aria-pressed', 'false')
     expect(within(tally()).getByText('2 games left to place.')).toBeInTheDocument()
     expect(within(tally()).getByText('6')).toBeInTheDocument()
-    await waitFor(() => expect(notices.at(-1)?.message).toBe('Put Hades in Backlog.'))
-    expect(patches()).toEqual([
-      { path: '/api/v1/entries/hades', method: 'PATCH', body: { status: 'backlog' } },
-    ])
-
-    await notices.at(-1)!.actions![0]!.run()
-    await waitFor(() => expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal']))
-    expect(patches().at(-1)?.body).toEqual({ status: 'unsorted' })
-    expect(notices.at(-1)?.message).toBe('Hades is back in the list.')
-    expect(within(tally()).getByText('3 games left to place.')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(patches()).toEqual([
+        { path: '/api/v1/entries/hades', method: 'PATCH', body: { status: 'backlog' } },
+      ]),
+    )
+    // What changed is in sight: nothing more is said.
+    expect(notices).toEqual([])
   })
 
-  it('puts a game back, saying so, when placing it fails', async () => {
+  it('changes a wrong status with one tap, and takes it back with its own', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+
+    await user.click(chip('Hades', 'Backlog'))
+    await user.click(chip('Hades', 'Completed'))
+    expect(chip('Hades', 'Completed')).toHaveAttribute('aria-pressed', 'true')
+    expect(chip('Hades', 'Backlog')).toHaveAttribute('aria-pressed', 'false')
+    // Out of Backlog and into Completed: Backlog is back to its 5.
+    expect(within(tally()).getByText('5')).toBeInTheDocument()
+    expect(within(tally()).getByText('2 games left to place.')).toBeInTheDocument()
+
+    await user.click(chip('Hades', 'Completed'))
+    expect(chip('Hades', 'Completed')).toHaveAttribute('aria-pressed', 'false')
+    expect(within(tally()).getByText('3 games left to place.')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(patches().map((each) => each.body)).toEqual([
+        { status: 'backlog' },
+        { status: 'completed' },
+        { status: 'unsorted' },
+      ]),
+    )
+  })
+
+  it('takes the status back, saying so, when placing fails', async () => {
     fails = true
     const user = userEvent.setup()
     renderWithIntl(<PlaceGames />, 'pt-BR')
     await screen.findByRole('list', { name: 'Jogos a definir' })
-    await user.click(within(rows('Jogos a definir')[0]!).getByRole('button', { name: 'Zerado' }))
+    const first = rows('Jogos a definir')[0]!
+    await user.click(within(first).getByRole('button', { name: 'Zerado' }))
     await waitFor(() =>
       expect(notices.at(-1)?.message).toBe('Não deu para mudar o status de Hades. Tente de novo.'),
     )
     expect(rows('Jogos a definir')).toHaveLength(3)
+    expect(within(first).getByRole('button', { name: 'Zerado' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(screen.getByText('Faltam 3 jogos para organizar.')).toBeInTheDocument()
   })
 
   it('gives many games one status at once: everything under an hour', async () => {
@@ -152,7 +186,10 @@ describe('PlaceGames', () => {
     expect(within(rowOf('Hades')).getByRole('checkbox')).not.toBeChecked()
 
     await user.click(within(bar).getByRole('button', { name: 'Dropped' }))
-    expect(titles()).toEqual(['Hades2020'])
+    expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal'])
+    expect(chip('Celeste', 'Dropped')).toHaveAttribute('aria-pressed', 'true')
+    expect(chip('Portal', 'Dropped')).toHaveAttribute('aria-pressed', 'true')
+    expect(within(tally()).getByText('1 game left to place.')).toBeInTheDocument()
     await waitFor(() => expect(notices.at(-1)?.message).toBe('Put 2 games in Dropped.'))
     expect(patches()).toEqual([
       {
@@ -162,6 +199,45 @@ describe('PlaceGames', () => {
       },
     ])
     expect(screen.queryByRole('group', { name: /selected/ })).not.toBeInTheDocument()
+    // What "select" offers now is the one game still waiting.
+    expect(screen.queryByRole('button', { name: /under an hour/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Select the 1 game' })).toBeInTheDocument()
+
+    await notices.at(-1)!.actions![0]!.run()
+    await waitFor(() => expect(chip('Celeste', 'Dropped')).toHaveAttribute('aria-pressed', 'false'))
+    expect(patches().at(-1)).toEqual({
+      path: '/api/v1/entries',
+      method: 'PATCH',
+      body: { entries: ['celeste', 'portal'], status: 'unsorted' },
+    })
+    expect(notices.at(-1)?.message).toBe('2 games are as they were.')
+    expect(within(tally()).getByText('3 games left to place.')).toBeInTheDocument()
+  })
+
+  it('puts each game back as it was on Undo, one placed alone before included', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+
+    await user.click(chip('Hades', 'Backlog'))
+    await user.click(within(rowOf('Hades')).getByRole('checkbox'))
+    await user.click(within(rowOf('Celeste')).getByRole('checkbox'))
+    const bar = screen.getByRole('group', { name: '2 games selected' })
+    await user.click(within(bar).getByRole('button', { name: 'Wishlist' }))
+    await waitFor(() => expect(notices.at(-1)?.message).toBe('Put 2 games in Wishlist.'))
+
+    await notices.at(-1)!.actions![0]!.run()
+    await waitFor(() => expect(chip('Hades', 'Backlog')).toHaveAttribute('aria-pressed', 'true'))
+    expect(chip('Celeste', 'Wishlist')).toHaveAttribute('aria-pressed', 'false')
+    expect(patches().slice(-2)).toEqual([
+      { path: '/api/v1/entries', method: 'PATCH', body: { entries: ['hades'], status: 'backlog' } },
+      {
+        path: '/api/v1/entries',
+        method: 'PATCH',
+        body: { entries: ['celeste'], status: 'unsorted' },
+      },
+    ])
+    expect(within(tally()).getByText('2 games left to place.')).toBeInTheDocument()
   })
 
   it('keeps a game I only rated, and saves the rating', async () => {
@@ -179,24 +255,18 @@ describe('PlaceGames', () => {
     expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal'])
   })
 
-  it('brings a game back with the rating it was given just before it was placed', async () => {
+  it('keeps a game with its rating and its status, whichever comes first', async () => {
     const user = userEvent.setup()
     renderWithIntl(<PlaceGames />)
     await screen.findByRole('list', { name: 'Unsorted games' })
 
+    await user.click(chip('Hades', 'Backlog'))
     within(rowOf('Hades')).getByRole('slider').focus()
     await user.keyboard('{ArrowRight}{ArrowRight}')
-    // Placed before the rating comes to rest: leaving, the rating is saved at once.
-    await user.click(within(rowOf('Hades')).getByRole('button', { name: 'Backlog' }))
-    await waitFor(() => expect(notices.at(-1)?.message).toBe('Put Hades in Backlog.'))
     await waitFor(() => expect(patches()).toHaveLength(2))
-    expect(patches().map((each) => each.body)).toEqual(
-      expect.arrayContaining([{ rating: 1 }, { status: 'backlog' }]),
-    )
-
-    await notices.at(-1)!.actions![0]!.run()
-    await waitFor(() => expect(titles()).toContain('Hades2020'))
+    expect(patches().map((each) => each.body)).toEqual([{ status: 'backlog' }, { rating: 1 }])
     expect(within(rowOf('Hades')).getByRole('slider')).toHaveAttribute('aria-valuenow', '1')
+    expect(chip('Hades', 'Backlog')).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('is one stop for Tab, moved through with the arrows', async () => {
@@ -222,14 +292,15 @@ describe('PlaceGames', () => {
     await user.keyboard(' ')
     expect(box('Portal')).toBeChecked()
 
-    // Placed from the keyboard, the row's place goes to the one after it.
+    // Placed from the keyboard, the row stays, and focus with it.
     box('Hades').focus()
     await user.tab()
     await user.tab()
     await user.tab()
     await user.keyboard('{Enter}')
-    await waitFor(() => expect(box('Celeste')).toHaveFocus())
-    expect(titles()).toEqual(['Celeste', 'Portal'])
+    expect(chip('Hades', 'Playing')).toHaveFocus()
+    expect(chip('Hades', 'Playing')).toHaveAttribute('aria-pressed', 'true')
+    expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal'])
   })
 
   it('says nothing is waiting, beside the tally', async () => {

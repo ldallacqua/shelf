@@ -4,7 +4,24 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: a new shelf is set up on a page of its own (24 Oct 2026)
+## Now: a placed game stays on the placing page (24 Oct 2026)
+
+The owner, having used the placing page: "não quero que o jogo desapareça depois de eu colocar
+um status nele imediatamente [...] Se eu atualizar a pagina e voltar pro organize seus jogos ai
+beleza". [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in) says what it does now.
+
+- **In `place-games.tsx` only:** the statuses given on this visit are kept beside the list
+  (`given`), each row's statuses are `ToggleChip`s (pressed, with a tick), another status is
+  one tap, and the pressed one tapped again writes `unsorted`. The server's answer is the same:
+  opening the page again lists only what is still unsorted. One game's status no longer
+  says anything in a notice (it is in sight); many at once still do, with Undo, which writes
+  each game's earlier status back, one `PATCH /entries` per status. "Select all" and "under an
+  hour" count only the games still waiting.
+- **Lighthouse from #34 still to measure on a quiet machine:** verify read the library at 89
+  while the machine was busy; main, measured right after, read 84, and the branch again 86.
+- **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
+
+## Before: a new shelf is set up on a page of its own (24 Oct 2026)
 
 The owner asked for an onboarding page, and for something saying how many games have no
 status, "mas não quero que vc fique adicionando botões a torto e a direito". Researched first
@@ -45,9 +62,9 @@ first row.
 - **Not built, and asked about:** fixing a game a sync matched to the wrong IGDB record
   ("Não é este jogo" on the placing page, keeping the copy and its hours). Today the way is to
   remove it and add the right one by hand, which loses the source's hours.
-- **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
+- **Lighthouse was not measured on a quiet machine:** see the section above.
 
-## Before: the page for placing a sync's games is built (24 Oct 2026)
+## Earlier: the page for placing a sync's games is built (24 Oct 2026)
 
 The owner's ask from 23 Oct 2026 (below, "Next: the review of unsorted games"), started with
 "Usa o de 0-10 que a gente já tem. Pode começar": the rating is the editor's, out of ten, not
@@ -79,7 +96,7 @@ is built so, architecture section 25's first row.
   Playwright test does.
 - **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
-## Earlier: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
+## Earlier still: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
 
 After the review of #26 below, the owner chose the route for Nintendo: "Build Nintendo from
 the Store app's play history: I sign in on Nintendo's own page and Shelf keeps the session

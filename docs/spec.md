@@ -574,7 +574,10 @@ games" page as the model: games a platform brought in "are actually in a waiting
 unassigned state, we will in a next step, add a review experience where we will allow the
 user to assign a score to the game and which status they have." The rating is the editor's,
 out of ten, not Minimap's five stars (the owner, 24 Oct 2026: "Usa o de 0-10 que a gente já
-tem"). Built 24 Oct 2026.
+tem"). Built 24 Oct 2026. The same day, having used it, they asked that a placed game stay: "não
+quero que o jogo desapareça depois de eu colocar um status nele imediatamente. Se eu colocar o
+status errado ou não tiver dado uma nota ainda ele está desaparecendo. [...] Se eu atualizar a
+pagina e voltar pro organize seus jogos ai beleza".
 
 - **A page of its own**, `/account/unsorted`, for my unsorted games, reached from each
   platform's card ("240 games to place", the games that source brought in still unsorted); on
@@ -588,25 +591,29 @@ tem"). Built 24 Oct 2026.
   50 more at a time.
 - **On each row, my rating and a status, one tap each, saved at once,** with the controls the
   editor uses: the rating out of ten, and Playing, Backlog, Completed, Dropped, Wishlist as
-  shapes and words. A game with a status leaves the list at once, with Undo; if saving fails
-  it comes back, saying so. A rating alone leaves it where it is. Nothing else about the game
-  changes: Completed here sets no completion day.
+  shapes and words, the one given shown pressed, with a tick. **A game given a status stays in
+  the list for the rest of the visit,** so a wrong status is one tap to change and a rating can
+  still be given; its pressed status, tapped again, takes it back to unsorted. If saving fails,
+  the status is taken back, saying so. The next time the page is opened, it lists only the
+  games still unsorted. Nothing else about the game changes: Completed here sets no completion
+  day.
 - **A tally beside the list,** as Minimap's has: how many games are in each status, and how
   many are still unsorted, moving as I place them. On a phone it sits above the list, the
   statuses on one wrapping line.
-- **Many at once:** select rows, "the N games under an hour", or all of them, and give them
-  one status, in one write, with Undo. The bar that does it stays under the header while the
-  list scrolls.
+- **Many at once:** select rows, "the N games under an hour", or all of them (those two count
+  only the games still waiting), and give them one status, in one write, with Undo, which puts
+  each back as it was. The bar that does it stays under the header while the list scrolls.
 - **Leaving one unsorted is fine:** it stays in the list for another day.
 - Keyboard all the way: the list is one stop (each row's checkbox), the arrows move through
   it, Home and End go to either end, Space selects, and Tab goes on into the row's link,
-  rating and statuses. When the row in focus leaves, focus goes to the one that takes its
-  place. Both themes, both languages, a phone.
+  rating and statuses. A row placed from the keyboard stays, and focus with it. Both themes,
+  both languages, a phone.
 
 **Done when**
 
 - Every unsorted game can be given a status and a rating from one page, without opening it.
-- A game given a status leaves the list at once, and Undo puts it back.
+- A game given a status stays, showing it, until the page is opened again; one tap changes
+  it, and its own status taken back makes it unsorted.
 - The tally always agrees with the shelf.
 
 ### 4.6 Setting a new shelf up

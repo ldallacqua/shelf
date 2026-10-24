@@ -25,6 +25,7 @@ import { notify } from '@/features/shell/notices'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Checkbox } from '@/ui/checkbox'
+import { ToggleChip } from '@/ui/chip'
 import { Progress } from '@/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
 
@@ -34,9 +35,10 @@ import { placeGame, placeGames, rateGame, readUnsorted } from './placing-client'
  * Placing what a sync brought in (spec 4.5), after Minimap's "Rate my
  * games": one row per unsorted game, with its hours and last play on each
  * source, my rating and a status one tap each, saved at once. A game given
- * a status leaves the list, with Undo; a rating alone leaves it where it
- * is. Many can be given one status at once. Beside the list, how many games
- * stand in each status, moving as they are placed.
+ * a status stays in the list, showing it, until the page is opened again:
+ * a wrong status is one tap to change, and its pressed status taps it back
+ * to unsorted. Many can be given one status at once. Beside the list, how
+ * many games stand in each status, moving as they are placed.
  *
  * The list is one stop for the keyboard: Tab reaches the checkbox of the
  * row last in focus, the arrows move from row to row (Space selects), and
@@ -58,10 +60,14 @@ type Loaded = {
   games: UnsortedGame[]
   tally: Tally
   platforms: Map<number, PlatformLabel>
+  /** The statuses given on this visit, by entry: a game not here still waits. */
+  given: ReadonlyMap<string, Status>
 }
 
 type RowProps = {
   game: UnsortedGame
+  /** The status given to it on this visit, if any. */
+  given: Status | undefined
   handle: string
   platforms: Map<number, PlatformLabel>
   /** The row the keyboard is on: its controls are in the Tab order. */
@@ -113,6 +119,7 @@ function Played({ game }: { game: UnsortedGame }) {
 
 function Row({
   game,
+  given,
   handle,
   platforms,
   current,
@@ -185,9 +192,14 @@ function Row({
           className="flex flex-wrap gap-2 lg:pt-1"
         >
           {placements.map((status) => (
-            <Button key={status} size="sm" tabIndex={tab} onClick={() => onPlace(status)}>
+            <ToggleChip
+              key={status}
+              pressed={given === status}
+              tabIndex={tab}
+              onClick={() => onPlace(status)}
+            >
               <StatusMark status={status} label={library(`status.${status}`)} />
-            </Button>
+            </ToggleChip>
           ))}
         </div>
       </div>
@@ -243,10 +255,8 @@ function PlacingList({ handle }: { handle: string }) {
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
   const [active, setActive] = useState<string>()
   const rows = useRef(new Map<string, HTMLLIElement>())
-  // The row to move focus to once it is drawn: after an arrow, or when the row in focus leaves.
+  // The row to move focus to once it is drawn, after an arrow.
   const focusNext = useRef<string>(undefined)
-  // Ratings given on this page, by entry: null for one taken away.
-  const rated = useRef(new Map<string, number | null>())
 
   useEffect(() => {
     const abort = new AbortController()
@@ -261,6 +271,7 @@ function PlacingList({ handle }: { handle: string }) {
         games: answer.value.games,
         tally: answer.value.tally,
         platforms: new Map(answer.value.platforms.map((platform) => [platform.id, platform])),
+        given: new Map(),
       })
     })
     return () => abort.abort()
@@ -291,92 +302,49 @@ function PlacingList({ handle }: { handle: string }) {
   const shown = sorted.slice(0, limit)
   const current =
     active && shown.some((game) => game.entryId === active) ? active : shown[0]?.entryId
-  const briefly = sorted.filter((game) => game.minutes < UNDER_AN_HOUR)
+  // What "select" offers is the games still waiting: one given a status here is chosen by hand.
+  const waiting = sorted.filter((game) => !loaded.given.has(game.entryId))
+  const briefly = waiting.filter((game) => game.minutes < UNDER_AN_HOUR)
   const label = (status: Status) => library(`status.${status}`)
+  const statusOf = (entryId: string): Status => loaded.given.get(entryId) ?? 'unsorted'
 
-  /** Games out of the list and into a status, in the tally too. */
-  const take = (games: readonly UnsortedGame[], status: Status) => {
-    const leaving = new Set(games.map((game) => game.entryId))
+  /** Games given these statuses here (unsorted: waiting again), and the tally with them. */
+  const give = (changes: ReadonlyMap<string, Status>) =>
     setLoaded((now) => {
       if (!now) return now
-      const stays = now.games.filter((game) => !leaving.has(game.entryId))
-      return {
-        ...now,
-        games: stays,
-        tally: moveInTally(now.tally, 'unsorted', status, now.games.length - stays.length),
+      const given = new Map(now.given)
+      let tally = now.tally
+      for (const [entryId, to] of changes) {
+        tally = moveInTally(tally, given.get(entryId) ?? 'unsorted', to)
+        if (to === 'unsorted') given.delete(entryId)
+        else given.set(entryId, to)
       }
+      return { ...now, given, tally }
     })
-    setSelected((now) => new Set([...now].filter((id) => !leaving.has(id))))
-  }
-
-  /** Games back in the list, from the status they were given, with any rating since. */
-  const giveBack = (games: readonly UnsortedGame[], status: Status) =>
-    setLoaded((now) => {
-      if (!now) return now
-      const there = new Set(now.games.map((game) => game.entryId))
-      const back = games
-        .filter((game) => !there.has(game.entryId))
-        .map((game) => withRating(game, rated.current.get(game.entryId)))
-      return {
-        ...now,
-        games: [...now.games, ...back],
-        tally: moveInTally(now.tally, status, 'unsorted', back.length),
-      }
-    })
-
-  /** When the row in focus leaves, focus goes to the one that takes its place. */
-  const keepFocus = (leaving: ReadonlySet<string>) => {
-    const inFocus = [...leaving].some((id) =>
-      rows.current.get(id)?.contains(document.activeElement),
-    )
-    const at = shown.findIndex((game) => leaving.has(game.entryId))
-    const stays = shown.filter((game) => !leaving.has(game.entryId))
-    const next = stays[Math.min(at, stays.length - 1)]
-    if (!next) return
-    if (current && leaving.has(current)) setActive(next.entryId)
-    if (inFocus) focusNext.current = next.entryId
-  }
 
   const placeOne = async (game: UnsortedGame, status: Status) => {
-    keepFocus(new Set([game.entryId]))
-    take([game], status)
-    const answer = await placeGame(game.entryId, status)
+    const before = statusOf(game.entryId)
+    // Its pressed status, tapped again, takes it back: the game waits, as it came.
+    const to = before === status ? 'unsorted' : status
+    give(new Map([[game.entryId, to]]))
+    const answer = await placeGame(game.entryId, to)
     if (!answer.ok) {
-      giveBack([game], status)
+      give(new Map([[game.entryId, before]]))
       notify({ message: t('notPlaced', { title: game.title }) })
       return
     }
     announceChange({ version: answer.value.version })
-    notify({
-      message: t('placed', { title: game.title, status: label(status) }),
-      actions: [
-        {
-          label: errors('undo'),
-          run: async () => {
-            giveBack([game], status)
-            const back = await placeGame(game.entryId, 'unsorted')
-            if (!back.ok) {
-              take([game], status)
-              notify({ message: errors(`errors.${back.reason}`) })
-              return
-            }
-            announceChange({ version: back.value.version })
-            notify({ message: t('putBack', { title: game.title }) })
-          },
-        },
-      ],
-    })
   }
 
   const placeSelected = async (status: Status) => {
-    const games = sorted.filter((game) => selected.has(game.entryId))
-    const ids = games.map((game) => game.entryId)
+    const ids = sorted.filter((game) => selected.has(game.entryId)).map((game) => game.entryId)
     if (ids.length === 0) return
-    keepFocus(new Set(ids))
-    take(games, status)
+    const before = new Map(ids.map((id) => [id, statusOf(id)]))
+    give(new Map(ids.map((id) => [id, status])))
+    setSelected(new Set())
     const answer = await placeGames(ids, status)
     if (!answer.ok) {
-      giveBack(games, status)
+      give(before)
       setSelected(new Set(ids))
       notify({ message: errors(`errors.${answer.reason}`) })
       return
@@ -388,15 +356,20 @@ function PlacingList({ handle }: { handle: string }) {
         {
           label: errors('undo'),
           run: async () => {
-            giveBack(games, status)
-            const back = await placeGames(ids, 'unsorted')
-            if (!back.ok) {
-              take(games, status)
-              notify({ message: errors(`errors.${back.reason}`) })
-              return
+            give(before)
+            // Each back to what it was: one write for each status they had.
+            const groups = new Map<Status, string[]>()
+            for (const [id, was] of before) groups.set(was, [...(groups.get(was) ?? []), id])
+            for (const [was, group] of groups) {
+              const back = await placeGames(group, was)
+              if (!back.ok) {
+                give(new Map(ids.map((id) => [id, status])))
+                notify({ message: errors(`errors.${back.reason}`) })
+                return
+              }
+              announceChange({ version: back.value.version })
             }
-            announceChange({ version: back.value.version })
-            notify({ message: t('putBackMany', { count: ids.length }) })
+            notify({ message: t('undoneMany', { count: ids.length }) })
           },
         },
       ],
@@ -404,8 +377,6 @@ function PlacingList({ handle }: { handle: string }) {
   }
 
   const setRating = (entryId: string, score: number | null) => {
-    // Kept apart too: a rating still saving as its game is placed is the one Undo brings back.
-    rated.current.set(entryId, score)
     setLoaded((now) =>
       now
         ? {
@@ -503,12 +474,14 @@ function PlacingList({ handle }: { handle: string }) {
                 {t('underAnHour', { count: briefly.length })}
               </Button>
             ) : null}
-            <Button
-              variant="ghost"
-              onClick={() => setSelected(new Set(sorted.map((game) => game.entryId)))}
-            >
-              {t('selectAll', { count: sorted.length })}
-            </Button>
+            {waiting.length > 0 ? (
+              <Button
+                variant="ghost"
+                onClick={() => setSelected(new Set(waiting.map((game) => game.entryId)))}
+              >
+                {t('selectAll', { count: waiting.length })}
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -539,6 +512,7 @@ function PlacingList({ handle }: { handle: string }) {
             <Row
               key={game.entryId}
               game={game}
+              given={loaded.given.get(game.entryId)}
               handle={handle}
               platforms={loaded.platforms}
               current={game.entryId === current}
