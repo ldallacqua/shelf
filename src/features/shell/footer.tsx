@@ -27,9 +27,10 @@ export function Footer() {
           })}
         </p>
         <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+          {/* Not in a sentence, so its own target: 24 pixels tall at least. */}
           <Link
             href="/privacy"
-            className="rounded-[2px] underline decoration-1 underline-offset-4 hover:text-text hover:decoration-2"
+            className="inline-flex min-h-6 items-center rounded-[2px] underline decoration-1 underline-offset-4 hover:text-text hover:decoration-2"
           >
             {t('privacy')}
           </Link>
