@@ -848,7 +848,7 @@
   "Placing": {
     "metaTitle": "Organize seus jogos",
     "title": "Organize seus jogos",
-    "intro": "Os jogos que uma sincronização trouxe para a sua estante esperam aqui, a definir, até você dizer em que pé está cada um. Um jogo com status continua aqui, mostrando qual, então trocar um status errado é um toque, e dá para dar a nota depois; toque no status de novo para desfazer. Da próxima vez que você abrir esta página, só os jogos ainda a definir estarão aqui. Deixar algum para outro dia não tem problema.",
+    "intro": "Os jogos que uma sincronização trouxe para a sua estante esperam aqui até você dizer em que pé está cada um.",
     "signInFirst": "Entre para organizar seus jogos.",
     "loading": "Carregando seus jogos…",
     "failed": "O Shelf não conseguiu ler seus jogos. Tente de novo.",
