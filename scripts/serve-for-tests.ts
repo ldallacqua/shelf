@@ -5,11 +5,14 @@
  * test doubles for IGDB and Twitch and a made-up owner (`SHELF_MOCKS=1`), and on a fresh
  * copy of the database. Tests that add, change and remove games write to the
  * copy, so `.data/shelf.db` is never changed by a test, and every run starts
- * from the same library.
+ * from the same library. On the port `BASE_URL` names (3300 unless set), so a
+ * second checkout can be served and verified beside the first.
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
+
+import { BASE_URL } from './lib/budgets.ts'
 
 const source = resolve(process.env.SHELF_DATABASE_FILE?.trim() || '.data/shelf.db')
 const copy = resolve('.data/e2e.db')
@@ -35,11 +38,13 @@ const migrated = spawnSync(
 )
 if (migrated.status !== 0) process.exit(migrated.status ?? 1)
 
+// The server's own address (`site-url.ts`, the sign-in's trusted hosts) reads the same port.
+const port = new URL(BASE_URL).port || '3300'
 const server = spawn(
   process.execPath,
-  [resolve('node_modules/next/dist/bin/next'), 'start', '-p', '3300'],
+  [resolve('node_modules/next/dist/bin/next'), 'start', '-p', port],
   {
-    env: { ...process.env, SHELF_MOCKS: '1', SHELF_DATABASE_FILE: copy },
+    env: { ...process.env, PORT: port, SHELF_MOCKS: '1', SHELF_DATABASE_FILE: copy },
     stdio: 'inherit',
   },
 )
