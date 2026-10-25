@@ -99,8 +99,13 @@
     }
   }
 
+  /*
+   * One column no wider than the section: the screenshot strip scrolls inside it, and a
+   * wrapper around the strip (an adult game's media) cannot stretch it to the strip's length.
+   */
   .game-section {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     gap: 0.75rem;
   }
