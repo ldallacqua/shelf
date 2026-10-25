@@ -1,4 +1,4 @@
-import { act, type ReactElement } from 'react'
+import { act, Profiler, type ReactElement } from 'react'
 import { hydrateRoot, type Root } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -16,26 +16,32 @@ import { useTooSmallFor3d } from './use-preference'
  * longest task after the first paint.
  */
 
-let draws = 0
-
 function Shelf({ asked }: { asked: Dimension }) {
-  draws += 1
   const tooSmall = useTooSmallFor3d(asked)
   const folded = useCollapsed()
   return <p>{`${tooSmall ? 'too small' : 'room'}, ${folded.size} folded`}</p>
 }
 
+/** What React committed while the page came alive: `mount` for hydrating, then any redrawing. */
+let commits: string[] = []
+
+const page = (asked: Dimension): ReactElement => (
+  <Profiler id="shelf" onRender={(_id, phase) => commits.push(phase)}>
+    <Shelf asked={asked} />
+  </Profiler>
+)
+
 let root: Root | undefined
 let container: HTMLElement | undefined
 
 /** Drawn as the server draws it, then brought to life as the browser does. */
-const comeAlive = async (page: ReactElement) => {
+const comeAlive = async (element: ReactElement) => {
   container = document.createElement('div')
-  container.innerHTML = renderToString(page)
+  container.innerHTML = renderToString(element)
   document.body.append(container)
-  draws = 0
+  commits = []
   await act(async () => {
-    root = hydrateRoot(container!, page)
+    root = hydrateRoot(container!, element)
   })
   return container
 }
@@ -48,15 +54,15 @@ afterEach(() => {
 describe('a library coming alive', () => {
   it('is not drawn again on a phone that asks for 2D, with nothing folded', async () => {
     setDevice({ phone: true })
-    const page = await comeAlive(<Shelf asked="2d" />)
-    expect(page).toHaveTextContent('room, 0 folded')
-    expect(draws).toBe(1)
+    const shelf = await comeAlive(page('2d'))
+    expect(shelf).toHaveTextContent('room, 0 folded')
+    expect(commits).toEqual(['mount'])
   })
 
   it('still learns a phone has no room for 3D, once 3D is what was asked for', async () => {
     setDevice({ phone: true })
-    const page = await comeAlive(<Shelf asked="3d" />)
-    expect(page).toHaveTextContent('too small, 0 folded')
-    expect(draws).toBe(2)
+    const shelf = await comeAlive(page('3d'))
+    expect(shelf).toHaveTextContent('too small, 0 folded')
+    expect(commits).toHaveLength(2)
   })
 })
