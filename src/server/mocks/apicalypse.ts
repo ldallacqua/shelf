@@ -11,6 +11,8 @@ export type Condition = {
   field: string
   op: '=' | '!=' | '~' | '>' | '>=' | '<' | '<='
   value: Value
+  /** `~ *"chain"*`: anything may come before the text, after it, or both. */
+  around?: { before: boolean; after: boolean }
 }
 
 export type Query = {
@@ -88,6 +90,15 @@ const parseCondition = (text: string): Condition => {
   const match = /^([a-z_.]+)\s*(!=|>=|<=|=|~|>|<)\s*(.+)$/is.exec(text.trim())
   if (!match) throw new QueryError(`Cannot read the condition ${text.trim()}`)
   const [, field = '', op = '=', value = ''] = match
+  const wild = op === '~' ? /^(\*?)\s*(".*")\s*(\*?)$/s.exec(value.trim()) : null
+  if (wild && (wild[1] || wild[3])) {
+    return {
+      field,
+      op: '~',
+      value: parseValue(wild[2] ?? ''),
+      around: { before: wild[1] === '*', after: wild[3] === '*' },
+    }
+  }
   return { field, op: op as Condition['op'], value: parseValue(value) }
 }
 
@@ -155,7 +166,13 @@ const matches = (row: Row, condition: Condition): boolean => {
     return op === '!=' ? !found : found
   }
   if (typeof value === 'string') {
-    const same = String(actual).toLowerCase() === value.toLowerCase()
+    const text = String(actual).toLowerCase()
+    const wanted = value.toLowerCase()
+    const { before = false, after = false } = condition.around ?? {}
+    if (before && after) return text.includes(wanted)
+    if (after) return text.startsWith(wanted)
+    if (before) return text.endsWith(wanted)
+    const same = text === wanted
     return op === '!=' ? !same : same
   }
   const number = Number(actual)
@@ -179,6 +196,12 @@ const matches = (row: Row, condition: Condition): boolean => {
 
 const normalize = (text: string): string => text.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
+/** The words of a text as a search sees them, punctuation aside. */
+const wordsOf = (text: string): string[] =>
+  normalize(text)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+
 /** Keeps `id` and the top-level fields asked for, as IGDB does. */
 const project = (row: Row, fields: readonly string[]): Row => {
   if (fields.includes('*')) return row
@@ -190,11 +213,12 @@ export const runQuery = (rows: readonly Row[], query: Query): Row[] => {
   let result = rows.filter((row) => query.where.every((condition) => matches(row, condition)))
 
   if (query.search !== undefined) {
-    const words = normalize(query.search).split(/\s+/).filter(Boolean)
+    // Whole words only, as IGDB's search: "astral cha" finds no Astral Chain.
+    const words = wordsOf(query.search)
     result = result
       .filter((row) => {
-        const name = normalize(String(row.name ?? ''))
-        return words.every((word) => name.includes(word))
+        const name = new Set(wordsOf(String(row.name ?? '')))
+        return words.every((word) => name.has(word))
       })
       // IGDB orders a search by relevance; the double uses how well known a game is.
       .sort((a, b) => Number(b.total_rating_count ?? 0) - Number(a.total_rating_count ?? 0))

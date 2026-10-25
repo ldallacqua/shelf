@@ -66,6 +66,16 @@ describe('runQuery', () => {
     expect(run('where name ~ "ALPHA"; limit 10;')).toEqual([1, 4])
   })
 
+  it('matches a name that holds, starts or ends with a text', () => {
+    expect(parseQuery('where name ~ *"lph"*;').where).toEqual([
+      { field: 'name', op: '~', value: 'lph', around: { before: true, after: true } },
+    ])
+    expect(run('where name ~ *"LPH"*; limit 10;')).toEqual([1, 4])
+    expect(run('where name ~ "alp"*; limit 10;')).toEqual([1, 4])
+    expect(run('where name ~ *"uxe"; limit 10;')).toEqual([2])
+    expect(run('where name ~ *"alp"; limit 10;')).toEqual([])
+  })
+
   it('combines conditions with and', () => {
     expect(run('where name ~ "alpha" & game_type = (0); limit 10;')).toEqual([1])
   })
@@ -82,6 +92,11 @@ describe('runQuery', () => {
   it('searches by words in the name, best known first', () => {
     expect(run('search "alpha"; limit 10;')).toEqual([4, 1])
     expect(run('search "beta deluxe"; limit 10;')).toEqual([2])
+  })
+
+  it('searches whole words only, as IGDB does', () => {
+    expect(run('search "alp"; limit 10;')).toEqual([])
+    expect(run('search "beta delu"; limit 10;')).toEqual([])
   })
 
   it('sorts, limits and offsets', () => {

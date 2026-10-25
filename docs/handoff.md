@@ -4,7 +4,14 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: five changes written into the spec, and none built (25 Oct 2026)
+## Now: five changes written into the spec, none built, and the add search finds half a word (25 Oct 2026)
+
+- **The add search finds a word still being typed** (the owner: "astral cha -> não acha nada na
+  busca. Astral Chain -> acha o jogo correto."). IGDB's `search` matches whole words only;
+  beside it a second query asks for names holding every word as typed, and its games follow.
+  The IGDB double now matches whole words too, so a test would catch it. Architecture
+  section 25's first row has the rest.
+
 
 The owner asked, in Portuguese, what status a game with no end gets (Path of Exile, 200 hours,
 no longer played), where games they may play one day go, apart from the backlog, and how to
