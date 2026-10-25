@@ -16,6 +16,11 @@ decisions 15 to 24 are built as written; the owner did not change them.
   two orders now: `statuses`, as shown, and `statusCodes`, as the library file numbers them.
   Add a status at the end of `statusCodes`, never in its middle. The sample shelf has none in
   either, so the browser tests' counts stand.
+- **Wishing on one platform is built** (7.5; architecture section 25's first row). A build here
+  reads `.data/shelf.db`, so after pulling a migration that adds a column, run `pnpm db:migrate`
+  first; Vercel's build migrates by itself.
+- **Two more asks, queued after 7.5:** why Dark Souls II and Scholar of the First Sin are one
+  entry, and the game panel jumping to the next game when the open game's status changes.
 
 ## Just before: five changes written into the spec, and the add search finds half a word (25 Oct 2026)
 

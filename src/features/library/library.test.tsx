@@ -181,6 +181,23 @@ describe('GameBox (spec 3.2: state is never shown by color alone)', () => {
     expect(view.style.getPropertyValue('--case-frame')).toBe('var(--plastic-blue)')
   })
 
+  it('stands a wishlist game in the case of the platform it is wanted on, and says so (spec 7.5)', () => {
+    const wished = item({ status: 'wishlist', copies: [], platforms: [167, 6], wanted: [6, 167] })
+    const button = box(wished)
+    expect(button).toHaveAccessibleName(
+      'Hades (2020), not owned, Wishlist, wanted on PC and 1 more',
+    )
+    const view = button.querySelector('.game-case') as HTMLElement
+    expect(view.style.height).toBe(`calc(var(--mm) * ${caseShapes.keepCase.height})`)
+  })
+
+  it('stands a wishlist game wanted nowhere in the first platform it came out on', () => {
+    const view = box(item({ status: 'wishlist', copies: [] })).querySelector(
+      '.game-case',
+    ) as HTMLElement
+    expect(view.style.height).toBe(`calc(var(--mm) * ${caseShapes.bluRay.height})`)
+  })
+
   it('wears a foil seal when completed', () => {
     expect(box(item({ status: 'completed' })).querySelector('.game-seal')).not.toBeNull()
   })

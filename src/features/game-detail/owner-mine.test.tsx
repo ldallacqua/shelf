@@ -135,4 +135,12 @@ describe('MineSkeleton', () => {
     expect(screen.getByText('Completed on')).toBeInTheDocument()
     expect(screen.getAllByText('Add a copy')).toHaveLength(1)
   })
+
+  it('on the wishlist, holds the place of where I want it, not where I own it (spec 7.5)', () => {
+    shape(game({ slug: 'tsukihime', status: 'wishlist', copies: [], wanted: [48] }))
+    expect(screen.getByText('Want it on')).toBeInTheDocument()
+    expect(screen.getByText('PlayStation 4')).toBeInTheDocument()
+    expect(screen.queryByText('Owned on')).not.toBeInTheDocument()
+    expect(screen.queryByText('Add a copy')).not.toBeInTheDocument()
+  })
 })

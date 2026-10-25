@@ -34,6 +34,7 @@ import { RangeSection } from './range-section'
 const MINE: readonly FilterKey[] = [
   'status',
   'owned',
+  'wanted',
   'format',
   'copies',
   'rating',

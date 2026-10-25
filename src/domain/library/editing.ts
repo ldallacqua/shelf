@@ -42,6 +42,8 @@ export type OwnerGame = {
   slug: string
   title: string
   status: Status
+  /** On the wishlist, the platforms I want it on (spec 7.5); empty otherwise. */
+  wanted: number[]
   rating?: number
   completedOn?: Day
   notes?: string
@@ -60,6 +62,8 @@ export const MAX_NOTES = 10_000
 /** A change to what is mine about a game. Absent: unchanged; null: cleared. */
 export const minePatch = z.object({
   status: z.enum(statuses).optional(),
+  /** Kept only while the game is on the wishlist; leaving it lets them go. */
+  wanted: z.array(z.number().int().positive()).max(20).nullable().optional(),
   rating: z.number().int().min(0).max(100).nullable().optional(),
   completedOn: z.iso.date().nullable().optional(),
   notes: z.string().max(MAX_NOTES).nullable().optional(),

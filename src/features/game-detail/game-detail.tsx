@@ -238,6 +238,8 @@ export function GameDetail({
     const platform = platforms.get(copy.platform)
     return platform ? [{ copy, platform }] : []
   })
+  // On the wishlist, where I want it (spec 7.5).
+  const wanted = (game.wanted ?? []).flatMap((id) => platforms.get(id) ?? [])
 
   const readOnlyMine = (
     <Section title={t('mine')} level={level} className={page ? 'game-mine' : undefined}>
@@ -274,6 +276,19 @@ export function GameDetail({
             <span className="text-muted">{library('shelf.notOwned')}</span>
           )}
         </Row>
+        {wanted.length > 0 ? (
+          <Row label={t('wanted')}>
+            <ul className="flex flex-wrap gap-1.5">
+              {wanted.map((platform) => (
+                <li key={platform.id}>
+                  <FilterLink handle={handle} filter={`wanted:${platform.key}`}>
+                    {platform.name}
+                  </FilterLink>
+                </li>
+              ))}
+            </ul>
+          </Row>
+        ) : null}
         {game.minutes > 0 ? <Row label={t('played')}>{hours(game.minutes)}</Row> : null}
         <Row label={t('added')}>{day(game.addedOn)}</Row>
         {game.completedOn ? <Row label={t('completed')}>{day(game.completedOn)}</Row> : null}

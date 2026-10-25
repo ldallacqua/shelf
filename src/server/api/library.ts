@@ -77,6 +77,9 @@ export const apiGame = z
         }),
       )
       .describe('Copies: one per platform and format'),
+    wanted: z
+      .array(z.string())
+      .describe('On the wishlist, the platforms it is wanted on, as `wanted:` takes them'),
     platforms: z.array(z.string()).describe('Every platform it was released on, as filter keys'),
     genres: z.array(z.string()).describe('As `genre:` takes them'),
     themes: z.array(z.string()),
@@ -243,6 +246,7 @@ const toApiGame = (library: Library, game: LibraryGame): z.infer<typeof apiGame>
       const platform = platforms.get(copy.platform)
       return platform ? [{ platform: platform.key, name: platform.name, format: copy.format }] : []
     }),
+    wanted: (game.wanted ?? []).flatMap((id) => platforms.get(id)?.key ?? []),
     platforms: game.platforms.flatMap((id) => platforms.get(id)?.key ?? []),
     genres: named('genre', game.genres),
     themes: named('theme', game.themes),

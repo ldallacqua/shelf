@@ -49,7 +49,7 @@ One line describes any filter: what a shelf's address stores (q), what a smart s
 - status:playing OR status:backlog: either. Brackets group: (owned:ps5 format:physical) OR rating:>=9
 - year:2015..2020, rating:>=8 (out of 10), hours:<10 (played), length:<10 (hours to beat): ranges and comparisons
 - completed:2025, added:2025-06: a year, a month or a day stands for all of it
-- The owner's own keys: status, owned, format, copies, rating, hours, completed, added, tag, has, is
+- The owner's own keys: status, owned, wanted (platforms a wishlist game is wanted on), format, copies, rating, hours, completed, added, tag, has, is
 - IGDB's keys: genre, theme, keyword, mode, perspective, kind, platform, franchise, series, developer, publisher, year, igdb, length
 - Values are lower case with hyphens: developer:eidos-montreal. A part that cannot be understood is left out, and the answer says which.
 `

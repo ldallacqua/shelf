@@ -17,6 +17,7 @@ import { formats, kinds, statuses } from '@/domain/library/values'
 export const listKeys = [
   'status',
   'owned',
+  'wanted',
   'format',
   'tag',
   'has',
@@ -58,6 +59,7 @@ export const isFilterKey = (key: string): key is FilterKey =>
 export const mineKeys: readonly FilterKey[] = [
   'status',
   'owned',
+  'wanted',
   'format',
   'copies',
   'rating',
@@ -87,8 +89,11 @@ export const closedValues: Partial<Record<ListKey, readonly string[]>> = {
   is: isValues,
 }
 
-/** Platform families, which `owned:` and `platform:` take as well as a platform's own key. */
+/** Platform families, which `owned:`, `wanted:` and `platform:` take as well as a platform's own key. */
 export const platformFamilies: readonly string[] = families
+
+/** The keys whose values are platforms: owned, wanted on the wishlist (spec 7.5), released on. */
+export const platformKeys: readonly ListKey[] = ['owned', 'wanted', 'platform']
 
 /**
  * Shorter words for IGDB's longest names, by IGDB id, so a filter reads as a

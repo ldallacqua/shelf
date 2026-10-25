@@ -219,6 +219,8 @@ export type NewEntry = {
   /** Our id of the game that supplies the title and cover. */
   primaryGameId: string
   status: Status
+  /** The platforms I want it on, kept only on the wishlist (spec 7.5). */
+  wanted?: readonly number[]
   rating?: number
   notes?: string
   notesPublic?: boolean
@@ -240,13 +242,24 @@ const checkCopy = (copy: NewCopy) => {
   }
 }
 
+/** At most this many platforms wanted for one game: more is not a wish, it is every platform. */
+const MAX_WANTED = 20
+
 const checkMine = (input: {
   status?: Status
   rating?: number | null
   completedOn?: Day | null
   minutes?: number
+  wanted?: readonly number[] | null
 }) => {
   if (input.status !== undefined && !isStatus(input.status)) throw invalid('Unknown status')
+  if (
+    input.wanted != null &&
+    (input.wanted.length > MAX_WANTED ||
+      !input.wanted.every((id) => Number.isInteger(id) && id > 0))
+  ) {
+    throw invalid(`A wish names at most ${MAX_WANTED} platforms, by id`)
+  }
   if (input.rating !== undefined && input.rating !== null && !isRating(input.rating)) {
     throw invalid('A rating is a whole number from 0 to 100')
   }
@@ -406,6 +419,7 @@ const insertEntry = async (
     featured: input.featured ?? false,
     addedAt: input.addedAt ?? now,
     completedOn: input.completedOn ?? null,
+    wanted: input.status === 'wishlist' && input.wanted?.length ? [...new Set(input.wanted)] : null,
     createdAt: now,
     updatedAt: now,
   })
@@ -759,6 +773,8 @@ export const undoJoin = (db: Db, libraryId: string, added: Added, now = Date.now
 
 export type EntryPatch = {
   status?: Status
+  /** The platforms I want it on; kept only while it is on the wishlist. */
+  wanted?: readonly number[] | null
   rating?: number | null
   notes?: string | null
   notesPublic?: boolean
@@ -766,6 +782,16 @@ export type EntryPatch = {
   completedOn?: Day | null
   displayCopyId?: string | null
   addedAt?: number
+}
+
+/**
+ * What I wanted is let go once a game leaves the wishlist (spec 7.5): its
+ * first copy starts on that platform in the editor, which has it in hand.
+ */
+const letGo = (patch: Pick<EntryPatch, 'status' | 'wanted'>): { wanted?: number[] | null } => {
+  if (patch.status !== undefined && patch.status !== 'wishlist') return { wanted: null }
+  if (patch.wanted === undefined) return {}
+  return { wanted: patch.wanted?.length ? [...new Set(patch.wanted)] : null }
 }
 
 export const updateEntry = (
@@ -787,9 +813,15 @@ export const updateEntry = (
       if (!copy) throw invalid('That copy belongs to another game')
     }
     const notes = patch.notes === undefined ? undefined : patch.notes?.trim() || null
+    const { wanted: _, ...rest } = patch
     await tx
       .update(entries)
-      .set({ ...patch, ...(notes === undefined ? {} : { notes }), updatedAt: now })
+      .set({
+        ...rest,
+        ...letGo(patch),
+        ...(notes === undefined ? {} : { notes }),
+        updatedAt: now,
+      })
       .where(eq(entries.id, entryId))
     await bumpVersion(tx, libraryId)
   })
@@ -813,9 +845,10 @@ export const patchEntry = (
     await requireEntry(tx, libraryId, entryId)
     if (patch.mine && Object.keys(patch.mine).length > 0) {
       const notes = patch.mine.notes === undefined ? undefined : patch.mine.notes?.trim() || null
+      const { wanted: _, ...rest } = patch.mine
       await tx
         .update(entries)
-        .set({ ...patch.mine, ...(notes === undefined ? {} : { notes }) })
+        .set({ ...rest, ...letGo(patch.mine), ...(notes === undefined ? {} : { notes }) })
         .where(eq(entries.id, entryId))
     }
     if (patch.tags) await writeTags(tx, libraryId, entryId, patch.tags)
@@ -848,7 +881,10 @@ export const setStatuses = async (
       const own = and(eq(entries.userId, libraryId), inArray(entries.id, some))
       const found = await tx.select({ id: entries.id }).from(entries).where(own)
       if (found.length !== some.length) throw notFound('A game')
-      await tx.update(entries).set({ status, updatedAt: now }).where(own)
+      await tx
+        .update(entries)
+        .set({ status, ...letGo({ status }), updatedAt: now })
+        .where(own)
     }
     await bumpVersion(tx, libraryId)
   })

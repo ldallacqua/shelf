@@ -1,9 +1,9 @@
 # Shelf: product and UX spec
 
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
-  Written on 25 Oct 2026: two statuses (3.12), built; and not built yet, hiding adult games
-  (3.13), archiving a game (7.4), wishing for a game on one platform (7.5) and a game only I see
-  (11.1).
+  Written on 25 Oct 2026: two statuses (3.12) and wishing for a game on one platform (7.5),
+  built; and not built yet, hiding adult games (3.13), archiving a game (7.4) and a game only I
+  see (11.1).
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -528,7 +528,7 @@ Signed in only. Opened by the Add button, by `A`, or from the empty library.
    - **Status.** Backlog by default.
    - **Platforms owned.** The platforms this game was released on, as chips, with my most-used
      first. Picking one asks physical or digital, preset to what I last chose for that platform.
-     Wishlist needs none.
+     Wishlist needs none, and asks instead which platforms I want it on, if any (7.5).
    - **Optional:** my rating, tags, and a completion date if the status is completed.
 7. **Add.** Enter adds and closes. Command+Enter adds and clears the field for the next game.
 
@@ -807,6 +807,7 @@ a moment ahead of the browser's. A sync is never said to be in the future.
 | Status | `status` | List |
 | My rating | `rating` | Range, 0 to 10 |
 | Platform owned | `owned` | List. Also accepts a family: `playstation`, `xbox`, `nintendo`, `pc`. |
+| Wanted on | `wanted` | List: the platforms a wishlist game is wanted on (7.5). Families too. |
 | Format | `format` | `physical`, `digital` |
 | Number of platforms owned | `copies` | Range |
 | Completion date | `completed` | Date range |
@@ -1042,21 +1043,23 @@ set. For a game I added myself it does none of it: Undo lasts a day. And its nam
 
 ### 7.5 Wishing for a game on one platform
 
-**Not built yet.** The owner asked on 25 Oct 2026, of Tsukihime, on the wishlist and released
+**Built 25 Oct 2026.** The owner asked on 25 Oct 2026, of Tsukihime, on the wishlist and released
 on PS4 and Switch: "eu não quero ele no ps4, eu quero ele no switch. [...] Tem como colocar que
 eu desejo esse game no switch? Sei que tem a opção tenho em: mas eu não tenho, então não faria
 sentido eu colocar tenho em switch sendo que ta na minha lista de desejos certo?"
 
-Right: Platforms owned is for what I own. Today a wishlist game has no platform of its own, so
-its box takes the case of the first platform IGDB lists it on, PS4's here.
+Right: Platforms owned is for what I own. Until then a wishlist game had no platform of its own,
+so its box took the case of the first platform IGDB lists it on, PS4's here.
 
 - **Want it on** (Quero em), in place of Platforms owned while a game is on the wishlist: the
-  platforms it was released on, as chips, and I pick one or more, or none. Adding a game as
-  Wishlist (4.1) asks the same, and needs none.
+  platforms it was released on, as chips, and I pick one or more, or none, each saved at once.
+  Adding a game as Wishlist (4.1) asks the same, and needs none. A wishlist game that has a copy
+  already (a sync found it owned) shows its copies too.
 - **Its box** stands in the case of the first platform I want it on, outlined as a wishlist
   game is, still on the Not owned shelf when grouped by platform. With none wanted, it is as
-  today.
-- **Its page and its box's name** say where I want it: "Wishlist, on Switch".
+  before.
+- **Its page and its box's name** say where I want it: "Wanted on: Nintendo Switch", and
+  "Wishlist, wanted on Switch".
 - **Filter:** `wanted:switch`, a list like `owned`, families included (`wanted:nintendo`).
 - **When I get it,** changing its status from Wishlist turns Want it on back into Platforms
   owned, with the platform I wanted already picked, asking only physical or digital. What I
@@ -1095,9 +1098,9 @@ Two additions the brief did not ask for, both small:
 | **Featured** (yes or no, per game) | Decides which boxes stand face-out. A shelf with a few covers showing reads far better than a wall of spines. |
 | **Notes public** (yes or no, per game) | The library is public and notes may not be meant to be |
 
-An entry's status is one of eight since 25 Oct 2026, with Someday and Retired (3.12). **Not
-built yet:** an entry gains **archived** (7.4) and **private** (11.1), yes or no, and the
-**platforms wanted** while it is on the wishlist (7.5); a game's cached IGDB data gains its age
+An entry's status is one of eight since 25 Oct 2026, with Someday and Retired (3.12), and a
+wishlist entry keeps the **platforms wanted** (7.5). **Not built yet:** an entry gains
+**archived** (7.4) and **private** (11.1), yes or no; a game's cached IGDB data gains its age
 ratings (3.13).
 
 ---

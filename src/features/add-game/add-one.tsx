@@ -273,6 +273,8 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
   const formId = useId()
   const [status, setStatus] = useState<Status>('backlog')
   const [owned, setOwned] = useState<{ platformId: number; format: Format }[]>([])
+  // On the wishlist, where I want it instead (spec 7.5).
+  const [wanted, setWanted] = useState<number[]>([])
   // Out of ten, as the field shows it; none until it is moved.
   const [rating, setRating] = useState<number>()
   const [tags, setTags] = useState<string[]>([])
@@ -322,6 +324,7 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
         igdbId: candidate.igdbId,
         status,
         copies: status === 'wishlist' ? [] : owned,
+        ...(status === 'wishlist' && wanted.length > 0 ? { wanted } : {}),
         // Stored out of a hundred.
         ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
         ...(tags.length > 0 ? { tags } : {}),
@@ -419,7 +422,30 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
       </fieldset>
 
       {status === 'wishlist' ? (
-        <p className="text-sm text-muted">{t('wishlistNone')}</p>
+        <fieldset className="grid gap-2">
+          <legend className="mb-2 text-sm font-semibold">{t('wanted')}</legend>
+          <div className="flex flex-wrap gap-2">
+            {platforms.map((id) => {
+              const platform = labels.get(id)
+              if (!platform) return null
+              const picked = wanted.includes(id)
+              return (
+                <ToggleChip
+                  key={id}
+                  pressed={picked}
+                  onClick={() =>
+                    setWanted((list) =>
+                      picked ? list.filter((each) => each !== id) : [...list, id],
+                    )
+                  }
+                >
+                  {platform.name}
+                </ToggleChip>
+              )
+            })}
+          </div>
+          <p className="text-xs text-muted">{t('wishlistNone')}</p>
+        </fieldset>
       ) : (
         <fieldset className="grid gap-2">
           <legend className="mb-2 text-sm font-semibold">{t('owned')}</legend>

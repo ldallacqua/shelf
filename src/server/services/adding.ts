@@ -292,6 +292,7 @@ const forLibrary = (libraryId: string, { db, api, records }: LibraryDeps) => {
         entry: {
           status: input.status,
           copies: wanted,
+          ...(input.status === 'wishlist' && input.wanted?.length ? { wanted: input.wanted } : {}),
           ...(input.rating === undefined ? {} : { rating: input.rating }),
           ...(input.tags ? { tags: input.tags } : {}),
           ...(input.completedOn ? { completedOn: input.completedOn } : {}),

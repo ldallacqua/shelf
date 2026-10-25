@@ -165,6 +165,8 @@ export const entries = sqliteTable(
     displayCopyId: text(),
     addedAt: integer().notNull(),
     completedOn: text().$type<Day>(),
+    /** IGDB platform ids I want it on, while it is on the wishlist (spec 7.5). Null otherwise. */
+    wanted: text({ mode: 'json' }).$type<number[]>(),
     createdAt: integer().notNull(),
     updatedAt: integer().notNull(),
   },

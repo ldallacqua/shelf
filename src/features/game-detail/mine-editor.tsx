@@ -66,6 +66,8 @@ export function MineEditor({
   const [drawing, startDrawing] = useTransition()
   const [problem, setProblem] = useState<string>()
   const [confirming, setConfirming] = useState(false)
+  // The platform I wanted it on, once it has left the wishlist: its first copy starts there.
+  const [wasWanted, setWasWanted] = useState<number>()
   const shown = useRef<OwnerGame | undefined>(owned)
 
   useEffect(() => {
@@ -134,9 +136,12 @@ export function MineEditor({
   const setStatus = (status: Status) => {
     // Completed sets the date to today, which stays editable.
     const completedOn = status === 'completed' && !owned.completedOn ? today() : undefined
+    // Off the wishlist, what I wanted is let go (spec 7.5); the copy to add starts on it.
+    const leaving = owned.status === 'wishlist' && status !== 'wishlist'
+    if (leaving && owned.wanted[0] !== undefined) setWasWanted(owned.wanted[0])
     void update(
       { status, ...(completedOn ? { completedOn } : {}) },
-      { status, ...(completedOn ? { completedOn } : {}) },
+      { status, ...(completedOn ? { completedOn } : {}), ...(leaving ? { wanted: [] } : {}) },
     )
   }
 
@@ -246,39 +251,66 @@ export function MineEditor({
           ) : null}
         </div>
 
-        <Copies
-          owned={owned}
-          labels={labels}
-          platforms={owned.platforms}
-          onFormat={(copy, format) =>
-            save(
-              {
-                ...owned,
-                copies: owned.copies.map((each) =>
-                  each.id === copy.id ? { ...each, format } : each,
-                ),
-              },
-              () => actions.setFormat(owned.entryId, copy.id, format),
-            )
-          }
-          onRemove={(copy) =>
-            save({ ...owned, copies: owned.copies.filter((each) => each.id !== copy.id) }, () =>
-              actions.removeCopy(owned.entryId, copy.id),
-            )
-          }
-          onAdd={(platformId, format) =>
-            save(
-              {
-                ...owned,
-                copies: [
-                  ...owned.copies,
-                  { id: `new-${platformId}-${format}`, platformId, format },
-                ],
-              },
-              () => actions.addCopy(owned.entryId, { platformId, format }),
-            )
-          }
-        />
+        {owned.status === 'wishlist' && owned.platforms.length > 0 ? (
+          <fieldset className="grid gap-2">
+            <legend className="mb-2 text-sm font-semibold">{t('wanted')}</legend>
+            <div className="flex flex-wrap gap-2">
+              {owned.platforms.map((platform) => (
+                <ChoiceChip
+                  key={platform.id}
+                  type="checkbox"
+                  checked={owned.wanted.includes(platform.id)}
+                  onChange={(event) => {
+                    const wanted = event.target.checked
+                      ? [...owned.wanted, platform.id]
+                      : owned.wanted.filter((each) => each !== platform.id)
+                    void update({ wanted }, { wanted })
+                  }}
+                >
+                  {platform.name}
+                </ChoiceChip>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
+
+        {/* On the wishlist, what I want takes the place of what I own, unless a copy is there already. */}
+        {owned.status !== 'wishlist' || owned.copies.length > 0 ? (
+          <Copies
+            owned={owned}
+            labels={labels}
+            platforms={owned.platforms}
+            preset={wasWanted}
+            onFormat={(copy, format) =>
+              save(
+                {
+                  ...owned,
+                  copies: owned.copies.map((each) =>
+                    each.id === copy.id ? { ...each, format } : each,
+                  ),
+                },
+                () => actions.setFormat(owned.entryId, copy.id, format),
+              )
+            }
+            onRemove={(copy) =>
+              save({ ...owned, copies: owned.copies.filter((each) => each.id !== copy.id) }, () =>
+                actions.removeCopy(owned.entryId, copy.id),
+              )
+            }
+            onAdd={(platformId, format) =>
+              save(
+                {
+                  ...owned,
+                  copies: [
+                    ...owned.copies,
+                    { id: `new-${platformId}-${format}`, platformId, format },
+                  ],
+                },
+                () => actions.addCopy(owned.entryId, { platformId, format }),
+              )
+            }
+          />
+        ) : null}
 
         <TagsField value={owned.tags} onChange={(tags) => void update({ tags }, { tags })} />
 
@@ -426,6 +458,7 @@ function Copies({
   owned,
   labels,
   platforms,
+  preset,
   onFormat,
   onRemove,
   onAdd,
@@ -433,6 +466,8 @@ function Copies({
   owned: OwnerGame
   labels: ReadonlyMap<number, PlatformLabel>
   platforms: readonly PlatformLabel[]
+  /** The platform to start on: the one I wanted it on, once it has left the wishlist. */
+  preset?: number
   onFormat: (copy: OwnedCopy, format: Format) => void
   onRemove: (copy: OwnedCopy) => void
   onAdd: (platformId: number, format: Format) => void
@@ -448,7 +483,8 @@ function Copies({
   )
   const [platform, setPlatform] = useState<number>()
   const [format, setFormat] = useState<Format>('physical')
-  const chosen = platform ?? open[0]?.id
+  const chosen =
+    platform ?? (open.some((each) => each.id === preset) ? preset : undefined) ?? open[0]?.id
 
   return (
     <fieldset className="grid gap-2">

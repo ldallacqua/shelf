@@ -6,7 +6,7 @@ import { useId, useState } from 'react'
 
 import { fold } from '@/domain/query/evaluate'
 import { rankFacets, type FacetValue } from '@/domain/query/facets'
-import { platformFamilies, type ListKey } from '@/domain/query/keys'
+import { platformFamilies, platformKeys, type ListKey } from '@/domain/query/keys'
 import type { ListCondition } from '@/domain/query/panel'
 import { cn } from '@/ui/cn'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
@@ -106,7 +106,7 @@ export function ListSection({
   } else {
     // A short list keeps its own order (statuses, families first), with what matches nothing last.
     const families = (word: string) =>
-      (filterKey === 'owned' || filterKey === 'platform') && platformFamilies.includes(word) ? 0 : 1
+      platformKeys.includes(filterKey) && platformFamilies.includes(word) ? 0 : 1
     shown = values
       .map((value, at) => ({ value, at }))
       .sort(

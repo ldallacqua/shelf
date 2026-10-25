@@ -222,6 +222,7 @@ export const readLibrary = async (db: Db, libraryId: string): Promise<Library> =
     }
     if (entry.rating !== null) game.rating = entry.rating
     if (entry.completedOn) game.completedOn = entry.completedOn
+    if (entry.status === 'wishlist' && entry.wanted?.length) game.wanted = entry.wanted
     if (primary.releasedOn) {
       game.releasedOn = primary.releasedOn
       game.year = Number(primary.releasedOn.slice(0, 4))
@@ -445,6 +446,7 @@ export const readOwnerGame = async (
     slug: primary.slug,
     title: primary.title,
     status: entry.status,
+    wanted: entry.status === 'wishlist' ? (entry.wanted ?? []) : [],
     notesPublic: entry.notesPublic,
     minutes: timeRows
       .filter((row) => row.source === 'manual')
