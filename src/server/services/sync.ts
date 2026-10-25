@@ -256,17 +256,29 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
       }
       const exact = await named(titled.map((item) => item.title))
       const again: Item[] = []
+      const missed: Item[] = []
       titled.forEach((item, at) => {
         const match = matchByTitle(query(item), foldSearchHits(exact[at] ?? [], 20))
         if (match) take(item, match.igdbId, 'title')
         else if (strippedTitle(item.title) !== item.title.trim()) again.push(item)
-        else tried.push(item.id)
+        else missed.push(item)
       })
       // Asked again without the marks and edition words, for those the title as written did not find.
       const stripped =
         again.length > 0 ? await named(again.map((item) => strippedTitle(item.title))) : []
       again.forEach((item, at) => {
         const match = matchByTitle(query(item), foldSearchHits(stripped[at] ?? [], 20))
+        if (match) take(item, match.igdbId, 'title')
+        else missed.push(item)
+      })
+      // And by its words, for a name IGDB punctuates otherwise: "Xtreme 3 Scarlet" is its
+      // "Xtreme 3: Scarlet". The rung still takes only the same words in the same order.
+      const worded =
+        missed.length > 0
+          ? await api.findByWords(missed.map((item) => strippedTitle(item.title)))
+          : []
+      missed.forEach((item, at) => {
+        const match = matchByTitle(query(item), foldSearchHits(worded[at] ?? [], 20))
         if (match) take(item, match.igdbId, 'title')
         else tried.push(item.id)
       })

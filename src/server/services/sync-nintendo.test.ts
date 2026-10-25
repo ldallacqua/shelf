@@ -422,3 +422,64 @@ describe('the names Nintendo gives its games', () => {
     ])
   })
 })
+
+describe('a name IGDB writes otherwise', () => {
+  const SCARLET = 900001
+  const CRAWLERS = 900002
+
+  /** The fixtures, with two Switch games named as IGDB names them. */
+  const withNames = (): Fixtures => {
+    const fixtures = loadFixtures()
+    const games = new Map(fixtures.games)
+    const base = fixtures.games.get(HOLLOW_KNIGHT)!
+    for (const [id, name] of [
+      [SCARLET, 'Dead or Alive Xtreme 3: Scarlet'],
+      [CRAWLERS, 'Vampire Crawlers: The Turbo Wildcard from Vampire Survivors'],
+    ] as const) {
+      games.set(id, {
+        ...base,
+        id,
+        name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        platforms: [SWITCH],
+      })
+    }
+    return { ...fixtures, games }
+  }
+
+  beforeEach(() => {
+    network.use(
+      ...createHandlers(withNames()),
+      http.get(`${NINTENDO_STORE_API}/users/me/play_histories`, () =>
+        HttpResponse.json({
+          playHistories: [
+            ['0100000000000001', 'DEAD OR ALIVE Xtreme 3 Scarlet'],
+            ['0100000000000002', 'Vampire Crawlers'],
+          ].map(([titleId, titleName]) => ({
+            titleId,
+            titleName,
+            platform: 'HAC',
+            totalPlayedMinutes: 12,
+            firstPlayedAt: '2025-06-05T12:00:00Z',
+            lastPlayedAt: '2025-07-01T12:00:00Z',
+          })),
+        }),
+      ),
+    )
+  })
+
+  it('finds a game whose words IGDB cases and punctuates otherwise', async () => {
+    const me = await linked()
+    await syncAll(me)
+    expect(await itemNamed(me, 'DEAD OR ALIVE Xtreme 3 Scarlet')).toMatchObject({
+      igdbId: SCARLET,
+      resolvedBy: 'title',
+    })
+  })
+
+  it('leaves a name with words missing for me to find, however close', async () => {
+    const me = await linked()
+    await syncAll(me)
+    expect(await itemNamed(me, 'Vampire Crawlers')).toMatchObject({ igdbId: null })
+  })
+})

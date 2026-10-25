@@ -321,6 +321,14 @@ Nintendo's own page and Shelf keeps the session token, encrypted." What building
   choice: a shelf can hold a game on the Switch 2 and on the PC. Its copy then goes on the
   Switch 2. Where IGDB keeps none, it is the game itself. Migration 0011 has the next sync
   look again at every title nothing matched.
+- **A name IGDB punctuates otherwise** (added 25 Oct 2026). Nintendo wrote "DEAD OR ALIVE
+  Xtreme 3 Scarlet" where IGDB has "Dead or Alive Xtreme 3: Scarlet": the same title once
+  bared, but the exact lookup never brought it back. A title no spelling found is asked once
+  more, last, for the names holding every one of its words (`findByWords` in
+  `server/igdb/api.ts`), and the rung compares them as before. Fewer words stay mine to find:
+  Nintendo's "Vampire Crawlers" is not IGDB's "Vampire Crawlers: The Turbo Wildcard from
+  Vampire Survivors", the owner's choice ("não quero fazer um match de jogos errado").
+  Migration 0017 has the next sync look again at every title nothing matched.
 - **The games Shelf matched are listed first**, each needing only Cartridge or Download, then
   those it could not find, under a heading of their own. The card says how many wait for an
   answer; it never says "up to date" while any do.

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { createIgdbApi, quote } from '@/server/igdb/api'
+import { createIgdbApi, quote, wordsOf } from '@/server/igdb/api'
 import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
 import {
   createHandlers,
@@ -156,6 +156,36 @@ describe('findByTitles', () => {
     // Two games share this title; both come back, to be told apart by year.
     expect(found[10]?.map((hit) => hit.name)).toEqual(['Resident Evil 4', 'Resident Evil 4'])
     expect(found[11]?.[0]?.name).toBe('Journey')
+  })
+})
+
+describe('findByWords', () => {
+  it('finds a name however its words are cased and punctuated, where the exact lookup does not', async () => {
+    const titles = ['SEKIRO SHADOWS DIE TWICE', '—', 'No Such Game Exists', 'hades']
+    expect(await api.findByTitles([titles[0]!])).toEqual([[]])
+    state.requests.length = 0
+    const found = await api.findByWords(titles)
+    // One request; a title with no words is not asked.
+    expect(state.requests.map((request) => request.endpoint)).toEqual(['multiquery'])
+    expect(found).toHaveLength(titles.length)
+    expect(found[0]?.map((hit) => hit.name)).toContain('Sekiro: Shadows Die Twice')
+    expect(found[1]).toEqual([])
+    expect(found[2]).toEqual([])
+    expect(found[3]?.map((hit) => hit.name)).toContain('Hades')
+  })
+
+  it('asks for each word once, split at anything not a letter or a digit', () => {
+    expect(wordsOf('Assassin’s Creed: assassin’s Creed')).toEqual(['Assassin', 's', 'Creed'])
+    expect(wordsOf('DEAD OR ALIVE Xtreme 3 Scarlet')).toEqual([
+      'DEAD',
+      'OR',
+      'ALIVE',
+      'Xtreme',
+      '3',
+      'Scarlet',
+    ])
+    expect(wordsOf('Pokémon™ Legends: Arceus')).toEqual(['Pokémon', 'Legends', 'Arceus'])
+    expect(wordsOf(' – ')).toEqual([])
   })
 })
 
