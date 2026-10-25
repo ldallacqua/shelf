@@ -133,6 +133,7 @@ export const gameColumns = (data: GameData, lineage: readonly LineageStep[], now
   publishers: data.publishers,
   screenshots: data.screenshots,
   artworks: data.artworks,
+  videos: data.videos,
   releases: data.releases,
   storeIds: data.storeIds,
   lineage: [...lineage],

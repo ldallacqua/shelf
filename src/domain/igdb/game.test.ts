@@ -103,6 +103,23 @@ describe('toGameData', () => {
     expect(toGameData(parse({})).adultsOnly).toBe(false)
   })
 
+  it('keeps up to six videos by their YouTube ids, with what IGDB calls each (spec 7.1)', () => {
+    const videos = toGameData(
+      parse({
+        videos: [
+          { video_id: '2UJxaWZoK6Y', name: ' Gameplay Trailer ' },
+          { video_id: 'not a youtube id' },
+          { video_id: 'Ga98zSE9Q3Y' },
+          ...Array.from({ length: 6 }, (_, at) => ({ video_id: `abcdefghij${at}` })),
+        ],
+      }),
+    ).videos
+    expect(videos).toHaveLength(6)
+    expect(videos[0]).toEqual({ id: '2UJxaWZoK6Y', name: 'Gameplay Trailer' })
+    expect(videos[1]).toEqual({ id: 'Ga98zSE9Q3Y' })
+    expect(toGameData(parse({})).videos).toEqual([])
+  })
+
   it('turns the release date into a day and a year', () => {
     const data = toGameData(parse({ first_release_date: 1536883200 }))
     expect(data.releasedOn).toBe('2018-09-14')

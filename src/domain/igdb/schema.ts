@@ -76,6 +76,8 @@ export const igdbGameSchema = z.object({
   storyline: z.string().optional(),
   screenshots: z.array(image).default([]),
   artworks: z.array(artwork).default([]),
+  /** Trailers and gameplay, as YouTube ids. */
+  videos: z.array(z.object({ video_id: z.string(), name: z.string().optional() })).default([]),
   parent_game: id.optional(),
   version_parent: id.optional(),
   version_title: z.string().optional(),
@@ -127,6 +129,8 @@ export const igdbGameFields = [
   'artworks.width',
   'artworks.height',
   'artworks.artwork_type',
+  'videos.video_id',
+  'videos.name',
   'parent_game',
   'version_parent',
   'version_title',

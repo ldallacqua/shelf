@@ -427,12 +427,13 @@ export function GameDetail({
       </Section>
     )
 
+  const videos = facts?.videos ?? []
   const shots =
-    facts && facts.screenshots.length === 0 ? null : (
-      <Section title={t('screenshots')} level={level}>
+    facts && facts.screenshots.length === 0 && videos.length === 0 ? null : (
+      <Section title={videos.length > 0 ? t('media') : t('screenshots')} level={level}>
         {facts ? (
           <div data-adult-media={game.adult ? '' : undefined}>
-            <Screenshots shots={facts.screenshots} title={game.title} />
+            <Screenshots shots={facts.screenshots} videos={videos} title={game.title} />
           </div>
         ) : (
           <div aria-hidden="true" className="flex gap-2 overflow-hidden">
