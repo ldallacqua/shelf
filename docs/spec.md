@@ -583,7 +583,9 @@ pagina e voltar pro organize seus jogos ai beleza".
   platform's card ("240 games to place", the games that source brought in still unsorted); on
   my own shelf, from one line under the status row, "Place the 180 games with no status",
   there whenever any game waits, whatever the filter, and gone when none does; and from the
-  page that sets a new shelf up (4.6).
+  page that sets a new shelf up (4.6). Its intro says what the page is for, in one sentence,
+  and nothing of how it behaves, which using it shows (the owner, 24 Oct 2026: "esse texto ta
+  explicando demais [...] So explica pra que serve e ponto").
 - **One row per game:** cover, title and year, the platforms of its copies, hours on each
   source that feeds a copy and when I last played it there ("Not played on Steam" when it
   never was), or the hours I typed when no source reported any. Longest played first, as

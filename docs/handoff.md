@@ -21,6 +21,11 @@ all the browser tests too to see if these changes broke anything."
   with `next build --profile` for React's own tracks (render, commit and cascading updates,
   per lane) in a Chrome trace, and load the page with Lighthouse's phone user agent: the
   server sends a phone 12 boxes, not 48. Put the config back before committing.
+- **The placing page's intro is one sentence,** what the page is for: it explained all of its
+  behaviour, which using it shows (the owner: "So explica pra que serve e ponto"; spec 4.5).
+- **Icons for the stores and consoles** are a session of their own: it researched the brands'
+  rules (none lets its logo be used here but Valve's sign-in button) and proposed five small
+  changes without logos, which wait for the owner's answer.
 - **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
 ## Before: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)
