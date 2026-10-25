@@ -15,6 +15,7 @@ import {
   type OwnerGame,
   type Removed,
   type Restored,
+  type Separated,
 } from '@/domain/library/editing'
 import { formats, type Format } from '@/domain/library/values'
 import { database, type Db } from '@/server/db/client'
@@ -29,6 +30,7 @@ import {
   removeCopy,
   removeEntryForUndo,
   restoreEntry,
+  separateVersion,
   setArchived,
   setCopyFormat,
   setPrimary,
@@ -99,6 +101,12 @@ export const createEditing = (db: Db, libraryId: string) => {
     return { ...(await changed()), ...(await named(entryId)) }
   }
 
+  /** One of its versions made a game of its own (spec 7.6): that game's address and title. */
+  const separate = async (idOrSlug: string, gameId: string): Promise<Separated> => {
+    const entryId = await separateVersion(db, libraryId, await entryIdFor(idOrSlug), gameId)
+    return { ...(await changed()), ...(await named(entryId)) }
+  }
+
   const restore = async (undo: string): Promise<Restored> => {
     const entryId = await restoreEntry(db, libraryId, undo)
     const [primary] = await db
@@ -140,6 +148,7 @@ export const createEditing = (db: Db, libraryId: string) => {
     restore,
     archive,
     bringBack,
+    separate,
     archived: (): Promise<ArchivedGame[]> => readArchived(db, libraryId),
   }
 }
@@ -207,6 +216,10 @@ export const archiveMine = checked(z.tuple([slug]), (editing, s) => editing.arch
 
 export const bringBackMine = checked(z.tuple([id]), (editing, entryId) =>
   editing.bringBack(entryId),
+)
+
+export const separateMine = checked(z.tuple([slug, id]), (editing, s, gameId) =>
+  editing.separate(s, gameId),
 )
 
 export const myArchived = checked(z.tuple([]), (editing) => editing.archived(), false)

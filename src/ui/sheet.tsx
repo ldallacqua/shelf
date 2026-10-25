@@ -102,6 +102,7 @@ function SheetContent({
   actions,
   grip,
   upright,
+  onInteractOutside,
   ...props
 }: SheetContentProps) {
   const place = placing[upright ? 'upright' : 'phone']
@@ -144,6 +145,14 @@ function SheetContent({
           className,
         )}
         {...props}
+        onInteractOutside={(event) => {
+          // A notice raised from inside the sheet (its Undo, its Open) is part of what the sheet
+          // did, not a click away from it: closing would step back in history under its action.
+          if (event.target instanceof Element && event.target.closest('[data-notice]')) {
+            event.preventDefault()
+          }
+          onInteractOutside?.(event)
+        }}
       >
         {/* A grip, on a phone, where a thumb expects one. */}
         {grip ? null : (

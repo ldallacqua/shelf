@@ -330,6 +330,14 @@ export const apiBroughtBack = z
   .object({ version: z.int(), slug: z.string(), title: z.string() })
   .meta({ id: 'BroughtBack' })
 
+export const apiSeparated = z
+  .object({
+    version: z.int(),
+    slug: z.string().describe('The new game’s address'),
+    title: z.string(),
+  })
+  .meta({ id: 'Separated' })
+
 export const apiArchivedGames = z
   .object({
     games: z.array(

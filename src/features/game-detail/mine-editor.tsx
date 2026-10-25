@@ -5,10 +5,16 @@ import { useTranslations } from 'next-intl'
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from 'react'
 
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
-import type { Changed, EditPatch, OwnedCopy, OwnerGame } from '@/domain/library/editing'
+import type {
+  Changed,
+  EditPatch,
+  OwnedCopy,
+  OwnedVersion,
+  OwnerGame,
+} from '@/domain/library/editing'
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
 import { useShelf } from '@/features/library/shelf'
-import { libraryHref } from '@/features/library/shelf-address'
+import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { DayField, SavedRating, TagsField, today } from '@/features/owner/fields'
 import { announceChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
@@ -66,6 +72,8 @@ export function MineEditor({
   const [drawing, startDrawing] = useTransition()
   const [problem, setProblem] = useState<string>()
   const [confirming, setConfirming] = useState(false)
+  // The version asked about before it is made a game of its own (spec 7.6).
+  const [separating, setSeparating] = useState<string>()
   // The platform I wanted it on, once it has left the wishlist: its first copy starts there.
   const [wasWanted, setWasWanted] = useState<number>()
   const shown = useRef<OwnerGame | undefined>(owned)
@@ -184,6 +192,25 @@ export function MineEditor({
     announceChange({ version: result.value.version })
     if (onRemoved) onRemoved()
     else router.push(libraryHref(handle))
+  }
+
+  /** A version made a game of its own (spec 7.6): gone from here at once, and Open goes to it. */
+  const separate = (version: OwnedVersion) => {
+    setSeparating(undefined)
+    void save(
+      { ...owned, versions: owned.versions.filter((each) => each.gameId !== version.gameId) },
+      async () => {
+        const result = await actions.separate(owned.entryId, version.gameId)
+        if (result.ok) {
+          const { slug: other, title } = result.value
+          notify({
+            message: t('separated', { title }),
+            actions: [{ label: t('open'), run: () => router.push(gameHref(handle, other)) }],
+          })
+        }
+        return result
+      },
+    )
   }
 
   const remove = async () => {
@@ -405,18 +432,43 @@ export function MineEditor({
                     ].join(' · ')}
                   </span>
                   {version.relation === 'primary' ? null : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        save(owned, () =>
-                          actions.update(owned.entryId, { mainVersion: version.gameId }),
-                        )
-                      }
-                    >
-                      {t('makeMain')}
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          save(owned, () =>
+                            actions.update(owned.entryId, { mainVersion: version.gameId }),
+                          )
+                        }
+                      >
+                        {t('makeMain')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-expanded={separating === version.gameId}
+                        onClick={() => setSeparating(version.gameId)}
+                      >
+                        {t('separate')}
+                      </Button>
+                    </>
                   )}
+                  {separating === version.gameId ? (
+                    <div role="group" aria-label={t('separate')} className="grid w-full gap-3">
+                      <p className="text-sm text-pretty">
+                        {t('confirmSeparate', { title: version.title, main: owned.title })}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="primary" onClick={() => separate(version)}>
+                          {t('separateConfirm')}
+                        </Button>
+                        <Button variant="secondary" onClick={() => setSeparating(undefined)}>
+                          {t('keepTogether')}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>

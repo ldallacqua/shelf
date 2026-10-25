@@ -1211,6 +1211,12 @@
       "other": "Other version"
     },
     "makeMain": "Make this the main version",
+    "separate": "Separate into its own game",
+    "confirmSeparate": "Make {title} a game of its own? Its copies and the hours stores report for it go with it, and it waits in Unsorted. Status, rating, notes and tags stay with {main}.",
+    "separateConfirm": "Separate",
+    "keepTogether": "Keep together",
+    "separated": "{title} is a game of its own now, in Unsorted.",
+    "open": "Open",
     "remove": "Remove from library",
     "confirmRemove": "Remove {title} from the library? Its copies, playtime and notes go with it.",
     "orArchive": "Or archive it: out of sight, with everything kept, until you bring it back.",
