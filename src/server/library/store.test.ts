@@ -13,6 +13,7 @@ import {
   entryVersions,
   games,
   playTime,
+  sourceItems,
   tags,
 } from '@/server/db/schema'
 import { readArchived, readLibrary, readOwnerGame, readStanding } from '@/server/library/read'
@@ -20,6 +21,7 @@ import {
   addCopy,
   addVersion,
   createEntry,
+  feedCopies,
   findEntryIdBySlug,
   LibraryError,
   readLinkedMembers,
@@ -32,6 +34,7 @@ import {
   restoreEntry,
   saveGame,
   savePlatforms,
+  separateVersion,
   patchEntry,
   setManualMinutes,
   setPrimary,
@@ -495,6 +498,169 @@ describe('archiving a game (spec 7.4)', () => {
     expect(await readVersion(db, me)).toBe(version)
     await expect(setArchived(db, other, entry, false)).rejects.toThrow(LibraryError)
     expect(await readArchived(db, other)).toEqual([])
+  })
+})
+
+describe('separating a version (spec 7.6)', () => {
+  let ds2: string
+  let scholar: string
+
+  beforeEach(async () => {
+    ds2 = await saveGame(db, game(2368, 'Dark Souls II', { platforms: [6, 48] }), { lineage: [] })
+    scholar = await saveGame(
+      db,
+      game(9727, 'Dark Souls II: Scholar of the First Sin', {
+        platforms: [6, 48],
+        game_type: { id: 10 },
+        parent_game: 2368,
+      }),
+      { lineage: [{ igdbId: 2368, via: 'expanded' }] },
+    )
+  })
+
+  /** A Steam app feeding a copy, as a sync leaves it. */
+  const steamItem = (storeId: string, igdbId: number, minutes: number, copyId: string) =>
+    db.insert(sourceItems).values({
+      id: `steam-${storeId}`,
+      userId: me,
+      source: 'steam',
+      storeId,
+      title: storeId,
+      evidence: 'owned',
+      minutes,
+      firstSeenAt: 1,
+      lastSeenAt: 1,
+      igdbId,
+      resolvedBy: 'store_id',
+      decision: 'copy',
+      copyId,
+    })
+
+  const steamMinutes = async () =>
+    (await db.select().from(playTime).where(eq(playTime.source, 'steam'))).reduce(
+      (sum, row) => sum + row.minutes,
+      0,
+    )
+
+  it('splits a copy both fed, and leaves everything I set where it was', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: ds2,
+      status: 'completed',
+      rating: 90,
+      notes: 'Both of them.',
+      copies: [{ platformId: PC, format: 'digital' }],
+      tags: ['souls'],
+      minutes: 60,
+      addedAt: 1000,
+    })
+    await addVersion(db, me, entry, scholar, 'expanded')
+    const [copy] = await db.select().from(copies).where(eq(copies.entryId, entry))
+    await steamItem('236430', 2368, 600, copy!.id)
+    await steamItem('335300', 9727, 1200, copy!.id)
+    await feedCopies(db, me, 'steam')
+    const before = await readVersion(db, me)
+
+    const apart = await separateVersion(db, me, entry, scholar)
+
+    expect(await readVersion(db, me)).toBe(before + 1)
+    expect(await readOwnerGame(db, me, entry)).toMatchObject({
+      status: 'completed',
+      rating: 90,
+      notes: 'Both of them.',
+      tags: ['souls'],
+      minutes: 60,
+      versions: [expect.objectContaining({ gameId: ds2, relation: 'primary' })],
+      copies: [
+        expect.objectContaining({
+          id: copy!.id,
+          platformId: PC,
+          synced: [{ source: 'steam', minutes: 600 }],
+        }),
+      ],
+    })
+    const separated = await readOwnerGame(db, me, apart)
+    expect(separated).toMatchObject({
+      title: 'Dark Souls II: Scholar of the First Sin',
+      status: 'unsorted',
+      tags: [],
+      minutes: 0,
+      versions: [expect.objectContaining({ gameId: scholar, relation: 'primary' })],
+      copies: [
+        expect.objectContaining({
+          platformId: PC,
+          format: 'digital',
+          synced: [{ source: 'steam', minutes: 1200 }],
+        }),
+      ],
+    })
+    expect(separated?.rating).toBeUndefined()
+    expect(separated?.notes).toBeUndefined()
+    expect(await steamMinutes()).toBe(1800)
+    const [row] = await db.select().from(entries).where(eq(entries.id, apart))
+    expect(row?.addedAt).toBe(1000)
+    expect((await readLibrary(db, me)).games.map((game) => game.slug).sort()).toEqual([
+      'dark-souls-ii',
+      'dark-souls-ii-scholar-of-the-first-sin',
+    ])
+  })
+
+  it('takes a copy that names the version whole, and gives back what feeds it of another', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: ds2,
+      status: 'playing',
+      copies: [{ platformId: PS4, format: 'physical' }],
+    })
+    await addVersion(db, me, entry, scholar, 'expanded')
+    const named = await addCopy(db, me, entry, {
+      platformId: PC,
+      format: 'digital',
+      gameId: scholar,
+    })
+    await updateEntry(db, me, entry, { displayCopyId: named })
+    await steamItem('335300', 9727, 1200, named)
+    await steamItem('236430', 2368, 600, named)
+    await feedCopies(db, me, 'steam')
+
+    const apart = await separateVersion(db, me, entry, scholar)
+
+    expect((await readOwnerGame(db, me, apart))?.copies).toEqual([
+      expect.objectContaining({ id: named, synced: [{ source: 'steam', minutes: 1200 }] }),
+    ])
+    const left = await readOwnerGame(db, me, entry)
+    expect(left?.copies.map((each) => [each.platformId, each.synced])).toEqual(
+      expect.arrayContaining([
+        [PS4, undefined],
+        [PC, [{ source: 'steam', minutes: 600 }]],
+      ]),
+    )
+    const [row] = await db.select().from(entries).where(eq(entries.id, entry))
+    expect(row?.displayCopyId).toBeNull()
+    expect(await steamMinutes()).toBe(1800)
+  })
+
+  it('keeps a private game private', async () => {
+    const entry = await createEntry(db, me, { primaryGameId: ds2, status: 'backlog' })
+    await addVersion(db, me, entry, scholar, 'expanded')
+    await patchEntry(db, me, entry, { mine: { private: true } })
+    const apart = await separateVersion(db, me, entry, scholar)
+    expect((await readOwnerGame(db, me, apart))?.private).toBe(true)
+  })
+
+  it('refuses the main version, a version it lacks, an archived game and another library', async () => {
+    const entry = await createEntry(db, me, { primaryGameId: ds2, status: 'backlog' })
+    await addVersion(db, me, entry, scholar, 'expanded')
+    await expect(separateVersion(db, me, entry, ds2)).rejects.toMatchObject({ code: 'invalid' })
+    await expect(separateVersion(db, me, entry, hades)).rejects.toMatchObject({
+      code: 'not-found',
+    })
+    await expect(separateVersion(db, other, entry, scholar)).rejects.toMatchObject({
+      code: 'not-found',
+    })
+    await setArchived(db, me, entry, true)
+    await expect(separateVersion(db, me, entry, scholar)).rejects.toMatchObject({
+      code: 'not-found',
+    })
+    expect(await count(entries)).toBe(1)
   })
 })
 

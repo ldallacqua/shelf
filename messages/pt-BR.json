@@ -1211,6 +1211,12 @@
       "other": "Outra versão"
     },
     "makeMain": "Tornar a versão principal",
+    "separate": "Separar em outro jogo",
+    "confirmSeparate": "Fazer de {title} um jogo à parte? As cópias dele e as horas que as lojas contam para ele vão junto, e ele fica em A definir. O status, a sua nota, as notas e as etiquetas ficam com {main}.",
+    "separateConfirm": "Separar",
+    "keepTogether": "Manter juntos",
+    "separated": "{title} agora é um jogo à parte, em A definir.",
+    "open": "Abrir",
     "remove": "Tirar da biblioteca",
     "confirmRemove": "Tirar {title} da biblioteca? As cópias, o tempo de jogo e as notas vão junto.",
     "orArchive": "Ou arquive: fora de vista, com tudo guardado, até você trazer de volta.",

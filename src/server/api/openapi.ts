@@ -22,6 +22,7 @@ import {
   apiArchived,
   apiArchivedGames,
   apiBroughtBack,
+  apiSeparated,
   apiAddUndo,
   apiChanged,
   apiCopyPatch,
@@ -100,6 +101,14 @@ const COPY = {
   schema: { type: 'string' },
 }
 
+const VERSION = {
+  name: 'version',
+  in: 'path',
+  required: true,
+  description: 'The version’s `gameId`, from GET /entries/{id}',
+  schema: { type: 'string' },
+}
+
 export const openApiDocument = () => {
   // Every schema with an id becomes a component; a schema inside another is a reference to it.
   const registry = z.registry<{ id: string }>()
@@ -128,6 +137,7 @@ export const openApiDocument = () => {
     apiRestored,
     apiArchived,
     apiBroughtBack,
+    apiSeparated,
     apiArchivedGames,
     apiPastedLines,
     apiLineMatch,
@@ -373,6 +383,15 @@ export const openApiDocument = () => {
             200: { description: 'Back on the shelf', ...json('BroughtBack') },
             ...REFUSALS,
           },
+        },
+      },
+      '/entries/{id}/versions/{version}/separate': {
+        post: {
+          summary:
+            'Make one of a game’s versions a game of its own, unsorted, with its copies and the hours stores report for it. Signed in.',
+          security: OWNER,
+          parameters: [ENTRY, VERSION],
+          responses: { 200: { description: 'Separated', ...json('Separated') }, ...REFUSALS },
         },
       },
       '/me/archived': {

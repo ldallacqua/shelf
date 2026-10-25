@@ -37,7 +37,20 @@ const client = vi.hoisted(() => ({
     value: { version: 3, entryId, title: 'Tsukihime: A Piece of Blue Glass Moon' },
   })),
   bringBack: vi.fn(),
+  separate: vi.fn(async (entryId: string, gameId: string) => {
+    const [slug, game] = [...server.games].find(([, each]) => each.entryId === entryId)!
+    server.games.set(slug, {
+      ...game,
+      versions: game.versions.filter((version) => version.gameId !== gameId),
+    })
+    return {
+      ok: true as const,
+      value: { version: 4, slug: 'scholar', title: 'Dark Souls II: Scholar of the First Sin' },
+    }
+  }),
 }))
+const notices = vi.hoisted(() => ({ notify: vi.fn() }))
+vi.mock('@/features/shell/notices', () => notices)
 vi.mock('./edit-client', () => ({ editClient: client }))
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 vi.mock('@/features/library/shelf', () => ({ useShelf: () => ({ handle: 'sample' }) }))
@@ -134,5 +147,70 @@ describe('MineEditor, a game only I see (spec 11.1)', () => {
     await waitFor(() => expect(toggle).toBeChecked())
     await userEvent.click(toggle)
     expect(client.update).toHaveBeenLastCalledWith('entry-secret', { private: false })
+  })
+})
+
+describe('MineEditor, separating a version (spec 7.6)', () => {
+  it('asks first, then makes the version a game of its own and offers to open it', async () => {
+    server.games.set('dark-souls-ii', {
+      ...wished('dark-souls-ii', []),
+      title: 'Dark Souls II',
+      status: 'completed',
+      versions: [
+        {
+          gameId: 'ds2',
+          slug: 'dark-souls-ii',
+          title: 'Dark Souls II',
+          relation: 'primary',
+          kind: 'main',
+          platforms: [],
+        },
+        {
+          gameId: 'scholar',
+          slug: 'scholar',
+          title: 'Dark Souls II: Scholar of the First Sin',
+          relation: 'expanded',
+          kind: 'main',
+          platforms: [],
+        },
+      ],
+    })
+    editor('dark-souls-ii')
+    await userEvent.click(await screen.findByRole('button', { name: 'Separate into its own game' }))
+    expect(client.separate).not.toHaveBeenCalled()
+    const question = within(screen.getByRole('group', { name: 'Separate into its own game' }))
+    expect(question.getByText(/stay with Dark Souls II/)).toBeInTheDocument()
+
+    await userEvent.click(question.getByRole('button', { name: 'Separate' }))
+    expect(client.separate).toHaveBeenCalledWith('entry-dark-souls-ii', 'scholar')
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Separate into its own game' }),
+      ).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByText('Dark Souls II: Scholar of the First Sin')).not.toBeInTheDocument()
+    expect(notices.notify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Dark Souls II: Scholar of the First Sin is a game of its own now, in Unsorted.',
+        actions: [expect.objectContaining({ label: 'Open' })],
+      }),
+    )
+  })
+
+  it('keeps them together when I say so', async () => {
+    server.games.set('ds2-again', {
+      ...wished('ds2-again', []),
+      versions: [
+        { gameId: 'a', slug: 'a', title: 'A', relation: 'primary', kind: 'main', platforms: [] },
+        { gameId: 'b', slug: 'b', title: 'B', relation: 'edition', kind: 'main', platforms: [] },
+      ],
+    })
+    editor('ds2-again')
+    await userEvent.click(await screen.findByRole('button', { name: 'Separate into its own game' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Keep together' }))
+    expect(
+      screen.queryByRole('group', { name: 'Separate into its own game' }),
+    ).not.toBeInTheDocument()
+    expect(client.separate).not.toHaveBeenCalled()
   })
 })

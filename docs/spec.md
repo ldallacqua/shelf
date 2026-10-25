@@ -2,7 +2,8 @@
 
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
   Written and built on 25 Oct 2026: two statuses (3.12), hiding adult games (3.13), archiving a
-  game (7.4), wishing for a game on one platform (7.5) and a game only I see (11.1).
+  game (7.4), wishing for a game on one platform (7.5), separating a version (7.6) and a game
+  only I see (11.1).
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -1077,6 +1078,39 @@ so its box took the case of the first platform IGDB lists it on, PS4's here.
   `wanted:switch` and not by `owned:switch`.
 - Leaving the wishlist starts its first copy on the platform I wanted.
 
+### 7.6 Separating a version
+
+**Built 25 Oct 2026.** The owner asked on 25 Oct 2026, of Dark Souls II and Scholar of the First
+Sin standing as one game: "esses jogos são dois jogos diferentes, não acho que deveriam estar
+agrupados assim. [...] Se for cagar outros varios games tudo bem. Pode deixar assim."
+
+IGDB files Scholar as an expanded game of Dark Souls II, and ADR 001 folds an expanded game into
+the game it expands; a sync, which cannot ask, takes that default. The default stays: it is right
+for Skyrim and its Special Edition, and for Persona 5 and Royal. What was missing is a way to undo
+it for one game.
+
+- **Separate into its own game** (Separar em outro jogo), on each version under Versions in the
+  editor except the main one. It asks first, saying what goes with it and what stays, since
+  joining two games back is not built.
+- **The version becomes a game of its own,** titled, dated and covered by itself, in Unsorted,
+  to be placed as a game a sync brings in is. It is private if the game was, and keeps the
+  game's date added.
+- **What goes with it:** the copies that name that version, and every store item matched to it,
+  with its hours. A copy both fed (Dark Souls II and Scholar both on Steam, one PC digital copy)
+  becomes two, each with its own game's hours.
+- **What stays:** status, rating, notes, tags, dates, the hours I typed, and every other version
+  and copy.
+- **Afterwards** it says so, with Open, which goes to the new game's page.
+- **A sync leaves them apart:** each store item feeds its own game, and nothing joins them
+  again. Searching for the separated game finds it on the shelf as itself.
+
+**Done when**
+
+- Separating Scholar from Dark Souls II leaves two games, each with its own copies and the hours
+  its store items report, and the first keeps everything I set.
+- A copy both fed is split, and no hour is counted twice or lost.
+- The next sync changes neither.
+
 ---
 
 ## 8. Data model
@@ -1429,7 +1463,7 @@ Not built now. The design leaves room for each.
 | Installable app, offline use | The library is one loaded data set filtered on the device |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
-| Merging and splitting entries | Both are row moves in the model |
+| Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |
 
 ---
@@ -1469,3 +1503,12 @@ Made on 25 Oct 2026 for the five sections not built yet (3.12, 3.13, 7.4, 7.5, 1
 | 22 | IGDB's results when adding a game are not hidden: they are not the shelf's games, and it is me typing | Hidden too, which needs every result's themes and age ratings |
 | 23 | A wished game stays on the Not owned shelf, in the case of the platform I want it on | It stands, outlined, on that platform's shelf |
 | 24 | A wish names platforms, not physical or digital | The format too |
+
+Made on 25 Oct 2026 for separating a version (7.6):
+
+| # | Decision | Alternative |
+| --- | --- | --- |
+| 25 | A separated game starts Unsorted, with nothing of mine on it but its copies | It takes the status of the game it left |
+| 26 | Separating asks first | Undo, which needs joining two games, not built |
+| 27 | A sync still folds an expanded game into the game it expands | Expanded games stand apart unless I join them |
+| 28 | Only the version I pick moves, not versions of it | Its editions and ports go with it |

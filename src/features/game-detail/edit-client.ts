@@ -68,4 +68,6 @@ export const editClient: EditActions = {
   restore: (undo) => call('POST', `/api/v1/removed/${encodeURIComponent(undo)}`),
   archive: (entryId) => call('PUT', `${entry(entryId)}/archived`),
   bringBack: (entryId) => call('DELETE', `${entry(entryId)}/archived`),
+  separate: (entryId, gameId) =>
+    call('POST', `${entry(entryId)}/versions/${encodeURIComponent(gameId)}/separate`),
 }

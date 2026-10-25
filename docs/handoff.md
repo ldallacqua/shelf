@@ -24,9 +24,9 @@ decisions 15 to 24 are built as written; the owner did not change them.
   the daily refresh reaches them; Erotic works from the start. To try it here, mark a game in
   `.data/shelf.db` (`games.adults_only = 1`, and raise its library's version), build, and put
   the database back.
-- **Waiting for the owner:** whether to split Dark Souls II and Scholar of the First Sin with a
-  new "make it a game of its own" on a version, rather than change ADR 001's rule (section 19,
-  decision 2), which would split Skyrim and its Special Edition too.
+- **Separating a version is built** (7.6; architecture section 25, row "Separating"): the owner's
+  answer to Dark Souls II and Scholar of the First Sin standing as one. ADR 001's default that
+  joins them stays (section 19, decision 27).
 - **A game only I see is built** (11.1; architecture section 25, row "Privacy"). On a public
   shelf its own account now reads its own files (`/api/v1/me/…`), never the public ones.
 - **Archiving is built** (7.4; architecture section 25, row "Archive"), and with it two fixes for

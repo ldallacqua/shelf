@@ -970,6 +970,147 @@ export const setPrimary = (
   })
 
 /**
+ * One of an entry's versions made a game of its own (spec 7.6), in one
+ * transaction. The new entry is unsorted, private if the entry is, and added
+ * when it was; nothing else of mine goes with it. The copies that name the
+ * version go. Then every store item feeding either entry ends on the one its
+ * record is: the version's items on the new entry, the rest on the old, each
+ * on its entry's copy on the same platform and format, made where there is
+ * none. A copy both fed becomes two, and each copy touched gets its hours
+ * again. Answers the new entry's id.
+ */
+export const separateVersion = (
+  db: Db,
+  libraryId: string,
+  entryId: string,
+  gameId: string,
+  now = Date.now(),
+): Promise<string> =>
+  db.transaction(async (tx) => {
+    const entry = await requireEntry(tx, libraryId, entryId)
+    if (entry.archivedAt !== null) throw notFound('That entry')
+    const versions = await tx
+      .select({
+        gameId: entryVersions.gameId,
+        relation: entryVersions.relation,
+        igdbId: games.igdbId,
+      })
+      .from(entryVersions)
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(eq(entryVersions.entryId, entryId))
+    const version = versions.find((each) => each.gameId === gameId)
+    if (!version) throw notFound('That version')
+    if (version.relation === 'primary') throw invalid('The main version is the game itself')
+
+    const id = randomUUID()
+    await tx.insert(entries).values({
+      id,
+      userId: libraryId,
+      status: 'unsorted',
+      isPrivate: entry.isPrivate,
+      addedAt: entry.addedAt,
+      createdAt: now,
+      updatedAt: now,
+    })
+    await tx
+      .update(entryVersions)
+      .set({ entryId: id, relation: 'primary' })
+      .where(and(eq(entryVersions.entryId, entryId), eq(entryVersions.gameId, gameId)))
+
+    const named = (
+      await tx
+        .select({ id: copies.id })
+        .from(copies)
+        .where(and(eq(copies.entryId, entryId), eq(copies.gameId, gameId)))
+    ).map((copy) => copy.id)
+    if (named.length > 0) {
+      // There it is the entry's own record, which a copy does not need to name.
+      await tx.update(copies).set({ entryId: id, gameId: null }).where(inArray(copies.id, named))
+      await tx.update(playTime).set({ entryId: id }).where(inArray(playTime.copyId, named))
+      if (entry.displayCopyId && named.includes(entry.displayCopyId)) {
+        await tx.update(entries).set({ displayCopyId: null }).where(eq(entries.id, entryId))
+      }
+    }
+
+    const owned = await tx
+      .select({
+        id: copies.id,
+        entryId: copies.entryId,
+        platformId: copies.platformId,
+        format: copies.format,
+      })
+      .from(copies)
+      .where(inArray(copies.entryId, [entryId, id]))
+    const fed =
+      owned.length === 0
+        ? []
+        : await tx
+            .select({
+              id: sourceItems.id,
+              source: sourceItems.source,
+              igdbId: sourceItems.igdbId,
+              copyId: sourceItems.copyId,
+            })
+            .from(sourceItems)
+            .where(
+              and(
+                eq(sourceItems.userId, libraryId),
+                inArray(
+                  sourceItems.copyId,
+                  owned.map((copy) => copy.id),
+                ),
+              ),
+            )
+    const theirs = (igdbId: number | null) =>
+      version.igdbId !== null && igdbId === version.igdbId ? id : entryId
+    // A copy made on the old entry names the version it is, when that is not the main one.
+    const versionOf = (igdbId: number | null) =>
+      versions.find((each) => each.relation !== 'primary' && each.igdbId === igdbId)?.gameId
+    const touched = new Map<string, string>()
+    const sources = new Set<SyncSource>()
+    for (const item of fed) {
+      const from = owned.find((copy) => copy.id === item.copyId)!
+      const to = theirs(item.igdbId)
+      if (from.entryId === to) continue
+      let there = owned.find(
+        (copy) =>
+          copy.entryId === to && copy.platformId === from.platformId && copy.format === from.format,
+      )
+      if (!there) {
+        const gameIdThere = to === entryId ? versionOf(item.igdbId) : undefined
+        const made = await insertCopy(
+          tx,
+          to,
+          {
+            platformId: from.platformId,
+            format: from.format,
+            ...(gameIdThere ? { gameId: gameIdThere } : {}),
+          },
+          now,
+        )
+        there = { id: made, entryId: to, platformId: from.platformId, format: from.format }
+        owned.push(there)
+      }
+      await tx.update(sourceItems).set({ copyId: there.id }).where(eq(sourceItems.id, item.id))
+      touched.set(from.id, from.entryId)
+      touched.set(there.id, there.entryId)
+      sources.add(item.source)
+    }
+    for (const source of sources) {
+      const sums = await sourceMinutes(tx, libraryId, source, [...touched.keys()])
+      // A copy left with none of this source's items has none of its hours.
+      const emptied = [...touched]
+        .filter(([copyId]) => !sums.some((row) => row.copyId === copyId))
+        .map(([copyId, owner]) => ({ copyId, entryId: owner, minutes: 0 }))
+      await writeSourceMinutes(tx, libraryId, source, [...sums, ...emptied], now)
+    }
+
+    await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
+    await bumpVersion(tx, libraryId)
+    return id
+  })
+
+/**
  * Where a game taken for the wrong one goes once I say which it is: the
  * entry already on the shelf that has that game, as it or as a version of
  * it. Absent, the game stays an entry of its own.

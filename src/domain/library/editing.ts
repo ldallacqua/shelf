@@ -109,6 +109,9 @@ export type Archived = Changed & { entryId: string; title: string }
 /** After bringing it back: its address, to land on, and its title. */
 export type BroughtBack = Restored & { title: string }
 
+/** After separating a version (spec 7.6): the new game's address, to open it, and its title. */
+export type Separated = Restored & { title: string }
+
 /** Changes the editor sends at once: what is mine, and the rest of a game's patch. */
 export type EditPatch = MinePatch & { tags?: string[]; minutes?: number; mainVersion?: string }
 
@@ -123,4 +126,5 @@ export type EditActions = {
   restore: (undo: string) => Promise<Answer<Restored>>
   archive: (entryId: string) => Promise<Answer<Archived>>
   bringBack: (entryId: string) => Promise<Answer<BroughtBack>>
+  separate: (entryId: string, gameId: string) => Promise<Answer<Separated>>
 }
