@@ -35,6 +35,10 @@ export type OwnedVersion = {
   kind: Kind
   year?: number
   platforms: number[]
+  /** Its own cover, to tell the versions apart at a glance: an IGDB image id. */
+  cover?: string
+  colors?: Palette
+  hash?: string
 }
 
 /** A game as its owner edits it. Notes are here whether or not they are public. */

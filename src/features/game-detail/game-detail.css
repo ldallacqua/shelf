@@ -160,6 +160,61 @@
     }
   }
 
+  /* "Read more": the rest of a long passage, opened in place. */
+  .game-more {
+    display: grid;
+    gap: 0.875rem;
+
+    & > summary {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.5rem;
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      /* A chevron, turned up once open. */
+      &::after {
+        content: '';
+        width: 0.4375rem;
+        height: 0.4375rem;
+        margin-top: -0.25rem;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        rotate: 45deg;
+        transition: rotate var(--motion-quick) var(--ease-settle);
+      }
+
+      &:hover {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+    }
+
+    &[open] > summary::after {
+      margin-top: 0.25rem;
+      rotate: 225deg;
+    }
+
+    &:not([open]) .game-more-open,
+    &[open] .game-more-closed {
+      display: none;
+    }
+
+    /* Open, the button follows what it opened. */
+    &[open] > summary {
+      order: 1;
+    }
+  }
+
   /* Screenshots: a strip that scrolls sideways. */
   .shot-strip {
     display: flex;

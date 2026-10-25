@@ -1,0 +1,35 @@
+/*
+ * A sheet whose content runs to its top edge (a game's panel, its art under
+ * the buttons): once the body scrolls, a band of the surface fades in behind
+ * the buttons, so text never runs under them unseen. Driven by the body's own
+ * scroll, with no script; where the browser cannot (Firefox), the band stays
+ * away and the buttons keep their own backing.
+ */
+@layer components {
+  [data-slot='sheet'] {
+    timeline-scope: --sheet-body;
+  }
+
+  [data-sheet-body] {
+    scroll-timeline: --sheet-body block;
+  }
+
+  .sheet-scrim {
+    opacity: 0;
+    background: linear-gradient(to bottom, var(--surface) 60%, transparent);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .sheet-scrim {
+      animation: sheet-scrim linear both;
+      animation-timeline: --sheet-body;
+      animation-range: 0 5rem;
+    }
+  }
+
+  @keyframes sheet-scrim {
+    to {
+      opacity: 1;
+    }
+  }
+}

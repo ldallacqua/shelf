@@ -105,6 +105,60 @@ const SHELF: ShelfInfo = {
 }
 
 describe('GameDetail', () => {
+  it('writes IGDB’s text in its paragraphs, and keeps the rest of a long one behind Read more', () => {
+    const long = Array.from(
+      { length: 6 },
+      (_, at) => `Paragraph ${at + 1}. ${'Words. '.repeat(20)}`,
+    )
+    renderWithIntl(
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game()}
+        tags={tags}
+        platforms={platforms}
+        facts={facts({ summary: 'First.\nSecond.', storyline: long.join('\n') })}
+      />,
+    )
+    expect(screen.getByText('First.').tagName).toBe('P')
+    expect(screen.getByText('Second.').tagName).toBe('P')
+    const more = screen.getByText('Read more').closest('details')!
+    expect(more).not.toHaveAttribute('open')
+    expect(more).toHaveTextContent('Paragraph 6.')
+    expect(more).not.toHaveTextContent('Paragraph 1.')
+    // A short passage hides nothing.
+    expect(screen.getAllByText('Read more')).toHaveLength(1)
+  })
+
+  it('lists the platforms a game came out on by date, one line a date', () => {
+    const switchPlatform = { ...ps4, id: 130, key: 'switch', name: 'Nintendo Switch' }
+    renderWithIntl(
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game()}
+        tags={tags}
+        platforms={platforms}
+        facts={facts({
+          releases: [
+            { platform: 48, day: '2015-03-24', year: 2015 },
+            { platform: 130, day: '2015-03-24', year: 2015 },
+            { platform: 6, year: 2016 },
+          ],
+          names: {
+            ...facts().names,
+            platform: [ps4, switchPlatform, { ...ps4, id: 6, key: 'pc', name: 'PC' }],
+          },
+        })}
+      />,
+    )
+    const dates = screen.getByText('PlayStation 4', { selector: 'a' }).closest('ul')!
+    const lines = within(dates).getAllByRole('listitem')
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toHaveTextContent(/PlayStation 4.*Nintendo Switch/)
+    expect(lines[1]).toHaveTextContent(/2016.*PC/)
+  })
+
   it('keeps an adult game’s cover, art and screenshots for CSS to hide, and says so (spec 3.13)', () => {
     renderWithIntl(
       <GameDetail

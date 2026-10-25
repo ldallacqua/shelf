@@ -27,7 +27,16 @@ const client = vi.hoisted(() => ({
     })
     return { ok: true as const, value: { version: 2 } }
   }),
-  addCopy: vi.fn(),
+  addCopy: vi.fn(
+    async (entryId: string, copy: { platformId: number; format: 'physical' | 'digital' }) => {
+      const [slug, game] = [...server.games].find(([, each]) => each.entryId === entryId)!
+      server.games.set(slug, {
+        ...game,
+        copies: [...game.copies, { id: `copy-${game.copies.length}`, ...copy }],
+      })
+      return { ok: true as const, value: { version: 5 } }
+    },
+  ),
   setFormat: vi.fn(),
   removeCopy: vi.fn(),
   remove: vi.fn(),
@@ -140,7 +149,7 @@ describe('MineEditor, a game only I see (spec 11.1)', () => {
   it('makes it private at once, and back', async () => {
     server.games.set('secret', { ...wished('secret', []), status: 'backlog' })
     editor('secret')
-    const toggle = await screen.findByRole('switch', { name: 'Private: only you see this game' })
+    const toggle = await screen.findByRole('switch', { name: /^Private/ })
     expect(toggle).not.toBeChecked()
     await userEvent.click(toggle)
     expect(client.update).toHaveBeenCalledWith('entry-secret', { private: true })
@@ -212,5 +221,51 @@ describe('MineEditor, separating a version (spec 7.6)', () => {
       screen.queryByRole('group', { name: 'Separate into its own game' }),
     ).not.toBeInTheDocument()
     expect(client.separate).not.toHaveBeenCalled()
+  })
+})
+
+describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
+  const owned = (slug: string): OwnerGame => ({
+    ...wished(slug, []),
+    status: 'backlog',
+    minutes: 90,
+    copies: [
+      {
+        id: 'ps4',
+        platformId: 48,
+        format: 'physical',
+        synced: [{ source: 'steam', minutes: 600 }],
+      },
+    ],
+  })
+
+  it('shows each copy on its own card, and puts a new one together apart from them', async () => {
+    server.games.set('pair', owned('pair'))
+    editor('pair')
+    const copies = within(await screen.findByRole('group', { name: 'Owned on' }))
+    expect(copies.getByRole('listitem')).toHaveTextContent('PlayStation 4')
+    expect(copies.getByRole('listitem')).toHaveTextContent('Steam: 10 h')
+    expect(copies.queryByRole('group', { name: 'New copy' })).not.toBeInTheDocument()
+
+    await userEvent.click(copies.getByRole('button', { name: 'Add a copy' }))
+    const draft = within(copies.getByRole('group', { name: 'New copy' }))
+    // PS4 physical is owned; on PS4 only digital is left.
+    expect(draft.getByRole('combobox', { name: 'Platform' })).toHaveTextContent('PlayStation 4')
+    expect(draft.getByRole('radio', { name: 'Physical' })).toBeDisabled()
+    await userEvent.click(draft.getByRole('button', { name: 'Add' }))
+    expect(client.addCopy).toHaveBeenCalledWith('entry-pair', { platformId: 48, format: 'digital' })
+    expect(copies.queryByRole('group', { name: 'New copy' })).not.toBeInTheDocument()
+    await waitFor(() => expect(copies.getAllByRole('listitem')).toHaveLength(2))
+  })
+
+  it('takes hours as a number, and says what the stores report beside them', async () => {
+    server.games.set('hours', owned('hours'))
+    editor('hours')
+    const field = await screen.findByRole('textbox', { name: 'Hours played' })
+    expect(field).toHaveValue('1.5')
+    expect(screen.getByText(/Your stores report 10 h/)).toBeInTheDocument()
+    await userEvent.clear(field)
+    await userEvent.type(field, '2a0{Enter}')
+    expect(client.update).toHaveBeenLastCalledWith('entry-hours', { minutes: 1200 })
   })
 })

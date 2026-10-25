@@ -98,6 +98,56 @@ function Section({
   )
 }
 
+/** About this much of a passage is shown before "Read more". */
+const SHOWN_CHARS = 420
+/** Less than this left over is shown too: hiding a sliver is worse than showing it. */
+const HIDDEN_CHARS = 200
+
+/**
+ * A passage of IGDB's text in its paragraphs, one to each line break it
+ * has. A long one shows its first paragraphs, about a screen's worth, and
+ * the rest behind "Read more", with no script: a closed `details` is still
+ * found by the browser's search.
+ */
+function Passage({
+  text,
+  more,
+  less,
+  lang,
+}: {
+  text: string
+  more: string
+  less: string
+  /** The page's language, for the button: the passage is IGDB's English. */
+  lang: string
+}) {
+  const paragraphs = text
+    .split(/\n+/)
+    .map((each) => each.trim())
+    .filter(Boolean)
+  let shown = 0
+  for (let length = 0; shown < paragraphs.length && (shown === 0 || length < SHOWN_CHARS);) {
+    length += paragraphs[shown]!.length
+    shown += 1
+  }
+  const rest = paragraphs.slice(shown)
+  const all = (list: readonly string[]) =>
+    list.map((paragraph, index) => <p key={index}>{paragraph}</p>)
+  if (rest.join('').length < HIDDEN_CHARS) return all(paragraphs)
+  return (
+    <>
+      {all(paragraphs.slice(0, shown))}
+      <details className="game-more">
+        <summary lang={lang}>
+          <span className="game-more-closed">{more}</span>
+          <span className="game-more-open">{less}</span>
+        </summary>
+        <div className="game-prose">{all(rest)}</div>
+      </details>
+    </>
+  )
+}
+
 /** Bars where words are on their way. */
 function Ghosts({ lines }: { lines: number }) {
   return (
@@ -346,13 +396,28 @@ export function GameDetail({
       <Section title={t('about')} level={level}>
         {facts ? (
           <div className="game-prose" lang={igdbLang}>
-            {facts.summary ? <p>{facts.summary}</p> : null}
+            {facts.summary ? (
+              <Passage
+                text={facts.summary}
+                more={t('readMore')}
+                less={t('readLess')}
+                lang={locale}
+              />
+            ) : null}
             {facts.storyline ? (
               <>
-                <Minor className="readout text-[0.625rem] text-muted" lang={locale}>
+                <Minor
+                  className={cn('readout text-[0.625rem] text-muted', facts.summary && 'mt-3')}
+                  lang={locale}
+                >
                   {t('storyline')}
                 </Minor>
-                <p>{facts.storyline}</p>
+                <Passage
+                  text={facts.storyline}
+                  more={t('readMore')}
+                  less={t('readLess')}
+                  lang={locale}
+                />
               </>
             ) : null}
           </div>
@@ -384,6 +449,21 @@ export function GameDetail({
     )
 
   const releasePlatforms = new Map(names?.platform.map((platform) => [platform.id, platform]))
+  /** The platforms it came out on, by the date it did, in the order the dates come. */
+  const releasedOn = (releases: GameFacts['releases']) => {
+    const byDate = new Map<string, LibraryPlatform[]>()
+    for (const release of releases) {
+      const platform = releasePlatforms.get(release.platform)
+      if (!platform) continue
+      const when = release.day
+        ? day(release.day)
+        : release.year
+          ? String(release.year)
+          : t('unknownDate')
+      byDate.set(when, [...(byDate.get(when) ?? []), platform])
+    }
+    return byDate
+  }
   const lists: { key: ListKey; label: string; list?: readonly Named[]; ids: readonly number[] }[] =
     [
       { key: 'genre', label: t('genres'), list: names?.genre, ids: game.genres },
@@ -429,25 +509,24 @@ export function GameDetail({
           })}
           {facts.releases.length > 0 ? (
             <Row label={t('released')}>
-              <ul className="grid gap-1.5">
-                {facts.releases.flatMap((release) => {
-                  const platform = releasePlatforms.get(release.platform)
-                  if (!platform) return []
-                  return [
-                    <li key={release.platform} className="flex flex-wrap items-baseline gap-x-2">
-                      <FilterLink handle={handle} filter={`platform:${platform.key}`}>
-                        {platform.name}
-                      </FilterLink>
-                      <span className="text-sm text-muted">
-                        {release.day
-                          ? day(release.day)
-                          : release.year
-                            ? String(release.year)
-                            : t('unknownDate')}
-                      </span>
-                    </li>,
-                  ]
-                })}
+              {/* One line a date, with every platform it came out on that day. */}
+              <ul className="grid gap-3">
+                {[...releasedOn(facts.releases)].map(([when, released]) => (
+                  <li key={when} className="grid gap-1.5">
+                    <span className="text-sm text-muted">{when}</span>
+                    <span className="flex flex-wrap gap-1.5">
+                      {released.map((platform) => (
+                        <FilterLink
+                          key={platform.id}
+                          handle={handle}
+                          filter={`platform:${platform.key}`}
+                        >
+                          {platform.name}
+                        </FilterLink>
+                      ))}
+                    </span>
+                  </li>
+                ))}
               </ul>
             </Row>
           ) : null}
