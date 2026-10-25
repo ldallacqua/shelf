@@ -168,6 +168,10 @@ function SheetContent({
         {bleed ? (
           <>
             {title === undefined ? null : <Dialog.Title className="sr-only">{title}</Dialog.Title>}
+            <span
+              aria-hidden="true"
+              className="sheet-scrim pointer-events-none absolute inset-x-0 top-0 z-[5] h-16"
+            />
             {buttons}
           </>
         ) : (

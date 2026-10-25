@@ -971,9 +971,9 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Hero** | The cover, large, over the game's key art dimmed behind it. No key art: a screenshot. No screenshot: the cover's own colors. |
 | **Heading** | Title, year, developer |
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
-| **About** | IGDB's summary and storyline |
+| **About** | IGDB's summary and storyline, in their paragraphs. A long one shows about a screen's worth, and the rest behind **Read more**, opened in place |
 | **Screenshots** | A strip that opens a full-screen viewer: arrow keys, swipe, pinch to zoom |
-| **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release date per platform, time to beat, IGDB rating and how many ratings it rests on |
+| **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat, IGDB rating and how many ratings it rests on |
 | **Versions** | The editions and ports linked to this entry (signed in) |
 
 Each value under Details is a link to the library filtered by it.
@@ -995,11 +995,21 @@ are marked as English, so a screen reader pronounces them correctly.
 ### 7.3 Editing
 
 Signed in, every field under Mine is edited in place and saved as I go. A change shows
-immediately; if saving fails it reverts and says why.
+immediately; if saving fails it reverts and says why. Mine is in groups set apart by a rule:
+how I play it (status, rating, hours, completion date), what I own, tags and notes, privacy,
+the versions, and archiving or removing.
 
 - **Status** changes take effect on the shelf at once: the box changes posture.
 - **Completed** sets the completion date to today, editable.
-- **Platforms owned:** add or remove a copy; switch physical or digital per copy.
+- **Hours played** takes only a number, typed with a point or a comma, or stepped an hour at a
+  time with − and + beside it (ten with Shift) or the arrow keys. When a store reports hours on
+  a copy, a line under it says how many, and that the larger of the two is shown.
+- **Platforms owned:** each copy on a card of its own, with its platform, the hours a store
+  reports on it, physical or digital, and a button to remove it. **Add a copy** opens a new one
+  apart from them: a platform, physical or digital (one I own already cannot be picked), and
+  Add.
+- **Versions:** each on a card with its cover, what it is (main version, edition, port), its
+  year and platforms; the others offer Make main and Separate (7.6).
 - **Notes** are private unless I mark them public for that game.
 - **Archive** takes the game out of sight, kept whole, and offers Undo (7.4).
 - **Remove from library** asks once, offers archiving instead, and offers Undo.

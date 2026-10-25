@@ -420,6 +420,9 @@ export const readOwnerGame = async (
         kind: games.kind,
         year: games.year,
         platforms: games.platforms,
+        cover: games.cover,
+        colors: games.colors,
+        thumbhash: games.thumbhash,
       })
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
@@ -481,6 +484,9 @@ export const readOwnerGame = async (
       kind: row.kind,
       ...(row.year === null ? {} : { year: row.year }),
       platforms: row.platforms,
+      ...(row.cover ? { cover: row.cover.id } : {}),
+      ...(row.colors ? { colors: row.colors } : {}),
+      ...(row.thumbhash ? { hash: row.thumbhash } : {}),
     })),
     platforms: platformRows
       .map((row) => ({

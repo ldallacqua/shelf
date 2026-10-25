@@ -441,8 +441,9 @@ export function ItemLists(props: {
   onAnswered: (said?: string) => void
   onSteps: (first: Answer<SyncStep>) => void
 }) {
+  // A row's answers stay within reach of its title, however wide the card.
   return (
-    <div className="grid gap-3">
+    <div className="grid max-w-3xl gap-3">
       <List list="needs-you" {...props} />
       <List list="hidden" {...props} />
       <List list="not-seen" {...props} />

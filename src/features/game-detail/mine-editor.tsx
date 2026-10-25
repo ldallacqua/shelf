@@ -1,7 +1,7 @@
 'use client'
 
-import { ArchiveIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { ArchiveIcon, PlusIcon, SplitIcon, StarIcon, Trash2Icon } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from 'react'
 
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
@@ -13,6 +13,7 @@ import type {
   OwnerGame,
 } from '@/domain/library/editing'
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
+import { Cover } from '@/features/library/cover'
 import { useShelf } from '@/features/library/shelf'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { DayField, SavedRating, TagsField, today } from '@/features/owner/fields'
@@ -22,17 +23,30 @@ import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Switch } from '@/ui/checkbox'
 import { ChoiceChip } from '@/ui/chip'
-import { Input, Textarea } from '@/ui/field'
+import { cn } from '@/ui/cn'
+import { Textarea } from '@/ui/field'
+import { NumberField } from '@/ui/number-field'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
 
 import { editClient as actions } from './edit-client'
+import {
+  mineCard,
+  mineGroup,
+  mineGroupRuled,
+  mineGroups,
+  mineHeading,
+  mineNewCard,
+} from './mine-layout'
 
 /**
  * The records read so far this visit, by game: a game opened again is
  * edited at once, and read again behind it in case it changed.
  */
 const records = new Map<string, OwnerGame>()
+
+/** As many hours as the API takes: a million minutes. */
+const MAX_HOURS = 16_666
 
 type MineEditorProps = {
   slug: string
@@ -63,6 +77,7 @@ export function MineEditor({
   const library = useTranslations('Library')
   const errors = useTranslations('Add')
   const router = useRouter()
+  const locale = useLocale()
   const { handle } = useShelf()
   const id = useId()
 
@@ -156,6 +171,12 @@ export function MineEditor({
   }
 
   const labels = new Map(owned.platforms.map((platform) => [platform.id, platform]))
+  const hoursText = (hours: number) =>
+    new Intl.NumberFormat(locale, { maximumFractionDigits: 1, useGrouping: false }).format(hours)
+  // What the stores report on its copies, said under the hours I type.
+  const synced = owned.copies
+    .flatMap((copy) => copy.synced ?? [])
+    .reduce((sum, each) => sum + each.minutes, 0)
 
   /** Out of sight, kept whole (spec 7.4): nothing is lost, so nothing is asked first. */
   const archive = async () => {
@@ -265,46 +286,50 @@ export function MineEditor({
         </p>
       ) : null}
 
-      <div className="mt-3 grid gap-5">
-        <fieldset className="grid gap-2">
-          <legend className="mb-2 text-sm font-semibold">{game('status')}</legend>
-          <div className="flex flex-wrap gap-2">
-            {statuses.map((each) => (
-              <ChoiceChip
-                key={each}
-                type="radio"
-                name={`${id}-status`}
-                checked={owned.status === each}
-                onChange={() => setStatus(each)}
-              >
-                {library(`status.${each}`)}
-              </ChoiceChip>
-            ))}
-          </div>
-        </fieldset>
+      <div className={mineGroups}>
+        <div className={mineGroup}>
+          <fieldset className="grid gap-2">
+            <legend className={cn(mineHeading, 'mb-2')}>{game('status')}</legend>
+            <div className="flex flex-wrap gap-2">
+              {statuses.map((each) => (
+                <ChoiceChip
+                  key={each}
+                  type="radio"
+                  name={`${id}-status`}
+                  checked={owned.status === each}
+                  onChange={() => setStatus(each)}
+                >
+                  {library(`status.${each}`)}
+                </ChoiceChip>
+              ))}
+            </div>
+          </fieldset>
 
-        <SavedRating
-          score={owned.rating}
-          onSave={(score) =>
-            void update({ rating: score }, { rating: score === null ? undefined : score })
-          }
-        />
+          <SavedRating
+            score={owned.rating}
+            onSave={(score) =>
+              void update({ rating: score }, { rating: score === null ? undefined : score })
+            }
+          />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SavedField
+          <NumberField
             label={t('played')}
-            value={owned.minutes > 0 ? String(Math.round((owned.minutes / 60) * 10) / 10) : ''}
-            inputMode="decimal"
-            onSave={(text) => {
-              const hours = Number(text.trim().replace(',', '.') || '0')
-              if (!Number.isFinite(hours) || hours < 0) {
-                setProblem(t('playedRange'))
-                return
-              }
-              const minutes = Math.round(hours * 60)
+            value={owned.minutes > 0 ? owned.minutes / 60 : undefined}
+            decimals={1}
+            max={MAX_HOURS}
+            unit="h"
+            format={hoursText}
+            decreaseLabel={t('hourFewer')}
+            increaseLabel={t('hourMore')}
+            hint={
+              synced > 0 ? t('playedSynced', { hours: Math.round(synced / 6) / 10 }) : undefined
+            }
+            onCommit={(hours) => {
+              const minutes = Math.round((hours ?? 0) * 60)
               void update({ minutes }, { minutes })
             }}
           />
+
           {owned.status === 'completed' || owned.completedOn ? (
             <DayField
               label={t('completedOn')}
@@ -318,9 +343,9 @@ export function MineEditor({
         </div>
 
         {owned.status === 'wishlist' && owned.platforms.length > 0 ? (
-          <fieldset className="grid gap-2">
-            <legend className="mb-2 text-sm font-semibold">{t('wanted')}</legend>
-            <div className="flex flex-wrap gap-2">
+          <fieldset className={mineGroupRuled}>
+            <legend className={cn(mineHeading, 'float-left mb-2')}>{t('wanted')}</legend>
+            <div className="clear-left flex flex-wrap gap-2">
               {owned.platforms.map((platform) => (
                 <ChoiceChip
                   key={platform.id}
@@ -378,104 +403,148 @@ export function MineEditor({
           />
         ) : null}
 
-        <TagsField value={owned.tags} onChange={(tags) => void update({ tags }, { tags })} />
-
-        <div className="grid gap-2">
-          <SavedField
-            label={game('notes')}
-            value={owned.notes ?? ''}
-            multiline
-            onSave={(text) => {
-              const notes = text.trim()
-              void update({ notes: notes || null }, { notes: notes || undefined })
-            }}
-          />
-          <label className="flex min-h-10 cursor-pointer items-center gap-3 text-sm">
-            <Switch
-              checked={owned.notesPublic}
-              onChange={(event) =>
-                update({ notesPublic: event.target.checked }, { notesPublic: event.target.checked })
-              }
+        <div className={mineGroupRuled}>
+          <TagsField value={owned.tags} onChange={(tags) => void update({ tags }, { tags })} />
+          <div className="grid gap-2">
+            <SavedField
+              label={game('notes')}
+              value={owned.notes ?? ''}
+              onSave={(text) => {
+                const notes = text.trim()
+                void update({ notes: notes || null }, { notes: notes || undefined })
+              }}
             />
-            {t('notesPublic')}
-          </label>
+            <label className="flex min-h-10 cursor-pointer items-center gap-3 text-sm">
+              <Switch
+                checked={owned.notesPublic}
+                onChange={(event) =>
+                  update(
+                    { notesPublic: event.target.checked },
+                    { notesPublic: event.target.checked },
+                  )
+                }
+              />
+              {t('notesPublic')}
+            </label>
+          </div>
         </div>
 
         {/* Only I see it (spec 11.1); on a private shelf every game already is, and this waits for it to go public. */}
-        <label className="flex min-h-10 cursor-pointer items-center gap-3 text-sm">
-          <Switch
-            checked={owned.private}
-            onChange={(event) =>
-              update({ private: event.target.checked }, { private: event.target.checked })
-            }
-          />
-          {t('private')}
-        </label>
+        <div className={mineGroupRuled}>
+          <label className="flex cursor-pointer items-start gap-3 text-sm">
+            <Switch
+              className="mt-0.5"
+              checked={owned.private}
+              onChange={(event) =>
+                update({ private: event.target.checked }, { private: event.target.checked })
+              }
+            />
+            <span className="grid gap-0.5">
+              <span className="font-medium">{t('privateTitle')}</span>
+              <span className="text-pretty text-muted">{t('privateHint')}</span>
+            </span>
+          </label>
+        </div>
 
         {owned.versions.length > 1 ? (
-          <div className="grid gap-2">
-            <Minor className="readout text-[0.625rem] text-muted">{t('versions')}</Minor>
+          <div className={mineGroupRuled}>
+            <Minor className={mineHeading}>{t('versions')}</Minor>
             <ul className="grid gap-2">
-              {owned.versions.map((version) => (
-                <li
-                  key={version.gameId}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
-                >
-                  <span className="font-semibold">{version.title}</span>
-                  {version.year ? (
-                    <span className="readout text-[0.6875rem] text-muted">{version.year}</span>
-                  ) : null}
-                  <span className="text-muted">
-                    {[
-                      t(`relations.${version.relation}`),
-                      ...version.platforms.flatMap((platform) => labels.get(platform)?.short ?? []),
-                    ].join(' · ')}
-                  </span>
-                  {version.relation === 'primary' ? null : (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          save(owned, () =>
-                            actions.update(owned.entryId, { mainVersion: version.gameId }),
-                          )
-                        }
+              {owned.versions.map((version) => {
+                const main = version.relation === 'primary'
+                const on = version.platforms.flatMap(
+                  (platform) => labels.get(platform)?.short ?? [],
+                )
+                return (
+                  <li key={version.gameId} className={mineCard}>
+                    <div className="flex items-start gap-3">
+                      <span
+                        aria-hidden="true"
+                        className="relative block w-12 flex-none overflow-hidden rounded-[3px] bg-text/8"
+                        style={{ aspectRatio: '3 / 4' }}
                       >
-                        {t('makeMain')}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-expanded={separating === version.gameId}
-                        onClick={() => setSeparating(version.gameId)}
-                      >
-                        {t('separate')}
-                      </Button>
-                    </>
-                  )}
-                  {separating === version.gameId ? (
-                    <div role="group" aria-label={t('separate')} className="grid w-full gap-3">
-                      <p className="text-sm text-pretty">
-                        {t('confirmSeparate', { title: version.title, main: owned.title })}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button variant="primary" onClick={() => separate(version)}>
-                          {t('separateConfirm')}
-                        </Button>
-                        <Button variant="secondary" onClick={() => setSeparating(undefined)}>
-                          {t('keepTogether')}
-                        </Button>
+                        <Cover
+                          cover={version.cover}
+                          colors={version.colors}
+                          hash={version.hash}
+                          title={version.title}
+                          sizes="48px"
+                        />
+                      </span>
+                      <div className="grid min-w-0 flex-1 content-start gap-1.5">
+                        <p className="text-sm font-semibold text-pretty">{version.title}</p>
+                        <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                          <span
+                            className={cn(
+                              'rounded-full border px-2 py-0.5 font-medium',
+                              main ? 'border-accent text-accent' : 'border-line-strong',
+                            )}
+                          >
+                            {t(`relations.${version.relation}`)}
+                          </span>
+                          {version.year ? (
+                            <span className="readout text-[0.6875rem]">{version.year}</span>
+                          ) : null}
+                        </p>
+                        {on.length > 0 ? (
+                          <p className="text-xs text-pretty text-muted">{on.join(' · ')}</p>
+                        ) : null}
                       </div>
                     </div>
-                  ) : null}
-                </li>
-              ))}
+                    {main ? null : separating === version.gameId ? (
+                      <div
+                        role="group"
+                        aria-label={t('separate')}
+                        className="grid gap-3 border-t border-line pt-3"
+                      >
+                        <p className="text-sm text-pretty">
+                          {t('confirmSeparate', { title: version.title, main: owned.title })}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button variant="primary" size="sm" onClick={() => separate(version)}>
+                            <SplitIcon aria-hidden="true" />
+                            {t('separateConfirm')}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSeparating(undefined)}
+                          >
+                            {t('keepTogether')}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            save(owned, () =>
+                              actions.update(owned.entryId, { mainVersion: version.gameId }),
+                            )
+                          }
+                        >
+                          <StarIcon aria-hidden="true" />
+                          {t('makeMain')}
+                        </Button>
+                        <Button
+                          size="sm"
+                          aria-expanded={false}
+                          onClick={() => setSeparating(version.gameId)}
+                        >
+                          <SplitIcon aria-hidden="true" />
+                          {t('separate')}
+                        </Button>
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           </div>
         ) : null}
 
-        <div className="flex flex-wrap gap-2 border-t border-line pt-4">
+        <div className="flex flex-wrap gap-2 border-t border-line pt-6">
           {confirming ? (
             <div role="group" aria-label={t('remove')} className="grid gap-3">
               <p className="text-sm text-pretty">{t('confirmRemove', { title: owned.title })}</p>
@@ -511,19 +580,15 @@ export function MineEditor({
   )
 }
 
-/** A text field saved when it is left or Enter is pressed, if it changed. */
+/** Several lines of text, saved when they are left, if they changed. */
 function SavedField({
   label,
   value,
   onSave,
-  inputMode,
-  multiline,
 }: {
   label: string
   value: string
   onSave: (text: string) => void
-  inputMode?: 'decimal'
-  multiline?: boolean
 }) {
   const [text, setText] = useState(value)
   const [from, setFrom] = useState(value)
@@ -532,41 +597,28 @@ function SavedField({
     setFrom(value)
     setText(value)
   }
-  const commit = () => {
-    if (text !== value) onSave(text)
-  }
   return (
     <label className="grid gap-1.5 text-sm font-medium">
       {label}
-      {multiline ? (
-        <Textarea
-          grow
-          value={text}
-          rows={4}
-          onChange={(event) => setText(event.target.value)}
-          onBlur={commit}
-          className="font-normal"
-        />
-      ) : (
-        <Input
-          value={text}
-          inputMode={inputMode}
-          onChange={(event) => setText(event.target.value)}
-          onBlur={commit}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              commit()
-            }
-          }}
-          className="font-normal"
-        />
-      )}
+      <Textarea
+        grow
+        value={text}
+        rows={4}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={() => {
+          if (text !== value) onSave(text)
+        }}
+        className="font-normal"
+      />
     </label>
   )
 }
 
-/** Platforms owned: switch a copy's format, remove it, or add another. */
+/**
+ * Platforms owned: a card for each copy, its format switched or the copy
+ * removed there, and apart from them, behind a button of its own, a new copy
+ * put together.
+ */
 function Copies({
   owned,
   labels,
@@ -594,105 +646,144 @@ function Copies({
   const open = platforms.filter((platform) =>
     formats.some((format) => !have.has(`${platform.id}:${format}`)),
   )
+  // Left the wishlist for a platform I wanted: the new copy is already begun.
+  const [adding, setAdding] = useState(preset !== undefined)
   const [platform, setPlatform] = useState<number>()
-  const [format, setFormat] = useState<Format>('physical')
   const chosen =
     platform ?? (open.some((each) => each.id === preset) ? preset : undefined) ?? open[0]?.id
+  const free = formats.filter((each) => !have.has(`${chosen}:${each}`))
+  const [picked, setPicked] = useState<Format>('physical')
+  const format = free.includes(picked) ? picked : (free[0] ?? picked)
 
   return (
-    <fieldset className="grid gap-2">
-      <legend className="mb-2 text-sm font-semibold">{game('owned')}</legend>
-      {owned.copies.length === 0 ? (
-        <p className="text-sm text-muted">{library('shelf.notOwned')}</p>
-      ) : (
-        <ul className="grid gap-2">
-          {owned.copies.map((copy) => {
-            const name = labels.get(copy.platformId)?.name ?? ''
-            return (
-              <li key={copy.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                <span className="min-w-28 flex-1 font-medium">
-                  {name}
-                  {copy.synced?.map((each) => (
-                    <span key={each.source} className="ml-2 font-normal text-muted">
-                      {t('syncedHours', {
-                        source: sync(`source.${each.source}`),
-                        hours: Math.round(each.minutes / 6) / 10,
+    <fieldset className={mineGroupRuled}>
+      <legend className={cn(mineHeading, 'float-left')}>{game('owned')}</legend>
+      <div className="clear-left grid gap-2">
+        {owned.copies.length === 0 ? (
+          <p className="text-sm text-muted">{t('noCopies')}</p>
+        ) : (
+          <ul className="grid gap-2">
+            {owned.copies.map((copy) => {
+              const name = labels.get(copy.platformId)?.name ?? ''
+              return (
+                <li key={copy.id} className={mineCard}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="grid min-w-0 gap-0.5 pt-1">
+                      <span className="text-sm font-semibold">{name}</span>
+                      {copy.synced?.map((each) => (
+                        <span key={each.source} className="text-xs text-muted">
+                          {t('syncedHours', {
+                            source: sync(`source.${each.source}`),
+                            hours: Math.round(each.minutes / 6) / 10,
+                          })}
+                        </span>
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t('removeCopy', {
+                        platform: name,
+                        format: library(`format.${copy.format}`),
                       })}
-                    </span>
-                  ))}
+                      title={t('removeCopy', {
+                        platform: name,
+                        format: library(`format.${copy.format}`),
+                      })}
+                      onClick={() => onRemove(copy)}
+                      className="-mt-1 -mr-1 text-muted hover:text-text"
+                    >
+                      <Trash2Icon aria-hidden="true" />
+                    </Button>
+                  </div>
+                  <Segmented
+                    aria-label={t('formatOf', { platform: name })}
+                    value={copy.format}
+                    onValueChange={(next: Format) => onFormat(copy, next)}
+                    className="grid w-full grid-cols-2"
+                  >
+                    {formats.map((each) => (
+                      <SegmentedItem key={each} value={each}>
+                        {library(`format.${each}`)}
+                      </SegmentedItem>
+                    ))}
+                  </Segmented>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+
+        {open.length > 0 && chosen !== undefined ? (
+          adding ? (
+            <div role="group" aria-label={t('newCopy')} className={mineNewCard}>
+              <p className={mineHeading}>{t('newCopy')}</p>
+              <div className="grid gap-1.5">
+                <label htmlFor={`${id}-platform`} className="text-sm font-medium">
+                  {t('copyPlatform')}
+                </label>
+                <Select
+                  value={String(chosen)}
+                  onValueChange={(value) => setPlatform(Number(value))}
+                >
+                  <SelectTrigger id={`${id}-platform`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {open.map((each) => (
+                      <SelectItem key={each.id} value={String(each.id)}>
+                        {each.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <span aria-hidden="true" className="text-sm font-medium">
+                  {t('copyFormat')}
                 </span>
                 <Segmented
-                  aria-label={t('formatOf', { platform: name })}
-                  value={copy.format}
-                  onValueChange={(format: Format) => onFormat(copy, format)}
+                  aria-label={t('copyFormat')}
+                  value={format}
+                  onValueChange={(next: Format) => setPicked(next)}
+                  className="grid w-full grid-cols-2"
                 >
                   {formats.map((each) => (
-                    <SegmentedItem key={each} value={each}>
+                    <SegmentedItem key={each} value={each} disabled={!free.includes(each)}>
                       {library(`format.${each}`)}
                     </SegmentedItem>
                   ))}
                 </Segmented>
-                <button
-                  type="button"
-                  aria-label={t('removeCopy', {
-                    platform: name,
-                    format: library(`format.${copy.format}`),
-                  })}
-                  onClick={() => onRemove(copy)}
-                  className="inline-flex size-10 items-center justify-center rounded-control text-muted hover:bg-text/8 hover:text-text pointer-coarse:size-11"
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  disabled={!free.includes(format)}
+                  onClick={() => {
+                    onAdd(chosen, format)
+                    setAdding(false)
+                    setPlatform(undefined)
+                  }}
                 >
-                  <XIcon aria-hidden="true" className="size-4" />
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-      {open.length > 0 && chosen !== undefined ? (
-        <div className="mt-1 flex flex-wrap items-end gap-2">
-          <div className="grid min-w-44 flex-1 gap-1.5">
-            <label htmlFor={`${id}-platform`} className="text-sm font-medium">
-              {t('copyPlatform')}
-            </label>
-            <Select value={String(chosen)} onValueChange={(value) => setPlatform(Number(value))}>
-              <SelectTrigger id={`${id}-platform`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {open.map((each) => (
-                  <SelectItem key={each.id} value={String(each.id)}>
-                    {each.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid min-w-32 gap-1.5">
-            <label htmlFor={`${id}-format`} className="text-sm font-medium">
-              {t('copyFormat')}
-            </label>
-            <Select value={format} onValueChange={(value) => setFormat(value as Format)}>
-              <SelectTrigger id={`${id}-format`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {formats.map((each) => (
-                  <SelectItem key={each} value={each} disabled={have.has(`${chosen}:${each}`)}>
-                    {library(`format.${each}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            variant="secondary"
-            disabled={have.has(`${chosen}:${format}`)}
-            onClick={() => onAdd(chosen, format)}
-          >
-            {t('addCopy')}
-          </Button>
-        </div>
-      ) : null}
+                  <PlusIcon aria-hidden="true" />
+                  {t('addThisCopy')}
+                </Button>
+                <Button variant="ghost" onClick={() => setAdding(false)}>
+                  {t('cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              className="w-full border-dashed text-muted hover:text-text"
+              onClick={() => setAdding(true)}
+            >
+              <PlusIcon aria-hidden="true" />
+              {t('addCopy')}
+            </Button>
+          )
+        ) : null}
+      </div>
     </fieldset>
   )
 }

@@ -524,8 +524,8 @@ function PlacingList({ handle }: { handle: string }) {
 
   if (sorted.length === 0) {
     return (
-      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="grid max-w-xl justify-items-start gap-4">
+      <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="grid max-w-xl content-start justify-items-start gap-4">
           <p className="text-pretty">{t('empty')}</p>
           <Button variant="primary" asChild>
             <Link href={libraryHref(handle)}>{t('toShelf')}</Link>

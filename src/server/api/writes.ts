@@ -290,6 +290,9 @@ export const apiOwnerGame = z
         kind: z.enum(kinds),
         year: z.int().optional(),
         platforms: z.array(z.int()),
+        cover: z.string().optional().describe('An IGDB image id'),
+        colors: z.array(z.string()).readonly().optional(),
+        hash: z.string().optional(),
       }),
     ),
     platforms: z.array(
