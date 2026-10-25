@@ -454,6 +454,13 @@
     "readMore": "Read more",
     "readLess": "Show less",
     "screenshots": "Screenshots",
+    "media": "Videos and screenshots",
+    "video": "Video",
+    "videoOpen": "Play {name}, {at} of {total}, {title}",
+    "videoTitle": "{name}: {title}",
+    "videoFrom": "Played from YouTube.",
+    "stripBefore": "Scroll back",
+    "stripAfter": "Scroll on",
     "details": "Details",
     "genres": "Genres",
     "themes": "Themes",
@@ -1078,7 +1085,7 @@
       },
       "where": {
         "title": "Where it is kept",
-        "body": "In a database in São Paulo, Brazil (Turso), reached by Shelf’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there."
+        "body": "In a database in São Paulo, Brazil (Turso), reached by Shelf’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there. Pressing one of a game's videos plays it in YouTube's player (youtube-nocookie.com), which then sees your visit as YouTube's own pages would; nothing goes to YouTube before you press one."
       },
       "delete": {
         "title": "Removing it",

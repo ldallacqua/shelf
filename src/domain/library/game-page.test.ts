@@ -19,6 +19,7 @@ const pc = testPlatform(6, 'pc', 'pc', 'PC')
 const extras = (more: Partial<GameExtras> = {}): GameExtras => ({
   artworks: [],
   screenshots: [],
+  videos: [],
   releases: [],
   notesPublic: false,
   ...more,

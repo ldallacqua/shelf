@@ -454,6 +454,13 @@
     "readMore": "Ler mais",
     "readLess": "Ler menos",
     "screenshots": "Capturas de tela",
+    "media": "Vídeos e capturas de tela",
+    "video": "Vídeo",
+    "videoOpen": "Tocar {name}, {at} de {total}, {title}",
+    "videoTitle": "{name}: {title}",
+    "videoFrom": "Tocado pelo YouTube.",
+    "stripBefore": "Voltar",
+    "stripAfter": "Avançar",
     "details": "Detalhes",
     "genres": "Gêneros",
     "themes": "Temas",
@@ -1078,7 +1085,7 @@
       },
       "where": {
         "title": "Onde fica guardado",
-        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Shelf, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá."
+        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Shelf, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá. Ao apertar um vídeo de um jogo, ele toca no player do YouTube (youtube-nocookie.com), que então vê a sua visita como as páginas do próprio YouTube veriam; nada vai para o YouTube antes de você apertar."
       },
       "delete": {
         "title": "Apagar",

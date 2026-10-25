@@ -14,6 +14,12 @@ export type GameArtwork = GameImage & {
   type: 'key' | 'key-logo' | 'art' | 'concept' | 'other'
 }
 
+/** A trailer or a gameplay video: its YouTube id, and what IGDB calls it ("Trailer"). */
+export type GameVideo = { id: string; name?: string }
+
+/** A YouTube id as IGDB gives them: eleven letters, digits, - and _. Anything else is left out. */
+const YOUTUBE_ID = /^[\w-]{11}$/
+
 export type Company = { id: number; name: string; slug: string }
 
 export type StoreSource = 'steam' | 'gog' | 'epic' | 'microsoft' | 'playstation'
@@ -71,6 +77,7 @@ export type GameData = {
   companies: Company[]
   screenshots: GameImage[]
   artworks: GameArtwork[]
+  videos: GameVideo[]
   releases: Release[]
   storeIds: StoreId[]
   /** The record this one points up to, and how. Absent for a game that stands alone. */
@@ -202,6 +209,7 @@ export const lengthMinutes = (length: Length | undefined): number | undefined =>
 /** How many screenshots and backdrops are kept per game. */
 const MAX_SCREENSHOTS = 12
 const MAX_ARTWORKS = 6
+const MAX_VIDEOS = 6
 
 const ARTWORK_ORDER: GameArtwork['type'][] = ['key', 'key-logo', 'art', 'concept', 'other']
 
@@ -278,6 +286,13 @@ export const toGameData = (record: IgdbGame, time?: IgdbTimeToBeat): GameData =>
       .flatMap((shot) => toImage(shot) ?? [])
       .slice(0, MAX_SCREENSHOTS),
     artworks,
+    videos: record.videos
+      .filter((video) => YOUTUBE_ID.test(video.video_id))
+      .slice(0, MAX_VIDEOS)
+      .map((video) => ({
+        id: video.video_id,
+        ...(video.name?.trim() ? { name: video.name.trim() } : {}),
+      })),
     releases: [...releases.values()],
     storeIds: [...storeIds.values()],
     adultsOnly: record.age_ratings.some(

@@ -3,9 +3,9 @@
 import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Dialog } from 'radix-ui'
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent } from 'react'
 
-import type { GameImage } from '@/domain/igdb/game'
+import type { GameImage, GameVideo } from '@/domain/igdb/game'
 import { imageUrl, screenshotSources } from '@/domain/igdb/images'
 
 /** How far a screenshot can be zoomed. */
@@ -188,9 +188,9 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
   return (
     <Dialog.Root open={open !== undefined} onOpenChange={(next) => !next && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="bg-black/92 fixed inset-0 z-[60] data-[state=open]:animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-cinema/92 data-[state=open]:animate-fade-in" />
         <Dialog.Content
-          className="shot-viewer text-white fixed inset-0 z-[60] flex flex-col outline-none data-[state=open]:animate-fade-in"
+          className="shot-viewer fixed inset-0 z-[60] flex flex-col text-on-cinema outline-none data-[state=open]:animate-fade-in"
           onOpenAutoFocus={() => {
             // Opens at the screenshot chosen, with no slide to it. The viewer is in the page by now.
             const element = track.current
@@ -213,7 +213,7 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
             </p>
             <Dialog.Close
               aria-label={t('viewerClose')}
-              className="bg-white/10 hover:bg-white/20 inline-flex size-11 items-center justify-center rounded-full"
+              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
             >
               <XIcon aria-hidden="true" className="size-5" />
             </Dialog.Close>
@@ -258,7 +258,7 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
               aria-label={t('viewerPrevious')}
               disabled={at === 0}
               onClick={() => go(at - 1)}
-              className="bg-white/10 hover:bg-white/20 inline-flex size-11 items-center justify-center rounded-full disabled:opacity-40"
+              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
             >
               <ChevronLeftIcon aria-hidden="true" className="size-5" />
             </button>
@@ -267,7 +267,7 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
               aria-label={t('viewerNext')}
               disabled={at === shots.length - 1}
               onClick={() => go(at + 1)}
-              className="bg-white/10 hover:bg-white/20 inline-flex size-11 items-center justify-center rounded-full disabled:opacity-40"
+              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
             >
               <ChevronRightIcon aria-hidden="true" className="size-5" />
             </button>
@@ -278,44 +278,155 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
   )
 }
 
+const VideoPlayer = lazy(() => import('./video-player'))
+
 /**
- * A game's screenshots as a strip; each opens the full-screen viewer at
- * itself (spec 7.1).
+ * A game's videos and screenshots, in one strip that scrolls sideways
+ * (spec 7.1): videos first, each on one of the game's own pictures with a
+ * play button, then the screenshots. No scrollbar: an edge with more past it
+ * fades, and an arrow there moves the strip on a pointer that can hover.
  */
-export function Screenshots({ shots, title }: { shots: readonly GameImage[]; title: string }) {
+export function Screenshots({
+  shots,
+  videos = [],
+  title,
+}: {
+  shots: readonly GameImage[]
+  videos?: readonly GameVideo[]
+  title: string
+}) {
   const t = useTranslations('Game')
   const [open, setOpen] = useState<number>()
+  const [playing, setPlaying] = useState<GameVideo>()
+  const strip = useRef<HTMLUListElement>(null)
+  const [edges, setEdges] = useState({ before: false, after: false })
 
+  // Which ends have more past them: on scrolling, and whenever the strip's width changes.
+  useEffect(() => {
+    const element = strip.current
+    if (!element) return
+    const measure = () => {
+      const before = element.scrollLeft > 4
+      const after = element.scrollLeft + element.clientWidth < element.scrollWidth - 4
+      setEdges((now) => (now.before === before && now.after === after ? now : { before, after }))
+    }
+    measure()
+    element.addEventListener('scroll', measure, { passive: true })
+    const resized = new ResizeObserver(measure)
+    resized.observe(element)
+    return () => {
+      element.removeEventListener('scroll', measure)
+      resized.disconnect()
+    }
+  }, [])
+
+  const step = (direction: 1 | -1) => {
+    const element = strip.current
+    if (!element) return
+    element.scrollBy({
+      left: direction * element.clientWidth * 0.8,
+      behavior: reduced() ? 'instant' : 'smooth',
+    })
+  }
+
+  const total = videos.length + shots.length
   return (
     <>
-      <ul className="shot-strip">
-        {shots.map((shot, index) => (
-          <li key={shot.id}>
-            <button
-              type="button"
-              className="shot-thumb"
-              aria-label={t('screenshotOpen', { at: index + 1, total: shots.length, title })}
-              onClick={() => setOpen(index)}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                alt=""
-                {...screenshotSources(shot.id)}
-                sizes="(min-width: 40rem) 224px, 176px"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div
+        className="media-strip"
+        data-before={edges.before ? '' : undefined}
+        data-after={edges.after ? '' : undefined}
+      >
+        <button
+          type="button"
+          className="media-step"
+          data-side="before"
+          aria-label={t('stripBefore')}
+          tabIndex={edges.before ? 0 : -1}
+          onClick={() => step(-1)}
+        >
+          <ChevronLeftIcon aria-hidden="true" className="size-5" />
+        </button>
+        <ul ref={strip} className="shot-strip">
+          {videos.map((video, index) => {
+            const picture = shots[index % Math.max(1, shots.length)]
+            const name = video.name ?? t('video')
+            return (
+              <li key={video.id}>
+                <button
+                  type="button"
+                  className="shot-thumb media-video"
+                  aria-label={t('videoOpen', { name, at: index + 1, total, title })}
+                  onClick={() => setPlaying(video)}
+                >
+                  {picture ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      alt=""
+                      {...screenshotSources(picture.id)}
+                      sizes="(min-width: 40rem) 224px, 176px"
+                      loading="lazy"
+                      decoding="async"
+                      draggable={false}
+                    />
+                  ) : null}
+                  <span className="media-play" aria-hidden="true">
+                    <span />
+                  </span>
+                  <span className="media-name" aria-hidden="true">
+                    {name}
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+          {shots.map((shot, index) => (
+            <li key={shot.id}>
+              <button
+                type="button"
+                className="shot-thumb"
+                aria-label={t('screenshotOpen', {
+                  at: videos.length + index + 1,
+                  total,
+                  title,
+                })}
+                onClick={() => setOpen(index)}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt=""
+                  {...screenshotSources(shot.id)}
+                  sizes="(min-width: 40rem) 224px, 176px"
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                />
+              </button>
+            </li>
+          ))}
+        </ul>
+        <button
+          type="button"
+          className="media-step"
+          data-side="after"
+          aria-label={t('stripAfter')}
+          tabIndex={edges.after ? 0 : -1}
+          onClick={() => step(1)}
+        >
+          <ChevronRightIcon aria-hidden="true" className="size-5" />
+        </button>
+      </div>
       <ScreenshotViewer
         shots={shots}
         title={title}
         open={open}
         onClose={() => setOpen(undefined)}
       />
+      {playing ? (
+        <Suspense fallback={null}>
+          <VideoPlayer video={playing} title={title} onClose={() => setPlaying(undefined)} />
+        </Suspense>
+      ) : null}
     </>
   )
 }

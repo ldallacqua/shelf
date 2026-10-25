@@ -972,7 +972,7 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Heading** | Title, year, developer |
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
 | **About** | IGDB's summary and storyline, in their paragraphs. A long one shows about a screen's worth, and the rest behind **Read more**, opened in place |
-| **Screenshots** | A strip that opens a full-screen viewer: arrow keys, swipe, pinch to zoom |
+| **Videos and screenshots** | One strip, videos first: each video on one of the game's own pictures with a play button and what it is ("Launch Trailer"), then the screenshots. No scrollbar: an edge with more past it fades, and on a pointer that can hover an arrow there moves the strip. A screenshot opens a full-screen viewer (arrow keys, swipe, pinch to zoom); a video plays over the page, from YouTube, which nothing reaches before it is pressed |
 | **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat, IGDB rating and how many ratings it rests on |
 | **Versions** | The editions and ports linked to this entry (signed in) |
 
@@ -1522,3 +1522,11 @@ Made on 25 Oct 2026 for separating a version (7.6):
 | 26 | Separating asks first | Undo, which needs joining two games, not built |
 | 27 | A sync still folds an expanded game into the game it expands | Expanded games stand apart unless I join them |
 | 28 | Only the version I pick moves, not versions of it | Its editions and ports go with it |
+
+Made on 25 Oct 2026 for a game's videos (7.1):
+
+| # | Decision | Alternative |
+| --- | --- | --- |
+| 29 | A video's tile shows one of the game's own screenshots, so a page reaches YouTube only when a video is pressed | YouTube's own thumbnail, fetched from YouTube on every visit |
+| 30 | A video plays over the page, in YouTube's privacy-enhanced player | A link out to YouTube |
+| 31 | At most six videos a game, in IGDB's order | All of them |

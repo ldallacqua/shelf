@@ -340,6 +340,7 @@ export const readGameExtras = async (
         storyline: games.storyline,
         artworks: games.artworks,
         screenshots: games.screenshots,
+        videos: games.videos,
         releases: games.releases,
         length: games.length,
         igdbUrl: games.igdbUrl,
@@ -355,6 +356,7 @@ export const readGameExtras = async (
   const extras: GameExtras = {
     artworks: main.artworks,
     screenshots: main.screenshots,
+    videos: main.videos ?? [],
     // The primary's releases first, then each version's.
     releases: [main, ...versionRows.filter((row) => row !== main)].map((row) => row.releases),
     notesPublic: entry.notesPublic,

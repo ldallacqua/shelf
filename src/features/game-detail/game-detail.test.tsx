@@ -336,6 +336,58 @@ describe('Screenshots', () => {
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
+
+  it('puts the videos first, on the game’s own pictures, and plays one from YouTube only when pressed (spec 7.1)', async () => {
+    renderWithIntl(
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game()}
+        tags={tags}
+        platforms={platforms}
+        facts={facts({
+          videos: [{ id: '2UJxaWZoK6Y', name: 'Gameplay Trailer' }, { id: 'Ga98zSE9Q3Y' }],
+        })}
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Videos and screenshots' })).toBeInTheDocument()
+    const strip = document.querySelector<HTMLElement>('.shot-strip')!
+    const tiles = within(strip).getAllByRole('button')
+    expect(tiles[0]).toHaveAccessibleName('Play Gameplay Trailer, 1 of 5, Bloodborne')
+    expect(tiles[1]).toHaveAccessibleName('Play Video, 2 of 5, Bloodborne')
+    expect(tiles[2]).toHaveAccessibleName(/^Screenshot 3 of 5 from Bloodborne/)
+    // Nothing from YouTube until a video is pressed: its tile is the game's own screenshot.
+    expect(document.querySelector('iframe')).toBeNull()
+    expect(tiles[0]!.querySelector('img')).toHaveAttribute(
+      'src',
+      expect.stringContaining('images.igdb.com'),
+    )
+
+    await userEvent.click(tiles[0]!)
+    const player = await screen.findByRole('dialog', { name: 'Gameplay Trailer: Bloodborne' })
+    expect(within(player).getByTitle('Gameplay Trailer: Bloodborne')).toHaveAttribute(
+      'src',
+      'https://www.youtube-nocookie.com/embed/2UJxaWZoK6Y?autoplay=1&rel=0&playsinline=1',
+    )
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('keeps the strip’s arrows out of reach while there is nothing more past them', () => {
+    renderWithIntl(
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game()}
+        tags={tags}
+        platforms={platforms}
+        facts={facts()}
+      />,
+    )
+    for (const name of ['Scroll back', 'Scroll on']) {
+      expect(screen.getByRole('button', { name })).toHaveAttribute('tabindex', '-1')
+    }
+  })
 })
 
 describe('GamePanel', () => {

@@ -132,6 +132,9 @@ export const apiGamePage = apiGame
       .describe('Mine, when I have made them public. Private notes are never sent.'),
     backdrop: z.url().nullable().describe('Key art, or a screenshot: 1280 by 720'),
     screenshots: z.array(z.url()).describe('1280 by 720'),
+    videos: z
+      .array(z.object({ url: z.url(), name: z.string().optional() }))
+      .describe('Trailers and gameplay, on YouTube'),
   })
   .meta({ id: 'GamePage' })
 
@@ -297,6 +300,10 @@ export const answerGame = (library: Library, page: GamePage): z.infer<typeof api
     notes: facts.notes ?? null,
     backdrop: facts.backdrop ? imageUrl(facts.backdrop.id, 'screenshot_huge') : null,
     screenshots: facts.screenshots.map((shot) => imageUrl(shot.id, 'screenshot_huge')),
+    videos: (facts.videos ?? []).map((video) => ({
+      url: `https://www.youtube.com/watch?v=${video.id}`,
+      ...(video.name ? { name: video.name } : {}),
+    })),
   }
 }
 

@@ -1,4 +1,4 @@
-import type { GameArtwork, GameImage, Length, Release } from '@/domain/igdb/game'
+import type { GameArtwork, GameImage, GameVideo, Length, Release } from '@/domain/igdb/game'
 import type {
   Library,
   LibraryGame,
@@ -28,6 +28,8 @@ export type GameFacts = {
   /** Behind the cover: key art, or a screenshot when there is none. Without either, the cover's colors. */
   backdrop?: GameImage
   screenshots: GameImage[]
+  /** Trailers and gameplay, played from YouTube only when pressed. Absent when IGDB lists none. */
+  videos?: GameVideo[]
   /** The first release on each platform, across every version folded into the entry. */
   releases: Release[]
   /** Hours to beat, three ways, in minutes. */
@@ -53,6 +55,7 @@ export type GameExtras = {
   storyline?: string
   artworks: GameArtwork[]
   screenshots: GameImage[]
+  videos: GameVideo[]
   /** Each version's own releases: the primary's first. */
   releases: Release[][]
   length?: Length
@@ -129,6 +132,7 @@ export const buildGamePage = (
     releases,
     names,
   }
+  if (extras.videos.length > 0) facts.videos = extras.videos
   if (extras.versionTitle) facts.versionTitle = extras.versionTitle
   if (extras.summary) facts.summary = extras.summary
   if (extras.storyline) facts.storyline = extras.storyline

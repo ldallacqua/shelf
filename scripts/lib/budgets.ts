@@ -68,7 +68,12 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf
   // pages' error boundary (1.9 KB), which shelf the page is, and the loader
   // that fetches a private shelf's game only when one is drawn.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 217 },
+  // Videos (25 Oct 2026): measured 217.9 KB, from 216.8. The strip's arrows and
+  // the ends it fades, the video tiles, and the loader of the player; the
+  // player itself is fetched only when a video is pressed. The play sign is
+  // drawn in CSS, not an icon. The owner asked for the videos and for the
+  // strip without its scrollbar.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 219 },
 ]
 
 /**

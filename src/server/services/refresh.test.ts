@@ -158,6 +158,16 @@ describe('the daily refresh', () => {
     expect(await refresh()(100, NOW + 1)).toMatchObject({ changed: 0 })
   })
 
+  it('asks once for the videos of a record stored before they were asked for (spec 7.1)', async () => {
+    igdbWith()
+    await db.update(games).set({ videos: null, checkedAt: 0 }).where(eq(games.igdbId, SKYRIM))
+
+    expect(await refresh()(100, NOW)).toMatchObject({ changed: 1 })
+    const [row] = await db.select().from(games).where(eq(games.igdbId, SKYRIM))
+    expect(row?.videos).toEqual([])
+    expect(await refresh()(100, NOW + 1)).toMatchObject({ changed: 0 })
+  })
+
   it('stores a record whose time to beat changed, which IGDB does not stamp on the record', async () => {
     igdbWith((fixtures) => {
       const time = fixtures.timeToBeat.get(SKYRIM)!

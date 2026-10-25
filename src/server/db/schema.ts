@@ -13,6 +13,7 @@ import type { Palette } from '@/domain/color/palette'
 import type {
   GameArtwork,
   GameImage,
+  GameVideo,
   Length,
   LineageStep,
   Release,
@@ -114,6 +115,8 @@ export const games = sqliteTable(
       .$type<GameArtwork[]>()
       .notNull()
       .default(sql`'[]'`),
+    /** Trailers and gameplay, as YouTube ids. Null for a record stored before they were asked for. */
+    videos: text({ mode: 'json' }).$type<GameVideo[]>(),
     releases: text({ mode: 'json' })
       .$type<Release[]>()
       .notNull()
