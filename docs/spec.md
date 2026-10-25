@@ -1,6 +1,9 @@
 # Shelf: product and UX spec
 
-- **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md)
+- **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
+  Written on 25 Oct 2026 and not built yet: two statuses (3.12), hiding adult games (3.13),
+  archiving a game (7.4), wishing for a game on one platform (7.5) and a game only I see
+  (11.1).
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -402,6 +405,101 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | `?` | Show this list |
 
 Single-letter shortcuts are off while typing in a field, and can be turned off entirely.
+
+### 3.12 Someday and Retired
+
+**Not built yet.** The owner asked on 25 Oct 2026, of a game with no end: "qual status devo
+colocar em um jogo que não tem fim? Tipo path of exile. Joguei umas 200 horas e não estou
+jogando mais. Significa que eu dropei?"; and of games they may never get to: "Meu backlog tenho
+certeza que vou jogar em algum momento, Mas tem uns jogos meio maybe, talvez um dia eu jogue
+mas são menos prioridade que os do backlog." Then, of this section and of 3.13, 7.4 and 11.1:
+"Escreve tudo essas coisas no spec, mas não constroi nada ainda".
+
+Two statuses join the five, each for a game the others describe wrongly:
+
+| Status | For | Not |
+| --- | --- | --- |
+| **Someday** (Algum dia) | A game I own and may play one day, after my backlog | Backlog, which I mean to play; Wishlist, which I do not own |
+| **Retired** (Aposentado) | A game with no end to reach that I am done with, having had what I wanted from it | Completed, which reached an end; Dropped, which I gave up on before having what I wanted |
+
+A game with a story and play after it (Path of Exile's campaign, then its endgame) is Completed
+once the story is done. Retired is for the rest: a game that never ends, multiplayer or endless,
+that I have stopped playing.
+
+**On the shelf,** never by color alone, as every status (3.2):
+
+| Status | On the shelf |
+| --- | --- |
+| Someday | Stands set back from the row, toward the wall: the opposite of Playing. In 2D, a little smaller, its foot behind the ledge's lip. |
+| Retired | A small square tag on the cover's corner, matte, where Completed has a round foil seal |
+
+The wall and the list give each its own mark, and a box's name says its status in words, as
+for the others.
+
+**The order,** everywhere statuses are listed (the status row, grouping, sorting, the editor,
+adding a game, the placing page and its tally): Playing, Backlog, Someday, Completed, Retired,
+Dropped, Wishlist, Unsorted. What I mean to play, then what I am done with, then what I do not
+own, then what waits.
+
+- **The status row** shows Someday and Retired only while the shelf has a game in one, as it
+  does Unsorted: a shelf that never uses them looks as it does now.
+- **The placing page** (4.5) offers both among the others, as shapes and words; on a phone the
+  statuses wrap. What a sync brought in is where the two are needed most.
+- **Stats** (3.9): a retired game is not finished. It is not on the trophy wall, not counted in
+  games finished, here or in the stats line, and never the longest game. The share of started
+  games that I finished leaves it out altogether: there was no end to reach, so it neither
+  raises nor lowers it. Its hours count in hours played and the most-played platform, as every
+  game's do. Someday is not started, as Backlog is not.
+- **Neither sets a date.** Completed alone sets the completion date.
+- **Filters:** `status:someday`, `status:retired`. The API, the MCP tools and `llms.txt` list
+  the seven. The starter shelf Backlog stays `status:backlog`, so Someday is out of it, which is
+  the point.
+- **A sync never sets either:** a game it adds still starts unsorted, or playing (4.4).
+
+**Done when**
+
+- Someday and Retired each show by posture or mark, and in words, in 2D, 3D, the wall and the
+  list, in both themes.
+- Grouping and sorting by status give the order above, and the status row shows the two only
+  while a game has one.
+- A retired game counts in hours played and in nothing finished, and leaves the share of
+  finished games as it was.
+
+### 3.13 Hiding adult games
+
+**Not built yet.** The owner asked on 25 Oct 2026: "Preciso de uma opção pra esconder todos os
+jogos marcados como erotic. Mas não é uma opção permanente. Ela deve lembrar minha escolha obvio
+mas devo poder reverter ou ativar ao pressionar um botão. Mas não quero ter que apertar pra
+esconder toda vez que atualizar a pagina, então essa seleção tem que ser lembrada. Erotic e
+Adult Only. Tipo se eu quiser mostrar minha biblioteca pra uma pessoa no meu pc e não quiser
+mostrar esses games."
+
+- **Adult** means a game IGDB gives the theme Erotic, or that the ESRB rates Adults Only (AO).
+  Shelf keeps IGDB's themes already; it does not keep age ratings yet, so they are fetched with
+  every game from then on, and once for the games already cached.
+- **One button, Hide adult games** (Esconder jogos adultos), pressed or not, beside Covers and
+  Compact (3.6); in the View sheet on a phone; and `H`. It is there only while the shelf has an
+  adult game, so a shelf with none never shows it.
+- **Remembered on this device,** like 2D or 3D, before the first paint: a reload, a new visit
+  and every page keep it until it is pressed again. It is not in the address, so a link I share
+  shows the person who opens it what they chose. It belongs to whoever is at this screen, so it
+  is per device, not per account, and holds on every shelf seen on it.
+- **While it is pressed, adult games are drawn nowhere:** not on the shelf, the wall, the list,
+  3D, the trophy wall, the placing page, or in the search inside the library, and never drawn
+  first and taken away. The counts, the stats line and the stats leave them out, so the numbers
+  agree with what is on the screen. Nothing counts what is hidden: the pressed button is the one
+  sign that something is.
+- **A game's own page,** reached by its address while it is pressed, shows no cover, art or
+  screenshots, says the game is hidden on this device, and offers to show adult games again.
+- **A visitor** to a public shelf has the same button, for their own device. Until it is
+  pressed, adult games show, for everyone.
+
+**Done when**
+
+- With it pressed, no adult game's cover or title is drawn on any page of a shelf, in any view,
+  from the first paint, and a reload keeps it so.
+- Pressed again, they are back, and that survives a reload too.
+- A shelf with no adult game has no button, and `H` does what the button does.
 
 ---
 
@@ -901,6 +999,70 @@ immediately; if saving fails it reverts and says why.
 - A visitor never sees private notes or any edit control.
 - An address for a game that is not in the library returns "not found".
 
+### 7.4 Archiving a game
+
+**Not built yet.** The owner asked on 25 Oct 2026 for "um jogo que eu quero que suma do meu
+shelf, que esteja em um lugar escondido. Tipo, não quero ficar olhando pra ele pq eu não comprei
+de fato. Ganhei de presente se la. Mas não quero deletar ele completamente, quero poder restaurar
+ele se quiser."
+
+Remove from library does part of that for a game a sync brought in: it waits on its platform's
+card, left out, and "Put back on my shelf" brings it back, but as new, without what I had
+set. For a game I added myself it does none of it: Undo lasts a day. And its name says delete.
+
+- **Archive** (Arquivar), in the editor beside Remove from library. It takes the game off my
+  shelf at once, says so, and offers Undo. It asks nothing first, since nothing is lost.
+- **An archived game is kept whole:** status, rating, notes, tags, dates, copies and hours.
+- **It is nowhere else,** to me or anyone: not on the shelf, the wall, the list, 3D or the
+  trophy wall; not in a count, a stat, a filter's values or a smart shelf; not on the placing
+  page or in the search inside the library; not on the public shelf or in an API or MCP answer.
+  Its address answers "not found". To look at it again, I bring it back.
+- **One place lists them:** "Archived games" on the account page, there only while one is.
+  Each row has the cover, the title and the platforms, and **Bring back** (Trazer de volta),
+  which puts the game on the shelf exactly as it was and says so.
+- **A sync** still feeds its copies' hours, and a copy found on another platform joins it, but
+  it stays archived: never back on the shelf by itself, never listed for placing.
+- **Adding it again,** by search or a pasted list, finds it archived and offers Bring back, not
+  a second box: an IGDB record belongs to one entry per library (ADR 001).
+- **Remove from library** stays as it is. Its question names the other way: archiving keeps
+  the game out of sight with everything I set, and is one button there.
+
+**Done when**
+
+- An archived game is in no view, count or answer, to me or anyone, and comes back exactly as
+  it was.
+- A sync neither puts it back nor gives it a second entry, and adding it again offers Bring
+  back.
+- The account page lists every archived game, and shows nothing when there is none.
+
+### 7.5 Wishing for a game on one platform
+
+**Not built yet.** The owner asked on 25 Oct 2026, of Tsukihime, on the wishlist and released
+on PS4 and Switch: "eu não quero ele no ps4, eu quero ele no switch. [...] Tem como colocar que
+eu desejo esse game no switch? Sei que tem a opção tenho em: mas eu não tenho, então não faria
+sentido eu colocar tenho em switch sendo que ta na minha lista de desejos certo?"
+
+Right: Platforms owned is for what I own. Today a wishlist game has no platform of its own, so
+its box takes the case of the first platform IGDB lists it on, PS4's here.
+
+- **Want it on** (Quero em), in place of Platforms owned while a game is on the wishlist: the
+  platforms it was released on, as chips, and I pick one or more, or none. Adding a game as
+  Wishlist (4.1) asks the same, and needs none.
+- **Its box** stands in the case of the first platform I want it on, outlined as a wishlist
+  game is, still on the Not owned shelf when grouped by platform. With none wanted, it is as
+  today.
+- **Its page and its box's name** say where I want it: "Wishlist, on Switch".
+- **Filter:** `wanted:switch`, a list like `owned`, families included (`wanted:nintendo`).
+- **When I get it,** changing its status from Wishlist turns Want it on back into Platforms
+  owned, with the platform I wanted already picked, asking only physical or digital. What I
+  wanted is then let go.
+
+**Done when**
+
+- A wishlist game wanted on Switch stands in a Switch case, says so in words, and is found by
+  `wanted:switch` and not by `owned:switch`.
+- Leaving the wishlist starts its first copy on the platform I wanted.
+
 ---
 
 ## 8. Data model
@@ -927,6 +1089,10 @@ Two additions the brief did not ask for, both small:
 | --- | --- |
 | **Featured** (yes or no, per game) | Decides which boxes stand face-out. A shelf with a few covers showing reads far better than a wall of spines. |
 | **Notes public** (yes or no, per game) | The library is public and notes may not be meant to be |
+
+**Not built yet** (25 Oct 2026): an entry gains **archived** (7.4) and **private** (11.1), yes
+or no, the **platforms wanted** while it is on the wishlist (7.5), and two statuses, Someday and
+Retired (3.12); a game's cached IGDB data gains its age ratings (3.13).
 
 ---
 
@@ -1027,6 +1193,36 @@ English and Brazilian Portuguese from the first build.
 - A wrong password cannot sign in.
 - The public pages contain no private note text, and a private shelf's pages and files none of
   its games, checked in the page source.
+
+### 11.1 A game only I see
+
+**Not built yet.** The owner asked on 25 Oct 2026 for "outra opção de esconder o game do
+publico. Não so erotic mas qualquer jogo. Tipo a opção da steam que eu posso deixar o jogo como
+privado. Ou seja, so eu vejo ele no meu shelf."
+
+- **Private** (Privado), a switch per game in the editor, under Mine: off unless I turn it on,
+  and saved at once, like everything there.
+- **On my own shelf, signed in, it is there as ever,** in every view, count and stat, with a
+  small closed lock on the box's foot, the same mark on the wall and in the list, and "private"
+  in its name. `is:private` finds them.
+- **To anyone else it does not exist:** a visitor, another account, a search engine, the public
+  API, the MCP tools, `llms.txt` and the structured data. It is not on the shelf, the wall, the
+  list or the trophy wall, and not in a count, a stat, a smart shelf or a filter's values (a
+  developer only it has is not offered); its address answers "not found". The public shelf's
+  pages and files never carry it, so it cannot be read from the page source.
+- **On a private shelf** every game is already only mine. The switch is still there, and what
+  it says is kept for when the shelf goes public.
+- **A sync** never changes it, and the games it adds are not private.
+- **The table above** gains a row, "See a game marked private": a visitor no, another account
+  no, its own account yes. The landing page's part 8 and its question on who can see a shelf
+  (15) say that any one game can be kept to oneself.
+
+**Done when**
+
+- A private game's title, cover and data are in no public page, file, API or MCP answer,
+  checked in the page source, and in no count or filter value a visitor sees.
+- Its own account sees it everywhere, marked, in both themes and both languages.
+- Switching it on or off is what a visitor sees the next time the shelf loads.
 
 ---
 
@@ -1239,3 +1435,18 @@ Each is a default you can overturn. None blocks Phase 3.
 | 12 | In 3D the wall runs sideways and the camera walks along it; in 2D on desktop the page scrolls down | The same direction in both |
 | 13 | Franchise and series are separate filters, as in IGDB | Merge them |
 | 14 | The library opens grouped by platform, sorted by title | Ungrouped, newest first |
+
+Made on 25 Oct 2026 for the five sections not built yet (3.12, 3.13, 7.4, 7.5, 11.1):
+
+| # | Decision | Alternative |
+| --- | --- | --- |
+| 15 | Someday and Retired are in the status row only while a game has one | Always there |
+| 16 | A retired game is out of the share of finished games altogether | Counted as finished, or as dropped |
+| 17 | Archiving asks nothing and offers Undo; removing still asks | Both ask |
+| 18 | An archived game's address is not found, to me too: I bring it back to look at it | Its own account sees its page, marked archived |
+| 19 | Adult is IGDB's Erotic theme or the ESRB's Adults Only | Also IGDB's keywords for sexual content, or a mark of my own per game |
+| 20 | Hiding adult games is per device, and off until pressed, for visitors too | Per account, or on by default for visitors |
+| 21 | Nothing counts the hidden adult games; the pressed button is the only sign | Say how many are hidden |
+| 22 | IGDB's results when adding a game are not hidden: they are not the shelf's games, and it is me typing | Hidden too, which needs every result's themes and age ratings |
+| 23 | A wished game stays on the Not owned shelf, in the case of the platform I want it on | It stands, outlined, on that platform's shelf |
+| 24 | A wish names platforms, not physical or digital | The format too |
