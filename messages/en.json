@@ -852,7 +852,7 @@
   "Placing": {
     "metaTitle": "Place your games",
     "title": "Place your games",
-    "intro": "The games a sync brought onto your shelf wait here, unsorted, until you say where each one stands. A game you give a status stays here, showing it, so a wrong one is one tap to change and you can still rate it; tap its status again to take it back. Next time you open this page, only the games still unsorted are here. Leaving one for another day is fine.",
+    "intro": "The games a sync brought onto your shelf wait here until you say where each one stands.",
     "signInFirst": "Sign in to place your games.",
     "loading": "Loading your games…",
     "failed": "Shelf could not read your games. Try again.",
