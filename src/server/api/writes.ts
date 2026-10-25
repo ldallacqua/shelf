@@ -47,7 +47,14 @@ export const apiSearchResult = z
     platforms: z.array(platformId).describe('The platforms it was released on'),
     alsoOn: z.array(platformId).describe('More platforms, through ports folded into it'),
     onShelf: z
-      .object({ slug: z.string(), title: z.string() })
+      .object({
+        slug: z.string(),
+        title: z.string(),
+        archived: z
+          .string()
+          .optional()
+          .describe('Its entry, when it is archived: DELETE /entries/{id}/archived brings it back'),
+      })
       .nullable()
       .describe('The game in the library it already is, under any version'),
   })
@@ -305,6 +312,35 @@ export const apiRemoved = z
     undo: z.string().describe('Kept for a day; the interface’s Undo takes it'),
   })
   .meta({ id: 'Removed' })
+
+export const apiArchived = z
+  .object({
+    version: z.int(),
+    entryId: z.string().describe('For DELETE /entries/{id}/archived, which brings it back'),
+    title: z.string(),
+  })
+  .meta({ id: 'Archived' })
+
+export const apiBroughtBack = z
+  .object({ version: z.int(), slug: z.string(), title: z.string() })
+  .meta({ id: 'BroughtBack' })
+
+export const apiArchivedGames = z
+  .object({
+    games: z.array(
+      z.object({
+        entryId: z.string(),
+        slug: z.string(),
+        title: z.string(),
+        year: z.int().optional(),
+        cover: z.string().optional().describe('An IGDB image id'),
+        colors: z.array(z.string()).optional(),
+        hash: z.string().optional(),
+        platforms: z.array(z.string()).describe('Its copies’ platforms, by their short names'),
+      }),
+    ),
+  })
+  .meta({ id: 'ArchivedGames' })
 
 const toApiResult = (result: Candidate): z.input<typeof apiSearchResult> => ({
   igdbId: result.igdbId,

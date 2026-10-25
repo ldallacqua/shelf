@@ -239,14 +239,17 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
           </div>
         </div>
 
-        <div className="grid justify-items-start gap-3 border-t border-line pt-4">
-          <Ghost
-            index={16}
-            className="inline-flex h-10 items-center gap-2 rounded-control px-4 text-sm font-medium whitespace-nowrap pointer-coarse:h-11"
-          >
-            <span className="size-4 flex-none" />
-            {t('remove')}
-          </Ghost>
+        <div className="flex flex-wrap gap-2 border-t border-line pt-4">
+          {(['archive', 'remove'] as const).map((each, index) => (
+            <Ghost
+              key={each}
+              index={16 + index}
+              className="inline-flex h-10 items-center gap-2 rounded-control px-4 text-sm font-medium whitespace-nowrap pointer-coarse:h-11"
+            >
+              <span className="size-4 flex-none" />
+              {t(each)}
+            </Ghost>
+          ))}
         </div>
       </div>
     </section>

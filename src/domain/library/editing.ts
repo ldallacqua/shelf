@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Palette } from '@/domain/color/palette'
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
 import {
   formats,
@@ -57,6 +58,20 @@ export type OwnerGame = {
   platforms: PlatformLabel[]
 }
 
+/** An archived game, as the account page lists it (spec 7.4). */
+export type ArchivedGame = {
+  entryId: string
+  slug: string
+  title: string
+  year?: number
+  /** IGDB image id. */
+  cover?: string
+  colors?: Palette
+  hash?: string
+  /** The platforms of its copies, by their short names. */
+  platforms: string[]
+}
+
 export const MAX_NOTES = 10_000
 
 /** A change to what is mine about a game. Absent: unchanged; null: cleared. */
@@ -84,6 +99,12 @@ export type Removed = Changed & { undo: string; title: string }
 
 export type Restored = Changed & { slug: string }
 
+/** After archiving (spec 7.4): the entry, to bring it back with, and its title, to say so. */
+export type Archived = Changed & { entryId: string; title: string }
+
+/** After bringing it back: its address, to land on, and its title. */
+export type BroughtBack = Restored & { title: string }
+
 /** Changes the editor sends at once: what is mine, and the rest of a game's patch. */
 export type EditPatch = MinePatch & { tags?: string[]; minutes?: number; mainVersion?: string }
 
@@ -96,4 +117,6 @@ export type EditActions = {
   removeCopy: (entryId: string, copyId: string) => Promise<Answer<Changed>>
   remove: (entryId: string) => Promise<Answer<Removed>>
   restore: (undo: string) => Promise<Answer<Restored>>
+  archive: (entryId: string) => Promise<Answer<Archived>>
+  bringBack: (entryId: string) => Promise<Answer<BroughtBack>>
 }

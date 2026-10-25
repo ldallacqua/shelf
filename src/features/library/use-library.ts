@@ -16,18 +16,32 @@ import { snapshotAddress, type LibraryFiles } from './shelf-address'
 
 const fetched = new Map<string, Promise<Library>>()
 
-const load = (files: LibraryFiles, version: number): Promise<Library> => {
+/** How long to wait before asking again for a version the server is still making. */
+const AGAIN_MS = [250, 500, 1000, 2000]
+
+const fetchFile = async (files: LibraryFiles, version: number): Promise<Library> => {
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(snapshotAddress(files, version), {
+      cache: files.kind === 'mine' ? 'no-store' : 'default',
+    })
+    if (!response.ok) throw new Error(`The library file answered ${response.status}`)
+    const library = decodeLibrary((await response.json()) as SnapshotFile)
+    // Right after a write the server may still send the new version's address on to the
+    // version before it, while it makes the new file in the background; a moment later it
+    // has it. Taking the older file would show the shelf as it was before the change. One's
+    // own file is read fresh, not by version.
+    const wait = AGAIN_MS[attempt]
+    if (files.kind === 'mine' || library.version >= version || wait === undefined) return library
+    await new Promise((resolve) => setTimeout(resolve, wait))
+  }
+}
+
+/** The library file for a version: fetched once, and kept while the page is open. */
+export const load = (files: LibraryFiles, version: number): Promise<Library> => {
   const id = `${files.kind === 'public' ? files.key : 'mine'}:${version}`
   let file = fetched.get(id)
   if (!file) {
-    file = fetch(snapshotAddress(files, version), {
-      cache: files.kind === 'mine' ? 'no-store' : 'default',
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error(`The library file answered ${response.status}`)
-        return response.json() as Promise<SnapshotFile>
-      })
-      .then(decodeLibrary)
+    file = fetchFile(files, version)
     fetched.set(id, file)
     // A failed attempt is forgotten, so "Try again" really tries again.
     file.catch(() => fetched.delete(id))

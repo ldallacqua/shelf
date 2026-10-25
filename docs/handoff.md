@@ -19,6 +19,12 @@ decisions 15 to 24 are built as written; the owner did not change them.
 - **Wishing on one platform is built** (7.5; architecture section 25's first row). A build here
   reads `.data/shelf.db`, so after pulling a migration that adds a column, run `pnpm db:migrate`
   first; Vercel's build migrates by itself.
+- **Archiving is built** (7.4; architecture section 25's first row), and with it two fixes for
+  every edit: a library file older than the version asked for is asked for again, and a
+  closing panel keeps its version. Checking a flow end to end here: a headless Chromium script
+  against `pnpm serve:test` (the made-up owner), since the app's pane, hidden, does not draw.
+  Wait for the panel's opening animation before clicking in it: its view transition takes
+  the clicks until it ends.
 - **The game panel stays on its game** when a change moves it off the shelf (architecture
   section 25's first row). To check the library's own behaviour in a browser, the app's pane
   must be showing: hidden, it does not draw, and the new library file is never applied.

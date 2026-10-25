@@ -15,7 +15,7 @@ import {
   playTime,
   tags,
 } from '@/server/db/schema'
-import { readLibrary } from '@/server/library/read'
+import { readArchived, readLibrary, readOwnerGame, readStanding } from '@/server/library/read'
 import {
   addCopy,
   addVersion,
@@ -35,6 +35,7 @@ import {
   patchEntry,
   setManualMinutes,
   setPrimary,
+  setArchived,
   setStatuses,
   setTags,
   updateEntry,
@@ -397,6 +398,57 @@ describe('each library is its own (ADR 004)', () => {
     await setTags(db, me, mine, [])
     expect((await readLibrary(db, me)).names.tag).toEqual([])
     expect((await readLibrary(db, other)).names.tag).toEqual([{ name: 'short', slug: 'short' }])
+  })
+})
+
+describe('archiving a game (spec 7.4)', () => {
+  it('takes it out of every answer, keeps it whole, and brings it back as it was', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'completed',
+      rating: 90,
+      notes: 'A gift.',
+      copies: [{ platformId: SWITCH, format: 'physical' }],
+      tags: ['gift'],
+    })
+    await createEntry(db, me, { primaryGameId: skyrim, status: 'backlog' })
+    const before = await readVersion(db, me)
+
+    await setArchived(db, me, entry, true)
+    expect(await readVersion(db, me)).toBe(before + 1)
+    expect((await readLibrary(db, me)).games.map((game) => game.slug)).toEqual([
+      'the-elder-scrolls-v-skyrim',
+    ])
+    expect(await readOwnerGame(db, me, entry)).toBeUndefined()
+    expect((await readStanding(db, me)).tally).toMatchObject({ completed: 0, backlog: 1 })
+    expect(await readArchived(db, me)).toEqual([
+      expect.objectContaining({
+        entryId: entry,
+        slug: 'hades',
+        title: 'Hades',
+        platforms: ['Switch'],
+      }),
+    ])
+
+    await setArchived(db, me, entry, false)
+    expect(await readArchived(db, me)).toEqual([])
+    expect(await readOwnerGame(db, me, entry)).toMatchObject({
+      status: 'completed',
+      rating: 90,
+      notes: 'A gift.',
+      tags: ['gift'],
+      copies: [expect.objectContaining({ platformId: SWITCH, format: 'physical' })],
+    })
+  })
+
+  it('changes nothing when asked twice, and nothing in another library', async () => {
+    const entry = await createEntry(db, me, { primaryGameId: hades, status: 'backlog' })
+    await setArchived(db, me, entry, true)
+    const version = await readVersion(db, me)
+    await setArchived(db, me, entry, true)
+    expect(await readVersion(db, me)).toBe(version)
+    await expect(setArchived(db, other, entry, false)).rejects.toThrow(LibraryError)
+    expect(await readArchived(db, other)).toEqual([])
   })
 })
 

@@ -816,6 +816,11 @@
   "AccountPage": {
     "metaTitle": "Sua conta",
     "title": "Sua conta",
+    "archived": {
+      "title": "Jogos arquivados",
+      "intro": "Fora de vista e fora de todas as contas, com tudo o que você marcou. Traga um de volta para pô-lo na estante como estava.",
+      "copies": "Em {platforms}"
+    },
     "checking": "Verificando quem é você…",
     "signInFirst": "Entre para ver sua conta.",
     "signIn": "Entrar",
@@ -1091,6 +1096,8 @@
     "unavailable": "A busca de jogos não está disponível agora. A biblioteca continua funcionando.",
     "tryAgain": "Tentar de novo",
     "inLibrary": "Na biblioteca",
+    "archived": "Arquivado",
+    "archivedFound": "{title} está no seu arquivo, com tudo o que você marcou. Traga de volta em vez de adicionar de novo.",
     "alsoOn": "também no {platforms}",
     "kinds": {
       "remake": "Remake",
@@ -1197,6 +1204,11 @@
     "makeMain": "Tornar a versão principal",
     "remove": "Tirar da biblioteca",
     "confirmRemove": "Tirar {title} da biblioteca? As cópias, o tempo de jogo e as notas vão junto.",
+    "orArchive": "Ou arquive: fora de vista, com tudo guardado, até você trazer de volta.",
+    "archive": "Arquivar",
+    "archived": "{title} foi arquivado.",
+    "bringBack": "Trazer de volta",
+    "broughtBack": "{title} voltou para a estante.",
     "confirm": "Tirar",
     "keep": "Manter",
     "removed": "{title} saiu da biblioteca.",

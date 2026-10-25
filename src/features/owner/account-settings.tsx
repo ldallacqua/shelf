@@ -12,6 +12,7 @@ import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
 
 import { accountChanged, forgetAccount, openAfresh, type SignedIn, useAccount } from './account'
+import { ArchivedGames } from './archived-games'
 import { HandleField, useHandleCheck } from './handle-field'
 import { PasswordField } from './password-field'
 import { VisibilityChoice } from './visibility-choice'
@@ -372,6 +373,7 @@ export function AccountSettings() {
       {/* Saved, the fields already hold what the account now is: kept, with what was said. */}
       <ShelfSettings account={account} />
       <Platforms handle={account.handle} />
+      <ArchivedGames />
       <PasswordSettings />
       <SignOutEverywhere />
       <DeleteAccount />

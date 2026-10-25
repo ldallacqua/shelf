@@ -31,6 +31,11 @@ const client = vi.hoisted(() => ({
   removeCopy: vi.fn(),
   remove: vi.fn(),
   restore: vi.fn(),
+  archive: vi.fn(async (entryId: string) => ({
+    ok: true as const,
+    value: { version: 3, entryId, title: 'Tsukihime: A Piece of Blue Glass Moon' },
+  })),
+  bringBack: vi.fn(),
 }))
 vi.mock('./edit-client', () => ({ editClient: client }))
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
@@ -88,5 +93,30 @@ describe('MineEditor, on the wishlist (spec 7.5)', () => {
         'Nintendo Switch',
       ),
     )
+  })
+})
+
+describe('MineEditor, archiving (spec 7.4)', () => {
+  it('archives at once, asking nothing, and leaves the game', async () => {
+    server.games.set('gift', wished('gift', []))
+    const onRemoved = vi.fn()
+    renderWithIntl(
+      <MineEditor slug="gift" level="h3" minor="h4" onRemoved={onRemoved} fallback={null} />,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Archive' }))
+    expect(client.archive).toHaveBeenCalledWith('entry-gift')
+    expect(client.remove).not.toHaveBeenCalled()
+    expect(onRemoved).toHaveBeenCalled()
+  })
+
+  it('offers archiving in the question removing asks', async () => {
+    server.games.set('gift-2', wished('gift-2', []))
+    editor('gift-2')
+    await userEvent.click(await screen.findByRole('button', { name: 'Remove from library' }))
+    const question = within(screen.getByRole('group', { name: 'Remove from library' }))
+    expect(question.getByText(/Or archive it/)).toBeInTheDocument()
+    await userEvent.click(question.getByRole('button', { name: 'Archive' }))
+    expect(client.archive).toHaveBeenCalledWith('entry-gift-2')
+    expect(client.remove).not.toHaveBeenCalled()
   })
 })

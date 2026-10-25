@@ -19,6 +19,9 @@ import {
 import {
   apiAdded,
   apiAdditions,
+  apiArchived,
+  apiArchivedGames,
+  apiBroughtBack,
   apiAddUndo,
   apiChanged,
   apiCopyPatch,
@@ -123,6 +126,9 @@ export const openApiDocument = () => {
     apiNewCopy,
     apiCopyPatch,
     apiRestored,
+    apiArchived,
+    apiBroughtBack,
+    apiArchivedGames,
     apiPastedLines,
     apiLineMatch,
     apiListMatch,
@@ -349,6 +355,34 @@ export const openApiDocument = () => {
           security: OWNER,
           parameters: [ENTRY, COPY],
           responses: { 200: { description: 'Removed', ...json('Changed') }, ...REFUSALS },
+        },
+      },
+      '/entries/{id}/archived': {
+        put: {
+          summary:
+            'Archive a game: off the shelf and out of every answer, kept whole until it is brought back. Signed in.',
+          security: OWNER,
+          parameters: [ENTRY],
+          responses: { 200: { description: 'Archived', ...json('Archived') }, ...REFUSALS },
+        },
+        delete: {
+          summary: 'Bring an archived game back, exactly as it was. Signed in.',
+          security: OWNER,
+          parameters: [ENTRY],
+          responses: {
+            200: { description: 'Back on the shelf', ...json('BroughtBack') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/me/archived': {
+        get: {
+          summary: 'The signed-in account’s archived games, the latest first. Signed in.',
+          security: OWNER,
+          responses: {
+            200: { description: 'Archived games', ...json('ArchivedGames') },
+            ...REFUSALS,
+          },
         },
       },
       '/removed/{undo}': {

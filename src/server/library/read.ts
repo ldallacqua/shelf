@@ -1,9 +1,9 @@
 import 'server-only'
 
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import { lengthMinutes } from '@/domain/igdb/game'
-import type { OwnerGame } from '@/domain/library/editing'
+import type { ArchivedGame, OwnerGame } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
 import {
   emptyTally,
@@ -180,6 +180,8 @@ export const readLibrary = async (db: Db, libraryId: string): Promise<Library> =
 
   const libraryGames: LibraryGame[] = []
   for (const entry of entryRows) {
+    // Archived, it is in no view, count or answer (spec 7.4).
+    if (entry.archivedAt !== null) continue
     const versions = versionsByEntry.get(entry.id) ?? []
     const primary = versions.find((version) => version.relation === 'primary')
     // An entry without a primary cannot be shown. The schema makes one hard to lose.
@@ -321,7 +323,7 @@ export const readGameExtras = async (
     db
       .select({ notes: entries.notes, notesPublic: entries.notesPublic })
       .from(entries)
-      .where(eq(entries.id, primary.entryId)),
+      .where(and(eq(entries.id, primary.entryId), isNull(entries.archivedAt))),
     db
       .select({
         relation: entryVersions.relation,
@@ -398,7 +400,9 @@ export const readOwnerGame = async (
     db
       .select()
       .from(entries)
-      .where(and(eq(entries.id, entryId), eq(entries.userId, libraryId))),
+      .where(
+        and(eq(entries.id, entryId), eq(entries.userId, libraryId), isNull(entries.archivedAt)),
+      ),
     db
       .select({
         gameId: games.id,
@@ -507,7 +511,7 @@ const statusCounts = (db: Db, libraryId: string) =>
   db
     .select({ status: entries.status, count: sql<number>`count(*)` })
     .from(entries)
-    .where(eq(entries.userId, libraryId))
+    .where(and(eq(entries.userId, libraryId), isNull(entries.archivedAt)))
     .groupBy(entries.status)
 
 const tallyOf = (rows: readonly { status: string; count: number }[]): Tally => {
@@ -558,7 +562,13 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
           and(eq(entryVersions.entryId, entries.id), eq(entryVersions.relation, 'primary')),
         )
         .innerJoin(games, eq(games.id, entryVersions.gameId))
-        .where(and(eq(entries.userId, libraryId), eq(entries.status, 'unsorted'))),
+        .where(
+          and(
+            eq(entries.userId, libraryId),
+            eq(entries.status, 'unsorted'),
+            isNull(entries.archivedAt),
+          ),
+        ),
       db
         .select({ id: copies.id, entryId: copies.entryId, platformId: copies.platformId })
         .from(copies)
@@ -666,4 +676,58 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
     tally,
     platforms: labels,
   }
+}
+
+/**
+ * My archived games, the latest first (spec 7.4): the one place they are
+ * listed, on the account page, each with what it needs to be told apart and
+ * brought back.
+ */
+export const readArchived = async (db: Executor, libraryId: string): Promise<ArchivedGame[]> => {
+  const rows = await db
+    .select({
+      entryId: entries.id,
+      slug: games.slug,
+      title: games.title,
+      year: games.year,
+      cover: games.cover,
+      colors: games.colors,
+      thumbhash: games.thumbhash,
+    })
+    .from(entries)
+    .innerJoin(
+      entryVersions,
+      and(eq(entryVersions.entryId, entries.id), eq(entryVersions.relation, 'primary')),
+    )
+    .innerJoin(games, eq(games.id, entryVersions.gameId))
+    .where(and(eq(entries.userId, libraryId), isNotNull(entries.archivedAt)))
+    .orderBy(desc(entries.archivedAt))
+  if (rows.length === 0) return []
+  const owned = await db
+    .select({ entryId: copies.entryId, platformId: platforms.short })
+    .from(copies)
+    .innerJoin(platforms, eq(platforms.igdbId, copies.platformId))
+    .where(
+      inArray(
+        copies.entryId,
+        rows.map((row) => row.entryId),
+      ),
+    )
+  return rows.map((row) => {
+    const game: ArchivedGame = {
+      entryId: row.entryId,
+      slug: row.slug,
+      title: row.title,
+      platforms: [
+        ...new Set(
+          owned.filter((copy) => copy.entryId === row.entryId).map((copy) => copy.platformId),
+        ),
+      ],
+    }
+    if (row.year !== null) game.year = row.year
+    if (row.cover) game.cover = row.cover.id
+    if (row.colors) game.colors = row.colors
+    if (row.thumbhash) game.hash = row.thumbhash
+    return game
+  })
 }

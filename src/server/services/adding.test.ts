@@ -6,7 +6,7 @@ import { copies, entryVersions, games } from '@/server/db/schema'
 import { createIgdbApi } from '@/server/igdb/api'
 import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
 import { readLibrary } from '@/server/library/read'
-import { readVersion } from '@/server/library/store'
+import { findEntryIdBySlug, readVersion, setArchived } from '@/server/library/store'
 import { parseList } from '@/domain/library/bulk'
 import {
   createHandlers,
@@ -75,6 +75,17 @@ describe('searching IGDB to add a game', () => {
     expect(answer.platforms.find((platform) => platform.id === SWITCH)?.name).toBe(
       'Nintendo Switch',
     )
+  })
+
+  it('marks a game I archived as archived, with its entry to bring it back (spec 7.4)', async () => {
+    const entryId = (await findEntryIdBySlug(db, sample, 'the-elder-scrolls-v-skyrim'))!
+    await setArchived(db, sample, entryId, true)
+    const answer = await adding.search('Skyrim')
+    expect(answer.results.find((result) => result.igdbId === SKYRIM)?.onShelf).toEqual({
+      slug: 'the-elder-scrolls-v-skyrim',
+      title: 'The Elder Scrolls V: Skyrim',
+      archived: entryId,
+    })
   })
 
   it('leaves a game I do not have unmarked', async () => {

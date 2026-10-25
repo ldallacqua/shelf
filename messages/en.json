@@ -816,6 +816,11 @@
   "AccountPage": {
     "metaTitle": "Your account",
     "title": "Your account",
+    "archived": {
+      "title": "Archived games",
+      "intro": "Out of sight and out of every count, with everything you set. Bring one back to put it on your shelf as it was.",
+      "copies": "On {platforms}"
+    },
     "checking": "Checking who you are…",
     "signInFirst": "Sign in to see your account.",
     "signIn": "Sign in",
@@ -1091,6 +1096,8 @@
     "unavailable": "Game search is unavailable right now. The library itself works as before.",
     "tryAgain": "Try again",
     "inLibrary": "In library",
+    "archived": "Archived",
+    "archivedFound": "{title} is in your archive, with everything you set. Bring it back rather than add it again.",
     "alsoOn": "also on {platforms}",
     "kinds": {
       "remake": "Remake",
@@ -1197,6 +1204,11 @@
     "makeMain": "Make this the main version",
     "remove": "Remove from library",
     "confirmRemove": "Remove {title} from the library? Its copies, playtime and notes go with it.",
+    "orArchive": "Or archive it: out of sight, with everything kept, until you bring it back.",
+    "archive": "Archive",
+    "archived": "Archived {title}.",
+    "bringBack": "Bring back",
+    "broughtBack": "{title} is back on your shelf.",
     "confirm": "Remove",
     "keep": "Keep it",
     "removed": "Removed {title}.",
