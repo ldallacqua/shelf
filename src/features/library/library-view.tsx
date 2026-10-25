@@ -90,6 +90,7 @@ import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
 import { revealRow } from './use-row-window'
 import {
+  tooSmallFor3dNow,
   useDensity,
   useDimension,
   useReducedMotion,
@@ -240,7 +241,7 @@ export function LibraryView({
   const noWebGL2 = useNoWebGL2()
   const noThreeD = noWebGL2 || fallback === 'unsupported'
   // On a phone the shelf is 2D, and 3D is not offered.
-  const tooSmall = useTooSmallFor3d()
+  const tooSmall = useTooSmallFor3d(dimension)
   const calm = useReducedMotion()
   // With no WebGL 2 at all, 3D is not even tried: the 3D button says why (spec 3.6).
   const asked: Dimension = noWebGL2 || tooSmall ? '2d' : dimension
@@ -313,7 +314,7 @@ export function LibraryView({
       standingCopies(index, drawn.tree),
     ).map((each) => ({ ...each, total: each.items.length }))
   } else if (asBuilt) {
-    shelves = firstScreenShelves(first, locale)
+    shelves = firstScreenShelves(first)
   }
 
   const platforms = new Map<number, LibraryPlatform>(
@@ -326,7 +327,7 @@ export function LibraryView({
   /** 2D or 3D, as asked for by the buttons or the D key. Nothing else about the library changes. */
   const switchTo = (next: Dimension) => {
     if (next === '3d') {
-      if (noThreeD || tooSmall) return
+      if (noThreeD || tooSmallFor3dNow()) return
       setAnchor(anchorIn2d(scope.current))
       // 3D gave way earlier on this page: asking again tries again.
       setFallback(undefined)
@@ -424,9 +425,9 @@ export function LibraryView({
 
   const nextView = () => change(setView, views[(views.indexOf(view) + 1) % views.length]!)
 
-  const keys = useRef({ view, shown, tooSmall, switchTo, nextView, shuffle })
+  const keys = useRef({ view, shown, switchTo, nextView, shuffle })
   useEffect(() => {
-    keys.current = { view, shown, tooSmall, switchTo, nextView, shuffle }
+    keys.current = { view, shown, switchTo, nextView, shuffle }
   })
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -461,7 +462,7 @@ export function LibraryView({
           now.shuffle()
           break
         case 'd':
-          if (now.view !== 'shelf' || now.tooSmall) return
+          if (now.view !== 'shelf' || tooSmallFor3dNow()) return
           now.switchTo(now.shown === '3d' ? '2d' : '3d')
           break
         default:

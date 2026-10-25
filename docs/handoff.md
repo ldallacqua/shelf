@@ -4,7 +4,26 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)
+## Now: every browser test passes, and the library is back to 90 (24 Oct 2026)
+
+The owner, of the library at 89 on Lighthouse: "yes look into it. but apart from that. run
+all the browser tests too to see if these changes broke anything."
+
+- **Every browser test, in all nine projects,** with `pnpm verify --skip-linux` (Docker is not
+  installed on this computer, so no Linux pass): 63 failed, all one check, every control at
+  least 24 by 24 pixels, on every page. It was the footer's link to /privacy, added with the
+  Steam sync after the last full run; it is now 24 pixels tall, as the account link beside it.
+  Then 2,571 passed and none failed, the tests that change the library among them (they wait
+  for the reading ones, so 225 had not run). #34 to #36 broke nothing.
+- **The library at 8 times:** 88 to 90, the wall 91 to 93. Architecture section 25's first
+  row says what was changed and how it was found. The library is at its edge still.
+- **To profile it again:** build once with `productionBrowserSourceMaps: true` for names, or
+  with `next build --profile` for React's own tracks (render, commit and cascading updates,
+  per lane) in a Chrome trace, and load the page with Lighthouse's phone user agent: the
+  server sends a phone 12 boxes, not 48. Put the config back before committing.
+- **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
+
+## Before: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)
 
 The owner: "Yes, build 'Não é este jogo' on the placing page, to fix games the sync matched
 wrong while keeping the copy and the hours." [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in)
@@ -22,9 +41,8 @@ says what it does; architecture section 25's first row, why it is built so.
   new record, so a sync keeps it. It spends the hour's IGDB allowance as an add does.
 - **Seen with the test doubles** (headless Chromium, `serve:test`): see the pull request.
 - **Not seen:** the owner's own list on production; the click is theirs.
-- **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
-## Before: a placed game stays on the placing page (24 Oct 2026)
+## Earlier: a placed game stays on the placing page (24 Oct 2026)
 
 The owner, having used the placing page: "não quero que o jogo desapareça depois de eu colocar
 um status nele imediatamente [...] Se eu atualizar a pagina e voltar pro organize seus jogos ai
@@ -40,7 +58,7 @@ beleza". [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in) says what it does
 - **Lighthouse from #34 still to measure on a quiet machine:** verify read the library at 89
   while the machine was busy; main, measured right after, read 84, and the branch again 86.
 
-## Earlier: a new shelf is set up on a page of its own (24 Oct 2026)
+## Earlier still: a new shelf is set up on a page of its own (24 Oct 2026)
 
 The owner asked for an onboarding page, and for something saying how many games have no
 status, "mas não quero que vc fique adicionando botões a torto e a direito". Researched first
@@ -83,7 +101,7 @@ first row.
   remove it and add the right one by hand, which loses the source's hours.
 - **Lighthouse was not measured on a quiet machine:** see the section above.
 
-## Earlier still: the page for placing a sync's games is built (24 Oct 2026)
+## Before that: the page for placing a sync's games is built (24 Oct 2026)
 
 The owner's ask from 23 Oct 2026 (below, "Next: the review of unsorted games"), started with
 "Usa o de 0-10 que a gente já tem. Pode começar": the rating is the editor's, out of ten, not
@@ -115,7 +133,7 @@ is built so, architecture section 25's first row.
   Playwright test does.
 - **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
-## Before that: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
+## Done: Nintendo is built ([#29](https://github.com/ldallacqua/shelf/pull/29)) and linked on production
 
 After the review of #26 below, the owner chose the route for Nintendo: "Build Nintendo from
 the Store app's play history: I sign in on Nintendo's own page and Shelf keeps the session

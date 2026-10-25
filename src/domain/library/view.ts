@@ -4,6 +4,7 @@ import {
   shelfIdOf,
   type Grouping,
   type Shelf,
+  type ShelfItem,
   type Stands,
 } from '@/domain/library/group'
 import type { Library, LibraryGame, LibraryNames } from '@/domain/library/library'
@@ -211,12 +212,18 @@ export const arrangeOnce = (
   return shelves
 }
 
+/**
+ * One of a shelf's first boxes, as the server placed it: the game, and which
+ * of its copies stands there (its place in `copies`), when one does.
+ */
+export type FirstBox = { slug: string; copy?: number }
+
 /** A shelf's name tag before its games are known: enough to draw the shelf and reserve its space. */
 export type ShelfOutline = {
   key: string
   count: number
-  /** How many of the shelf's first boxes came with the page. The rest arrive with the library file. */
-  known: number
+  /** The shelf's first boxes that came with the page, in their places. The rest arrive with the library file. */
+  boxes: FirstBox[]
 }
 
 /** The part of the address a first screen was built for. The view does not change it. */
@@ -274,9 +281,15 @@ export const buildFirstScreen = (
     limit,
   )
   const outline = shelves.map((shelf, at): ShelfOutline => {
-    const known = shares[at] ?? 0
-    for (const item of shelf.items.slice(0, known)) games.set(item.game.slug, item.game)
-    return { key: shelf.key, count: shelf.items.length, known }
+    const known = shelf.items.slice(0, shares[at] ?? 0)
+    for (const item of known) games.set(item.game.slug, item.game)
+    return {
+      key: shelf.key,
+      count: shelf.items.length,
+      boxes: known.map(({ game, copy }) =>
+        copy ? { slug: game.slug, copy: game.copies.indexOf(copy) } : { slug: game.slug },
+      ),
+    }
   })
 
   return {
@@ -355,44 +368,28 @@ const kept = new WeakMap<Library, { first: FirstScreen; library: Library }>()
 
 /**
  * The shelves to draw before the library file arrives: every shelf from the
- * outline, each holding only the boxes that came with the page. A game that
- * came for one shelf may also belong on a later one; it is left off there
- * until the whole shelf is known, so no box ever changes place. A shelf none
- * of whose boxes came is named from its key and drawn empty, so the shelves
- * and their tabs are all there from the first paint and none is slotted in
- * when the file arrives.
+ * outline, each holding only the boxes that came with the page, where the
+ * server placed them. A game that came for one shelf may also belong on a
+ * later one; it is left off there until the whole shelf is known, so no box
+ * ever changes place. A shelf none of whose boxes came is drawn empty, so the
+ * shelves and their tabs are all there from the first paint and none is
+ * slotted in when the file arrives.
+ *
+ * Nothing is filtered, sorted or grouped here: the device did all of that
+ * again as the page came alive, for the same boxes, in the same task, and
+ * the first sort made the language's collator then too.
  */
-export const firstScreenShelves = (first: FirstScreen, locale: string) => {
-  const names: LibraryNames = {
-    genre: [],
-    theme: [],
-    mode: [],
-    perspective: [],
-    franchise: [],
-    series: [],
-    company: [],
-    platform: first.platforms,
-    tag: first.tags,
-  }
-  const arrangement: Arrangement = {
-    group: first.query.group,
-    sort: parseSort(first.query.sort),
-    seed: first.query.seed,
-  }
-  // The games came already filtered. Which of their copies stand needs only platforms and
-  // formats, which these few games carry.
-  const index = indexOnce({ version: first.version, games: first.games, names })
-  const stands = standingCopies(index, parseQuery(first.query.q).tree)
-  const partial = new Map(
-    arrangeLibrary(first.games, names, arrangement, locale, stands).map((shelf) => [
-      shelf.key,
-      shelf,
-    ]),
-  )
+export const firstScreenShelves = (first: FirstScreen) => {
+  const games = new Map(first.games.map((game) => [game.slug, game]))
   return first.outline.flatMap((entry) => {
-    const shelf = partial.get(entry.key)
-    if (shelf) return [{ ...shelf, items: shelf.items.slice(0, entry.known), total: entry.count }]
     const id = shelfIdOf(entry.key, first.platforms)
-    return id ? [{ ...id, items: [], total: entry.count }] : []
+    if (!id) return []
+    const items = entry.boxes.flatMap(({ slug, copy }): ShelfItem[] => {
+      const game = games.get(slug)
+      if (!game) return []
+      const stands = copy === undefined ? undefined : game.copies[copy]
+      return [stands ? { game, copy: stands } : { game }]
+    })
+    return [{ ...id, items, total: entry.count }]
   })
 }
