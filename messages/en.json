@@ -243,7 +243,7 @@
         "title": "Private",
         "body": "Only you can see it: not other people, not search engines."
       },
-      "notes": "Notes you write about a game stay private, on a public shelf too, unless you mark them public."
+      "notes": "Notes you write about a game stay private, on a public shelf too, unless you mark them public. And any one game can be yours alone: on a public shelf, nobody else sees it."
     },
     "assistant": {
       "eyebrow": "AI assistants",
@@ -277,7 +277,7 @@
       },
       "who": {
         "q": "Who can see my shelf?",
-        "a": "You choose when you sign up, and can change it any time on your account page. A public shelf is for anyone, and search engines can list it; a private one is for you alone. Notes stay private unless you mark them public, game by game."
+        "a": "You choose when you sign up, and can change it any time on your account page. A public shelf is for anyone, and search engines can list it; a private one is for you alone. Notes stay private unless you mark them public, game by game, and any one game can be marked private, so only you see it."
       },
       "export": {
         "q": "Can I take my games with me?",
@@ -393,7 +393,8 @@
       "owned": "{title}, {platform}, {format}, {status}",
       "notOwned": "{title}, not owned, {status}",
       "wanted": "{title}, not owned, {status}, wanted on {platform}{more, plural, =0 {} other { and # more}}",
-      "alsoOn": "{description}, owned on {count} platforms"
+      "alsoOn": "{description}, owned on {count} platforms",
+      "private": "{description}, only you see it"
     },
     "list": {
       "cover": "Cover",
@@ -569,7 +570,8 @@
         "cover": "A cover"
       },
       "is": {
-        "featured": "Featured"
+        "featured": "Featured",
+        "private": "Private"
       },
       "family": {
         "playstation": "Any PlayStation",
@@ -1052,7 +1054,7 @@
       },
       "shelf": {
         "title": "Your shelf",
-        "body": "The games you add and what you say about them: where you own them, how far you got, ratings, dates, tags and notes. A public shelf can be seen by anyone, and search engines can list it; a private one only by you. Notes stay private unless you mark them public."
+        "body": "The games you add and what you say about them: where you own them, how far you got, ratings, dates, tags and notes. A public shelf can be seen by anyone, and search engines can list it; a private one only by you. Notes stay private unless you mark them public, and a game marked private is seen only by you."
       },
       "signIn": {
         "title": "Signing in",
@@ -1191,6 +1193,7 @@
     "playedRange": "Hours played is a number, 0 or more.",
     "syncedHours": "{source}: {hours, number} h",
     "notesPublic": "Visitors can read these notes",
+    "private": "Private: only you see this game",
     "versions": "Versions",
     "relations": {
       "primary": "Main version",

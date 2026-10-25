@@ -1,5 +1,6 @@
 'use client'
 
+import { LockIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { memo, useRef, type CSSProperties } from 'react'
 
@@ -100,6 +101,7 @@ const WallCell = memo(function WallCell({
         />
         <span className="wall-marks" aria-hidden="true">
           <StatusMark status={game.status} label={t(`status.${game.status}`)} iconOnly />
+          {game.private ? <LockIcon className="size-3.5 flex-none" /> : null}
           <span className="truncate">{owned.join(' · ')}</span>
         </span>
       </button>

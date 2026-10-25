@@ -243,7 +243,7 @@
         "title": "Privada",
         "body": "Só você vê: nem outras pessoas, nem mecanismos de busca."
       },
-      "notes": "As notas que você escreve sobre um jogo continuam privadas, mesmo numa estante pública, a menos que você as marque como públicas."
+      "notes": "As notas que você escreve sobre um jogo continuam privadas, mesmo numa estante pública, a menos que você as marque como públicas. E qualquer jogo pode ser só seu: numa estante pública, ninguém mais o vê."
     },
     "assistant": {
       "eyebrow": "Assistentes de IA",
@@ -277,7 +277,7 @@
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
-        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As notas continuam privadas a menos que você as marque como públicas, jogo por jogo."
+        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As notas continuam privadas a menos que você as marque como públicas, jogo por jogo, e qualquer jogo pode ser marcado como privado, para que só você o veja."
       },
       "export": {
         "q": "Posso levar meus jogos comigo?",
@@ -393,7 +393,8 @@
       "owned": "{title}, {platform}, {format}, {status}",
       "notOwned": "{title}, não tenho, {status}",
       "wanted": "{title}, não tenho, {status}, quero em {platform}{more, plural, =0 {} one { e mais #} other { e mais #}}",
-      "alsoOn": "{description}, tenho em {count} plataformas"
+      "alsoOn": "{description}, tenho em {count} plataformas",
+      "private": "{description}, só você vê"
     },
     "list": {
       "cover": "Capa",
@@ -569,7 +570,8 @@
         "cover": "Uma capa"
       },
       "is": {
-        "featured": "Em destaque"
+        "featured": "Em destaque",
+        "private": "Privado"
       },
       "family": {
         "playstation": "Qualquer PlayStation",
@@ -1052,7 +1054,7 @@
       },
       "shelf": {
         "title": "Sua estante",
-        "body": "Os jogos que você adiciona e o que você diz sobre eles: onde os tem, até onde chegou, notas de avaliação, datas, tags e anotações. Uma estante pública pode ser vista por qualquer pessoa, e mecanismos de busca podem listá-la; uma privada só por você. As anotações continuam privadas a menos que você as marque como públicas."
+        "body": "Os jogos que você adiciona e o que você diz sobre eles: onde os tem, até onde chegou, notas de avaliação, datas, tags e anotações. Uma estante pública pode ser vista por qualquer pessoa, e mecanismos de busca podem listá-la; uma privada só por você. As anotações continuam privadas a menos que você as marque como públicas, e um jogo marcado como privado só você vê."
       },
       "signIn": {
         "title": "Entrar na conta",
@@ -1191,6 +1193,7 @@
     "playedRange": "As horas jogadas são um número, 0 ou mais.",
     "syncedHours": "{source}: {hours, number} h",
     "notesPublic": "Os visitantes podem ler estas notas",
+    "private": "Privado: só você vê este jogo",
     "versions": "Versões",
     "relations": {
       "primary": "Versão principal",

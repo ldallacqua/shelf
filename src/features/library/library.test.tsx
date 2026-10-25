@@ -213,6 +213,12 @@ describe('GameBox (spec 3.2: state is never shown by color alone)', () => {
     expect(retired).toHaveAccessibleName('Hades (2020), PS5, Physical, Retired')
   })
 
+  it('wears a lock when only its owner sees it, and says so (spec 11.1)', () => {
+    const hidden = box(item({ private: true }))
+    expect(hidden.querySelector('.game-lock')).not.toBeNull()
+    expect(hidden).toHaveAccessibleName('Hades (2020), PS5, Physical, Backlog, only you see it')
+  })
+
   it('has no tag otherwise', () => {
     expect(box(item({ status: 'completed' })).querySelector('.game-tag')).toBeNull()
   })

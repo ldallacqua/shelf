@@ -61,6 +61,8 @@ export type LibraryGame = {
   tags: number[]
   /** On the wishlist, the platforms I want it on, the first standing for its case (spec 7.5). */
   wanted?: number[]
+  /** Only its own account sees it (spec 11.1); in its own browser's file only. */
+  private?: true
 }
 
 export type Named = { id: number; name: string; slug: string }

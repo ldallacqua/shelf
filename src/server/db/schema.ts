@@ -169,6 +169,8 @@ export const entries = sqliteTable(
     wanted: text({ mode: 'json' }).$type<number[]>(),
     /** When I archived it (spec 7.4): off the shelf and out of every answer, kept whole. */
     archivedAt: integer(),
+    /** Only its own account sees it (spec 11.1): never in a public file or answer. */
+    isPrivate: integer({ mode: 'boolean' }).notNull().default(false),
     createdAt: integer().notNull(),
     updatedAt: integer().notNull(),
   },

@@ -205,6 +205,10 @@ export const apiGamePatch = z
       .describe(
         'On the wishlist, the platforms it is wanted on, by IGDB id; kept only while it is on the wishlist',
       ),
+    private: z
+      .boolean()
+      .optional()
+      .describe('Only its owner sees it: in no public page, file or answer'),
     rating: z.number().min(0).max(10).nullable().optional().describe('Out of ten; null clears it'),
     completedOn: z.iso.date().nullable().optional(),
     notes: z.string().max(MAX_NOTES).nullable().optional(),
@@ -256,6 +260,7 @@ export const apiOwnerGame = z
     wanted: z
       .array(platformId)
       .describe('On the wishlist, the platforms it is wanted on, by IGDB id; empty otherwise'),
+    private: z.boolean().describe('Only its owner sees it'),
     rating: z.number().min(0).max(10).optional().describe('Out of ten'),
     completedOn: z.iso.date().optional(),
     notes: z

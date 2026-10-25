@@ -72,7 +72,7 @@ async function GameFrame({
   if (!page) {
     return (
       <ShelfProvider shelf={shelf}>
-        <GameMissing />
+        <GameMissing slug={slug} />
       </ShelfProvider>
     )
   }

@@ -1,9 +1,9 @@
 # Shelf: product and UX spec
 
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
-  Written on 25 Oct 2026: two statuses (3.12), archiving a game (7.4) and wishing for a game on
-  one platform (7.5), built; and not built yet, hiding adult games (3.13) and a game only I see
-  (11.1).
+  Written on 25 Oct 2026: two statuses (3.12), archiving a game (7.4), wishing for a game on one
+  platform (7.5) and a game only I see (11.1), built; and not built yet, hiding adult games
+  (3.13).
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -1100,9 +1100,9 @@ Two additions the brief did not ask for, both small:
 | **Notes public** (yes or no, per game) | The library is public and notes may not be meant to be |
 
 An entry's status is one of eight since 25 Oct 2026, with Someday and Retired (3.12); a
-wishlist entry keeps the **platforms wanted** (7.5); and an entry can be **archived** (7.4).
-**Not built yet:** an entry gains **private** (11.1), yes or no; a game's cached IGDB data
-gains its age ratings (3.13).
+wishlist entry keeps the **platforms wanted** (7.5); an entry can be **archived** (7.4); and
+an entry can be **private** (11.1). **Not built yet:** a game's cached IGDB data gains its age
+ratings (3.13).
 
 ---
 
@@ -1174,6 +1174,7 @@ English and Brazilian Portuguese from the first build.
 | See private notes | No | No | Yes |
 | Search IGDB | No | For its own shelf | Yes |
 | Add, edit, remove games; save smart shelves | No | On its own shelf only | Yes |
+| See a game marked private (11.1) | No | No | Yes |
 
 - **Sign-up** is open to anyone: a name, a handle (the shelf's address, `/u/{handle}`), an
   email address and a password of 10 characters or more, and public or private, with Public
@@ -1207,15 +1208,17 @@ English and Brazilian Portuguese from the first build.
 
 ### 11.1 A game only I see
 
-**Not built yet.** The owner asked on 25 Oct 2026 for "outra opção de esconder o game do
+**Built 25 Oct 2026.** The owner asked on 25 Oct 2026 for "outra opção de esconder o game do
 publico. Não so erotic mas qualquer jogo. Tipo a opção da steam que eu posso deixar o jogo como
 privado. Ou seja, so eu vejo ele no meu shelf."
 
 - **Private** (Privado), a switch per game in the editor, under Mine: off unless I turn it on,
   and saved at once, like everything there.
 - **On my own shelf, signed in, it is there as ever,** in every view, count and stat, with a
-  small closed lock on the box's foot, the same mark on the wall and in the list, and "private"
-  in its name. `is:private` finds them.
+  small closed lock on the box's foot, the same mark on the wall and in the list, and "only you
+  see it" in its name. In 3D the box's name says so; no lock is drawn on it. `is:private` finds
+  them. Its own account's browser reads its own files for that: the public ones never carry it.
+  Its address opens for its account, and the trophy wall counts it there.
 - **To anyone else it does not exist:** a visitor, another account, a search engine, the public
   API, the MCP tools, `llms.txt` and the structured data. It is not on the shelf, the wall, the
   list or the trophy wall, and not in a count, a stat, a smart shelf or a filter's values (a
@@ -1224,9 +1227,9 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 - **On a private shelf** every game is already only mine. The switch is still there, and what
   it says is kept for when the shelf goes public.
 - **A sync** never changes it, and the games it adds are not private.
-- **The table above** gains a row, "See a game marked private": a visitor no, another account
-  no, its own account yes. The landing page's part 8 and its question on who can see a shelf
-  (15) say that any one game can be kept to oneself.
+- **The table above** has a row for it, "See a game marked private". The landing page's part 8,
+  its question on who can see a shelf (15), and `/privacy` say that any one game can be kept to
+  oneself.
 
 **Done when**
 

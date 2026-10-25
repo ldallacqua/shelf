@@ -22,6 +22,7 @@ const client = vi.hoisted(() => ({
     server.games.set(slug, {
       ...game,
       ...(patch.status ? { status: patch.status } : {}),
+      ...(patch.private === undefined ? {} : { private: patch.private }),
       wanted: leaving ? [] : (patch.wanted ?? game.wanted),
     })
     return { ok: true as const, value: { version: 2 } }
@@ -51,6 +52,7 @@ const wished = (slug: string, wanted: number[]): OwnerGame => ({
   title: 'Tsukihime: A Piece of Blue Glass Moon',
   status: 'wishlist',
   wanted,
+  private: false,
   notesPublic: false,
   minutes: 0,
   copies: [],
@@ -118,5 +120,19 @@ describe('MineEditor, archiving (spec 7.4)', () => {
     await userEvent.click(question.getByRole('button', { name: 'Archive' }))
     expect(client.archive).toHaveBeenCalledWith('entry-gift-2')
     expect(client.remove).not.toHaveBeenCalled()
+  })
+})
+
+describe('MineEditor, a game only I see (spec 11.1)', () => {
+  it('makes it private at once, and back', async () => {
+    server.games.set('secret', { ...wished('secret', []), status: 'backlog' })
+    editor('secret')
+    const toggle = await screen.findByRole('switch', { name: 'Private: only you see this game' })
+    expect(toggle).not.toBeChecked()
+    await userEvent.click(toggle)
+    expect(client.update).toHaveBeenCalledWith('entry-secret', { private: true })
+    await waitFor(() => expect(toggle).toBeChecked())
+    await userEvent.click(toggle)
+    expect(client.update).toHaveBeenLastCalledWith('entry-secret', { private: false })
   })
 })

@@ -7,9 +7,10 @@ import { IMAGE_HOST } from '@/domain/igdb/images'
 import { NoShelf } from '@/features/library/no-shelf'
 import { ShelfProvider } from '@/features/library/shelf'
 import { Page } from '@/features/shell/page'
-import { EmptyTrophies } from '@/features/trophies/empty-trophies'
 import { PrivateTrophiesLater } from '@/features/trophies/private-later'
 import { TrophiesSkeleton } from '@/features/trophies/trophies-skeleton'
+import { EmptyTrophies } from '@/features/trophies/empty-trophies'
+import { PublicTrophies } from '@/features/trophies/public-trophies'
 import { TrophyWallView } from '@/features/trophies/trophy-wall'
 import { findLibrary, getTrophyWall } from '@/server/services/library'
 
@@ -55,8 +56,15 @@ async function ShelfTrophies({
     )
   }
   const wall = await getTrophyWall(library.id)
-  if (wall.years.length === 0) return <EmptyTrophies />
-  return <TrophyWallView wall={wall} handle={library.handle} />
+  return (
+    <PublicTrophies handle={library.handle}>
+      {wall.years.length === 0 ? (
+        <EmptyTrophies />
+      ) : (
+        <TrophyWallView wall={wall} handle={library.handle} />
+      )}
+    </PublicTrophies>
+  )
 }
 
 /** A shelf's trophy wall (spec 3.9). */

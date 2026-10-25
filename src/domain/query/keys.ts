@@ -74,7 +74,7 @@ export const mineKeys: readonly FilterKey[] = [
 export const hasValues = ['notes', 'rating', 'playtime', 'cover'] as const
 export type HasValue = (typeof hasValues)[number]
 
-export const isValues = ['featured'] as const
+export const isValues = ['featured', 'private'] as const
 
 /**
  * The keys whose values are a fixed list Shelf itself defines. Any other

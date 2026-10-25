@@ -773,6 +773,8 @@ export const undoJoin = (db: Db, libraryId: string, added: Added, now = Date.now
 
 export type EntryPatch = {
   status?: Status
+  /** Only its own account sees it (spec 11.1). */
+  private?: boolean
   /** The platforms I want it on; kept only while it is on the wishlist. */
   wanted?: readonly number[] | null
   rating?: number | null
@@ -813,12 +815,13 @@ export const updateEntry = (
       if (!copy) throw invalid('That copy belongs to another game')
     }
     const notes = patch.notes === undefined ? undefined : patch.notes?.trim() || null
-    const { wanted: _, ...rest } = patch
+    const { wanted: _, private: hidden, ...rest } = patch
     await tx
       .update(entries)
       .set({
         ...rest,
         ...letGo(patch),
+        ...(hidden === undefined ? {} : { isPrivate: hidden }),
         ...(notes === undefined ? {} : { notes }),
         updatedAt: now,
       })
@@ -845,10 +848,15 @@ export const patchEntry = (
     await requireEntry(tx, libraryId, entryId)
     if (patch.mine && Object.keys(patch.mine).length > 0) {
       const notes = patch.mine.notes === undefined ? undefined : patch.mine.notes?.trim() || null
-      const { wanted: _, ...rest } = patch.mine
+      const { wanted: _, private: hidden, ...rest } = patch.mine
       await tx
         .update(entries)
-        .set({ ...rest, ...letGo(patch.mine), ...(notes === undefined ? {} : { notes }) })
+        .set({
+          ...rest,
+          ...letGo(patch.mine),
+          ...(hidden === undefined ? {} : { isPrivate: hidden }),
+          ...(notes === undefined ? {} : { notes }),
+        })
         .where(eq(entries.id, entryId))
     }
     if (patch.tags) await writeTags(tx, libraryId, entryId, patch.tags)

@@ -17,7 +17,11 @@ const account = vi.hoisted(() => ({
   handle: 'ana',
   name: 'Ana',
 }))
-vi.mock('@/features/owner/account', () => ({ useAccount: () => ({ ...account }) }))
+vi.mock('@/features/owner/account', () => ({
+  useAccount: () => ({ ...account }),
+  useIsMine: (handle: string | undefined) =>
+    account.status === 'signed-in' && account.handle === handle,
+}))
 
 const mine = vi.hoisted(() => ({ library: undefined as Library | undefined }))
 vi.mock('@/features/library/use-library', () => ({

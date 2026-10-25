@@ -4,20 +4,32 @@ import { useTranslations } from 'next-intl'
 
 import { libraryHref } from '@/features/library/shelf-address'
 import { useShelf } from '@/features/library/shelf'
+import { useAccount } from '@/features/owner/account'
 import { EmptyLedge } from '@/features/shell/empty-ledge'
 import { Page } from '@/features/shell/page'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 
+import { GameSkeleton } from './game-skeleton'
+import { PrivateGameLater } from './private-game-later'
+
 /**
  * A game's address with no game behind it on its shelf: it may have been
  * taken off it, or mistyped. Said in the page, which is marked not to be
  * indexed; the address has a route, so the proxy cannot answer it with a 404.
+ * Given the slug the public shelf has no game for, its own account is shown
+ * the game if it is one only it sees (spec 11.1), from its own files.
  */
-export function GameMissing() {
+export function GameMissing({ slug }: { slug?: string }) {
   const t = useTranslations('Game')
   const library = useTranslations('Library')
   const { handle } = useShelf()
+  const account = useAccount()
+
+  if (slug && account.status === 'checking') return <GameSkeleton />
+  if (slug && account.status === 'signed-in' && account.handle === handle) {
+    return <PrivateGameLater slug={slug} />
+  }
 
   return (
     <Page>
