@@ -526,6 +526,12 @@ export const users = sqliteTable('users', {
   username: text().unique(),
   /** Whether anyone may see the shelf, or only its owner. The owner chooses. */
   shelfPublic: integer({ mode: 'boolean' }).notNull().default(true),
+  /**
+   * Every game on this account's shelf is asked about again each day, not only
+   * its turn in the daily hundred (architecture, section 8). Set for the
+   * owner's own account, at the owner's word; nobody can set it from the site.
+   */
+  refreshAll: integer({ mode: 'boolean' }).notNull().default(false),
 })
 
 export const sessions = sqliteTable(
