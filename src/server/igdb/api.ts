@@ -57,6 +57,22 @@ export const quote = (text: string): string =>
     .replace(/"/g, '\\"')
     .trim()}"`
 
+/**
+ * A title's words, as a lookup by words asks for them: split at anything not
+ * a letter or a digit, apostrophes and full stops too, so "Assassin's" asks
+ * for "Assassin" and "s", both in IGDB's "Assassin's Creed". Each once,
+ * whatever its case.
+ */
+export const wordsOf = (title: string): string[] => {
+  const seen = new Set<string>()
+  return title.split(/[^\p{L}\p{N}]+/u).filter((word) => {
+    const key = word.toLowerCase()
+    if (!word || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 const byIds = async <T>(
   ids: readonly number[],
   run: (list: string, count: number) => Promise<T[]>,
@@ -200,6 +216,33 @@ export const createIgdbApi = (client: IgdbClient) => {
   }
 
   /**
+   * The games whose names hold every word of each title, in any case and
+   * whatever stands between the words, ten titles to a request: what the
+   * exact lookup misses when a store writes "DEAD OR ALIVE Xtreme 3 Scarlet"
+   * for IGDB's "Dead or Alive Xtreme 3: Scarlet". Which of them, if any, is
+   * the same title is still the caller's to decide. A title with no words
+   * finds nothing.
+   */
+  const findByWords = async (titles: readonly string[]): Promise<IgdbSearchHit[][]> => {
+    const asked = titles.map(wordsOf)
+    const queries = asked.flatMap((words) =>
+      words.length === 0
+        ? []
+        : [
+            {
+              endpoint: 'games' as const,
+              body: `fields ${igdbSearchFields.join(',')}; where ${words.map((word) => `name ~ *${quote(word)}*`).join(' & ')} & game_type = ${GAME_TYPES} & version_parent = null; sort total_rating_count desc; limit 10;`,
+            },
+          ],
+    )
+    const found = (
+      await Promise.all(chunk(queries, 10).map((batch) => client.multi(batch, igdbSearchHitSchema)))
+    ).flat()
+    let at = 0
+    return asked.map((words) => (words.length === 0 ? [] : (found[at++] ?? []).filter(isGame)))
+  }
+
+  /**
    * The games carrying these ids of one store (the ladder's second rung,
    * ADR 003), 200 ids to a request, so the rows for them fit in one page.
    * Each id maps to every game IGDB lists for it; usually one.
@@ -229,5 +272,15 @@ export const createIgdbApi = (client: IgdbClient) => {
     return found
   }
 
-  return { games, timeToBeat, lineages, named, platforms, search, findByTitles, byStoreIds }
+  return {
+    games,
+    timeToBeat,
+    lineages,
+    named,
+    platforms,
+    search,
+    findByTitles,
+    findByWords,
+    byStoreIds,
+  }
 }

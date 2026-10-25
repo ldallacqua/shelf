@@ -24,6 +24,9 @@ decisions 15 to 24 are built as written; the owner did not change them.
   the daily refresh reaches them; Erotic works from the start. To try it here, mark a game in
   `.data/shelf.db` (`games.adults_only = 1`, and raise its library's version), build, and put
   the database back.
+- **A synced title IGDB punctuates otherwise is found** (architecture section 25, row "Title
+  rung"): asked last by its words, compared as before. The owner declined matching a name with
+  words missing ("Vampire Crawlers"): a wrong match is worse than asking.
 - **Separating a version is built** (7.6; architecture section 25, row "Separating"): the owner's
   answer to Dark Souls II and Scholar of the First Sin standing as one. ADR 001's default that
   joins them stays (section 19, decision 27).
