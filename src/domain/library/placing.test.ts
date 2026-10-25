@@ -84,7 +84,15 @@ describe('the tally', () => {
   })
 
   it('places games in every status but the one they wait in', () => {
-    expect(placements).toEqual(['playing', 'backlog', 'completed', 'dropped', 'wishlist'])
+    expect(placements).toEqual([
+      'playing',
+      'backlog',
+      'someday',
+      'completed',
+      'retired',
+      'dropped',
+      'wishlist',
+    ])
   })
 })
 

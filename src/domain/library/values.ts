@@ -5,20 +5,46 @@
  */
 
 /**
- * Where a game stands with me. The order is the order shelves appear in.
- * `unsorted` is a game a sync brought in that I have not placed yet: not my
- * backlog until I say so. It comes last, so the data files' numbers for the
- * others stay as they were.
+ * Where a game stands with me, in the order shelves and every list of them
+ * show it (spec 3.12): what I mean to play, what I am done with, what I do not
+ * own, and what waits. `someday` is a game I may play one day, after my
+ * backlog; `retired`, a game with no end that I am done with. `unsorted` is a
+ * game a sync brought in that I have not placed yet: not my backlog until I
+ * say so.
  */
 export const statuses = [
+  'playing',
+  'backlog',
+  'someday',
+  'completed',
+  'retired',
+  'dropped',
+  'wishlist',
+  'unsorted',
+] as const
+export type Status = (typeof statuses)[number]
+
+/**
+ * The same, as the library file numbers them. A new status goes at the end,
+ * so a number never changes meaning in a file a browser has kept.
+ */
+export const statusCodes = [
   'playing',
   'backlog',
   'completed',
   'dropped',
   'wishlist',
   'unsorted',
-] as const
-export type Status = (typeof statuses)[number]
+  'someday',
+  'retired',
+] as const satisfies readonly Status[]
+
+/** The statuses the status row shows only while the shelf has a game in one (spec 3.1, 3.12). */
+export const occasionalStatuses = [
+  'someday',
+  'retired',
+  'unsorted',
+] as const satisfies readonly Status[]
 
 /** How a copy is owned. */
 export const formats = ['physical', 'digital'] as const

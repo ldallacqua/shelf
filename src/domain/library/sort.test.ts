@@ -186,6 +186,29 @@ describe('sorting (spec 6)', () => {
     ])
   })
 
+  it('status, with Someday after Backlog and Retired after Completed (spec 3.12)', () => {
+    const more = [
+      ...games,
+      testGame('Path of Exile', { status: 'retired' }),
+      testGame('Okami', { status: 'someday' }),
+      testGame('Returnal', { status: 'dropped' }),
+      testGame('Portal', { status: 'unsorted' }),
+    ]
+    expect(
+      sortGames(more, { key: 'status', descending: false }, 'en').map((game) => game.status),
+    ).toEqual([
+      'playing',
+      'backlog',
+      'someday',
+      'completed',
+      'completed',
+      'retired',
+      'dropped',
+      'wishlist',
+      'unsorted',
+    ])
+  })
+
   it('time to beat, shortest first', () => {
     expect(order({ key: 'length' })).toEqual([
       'Celeste',

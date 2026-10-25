@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Standing } from '@/domain/library/placing'
+import { emptyTally, type Standing } from '@/domain/library/placing'
 import type { LinkView, SyncStep } from '@/domain/sync/link'
 import type { AccountState } from '@/features/owner/account'
 import type { PlatformRow } from '@/features/platforms/sync-client'
@@ -24,7 +24,7 @@ vi.mock('@/features/owner/account', () => ({
  * and Steam's sign-in coming back here.
  */
 
-const EMPTY = { playing: 0, backlog: 0, completed: 0, dropped: 0, wishlist: 0, unsorted: 0 }
+const EMPTY = emptyTally()
 
 const STEAM: LinkView = {
   source: 'steam',

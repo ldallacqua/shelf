@@ -4,15 +4,26 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: five changes written into the spec, none built, and the add search finds half a word (25 Oct 2026)
+## Now: building the five changes in the spec, one pull request each (25 Oct 2026)
+
+The owner, after the add search was fixed: "vai pros proximos items da lista", the five
+sections written into the spec. In this order, each merged before the next starts: Someday
+and Retired (3.12), wishing on one platform (7.5), archiving (7.4), a game only I see (11.1),
+hiding adult games (3.13), last because it needs IGDB's age ratings fetched. Section 19's
+decisions 15 to 24 are built as written; the owner did not change them.
+
+- **Someday and Retired are built** (3.12; architecture section 25's first row). Statuses have
+  two orders now: `statuses`, as shown, and `statusCodes`, as the library file numbers them.
+  Add a status at the end of `statusCodes`, never in its middle. The sample shelf has none in
+  either, so the browser tests' counts stand.
+
+## Just before: five changes written into the spec, and the add search finds half a word (25 Oct 2026)
 
 - **The add search finds a word still being typed** (the owner: "astral cha -> não acha nada na
   busca. Astral Chain -> acha o jogo correto."). IGDB's `search` matches whole words only;
   beside it a second query asks for names holding every word as typed, and its games follow.
   The IGDB double now matches whole words too, so a test would catch it. Architecture
-  section 25's first row has the rest.
-
-
+  section 25 has the rest.
 The owner asked, in Portuguese, what status a game with no end gets (Path of Exile, 200 hours,
 no longer played), where games they may play one day go, apart from the backlog, and how to
 hide a gift from the shelf without deleting it. Then, written down and not built: "sim
@@ -36,7 +47,7 @@ not PS4.
   public library file and every public answer, and reach its own account by `/api/v1/me/…`,
   as a private shelf does.
 
-## Just before: stores and consoles are named in words, with a few pictures where words are slow (25 Oct 2026)
+## Before: stores and consoles are named in words, with a few pictures where words are slow (25 Oct 2026)
 
 The owner asked (in Portuguese) for Steam, Nintendo, PlayStation and Xbox icons where they
 apply, and pictures where they help, "without going over the top", researched first. The
@@ -60,7 +71,7 @@ sem os logos das marcas."
   served and verified beside a checkout that holds 3300: `BASE_URL=http://localhost:3311 pnpm
   verify --skip-browser`.
 
-## Before: every browser test passes, and the library is back to 90 (24 Oct 2026)
+## Earlier: every browser test passes, and the library is back to 90 (24 Oct 2026)
 
 The owner, of the library at 89 on Lighthouse: "yes look into it. but apart from that. run
 all the browser tests too to see if these changes broke anything."
@@ -84,7 +95,7 @@ all the browser tests too to see if these changes broke anything."
   changes without logos, approved and built since (above).
 - **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
-## Earlier: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)
+## Earlier still: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)
 
 The owner: "Yes, build 'Não é este jogo' on the placing page, to fix games the sync matched
 wrong while keeping the copy and the hours." [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in)
@@ -103,7 +114,7 @@ says what it does; architecture section 25's first row, why it is built so.
 - **Seen with the test doubles** (headless Chromium, `serve:test`): see the pull request.
 - **Not seen:** the owner's own list on production; the click is theirs.
 
-## Earlier still: a placed game stays on the placing page (24 Oct 2026)
+## Before that: a placed game stays on the placing page (24 Oct 2026)
 
 The owner, having used the placing page: "não quero que o jogo desapareça depois de eu colocar
 um status nele imediatamente [...] Se eu atualizar a pagina e voltar pro organize seus jogos ai
@@ -119,7 +130,7 @@ beleza". [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in) says what it does
 - **Lighthouse from #34 still to measure on a quiet machine:** verify read the library at 89
   while the machine was busy; main, measured right after, read 84, and the branch again 86.
 
-## Before that: a new shelf is set up on a page of its own (24 Oct 2026)
+## Done: a new shelf is set up on a page of its own (24 Oct 2026)
 
 The owner asked for an onboarding page, and for something saying how many games have no
 status, "mas não quero que vc fique adicionando botões a torto e a direito". Researched first

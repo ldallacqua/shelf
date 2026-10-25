@@ -18,7 +18,7 @@ import type { LibraryPlatform } from '@/domain/library/library'
 import type { SmartShelf } from '@/domain/library/shelves'
 import { writeSort, type Sort } from '@/domain/library/sort'
 import { libraryStats } from '@/domain/library/stats'
-import type { Status } from '@/domain/library/values'
+import { occasionalStatuses, type Status } from '@/domain/library/values'
 import {
   arrangeOnce,
   DEFAULT_GROUPING,
@@ -29,7 +29,7 @@ import {
   keywordIndexOnce,
   parseLibraryQuery,
   selectOnce,
-  unsortedOnShelf,
+  statusOnShelf,
   views,
   type FirstScreen,
   type View,
@@ -622,9 +622,12 @@ export function LibraryView({
       : undefined
   // Unsorted stays in the row while the shelf has any, whatever the filter matches. Until the
   // library arrives, the counts sent with the page are the best word on it.
-  const unsortedCount = unsortedOnShelf(library, first)
-  const anyUnsorted =
-    unsortedCount === undefined ? (first.statusCounts.unsorted ?? 0) > 0 : unsortedCount > 0
+  const unsortedCount = statusOnShelf(library, first, 'unsorted')
+  // Someday and Retired likewise, while a game has one (spec 3.12).
+  const onShelf = occasionalStatuses.filter((status) => {
+    const count = statusOnShelf(library, first, status)
+    return count === undefined ? (first.statusCounts[status] ?? 0) > 0 : count > 0
+  })
   const conditions = chipsOf(parsed.tree).reduce((total, chips) => total + chips.length, 0)
 
   // The totals follow the filter. The server drew them for the address the page came
@@ -723,7 +726,7 @@ export function LibraryView({
         <StatusRow
           value={statusValue}
           counts={statusCounts}
-          unsortedOnShelf={anyUnsorted}
+          onShelf={onShelf}
           onChange={(status) =>
             writeTree(
               setListEverywhere(

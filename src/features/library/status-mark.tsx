@@ -3,7 +3,9 @@ import {
   CheckIcon,
   CircleDashedIcon,
   CircleSlashIcon,
+  ClockIcon,
   InboxIcon,
+  InfinityIcon,
   PlayIcon,
   type LucideIcon,
 } from 'lucide-react'
@@ -14,7 +16,11 @@ import { cn } from '@/ui/cn'
 const icons: Record<Status, LucideIcon> = {
   playing: PlayIcon,
   backlog: CircleDashedIcon,
+  // One day, after the backlog.
+  someday: ClockIcon,
   completed: CheckIcon,
+  // Done with a game that has no end.
+  retired: InfinityIcon,
   dropped: CircleSlashIcon,
   wishlist: BookmarkIcon,
   // Came in from a sync, waiting for me to place it.

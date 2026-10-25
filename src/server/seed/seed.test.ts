@@ -62,10 +62,13 @@ describe('planSeed', () => {
     const counts = Object.fromEntries(
       statuses.map((status) => [status, planned.filter((e) => e.status === status).length]),
     )
-    // Only a sync brings games in unsorted, and the sample library was never synced.
+    // Only a sync brings games in unsorted, and the sample library was never synced. Someday
+    // and Retired came later and are left out of it, so the numbers the browser tests count
+    // on the sample shelf stay as they were.
     for (const status of statuses) {
-      if (status === 'unsorted') expect(counts[status]).toBe(0)
-      else expect(counts[status]).toBeGreaterThan(0)
+      if (status === 'unsorted' || status === 'someday' || status === 'retired') {
+        expect(counts[status]).toBe(0)
+      } else expect(counts[status]).toBeGreaterThan(0)
     }
     expect(counts.backlog).toBeGreaterThan(counts.dropped ?? 0)
     expect(counts.completed).toBeGreaterThan(counts.playing ?? 0)

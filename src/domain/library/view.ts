@@ -323,19 +323,20 @@ export const openingCovers = (library: Library, locale: string, count: number): 
     .flatMap((item) => item.copy?.cover ?? item.game.cover ?? [])
 
 /**
- * How many games on the whole shelf wait for a status, whatever the address
+ * How many games on the whole shelf have a status, whatever the address
  * filters. Once the library has arrived it says; until then the counts sent
  * with the page say it only for an address with no filter, and otherwise
  * nothing is known yet.
  */
-export const unsortedOnShelf = (
+export const statusOnShelf = (
   library: Library | undefined,
   first: FirstScreen,
+  status: Status,
 ): number | undefined =>
   library
-    ? library.games.reduce((sum, game) => sum + (game.status === 'unsorted' ? 1 : 0), 0)
+    ? library.games.reduce((sum, game) => sum + (game.status === status ? 1 : 0), 0)
     : first.query.q === ''
-      ? (first.statusCounts.unsorted ?? 0)
+      ? (first.statusCounts[status] ?? 0)
       : undefined
 
 /**

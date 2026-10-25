@@ -1,8 +1,8 @@
 # Shelf: product and UX spec
 
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
-  Written on 25 Oct 2026 and not built yet: two statuses (3.12), hiding adult games (3.13),
-  archiving a game (7.4), wishing for a game on one platform (7.5) and a game only I see
+  Written on 25 Oct 2026: two statuses (3.12), built; and not built yet, hiding adult games
+  (3.13), archiving a game (7.4), wishing for a game on one platform (7.5) and a game only I see
   (11.1).
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
@@ -168,7 +168,7 @@ Phone:
 
 | Control | Does |
 | --- | --- |
-| Status row | One tap filters to a status. The commonest filter gets the shortest path. Unsorted is in it only while a shelf has unsorted games. |
+| Status row | One tap filters to a status. The commonest filter gets the shortest path. Unsorted is in it only while a shelf has unsorted games, and Someday and Retired only while it has a game in one (3.12). |
 | Filters | Opens the filter panel. Shows how many conditions are active. |
 | Group | None, platform, status, year |
 | Sort | The sort key and direction |
@@ -195,7 +195,9 @@ Phone:
 | --- | --- |
 | Backlog | Stands in the row |
 | Playing | Stands forward of the row, and its shelf's label carries a "playing" marker |
+| Someday | Stands set back from the row, toward the wall; in 2D, a little smaller and in shade (3.12) |
 | Completed | A small foil seal on the cover's corner |
+| Retired | A small matte square tag on the cover's corner, with an infinity sign (3.12) |
 | Dropped | Leans against its neighbor |
 | Wishlist | An outlined placeholder with a faint cover, not a solid box |
 | Owned only digitally | A cover with no case around it |
@@ -311,7 +313,7 @@ choice, it is not in the address, and it works in both 2D and 3D.
 | Group by | Shelves | Order |
 | --- | --- | --- |
 | Platform | One per platform I own games on, plus "Not owned" | By family, newest generation first |
-| Status | Playing, Backlog, Completed, Dropped, Wishlist, Unsorted | That order |
+| Status | Playing, Backlog, Someday, Completed, Retired, Dropped, Wishlist, Unsorted | That order |
 | Year | One per release year | Newest first |
 | None | One shelf | |
 
@@ -361,7 +363,8 @@ never recorded stands last, under "Day not recorded".
 - Games finished, in total and this year
 - Hours played, across the whole library
 - Average of my ratings, every game I rated, finished or not, to a tenth
-- Share of started games that I finished: started is playing, finished or dropped
+- Share of started games that I finished: started is playing, finished or dropped; a retired
+  game is out of it, since it had no end to reach (3.12)
 - Longest game: the finished game I played longest, with its hours
 - Most-played platform: by the hours on each game's main copy, since a game's hours are not
   kept per copy
@@ -408,7 +411,7 @@ Single-letter shortcuts are off while typing in a field, and can be turned off e
 
 ### 3.12 Someday and Retired
 
-**Not built yet.** The owner asked on 25 Oct 2026, of a game with no end: "qual status devo
+**Built 25 Oct 2026.** The owner asked on 25 Oct 2026, of a game with no end: "qual status devo
 colocar em um jogo que não tem fim? Tipo path of exile. Joguei umas 200 horas e não estou
 jogando mais. Significa que eu dropei?"; and of games they may never get to: "Meu backlog tenho
 certeza que vou jogar em algum momento, Mas tem uns jogos meio maybe, talvez um dia eu jogue
@@ -430,7 +433,7 @@ that I have stopped playing.
 
 | Status | On the shelf |
 | --- | --- |
-| Someday | Stands set back from the row, toward the wall: the opposite of Playing. In 2D, a little smaller, its foot behind the ledge's lip. |
+| Someday | Stands set back from the row, toward the wall: the opposite of Playing. In 2D, a little smaller, and in shade. |
 | Retired | A small square tag on the cover's corner, matte, where Completed has a round foil seal |
 
 The wall and the list give each its own mark, and a box's name says its status in words, as
@@ -697,8 +700,8 @@ pagina e voltar pro organize seus jogos ai beleza".
   Minimap opens; also by last played, by title, and by last added. The first 50 are drawn, and
   50 more at a time.
 - **On each row, my rating and a status, one tap each, saved at once,** with the controls the
-  editor uses: the rating out of ten, and Playing, Backlog, Completed, Dropped, Wishlist as
-  shapes and words, the one given shown pressed, with a tick. **A game given a status stays in
+  editor uses: the rating out of ten, and Playing, Backlog, Someday, Completed, Retired,
+  Dropped, Wishlist as shapes and words, the one given shown pressed, with a tick. **A game given a status stays in
   the list for the rest of the visit,** so a wrong status is one tap to change and a rating can
   still be given; its pressed status, tapped again, takes it back to unsorted. If saving fails,
   the status is taken back, saying so. The next time the page is opened, it lists only the
@@ -922,7 +925,7 @@ the next frame. There is no Apply button and no spinner.
 | IGDB rating | `igdb` | |
 | Playtime | `hours` | |
 | Completion date | `completed` | |
-| Status | `status` | Playing, Backlog, Completed, Dropped, Wishlist, Unsorted |
+| Status | `status` | Playing, Backlog, Someday, Completed, Retired, Dropped, Wishlist, Unsorted |
 | Surprise me | `random` | A shuffle. The address keeps a seed, so a shared link shows the same order. Shuffling again picks a new seed. |
 
 Two more that the data makes cheap. Say if you do not want them:
@@ -1092,9 +1095,10 @@ Two additions the brief did not ask for, both small:
 | **Featured** (yes or no, per game) | Decides which boxes stand face-out. A shelf with a few covers showing reads far better than a wall of spines. |
 | **Notes public** (yes or no, per game) | The library is public and notes may not be meant to be |
 
-**Not built yet** (25 Oct 2026): an entry gains **archived** (7.4) and **private** (11.1), yes
-or no, the **platforms wanted** while it is on the wishlist (7.5), and two statuses, Someday and
-Retired (3.12); a game's cached IGDB data gains its age ratings (3.13).
+An entry's status is one of eight since 25 Oct 2026, with Someday and Retired (3.12). **Not
+built yet:** an entry gains **archived** (7.4) and **private** (11.1), yes or no, and the
+**platforms wanted** while it is on the wishlist (7.5); a game's cached IGDB data gains its age
+ratings (3.13).
 
 ---
 

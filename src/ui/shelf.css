@@ -196,6 +196,12 @@
     scale: 1.05;
   }
 
+  /* Someday: set back from the row, toward the wall: a little smaller, and in shade. */
+  .game-box[data-status='someday'] {
+    scale: 0.92;
+    filter: brightness(0.78);
+  }
+
   /* Dropped: leans against its neighbor. */
   .game-box[data-status='dropped'] {
     rotate: 5deg;
@@ -277,6 +283,31 @@
     width: 0.75rem;
     height: 0.75rem;
     stroke-width: 3;
+  }
+
+  /* Retired: a matte square tag where Completed has its round foil seal. */
+  .game-tag {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    z-index: 2;
+    display: grid;
+    width: 1.125rem;
+    height: 1.125rem;
+    place-items: center;
+    border-radius: 3px;
+    background: var(--ledge);
+    color: var(--on-ledge);
+    box-shadow:
+      inset 0 1px 0 var(--ledge-top),
+      0 0 0 1px rgb(0 0 0 / 0.35),
+      0 1px 3px rgb(0 0 0 / 0.5);
+  }
+
+  .game-tag svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    stroke-width: 2.5;
   }
 
   /* Owned on more than one platform: a small count on the box's foot. */
