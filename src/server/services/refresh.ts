@@ -1,10 +1,10 @@
 import 'server-only'
 
-import { asc, inArray, isNotNull } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, notInArray } from 'drizzle-orm'
 
 import { toGameData } from '@/domain/igdb/game'
 import { database } from '@/server/db/client'
-import { entryVersions, games } from '@/server/db/schema'
+import { entryVersions, games, users } from '@/server/db/schema'
 import { igdb } from '@/server/igdb'
 import { readCoverArt } from '@/server/igdb/cover-art'
 import {
@@ -21,12 +21,22 @@ import { createRecords, type RecordsDeps } from '@/server/services/igdb-records'
  * they are stored: a rating, a cover, a release, a time to beat. Once a day
  * the records checked longest ago are asked for again, 100 of them: two
  * requests when nothing changed, so a library of 1,000 games is never more
- * than ten days behind. A record that changed is stored again, with its
- * address kept, and every library holding it gets a new version.
+ * than ten days behind. An account marked to have all of its games asked
+ * about (`users.refreshAll`, the owner's) has every one of them asked each
+ * day besides, 500 to a request. A record that changed is stored again, with
+ * its address kept, and every library holding it gets a new version.
  */
 
 /** Records asked for again each day. */
 export const REFRESH_COUNT = 100
+
+/** How many ids one statement names: well under SQLite's limit on a statement's values. */
+const IDS_PER_QUERY = 200
+
+const chunks = <T>(items: readonly T[]): T[][] =>
+  Array.from({ length: Math.ceil(items.length / IDS_PER_QUERY) }, (_, at) =>
+    items.slice(at * IDS_PER_QUERY, (at + 1) * IDS_PER_QUERY),
+  )
 
 export type Refreshed = {
   /** Records asked for again. */
@@ -45,27 +55,41 @@ export const createRefresh = (deps: RecordsDeps) => {
   const records = createRecords(deps)
 
   return async (count = REFRESH_COUNT, now = Date.now()): Promise<Refreshed> => {
-    const held = await db
-      .select({
-        id: games.id,
-        igdbId: games.igdbId,
-        slug: games.slug,
-        cover: games.cover,
-        length: games.length,
-        updatedAt: games.igdbUpdatedAt,
-        adultsOnly: games.adultsOnly,
-        videos: games.videos,
-      })
-      .from(games)
-      // A game not from IGDB has nothing to ask about.
-      .where(isNotNull(games.igdbId))
-      .orderBy(asc(games.checkedAt), asc(games.igdbId))
-      .limit(count)
+    const fields = {
+      id: games.id,
+      igdbId: games.igdbId,
+      slug: games.slug,
+      cover: games.cover,
+      length: games.length,
+      updatedAt: games.igdbUpdatedAt,
+      adultsOnly: games.adultsOnly,
+      videos: games.videos,
+    }
+    // The games of the accounts that have all of theirs asked about each day.
+    const everyDay = db
+      .selectDistinct({ gameId: entryVersions.gameId })
+      .from(entryVersions)
+      .innerJoin(users, eq(users.id, entryVersions.userId))
+      .where(eq(users.refreshAll, true))
+    const [all, oldest] = await Promise.all([
+      db
+        .select(fields)
+        .from(games)
+        .where(and(isNotNull(games.igdbId), inArray(games.id, everyDay))),
+      db
+        .select(fields)
+        .from(games)
+        // A game not from IGDB has nothing to ask about.
+        .where(and(isNotNull(games.igdbId), notInArray(games.id, everyDay)))
+        .orderBy(asc(games.checkedAt), asc(games.igdbId))
+        .limit(count),
+    ])
+    const held = [...all, ...oldest]
     if (held.length === 0) return { checked: 0, changed: 0, libraries: [] }
     const ids = held.flatMap((row) => (row.igdbId === null ? [] : [row.igdbId]))
     const byIgdbId = new Map(held.map((row) => [row.igdbId, row]))
 
-    // The two requests: the records, and their times to beat, which IGDB keeps apart.
+    // The records, and their times to beat, which IGDB keeps apart: two requests to every 500.
     const [fresh, times] = await Promise.all([api.games(ids), api.timeToBeat(ids)])
     const stale = fresh.filter((record) => {
       const stored = byIgdbId.get(record.id)
@@ -119,14 +143,20 @@ export const createRefresh = (deps: RecordsDeps) => {
         }
       }
       // Asked, changed or not, and IGDB's own deletions too: the next run takes the next oldest.
-      await tx.update(games).set({ checkedAt: now }).where(inArray(games.igdbId, ids))
+      for (const some of chunks(ids)) {
+        await tx.update(games).set({ checkedAt: now }).where(inArray(games.igdbId, some))
+      }
 
       if (changedIds.length === 0) return []
-      const holders = await tx
-        .selectDistinct({ libraryId: entryVersions.userId })
-        .from(entryVersions)
-        .where(inArray(entryVersions.gameId, changedIds))
-      const found = holders.flatMap((row) => (row.libraryId ? [row.libraryId] : []))
+      const holders = new Set<string>()
+      for (const some of chunks(changedIds)) {
+        const rows = await tx
+          .selectDistinct({ libraryId: entryVersions.userId })
+          .from(entryVersions)
+          .where(inArray(entryVersions.gameId, some))
+        for (const row of rows) if (row.libraryId) holders.add(row.libraryId)
+      }
+      const found = [...holders]
       for (const libraryId of found) await bumpVersion(tx, libraryId)
       return found
     })

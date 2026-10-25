@@ -6,6 +6,9 @@ import { cronSecret } from '@/server/env'
 import { refreshOldest } from '@/server/services/refresh'
 import { libraryTag } from '@/server/services/tags'
 
+/** The owner's whole shelf is asked about each day besides the hundred: time for a large one. */
+export const maxDuration = 300
+
 /** Compared by their digests, so neither the time taken nor a length gives the secret away. */
 const sameSecret = (given: string, expected: string): boolean =>
   timingSafeEqual(

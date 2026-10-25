@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 import { SAMPLE_ACCOUNT } from '@/server/mocks/owner'
 import { openDatabase, type Db } from '@/server/db/client'
@@ -29,17 +29,11 @@ export const createTestAccount = async (
   { shelfPublic = true }: { shelfPublic?: boolean } = {},
 ): Promise<string> => {
   const id = `user-${handle}`
-  const at = new Date()
-  await db.insert(users).values({
-    id,
-    name: handle,
-    email: `${handle}@shelf.test`,
-    emailVerified: true,
-    username: handle,
-    shelfPublic,
-    createdAt: at,
-    updatedAt: at,
-  })
+  const at = Date.now()
+  // Only the columns accounts have had since they began, so a test of an older migration can
+  // make one too; a column added since takes its default.
+  await db.run(sql`insert into users (id, name, email, email_verified, username, shelf_public, created_at, updated_at)
+    values (${id}, ${handle}, ${`${handle}@shelf.test`}, 1, ${handle}, ${shelfPublic ? 1 : 0}, ${at}, ${at})`)
   await startLibrary(db, id)
   return id
 }

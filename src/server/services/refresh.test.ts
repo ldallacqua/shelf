@@ -1,11 +1,11 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray, ne } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import type { Db } from '@/server/db/client'
-import { games } from '@/server/db/schema'
+import { games, users } from '@/server/db/schema'
 import { createIgdbApi } from '@/server/igdb/api'
 import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
-import { readVersion } from '@/server/library/store'
+import { createEntry, readVersion } from '@/server/library/store'
 import {
   createHandlers,
   MOCK_CLIENT_ID,
@@ -15,7 +15,7 @@ import {
 } from '@/server/mocks/handlers'
 import { loadFixtures, type Fixtures } from '@/server/seed/fixtures'
 import { SEED_NOW } from '@/server/seed/mine'
-import { createTestDatabase, sampleLibraryId } from '@/test/database'
+import { createTestAccount, createTestDatabase, sampleLibraryId } from '@/test/database'
 import { network } from '@/test/network'
 
 import { createRefresh } from './refresh'
@@ -102,6 +102,40 @@ describe('the daily refresh', () => {
     expect(checked).toHaveLength(100)
     expect(await readVersion(db, sample)).toBe(version)
     expect(artRead).toEqual([])
+  })
+
+  it('asks every day about every game of an account marked to have them all asked, and keeps the hundred for the rest', async () => {
+    igdbWith()
+    const whole = await createTestAccount(db, 'whole')
+    await db.update(users).set({ refreshAll: true }).where(eq(users.id, whole))
+    // Three games checked just now, which a turn in the hundred would not reach for days.
+    const mine = await db
+      .select({ id: games.id })
+      .from(games)
+      .where(ne(games.igdbId, SKYRIM))
+      .limit(3)
+    for (const game of mine)
+      await createEntry(db, whole, { primaryGameId: game.id, status: 'backlog' })
+    await db
+      .update(games)
+      .set({ checkedAt: NOW - 1 })
+      .where(
+        inArray(
+          games.id,
+          mine.map((game) => game.id),
+        ),
+      )
+
+    const result = await refresh()(2, NOW)
+
+    expect(result.checked).toBe(5)
+    const asked = await db.select({ id: games.id }).from(games).where(eq(games.checkedAt, NOW))
+    expect(asked.map((game) => game.id)).toEqual(
+      expect.arrayContaining(mine.map((game) => game.id)),
+    )
+    expect(asked).toHaveLength(5)
+    // Skyrim, checked longest ago, still has its turn.
+    expect((await skyrimRow()).checkedAt).toBe(NOW)
   })
 
   it('takes the next oldest the next day', async () => {

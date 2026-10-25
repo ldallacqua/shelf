@@ -24,6 +24,9 @@ decisions 15 to 24 are built as written; the owner did not change them.
   the daily refresh reaches them; Erotic works from the start. To try it here, mark a game in
   `.data/shelf.db` (`games.adults_only = 1`, and raise its library's version), build, and put
   the database back.
+- **The owner's whole shelf is refreshed every day** (architecture section 25, row "Refresh all"):
+  `users.refresh_all`, set by migration 0019 for the owner's address only. Every other account
+  keeps its turn in the daily hundred, as the owner asked.
 - **A synced title IGDB punctuates otherwise is found** (architecture section 25, row "Title
   rung"): asked last by its words, compared as before. The owner declined matching a name with
   words missing ("Vampire Crawlers"): a wrong match is worse than asking.
