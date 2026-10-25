@@ -178,6 +178,7 @@ export function ShelfGrid({
         key={`${item.game.slug}:${item.copy?.platform ?? ''}`}
         className="shelf-cell"
         data-cell=""
+        data-adult={item.game.adult ? '' : undefined}
         data-enter={enter ? '' : undefined}
         aria-posinset={index + 1}
         aria-setsize={total}

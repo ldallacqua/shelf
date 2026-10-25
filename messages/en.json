@@ -286,6 +286,9 @@
     }
   },
   "Library": {
+    "adult": {
+      "hide": "Hide adult games"
+    },
     "metaTitle": "Library",
     "title": "Library",
     "emptyTitle": "The shelf is being stocked.",
@@ -438,6 +441,8 @@
     "outOfTen": "out of 10",
     "owned": "Owned on",
     "wanted": "Wanted on",
+    "adultHidden": "This device hides adult games: this one's cover, art and screenshots are not shown.",
+    "showAdult": "Show adult games",
     "copy": "{platform}, {format}",
     "played": "Played",
     "added": "Added",
@@ -736,6 +741,7 @@
       "sort": "Change the sort",
       "view": "Next view",
       "dimension": "Switch between 2D and 3D",
+      "adult": "Hide or show adult games, on a shelf that has any",
       "shuffle": "Surprise me: shuffle the shelves",
       "add": "Add a game, when signed in",
       "help": "Show this list"

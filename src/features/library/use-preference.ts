@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react'
 
 import {
+  adultPreference,
   densityPreference,
   dimensionPreference,
   readPreference,
@@ -10,6 +11,7 @@ import {
   TOO_SMALL_FOR_3D,
   wallSizePreference,
   writePreference,
+  type AdultChoice,
   type Density,
   type Dimension,
   type WallSize,
@@ -61,6 +63,16 @@ export function useDensity(): [Density, (value: Density) => void] {
     () => densityPreference.fallback,
   )
   return [value, (next) => writePreference(densityPreference, next)]
+}
+
+/** Whether adult games are hidden on this device (spec 3.13), and a way to change it. */
+export function useAdult(): [AdultChoice, (value: AdultChoice) => void] {
+  const value = useSyncExternalStore(
+    subscribeToPreferences,
+    () => readPreference(adultPreference),
+    () => adultPreference.fallback,
+  )
+  return [value, (next) => writePreference(adultPreference, next)]
 }
 
 /** How large covers are on the wall on this device, and a way to change it. */

@@ -94,6 +94,7 @@ export type SnapshotFile = {
 const FEATURED = 1
 const HAS_NOTES = 2
 const PRIVATE = 4
+const ADULT = 8
 
 const DAY_MS = 86_400_000
 
@@ -130,7 +131,10 @@ const baseRow = (game: LibraryGame): GameRow => [
   game.coverRatio ?? 0,
   packColors(game.colors),
   game.hash ?? '',
-  (game.featured ? FEATURED : 0) | (game.hasNotes ? HAS_NOTES : 0) | (game.private ? PRIVATE : 0),
+  (game.featured ? FEATURED : 0) |
+    (game.hasNotes ? HAS_NOTES : 0) |
+    (game.private ? PRIVATE : 0) |
+    (game.adult ? ADULT : 0),
   game.copies.map((copy): CopyRow => {
     const row: CopyRow = [copy.platform, position(formats, copy.format)]
     if (copy.cover) row.push(copy.cover)
@@ -196,6 +200,7 @@ const decodeGame = (row: GameRow): LibraryGame => {
   if (row[15]) game.hash = row[15]
   if (row[28]?.length) game.wanted = row[28]
   if (row[16] & PRIVATE) game.private = true
+  if (row[16] & ADULT) game.adult = true
   return game
 }
 

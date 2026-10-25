@@ -401,6 +401,29 @@ describe('each library is its own (ADR 004)', () => {
   })
 })
 
+describe('adult games (spec 3.13)', () => {
+  it('are those IGDB gives the theme Erotic, or the ESRB rates Adults Only', async () => {
+    const erotic = await saveGame(db, game(9001, 'Lula', { themes: [42] }), { lineage: [] })
+    const rated = await saveGame(
+      db,
+      game(9002, 'Hatred', {
+        age_ratings: [{ organization: 1, rating_category: { rating: 'AO' } }],
+      }),
+      { lineage: [] },
+    )
+    for (const primaryGameId of [erotic, rated, hades]) {
+      await createEntry(db, me, { primaryGameId, status: 'backlog' })
+    }
+    const games = (await readLibrary(db, me)).games
+    expect(
+      games
+        .filter((each) => each.adult)
+        .map((each) => each.slug)
+        .sort(),
+    ).toEqual(['hatred', 'lula'])
+  })
+})
+
 describe('a game only its own account sees (spec 11.1)', () => {
   it('is in no read but its own account’s, nor are the names only it has', async () => {
     const entry = await createEntry(db, me, { primaryGameId: hades, status: 'playing' })

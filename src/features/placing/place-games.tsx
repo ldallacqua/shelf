@@ -23,6 +23,7 @@ import { SavedRating } from '@/features/owner/fields'
 import { announceChange } from '@/features/owner/library-change'
 import { FindIt } from '@/features/platforms/find-it'
 import type { Found } from '@/features/platforms/sync-client'
+import { useAdult } from '@/features/library/use-preference'
 import { notify } from '@/features/shell/notices'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -328,9 +329,18 @@ function PlacingList({ handle }: { handle: string }) {
     rows.current.get(id)?.querySelector<HTMLElement>('input[type="checkbox"]')?.focus()
   })
 
+  // On a device that hides adult games, they are not in the list at all (spec 3.13).
+  const [adult] = useAdult()
   const sorted = useMemo(
-    () => (loaded ? sortUnsorted(loaded.games, sort, locale) : []),
-    [loaded, sort, locale],
+    () =>
+      loaded
+        ? sortUnsorted(
+            adult === 'hidden' ? loaded.games.filter((game) => !game.adult) : loaded.games,
+            sort,
+            locale,
+          )
+        : [],
+    [loaded, sort, locale, adult],
   )
 
   if (trouble) {

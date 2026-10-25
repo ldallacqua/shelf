@@ -111,6 +111,17 @@ describe('its stats', () => {
     expect(unstarted.finishedShare).toBeUndefined()
   })
 
+  it('works its stats out without adult games too, and marks their trophies (spec 3.13)', () => {
+    const adult = finished('Lula', '2026-02-01', { minutes: 60 * 9, rating: 20, adult: true })
+    const wall = trophyWall(testLibrary([...library.games, adult], { platform: [ps5, pc] }), 2026)
+    expect(wall.stats.finished).toBe(stats.finished + 1)
+    expect(wall.hidden).toEqual(stats)
+    expect(
+      wall.years.flatMap((year) => year.trophies).find((trophy) => trophy.slug === 'lula'),
+    ).toMatchObject({ adult: true })
+    expect(trophyWall(library, 2026).hidden).toBeUndefined()
+  })
+
   it('counts a retired game’s hours, and it in nothing finished (spec 3.12)', () => {
     const endless = testGame('Path of Exile', { status: 'retired', minutes: 60 * 200, rating: 80 })
     const someday = testGame('Okami', { status: 'someday' })

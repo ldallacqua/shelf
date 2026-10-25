@@ -122,6 +122,7 @@ function TrophyCase({ trophy, handle, eager }: { trophy: Trophy; handle: string;
   return (
     <li
       className="trophy"
+      data-adult={trophy.adult ? '' : undefined}
       style={
         { '--case-led': trophy.colors ? ledFrom(trophy.colors[0]) : undefined } as CSSProperties
       }
@@ -187,7 +188,7 @@ function Year({
   const t = useTranslations('Trophies')
   const id = useId()
   return (
-    <section aria-labelledby={id} className="mt-10 sm:mt-14">
+    <section aria-labelledby={id} className="trophy-year mt-10 sm:mt-14">
       <h2 id={id} className="wall-label">
         <span className="title text-2xl sm:text-3xl">{year ?? t('undated')}</span>{' '}
         <span className="readout text-[0.625rem] text-muted">
@@ -217,7 +218,19 @@ export function TrophyWallView({ wall, handle }: { wall: TrophyWall; handle: str
   return (
     <>
       <h1 className="pt-10 title text-3xl sm:pt-14 sm:text-5xl">{t('title')}</h1>
-      <Stats stats={wall.stats} handle={handle} />
+      {wall.hidden ? (
+        // Both, and CSS shows the one this device's choice asks for (spec 3.13), from the first paint.
+        <>
+          <div data-when-adult="shown">
+            <Stats stats={wall.stats} handle={handle} />
+          </div>
+          <div data-when-adult="hidden">
+            <Stats stats={wall.hidden} handle={handle} />
+          </div>
+        </>
+      ) : (
+        <Stats stats={wall.stats} handle={handle} />
+      )}
       {wall.years.map(({ year, trophies }, index) => (
         <Year
           key={year ?? 'undated'}

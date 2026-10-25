@@ -22,6 +22,7 @@ const KEYS = [
   ['sort', 'S'],
   ['view', 'V'],
   ['dimension', 'D'],
+  ['adult', 'H'],
   ['shuffle', 'R'],
   ['add', 'A'],
   ['help', '?'],

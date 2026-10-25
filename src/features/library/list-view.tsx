@@ -186,6 +186,7 @@ function ListTable({
             <tr
               key={`${game.slug}:${copy?.platform ?? ''}`}
               data-cell=""
+              data-adult={game.adult ? '' : undefined}
               data-active={isOpen ? 'true' : undefined}
               aria-rowindex={index + 2}
             >

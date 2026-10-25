@@ -286,6 +286,9 @@
     }
   },
   "Library": {
+    "adult": {
+      "hide": "Esconder jogos adultos"
+    },
     "metaTitle": "Biblioteca",
     "title": "Biblioteca",
     "emptyTitle": "A estante está sendo abastecida.",
@@ -438,6 +441,8 @@
     "outOfTen": "de 10",
     "owned": "Tenho em",
     "wanted": "Quero em",
+    "adultHidden": "Este aparelho esconde jogos adultos: a capa, a arte e as capturas deste não aparecem.",
+    "showAdult": "Mostrar jogos adultos",
     "copy": "{platform}, {format}",
     "played": "Jogado",
     "added": "Adicionado",
@@ -736,6 +741,7 @@
       "sort": "Mudar a ordem",
       "view": "Próxima visualização",
       "dimension": "Alternar entre 2D e 3D",
+      "adult": "Esconder ou mostrar jogos adultos, numa estante que tenha algum",
       "shuffle": "Me surpreenda: embaralhar as prateleiras",
       "add": "Adicionar um jogo, com login",
       "help": "Mostrar esta lista"

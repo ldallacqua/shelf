@@ -2,7 +2,7 @@ import 'server-only'
 
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
-import { lengthMinutes } from '@/domain/igdb/game'
+import { EROTIC, lengthMinutes } from '@/domain/igdb/game'
 import type { ArchivedGame, OwnerGame } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
 import {
@@ -93,6 +93,7 @@ export const readLibrary = async (
         thumbhash: games.thumbhash,
         igdbRating: games.igdbRating,
         igdbRatingCount: games.igdbRatingCount,
+        adultsOnly: games.adultsOnly,
         length: games.length,
         genres: games.genres,
         themes: games.themes,
@@ -231,6 +232,7 @@ export const readLibrary = async (
     if (entry.completedOn) game.completedOn = entry.completedOn
     if (entry.status === 'wishlist' && entry.wanted?.length) game.wanted = entry.wanted
     if (entry.isPrivate) game.private = true
+    if (primary.adultsOnly || primary.themes.includes(EROTIC)) game.adult = true
     if (primary.releasedOn) {
       game.releasedOn = primary.releasedOn
       game.year = Number(primary.releasedOn.slice(0, 4))
@@ -562,6 +564,8 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
           cover: games.cover,
           colors: games.colors,
           thumbhash: games.thumbhash,
+          themes: games.themes,
+          adultsOnly: games.adultsOnly,
         })
         .from(entries)
         .innerJoin(
@@ -653,6 +657,7 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
     if (row.cover) game.cover = row.cover.id
     if (row.colors) game.colors = row.colors
     if (row.thumbhash) game.hash = row.thumbhash
+    if (row.adultsOnly || row.themes.includes(EROTIC)) game.adult = true
     return game
   })
 

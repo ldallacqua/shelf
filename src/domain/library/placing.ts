@@ -36,6 +36,8 @@ export type UnsortedGame = {
   /** The platforms of its copies, the shown one first. */
   platforms: number[]
   played: PlayedOn[]
+  /** IGDB's theme Erotic, or the ESRB's Adults Only: left out on a device that hides them (spec 3.13). */
+  adult?: true
 }
 
 export type Tally = Record<Status, number>
