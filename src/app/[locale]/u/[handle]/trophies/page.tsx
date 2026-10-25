@@ -9,7 +9,9 @@ import { ShelfProvider } from '@/features/library/shelf'
 import { Page } from '@/features/shell/page'
 import { PrivateTrophiesLater } from '@/features/trophies/private-later'
 import { TrophiesSkeleton } from '@/features/trophies/trophies-skeleton'
+import { EmptyTrophies } from '@/features/trophies/empty-trophies'
 import { PublicTrophies } from '@/features/trophies/public-trophies'
+import { TrophyWallView } from '@/features/trophies/trophy-wall'
 import { findLibrary, getTrophyWall } from '@/server/services/library'
 
 import { NO_HANDLE, shelfInfoOf } from '../shelf-info'
@@ -54,7 +56,15 @@ async function ShelfTrophies({
     )
   }
   const wall = await getTrophyWall(library.id)
-  return <PublicTrophies wall={wall} handle={library.handle} />
+  return (
+    <PublicTrophies handle={library.handle}>
+      {wall.years.length === 0 ? (
+        <EmptyTrophies />
+      ) : (
+        <TrophyWallView wall={wall} handle={library.handle} />
+      )}
+    </PublicTrophies>
+  )
 }
 
 /** A shelf's trophy wall (spec 3.9). */
