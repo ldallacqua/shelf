@@ -23,7 +23,7 @@ export function LedPicker() {
         >
           <span
             aria-hidden="true"
-            className="ring-black/20 size-4 rounded-full shadow-[0_0_calc(var(--glow)*10px)_var(--dot)] ring-1"
+            className="size-4 rounded-full shadow-[0_0_calc(var(--glow)*10px)_var(--dot)] ring-1 ring-text/20"
             style={{ backgroundColor: option.value, ['--dot' as string]: option.value }}
           />
         </SegmentedItem>

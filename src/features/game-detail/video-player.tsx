@@ -26,9 +26,9 @@ export default function VideoPlayer({
   return (
     <Dialog.Root open={video !== undefined} onOpenChange={(next) => !next && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="bg-black/92 fixed inset-0 z-[60] data-[state=open]:animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-cinema/92 data-[state=open]:animate-fade-in" />
         <Dialog.Content
-          className="text-white fixed inset-0 z-[60] flex flex-col outline-none data-[state=open]:animate-fade-in"
+          className="fixed inset-0 z-[60] flex flex-col text-on-cinema outline-none data-[state=open]:animate-fade-in"
           onKeyDown={(event) => {
             // The game's panel around it steps through games on these keys.
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') event.stopPropagation()
@@ -40,7 +40,7 @@ export default function VideoPlayer({
             </Dialog.Title>
             <Dialog.Close
               aria-label={t('viewerClose')}
-              className="bg-white/10 hover:bg-white/20 inline-flex size-11 flex-none items-center justify-center rounded-full"
+              className="inline-flex size-11 flex-none items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
             >
               <XIcon aria-hidden="true" className="size-5" />
             </Dialog.Close>
@@ -55,7 +55,7 @@ export default function VideoPlayer({
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
-                className="bg-black aspect-video max-h-full w-full max-w-6xl rounded-case"
+                className="aspect-video max-h-full w-full max-w-6xl rounded-case bg-cinema"
               />
             ) : null}
           </div>

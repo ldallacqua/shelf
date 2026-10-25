@@ -188,9 +188,9 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
   return (
     <Dialog.Root open={open !== undefined} onOpenChange={(next) => !next && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="bg-black/92 fixed inset-0 z-[60] data-[state=open]:animate-fade-in" />
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-cinema/92 data-[state=open]:animate-fade-in" />
         <Dialog.Content
-          className="shot-viewer text-white fixed inset-0 z-[60] flex flex-col outline-none data-[state=open]:animate-fade-in"
+          className="shot-viewer fixed inset-0 z-[60] flex flex-col text-on-cinema outline-none data-[state=open]:animate-fade-in"
           onOpenAutoFocus={() => {
             // Opens at the screenshot chosen, with no slide to it. The viewer is in the page by now.
             const element = track.current
@@ -213,7 +213,7 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
             </p>
             <Dialog.Close
               aria-label={t('viewerClose')}
-              className="bg-white/10 hover:bg-white/20 inline-flex size-11 items-center justify-center rounded-full"
+              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
             >
               <XIcon aria-hidden="true" className="size-5" />
             </Dialog.Close>
@@ -258,7 +258,7 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
               aria-label={t('viewerPrevious')}
               disabled={at === 0}
               onClick={() => go(at - 1)}
-              className="bg-white/10 hover:bg-white/20 inline-flex size-11 items-center justify-center rounded-full disabled:opacity-40"
+              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
             >
               <ChevronLeftIcon aria-hidden="true" className="size-5" />
             </button>
@@ -267,7 +267,7 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
               aria-label={t('viewerNext')}
               disabled={at === shots.length - 1}
               onClick={() => go(at + 1)}
-              className="bg-white/10 hover:bg-white/20 inline-flex size-11 items-center justify-center rounded-full disabled:opacity-40"
+              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
             >
               <ChevronRightIcon aria-hidden="true" className="size-5" />
             </button>

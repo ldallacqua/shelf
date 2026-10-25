@@ -67,6 +67,9 @@
   --color-led: var(--led);
   /* What dims the page behind a sheet. */
   --color-scrim: color-mix(in srgb, var(--shadow-color) 55%, transparent);
+  /* A screenshot or a video full screen: dark whatever the theme, as a cinema is. */
+  --color-cinema: #000;
+  --color-on-cinema: #fff;
 
   /* One family for titles and interface: a wide, heavy cut for titles. */
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
