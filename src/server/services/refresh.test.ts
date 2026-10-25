@@ -145,6 +145,19 @@ describe('the daily refresh', () => {
     expect((await skyrimRow()).colors).toEqual(ART.colors)
   })
 
+  it('asks once for the age ratings of a record stored before they were asked for (spec 3.13)', async () => {
+    igdbWith()
+    // Stored before the age ratings were asked for, and checked longest ago.
+    await db.update(games).set({ adultsOnly: null, checkedAt: 0 }).where(eq(games.igdbId, SKYRIM))
+
+    const result = await refresh()(100, NOW)
+
+    expect(result).toMatchObject({ changed: 1, libraries: [sample] })
+    const [row] = await db.select().from(games).where(eq(games.igdbId, SKYRIM))
+    expect(row?.adultsOnly).toBe(false)
+    expect(await refresh()(100, NOW + 1)).toMatchObject({ changed: 0 })
+  })
+
   it('stores a record whose time to beat changed, which IGDB does not stamp on the record', async () => {
     igdbWith((fixtures) => {
       const time = fixtures.timeToBeat.get(SKYRIM)!

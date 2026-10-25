@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { thumbHashToDataURL } from 'thumbhash'
 import { createTranslator } from 'next-intl'
@@ -27,6 +27,7 @@ import { resetPreviews } from './preview-queue'
 import {
   densityPreference,
   dimensionPreference,
+  adultPreference,
   preferenceScript,
   readPreference,
   wallSizePreference,
@@ -305,6 +306,33 @@ describe('Toolbar', () => {
     return handlers
   }
 
+  it('offers to hide adult games only on a shelf that has any, pressed while they are hidden (spec 3.13)', async () => {
+    const onChange = vi.fn()
+    const toolbar = (adult?: { hidden: boolean; onChange: (hidden: boolean) => void }) => (
+      <Toolbar
+        view="wall"
+        onView={vi.fn()}
+        group="platform"
+        onGroup={vi.fn()}
+        density="covers"
+        onDensity={vi.fn()}
+        wallSize="medium"
+        onWallSize={vi.fn()}
+        dimension="2d"
+        onDimension={vi.fn()}
+        {...(adult ? { adult } : {})}
+      />
+    )
+    renderWithIntl(toolbar())
+    expect(screen.queryByRole('button', { name: 'Hide adult games' })).toBeNull()
+    cleanup()
+    renderWithIntl(toolbar({ hidden: true, onChange }))
+    const button = screen.getByRole('button', { name: 'Hide adult games' })
+    expect(button).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(button)
+    expect(onChange).toHaveBeenCalledWith(false)
+  })
+
   it('offers 2D or 3D on the shelf only, with the one shown pressed', async () => {
     const { onDimension } = setup('shelf')
     const pair = screen.getByRole('radiogroup', { name: 'Shelf in 2D or 3D' })
@@ -518,6 +546,7 @@ describe('device preferences', () => {
     window.localStorage.clear()
     document.documentElement.removeAttribute('data-density')
     document.documentElement.removeAttribute('data-wall-size')
+    document.documentElement.removeAttribute('data-adult')
   })
 
   const runScript = () => new Function(preferenceScript())()
@@ -534,6 +563,16 @@ describe('device preferences', () => {
     runScript()
     expect(document.documentElement).toHaveAttribute('data-density', 'compact')
     expect(document.documentElement).toHaveAttribute('data-wall-size', 'medium')
+  })
+
+  it('the head script hides adult games before the first paint, where this device asked (spec 3.13)', () => {
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-adult', 'shown')
+    window.localStorage.setItem('shelf:adult', 'hidden')
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-adult', 'hidden')
+    writePreference(adultPreference, 'shown')
+    expect(window.localStorage.getItem('shelf:adult')).toBeNull()
   })
 
   it('the head script survives storage being blocked', () => {

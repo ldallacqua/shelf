@@ -1,9 +1,8 @@
 # Shelf: product and UX spec
 
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
-  Written on 25 Oct 2026: two statuses (3.12), archiving a game (7.4), wishing for a game on one
-  platform (7.5) and a game only I see (11.1), built; and not built yet, hiding adult games
-  (3.13).
+  Written and built on 25 Oct 2026: two statuses (3.12), hiding adult games (3.13), archiving a
+  game (7.4), wishing for a game on one platform (7.5) and a game only I see (11.1).
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -403,6 +402,7 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | `S` | Change sort |
 | `V` | Next view |
 | `D` | Switch 2D and 3D |
+| `H` | Hide or show adult games, on a shelf that has any (3.13) |
 | `R` | Shuffle ("surprise me") |
 | `A` | Add a game (signed in) |
 | `?` | Show this list |
@@ -470,7 +470,7 @@ own, then what waits.
 
 ### 3.13 Hiding adult games
 
-**Not built yet.** The owner asked on 25 Oct 2026: "Preciso de uma opção pra esconder todos os
+**Built 25 Oct 2026.** The owner asked on 25 Oct 2026: "Preciso de uma opção pra esconder todos os
 jogos marcados como erotic. Mas não é uma opção permanente. Ela deve lembrar minha escolha obvio
 mas devo poder reverter ou ativar ao pressionar um botão. Mas não quero ter que apertar pra
 esconder toda vez que atualizar a pagina, então essa seleção tem que ser lembrada. Erotic e
@@ -478,10 +478,13 @@ Adult Only. Tipo se eu quiser mostrar minha biblioteca pra uma pessoa no meu pc 
 mostrar esses games."
 
 - **Adult** means a game IGDB gives the theme Erotic, or that the ESRB rates Adults Only (AO).
-  Shelf keeps IGDB's themes already; it does not keep age ratings yet, so they are fetched with
-  every game from then on, and once for the games already cached.
-- **One button, Hide adult games** (Esconder jogos adultos), pressed or not, beside Covers and
-  Compact (3.6); in the View sheet on a phone; and `H`. It is there only while the shelf has an
+  Shelf keeps IGDB's themes already; age ratings are fetched with every game from then on, and
+  for the games already cached as the daily refresh reaches them, about a hundred a day, so an
+  Adults Only game not Erotic too is known within days. The ESRB gives AO for violence too
+  (Hatred, Thrill Kill): those count, as the owner asked for Adults Only.
+- **One button, Hide adult games** (Esconder jogos adultos), pressed or not, in the library's
+  row of controls, before the views; an eye crossed out, with its words on a wide screen; and
+  `H`. It is there only while the shelf has an
   adult game, so a shelf with none never shows it.
 - **Remembered on this device,** like 2D or 3D, before the first paint: a reload, a new visit
   and every page keep it until it is pressed again. It is not in the address, so a link I share
@@ -490,7 +493,9 @@ mostrar esses games."
 - **While it is pressed, adult games are drawn nowhere:** not on the shelf, the wall, the list,
   3D, the trophy wall, the placing page, or in the search inside the library, and never drawn
   first and taken away. The counts, the stats line and the stats leave them out, so the numbers
-  agree with what is on the screen. Nothing counts what is hidden: the pressed button is the one
+  agree with what is on the screen. A page the server drew holds them until it comes alive,
+  except on the trophy wall, whose stats are drawn both ways: a reload shows the library's
+  totals with them for a moment, its boxes never. Nothing counts what is hidden: the pressed button is the one
   sign that something is.
 - **A game's own page,** reached by its address while it is pressed, shows no cover, art or
   screenshots, says the game is hidden on this device, and offers to show adult games again.
@@ -1101,8 +1106,8 @@ Two additions the brief did not ask for, both small:
 
 An entry's status is one of eight since 25 Oct 2026, with Someday and Retired (3.12); a
 wishlist entry keeps the **platforms wanted** (7.5); an entry can be **archived** (7.4); and
-an entry can be **private** (11.1). **Not built yet:** a game's cached IGDB data gains its age
-ratings (3.13).
+an entry can be **private** (11.1). A game's cached IGDB data says whether the ESRB rates it
+Adults Only (3.13).
 
 ---
 

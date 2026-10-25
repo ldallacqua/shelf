@@ -20,6 +20,7 @@ import {
   parseLibraryQuery,
   shareFirstBoxes,
   statusOnShelf,
+  withoutAdult,
 } from '@/domain/library/view'
 import { facetCounts } from '@/domain/query/facets'
 import { parseQuery } from '@/domain/query/parse'
@@ -378,6 +379,21 @@ describe('the first screen', () => {
         Object.fromEntries(counts.map((value) => [value.word, value.count])),
       )
     }
+  })
+
+  it('sends the counts without adult games too, when the library has any (spec 3.13)', () => {
+    const plain = buildFirstScreen(library, { group: 'platform' }, 'en', 2)
+    expect(plain.hidden).toBeUndefined()
+    const adult = {
+      ...library,
+      games: [...all, game('Lula', { ...on(6), status: 'completed', minutes: 600, adult: true })],
+    }
+    const first = buildFirstScreen(adult, { group: 'platform' }, 'en', 2)
+    expect(first.stats.games).toBe(all.length + 1)
+    expect(first.hidden?.stats).toEqual(plain.stats)
+    expect(first.hidden?.statusCounts.completed).toBe(plain.statusCounts.completed)
+    expect(withoutAdult(adult).games).toHaveLength(all.length)
+    expect(withoutAdult(adult)).toBe(withoutAdult(adult))
   })
 
   it('counts the games in a status on the whole shelf, whatever the address filters', () => {

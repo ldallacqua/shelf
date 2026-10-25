@@ -53,6 +53,7 @@ export const createRefresh = (deps: RecordsDeps) => {
         cover: games.cover,
         length: games.length,
         updatedAt: games.igdbUpdatedAt,
+        adultsOnly: games.adultsOnly,
       })
       .from(games)
       // A game not from IGDB has nothing to ask about.
@@ -71,7 +72,9 @@ export const createRefresh = (deps: RecordsDeps) => {
       return (
         !stored ||
         (data.igdbUpdatedAt ?? null) !== stored.updatedAt ||
-        !same(data.length, stored.length)
+        !same(data.length, stored.length) ||
+        // Stored before its age ratings were asked for (spec 3.13): stored again, once.
+        stored.adultsOnly === null
       )
     })
 

@@ -1,0 +1,1 @@
+ALTER TABLE `games` ADD `adults_only` integer;

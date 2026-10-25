@@ -244,12 +244,37 @@ export type FirstScreen = {
   stats: LibraryStats
   /** How many games each status would give, for the status row: it has its counts from the first paint. */
   statusCounts: Partial<Record<Status, number>>
+  /**
+   * When the library has adult games (spec 3.13): the same two counts without them, for a
+   * device that hides them, before the library file has come.
+   */
+  hidden?: { stats: LibraryStats; statusCounts: Partial<Record<Status, number>> }
   outline: ShelfOutline[]
   /** The first boxes in shelf order, each game once. */
   games: LibraryGame[]
   /** Platforms are needed to draw any box. The other name tables come with the library file. */
   platforms: LibraryNames['platform']
   tags: LibraryNames['tag']
+}
+
+const statusCountsOf = (index: LibraryIndex, tree: QueryNode | undefined) =>
+  Object.fromEntries(facetCounts(index, tree, 'status').map((value) => [value.word, value.count]))
+
+/** The library without its adult games, for a device that hides them (spec 3.13). Kept per library. */
+export const withoutAdult = (library: Library): Library => {
+  let kept = adultFree.get(library)
+  if (!kept) {
+    kept = { ...library, games: library.games.filter((game) => !game.adult) }
+    adultFree.set(library, kept)
+  }
+  return kept
+}
+
+const adultFree = new WeakMap<Library, Library>()
+
+const hiddenCounts = (library: Library, tree: QueryNode | undefined) => {
+  const index = indexOnce(withoutAdult(library))
+  return { stats: libraryStats(selectOnce(index, tree)), statusCounts: statusCountsOf(index, tree) }
 }
 
 /**
@@ -302,9 +327,8 @@ export const buildFirstScreen = (
       seed: query.seed ?? '',
     },
     stats: libraryStats(matching),
-    statusCounts: Object.fromEntries(
-      facetCounts(index, tree, 'status').map((value) => [value.word, value.count]),
-    ),
+    statusCounts: statusCountsOf(index, tree),
+    ...(library.games.some((game) => game.adult) ? { hidden: hiddenCounts(library, tree) } : {}),
     outline,
     games: [...games.values()],
     platforms: library.names.platform,

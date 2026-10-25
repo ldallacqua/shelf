@@ -78,7 +78,15 @@ export type GameData = {
   igdbUrl?: string
   /** When IGDB last changed the record, in milliseconds. */
   igdbUpdatedAt?: number
+  /** The ESRB rates it Adults Only (spec 3.13). */
+  adultsOnly: boolean
 }
+
+/** IGDB's id for the ESRB among the boards that rate games, read from the live API on 25 Oct 2026. */
+const ESRB = 1
+
+/** IGDB's theme Erotic (spec 3.13). */
+export const EROTIC = 42
 
 // IGDB's `game_types`, read from the live API on 13 Oct 2026.
 const KIND_BY_TYPE: Record<number, Kind> = {
@@ -272,6 +280,9 @@ export const toGameData = (record: IgdbGame, time?: IgdbTimeToBeat): GameData =>
     artworks,
     releases: [...releases.values()],
     storeIds: [...storeIds.values()],
+    adultsOnly: record.age_ratings.some(
+      (rating) => rating.organization === ESRB && rating.rating_category?.rating === 'AO',
+    ),
   }
 
   if (record.version_title?.trim()) data.versionTitle = record.version_title.trim()

@@ -82,6 +82,27 @@ describe('toGameData', () => {
     })
   })
 
+  it('says when the ESRB rates it Adults Only, and only the ESRB (spec 3.13)', () => {
+    const rated = (ratings: { organization: number; rating: string }[]) =>
+      toGameData(
+        parse({
+          age_ratings: ratings.map(({ organization, rating }) => ({
+            organization,
+            rating_category: { rating },
+          })),
+        }),
+      ).adultsOnly
+    expect(rated([{ organization: 1, rating: 'AO' }])).toBe(true)
+    // PEGI's 18 and the ESRB's Mature are not Adults Only.
+    expect(
+      rated([
+        { organization: 2, rating: '18' },
+        { organization: 1, rating: 'M' },
+      ]),
+    ).toBe(false)
+    expect(toGameData(parse({})).adultsOnly).toBe(false)
+  })
+
   it('turns the release date into a day and a year', () => {
     const data = toGameData(parse({ first_release_date: 1536883200 }))
     expect(data.releasedOn).toBe('2018-09-14')

@@ -75,6 +75,7 @@ const WallCell = memo(function WallCell({
     <li
       className="wall-cell"
       data-cell=""
+      data-adult={game.adult ? '' : undefined}
       data-enter={enter ? '' : undefined}
       aria-posinset={index + 1}
       aria-setsize={total}

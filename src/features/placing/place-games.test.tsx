@@ -128,6 +128,18 @@ describe('PlaceGames', () => {
     expect(within(tally()).getByText('3 games left to place.')).toBeInTheDocument()
   })
 
+  it('leaves adult games out on a device that hides them (spec 3.13)', async () => {
+    placing = {
+      ...PLACING,
+      games: [...PLACING.games, game('lula', 'Lula', 60, { adult: true })],
+    }
+    document.documentElement.setAttribute('data-adult', 'hidden')
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+    expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal'])
+    document.documentElement.removeAttribute('data-adult')
+  })
+
   it('places a game with one tap: it stays, showing its status, and the tally moves', async () => {
     const user = userEvent.setup()
     renderWithIntl(<PlaceGames />)

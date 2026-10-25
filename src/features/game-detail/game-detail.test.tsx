@@ -105,6 +105,38 @@ const SHELF: ShelfInfo = {
 }
 
 describe('GameDetail', () => {
+  it('keeps an adult game’s cover, art and screenshots for CSS to hide, and says so (spec 3.13)', () => {
+    renderWithIntl(
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game({ adult: true })}
+        tags={tags}
+        platforms={platforms}
+        facts={facts()}
+      />,
+    )
+    expect(document.querySelectorAll('[data-adult-media]').length).toBeGreaterThanOrEqual(2)
+    const notice = document.querySelector<HTMLElement>('[data-adult-notice]')!
+    expect(notice).toHaveTextContent('This device hides adult games')
+    expect(within(notice).getByRole('button', { name: 'Show adult games' })).toBeInTheDocument()
+  })
+
+  it('has no notice, and hides nothing, for any other game', () => {
+    renderWithIntl(
+      <GameDetail
+        handle="sample"
+        layout="page"
+        game={game()}
+        tags={tags}
+        platforms={platforms}
+        facts={facts()}
+      />,
+    )
+    expect(document.querySelector('[data-adult-notice]')).toBeNull()
+    expect(document.querySelector('[data-adult-media]')).toBeNull()
+  })
+
   it('shows the game, what is recorded about it, and what IGDB says', () => {
     renderWithIntl(
       <GameDetail

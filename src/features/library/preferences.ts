@@ -73,7 +73,27 @@ export const dimensionPreference: Preference<Dimension> = {
  */
 export const TOO_SMALL_FOR_3D = '(width < 40rem), (height < 36rem)'
 
-const preferences = [densityPreference, wallSizePreference, dimensionPreference] as const
+export const adultChoices = ['shown', 'hidden'] as const
+export type AdultChoice = (typeof adultChoices)[number]
+
+/**
+ * Whether adult games are hidden on this device (spec 3.13): whoever is at this screen
+ * chooses, on every shelf it shows. On <html> before the first paint, so CSS keeps their
+ * boxes out of a page the server drew with them.
+ */
+export const adultPreference: Preference<AdultChoice> = {
+  storageKey: 'shelf:adult',
+  attribute: 'adult',
+  values: adultChoices,
+  fallback: 'shown',
+}
+
+const preferences = [
+  densityPreference,
+  wallSizePreference,
+  dimensionPreference,
+  adultPreference,
+] as const
 
 const parse = <Value extends string>(preference: Preference<Value>, value: unknown): Value =>
   (preference.values as readonly unknown[]).includes(value) ? (value as Value) : preference.fallback

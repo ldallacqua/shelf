@@ -141,6 +141,14 @@ describe('the library file', () => {
     expect(file.games[1]).toHaveLength(28)
   })
 
+  it('carries that a game is for adults (spec 3.13)', () => {
+    const adult = { ...bare, adult: true as const }
+    expect(decodeLibrary(encodeLibrary({ ...library, games: [adult, bare] })).games).toEqual([
+      adult,
+      bare,
+    ])
+  })
+
   it('carries that a game is only its owner’s (spec 11.1)', () => {
     const hidden = { ...bare, private: true as const }
     expect(decodeLibrary(encodeLibrary({ ...library, games: [hidden, bare] })).games).toEqual([

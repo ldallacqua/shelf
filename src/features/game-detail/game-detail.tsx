@@ -16,6 +16,7 @@ import { cn } from '@/ui/cn'
 import { HERO_COVER } from './hero'
 import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
+import { AdultNotice } from './adult-notice'
 import { Screenshots } from './screenshots'
 
 import './game-detail.css'
@@ -165,7 +166,11 @@ export function GameDetail({
 
   const hero = (
     <header className="game-hero" data-layout={layout}>
-      <div className="game-backdrop" aria-hidden="true">
+      <div
+        className="game-backdrop"
+        aria-hidden="true"
+        data-adult-media={game.adult ? '' : undefined}
+      >
         {backdrop ? (
           // Key art straight from IGDB's servers, which resize it. Dimmed, so a
           // smaller file than the screen does no harm.
@@ -191,6 +196,7 @@ export function GameDetail({
             <span
               className="game-cover"
               style={{ aspectRatio: String(ratio) }}
+              data-adult-media={game.adult ? '' : undefined}
               {...{ [HERO_COVER]: '' }}
             >
               <Cover
@@ -360,7 +366,9 @@ export function GameDetail({
     facts && facts.screenshots.length === 0 ? null : (
       <Section title={t('screenshots')} level={level}>
         {facts ? (
-          <Screenshots shots={facts.screenshots} title={game.title} />
+          <div data-adult-media={game.adult ? '' : undefined}>
+            <Screenshots shots={facts.screenshots} title={game.title} />
+          </div>
         ) : (
           <div aria-hidden="true" className="flex gap-2 overflow-hidden">
             {[0, 1, 2].map((index) => (
@@ -473,6 +481,7 @@ export function GameDetail({
     return (
       <article className="game" data-layout="page">
         {hero}
+        {game.adult ? <AdultNotice /> : null}
         <div className="mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-10">
           <div className="grid min-w-0 content-start gap-10">
             {about}

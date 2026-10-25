@@ -63,6 +63,8 @@ export type LibraryGame = {
   wanted?: number[]
   /** Only its own account sees it (spec 11.1); in its own browser's file only. */
   private?: true
+  /** IGDB's theme Erotic, or the ESRB's Adults Only: hidden while a device asks (spec 3.13). */
+  adult?: true
 }
 
 export type Named = { id: number; name: string; slug: string }

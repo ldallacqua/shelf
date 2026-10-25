@@ -310,6 +310,29 @@
     stroke-width: 2.5;
   }
 
+  /*
+   * Adult games hidden on this device (spec 3.13): set on <html> before the first paint, so a
+   * box, a cover or a row the server drew for one is never drawn first and taken away.
+   */
+  html[data-adult='hidden'] [data-adult] {
+    display: none !important;
+  }
+
+  html[data-adult='hidden'] [data-adult-media] {
+    visibility: hidden;
+  }
+
+  html:not([data-adult='hidden']) [data-adult-notice],
+  html:not([data-adult='hidden']) [data-when-adult='hidden'],
+  html[data-adult='hidden'] [data-when-adult='shown'] {
+    display: none !important;
+  }
+
+  /* A year of the trophy wall whose every trophy is hidden goes with them. */
+  html[data-adult='hidden'] .trophy-year:not(:has(.trophy:not([data-adult]))) {
+    display: none;
+  }
+
   /* Private: a small closed lock on the box's foot, at its left. */
   .game-lock {
     position: absolute;

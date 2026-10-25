@@ -129,6 +129,11 @@ export const games = sqliteTable(
       .default(sql`'[]'`),
     igdbUrl: text(),
     igdbUpdatedAt: integer(),
+    /**
+     * Whether the ESRB rates it Adults Only (spec 3.13). Null for a record stored before it was
+     * asked: the daily refresh asks again for those first.
+     */
+    adultsOnly: integer({ mode: 'boolean' }),
     /** When Shelf last stored this record. */
     fetchedAt: integer().notNull(),
     /** When Shelf last asked IGDB whether it changed. The daily refresh takes the oldest. */

@@ -39,6 +39,12 @@ const releaseDate = z.object({
   release_region: id.optional(),
 })
 
+/** An age rating: the board that gave it (1 is the ESRB), and the rating, in that board's words. */
+const ageRating = z.object({
+  organization: id.optional(),
+  rating_category: z.object({ rating: z.string().optional() }).optional(),
+})
+
 const externalGame = z.object({
   uid: z.string().optional(),
   external_game_source: id.optional(),
@@ -79,6 +85,7 @@ export const igdbGameSchema = z.object({
   expanded_games: ids,
   release_dates: z.array(releaseDate).default([]),
   external_games: z.array(externalGame).default([]),
+  age_ratings: z.array(ageRating).default([]),
   updated_at: z.number().optional(),
   url: z.string().optional(),
 })
@@ -137,6 +144,8 @@ export const igdbGameFields = [
   'external_games.game_release_format',
   'updated_at',
   'url',
+  'age_ratings.organization',
+  'age_ratings.rating_category.rating',
 ] as const
 
 /**

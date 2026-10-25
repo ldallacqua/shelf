@@ -6,7 +6,16 @@ import type { Status } from '@/domain/library/values'
 /** What a trophy shows (spec 3.9): the cover under its own light, the title, the day, the hours, my rating. */
 export type Trophy = Pick<
   LibraryGame,
-  'slug' | 'title' | 'year' | 'cover' | 'colors' | 'hash' | 'completedOn' | 'minutes' | 'rating'
+  | 'slug'
+  | 'title'
+  | 'year'
+  | 'cover'
+  | 'colors'
+  | 'hash'
+  | 'completedOn'
+  | 'minutes'
+  | 'rating'
+  | 'adult'
 >
 
 /** The games finished in one year; without a year, the ones whose day was never recorded. */
@@ -29,7 +38,12 @@ export type TrophyStats = {
   platform?: { id: number; name: string; minutes: number }
 }
 
-export type TrophyWall = { stats: TrophyStats; years: TrophyYear[] }
+export type TrophyWall = {
+  stats: TrophyStats
+  years: TrophyYear[]
+  /** When the library has adult games: the stats without them, for a device that hides them (spec 3.13). */
+  hidden?: TrophyStats
+}
 
 /**
  * Begun, whether or not finished: backlog, someday and wishlist games are not.
@@ -48,6 +62,7 @@ const trophyOf = ({
   completedOn,
   minutes,
   rating,
+  adult,
 }: LibraryGame): Trophy => ({
   slug,
   title,
@@ -58,6 +73,7 @@ const trophyOf = ({
   completedOn,
   minutes,
   rating,
+  ...(adult ? { adult } : {}),
 })
 
 const statsOf = (library: Library, finished: readonly LibraryGame[], year: number): TrophyStats => {
@@ -129,5 +145,14 @@ export const trophyWall = (library: Library, year: number, locale = 'en'): Troph
   const undated = finished.filter((game) => game.completedOn === undefined)
   if (undated.length > 0) years.push({ trophies: undated.map(trophyOf) })
 
-  return { stats: statsOf(library, finished, year), years }
+  const wall: TrophyWall = { stats: statsOf(library, finished, year), years }
+  if (library.games.some((game) => game.adult)) {
+    const games = library.games.filter((game) => !game.adult)
+    wall.hidden = statsOf(
+      { ...library, games },
+      finished.filter((game) => !game.adult),
+      year,
+    )
+  }
+  return wall
 }

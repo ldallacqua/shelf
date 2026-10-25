@@ -12,23 +12,31 @@ and Retired (3.12), wishing on one platform (7.5), archiving (7.4), a game only 
 hiding adult games (3.13), last because it needs IGDB's age ratings fetched. Section 19's
 decisions 15 to 24 are built as written; the owner did not change them.
 
-- **Someday and Retired are built** (3.12; architecture section 25's first row). Statuses have
+- **Someday and Retired are built** (3.12; architecture section 25, row "Statuses"). Statuses have
   two orders now: `statuses`, as shown, and `statusCodes`, as the library file numbers them.
   Add a status at the end of `statusCodes`, never in its middle. The sample shelf has none in
   either, so the browser tests' counts stand.
-- **Wishing on one platform is built** (7.5; architecture section 25's first row). A build here
+- **Wishing on one platform is built** (7.5; architecture section 25, row "Wishlist"). A build here
   reads `.data/shelf.db`, so after pulling a migration that adds a column, run `pnpm db:migrate`
   first; Vercel's build migrates by itself.
-- **A game only I see is built** (11.1; architecture section 25's first row). On a public
+- **Hiding adult games is built** (3.13; architecture section 25, row "Adult games"), and with it the
+  five sections of 25 Oct are all built. Adults Only fills in for the games already cached as
+  the daily refresh reaches them; Erotic works from the start. To try it here, mark a game in
+  `.data/shelf.db` (`games.adults_only = 1`, and raise its library's version), build, and put
+  the database back.
+- **Waiting for the owner:** whether to split Dark Souls II and Scholar of the First Sin with a
+  new "make it a game of its own" on a version, rather than change ADR 001's rule (section 19,
+  decision 2), which would split Skyrim and its Special Edition too.
+- **A game only I see is built** (11.1; architecture section 25, row "Privacy"). On a public
   shelf its own account now reads its own files (`/api/v1/me/…`), never the public ones.
-- **Archiving is built** (7.4; architecture section 25's second row), and with it two fixes for
+- **Archiving is built** (7.4; architecture section 25, row "Archive"), and with it two fixes for
   every edit: a library file older than the version asked for is asked for again, and a
   closing panel keeps its version. Checking a flow end to end here: a headless Chromium script
   against `pnpm serve:test` (the made-up owner), since the app's pane, hidden, does not draw.
   Wait for the panel's opening animation before clicking in it: its view transition takes
   the clicks until it ends.
 - **The game panel stays on its game** when a change moves it off the shelf (architecture
-  section 25's first row). To check the library's own behaviour in a browser, the app's pane
+  section 25, row "Game panel"). To check the library's own behaviour in a browser, the app's pane
   must be showing: hidden, it does not draw, and the new library file is never applied.
 - **Dark Souls II and Scholar of the First Sin are one entry** because IGDB makes Scholar an
   expanded game (type 10) of Dark Souls II, and the sync, which cannot ask, takes ADR 001's

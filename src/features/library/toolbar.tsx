@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  EyeOffIcon,
   ChevronDownIcon,
   Columns4Icon,
   LayoutGridIcon,
@@ -14,6 +15,7 @@ import { useId, type ReactNode } from 'react'
 import { groupings, type Grouping } from '@/domain/library/group'
 import type { View } from '@/domain/library/view'
 import { Button } from '@/ui/button'
+import { cn } from '@/ui/cn'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +55,8 @@ type ToolbarProps = {
   filters?: ReactNode
   /** The sort, after the filters. */
   sort?: ReactNode
+  /** Whether adult games are hidden on this device (spec 3.13); absent while the shelf has none. */
+  adult?: { hidden: boolean; onChange: (hidden: boolean) => void }
 }
 
 const viewIcons = { shelf: Rows3Icon, wall: LayoutGridIcon, list: ListIcon } as const
@@ -79,6 +83,7 @@ export function Toolbar({
   onGroupOpen,
   filters,
   sort,
+  adult,
 }: ToolbarProps) {
   const t = useTranslations('Library')
   const reasonId = useId()
@@ -189,6 +194,22 @@ export function Toolbar({
                 </SegmentedItem>
               ))}
             </Segmented>
+          ) : null}
+
+          {adult ? (
+            <Button
+              variant="secondary"
+              aria-pressed={adult.hidden}
+              aria-label={t('adult.hide')}
+              data-preference="adult"
+              className={cn('flex-none max-sm:px-3', adult.hidden && 'border-accent bg-accent/15')}
+              onClick={() => adult.onChange(!adult.hidden)}
+            >
+              <EyeOffIcon aria-hidden="true" />
+              <span aria-hidden="true" className="max-lg:hidden">
+                {t('adult.hide')}
+              </span>
+            </Button>
           ) : null}
 
           <Segmented aria-label={t('view.label')} value={view} onValueChange={onView}>

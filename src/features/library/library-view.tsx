@@ -26,6 +26,7 @@ import {
   firstScreenShelves,
   indexOnce,
   keepFirstScreen,
+  withoutAdult,
   keywordIndexOnce,
   parseLibraryQuery,
   selectOnce,
@@ -91,6 +92,7 @@ import { useLibrary } from './use-library'
 import { revealRow } from './use-row-window'
 import {
   tooSmallFor3dNow,
+  useAdult,
   useDensity,
   useDimension,
   useReducedMotion,
@@ -232,6 +234,8 @@ export function LibraryView({
   const sortText = writeSort(sort)
 
   const [density, setDensity] = useDensity()
+  const [adult, setAdult] = useAdult()
+  const hideAdult = adult === 'hidden'
   const [wallSize, setWallSize] = useWallSize()
   const [dimension, setDimension] = useDimension()
   /** Set when 3D gave way to 2D on this page, and why. */
@@ -281,7 +285,12 @@ export function LibraryView({
     return () => clearTimeout(timer)
   }, [])
 
-  const library = state.status === 'ready' ? keepFirstScreen(state.library, first) : undefined
+  const whole = state.status === 'ready' ? keepFirstScreen(state.library, first) : undefined
+  // A device that hides adult games has none in its library at all (spec 3.13): no box, no
+  // count, no filter value of one.
+  const library = whole && hideAdult ? withoutAdult(whole) : whole
+  const adultOnShelf = whole ? whole.games.some((game) => game.adult) : first.hidden !== undefined
+  const counted = hideAdult && first.hidden ? first.hidden : first
 
   // The filter as typed this moment, for the field, the chips and the panel; and the one
   // the shelves are drawn from, which may lag a frame behind fast typing so typing stays quick.
@@ -316,6 +325,12 @@ export function LibraryView({
     ).map((each) => ({ ...each, total: each.items.length }))
   } else if (asBuilt) {
     shelves = firstScreenShelves(first)
+    if (hideAdult) {
+      shelves = shelves.map((each) => ({
+        ...each,
+        items: each.items.filter((item) => !item.game.adult),
+      }))
+    }
   }
 
   const platforms = new Map<number, LibraryPlatform>(
@@ -426,9 +441,18 @@ export function LibraryView({
 
   const nextView = () => change(setView, views[(views.indexOf(view) + 1) % views.length]!)
 
-  const keys = useRef({ view, shown, switchTo, nextView, shuffle })
+  const keys = useRef({
+    view,
+    shown,
+    switchTo,
+    nextView,
+    shuffle,
+    adultOnShelf,
+    hideAdult,
+    setAdult,
+  })
   useEffect(() => {
-    keys.current = { view, shown, switchTo, nextView, shuffle }
+    keys.current = { view, shown, switchTo, nextView, shuffle, adultOnShelf, hideAdult, setAdult }
   })
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -466,6 +490,10 @@ export function LibraryView({
           if (now.view !== 'shelf' || tooSmallFor3dNow()) return
           now.switchTo(now.shown === '3d' ? '2d' : '3d')
           break
+        case 'h':
+          if (!now.adultOnShelf) return
+          now.setAdult(now.hideAdult ? 'shown' : 'hidden')
+          break
         default:
           return
       }
@@ -477,7 +505,7 @@ export function LibraryView({
 
   // The game whose details are open, followed by which game it is, and its neighbors in the
   // current order: changing its status where the filter is on status leaves it open.
-  const followed = open ? followOpen(shelves, open, library?.games) : undefined
+  const followed = open ? followOpen(shelves, open, whole?.games) : undefined
   const openItem = followed?.item
   const { previous, next } = open ? neighborsOf(shelves, open, followed?.box) : {}
 
@@ -602,7 +630,7 @@ export function LibraryView({
         facetCounts(index, parsed.tree, 'status').map((value) => [value.word, value.count]),
       )
     : query.q === builtFor.q
-      ? first.statusCounts
+      ? counted.statusCounts
       : undefined
   // Unsorted stays in the row while the shelf has any, whatever the filter matches. Until the
   // library arrives, the counts sent with the page are the best word on it.
@@ -610,14 +638,14 @@ export function LibraryView({
   // Someday and Retired likewise, while a game has one (spec 3.12).
   const onShelf = occasionalStatuses.filter((status) => {
     const count = statusOnShelf(library, first, status)
-    return count === undefined ? (first.statusCounts[status] ?? 0) > 0 : count > 0
+    return count === undefined ? (counted.statusCounts[status] ?? 0) > 0 : count > 0
   })
   const conditions = chipsOf(parsed.tree).reduce((total, chips) => total + chips.length, 0)
 
   // The totals follow the filter. The server drew them for the address the page came
   // with; from the first change they are worked out here.
   const liveStats =
-    matching && (drawnQ !== builtFor.q || library?.version !== first.version)
+    matching && (drawnQ !== builtFor.q || library?.version !== first.version || counted !== first)
       ? libraryStats(matching)
       : undefined
 
@@ -670,7 +698,13 @@ export function LibraryView({
             </p>
           ) : null}
         </div>
-        {liveStats ? <StatsLine stats={liveStats} settle={false} /> : stats}
+        {liveStats ? (
+          <StatsLine stats={liveStats} settle={false} />
+        ) : counted !== first && drawnQ === builtFor.q ? (
+          <StatsLine stats={counted.stats} settle={false} />
+        ) : (
+          stats
+        )}
       </div>
 
       {/* The toolbar stays a child of .library: on a phone it moves to the bottom of the screen. */}
@@ -743,6 +777,11 @@ export function LibraryView({
         dimension={shown}
         onDimension={switchTo}
         noThreeD={noThreeD}
+        adult={
+          adultOnShelf
+            ? { hidden: hideAdult, onChange: (hidden) => setAdult(hidden ? 'hidden' : 'shown') }
+            : undefined
+        }
         filters={
           <Button
             variant="secondary"
