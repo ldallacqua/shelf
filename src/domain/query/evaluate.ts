@@ -200,6 +200,7 @@ export const buildIndex = (library: Library): LibraryIndex => {
     if (game.minutes > 0) add(lists.has, 'playtime', 'playtime', size, at)
     if (game.cover) add(lists.has, 'cover', 'cover', size, at)
     if (game.featured) add(lists.is, 'featured', 'featured', size, at)
+    if (game.private) add(lists.is, 'private', 'private', size, at)
 
     for (const copy of game.copies) {
       copies.game[copyAt] = at

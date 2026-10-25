@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, LockIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
 import { useRef, type ReactNode } from 'react'
 
@@ -211,6 +211,9 @@ function ListTable({
                 >
                   {game.title}
                 </button>
+                {game.private ? (
+                  <LockIcon aria-hidden="true" className="ml-1.5 inline size-3.5 text-muted" />
+                ) : null}
                 {game.year ? (
                   <span className="block readout text-[0.625rem] text-muted">{game.year}</span>
                 ) : null}

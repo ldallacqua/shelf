@@ -19,7 +19,9 @@ decisions 15 to 24 are built as written; the owner did not change them.
 - **Wishing on one platform is built** (7.5; architecture section 25's first row). A build here
   reads `.data/shelf.db`, so after pulling a migration that adds a column, run `pnpm db:migrate`
   first; Vercel's build migrates by itself.
-- **Archiving is built** (7.4; architecture section 25's first row), and with it two fixes for
+- **A game only I see is built** (11.1; architecture section 25's first row). On a public
+  shelf its own account now reads its own files (`/api/v1/me/…`), never the public ones.
+- **Archiving is built** (7.4; architecture section 25's second row), and with it two fixes for
   every edit: a library file older than the version asked for is asked for again, and a
   closing panel keeps its version. Checking a flow end to end here: a headless Chromium script
   against `pnpm serve:test` (the made-up owner), since the app's pane, hidden, does not draw.

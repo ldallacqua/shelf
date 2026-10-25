@@ -50,7 +50,12 @@ const union = (lists: readonly (readonly number[])[]): number[] => [...new Set(l
 
 const byId = <T extends { id: number }>(a: T, b: T) => a.id - b.id
 
-export const readLibrary = async (db: Db, libraryId: string): Promise<Library> => {
+export const readLibrary = async (
+  db: Db,
+  libraryId: string,
+  /** Its own account's read: with the games only it sees (spec 11.1). Anyone else's has none of them. */
+  { mine = false }: { mine?: boolean } = {},
+): Promise<Library> => {
   const own = sql`(select ${entries.id} from ${entries} where ${entries.userId} = ${libraryId})`
   // One batch is one transaction: every query sees the library as it was at
   // one moment. Run side by side, a write landing between them would give a
@@ -180,8 +185,8 @@ export const readLibrary = async (db: Db, libraryId: string): Promise<Library> =
 
   const libraryGames: LibraryGame[] = []
   for (const entry of entryRows) {
-    // Archived, it is in no view, count or answer (spec 7.4).
-    if (entry.archivedAt !== null) continue
+    // Archived, it is in no view, count or answer (spec 7.4); private, in its own account's only.
+    if (entry.archivedAt !== null || (entry.isPrivate && !mine)) continue
     const versions = versionsByEntry.get(entry.id) ?? []
     const primary = versions.find((version) => version.relation === 'primary')
     // An entry without a primary cannot be shown. The schema makes one hard to lose.
@@ -225,6 +230,7 @@ export const readLibrary = async (db: Db, libraryId: string): Promise<Library> =
     if (entry.rating !== null) game.rating = entry.rating
     if (entry.completedOn) game.completedOn = entry.completedOn
     if (entry.status === 'wishlist' && entry.wanted?.length) game.wanted = entry.wanted
+    if (entry.isPrivate) game.private = true
     if (primary.releasedOn) {
       game.releasedOn = primary.releasedOn
       game.year = Number(primary.releasedOn.slice(0, 4))
@@ -451,6 +457,7 @@ export const readOwnerGame = async (
     title: primary.title,
     status: entry.status,
     wanted: entry.status === 'wishlist' ? (entry.wanted ?? []) : [],
+    private: entry.isPrivate,
     notesPublic: entry.notesPublic,
     minutes: timeRows
       .filter((row) => row.source === 'manual')

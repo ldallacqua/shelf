@@ -93,6 +93,7 @@ const tombRaider = testGame('Shadow of the Tomb Raider', {
 const residentEvil = testGame('Resident Evil 4', {
   copies: [{ platform: 167, format: 'digital' }],
   status: 'playing',
+  private: true,
   rating: 85,
   minutes: 420,
   year: 2023,
@@ -244,6 +245,7 @@ describe('each filter on its own (spec 5.1)', () => {
     expect(matching('has:playtime')).toEqual([ZELDA, RE4, PERSONA, HALO, POKEMON])
     expect(matching('-has:cover')).toEqual([SILKSONG])
     expect(matching('is:featured')).toEqual([ZELDA])
+    expect(matching('is:private')).toEqual([RE4])
   })
 
   it('genre, theme, mode and perspective, in short words or IGDB’s', () => {

@@ -45,6 +45,8 @@ export type OwnerGame = {
   status: Status
   /** On the wishlist, the platforms I want it on (spec 7.5); empty otherwise. */
   wanted: number[]
+  /** Only I see it (spec 11.1). */
+  private: boolean
   rating?: number
   completedOn?: Day
   notes?: string
@@ -83,6 +85,8 @@ export const minePatch = z.object({
   completedOn: z.iso.date().nullable().optional(),
   notes: z.string().max(MAX_NOTES).nullable().optional(),
   notesPublic: z.boolean().optional(),
+  /** Only its own account sees it (spec 11.1). */
+  private: z.boolean().optional(),
 })
 
 export type MinePatch = z.infer<typeof minePatch>

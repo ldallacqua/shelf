@@ -141,6 +141,14 @@ describe('the library file', () => {
     expect(file.games[1]).toHaveLength(28)
   })
 
+  it('carries that a game is only its owner’s (spec 11.1)', () => {
+    const hidden = { ...bare, private: true as const }
+    expect(decodeLibrary(encodeLibrary({ ...library, games: [hidden, bare] })).games).toEqual([
+      hidden,
+      bare,
+    ])
+  })
+
   it('numbers each status as it always has, a new one after the rest', () => {
     const codes = statuses.map((status) => {
       const file = encodeLibrary({ ...library, games: [{ ...bare, status }] })

@@ -145,7 +145,7 @@ export const getTrophyWall = async (libraryId: string): Promise<TrophyWall> => {
 
 /** A private library whole, for its own account only, read fresh and kept nowhere. */
 export const readMyLibrary = async (libraryId: string): Promise<Library> =>
-  inTitleOrder(await readLibrary(database(), libraryId))
+  inTitleOrder(await readLibrary(database(), libraryId, { mine: true }))
 
 /** A library as its file's text: what the browser fetches once, then filters and sorts on the device. */
 export const libraryFile = (library: Library): string => JSON.stringify(encodeLibrary(library))

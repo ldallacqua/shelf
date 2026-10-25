@@ -374,6 +374,17 @@ export function MineEditor({
           </label>
         </div>
 
+        {/* Only I see it (spec 11.1); on a private shelf every game already is, and this waits for it to go public. */}
+        <label className="flex min-h-10 cursor-pointer items-center gap-3 text-sm">
+          <Switch
+            checked={owned.private}
+            onChange={(event) =>
+              update({ private: event.target.checked }, { private: event.target.checked })
+            }
+          />
+          {t('private')}
+        </label>
+
         {owned.versions.length > 1 ? (
           <div className="grid gap-2">
             <Minor className="readout text-[0.625rem] text-muted">{t('versions')}</Minor>

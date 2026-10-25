@@ -401,6 +401,29 @@ describe('each library is its own (ADR 004)', () => {
   })
 })
 
+describe('a game only its own account sees (spec 11.1)', () => {
+  it('is in no read but its own account’s, nor are the names only it has', async () => {
+    const entry = await createEntry(db, me, { primaryGameId: hades, status: 'playing' })
+    await createEntry(db, me, { primaryGameId: skyrim, status: 'backlog' })
+    await updateEntry(db, me, entry, { private: true })
+
+    const seen = await readLibrary(db, me)
+    expect(seen.games.map((game) => game.slug)).toEqual(['the-elder-scrolls-v-skyrim'])
+    // Hades alone is on the Switch: a visitor is not offered it.
+    expect(seen.names.platform.map((platform) => platform.id)).not.toContain(SWITCH)
+
+    const mine = await readLibrary(db, me, { mine: true })
+    expect(mine.games.find((game) => game.slug === 'hades')).toMatchObject({ private: true })
+    expect(
+      mine.games.find((game) => game.slug === 'the-elder-scrolls-v-skyrim'),
+    ).not.toHaveProperty('private')
+    expect(await readOwnerGame(db, me, entry)).toMatchObject({ private: true })
+
+    await updateEntry(db, me, entry, { private: false })
+    expect((await readLibrary(db, me)).games).toHaveLength(2)
+  })
+})
+
 describe('archiving a game (spec 7.4)', () => {
   it('takes it out of every answer, keeps it whole, and brings it back as it was', async () => {
     const entry = await createEntry(db, me, {

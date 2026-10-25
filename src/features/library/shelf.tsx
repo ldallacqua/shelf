@@ -2,6 +2,8 @@
 
 import { createContext, use, type ReactNode } from 'react'
 
+import { useIsMine } from '@/features/owner/account'
+
 import type { ShelfInfo } from './shelf-address'
 
 /**
@@ -14,7 +16,14 @@ import type { ShelfInfo } from './shelf-address'
 const ShelfContext = createContext<ShelfInfo | undefined>(undefined)
 
 export function ShelfProvider({ shelf, children }: { shelf: ShelfInfo; children: ReactNode }) {
-  return <ShelfContext value={shelf}>{children}</ShelfContext>
+  // Its own account reads its own files, with the games only it sees (spec 11.1); a public
+  // shelf's files never carry them.
+  const mine = useIsMine(shelf.handle) && shelf.files.kind === 'public'
+  return (
+    <ShelfContext value={mine ? { ...shelf, files: { kind: 'mine' } } : shelf}>
+      {children}
+    </ShelfContext>
+  )
 }
 
 /** The shelf this page is part of. Only under `/u/{handle}`. */
