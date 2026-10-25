@@ -677,7 +677,9 @@ text ──parse──▶ tree ──compile──▶ predicate over an index �
 benchmark in the unit tests (`server/library/query-speed.test.ts`) runs the stress data set
 and fails past the budget.
 
-The server runs the same code for the first screen, the API and the MCP tools.
+The server runs the same code for the first screen, the API and the MCP tools. The first
+screen carries each shelf's first boxes as the server placed them, so the browser draws them
+without filtering, sorting or grouping them again.
 
 ---
 
@@ -841,9 +843,10 @@ Neither needs **secrets**: both build against a SQLite file and the mocks.
 | Fonts | Two families, three files, Latin subset, preloaded, 58 KB together | Review |
 
 How the page gets fast: the frame comes from the edge with no server work; the first screen
-of boxes is in the HTML, so covers begin loading at once; the library file is cached by
-content; nothing 3D loads on a phone; images have their dimensions and a placeholder, so
-nothing moves.
+of boxes is in the HTML, so covers begin loading at once; the page comes alive without being
+drawn again for what only the browser knows (a phone's size, shelves folded on this device),
+where it changes nothing on the screen; the library file is cached by content; nothing 3D
+loads on a phone; images have their dimensions and a placeholder, so nothing moves.
 
 The React Compiler is on. It memoizes components automatically, which matters most for a long
 list reacting to filter changes.
@@ -1027,6 +1030,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Speed | **The library comes alive on a phone without being drawn twice, and without arranging its first screen again.** `useTooSmallFor3d` answers only while 3D is asked for (the D key and the 3D button ask `matchMedia` at the moment instead); nothing folded is the very set the server drew with, not a new empty one; and each shelf's outline carries its first boxes as the server placed them (`boxes`: a slug, and which copy stands), so `firstScreenShelves` looks them up. | Profiled at 8 times on a phone's profile, with React's own tracks (`next build --profile`) and source maps: the window's size, which the server cannot know, made React draw the whole library again synchronously the moment it hydrated, to hide a 3D button that CSS already hid; the new empty set did the same to every shelf's fold; and the twelve boxes that came with the page were filtered, sorted and grouped again, the first sort making the language's collator right then (about 33 ms at 8 times). Lighthouse at 8 times, the middle of three: library 88 to 90 (blocked 458 to 374 ms), wall 91 to 93 (358 to 308). What remains is mostly Next.js starting up, about 175 ms of every page's blocked time, and the first screen's style and layout, about 85 ms, a third of that the 24 shelves beside the one in view and their tabs. Skipping those with `content-visibility` was weighed and left: each shelf measures its grid once it is alive, which would lay them out then, inside the same window. |
 | Sync | **"Not this game"** (spec 4.5) is `PUT /entries/{id}/game`, `rematch` in the adding service and `rematchEntry` in the store. It places the picked record as ADR 001 places any add, leaving out the entry's own records: an entry of its own takes it as its primary in place of the wrong one; a game already on the shelf, or related to one, takes the entry's copies (fed, not doubled, on the same platform and format), its hours and what it lacks of mine, and the entry goes. The sync's items name the picked record (`resolved_by` `owner`). `FindIt` moved out of the sync lists to be shared. | The owner asked to fix wrong matches without losing a copy's hours, which removing and adding again lost. Folding as a sync would have keeps "one game, one entry" true. Only a row still waiting offers it: a placed row is not in the list read again after, so it could not be shown as the new game. |
 | Sync | **A placed game stays on the placing page** (spec 4.5) for the rest of the visit, its status a pressed `ToggleChip`; the page keeps the statuses given (`given`) beside the list it was sent, and the tally moves from each game's last status. Undo of many puts each back to what it was, one write per status. | The owner, having used it: a wrong status, or a game not yet rated, vanished with it. Reading the list again on the next visit is what takes placed games away, so the server's answer did not change. |
 | Sync | **Setting a new shelf up** (spec 4.6) is a page of its own, `/account/start`, where sign-up leads. Its first step is the account page's platform cards (`PlatformCards`, split out of `Platforms`), and Steam's sign-in carries the page it began on (`back=start`) in the address Steam signs; its steps are read from `GET /me/tally`. On the shelf, the way to placing unsorted games is one line under the status row whenever any wait (`PlaceWaiting`, counted by `unsortedOnShelf`), in place of a button shown only while Unsorted was pressed. | A new account landed on an empty shelf with nothing to say what came next, and the owner, looking for the placing page, found it only by pressing Unsorted, which on a phone is past the row's edge. One set of cards in two places keeps linking the same everywhere. The return address is Steam's signature's subject, so the page to come back to cannot be changed on the way, and an unknown one is the account page. The tally alone is a count per status; the unsorted list would send every waiting game for two numbers. |

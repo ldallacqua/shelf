@@ -14,12 +14,17 @@ import { COLLAPSED_KEY } from './collapsed-script'
 
 const NONE: ReadonlySet<string> = new Set()
 
+/**
+ * Nothing folded is the same set the server draws with, not one equal to it:
+ * a new empty set would redraw every shelf's fold the moment the page came alive.
+ */
 const read = (): ReadonlySet<string> => {
   try {
     const stored: unknown = JSON.parse(window.localStorage.getItem(COLLAPSED_KEY) ?? '[]')
-    return Array.isArray(stored)
-      ? new Set(stored.filter((key): key is string => typeof key === 'string'))
-      : NONE
+    const keys = Array.isArray(stored)
+      ? stored.filter((key): key is string => typeof key === 'string')
+      : []
+    return keys.length > 0 ? new Set(keys) : NONE
   } catch {
     return NONE
   }

@@ -324,10 +324,10 @@ describe('the first screen', () => {
     expect(first.version).toBe(9)
     expect(first.stats).toEqual({ games: 5, finished: 2, hours: 40 })
     expect(first.outline).toEqual([
-      { key: 'platform:167', count: 1, known: 1 },
-      { key: 'platform:130', count: 2, known: 1 },
-      { key: 'platform:6', count: 2, known: 0 },
-      { key: 'platform:none', count: 1, known: 0 },
+      { key: 'platform:167', count: 1, boxes: [{ slug: 'astro-bot', copy: 0 }] },
+      { key: 'platform:130', count: 2, boxes: [{ slug: 'celeste', copy: 0 }] },
+      { key: 'platform:6', count: 2, boxes: [] },
+      { key: 'platform:none', count: 1, boxes: [] },
     ])
     expect(first.games.map((item) => item.title)).toEqual(['Astro Bot', 'Celeste'])
   })
@@ -385,7 +385,7 @@ describe('the first screen', () => {
     // Hades comes for the Switch shelf. It also belongs on the PC shelf, but
     // that shelf's first box is not known yet, so it must not appear there.
     const first = buildFirstScreen(library, { group: 'platform' }, 'en', 3)
-    const shelves = firstScreenShelves(first, 'en')
+    const shelves = firstScreenShelves(first)
     expect(shelves.map((shelf) => [shelf.key, titles(shelf), shelf.total])).toEqual([
       ['platform:167', ['Astro Bot'], 1],
       ['platform:130', ['Celeste', 'Hades'], 2],
@@ -397,7 +397,7 @@ describe('the first screen', () => {
   it('draws every shelf from the first paint, named, even with none of its boxes yet', () => {
     for (const group of ['platform', 'status', 'year', 'none'] as const) {
       const full = arrangeLibrary(all, names, { group }, 'en')
-      const first = firstScreenShelves(buildFirstScreen(library, { group }, 'en', 1), 'en')
+      const first = firstScreenShelves(buildFirstScreen(library, { group }, 'en', 1))
       expect(first.map(({ items: _items, total: _total, ...id }) => id)).toEqual(
         full.map(({ items: _items, ...id }) => id),
       )
@@ -432,14 +432,22 @@ describe('the first screen', () => {
     expect(keepFirstScreen(file, first)).toBe(file)
   })
 
-  it('matches the full arrangement box for box', () => {
+  it('matches the full arrangement box for box, each with the copy that stands there', () => {
     for (const group of ['platform', 'status', 'year', 'none'] as const) {
       const full = arrangeLibrary(all, names, { group }, 'en')
-      const first = firstScreenShelves(buildFirstScreen(library, { group }, 'en', 4), 'en')
+      const first = firstScreenShelves(buildFirstScreen(library, { group }, 'en', 4))
       for (const shelf of first) {
         const whole = full.find((item) => item.key === shelf.key)
-        expect(titles(shelf)).toEqual(titles(whole ?? { items: [] }).slice(0, shelf.items.length))
+        expect(shelf.items).toEqual((whole?.items ?? []).slice(0, shelf.items.length))
       }
     }
+  })
+
+  it('stands a game’s later copy on its own platform’s shelf', () => {
+    // Hades is on the Switch first and the PC second: on the PC shelf, the PC copy stands.
+    const first = buildFirstScreen(library, { group: 'platform' }, 'en', 5)
+    const pc = firstScreenShelves(first).find((shelf) => shelf.key === 'platform:6')
+    const hadesThere = pc?.items.find((item) => item.game.slug === hades.slug)
+    expect(hadesThere?.copy).toBe(hades.copies.find((copy) => copy.platform === 6))
   })
 })

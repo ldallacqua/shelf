@@ -36,16 +36,22 @@ const subscribeToSmall = (listener: () => void) => {
 }
 
 /**
- * Whether the window is too small for the 3D shelf, as it is now: turning a
- * tablet or resizing a window can change it. The server cannot tell: it says no.
+ * Whether the window is too small for the 3D shelf `asked` for, as it is now:
+ * turning a tablet or resizing a window can change it. The server cannot
+ * tell: it says no. Neither does the browser while 2D is asked for, when the
+ * answer changes nothing: on a phone it is yes, and asking it there redrew
+ * the whole library the moment it came alive.
  */
-export function useTooSmallFor3d(): boolean {
+export function useTooSmallFor3d(asked: Dimension): boolean {
   return useSyncExternalStore(
     subscribeToSmall,
-    () => window.matchMedia(TOO_SMALL_FOR_3D).matches,
+    () => asked === '3d' && window.matchMedia(TOO_SMALL_FOR_3D).matches,
     () => false,
   )
 }
+
+/** The same, at this moment, for a key or a button: nothing is drawn from it. */
+export const tooSmallFor3dNow = (): boolean => window.matchMedia(TOO_SMALL_FOR_3D).matches
 
 /** How boxes stand on the shelf on this device, and a way to change it. */
 export function useDensity(): [Density, (value: Density) => void] {
