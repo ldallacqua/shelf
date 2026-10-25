@@ -86,6 +86,7 @@ export const fold = (text: string): string =>
 const listOf = (): Record<ListKey, Map<string, IndexValue>> => ({
   status: new Map(),
   owned: new Map(),
+  wanted: new Map(),
   format: new Map(),
   tag: new Map(),
   has: new Map(),
@@ -221,6 +222,12 @@ export const buildIndex = (library: Library): LibraryIndex => {
       if (!platform) continue
       add(lists.platform, platform.key, platform.name, size, at)
       add(lists.platform, platform.family, platform.family, size, at)
+    }
+    for (const id of game.wanted ?? []) {
+      const platform = platforms.get(id)
+      if (!platform) continue
+      add(lists.wanted, platform.key, platform.name, size, at)
+      add(lists.wanted, platform.family, platform.family, size, at)
     }
     for (const [key, field] of IGDB_LISTS) {
       for (const id of game[field]) {

@@ -62,6 +62,8 @@ export const addInput = z.object({
   rating: z.number().int().min(0).max(100).optional(),
   tags: z.array(z.string().trim().min(1).max(40)).max(MAX_TAGS).optional(),
   completedOn: z.iso.date().optional(),
+  /** On the wishlist, the platforms I want it on (spec 7.5). */
+  wanted: z.array(z.number().int().positive()).max(20).optional(),
   /** My answer to the proposal: fold it in, or keep it apart. Absent: the default. */
   grouping: z.enum(['join', 'separate']).optional(),
 })

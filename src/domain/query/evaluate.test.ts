@@ -126,6 +126,7 @@ const silksong = testGame('Hollow Knight: Silksong', {
   status: 'wishlist',
   addedOn: '2025-01-03',
   platforms: [130, 6, 14],
+  wanted: [130],
 })
 const halo = testGame('Halo: Reach', {
   ...ownedOn(11),
@@ -188,6 +189,13 @@ describe('each filter on its own (spec 5.1)', () => {
     // "xbox" is the family, which holds the first Xbox too.
     expect(matching('owned:xbox')).toEqual([HALO])
     expect(matching('owned:switch,pc')).toEqual([ZELDA, TOMB, POKEMON])
+  })
+
+  it('wanted on, by platform or by family, apart from owned (spec 7.5)', () => {
+    expect(matching('wanted:switch')).toEqual([SILKSONG])
+    expect(matching('wanted:nintendo')).toEqual([SILKSONG])
+    expect(matching('wanted:pc')).toEqual([])
+    expect(matching('owned:switch')).not.toContain(SILKSONG)
   })
 
   it('format: a game with a disc and a download is both', () => {

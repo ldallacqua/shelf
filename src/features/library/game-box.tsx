@@ -15,13 +15,16 @@ import type { Density } from './preferences'
 /** What a box is drawn as when nothing says otherwise: a game with no platform known. */
 const PLAIN_SHAPE: CaseShape = 'keepCase'
 
-/** The platform whose case a box is drawn in: the copy's, or the first the game came out on. */
+/**
+ * The platform whose case a box is drawn in: the copy's; for a game not owned,
+ * the first I want it on (spec 7.5), or else the first it came out on.
+ */
 export const platformFor = (
   item: ShelfItem,
   platforms: ReadonlyMap<number, LibraryPlatform>,
 ): LibraryPlatform | undefined => {
   if (item.copy) return platforms.get(item.copy.platform)
-  for (const id of item.game.platforms) {
+  for (const id of [...(item.game.wanted ?? []), ...item.game.platforms]) {
     const platform = platforms.get(id)
     if (platform) return platform
   }

@@ -133,6 +133,14 @@ describe('the library file', () => {
     expect(file.version).toBe(42)
   })
 
+  it('carries the platforms a wishlist game is wanted on, last, and only when there are any', () => {
+    const wished = { ...bare, status: 'wishlist' as const, wanted: [130, 6] }
+    const file = encodeLibrary({ ...library, games: [wished, bare] })
+    expect(decodeLibrary(file).games).toEqual([wished, bare])
+    expect(file.games[0]).toHaveLength(29)
+    expect(file.games[1]).toHaveLength(28)
+  })
+
   it('numbers each status as it always has, a new one after the rest', () => {
     const codes = statuses.map((status) => {
       const file = encodeLibrary({ ...library, games: [{ ...bare, status }] })

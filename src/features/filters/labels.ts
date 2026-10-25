@@ -6,6 +6,7 @@ import {
   isDateKey,
   isNumberKey,
   platformFamilies,
+  platformKeys,
   type FilterKey,
   type ListKey,
 } from '@/domain/query/keys'
@@ -29,8 +30,7 @@ export const keyLabel = (key: FilterKey, { t }: Words): string => t(`keys.${key}
 
 /** Whether a value's name comes from IGDB, in English, rather than from our own words. */
 export const isIgdbName = (key: ListKey, word: string): boolean =>
-  !closedValues[key] &&
-  !((key === 'owned' || key === 'platform') && platformFamilies.includes(word))
+  !closedValues[key] && !(platformKeys.includes(key) && platformFamilies.includes(word))
 
 /** A value as the panel and the chips show it. */
 export const valueLabel = (
@@ -51,6 +51,7 @@ export const valueLabel = (
     case 'is':
       return t(`values.is.${word as 'featured'}`)
     case 'owned':
+    case 'wanted':
     case 'platform':
       if (platformFamilies.includes(word)) return t(`values.family.${word as 'playstation'}`)
   }

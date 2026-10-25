@@ -53,9 +53,13 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
   const library = useTranslations('Library')
 
   const owned = new Set(game.copies.map((copy) => `${copy.platform}:${copy.format}`))
-  const addable = [...new Set([...game.platforms, ...game.copies.map((copy) => copy.platform)])]
-    .filter((id) => platforms.has(id))
-    .some((id) => formats.some((format) => !owned.has(`${id}:${format}`)))
+  const known = new Set([...game.platforms, ...game.copies.map((copy) => copy.platform)])
+  // In the editor's order: the library's platforms are in shelf order already.
+  const choices = [...platforms.values()].filter((platform) => known.has(platform.id))
+  const addable = choices.some((platform) =>
+    formats.some((format) => !owned.has(`${platform.id}:${format}`)),
+  )
+  const wishlist = game.status === 'wishlist'
   const label = 'text-sm font-medium'
   const field = 'block h-10 rounded-control pointer-coarse:h-11'
 
@@ -112,63 +116,89 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
           ) : null}
         </div>
 
-        <fieldset className="grid gap-2">
-          <legend className="mb-2 text-sm font-semibold">{words('owned')}</legend>
-          {game.copies.length === 0 ? (
-            <p className="text-sm">{library('shelf.notOwned')}</p>
-          ) : (
-            <ul className="grid gap-2">
-              {game.copies.map((copy, index) => (
-                <li
-                  key={`${copy.platform}:${copy.format}`}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
-                >
-                  <span className="min-w-28 flex-1 font-medium">
-                    {platforms.get(copy.platform)?.name}
-                  </span>
+        {wishlist && choices.length > 0 ? (
+          <fieldset className="grid gap-2">
+            <legend className="mb-2 text-sm font-semibold">{t('wanted')}</legend>
+            <div className="flex flex-wrap gap-2">
+              {choices.map((platform, index) => {
+                const wanted = game.wanted?.includes(platform.id)
+                return (
                   <Ghost
+                    key={platform.id}
                     index={9 + index}
-                    className="inline-flex w-fit items-center gap-0.5 rounded-control border border-transparent p-0.5"
+                    className={cn(
+                      'inline-flex min-h-10 items-center gap-1.5 rounded-full border border-transparent px-3.5 text-sm pointer-coarse:min-h-11',
+                      wanted && 'font-semibold',
+                    )}
                   >
-                    {formats.map((format) => (
-                      <span
-                        key={format}
-                        className="inline-flex h-9 min-w-9 items-center px-3 font-medium whitespace-nowrap pointer-coarse:h-10"
-                      >
-                        {library(`format.${format}`)}
-                      </span>
-                    ))}
+                    {wanted ? <span className="-ml-0.5 size-4 flex-none" /> : null}
+                    {platform.name}
                   </Ghost>
-                  <span className="size-10 flex-none pointer-coarse:size-11" />
-                </li>
-              ))}
-            </ul>
-          )}
-          {addable ? (
-            <div className="mt-1 flex flex-wrap items-end gap-2">
-              <div className="grid min-w-44 flex-1 gap-1.5">
-                <span className={label}>{t('copyPlatform')}</span>
-                <Ghost index={10} className={field} />
-              </div>
-              <div className="grid min-w-32 gap-1.5">
-                <span className={label}>{t('copyFormat')}</span>
+                )
+              })}
+            </div>
+          </fieldset>
+        ) : null}
+
+        {wishlist && game.copies.length === 0 ? null : (
+          <fieldset className="grid gap-2">
+            <legend className="mb-2 text-sm font-semibold">{words('owned')}</legend>
+            {game.copies.length === 0 ? (
+              <p className="text-sm">{library('shelf.notOwned')}</p>
+            ) : (
+              <ul className="grid gap-2">
+                {game.copies.map((copy, index) => (
+                  <li
+                    key={`${copy.platform}:${copy.format}`}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
+                  >
+                    <span className="min-w-28 flex-1 font-medium">
+                      {platforms.get(copy.platform)?.name}
+                    </span>
+                    <Ghost
+                      index={9 + index}
+                      className="inline-flex w-fit items-center gap-0.5 rounded-control border border-transparent p-0.5"
+                    >
+                      {formats.map((format) => (
+                        <span
+                          key={format}
+                          className="inline-flex h-9 min-w-9 items-center px-3 font-medium whitespace-nowrap pointer-coarse:h-10"
+                        >
+                          {library(`format.${format}`)}
+                        </span>
+                      ))}
+                    </Ghost>
+                    <span className="size-10 flex-none pointer-coarse:size-11" />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {addable ? (
+              <div className="mt-1 flex flex-wrap items-end gap-2">
+                <div className="grid min-w-44 flex-1 gap-1.5">
+                  <span className={label}>{t('copyPlatform')}</span>
+                  <Ghost index={10} className={field} />
+                </div>
+                <div className="grid min-w-32 gap-1.5">
+                  <span className={label}>{t('copyFormat')}</span>
+                  <Ghost
+                    index={11}
+                    className="flex h-10 items-center gap-2 rounded-control border border-transparent px-3 text-sm pointer-coarse:h-11"
+                  >
+                    {library('format.physical')}
+                    <span className="size-4 flex-none" />
+                  </Ghost>
+                </div>
                 <Ghost
-                  index={11}
-                  className="flex h-10 items-center gap-2 rounded-control border border-transparent px-3 text-sm pointer-coarse:h-11"
+                  index={12}
+                  className="inline-flex h-10 items-center rounded-control border border-transparent px-4 text-sm font-medium whitespace-nowrap pointer-coarse:h-11"
                 >
-                  {library('format.physical')}
-                  <span className="size-4 flex-none" />
+                  {t('addCopy')}
                 </Ghost>
               </div>
-              <Ghost
-                index={12}
-                className="inline-flex h-10 items-center rounded-control border border-transparent px-4 text-sm font-medium whitespace-nowrap pointer-coarse:h-11"
-              >
-                {t('addCopy')}
-              </Ghost>
-            </div>
-          ) : null}
-        </fieldset>
+            ) : null}
+          </fieldset>
+        )}
 
         <div className="grid gap-1.5">
           <span className={label}>{fields('tags')}</span>

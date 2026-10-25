@@ -47,6 +47,8 @@ export const describeBox = (
           format: t(`format.${copy.format}`),
           status,
         })
-      : t('box.notOwned', { title, status })
+      : game.wanted?.length && platform
+        ? t('box.wanted', { title, status, platform: platform.short, more: game.wanted.length - 1 })
+        : t('box.notOwned', { title, status })
   return owned > 1 ? t('box.alsoOn', { description: base, count: owned }) : base
 }

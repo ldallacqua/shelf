@@ -59,6 +59,8 @@ export type LibraryGame = {
   publishers: number[]
   /** Positions in `names.tag`. */
   tags: number[]
+  /** On the wishlist, the platforms I want it on, the first standing for its case (spec 7.5). */
+  wanted?: number[]
 }
 
 export type Named = { id: number; name: string; slug: string }

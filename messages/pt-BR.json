@@ -392,6 +392,7 @@
       "titled": "{title} ({year})",
       "owned": "{title}, {platform}, {format}, {status}",
       "notOwned": "{title}, não tenho, {status}",
+      "wanted": "{title}, não tenho, {status}, quero em {platform}{more, plural, =0 {} one { e mais #} other { e mais #}}",
       "alsoOn": "{description}, tenho em {count} plataformas"
     },
     "list": {
@@ -435,6 +436,7 @@
     "rating": "Minha nota",
     "outOfTen": "de 10",
     "owned": "Tenho em",
+    "wanted": "Quero em",
     "copy": "{platform}, {format}",
     "played": "Jogado",
     "added": "Adicionado",
@@ -524,6 +526,7 @@
     "keys": {
       "status": "Status",
       "owned": "Plataforma que tenho",
+      "wanted": "Quero em",
       "format": "Formato",
       "copies": "Plataformas que tenho",
       "rating": "Minha nota",
@@ -1106,6 +1109,7 @@
     "separateChoice": "Adicionar como um jogo à parte",
     "status": "Situação",
     "owned": "Plataformas que você tem",
+    "wanted": "Quero em",
     "wishlistNone": "Um jogo da lista de desejos não precisa de plataforma.",
     "formatFor": "{platform}: físico ou digital",
     "completedOn": "Terminado em",
@@ -1202,6 +1206,7 @@
     "copyPlatform": "Plataforma",
     "copyFormat": "Formato",
     "addCopy": "Adicionar uma cópia",
+    "wanted": "Quero em",
     "completedOn": "Terminado em"
   },
   "Fields": {

@@ -392,6 +392,7 @@
       "titled": "{title} ({year})",
       "owned": "{title}, {platform}, {format}, {status}",
       "notOwned": "{title}, not owned, {status}",
+      "wanted": "{title}, not owned, {status}, wanted on {platform}{more, plural, =0 {} other { and # more}}",
       "alsoOn": "{description}, owned on {count} platforms"
     },
     "list": {
@@ -435,6 +436,7 @@
     "rating": "My rating",
     "outOfTen": "out of 10",
     "owned": "Owned on",
+    "wanted": "Wanted on",
     "copy": "{platform}, {format}",
     "played": "Played",
     "added": "Added",
@@ -524,6 +526,7 @@
     "keys": {
       "status": "Status",
       "owned": "Platform owned",
+      "wanted": "Wanted on",
       "format": "Format",
       "copies": "Platforms owned",
       "rating": "My rating",
@@ -1106,6 +1109,7 @@
     "separateChoice": "Add it as a game of its own",
     "status": "Status",
     "owned": "Platforms owned",
+    "wanted": "Want it on",
     "wishlistNone": "A wishlist game needs no platform.",
     "formatFor": "{platform}: physical or digital",
     "completedOn": "Completed on",
@@ -1202,6 +1206,7 @@
     "copyPlatform": "Platform",
     "copyFormat": "Format",
     "addCopy": "Add a copy",
+    "wanted": "Want it on",
     "completedOn": "Completed on"
   },
   "Fields": {

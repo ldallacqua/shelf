@@ -127,6 +127,11 @@ export const apiNewGame = z
     rating: z.number().min(0).max(10).optional().describe('Out of ten, in half steps'),
     tags: z.array(z.string().min(1).max(40)).max(20).optional(),
     completedOn: z.iso.date().optional(),
+    wanted: z
+      .array(platformId)
+      .max(20)
+      .optional()
+      .describe('For a wishlist game, the platforms it is wanted on, by IGDB id'),
     grouping: z
       .enum(['join', 'separate'])
       .optional()
@@ -185,6 +190,14 @@ export const apiUndoAdditions = z
 export const apiGamePatch = z
   .object({
     status: z.enum(statuses).optional(),
+    wanted: z
+      .array(platformId)
+      .max(20)
+      .nullable()
+      .optional()
+      .describe(
+        'On the wishlist, the platforms it is wanted on, by IGDB id; kept only while it is on the wishlist',
+      ),
     rating: z.number().min(0).max(10).nullable().optional().describe('Out of ten; null clears it'),
     completedOn: z.iso.date().nullable().optional(),
     notes: z.string().max(MAX_NOTES).nullable().optional(),
@@ -233,6 +246,9 @@ export const apiOwnerGame = z
     slug: z.string(),
     title: z.string(),
     status: z.enum(statuses),
+    wanted: z
+      .array(platformId)
+      .describe('On the wishlist, the platforms it is wanted on, by IGDB id; empty otherwise'),
     rating: z.number().min(0).max(10).optional().describe('Out of ten'),
     completedOn: z.iso.date().optional(),
     notes: z

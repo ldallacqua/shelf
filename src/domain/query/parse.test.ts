@@ -22,6 +22,12 @@ describe('the filter language, as the spec writes it (5.3)', () => {
     expect(tree('genre:rpg')).toEqual(list('genre', 'rpg'))
   })
 
+  it('reads the platforms a wishlist game is wanted on as a key of its own (spec 7.5)', () => {
+    expect(tree('status:wishlist wanted:switch,nintendo')).toEqual(
+      and(list('status', 'wishlist'), list('wanted', 'switch', 'nintendo')),
+    )
+  })
+
   it('reads a comma as or, within one key', () => {
     expect(tree('genre:rpg,adventure')).toEqual(list('genre', 'rpg', 'adventure'))
   })

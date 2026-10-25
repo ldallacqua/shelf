@@ -57,6 +57,8 @@ type GameRow = [
   developers: number[],
   publishers: number[],
   tags: number[],
+  // Last, and only when there are any: a file without them reads as it always did.
+  wanted?: number[],
 ]
 
 type NamedRow = [id: number, name: string, slug: string]
@@ -110,7 +112,7 @@ const unpackColors = (packed: string): Palette | undefined => {
 
 const position = <T>(list: readonly T[], value: T): number => Math.max(0, list.indexOf(value))
 
-const encodeGame = (game: LibraryGame): GameRow => [
+const baseRow = (game: LibraryGame): GameRow => [
   game.slug,
   game.title,
   position(statusCodes, game.status),
@@ -144,6 +146,12 @@ const encodeGame = (game: LibraryGame): GameRow => [
   game.publishers,
   game.tags,
 ]
+
+const encodeGame = (game: LibraryGame): GameRow => {
+  const row = baseRow(game)
+  if (game.wanted?.length) row.push(game.wanted)
+  return row
+}
 
 const decodeGame = (row: GameRow): LibraryGame => {
   const game: LibraryGame = {
@@ -185,6 +193,7 @@ const decodeGame = (row: GameRow): LibraryGame => {
   const colors = unpackColors(row[14])
   if (colors) game.colors = colors
   if (row[15]) game.hash = row[15]
+  if (row[28]?.length) game.wanted = row[28]
   return game
 }
 

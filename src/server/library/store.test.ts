@@ -32,8 +32,10 @@ import {
   restoreEntry,
   saveGame,
   savePlatforms,
+  patchEntry,
   setManualMinutes,
   setPrimary,
+  setStatuses,
   setTags,
   updateEntry,
 } from '@/server/library/store'
@@ -131,6 +133,16 @@ describe('createEntry', () => {
   it('allows a wishlist game with no copies', async () => {
     await createEntry(db, me, { primaryGameId: hades, status: 'wishlist' })
     expect((await readLibrary(db, me)).games[0]).toMatchObject({ status: 'wishlist', copies: [] })
+  })
+
+  it('keeps the platforms a wishlist game is wanted on, and only on the wishlist (spec 7.5)', async () => {
+    await createEntry(db, me, { primaryGameId: hades, status: 'wishlist', wanted: [SWITCH] })
+    await createEntry(db, me, { primaryGameId: skyrim, status: 'backlog', wanted: [PC] })
+    const games = (await readLibrary(db, me)).games
+    expect(games.find((each) => each.slug === 'hades')?.wanted).toEqual([SWITCH])
+    expect(games.find((each) => each.slug === 'the-elder-scrolls-v-skyrim')).not.toHaveProperty(
+      'wanted',
+    )
   })
 
   it('refuses a second entry for a record that already has one', async () => {
@@ -280,6 +292,27 @@ describe('changing an entry', () => {
     await updateEntry(db, me, entry, { status: 'completed', rating: 95, notes: '  Great.  ' })
     const [row] = await db.select().from(entries).where(eq(entries.id, entry))
     expect(row).toMatchObject({ status: 'completed', rating: 95, notes: 'Great.' })
+  })
+
+  it('lets what was wanted go once a game leaves the wishlist (spec 7.5)', async () => {
+    const wanted = async () => (await db.select().from(entries).where(eq(entries.id, entry)))[0]
+    await updateEntry(db, me, entry, { status: 'wishlist', wanted: [SWITCH, SWITCH, PC] })
+    expect((await wanted())?.wanted).toEqual([SWITCH, PC])
+    await updateEntry(db, me, entry, { status: 'backlog' })
+    expect((await wanted())?.wanted).toBeNull()
+
+    await patchEntry(db, me, entry, { mine: { status: 'wishlist', wanted: [SWITCH] } })
+    expect((await readLibrary(db, me)).games[0]?.wanted).toEqual([SWITCH])
+    await patchEntry(db, me, entry, { mine: { wanted: null } })
+    expect((await wanted())?.wanted).toBeNull()
+
+    await patchEntry(db, me, entry, { mine: { wanted: [PC] } })
+    await setStatuses(db, me, [entry], 'playing')
+    expect((await wanted())?.wanted).toBeNull()
+  })
+
+  it('refuses a wish that is not platform ids', async () => {
+    expect(() => updateEntry(db, me, entry, { wanted: [1.5] })).toThrow(LibraryError)
   })
 
   it('clears a rating with null', async () => {
