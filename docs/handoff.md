@@ -4,7 +4,32 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: stores and consoles are named in words, with a few pictures where words are slow (25 Oct 2026)
+## Now: five changes written into the spec, and none built (25 Oct 2026)
+
+The owner asked, in Portuguese, what status a game with no end gets (Path of Exile, 200 hours,
+no longer played), where games they may play one day go, apart from the backlog, and how to
+hide a gift from the shelf without deleting it. Then, written down and not built: "sim
+escreve no spec", and "Escreve tudo essas coisas no spec, mas não constroi nada ainda", adding
+a button that hides every Erotic and Adults Only game, remembered, and a game only they see,
+as Steam's private games; and, of Tsukihime on their wishlist, to say they want it on Switch,
+not PS4.
+
+- **In the spec, each marked "Not built yet",** with the owner's words: Someday and Retired
+  (3.12), hiding adult games (3.13), archiving a game (7.4), wishing for a game on one
+  platform (7.5), and a game only I see (11.1). Section 8 says what the data gains, and
+  section 19's decisions 15 to 24 are the defaults I chose for them: confirm those with the
+  owner before building.
+- **The other sections still say what is built.** The status lists in 3.2, 3.7, 4.5, 5.1 and 6,
+  the add form in 4.1, the access table in 11 and the shortcuts in 3.11 change when each is
+  built; the new sections say how.
+- **For whoever builds them:** ESRB's Adults Only needs IGDB's age ratings, which are not
+  fetched or cached yet (`src/server/igdb`, then `pnpm fixtures:fetch` by hand for fixtures that
+  have one). Hiding adult games is a device choice, so it goes through `preferences.ts` and is
+  on `<html>` before the first paint, as 2D or 3D is. A private game must be absent from the
+  public library file and every public answer, and reach its own account by `/api/v1/me/…`,
+  as a private shelf does.
+
+## Just before: stores and consoles are named in words, with a few pictures where words are slow (25 Oct 2026)
 
 The owner asked (in Portuguese) for Steam, Nintendo, PlayStation and Xbox icons where they
 apply, and pictures where they help, "without going over the top", researched first. The
@@ -28,7 +53,7 @@ sem os logos das marcas."
   served and verified beside a checkout that holds 3300: `BASE_URL=http://localhost:3311 pnpm
   verify --skip-browser`.
 
-## Just before: every browser test passes, and the library is back to 90 (24 Oct 2026)
+## Before: every browser test passes, and the library is back to 90 (24 Oct 2026)
 
 The owner, of the library at 89 on Lighthouse: "yes look into it. but apart from that. run
 all the browser tests too to see if these changes broke anything."
@@ -52,7 +77,7 @@ all the browser tests too to see if these changes broke anything."
   changes without logos, approved and built since (above).
 - **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
-## Before: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)
+## Earlier: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)
 
 The owner: "Yes, build 'Não é este jogo' on the placing page, to fix games the sync matched
 wrong while keeping the copy and the hours." [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in)
@@ -71,7 +96,7 @@ says what it does; architecture section 25's first row, why it is built so.
 - **Seen with the test doubles** (headless Chromium, `serve:test`): see the pull request.
 - **Not seen:** the owner's own list on production; the click is theirs.
 
-## Earlier: a placed game stays on the placing page (24 Oct 2026)
+## Earlier still: a placed game stays on the placing page (24 Oct 2026)
 
 The owner, having used the placing page: "não quero que o jogo desapareça depois de eu colocar
 um status nele imediatamente [...] Se eu atualizar a pagina e voltar pro organize seus jogos ai
@@ -87,7 +112,7 @@ beleza". [Spec 4.5](spec.md#45-placing-what-a-sync-brought-in) says what it does
 - **Lighthouse from #34 still to measure on a quiet machine:** verify read the library at 89
   while the machine was busy; main, measured right after, read 84, and the branch again 86.
 
-## Earlier still: a new shelf is set up on a page of its own (24 Oct 2026)
+## Before that: a new shelf is set up on a page of its own (24 Oct 2026)
 
 The owner asked for an onboarding page, and for something saying how many games have no
 status, "mas não quero que vc fique adicionando botões a torto e a direito". Researched first
@@ -130,7 +155,7 @@ first row.
   remove it and add the right one by hand, which loses the source's hours.
 - **Lighthouse was not measured on a quiet machine:** see the section above.
 
-## Before that: the page for placing a sync's games is built (24 Oct 2026)
+## Done: the page for placing a sync's games is built (24 Oct 2026)
 
 The owner's ask from 23 Oct 2026 (below, "Next: the review of unsorted games"), started with
 "Usa o de 0-10 que a gente já tem. Pode começar": the rating is the editor's, out of ten, not
