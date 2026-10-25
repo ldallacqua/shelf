@@ -189,6 +189,23 @@ describe('GameBox (spec 3.2: state is never shown by color alone)', () => {
     expect(box(item()).querySelector('.game-seal')).toBeNull()
   })
 
+  it('wears a square tag when retired, and says so (spec 3.12)', () => {
+    const retired = box(item({ status: 'retired' }))
+    expect(retired.querySelector('.game-tag')).not.toBeNull()
+    expect(retired.querySelector('.game-seal')).toBeNull()
+    expect(retired).toHaveAccessibleName('Hades (2020), PS5, Physical, Retired')
+  })
+
+  it('has no tag otherwise', () => {
+    expect(box(item({ status: 'completed' })).querySelector('.game-tag')).toBeNull()
+  })
+
+  it('stands set back when someday, and says so (spec 3.12)', () => {
+    const someday = box(item({ status: 'someday' }))
+    expect(someday).toHaveAttribute('data-status', 'someday')
+    expect(someday).toHaveAccessibleName('Hades (2020), PS5, Physical, Someday')
+  })
+
   it('shows a live light when playing', () => {
     expect(box(item({ status: 'playing' })).querySelector('.game-live')).not.toBeNull()
   })

@@ -110,4 +110,21 @@ describe('its stats', () => {
     const { stats: unstarted } = trophyWall(testLibrary([testGame('Balatro')]), 2026)
     expect(unstarted.finishedShare).toBeUndefined()
   })
+
+  it('counts a retired game’s hours, and it in nothing finished (spec 3.12)', () => {
+    const endless = testGame('Path of Exile', { status: 'retired', minutes: 60 * 200, rating: 80 })
+    const someday = testGame('Okami', { status: 'someday' })
+    const { stats: more, years } = trophyWall(
+      testLibrary([...library.games, endless, someday], { platform: [ps5, pc] }),
+      2026,
+    )
+    expect(more.hours).toBe(stats.hours + 200)
+    expect(more.finished).toBe(stats.finished)
+    // It had no end to reach: the share of started games finished is as it was.
+    expect(more.finishedShare).toBeCloseTo(3 / 5)
+    expect(more.longest).toEqual(stats.longest)
+    expect(years.flatMap((year) => year.trophies).map((trophy) => trophy.slug)).not.toContain(
+      'path-of-exile',
+    )
+  })
 })

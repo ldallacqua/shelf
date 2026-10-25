@@ -206,6 +206,7 @@ const BOX_FRAGMENT = /* glsl */ `
   const float COMPLETED = 2.0;
   const float DROPPED = 3.0;
   const float WISHLIST = 4.0;
+  const float RETIRED = 6.0;
 
   // The 2D placeholder, as CSS draws it: two soft spots of color over a base.
   vec3 wash(vec2 uv) {
@@ -254,6 +255,20 @@ const BOX_FRAGMENT = /* glsl */ `
     return vec4(mix(gold, vec3(0.23, 0.16, 0.02), rim * 0.8), 1.0 - smoothstep(7.6, 8.0, r));
   }
 
+  // A matte square tag where the seal sits, as the 2D shelf's for a retired game.
+  vec4 tag(vec2 mm) {
+    vec2 d = abs(mm - vec2(uSize.x - 9.0, uSize.y - 9.0));
+    float r = max(d.x, d.y);
+    if (r > 7.0) return vec4(0.0);
+    // An infinity sign drawn as two small rings side by side.
+    vec2 p = mm - vec2(uSize.x - 9.0, uSize.y - 9.0);
+    float ring = min(abs(length(p - vec2(-2.2, 0.0)) - 1.8), abs(length(p - vec2(2.2, 0.0)) - 1.8));
+    float ink = 1.0 - smoothstep(0.35, 0.75, ring);
+    vec3 face = mix(vec3(0.16, 0.18, 0.22), vec3(0.93, 0.94, 0.96), ink);
+    float rim = smoothstep(5.8, 6.6, r);
+    return vec4(mix(face, vec3(0.05, 0.06, 0.08), rim * 0.8), 1.0 - smoothstep(6.6, 7.0, r));
+  }
+
   // The count on the foot of a game owned on more than one platform.
   vec4 owned(vec2 mm, float count) {
     if (count < 1.5) return vec4(0.0);
@@ -300,6 +315,9 @@ const BOX_FRAGMENT = /* glsl */ `
       color *= mix(0.72, 1.0, smoothstep(0.0, uSize.x * 0.035, mm.x));
       if (abs(status - COMPLETED) < 0.5) {
         vec4 s = seal(mm);
+        color = mix(color, s.rgb, s.a);
+      } else if (abs(status - RETIRED) < 0.5) {
+        vec4 s = tag(mm);
         color = mix(color, s.rgb, s.a);
       }
       vec4 count = owned(mm, vState.z);

@@ -366,7 +366,9 @@
     "status": {
       "playing": "Jogando",
       "backlog": "Na fila",
+      "someday": "Algum dia",
       "completed": "Zerado",
+      "retired": "Aposentado",
       "dropped": "Abandonado",
       "wishlist": "Lista de desejos",
       "unsorted": "A definir"

@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Placing, UnsortedGame } from '@/domain/library/placing'
+import { emptyTally, type Placing, type UnsortedGame } from '@/domain/library/placing'
 import type { AccountState } from '@/features/owner/account'
 import type { Notice } from '@/features/shell/notices'
 import { renderWithIntl } from '@/test/render'
@@ -54,7 +54,7 @@ const PLACING: Placing = {
     game('hades', 'Hades', 720, { year: 2020 }),
     game('portal', 'Portal', 0),
   ],
-  tally: { playing: 2, backlog: 5, completed: 1, dropped: 0, wishlist: 0, unsorted: 3 },
+  tally: { ...emptyTally(), playing: 2, backlog: 5, completed: 1, unsorted: 3 },
   platforms: [{ id: 6, key: 'pc', name: 'PC (Microsoft Windows)', short: 'PC' }],
 }
 

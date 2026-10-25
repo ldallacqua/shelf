@@ -111,8 +111,36 @@ describe('StatusRow', () => {
     }
     const { rerender } = render(intl(<StatusRow value="all" counts={counts} onChange={() => {}} />))
     expect(screen.queryByRole('radio', { name: /Unsorted/ })).toBeNull()
-    rerender(intl(<StatusRow value="all" counts={counts} unsortedOnShelf onChange={() => {}} />))
+    rerender(
+      intl(<StatusRow value="all" counts={counts} onShelf={['unsorted']} onChange={() => {}} />),
+    )
     expect(screen.getByRole('radio', { name: 'Unsorted, 0 games' })).toBeInTheDocument()
+  })
+
+  it('shows Someday and Retired only on a shelf that uses them, in their place in the order', () => {
+    const counts = { playing: 6, backlog: 92, completed: 79, dropped: 20, wishlist: 33 }
+    const { rerender } = render(intl(<StatusRow value="all" counts={counts} onChange={() => {}} />))
+    expect(screen.queryByRole('radio', { name: /Someday|Retired/ })).toBeNull()
+    rerender(
+      intl(
+        <StatusRow
+          value="all"
+          counts={{ ...counts, someday: 4, retired: 0 }}
+          onShelf={['someday', 'retired']}
+          onChange={() => {}}
+        />,
+      ),
+    )
+    expect(screen.getAllByRole('radio').map((radio) => radio.textContent)).toEqual([
+      'All',
+      'Playing6',
+      'Backlog92',
+      'Someday4',
+      'Completed79',
+      'Retired0',
+      'Dropped20',
+      'Wishlist33',
+    ])
   })
 
   it('scrolls the row, and only the row, to the status pressed past its edge', () => {

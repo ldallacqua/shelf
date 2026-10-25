@@ -136,8 +136,14 @@ const SLOW_FRAME_MS = 34
 /** How many frames in a row to judge by. */
 const JUDGE_FRAMES = 45
 
-/** A box in focus comes this far toward you, and a playing one stands this far forward. */
-const FORWARD = { hot: 44, playing: 16 }
+/**
+ * A box in focus comes this far toward you, a playing one stands this far
+ * forward, and a someday one this far back, toward the wall.
+ */
+const FORWARD = { hot: 44, playing: 16, someday: -18 }
+/** Where a box stands when nothing is in focus: forward, back or in the row. */
+const resting = (game: SceneGame | undefined): number =>
+  game?.status === 'playing' ? FORWARD.playing : game?.status === 'someday' ? FORWARD.someday : 0
 /** The most a box grows on screen: a game being played and the one under the pointer stand larger, and nearer. */
 const HOT_GROWTH = 1.1
 /** Lean of a dropped game, in radians: 5 degrees, against its neighbor to the right. */
@@ -155,8 +161,11 @@ const STATUS_CODE: Record<Status, number> = {
   completed: 2,
   dropped: 3,
   wishlist: 4,
-  // Drawn as a backlog game is: the shader marks only completed and wishlist games.
+  // Drawn as a backlog game is: the shader marks only completed, retired and wishlist games.
   unsorted: 5,
+  retired: 6,
+  // Its mark is where it stands, set back.
+  someday: 7,
 }
 
 type ShapeMesh = {
@@ -316,7 +325,7 @@ export class ShelfScene {
     this.sliding = false
     this.moving.clear()
     for (const [at, game] of this.games.entries()) {
-      this.forward[at] = this.forwardTarget[at] = game.status === 'playing' ? FORWARD.playing : 0
+      this.forward[at] = this.forwardTarget[at] = resting(game)
       const from = before.get(game.key)
       const box = this.layout.boxes[at]!
       if (from && !this.options.calm && (from.x !== box.x || from.y !== box.y)) {
@@ -755,8 +764,7 @@ export class ShelfScene {
     if (box === this.hot) return
     const previous = this.hot
     if (previous !== undefined) {
-      const game = this.games[previous]
-      this.forwardTarget[previous] = game?.status === 'playing' ? FORWARD.playing : 0
+      this.forwardTarget[previous] = resting(this.games[previous])
       this.moving.add(previous)
       const ledge = this.layout.boxes[previous]?.ledge
       if (ledge !== undefined) this.setLed(ledge, this.restingLed)

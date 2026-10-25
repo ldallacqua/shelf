@@ -315,7 +315,7 @@ const registerWrites = (server: McpServer) => {
     {
       title: 'Set a game’s status',
       description:
-        'Playing, backlog, completed, dropped, wishlist, or unsorted (a game a sync brought in that its owner has not placed yet): nothing else changes.',
+        'Playing, backlog, someday (owned, maybe one day, after the backlog), completed, retired (a game with no end its owner is done with), dropped, wishlist, or unsorted (a game a sync brought in that its owner has not placed yet): nothing else changes.',
       inputSchema: z.object({ id: ENTRY, status: z.enum(statuses) }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },

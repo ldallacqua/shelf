@@ -31,7 +31,11 @@ export type TrophyStats = {
 
 export type TrophyWall = { stats: TrophyStats; years: TrophyYear[] }
 
-/** Begun, whether or not finished: backlog and wishlist games are not. */
+/**
+ * Begun, whether or not finished: backlog, someday and wishlist games are not.
+ * Nor is a retired one: it had no end to reach, so it neither raises nor
+ * lowers the share finished (spec 3.12).
+ */
 const STARTED: ReadonlySet<Status> = new Set(['playing', 'completed', 'dropped'])
 
 const trophyOf = ({

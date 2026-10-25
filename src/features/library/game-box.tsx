@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckIcon } from 'lucide-react'
+import { CheckIcon, InfinityIcon } from 'lucide-react'
 import { memo, type CSSProperties, type KeyboardEvent } from 'react'
 
 import { fromHex, ledFrom } from '@/domain/color/palette'
@@ -194,6 +194,11 @@ export const GameBox = memo(function GameBox({
       {game.status === 'completed' && density === 'covers' ? (
         <span className="game-seal" aria-hidden="true">
           <CheckIcon />
+        </span>
+      ) : null}
+      {game.status === 'retired' && density === 'covers' ? (
+        <span className="game-tag" aria-hidden="true">
+          <InfinityIcon />
         </span>
       ) : null}
       {owned > 1 && density === 'covers' ? (

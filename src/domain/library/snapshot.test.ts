@@ -10,6 +10,7 @@ import {
   SnapshotFormatError,
   type SnapshotFile,
 } from '@/domain/library/snapshot'
+import { statuses } from '@/domain/library/values'
 
 const full: LibraryGame = {
   slug: 'the-elder-scrolls-v-skyrim',
@@ -130,6 +131,24 @@ describe('the library file', () => {
     const file = encodeLibrary(library)
     expect(file.format).toBe(SNAPSHOT_FORMAT)
     expect(file.version).toBe(42)
+  })
+
+  it('numbers each status as it always has, a new one after the rest', () => {
+    const codes = statuses.map((status) => {
+      const file = encodeLibrary({ ...library, games: [{ ...bare, status }] })
+      expect(decodeLibrary(file).games[0]?.status).toBe(status)
+      return [status, file.games[0]?.[2]]
+    })
+    expect(Object.fromEntries(codes)).toEqual({
+      playing: 0,
+      backlog: 1,
+      completed: 2,
+      dropped: 3,
+      wishlist: 4,
+      unsorted: 5,
+      someday: 6,
+      retired: 7,
+    })
   })
 
   it('writes games as rows, with no field names repeated per game', () => {

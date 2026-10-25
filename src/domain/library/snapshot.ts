@@ -8,7 +8,7 @@ import {
   type LibraryPlatform,
   type Named,
 } from '@/domain/library/library'
-import { formats, kinds, statuses, type Day } from '@/domain/library/values'
+import { formats, kinds, statusCodes, type Day } from '@/domain/library/values'
 import type { GameKeywords } from '@/domain/query/evaluate'
 import { caseShapes, families, plastics } from '@/domain/platforms/platforms'
 
@@ -113,7 +113,7 @@ const position = <T>(list: readonly T[], value: T): number => Math.max(0, list.i
 const encodeGame = (game: LibraryGame): GameRow => [
   game.slug,
   game.title,
-  position(statuses, game.status),
+  position(statusCodes, game.status),
   game.rating ?? null,
   dayToNumber(game.addedOn),
   game.completedOn ? dayToNumber(game.completedOn) : null,
@@ -149,7 +149,7 @@ const decodeGame = (row: GameRow): LibraryGame => {
   const game: LibraryGame = {
     slug: row[0],
     title: row[1],
-    status: statuses[row[2]] ?? 'backlog',
+    status: statusCodes[row[2]] ?? 'backlog',
     addedOn: numberToDay(row[4]),
     minutes: row[6],
     igdbRatingCount: row[9],
