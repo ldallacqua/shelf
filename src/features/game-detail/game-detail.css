@@ -357,6 +357,15 @@
       transition: scale var(--motion-quick) var(--ease-settle);
     }
 
+    /* The play sign, drawn here: a triangle, nudged right to look centered. */
+    & .media-play > span::before {
+      content: '';
+      margin-left: 0.1875rem;
+      border-style: solid;
+      border-width: 0.5rem 0 0.5rem 0.8125rem;
+      border-color: transparent transparent transparent currentColor;
+    }
+
     &:hover .media-play > span {
       scale: 1.08;
     }

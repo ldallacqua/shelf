@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeftIcon, ChevronRightIcon, PlayIcon, XIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Dialog } from 'radix-ui'
 import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent } from 'react'
@@ -371,9 +371,7 @@ export function Screenshots({
                     />
                   ) : null}
                   <span className="media-play" aria-hidden="true">
-                    <span>
-                      <PlayIcon className="size-5 translate-x-px" fill="currentColor" />
-                    </span>
+                    <span />
                   </span>
                   <span className="media-name" aria-hidden="true">
                     {name}
