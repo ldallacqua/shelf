@@ -990,7 +990,11 @@ export const separateVersion = (
     const entry = await requireEntry(tx, libraryId, entryId)
     if (entry.archivedAt !== null) throw notFound('That entry')
     const versions = await tx
-      .select({ gameId: entryVersions.gameId, relation: entryVersions.relation, igdbId: games.igdbId })
+      .select({
+        gameId: entryVersions.gameId,
+        relation: entryVersions.relation,
+        igdbId: games.igdbId,
+      })
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
       .where(eq(entryVersions.entryId, entryId))

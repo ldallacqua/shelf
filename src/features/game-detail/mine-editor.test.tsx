@@ -208,7 +208,9 @@ describe('MineEditor, separating a version (spec 7.6)', () => {
     editor('ds2-again')
     await userEvent.click(await screen.findByRole('button', { name: 'Separate into its own game' }))
     await userEvent.click(screen.getByRole('button', { name: 'Keep together' }))
-    expect(screen.queryByRole('group', { name: 'Separate into its own game' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('group', { name: 'Separate into its own game' }),
+    ).not.toBeInTheDocument()
     expect(client.separate).not.toHaveBeenCalled()
   })
 })
