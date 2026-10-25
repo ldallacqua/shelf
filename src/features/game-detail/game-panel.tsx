@@ -80,12 +80,13 @@ export function GamePanel({
   pulled,
 }: GamePanelProps) {
   const t = useTranslations('Game')
-  // The panel keeps showing the last game while it slides away.
-  const [shown, setShown] = useState(item)
-  if (item && item !== shown) setShown(item)
-  const game = shown?.game
+  // The panel keeps showing the last game while it slides away, as of the version it
+  // showed it in: a game just removed or archived is in no later one, so its facts are not.
+  const [shown, setShown] = useState({ item, version })
+  if (item && (item !== shown.item || version !== shown.version)) setShown({ item, version })
+  const game = shown.item?.game
   const { handle, files } = useShelf()
-  const facts = useGameFacts(files, version, game?.slug)
+  const facts = useGameFacts(files, shown.version, game?.slug)
   const touch = useRef<{ x: number; y: number } | undefined>(undefined)
   const press = useRef<Press | undefined>(undefined)
   const panel = useRef<HTMLDivElement>(null)

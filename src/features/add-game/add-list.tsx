@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from '@/ui/select'
 
+import { BringBack } from './bring-back'
 import { addGames, matchLines, type NewGame } from './list-client'
 
 /** What a list added: how many, what Undo takes back, and the library's version after. */
@@ -654,13 +655,16 @@ function ListRow({
             </span>
             {candidate?.onShelf ? (
               <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">
-                {t('inLibrary')}
+                {candidate.onShelf.archived ? t('archived') : t('inLibrary')}
               </span>
             ) : null}
             {repeatOf === undefined ? null : (
               <span className="text-xs text-muted">{t('list.repeat', { line: repeatOf + 1 })}</span>
             )}
           </p>
+          {candidate?.onShelf?.archived ? (
+            <BringBack entryId={candidate.onShelf.archived} title={candidate.onShelf.title} />
+          ) : null}
           {row.line.text === candidate?.title ? null : (
             <p className="text-xs break-words text-muted">
               {t('list.asWritten', { line: row.line.text })}

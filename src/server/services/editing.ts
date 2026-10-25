@@ -7,6 +7,9 @@ import type { Refusal } from '@/domain/library/adding'
 import {
   minePatch,
   newCopy,
+  type Archived,
+  type ArchivedGame,
+  type BroughtBack,
   type Changed,
   type MinePatch,
   type OwnerGame,
@@ -16,7 +19,7 @@ import {
 import { formats, type Format } from '@/domain/library/values'
 import { database, type Db } from '@/server/db/client'
 import { copies, entryVersions, games, removedEntries } from '@/server/db/schema'
-import { readOwnerGame } from '@/server/library/read'
+import { readArchived, readOwnerGame } from '@/server/library/read'
 import {
   addCopy,
   findEntryIdBySlug,
@@ -26,6 +29,7 @@ import {
   removeCopy,
   removeEntryForUndo,
   restoreEntry,
+  setArchived,
   setCopyFormat,
   setPrimary,
 } from '@/server/library/store'
@@ -74,6 +78,27 @@ export const createEditing = (db: Db, libraryId: string) => {
     return { ...(await changed()), undo, title: row?.title ?? '' }
   }
 
+  /** The entry's main address and title, archived or not. */
+  const named = async (entryId: string) => {
+    const [primary] = await db
+      .select({ slug: games.slug, title: games.title })
+      .from(entryVersions)
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(and(eq(entryVersions.entryId, entryId), eq(entryVersions.relation, 'primary')))
+    return { slug: primary?.slug ?? '', title: primary?.title ?? '' }
+  }
+
+  const archive = async (idOrSlug: string): Promise<Archived> => {
+    const entryId = await entryIdFor(idOrSlug)
+    await setArchived(db, libraryId, entryId, true)
+    return { ...(await changed()), entryId, title: (await named(entryId)).title }
+  }
+
+  const bringBack = async (entryId: string): Promise<BroughtBack> => {
+    await setArchived(db, libraryId, entryId, false)
+    return { ...(await changed()), ...(await named(entryId)) }
+  }
+
   const restore = async (undo: string): Promise<Restored> => {
     const entryId = await restoreEntry(db, libraryId, undo)
     const [primary] = await db
@@ -113,6 +138,9 @@ export const createEditing = (db: Db, libraryId: string) => {
     },
     remove: async (idOrSlug: string) => remove(await entryIdFor(idOrSlug)),
     restore,
+    archive,
+    bringBack,
+    archived: (): Promise<ArchivedGame[]> => readArchived(db, libraryId),
   }
 }
 
@@ -174,3 +202,11 @@ export const removeMyCopy = checked(z.tuple([slug, id]), (editing, s, copy) =>
 export const removeMine = checked(z.tuple([slug]), (editing, s) => editing.remove(s))
 
 export const restoreMine = checked(z.tuple([id]), (editing, undo) => editing.restore(undo))
+
+export const archiveMine = checked(z.tuple([slug]), (editing, s) => editing.archive(s))
+
+export const bringBackMine = checked(z.tuple([id]), (editing, entryId) =>
+  editing.bringBack(entryId),
+)
+
+export const myArchived = checked(z.tuple([]), (editing) => editing.archived(), false)

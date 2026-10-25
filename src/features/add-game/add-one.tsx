@@ -27,6 +27,7 @@ import { Input } from '@/ui/field'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
 
 import type { AddActions } from './actions'
+import { BringBack } from './bring-back'
 
 /** A short pause after typing before IGDB is asked (spec 4.1). */
 const PAUSE_MS = 250
@@ -90,7 +91,8 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
 
   const choose = (candidate: Candidate) => {
     const mine = signedInAccount()
-    if (candidate.onShelf && mine) {
+    // Archived, it is brought back rather than added again (spec 7.4).
+    if (candidate.onShelf && mine && !candidate.onShelf.archived) {
       onOpenOwned()
       router.push(gameHref(mine.handle, candidate.onShelf.slug))
       return
@@ -111,6 +113,33 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
       const candidate = results[active]
       if (candidate) choose(candidate)
     }
+  }
+
+  const archived = chosen?.onShelf?.archived
+  if (chosen && archived) {
+    return (
+      <div className="grid gap-4">
+        <p className="text-pretty">{t('archivedFound', { title: chosen.onShelf?.title ?? '' })}</p>
+        <div className="flex flex-wrap items-start gap-2">
+          <BringBack
+            entryId={archived}
+            title={chosen.onShelf?.title ?? chosen.title}
+            variant="primary"
+            onBack={onOpenOwned}
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setChosen(undefined)
+              requestAnimationFrame(() => input.current?.focus())
+            }}
+          >
+            {t('change')}
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (chosen && answer) {
@@ -228,7 +257,7 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
             ) : null}
             {candidate.onShelf ? (
               <span className="flex-none rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold text-accent">
-                {t('inLibrary')}
+                {candidate.onShelf.archived ? t('archived') : t('inLibrary')}
               </span>
             ) : null}
           </li>

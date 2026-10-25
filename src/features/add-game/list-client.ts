@@ -21,7 +21,7 @@ type ApiCandidate = {
   cover: string | null
   platforms: number[]
   alsoOn: number[]
-  onShelf: { slug: string; title: string } | null
+  onShelf: { slug: string; title: string; archived?: string } | null
 }
 
 type ApiListMatch = {

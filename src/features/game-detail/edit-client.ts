@@ -66,4 +66,6 @@ export const editClient: EditActions = {
     call('DELETE', `${entry(entryId)}/copies/${encodeURIComponent(copyId)}`),
   remove: (entryId) => call('DELETE', entry(entryId)),
   restore: (undo) => call('POST', `/api/v1/removed/${encodeURIComponent(undo)}`),
+  archive: (entryId) => call('PUT', `${entry(entryId)}/archived`),
+  bringBack: (entryId) => call('DELETE', `${entry(entryId)}/archived`),
 }

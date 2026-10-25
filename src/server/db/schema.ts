@@ -167,6 +167,8 @@ export const entries = sqliteTable(
     completedOn: text().$type<Day>(),
     /** IGDB platform ids I want it on, while it is on the wishlist (spec 7.5). Null otherwise. */
     wanted: text({ mode: 'json' }).$type<number[]>(),
+    /** When I archived it (spec 7.4): off the shelf and out of every answer, kept whole. */
+    archivedAt: integer(),
     createdAt: integer().notNull(),
     updatedAt: integer().notNull(),
   },

@@ -7,7 +7,13 @@ import { copies, entries, entryVersions, games, playTime, sourceItems } from '@/
 import { createIgdbApi } from '@/server/igdb/api'
 import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
 import { readLibrary } from '@/server/library/read'
-import { readVersion, removeEntry, removeEntryForUndo, restoreEntry } from '@/server/library/store'
+import {
+  readVersion,
+  removeEntry,
+  removeEntryForUndo,
+  restoreEntry,
+  setArchived,
+} from '@/server/library/store'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { MOCK_STEAM } from '@/server/mocks/owner'
 import { createSteamHandlers, newSteamMockState } from '@/server/mocks/steam'
@@ -322,6 +328,31 @@ describe('a later sync', () => {
     const unseen = await sync(me).list('steam', 'not-seen')
     expect(unseen.map((item) => item.title)).toEqual(['The Witcher 3: Wild Hunt'])
     expect(unseen[0]?.onShelf?.slug).toBe('the-witcher-3-wild-hunt')
+  })
+
+  it('feeds an archived game’s copy, and never puts it back on the shelf or gives it a second entry (spec 7.4)', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const witcher = (await entryOf(me, WITCHER_3))!
+    await setArchived(db, me, witcher, true)
+    const count = (await entriesOf(me)).length
+
+    steamAnswers((list) =>
+      list.map((game) => (game.appid === 292030 ? { ...game, playtime_forever: 5000 } : game)),
+    )
+    await syncAll(me, NOW + 86_400_000)
+
+    expect(await entriesOf(me)).toHaveLength(count)
+    const [row] = await db.select().from(entries).where(eq(entries.id, witcher))
+    expect(row?.archivedAt).not.toBeNull()
+    expect(
+      (await readLibrary(db, me)).games.some((game) => game.title.startsWith('The Witcher 3')),
+    ).toBe(false)
+    const hours = await db
+      .select({ minutes: playTime.minutes })
+      .from(playTime)
+      .where(and(eq(playTime.entryId, witcher), eq(playTime.source, 'steam')))
+    expect(hours).toEqual([{ minutes: 5000 }])
   })
 
   it('does not put back a game I took off my shelf', async () => {

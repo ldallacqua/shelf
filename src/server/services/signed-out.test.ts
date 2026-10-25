@@ -14,6 +14,9 @@ import {
 } from '@/server/services/adding'
 import {
   addMyCopy,
+  archiveMine,
+  bringBackMine,
+  myArchived,
   myGame as myGameService,
   patchMine,
   removeMine,
@@ -100,6 +103,9 @@ const requests: [string, () => Promise<{ ok: boolean; reason?: string }>][] = [
   ['remove a copy', () => removeMyCopy('bloodborne', ID)],
   ['remove a game', () => removeMine('bloodborne')],
   ['put a removed game back', () => restoreMine(ID)],
+  ['archive a game', () => archiveMine('bloodborne')],
+  ['bring an archived game back', () => bringBackMine(ID)],
+  ['list its archived games', () => myArchived()],
   ['list its unsorted games', () => myUnsorted()],
   ['count its games by status', () => myTally()],
   ['place many games at once', () => placeMine({ entries: [ID], status: 'backlog' })],

@@ -10,7 +10,8 @@ import { formats, statuses, type Format, type Relation } from '@/domain/library/
  */
 
 /** The entry a result already is, under any of its versions: "In library", which opens it. */
-export type OnShelf = { slug: string; title: string }
+/** A game I have already. Archived (spec 7.4), its entry, to bring it back rather than add it again. */
+export type OnShelf = { slug: string; title: string; archived?: string }
 
 export type Candidate = SearchResult & { onShelf?: OnShelf }
 

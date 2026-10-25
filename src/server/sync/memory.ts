@@ -390,13 +390,19 @@ export const countItems = async (db: Executor, link: Link): Promise<ItemCounts> 
     .from(sourceItems)
     .where(ofSource(link.userId, link.source))
     .groupBy(sql`1, 2`)
-  // The games it fed that still wait for me to place them, each once.
+  // The games it fed that still wait for me to place them, each once; not one I archived.
   const [waiting] = await db
     .select({ count: sql<number>`count(distinct ${copies.entryId})` })
     .from(sourceItems)
     .innerJoin(copies, eq(copies.id, sourceItems.copyId))
     .innerJoin(entries, eq(entries.id, copies.entryId))
-    .where(and(ofSource(link.userId, link.source), eq(entries.status, 'unsorted')))
+    .where(
+      and(
+        ofSource(link.userId, link.source),
+        eq(entries.status, 'unsorted'),
+        isNull(entries.archivedAt),
+      ),
+    )
   const counts: ItemCounts = {
     'on-shelf': 0,
     adding: 0,

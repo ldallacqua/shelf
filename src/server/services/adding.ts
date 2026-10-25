@@ -102,16 +102,29 @@ const forLibrary = (libraryId: string, { db, api, records }: LibraryDeps) => {
     const [linked, primaries] = await Promise.all([
       readLinkedMembers(db, libraryId),
       db
-        .select({ entryId: entryVersions.entryId, slug: games.slug, title: games.title })
+        .select({
+          entryId: entryVersions.entryId,
+          slug: games.slug,
+          title: games.title,
+          archivedAt: entries.archivedAt,
+        })
         .from(entryVersions)
         .innerJoin(games, eq(games.id, entryVersions.gameId))
+        .innerJoin(entries, eq(entries.id, entryVersions.entryId))
         .where(and(eq(entryVersions.relation, 'primary'), eq(entryVersions.userId, libraryId))),
     ])
-    const entries = new Map(
-      primaries.map((row) => [row.entryId, { slug: row.slug, title: row.title }]),
+    const onShelf = new Map(
+      primaries.map((row): [string, OnShelf] => [
+        row.entryId,
+        {
+          slug: row.slug,
+          title: row.title,
+          ...(row.archivedAt === null ? {} : { archived: row.entryId }),
+        },
+      ]),
     )
     const byIgdbId = new Map(linked.map((member) => [member.igdbId, member.entryId]))
-    return { linked, entries, byIgdbId }
+    return { linked, entries: onShelf, byIgdbId }
   }
 
   const habits = async (): Promise<Habits> => {

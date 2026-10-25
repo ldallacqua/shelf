@@ -1,9 +1,9 @@
 # Shelf: product and UX spec
 
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
-  Written on 25 Oct 2026: two statuses (3.12) and wishing for a game on one platform (7.5),
-  built; and not built yet, hiding adult games (3.13), archiving a game (7.4) and a game only I
-  see (11.1).
+  Written on 25 Oct 2026: two statuses (3.12), archiving a game (7.4) and wishing for a game on
+  one platform (7.5), built; and not built yet, hiding adult games (3.13) and a game only I see
+  (11.1).
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -995,7 +995,8 @@ immediately; if saving fails it reverts and says why.
 - **Completed** sets the completion date to today, editable.
 - **Platforms owned:** add or remove a copy; switch physical or digital per copy.
 - **Notes** are private unless I mark them public for that game.
-- **Remove from library** asks once and offers Undo.
+- **Archive** takes the game out of sight, kept whole, and offers Undo (7.4).
+- **Remove from library** asks once, offers archiving instead, and offers Undo.
 
 **Done when**
 
@@ -1007,7 +1008,7 @@ immediately; if saving fails it reverts and says why.
 
 ### 7.4 Archiving a game
 
-**Not built yet.** The owner asked on 25 Oct 2026 for "um jogo que eu quero que suma do meu
+**Built 25 Oct 2026.** The owner asked on 25 Oct 2026 for "um jogo que eu quero que suma do meu
 shelf, que esteja em um lugar escondido. Tipo, não quero ficar olhando pra ele pq eu não comprei
 de fato. Ganhei de presente se la. Mas não quero deletar ele completamente, quero poder restaurar
 ele se quiser."
@@ -1098,10 +1099,10 @@ Two additions the brief did not ask for, both small:
 | **Featured** (yes or no, per game) | Decides which boxes stand face-out. A shelf with a few covers showing reads far better than a wall of spines. |
 | **Notes public** (yes or no, per game) | The library is public and notes may not be meant to be |
 
-An entry's status is one of eight since 25 Oct 2026, with Someday and Retired (3.12), and a
-wishlist entry keeps the **platforms wanted** (7.5). **Not built yet:** an entry gains
-**archived** (7.4) and **private** (11.1), yes or no; a game's cached IGDB data gains its age
-ratings (3.13).
+An entry's status is one of eight since 25 Oct 2026, with Someday and Retired (3.12); a
+wishlist entry keeps the **platforms wanted** (7.5); and an entry can be **archived** (7.4).
+**Not built yet:** an entry gains **private** (11.1), yes or no; a game's cached IGDB data
+gains its age ratings (3.13).
 
 ---
 
@@ -1182,8 +1183,9 @@ English and Brazilian Portuguese from the first build.
 - **Sign-in** is an email address or handle, and the password. A wrong one is turned away with
   a plain message, and repeated tries are slowed down.
 - **The account page** changes the name, the handle (the old address then leads nowhere), the
-  visibility and the password; signs out everywhere; and deletes the account and everything on
-  its shelf, after the password.
+  visibility and the password; lists the archived games, while there are any, to bring back
+  (7.4); signs out everywhere; and deletes the account and everything on its shelf, after the
+  password.
 - **Every change** is checked on the server, against the session's own account. A write never
   names a library: it acts on one's own. Hiding a button is never the protection.
 - **IGDB search is for accounts**, each limited per hour, so no one spends the whole site's

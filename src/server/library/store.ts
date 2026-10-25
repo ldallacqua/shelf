@@ -858,6 +858,29 @@ export const patchEntry = (
   })
 }
 
+/**
+ * Archives a game, or brings it back (spec 7.4). Archived, it is off the
+ * shelf and out of every answer, to me as to anyone, and kept whole: its
+ * status, rating, notes, tags, dates, copies and hours. A sync still feeds
+ * its copies and joins new ones to it; it stays archived.
+ */
+export const setArchived = (
+  db: Db,
+  libraryId: string,
+  entryId: string,
+  archived: boolean,
+  now = Date.now(),
+) =>
+  db.transaction(async (tx) => {
+    const entry = await requireEntry(tx, libraryId, entryId)
+    if ((entry.archivedAt !== null) === archived) return
+    await tx
+      .update(entries)
+      .set({ archivedAt: archived ? now : null, updatedAt: now })
+      .where(eq(entries.id, entryId))
+    await bumpVersion(tx, libraryId)
+  })
+
 /** How many ids one query names: well under SQLite's limit on a statement's values. */
 const IDS_PER_QUERY = 200
 

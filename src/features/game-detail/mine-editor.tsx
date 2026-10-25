@@ -1,6 +1,6 @@
 'use client'
 
-import { Trash2Icon, XIcon } from 'lucide-react'
+import { ArchiveIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from 'react'
 
@@ -148,6 +148,43 @@ export function MineEditor({
   }
 
   const labels = new Map(owned.platforms.map((platform) => [platform.id, platform]))
+
+  /** Out of sight, kept whole (spec 7.4): nothing is lost, so nothing is asked first. */
+  const archive = async () => {
+    setConfirming(false)
+    setSaving((count) => count + 1)
+    const result = await actions
+      .archive(owned.entryId)
+      .catch(() => ({ ok: false as const, reason: 'failed' as const }))
+    setSaving((count) => count - 1)
+    if (!result.ok) {
+      setProblem(errors(`errors.${result.reason}`))
+      return
+    }
+    records.delete(slug)
+    const { entryId, title } = result.value
+    notify({
+      message: t('archived', { title }),
+      actions: [
+        {
+          label: errors('undo'),
+          run: async () => {
+            const back = await actions.bringBack(entryId)
+            if (!back.ok) {
+              notify({ message: errors(`errors.${back.reason}`) })
+              return
+            }
+            announceChange({ version: back.value.version, slug: back.value.slug, title })
+            notify({ message: t('broughtBack', { title }) })
+            router.refresh()
+          },
+        },
+      ],
+    })
+    announceChange({ version: result.value.version })
+    if (onRemoved) onRemoved()
+    else router.push(libraryHref(handle))
+  }
 
   const remove = async () => {
     setConfirming(false)
@@ -375,13 +412,18 @@ export function MineEditor({
           </div>
         ) : null}
 
-        <div className="grid justify-items-start gap-3 border-t border-line pt-4">
+        <div className="flex flex-wrap gap-2 border-t border-line pt-4">
           {confirming ? (
             <div role="group" aria-label={t('remove')} className="grid gap-3">
               <p className="text-sm text-pretty">{t('confirmRemove', { title: owned.title })}</p>
+              <p className="text-sm text-pretty text-muted">{t('orArchive')}</p>
               <div className="flex flex-wrap gap-2">
                 <Button variant="primary" onClick={remove}>
                   {t('confirm')}
+                </Button>
+                <Button variant="secondary" onClick={() => void archive()}>
+                  <ArchiveIcon aria-hidden="true" />
+                  {t('archive')}
                 </Button>
                 <Button variant="secondary" onClick={() => setConfirming(false)}>
                   {t('keep')}
@@ -389,10 +431,16 @@ export function MineEditor({
               </div>
             </div>
           ) : (
-            <Button variant="ghost" onClick={() => setConfirming(true)}>
-              <Trash2Icon aria-hidden="true" />
-              {t('remove')}
-            </Button>
+            <>
+              <Button variant="ghost" onClick={() => void archive()}>
+                <ArchiveIcon aria-hidden="true" />
+                {t('archive')}
+              </Button>
+              <Button variant="ghost" onClick={() => setConfirming(true)}>
+                <Trash2Icon aria-hidden="true" />
+                {t('remove')}
+              </Button>
+            </>
           )}
         </div>
       </div>
