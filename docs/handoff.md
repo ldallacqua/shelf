@@ -19,8 +19,14 @@ decisions 15 to 24 are built as written; the owner did not change them.
 - **Wishing on one platform is built** (7.5; architecture section 25's first row). A build here
   reads `.data/shelf.db`, so after pulling a migration that adds a column, run `pnpm db:migrate`
   first; Vercel's build migrates by itself.
-- **Two more asks, queued after 7.5:** why Dark Souls II and Scholar of the First Sin are one
-  entry, and the game panel jumping to the next game when the open game's status changes.
+- **The game panel stays on its game** when a change moves it off the shelf (architecture
+  section 25's first row). To check the library's own behaviour in a browser, the app's pane
+  must be showing: hidden, it does not draw, and the new library file is never applied.
+- **Dark Souls II and Scholar of the First Sin are one entry** because IGDB makes Scholar an
+  expanded game (type 10) of Dark Souls II, and the sync, which cannot ask, takes ADR 001's
+  default for one: the same entry. Changing that rule would split Skyrim and its Special
+  Edition too, so a way to split one version into a game of its own was offered instead; it
+  waits for the owner.
 
 ## Just before: five changes written into the spec, and the add search finds half a word (25 Oct 2026)
 

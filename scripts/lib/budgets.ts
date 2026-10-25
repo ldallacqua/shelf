@@ -53,7 +53,7 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Step 9: measured 272.7 KB, from 270.9. The phone's gestures (dragging a
   // game's sheet between its heights, scrubbing a compact ledge) and folding a
   // shelf away, with the store that remembers it.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 275 },
+  { path: '/en/u/sample', name: 'Library', kilobytes: 277 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).

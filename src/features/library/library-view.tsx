@@ -97,6 +97,7 @@ import {
   useTooSmallFor3d,
   useWallSize,
 } from './use-preference'
+import { followOpen, neighborsOf, openGameAt, type OpenGame } from './open-game'
 import type { DrawnShelf, OpenBox } from './view-props'
 import { GhostWall, WallView } from './wall-view'
 
@@ -246,7 +247,7 @@ export function LibraryView({
   // With no WebGL 2 at all, 3D is not even tried: the 3D button says why (spec 3.6).
   const asked: Dimension = noWebGL2 || tooSmall ? '2d' : dimension
   const shown: Dimension = asked === '3d' && !fallback ? '3d' : '2d'
-  const [open, setOpen] = useState<OpenBox>()
+  const [open, setOpen] = useState<OpenGame>()
   /** The cover file the box showed, for the open game's cover to start from. */
   const [placeholder, setPlaceholder] = useState<string>()
   /** The open game's panel, once its code has arrived. */
@@ -474,29 +475,11 @@ export function LibraryView({
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // The game whose details are open, and its neighbors in the current order.
-  const openShelf = open ? shelves.findIndex((each) => each.key === open.key) : -1
-  const openItem = open ? shelves[openShelf]?.items[open.index] : undefined
-  const step = (direction: -1 | 1): OpenBox | undefined => {
-    if (!open || openShelf < 0) return undefined
-    const at = open.index + direction
-    const current = shelves[openShelf]
-    if (current?.items[at]) return { key: current.key, index: at }
-    // Off the end of a shelf: on to the next shelf's first box, or back to the last of the one before.
-    for (
-      let other = openShelf + direction;
-      other >= 0 && other < shelves.length;
-      other += direction
-    ) {
-      const next = shelves[other]
-      if (next && next.items.length > 0) {
-        return { key: next.key, index: direction === 1 ? 0 : next.items.length - 1 }
-      }
-    }
-    return undefined
-  }
-  const previous = step(-1)
-  const next = step(1)
+  // The game whose details are open, followed by which game it is, and its neighbors in the
+  // current order: changing its status where the filter is on status leaves it open.
+  const followed = open ? followOpen(shelves, open, library?.games) : undefined
+  const openItem = followed?.item
+  const { previous, next } = open ? neighborsOf(shelves, open, followed?.box) : {}
 
   const itemAt = (box: OpenBox) => shelves.find((each) => each.key === box.key)?.items[box.index]
   const pulled = view === 'shelf' && shown === '3d'
@@ -517,7 +500,7 @@ export function LibraryView({
       morph({ from: () => source, to: heroCover, panel: gamePanel }, () => {
         setGamePanel(() => panel)
         setPlaceholder(shows)
-        setOpen(box)
+        setOpen(openGameAt(box, item))
       })
     })
   }
@@ -540,7 +523,7 @@ export function LibraryView({
     setPlaceholder(
       coverOf(scope.current, keyOf(item))?.querySelector('img')?.currentSrc || undefined,
     )
-    setOpen(box)
+    setOpen(openGameAt(box, item))
     replaceGame(item.game.slug)
   }
 
@@ -560,10 +543,11 @@ export function LibraryView({
       }
       for (const shelf of latest.current.shelves) {
         const index = shelf.items.findIndex((item) => item.game.slug === slug)
-        if (index >= 0) {
+        const item = shelf.items[index]
+        if (item) {
           void loadPanel(handle).then((panel) => {
             setGamePanel(() => panel)
-            setOpen({ key: shelf.key, index })
+            setOpen(openGameAt({ key: shelf.key, index }, item))
           })
           return
         }
