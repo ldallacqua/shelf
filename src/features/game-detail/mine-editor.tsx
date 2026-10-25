@@ -115,7 +115,9 @@ export function MineEditor({
         setProblem(errors(`errors.${result.reason}`))
         return
       }
-      announceChange({ version: result.value.version, slug })
+      // The new file, and nothing else: an edit moves neither the view behind the game nor
+      // the game in front of it, as landing on a game just added would.
+      announceChange({ version: result.value.version })
       // Over the shelf, the new library file is enough. A page of its own is
       // drawn on the server, so it is asked for again.
       if (refresh) startDrawing(() => router.refresh())
