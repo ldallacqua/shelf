@@ -98,9 +98,37 @@ describe('search', () => {
     expect(hits.map((hit) => hit.id)).not.toContain(123051)
   })
 
+  it('finds a word still being typed, which IGDB’s search does not', async () => {
+    const names = (await api.search('shadow of the tomb rai')).map((hit) => hit.name)
+    expect(names).toContain('Shadow of the Tomb Raider')
+    const bodies = state.requests.map((request) => request.body)
+    expect(bodies).toHaveLength(2)
+    expect(bodies).toContainEqual(expect.stringMatching(/^search "shadow of the tomb rai";/))
+    expect(bodies).toContainEqual(
+      expect.stringContaining(
+        'name ~ *"shadow"* & name ~ *"of"* & name ~ *"the"* & name ~ *"tomb"* & name ~ *"rai"*; sort total_rating_count desc;',
+      ),
+    )
+  })
+
+  it('puts the games with the whole word first, and each game once', async () => {
+    const hits = await api.search('war')
+    const names = hits.map((hit) => hit.name)
+    const whole = names.filter((name) => /\bwar\b/i.test(name))
+    expect(whole.length).toBeGreaterThan(0)
+    expect(names.slice(0, whole.length)).toEqual(whole)
+    // Then Hogwarts, Star Wars and the rest, which hold the word only inside another.
+    expect(names.length).toBeGreaterThan(whole.length)
+    expect(new Set(hits.map((hit) => hit.id)).size).toBe(hits.length)
+  })
+
   it('survives quotes and backslashes in what was typed', async () => {
     expect(await api.search('say "hi" \\ ; where id = 1')).toEqual([])
-    expect(state.requests.at(-1)?.body).toContain('search "say \\"hi\\" \\\\ ; where id = 1"')
+    const bodies = state.requests.map((request) => request.body)
+    expect(bodies).toContainEqual(
+      expect.stringContaining('search "say \\"hi\\" \\\\ ; where id = 1"'),
+    )
+    expect(bodies).toContainEqual(expect.stringContaining('name ~ *"\\"hi\\""* & name ~ *"\\\\"*'))
   })
 })
 

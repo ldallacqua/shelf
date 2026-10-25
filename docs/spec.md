@@ -510,7 +510,9 @@ Signed in only. Opened by the Add button, by `A`, or from the empty library.
 ### 4.1 One game
 
 1. **Type.** Results appear as I type, from two characters on, after a short pause. A newer
-   keystroke cancels the older request.
+   keystroke cancels the older request. A word still being typed counts: "astral cha" finds
+   Astral Chain, after the games that have every word whole (the owner, 25 Oct 2026: "astral
+   cha -> não acha nada na busca. Astral Chain -> acha o jogo correto.").
 2. **Read the results.** Up to eight. Each shows cover, title, **year**, platforms, and a tag
    when it is a remake, remaster or expanded edition. Same-titled games are told apart by year
    and platforms: Prey (2017) and Prey (2006) are both in IGDB under one name.

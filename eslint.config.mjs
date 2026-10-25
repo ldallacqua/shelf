@@ -149,6 +149,8 @@ export default defineConfig([
   prettier,
 
   globalIgnores([
+    // The desktop app's own folder, where each session's worktree lives.
+    '.claude/**',
     '.next/**',
     'next-env.d.ts',
     'storybook-static/**',

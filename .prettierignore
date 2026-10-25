@@ -1,3 +1,6 @@
+# the desktop app's own folder, where each session's worktree lives
+.claude/
+
 # generated
 .next/
 node_modules/

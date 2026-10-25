@@ -152,16 +152,31 @@ export const createIgdbApi = (client: IgdbClient) => {
         )
 
   /**
-   * Search as I type. Editions are left out here; ports are folded under
-   * their originals afterward, by `foldSearchHits`.
+   * Search as I type. IGDB's search matches whole words only, so a word still
+   * being typed finds nothing: "astral cha" has no Astral Chain. Beside it,
+   * the names holding every word as typed, best known first, follow its own
+   * games. Editions are left out here; ports are folded under their originals
+   * afterward, by `foldSearchHits`.
    */
   const search = async (text: string, limit = 30): Promise<IgdbSearchHit[]> => {
-    const hits = await client.query(
-      'games',
-      `search ${quote(text)}; fields ${igdbSearchFields.join(',')}; where game_type = ${GAME_TYPES} & version_parent = null; limit ${Math.min(limit, PAGE)};`,
-      igdbSearchHitSchema,
-    )
-    return hits.filter(isGame)
+    const count = Math.min(limit, PAGE)
+    const words = text.split(/\s+/).filter(Boolean)
+    const [whole, partial] = await Promise.all([
+      client.query(
+        'games',
+        `search ${quote(text)}; fields ${igdbSearchFields.join(',')}; where game_type = ${GAME_TYPES} & version_parent = null; limit ${count};`,
+        igdbSearchHitSchema,
+      ),
+      words.length === 0
+        ? []
+        : client.query(
+            'games',
+            `fields ${igdbSearchFields.join(',')}; where game_type = ${GAME_TYPES} & version_parent = null & ${words.map((word) => `name ~ *${quote(word)}*`).join(' & ')}; sort total_rating_count desc; limit ${count};`,
+            igdbSearchHitSchema,
+          ),
+    ])
+    const found = new Set(whole.map((hit) => hit.id))
+    return [...whole, ...partial.filter((hit) => !found.has(hit.id))].filter(isGame).slice(0, count)
   }
 
   /**
