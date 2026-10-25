@@ -1,12 +1,13 @@
 'use client'
 
-import { InboxIcon, RefreshCwIcon, UnlinkIcon } from 'lucide-react'
+import { ExternalLinkIcon, InboxIcon, RefreshCwIcon, UnlinkIcon } from 'lucide-react'
 import { useFormatter, useLocale, useNow, useTranslations } from 'next-intl'
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
 import type { Answer } from '@/domain/library/adding'
 import type { SyncSource } from '@/domain/library/values'
 import type { LinkPage, LinkView, SyncStep } from '@/domain/sync/link'
+import { STEAM_PRIVACY_SETTINGS } from '@/domain/sync/steam'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Switch } from '@/ui/checkbox'
@@ -41,6 +42,23 @@ function Message({ said }: { said?: Said }) {
     </p>
   )
 }
+
+/**
+ * Steam's privacy settings, linked from the words that send me there: where
+ * to go is quicker followed than read, or drawn. In a tab of its own, so the
+ * card is still here to sync from after.
+ */
+const steamSettings = (chunks: ReactNode) => (
+  <a
+    href={STEAM_PRIVACY_SETTINGS}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
+  >
+    {chunks}
+    <ExternalLinkIcon aria-hidden="true" className="ml-1 inline size-3.5 align-[-0.125em]" />
+  </a>
+)
 
 type Outcome = 'linked' | 'failed'
 
@@ -201,7 +219,9 @@ function PlatformCard({
       ) : !link ? (
         <>
           <p className="max-w-xl text-sm text-pretty">{t('steam.about')}</p>
-          <p className="max-w-xl text-sm text-pretty text-muted">{t('steam.public')}</p>
+          <p className="max-w-xl text-sm text-pretty text-muted">
+            {t.rich('steam.public', { settings: steamSettings })}
+          </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
             {/*
              * A plain link: the browser leaves for Steam's own page and comes back.
@@ -247,7 +267,7 @@ function PlatformCard({
 
           {link.problem ? (
             <p role="alert" className="rounded-control border border-line-strong px-4 py-3 text-sm">
-              {t(`problem.${link.problem}`, { source: name })}
+              {t.rich(`problem.${link.problem}`, { source: name, settings: steamSettings })}
             </p>
           ) : null}
           {link.problem === 'signed-out' && source === 'nintendo' ? (

@@ -20,6 +20,7 @@ import { EmptyLibrary } from './empty-library'
 import { dateOf, hoursOf, outOfTen } from './format'
 import { GameBox, platformFor, platformsOwned } from './game-box'
 import { LibrarySkeleton } from './library-skeleton'
+import { ListView } from './list-view'
 import { markPageLive, pageIsLive, resetPageLive } from './live'
 import { PlaceWaiting } from './place-waiting'
 import { resetPreviews } from './preview-queue'
@@ -414,6 +415,42 @@ describe('LibrarySkeleton', () => {
   it('has the smart shelf’s name when it is one', () => {
     renderWithIntl(<LibrarySkeleton title="Short ones" />)
     expect(screen.getByRole('heading', { level: 1, name: 'Short ones' })).toBeInTheDocument()
+  })
+})
+
+describe('ListView', () => {
+  const nintendoSwitch: LibraryPlatform = {
+    id: 130,
+    key: 'switch',
+    name: 'Nintendo Switch',
+    short: 'Switch',
+    family: 'nintendo',
+    generation: 8,
+    shape: 'switch',
+    plastic: 'red',
+  }
+
+  it('says a physical copy is physical, a cartridge as much as a disc', () => {
+    const entry = item({
+      copies: [
+        { platform: 167, format: 'physical' },
+        { platform: 130, format: 'physical' },
+        { platform: 6, format: 'digital' },
+      ],
+    })
+    renderWithIntl(
+      <ListView
+        shelves={[{ kind: 'all', key: 'all', items: [entry], total: 1 }]}
+        platforms={new Map([...platforms, [130, nintendoSwitch]])}
+        onOpen={vi.fn()}
+        enter={false}
+        firstBoxes={12}
+      />,
+      'pt-BR',
+    )
+    const cell = screen.getByText('Switch').closest('td')!
+    expect(cell).toHaveTextContent('PS5FísicoSwitchFísicoPCDigital')
+    expect(cell).not.toHaveTextContent('Disco')
   })
 })
 

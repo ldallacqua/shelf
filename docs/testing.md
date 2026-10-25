@@ -195,7 +195,9 @@ In order, stopping at the first failure: `pnpm check` (format, lint, types, tran
 unit and component tests); a production build, served on port 3300 with the IGDB test
 doubles; the JavaScript budgets; the browser tests in all nine projects; the Linux pass;
 Lighthouse; the Storybook build. It builds and serves its own copy, so it refuses to start
-while something else answers on port 3300.
+while something else answers on port 3300. Another checkout on this machine (a worktree) can
+run beside one that holds 3300 on a port of its own: `BASE_URL=http://localhost:3311 pnpm
+verify`, which `serve:test` serves on (the browser tests still assume 3300).
 
 **The Linux pass** runs in Playwright's Docker image, against the server on the Mac: WebKit at
 all three widths (Linux WebKit is not Safari, see below) and the reference screenshots. Docker

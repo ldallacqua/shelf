@@ -226,7 +226,7 @@ function ListTable({
                       >
                         <span className="text-text">{on?.short}</span>
                         <span className="readout text-[0.5625rem]">
-                          {t(`formatShort.${owned.format}`)}
+                          {t(`format.${owned.format}`)}
                         </span>
                       </span>
                     )

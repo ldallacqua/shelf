@@ -1,10 +1,34 @@
-# Handoff: 24 October 2026
+# Handoff: 25 October 2026
 
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: every browser test passes, and the library is back to 90 (24 Oct 2026)
+## Now: stores and consoles are named in words, with a few pictures where words are slow (25 Oct 2026)
+
+The owner asked (in Portuguese) for Steam, Nintendo, PlayStation and Xbox icons where they
+apply, and pictures where they help, "without going over the top", researched first. The
+research ([architecture section 25](architecture.md#25-changes-since-approval)'s first row)
+found that none of the four allows its logo here: Nintendo declines every use, Microsoft
+forbids its logos and icons without a licence, Sony grants nothing, and Valve only its sign-in
+button. Proposed with that, and approved: "Sim, pode construir os cinco itens como proposto,
+sem os logos das marcas."
+
+- **Built:** Nintendo's second linking step drawn (`features/platforms/copy-link-picture.tsx`);
+  a cartridge icon (`ui/icons.tsx`) and lucide's download arrow on Cartridge and Download, one
+  game or all at once; Steam's privacy step and its "not showing your games" problem link to
+  Steam's own settings (`STEAM_PRIVACY_SETTINGS`, a tab of its own); `/privacy` ends with
+  "Trademarks"; the list says Physical, not Disc (`Library.formatShort` is gone).
+- **Deliberately not:** a logo anywhere, a mark beside a platform shelf's name, its tab, a box,
+  a list row or a filter value (the case's shape and plastic already say the platform, and the
+  library's script has 0.3 KB left), a picture on the landing page.
+- **For PlayStation and Xbox, when they are built:** name them in words, as Steam and Nintendo
+  are; `AGENTS.md`, "Icons".
+- **`serve:test` takes its port from `BASE_URL`** (3300 unless set), so a worktree can be
+  served and verified beside a checkout that holds 3300: `BASE_URL=http://localhost:3311 pnpm
+  verify --skip-browser`.
+
+## Just before: every browser test passes, and the library is back to 90 (24 Oct 2026)
 
 The owner, of the library at 89 on Lighthouse: "yes look into it. but apart from that. run
 all the browser tests too to see if these changes broke anything."
@@ -23,9 +47,9 @@ all the browser tests too to see if these changes broke anything."
   server sends a phone 12 boxes, not 48. Put the config back before committing.
 - **The placing page's intro is one sentence,** what the page is for: it explained all of its
   behaviour, which using it shows (the owner: "So explica pra que serve e ponto"; spec 4.5).
-- **Icons for the stores and consoles** are a session of their own: it researched the brands'
+- **Icons for the stores and consoles** were a session of their own: it researched the brands'
   rules (none lets its logo be used here but Valve's sign-in button) and proposed five small
-  changes without logos, which wait for the owner's answer.
+  changes without logos, approved and built since (above).
 - **Next,** as ADR 003 lays out: PlayStation and Xbox, then step 10, the final review, ⏸.
 
 ## Before: "Not this game" fixes a game the sync matched wrong (24 Oct 2026)

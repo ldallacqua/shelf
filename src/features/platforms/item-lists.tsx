@@ -1,5 +1,6 @@
 'use client'
 
+import { DownloadIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
 import { useEffect, useId, useState } from 'react'
 
@@ -10,6 +11,7 @@ import type { ItemCounts, ItemList, ItemMatch, ItemView, SyncStep } from '@/doma
 import { SOURCES } from '@/domain/sync/sources'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { CartridgeIcon } from '@/ui/icons'
 
 import { FindIt, Thumb } from './find-it'
 import { answerItem, confirmMany, readItems, type ItemAnswer } from './sync-client'
@@ -26,6 +28,10 @@ import { answerItem, confirmMany, readItems, type ItemAnswer } from './sync-clie
 
 /** How a game a source saw me play is owned, as its row asks it. */
 const FORMATS: readonly Format[] = ['physical', 'digital']
+
+/** A picture beside each answer's word, so a long list of the same two reads at a glance. */
+const FormatIcon = ({ format }: { format: Format }) =>
+  format === 'physical' ? <CartridgeIcon aria-hidden="true" /> : <DownloadIcon aria-hidden="true" />
 
 /** A source that lists what was played: its copies wait for how I own each game. */
 const playedOn = (source: SyncSource) => SOURCES[source].evidence === 'played'
@@ -189,6 +195,7 @@ function Row({
                 disabled={still}
                 onClick={() => void answer({ kind: 'confirm', format })}
               >
+                <FormatIcon format={format} />
                 {t(`nintendo.${format}`)}
               </Button>
             ))}
@@ -311,6 +318,7 @@ function AllAtOnce({
           disabled={busy || sending}
           onClick={() => void send('physical')}
         >
+          <FormatIcon format="physical" />
           {t('nintendo.allPhysical')}
         </Button>
         <Button
@@ -319,6 +327,7 @@ function AllAtOnce({
           disabled={busy || sending}
           onClick={() => void send('digital')}
         >
+          <FormatIcon format="digital" />
           {t('nintendo.allDigital')}
         </Button>
       </span>

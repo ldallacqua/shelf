@@ -82,7 +82,7 @@ language the browser asks for.
 | `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
 | `/en/account/start` | Setting a new shelf up, where signing up leads: the platforms to bring games in from, and the way to placing them ([section 4.6](#46-setting-a-new-shelf-up)) |
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once ([section 4.5](#45-placing-what-a-sync-brought-in)) |
-| `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it |
+| `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it; last, whose marks Steam, Nintendo, PlayStation and Xbox are |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
 
 The addresses from before accounts (`/en/library`, `/en/game/…`, `/en/shelves/…`,
@@ -331,7 +331,7 @@ scroll past.
 | --- | --- |
 | Cover | Thumbnail |
 | Title | With the year |
-| Platforms owned | Each with a physical or digital mark |
+| Platforms owned | Each with Physical or Digital, in words (a cartridge is no disc) |
 | Status | |
 | My rating | |
 | IGDB rating | |
@@ -474,11 +474,13 @@ seconds to about a minute within IGDB's limit of four requests per second.
 On the account page, under **Platforms** ([ADR 003](adr/003-platform-sync.md)), and as the
 first step of setting a new shelf up ([section 4.6](#46-setting-a-new-shelf-up)): the same
 cards in both. Steam and Nintendo are built; PlayStation and Xbox come next, and the page says
-so.
+so. Every store and console is named in words: Shelf draws none of their logos, which their
+owners do not allow, beyond Valve's own sign-in button.
 
 1. **Link.** "Sign in through Steam", Valve's own button, goes to Steam's own sign-in page and
    back. Shelf never sees the Steam password. Steam has to show the account's game details
-   publicly; the card says where that is set. Steam's sign-in comes back to the page it left.
+   publicly; the card says where that is set, and links to Steam's own privacy settings, in a
+   tab of its own. Steam's sign-in comes back to the page it left.
    An empty shelf leads to these cards too, beside "Add your first game".
 2. **The first sync** starts by itself on the way back. Every game the account owns on Steam,
    free games it has played among them, is matched to IGDB: by Steam's own id first, then by
@@ -507,7 +509,7 @@ so.
 
 | Problem | Behavior |
 | --- | --- |
-| Steam's game details are private | "Steam isn't showing your games", with where to change it |
+| Steam's game details are private | "Steam is not showing your games", with a link to where to change it |
 | Steam does not answer | Said on the card; the next sync tries again |
 | A very large library | The rest of the games come with the next step, or the next sync, past 2,000 an hour |
 
@@ -528,15 +530,18 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
 1. **Link.** Nintendo's page cannot send the browser back, so the card says three steps:
    **Sign in on Nintendo's page** (a new tab); when Nintendo shows "Select this account", do not
    press it, copy its link (right-click, or press and hold on a phone); paste it into the card
-   and **Link Nintendo**. A wrong paste says what was wrong: not the button's link, a link from
+   and **Link Nintendo**. The second step is also drawn: the button, with the menu open on
+   "Copy link address". The drawing is Shelf's own, with nothing of Nintendo's page in it, and
+   is hidden from assistive technology, since the words say it all. A wrong paste says what was wrong: not the button's link, a link from
    another sign-in, or one Nintendo no longer takes (each works once, for a few minutes).
    Shelf never sees the Nintendo password; it keeps the session Nintendo gives, sealed.
 2. **The first sync** starts once linked. Nintendo lists what was played, not what is owned,
    so nothing goes on the shelf by itself: every game is matched by title on the consoles that
    play it, and waits under "9 games need you" with the game Shelf took it for, its cover and
-   year. **Cartridge** or **Download** puts it on the shelf; **Not this game** opens Find it;
-   **Not mine**. One line answers every match at once: "All 7 games Shelf found are:
-   **Cartridges** / **Downloads**". A game I find becomes the match, and waits the same way.
+   year. **Cartridge** or **Download**, each with its picture, puts it on the shelf; **Not
+   this game** opens Find it; **Not mine**. One line answers every match at once: "All 7
+   games Shelf found are: **Cartridges** / **Downloads**". A game I find becomes the match,
+   and waits the same way.
    The matched games come first; those Shelf could not find follow, under "Shelf could not
    find these 2 games", each with Find it, Not a game and Not mine. The card says "9 games
    wait for your answer", never "up to date" while any do.

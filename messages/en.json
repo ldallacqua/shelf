@@ -375,10 +375,6 @@
       "physical": "Physical",
       "digital": "Digital"
     },
-    "formatShort": {
-      "physical": "Disc",
-      "digital": "Digital"
-    },
     "shelf": {
       "tabs": "Shelves",
       "notOwned": "Not owned",
@@ -932,7 +928,7 @@
     "later": "PlayStation and Xbox come next.",
     "steam": {
       "about": "Sign in through Steam, and every game you own there goes onto your shelf as a PC copy, with Steam’s hours on it. Shelf syncs again once a day. Your Steam password never reaches Shelf.",
-      "public": "Steam has to show your game details: in Steam, open Edit Profile, then Privacy Settings, and set Game details to Public.",
+      "public": "Steam has to show your game details: open <settings>your Steam privacy settings</settings> (in Steam, Edit Profile, then Privacy Settings) and set Game details to Public.",
       "signIn": "Sign in through Steam"
     },
     "nintendo": {
@@ -960,7 +956,11 @@
       "notThis": "Not this game",
       "all": "{count, plural, other {All # games Shelf found are:}}",
       "allPhysical": "Cartridges",
-      "allDigital": "Downloads"
+      "allDigital": "Downloads",
+      "picture": {
+        "button": "Select this account",
+        "copy": "Copy link address"
+      }
     },
     "kept": "What Shelf keeps",
     "linkedAs": "Linked to {name}",
@@ -981,7 +981,7 @@
     "linked": "Linked. Bringing your games in…",
     "linkFailed": "Steam did not confirm the sign-in, so nothing was linked. Try again.",
     "problem": {
-      "private": "Steam isn’t showing your games. Set Game details to Public in Steam’s privacy settings, then sync again.",
+      "private": "Steam is not showing your games. Set Game details to Public in <settings>your Steam privacy settings</settings>, then sync again.",
       "unreachable": "{source} did not answer. Try again in a while.",
       "unset": "{source} sync isn’t set up on this server yet.",
       "signed-out": "Nintendo ended Shelf’s sign-in, which lasts about two years. Sign in on Nintendo’s page again."
@@ -1063,6 +1063,10 @@
       "delete": {
         "title": "Removing it",
         "body": "Delete a game, and it is gone. Delete your account on your account page, and your account, your shelf and everything in it are deleted for good, what Steam and Nintendo listed included."
+      },
+      "trademarks": {
+        "title": "Trademarks",
+        "body": "Steam and the Steam logo are trademarks and/or registered trademarks of Valve Corporation in the U.S. and/or other countries. Nintendo and Nintendo Switch are trademarks of Nintendo. PlayStation is a registered trademark or trademark of Sony Interactive Entertainment Inc. Xbox is a trademark of the Microsoft group of companies. Shelf names them only to say where your games come from, and is not affiliated with, endorsed or sponsored by any of them."
       }
     },
     "account": "Your account page"

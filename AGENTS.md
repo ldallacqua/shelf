@@ -239,6 +239,10 @@ test doubles on, "Sign in through Steam" comes straight back with the made-up ac
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used
 straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
 
+**Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
+store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in
+button (architecture, section 11). Name them in words. An icon beside words is `aria-hidden`.
+
 **Comments** say why, in plain words. They do not restate the code.
 
 ## Done means

@@ -9,14 +9,16 @@ import type { NintendoLinkOutcome } from '@/domain/sync/link'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
 
+import { CopyLinkPicture } from './copy-link-picture'
 import { connectAddress, pasteNintendoLink } from './sync-client'
 
 /**
  * Linking Nintendo (ADR 003, "Built: Nintendo"): Nintendo's page never sends
  * the browser back, so it takes three steps, each said in words: sign in on
  * Nintendo's page, in a tab of its own; copy the link of its "Select this
- * account" button instead of pressing it; paste it here. The same steps
- * sign in again when Nintendo has ended Shelf's session.
+ * account" button instead of pressing it, which is also drawn, as no other
+ * page asks for anything like it; paste it here. The same steps sign in
+ * again when Nintendo has ended Shelf's session.
  */
 export function NintendoSignIn({
   again = false,
@@ -73,7 +75,12 @@ export function NintendoSignIn({
             </span>
           </div>
         </li>
-        <li>{t('nintendo.step2')}</li>
+        <li>
+          <div className="grid gap-3">
+            <span>{t('nintendo.step2')}</span>
+            <CopyLinkPicture />
+          </div>
+        </li>
         <li>
           <div className="grid gap-2">
             <label htmlFor={`${id}-link`}>{t('nintendo.step3')}</label>

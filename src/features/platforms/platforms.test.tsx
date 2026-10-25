@@ -157,7 +157,22 @@ describe('Platforms', () => {
   it('says how to fix an account that hides its games', async () => {
     platforms = rows({ ...LINK, problem: 'private' })
     renderWithIntl(<Platforms handle="ana" />)
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Set Game details to Public/)
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/Set Game details to Public/)
+    expect(
+      within(alert).getByRole('link', { name: 'your Steam privacy settings' }),
+    ).toHaveAttribute('href', 'https://steamcommunity.com/my/edit/settings')
+  })
+
+  it('links straight to Steam’s privacy settings, in a tab of its own, named by its words', async () => {
+    platforms = rows(null)
+    renderWithIntl(<Platforms handle="ana" />, 'pt-BR')
+    const settings = await screen.findByRole('link', {
+      name: 'suas configurações de privacidade na Steam',
+    })
+    expect(settings).toHaveAttribute('href', 'https://steamcommunity.com/my/edit/settings')
+    expect(settings).toHaveAttribute('target', '_blank')
+    expect(settings.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('reads Steam first, then asks for steps until nothing is left', async () => {
@@ -204,6 +219,18 @@ describe('Nintendo', () => {
     expect(signIn).toHaveAttribute('target', '_blank')
     expect(screen.getByText(/do not press it. Copy its link instead/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Link Nintendo' })).toBeDisabled()
+  })
+
+  it('draws the button whose link to copy, hidden from assistive technology, as the words say it', async () => {
+    platforms = rows(null)
+    renderWithIntl(<Platforms handle="ana" />, 'pt-BR')
+    const picked = await screen.findByText('Copiar endereço do link')
+    const picture = picked.closest('[aria-hidden="true"]')
+    expect(picture).not.toBeNull()
+    expect(picture).toHaveTextContent('Selecionar esta conta')
+    // Nothing in it to press: a drawing, not the button.
+    expect(within(picture as HTMLElement).queryByRole('button', { hidden: true })).toBeNull()
+    expect(screen.getByText(/Copie o link do botão/)).toBeVisible()
   })
 
   it('says what was wrong with a pasted link, and links nothing', async () => {
@@ -258,6 +285,22 @@ describe('Nintendo', () => {
     )
     // The game Shelf could not match is found as Steam's are.
     expect(screen.getAllByRole('button', { name: 'Find it' })).toHaveLength(1)
+  })
+
+  it('pictures each answer beside its word, which alone names the button', async () => {
+    platforms = rows(null, NINTENDO)
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByText('3 games need you'))
+    await screen.findByText('Shelf thinks it is Metroid Dread (2021)')
+    const answers = [
+      ...screen.getAllByRole('button', { name: 'Cartridge' }),
+      ...screen.getAllByRole('button', { name: 'Download' }),
+      screen.getByRole('button', { name: 'Cartridges' }),
+      screen.getByRole('button', { name: 'Downloads' }),
+    ]
+    for (const answer of answers) {
+      expect(answer.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+    }
   })
 
   it('lists the games Shelf matched first, then those it could not find, under a heading of their own', async () => {

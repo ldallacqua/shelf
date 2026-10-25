@@ -158,6 +158,12 @@ export const kindsFromSteam = (
 /** Steam's OpenID 2.0 provider, the "Sign in through Steam" page. */
 export const STEAM_OPENID = 'https://steamcommunity.com/openid/login'
 
+/**
+ * The signed-in person's own privacy settings on Steam, where Game details is
+ * set to Public. Signed out, Steam asks for its sign-in first, then opens them.
+ */
+export const STEAM_PRIVACY_SETTINGS = 'https://steamcommunity.com/my/edit/settings'
+
 const OPENID_NS = 'http://specs.openid.net/auth/2.0'
 const IDENTIFIER_SELECT = 'http://specs.openid.net/auth/2.0/identifier_select'
 

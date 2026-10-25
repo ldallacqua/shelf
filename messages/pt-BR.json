@@ -375,10 +375,6 @@
       "physical": "Físico",
       "digital": "Digital"
     },
-    "formatShort": {
-      "physical": "Disco",
-      "digital": "Digital"
-    },
     "shelf": {
       "tabs": "Prateleiras",
       "notOwned": "Não tenho",
@@ -932,7 +928,7 @@
     "later": "PlayStation e Xbox vêm a seguir.",
     "steam": {
       "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam. O Shelf sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega ao Shelf.",
-      "public": "A Steam precisa mostrar os detalhes dos seus jogos: na Steam, abra Editar perfil, depois Configurações de privacidade, e deixe Detalhes dos jogos como Público.",
+      "public": "A Steam precisa mostrar os detalhes dos seus jogos: abra <settings>suas configurações de privacidade na Steam</settings> (na Steam, Editar perfil, depois Configurações de privacidade) e deixe Detalhes dos jogos como Público.",
       "signIn": "Entrar pela Steam"
     },
     "nintendo": {
@@ -960,7 +956,11 @@
       "notThis": "Não é este jogo",
       "all": "{count, plural, other {Todos os # jogos que o Shelf achou são:}}",
       "allPhysical": "Cartuchos",
-      "allDigital": "Downloads"
+      "allDigital": "Downloads",
+      "picture": {
+        "button": "Selecionar esta conta",
+        "copy": "Copiar endereço do link"
+      }
     },
     "kept": "O que o Shelf guarda",
     "linkedAs": "Conectado a {name}",
@@ -981,7 +981,7 @@
     "linked": "Conectado. Trazendo seus jogos…",
     "linkFailed": "A Steam não confirmou a entrada, então nada foi conectado. Tente de novo.",
     "problem": {
-      "private": "A Steam não está mostrando seus jogos. Deixe Detalhes dos jogos como Público nas configurações de privacidade da Steam e sincronize de novo.",
+      "private": "A Steam não está mostrando seus jogos. Deixe Detalhes dos jogos como Público nas suas <settings>configurações de privacidade da Steam</settings> e sincronize de novo.",
       "unreachable": "A {source} não respondeu. Tente de novo daqui a pouco.",
       "unset": "A sincronização com a {source} ainda não está configurada neste servidor.",
       "signed-out": "A Nintendo encerrou o acesso do Shelf, que dura cerca de dois anos. Entre de novo pela página da Nintendo."
@@ -1063,6 +1063,10 @@
       "delete": {
         "title": "Apagar",
         "body": "Apague um jogo, e ele some. Apague a sua conta na página da sua conta, e a conta, a estante e tudo nela são apagados para sempre, inclusive o que a Steam e a Nintendo listaram."
+      },
+      "trademarks": {
+        "title": "Marcas",
+        "body": "Steam e o logotipo Steam são marcas e/ou marcas registradas da Valve Corporation nos EUA e/ou em outros países. Nintendo e Nintendo Switch são marcas da Nintendo. PlayStation é marca ou marca registrada da Sony Interactive Entertainment Inc. Xbox é marca do grupo de empresas Microsoft. O Shelf só cita esses nomes para dizer de onde vêm os seus jogos, e não tem ligação com nenhuma dessas empresas, nem é endossado ou patrocinado por elas."
       }
     },
     "account": "A página da sua conta"
