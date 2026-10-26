@@ -28,7 +28,10 @@ steps it is built in.
    - a game the Steam sync brought in has **Play** at once, through Steam;
    - any other has **Choose the game's file**: pick its `.exe` (or a shortcut). Play starts it
      from then on, from its own folder.
-4. **Change**, **Show in folder** and **Forget** are beside the file's name.
+4. **The menu beside Play** (Ways to play) names the file, with **Change the file**, **Show in
+   folder** and **Forget the file**.
+5. **The header is the window's bar:** drag it to move the window, double-click it to
+   maximize, and minimize, maximize and close are at its right end.
 
 What the app keeps on this computer is only the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`. Uninstalling leaves that file; delete the
@@ -80,7 +83,8 @@ desktop/
     launch.rs            Starting a file as Explorer does, or Steam
     steam.rs             Steam's folders: which apps are installed
   tests/fixtures/        Steam's files as Steam writes them, for the tests
-src/features/desktop/    The site's side: is this the app, and the bridge to its commands
+src/features/desktop/    The site's side: is this the app, the bridge to its commands, and the
+                         window's bar (window-frame.tsx, window-script.tsx)
 src/features/game-detail/play.tsx   Play, under Mine
 ```
 
@@ -101,6 +105,9 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
   none is allowed without one.
 - A path comes only from the file picker. No command takes one.
 - No plugin's JavaScript API is allowed to any page.
+- Shelf's origin may also use Tauri's window commands for the window it is in: minimize,
+  maximize, close, whether it is maximized, and dragging. The app's own page may minimize,
+  close and move its window.
 - The window keeps Shelf's pages and the platforms' sign-in pages (`navigation.rs`); any other
   address goes to the default browser; `steam://rungameid/` and `steam://install/` go to Steam,
   and every other scheme is dropped.
@@ -108,6 +115,14 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
 ### The site's side
 
 - `connect-src` allows `http://ipc.localhost`, Tauri's channel on Windows (`next.config.ts`).
+- The window has no Windows bar. The app runs `window.__SHELF_WINDOW__ = 'frameless'` before
+  a page's scripts; `window-script.tsx`, in `<head>`, puts `data-window="frameless"` on
+  `<html>` before the first paint, and the `frameless` variant (`globals.css`) keeps room at
+  the header's right end and shows the controls there (`WindowControls`, drawn for everyone,
+  shown only by that variant). `TitleBar` gives the header Tauri's
+  `data-tauri-drag-region="deep"` once the page runs, and only in that window: an app with
+  Windows' bar would refuse the drag, and say so in the console. The page's own scrollbar is
+  hidden there and `PageScrollbar` drawn instead, below the header.
 - Mine's Play (`play.tsx`) reads `steam` from the owner's game (`GET /api/v1/entries/{id}`):
   the app id the Steam sync recorded on one of its copies, and the ones IGDB lists for it. It
   carries `data-play`, so `pnpm desktop:check` reads every page without it: the app's and a
@@ -200,24 +215,29 @@ Where installers live was theirs to answer: this repository, made public.
 
 ### Step 4: The window's own title bar
 
-- [ ] The window without Windows' bar (`decorations(false)`; Windows keeps its edges, shadow,
+**Built 25 Oct 2026.**
+
+- [x] The window without Windows' bar (`decorations(false)`; Windows keeps its edges, shadow,
       rounded corners and snapping), and the app's line that tells Shelf's pages so
       (`window.__SHELF_WINDOW__ = 'frameless'`, before any of the page's scripts), mirrored on
       `<html>` as `data-window="frameless"` by Shelf's head script before the first paint.
-- [ ] Shelf's header as the bar: `data-tauri-drag-region="deep"` (its empty parts move the
+- [x] Shelf's header as the bar: `data-tauri-drag-region="deep"` (its empty parts move the
       window, a double click maximizes it), room kept at its right end, and minimize, maximize
       (restore, when maximized) and close there, as wide as Windows draws them, close turning
       red. Through the bridge, Tauri's window commands, allowed to Shelf's origin: `minimize`,
       `toggle_maximize`, `close`, `is_maximized`, `start_dragging`, `internal_toggle_maximize`.
-- [ ] The page's scrollbar in the app: Windows' would run beside the close button, so it is
+- [x] The page's scrollbar in the app: Windows' would run beside the close button, so it is
       hidden there and a thin one of Shelf's is drawn below the header, over the page, shown
       while the page scrolls or the pointer is on it, and draggable.
-- [ ] Tests: the controls are drawn only in a window without a bar, and each asks its command;
+- [x] Tests: the controls are drawn only in a window without a bar, and each asks its command;
       the scrollbar follows the page.
 
 **Done when** the window has one bar, Shelf's: it moves, maximizes, restores, minimizes and
 closes from the header, resizes from its edges, and Shelf's name shows once. An app from step 3,
-which has Windows' bar, shows no second set of controls.
+which has Windows' bar, shows no second set of controls. Checked by `pnpm desktop:check`, which
+finds the controls in the header, maximizes and restores the window from it, and still reads
+every page as a browser does. A development build no longer takes the single-instance lock,
+which closed it at once and brought the installed app forward whenever that was open.
 
 ### Step 5: Ready to play
 
@@ -298,6 +318,8 @@ Steam is still counted once.
   `desktop/tests/fixtures/`, never from this computer's Steam.
 - **The site's side:** Vitest, with the bridge faked (`src/features/desktop/bridge.ts` takes a
   stand-in in tests).
+- **Pictures:** `DESKTOP_CHECK_SHOTS=<folder> pnpm desktop:check` keeps a picture of the app's
+  page at each step, for a person to look at.
 - **The app itself:** `pnpm desktop:check` starts the development build against
   `pnpm serve:test` with WebView2's debugging port open
   (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333`), connects to it

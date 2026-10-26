@@ -37,6 +37,14 @@ const tauri = (): Invoke | undefined => {
 /** Whether this page is inside Shelf for Windows. */
 export const inDesktopApp = (): boolean => tauri() !== undefined
 
+/**
+ * Whether this page's window has no Windows bar, so Shelf's header is its bar
+ * (ADR 005, section 8): the app says so before the page's scripts run, and
+ * the head script puts it on <html> (`window-script.tsx`).
+ */
+export const framelessWindow = (): boolean =>
+  inDesktopApp() && document.documentElement.getAttribute('data-window') === 'frameless'
+
 /** A command's refusal as a word; anything else it throws is `failed`. */
 export const refusalOf = (error: unknown): Refusal =>
   refusals.find((refusal) => refusal === error) ?? 'failed'
@@ -68,4 +76,18 @@ export const desktop = {
   /** Of these Steam apps, the ones Steam has installed on this computer. */
   steamInstalled: async (apps: readonly string[]): Promise<string[]> =>
     z.array(z.string()).parse(await call('steam_installed', { apps })),
+  /** The window this page is in: Tauri's own window commands, allowed to Shelf's pages. */
+  window: {
+    minimize: async (): Promise<void> => {
+      await call('plugin:window|minimize', {})
+    },
+    toggleMaximize: async (): Promise<void> => {
+      await call('plugin:window|toggle_maximize', {})
+    },
+    close: async (): Promise<void> => {
+      await call('plugin:window|close', {})
+    },
+    isMaximized: async (): Promise<boolean> =>
+      z.boolean().parse(await call('plugin:window|is_maximized', {})),
+  },
 }
