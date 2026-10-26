@@ -32,6 +32,8 @@
 @custom-variant pointer-coarse (@media (pointer: coarse));
 /* Shelf for Windows' window without a Windows bar, where Shelf's header is the bar (features/desktop/window-script.tsx). */
 @custom-variant frameless (&:where([data-window='frameless'], [data-window='frameless'] *));
+/* That window, maximized (features/desktop/frame.ts). */
+@custom-variant maximized (&:where([data-maximized], [data-maximized] *));
 /* A window too small for the 3D shelf: TOO_SMALL_FOR_3D in features/library/preferences.ts. */
 @custom-variant too-small-for-3d {
   /* The shorthand form would split this list at its comma. */
@@ -227,7 +229,7 @@ html:has(.library) .site-search {
 
 /*
  * In Shelf for Windows' window without a bar, Windows' scrollbar would run the window's whole
- * height, beside the close button. Shelf draws its own below the header (features/desktop/window-frame.tsx).
+ * height, beside the close button. Shelf draws its own below the header (features/desktop/frame.ts).
  */
 html[data-window='frameless'] {
   scrollbar-width: none;

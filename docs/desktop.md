@@ -83,8 +83,9 @@ desktop/
     launch.rs            Starting a file as Explorer does, or Steam
     steam.rs             Steam's folders: which apps are installed
   tests/fixtures/        Steam's files as Steam writes them, for the tests
-src/features/desktop/    The site's side: is this the app, the bridge to its commands, and the
-                         window's bar (window-frame.tsx, window-script.tsx)
+src/features/desktop/    The site's side: Tauri's global (tauri.ts), the commands that answer
+                         with data (bridge.ts), and the window's bar (window-script.tsx,
+                         window-controls.tsx, and frame.ts, fetched only in the app)
 src/features/game-detail/play.tsx   Play, under Mine
 ```
 
@@ -121,11 +122,13 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
 - The window has no Windows bar. The app runs `window.__SHELF_WINDOW__ = 'frameless'` before
   a page's scripts; `window-script.tsx`, in `<head>`, puts `data-window="frameless"` on
   `<html>` before the first paint, and the `frameless` variant (`globals.css`) keeps room at
-  the header's right end and shows the controls there (`WindowControls`, drawn for everyone,
-  shown only by that variant). `TitleBar` gives the header Tauri's
-  `data-tauri-drag-region="deep"` once the page runs, and only in that window: an app with
-  Windows' bar would refuse the drag, and say so in the console. The page's own scrollbar is
-  hidden there and `PageScrollbar` drawn instead, below the header.
+  the header's right end and shows the controls there (`window-controls.tsx`, drawn on the
+  server for every page, shown only by that variant). What they do is `frame.ts`, which
+  `window-frame.tsx` fetches once the page runs and only in that window, so a visitor's page
+  carries none of it: it gives the header Tauri's `data-tauri-drag-region="deep"` (an app with
+  Windows' bar would refuse the drag, and say so in the console), acts on the controls' clicks,
+  marks `<html>` `data-maximized` for the restore button, and draws the page's scrollbar below
+  the header, Windows' own being hidden there.
 - Mine's Play (`play.tsx`) reads `steam` from the owner's game (`GET /api/v1/entries/{id}`):
   the app id the Steam sync recorded on one of its copies, and the ones IGDB lists for it. It
   carries `data-play`, so `pnpm desktop:check` reads every page without it: the app's and a

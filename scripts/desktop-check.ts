@@ -145,6 +145,12 @@ try {
   // The window has no Windows bar: Shelf's header is the bar, with the window's controls.
   // In English, whatever Windows' language, so the controls are found by their English names.
   await shelf.goto(`${BASE_URL}/en`)
+  // What makes the header the bar is fetched once the page runs, in that window only.
+  await shelf
+    .waitForFunction(() => document.querySelector('header[data-tauri-drag-region]'), null, {
+      timeout: 10_000,
+    })
+    .catch(() => {})
   const bar = await shelf.evaluate(() => ({
     frameless: document.documentElement.getAttribute('data-window'),
     drag: document.querySelector('header')?.getAttribute('data-tauri-drag-region'),

@@ -2,7 +2,8 @@ import { useTranslations } from 'next-intl'
 
 import type { AddActions } from '@/features/add-game/actions'
 import { AddButton } from '@/features/add-game/add-button'
-import { TitleBar, WindowControls } from '@/features/desktop/window-frame'
+import { WindowControls } from '@/features/desktop/window-controls'
+import { WindowFrame } from '@/features/desktop/window-frame'
 import { LanguageSwitch } from '@/features/language/language-switch'
 import { AccountMenu } from '@/features/owner/account-menu'
 import { ThemeSwitch } from '@/features/theme/theme-switch'
@@ -25,7 +26,10 @@ export function Header({ add }: { add?: AddActions }) {
 
   return (
     // It stays in view while the page scrolls, so theme and language are always in reach.
-    <TitleBar className="sticky top-0 z-40 border-b border-line/70 bg-wall/85 backdrop-blur-md frameless:pr-34.5">
+    <header
+      data-title-bar=""
+      className="sticky top-0 z-40 border-b border-line/70 bg-wall/85 backdrop-blur-md frameless:pr-34.5"
+    >
       <div className="mx-auto flex h-14 w-full max-w-360 items-stretch gap-2 px-4 sm:px-6 lg:px-10">
         <Link
           href="/"
@@ -50,6 +54,7 @@ export function Header({ add }: { add?: AddActions }) {
         </div>
       </div>
       <WindowControls />
-    </TitleBar>
+      <WindowFrame />
+    </header>
   )
 }

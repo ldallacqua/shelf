@@ -9,7 +9,6 @@ import {
   searchGamesAction,
   undoAddAction,
 } from '@/app/actions/games'
-import { PageScrollbar } from '@/features/desktop/window-frame'
 import { WindowScript } from '@/features/desktop/window-script'
 import { PreferenceScript } from '@/features/library/preference-script'
 import { Footer } from '@/features/shell/footer'
@@ -83,7 +82,6 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
             {children}
           </main>
           <Footer />
-          <PageScrollbar />
           <Notices />
         </NextIntlClientProvider>
       </body>
