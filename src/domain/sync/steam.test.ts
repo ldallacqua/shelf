@@ -6,6 +6,7 @@ import {
   kindsFromSteam,
   reportedFromSteam,
   STEAM_OPENID,
+  steamInstallLink,
   steamPlayLink,
   steamSignInAddress,
   steamStoreItemsSchema,
@@ -170,5 +171,10 @@ describe('playing a game through Steam (spec 7.7)', () => {
     expect(steamPlayLink('236430 -console')).toBeUndefined()
     expect(steamPlayLink('../../uninstall/236430')).toBeUndefined()
     expect(steamPlayLink('')).toBeUndefined()
+  })
+
+  it('links to Steam installing an app, by its id and nothing else', () => {
+    expect(steamInstallLink('236430')).toBe('steam://install/236430')
+    expect(steamInstallLink('236430/../../uninstall')).toBeUndefined()
   })
 })

@@ -5,15 +5,21 @@
  * section 5): starts the app's development build on `BASE_URL` with its web
  * view's debugging port open, connects to it as to any Chromium, signs in as
  * the made-up owner, and reads each page beside the same page read in a plain
- * Chromium the same size. Fails if a page reads differently, if the app's
- * bridge does not answer Shelf's page, if linking Steam (the test double)
- * does not come back to the app, or if the console has an error.
+ * Chromium the same size, Play left out (the app's and a browser's differ by
+ * design). Then Play: a file is chosen (a development build takes it from
+ * `SHELF_PICK`, since no script can answer Windows' picker) and started,
+ * and must start in its own folder. The file is a batch file that only
+ * writes that folder down; no game is started, and Steam's link is read,
+ * never followed. Fails if a page reads differently, if the bridge does not
+ * answer Shelf's page, if linking Steam (the test double) does not come back
+ * to the app, if Play does not start the file where it should, or if the
+ * console has an error.
  *
  * Start the server first: pnpm build && pnpm serve:test. Never against
  * production: it signs in with the test doubles' made-up password.
  */
 import { spawn, spawnSync } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -77,11 +83,16 @@ if (built.status !== 0) process.exit(built.status ?? 1)
 
 // A web view profile of its own, so each run starts signed out, and the installed app's is untouched.
 const profile = mkdtempSync(join(tmpdir(), 'shelf-desktop-check-'))
+// A stand-in for a game's file: a batch file that writes down the folder it was started in.
+const game = mkdtempSync(join(tmpdir(), 'shelf-desktop-game-'))
+const started = join(game, 'started.txt')
+writeFileSync(join(game, 'start.bat'), '@echo off\r\necho %CD%> "%~dp0started.txt"\r\n')
 const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
   env: {
     ...process.env,
     SHELF_URL: BASE_URL,
     SHELF_DATA_DIR: profile,
+    SHELF_PICK: join(game, 'start.bat'),
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}`,
   },
   stdio: 'inherit',
@@ -152,6 +163,39 @@ try {
   await until('coming back from Steam', 20, async () => /\/en\/account/.test(shelf.url()))
   pass(`came back to ${new URL(shelf.url()).pathname}, in the app`)
 
+  console.log('\nPlay, from a file')
+  await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
+  await shelf.getByRole('button', { name: 'Choose the game’s file' }).click()
+  await shelf.getByRole('button', { name: 'Play', exact: true }).click()
+  await until('the file starting', 15, async () => existsSync(started))
+  const folder = readFileSync(started, 'utf8').trim()
+  if (folder.toLowerCase() === game.toLowerCase()) pass(`started the file, in its own folder`)
+  else fail(`started the file in ${folder}, not in its own folder, ${game}`)
+  await shelf.getByRole('button', { name: 'Ways to play' }).click()
+  await shelf.getByRole('menuitem', { name: 'Forget the file' }).click()
+  await shelf.getByRole('button', { name: 'Choose the game’s file' }).waitFor({ timeout: 10_000 })
+  pass('forgot it, and asks for the file again')
+
+  console.log('\nPlay, through Steam (read, never followed)')
+  // Linked, then synced, from the app's own page: Skyrim comes from the made-up Steam account.
+  await shelf.evaluate(async () => {
+    let body: object = { read: true }
+    for (let step = 0; step < 20; step++) {
+      const answer = await fetch('/api/v1/me/platforms/steam/sync', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const { remaining } = (await answer.json()) as { remaining?: number }
+      if (!remaining) return
+      body = {}
+    }
+  })
+  await shelf.goto(`${BASE_URL}/en/u/sample/game/the-elder-scrolls-v-skyrim`)
+  const steam = shelf.locator('[data-play] a[href^="steam://"]')
+  await steam.waitFor({ timeout: 10_000 })
+  pass(`Skyrim offers “${await steam.textContent()}”, to ${await steam.getAttribute('href')}`)
+
   console.log('\nThe console')
   if (errors.length === 0) pass('no error')
   else for (const error of errors) fail(error)
@@ -161,6 +205,7 @@ try {
   await plain?.close()
   // The app and the web view's own processes, which hold its profile until they end.
   if (app.pid) spawnSync('taskkill', ['/pid', String(app.pid), '/t', '/f'], { stdio: 'ignore' })
+  rmSync(game, { recursive: true, force: true })
   try {
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
   } catch {
@@ -184,13 +229,20 @@ async function signIn(page: Page) {
   await page.waitForURL((url) => !url.pathname.endsWith('/sign-in'), { timeout: 20_000 })
 }
 
-/** A page's words once it has settled: every ghost gone, nothing left to fetch. */
+/**
+ * A page's words once it has settled (every ghost gone, nothing left to
+ * fetch), without Play, which the app and a browser draw differently.
+ */
 async function readPage(page: Page, path: string) {
   await page.goto(`${BASE_URL}${path}`, { waitUntil: 'networkidle' })
   await until(`${path} settling`, 20, async () => (await page.locator('.ghost').count()) === 0)
-  return page.evaluate(() =>
-    (document.querySelector('main') ?? document.body).innerText.replace(/\s+/g, ' ').trim(),
-  )
+  return page.evaluate(() => {
+    const main = document.querySelector('main') ?? document.body
+    const words = main.cloneNode(true) as HTMLElement
+    for (const play of words.querySelectorAll('[data-play]')) play.remove()
+    // A detached copy has no layout, so its text is read as written, then spaced as one line.
+    return (words.textContent ?? '').replace(/\s+/g, ' ').trim()
+  })
 }
 
 /** Where two readings part, with a little of each around it. */

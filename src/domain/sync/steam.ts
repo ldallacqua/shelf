@@ -174,6 +174,10 @@ const STEAM_APP = /^\d{1,10}$/
 export const steamPlayLink = (app: string): string | undefined =>
   STEAM_APP.test(app) ? `steam://rungameid/${app}` : undefined
 
+/** Steam's link that opens its installer for one of its apps (spec 7.7). */
+export const steamInstallLink = (app: string): string | undefined =>
+  STEAM_APP.test(app) ? `steam://install/${app}` : undefined
+
 const OPENID_NS = 'http://specs.openid.net/auth/2.0'
 const IDENTIFIER_SELECT = 'http://specs.openid.net/auth/2.0/identifier_select'
 

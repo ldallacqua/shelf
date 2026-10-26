@@ -1,8 +1,12 @@
 //! Shelf for Windows (ADR 005): the hosted Shelf in a window of its own, and
 //! the few commands its pages may ask of this computer.
 
+mod commands;
 mod ids;
+mod launch;
+mod launchers;
 mod navigation;
+mod steam;
 
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
@@ -14,6 +18,7 @@ use tauri::webview::NewWindowResponse;
 use tauri::{AppHandle, Manager, State, Url, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_opener::OpenerExt;
 
+use launchers::Launchers;
 use navigation::Decision;
 
 /// The Shelf a release build opens.
@@ -41,8 +46,8 @@ fn shelf_url() -> Url {
 }
 
 /// In a development build, `SHELF_DATA_DIR` keeps the web view's profile (and
-/// so its sign-ins) apart from the installed app's: `pnpm desktop:check`
-/// starts each run with an empty one.
+/// so its sign-ins) and the files chosen apart from the installed app's:
+/// `pnpm desktop:check` starts each run with empty ones.
 fn data_dir() -> Option<PathBuf> {
     #[cfg(debug_assertions)]
     if let Ok(dir) = std::env::var("SHELF_DATA_DIR") {
@@ -121,7 +126,17 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![desktop_info, open_shelf])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            desktop_info,
+            open_shelf,
+            commands::launcher,
+            commands::choose_launcher,
+            commands::forget_launcher,
+            commands::show_launcher,
+            commands::play,
+            commands::steam_installed,
+        ])
         .setup(|app| {
             let shelf = shelf_url();
             // Shelf's own pages, and no other remote page, may ask for commands.
@@ -130,9 +145,20 @@ pub fn run() {
                     .window("main")
                     .local(false)
                     .remote(format!("{}/*", shelf.origin().ascii_serialization()))
-                    .permission("allow-desktop-info"),
+                    .permission("allow-desktop-info")
+                    .permission("allow-launcher")
+                    .permission("allow-choose-launcher")
+                    .permission("allow-forget-launcher")
+                    .permission("allow-show-launcher")
+                    .permission("allow-play")
+                    .permission("allow-steam-installed"),
             )?;
             app.manage(Shelf(shelf.clone()));
+            let folder = match data_dir() {
+                Some(dir) => dir,
+                None => app.path().app_data_dir()?,
+            };
+            app.manage(Launchers::open(&folder));
 
             let navigating = app.handle().clone();
             let opening = app.handle().clone();

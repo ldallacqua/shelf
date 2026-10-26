@@ -279,7 +279,7 @@ export function MineEditor({
           <p className="text-xs text-muted" aria-live="polite">
             {saving > 0 ? t('saving') : ''}
           </p>
-          <Play steam={owned.steam} />
+          <Play entryId={owned.entryId} title={owned.title} steam={owned.steam} />
         </div>
       </div>
       {problem ? (
