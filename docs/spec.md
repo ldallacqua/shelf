@@ -3,8 +3,8 @@
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
   Written and built on 25 Oct 2026: two statuses (3.12), hiding adult games (3.13), archiving a
   game (7.4), wishing for a game on one platform (7.5), separating a version (7.6) and a game
-  only I see (11.1). Written on 25 Oct 2026: playing a game (7.7), with the desktop app of
-  [ADR 005](adr/005-desktop-app.md); Play on Steam in a browser is built, the app not yet.
+  only I see (11.1). Written and built on 25 Oct 2026: playing a game (7.7), with the desktop
+  app of [ADR 005](adr/005-desktop-app.md), all but its hours.
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -1124,8 +1124,8 @@ it for one game.
 
 ### 7.7 Playing a game
 
-**Built in the steps of [the desktop guide](desktop.md#4-the-steps): Play on Steam in a browser
-on 25 Oct 2026; the app not yet.** The owner
+**Built in the steps of [the desktop guide](desktop.md#4-the-steps) on 25 Oct 2026: Play on
+Steam in a browser, the app, and Play in it; hours not yet.** The owner
 asked on 25 Oct 2026: "quero converter esse projeto não somente em um browser mas tbm em um
 projeto que vai rodar no meu computar para eu executar meus jogos direito dele, tipo o hydra
 sabe. [...] Eu vou poder apontar o caminho no meu pc do game local e ele vai rodar o game, se o
@@ -1147,8 +1147,9 @@ tudo certo."
   - a game owned on Steam and not installed offers **Install on Steam** (Instalar na Steam);
   - any other offers **Choose the game's file** (Escolher o arquivo do jogo): Windows' own
     picker, for an `.exe`, a shortcut (`.lnk`, `.url`) or a `.bat`.
-- **The file's name** shows beside Play, with **Change**, **Show in folder** and **Forget**. A
-  file no longer there says so and offers to choose it again.
+- **The file's name** is in a menu beside Play (Formas de jogar), with **Change the file**,
+  **Show in folder** and **Forget the file**; for a game played through Steam, the menu offers
+  **Choose a file instead**. A file no longer there says so and offers to choose it again.
 - **The files chosen stay on this computer.** Shelf's server never sees them, and another
   computer keeps its own.
 - **Hours,** built after Play: the time a game started from its file is open is added to its

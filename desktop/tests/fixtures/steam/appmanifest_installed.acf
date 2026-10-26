@@ -1,0 +1,20 @@
+"AppState"
+{
+	"appid"		"10"
+	"Universe"		"1"
+	"LauncherPath"		"C:\\Steam\\steam.exe"
+	"name"		"A game"
+	"StateFlags"		"4"
+	"installdir"		"A game"
+	"lastupdated"		"1761350400"
+	"SizeOnDisk"		"1000"
+	"buildid"		"1"
+	"InstalledDepots"
+	{
+		"11"
+		{
+			"manifest"		"1"
+			"size"		"1000"
+		}
+	}
+}

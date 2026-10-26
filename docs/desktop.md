@@ -72,7 +72,9 @@ desktop/
   offline/               The one local page: "Shelf can't be reached", and Try again
   icons/                 Made from src/app/icon.svg by the Tauri CLI's `icon` command, Windows' only
   src/
-    main.rs, lib.rs      The window, the commands, the rules for where it may go
+    main.rs, lib.rs      The window, and what the app keeps while it runs
+    commands.rs          What Shelf's pages may ask, each checking what it is given
+    ids.rs               What an entry's id and a Steam app id may be
     navigation.rs        Which addresses stay in the window (unit-tested)
     launchers.rs         The files chosen, kept in launchers.json
     launch.rs            Starting a file as Explorer does, or Steam
@@ -85,10 +87,12 @@ src/features/game-detail/play.tsx   Play, under Mine
 ### The bridge
 
 The site calls the commands of ADR 005 section 3 through `src/features/desktop/bridge.ts`,
-which is the only code that knows Tauri's global. Outside the app it answers that there is no
-app, and Play falls back to what a browser can do (Play on Steam, or nothing). The commands'
-Rust side is in `lib.rs`; each takes an entry id (letters, digits, `-` and `_`, up to 64) and
-Steam app ids (digits), and refuses anything else as `invalid`.
+which is the only code that knows Tauri's global, and reads every answer through a schema.
+Outside the app there is no bridge, and Play falls back to what a browser can do (Play on
+Steam, or nothing). The commands' Rust side is `commands.rs`; each takes an entry id (letters,
+digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything else as
+`invalid`. A refusal is a word the page has a sentence for: `invalid`, `unset`, `missing`,
+`refused`, `failed`.
 
 ### Rules that keep it safe
 
@@ -105,7 +109,9 @@ Steam app ids (digits), and refuses anything else as `invalid`.
 
 - `connect-src` allows `http://ipc.localhost`, Tauri's channel on Windows (`next.config.ts`).
 - Mine's Play (`play.tsx`) reads `steam` from the owner's game (`GET /api/v1/entries/{id}`):
-  the app id the Steam sync recorded on one of its copies, and the ones IGDB lists for it.
+  the app id the Steam sync recorded on one of its copies, and the ones IGDB lists for it. It
+  carries `data-play`, so `pnpm desktop:check` reads every page without it: the app's and a
+  browser's differ there by design.
 
 ## 4. The steps
 
@@ -161,23 +167,33 @@ production.
 
 ### Step 3: Choose a file, and Play
 
-- [ ] `launchers.rs` (kept in `launchers.json`, written whole to a new file then renamed),
-      `launch.rs` (`ShellExecuteExW`, `open`, the file's folder), `steam.rs` (Steam's folder
-      from the registry, `libraryfolders.vdf`, each library's `appmanifest_{id}.acf`, installed
-      when its `StateFlags` has 4).
-- [ ] The commands `launcher`, `choose_launcher` (filters: `.exe`, `.bat`, `.lnk`, `.url`; the
-      picker titled with the game), `forget_launcher`, `show_launcher`, `play`,
-      `steam_installed`.
-- [ ] Play in the app (`play.tsx`): the file, or Steam installed (`owned`, else a `known` id
-      Steam has installed), or **Install on Steam** for an `owned` not installed, or **Choose the
-      game's file**. The file's name beside it, with Change, Show in folder, Forget. A file gone
-      says so, and offers to choose again.
-- [ ] Tests: every command refuses a bad id; Steam's fixtures (two libraries, one game half
-      downloaded); the kept file survives a broken write; Play's choices with the bridge faked.
+**Built 25 Oct 2026.**
+
+- [x] `launchers.rs` (kept in `launchers.json`, written whole to a new file then renamed; a file
+      it cannot read is put aside as `launchers.unreadable.json`), `launch.rs` (`ShellExecuteW`,
+      `open`, the file's folder), `steam.rs` (Steam's folder from the registry,
+      `libraryfolders.vdf`, each library's `appmanifest_{id}.acf`, installed when its
+      `StateFlags` has 4).
+- [x] The commands `launcher`, `choose_launcher` (filters: `.exe`, `.bat`, `.lnk`, `.url`; the
+      picker titled with the game, in the page's language), `forget_launcher`, `show_launcher`,
+      `play`, `steam_installed` (`commands.rs`). Steam is reached by its links, which the window
+      hands over (ADR 005, section 5), so `play` takes the entry alone.
+- [x] Play in the app (`play.tsx`), on Mine's own line: the file, or Steam installed (`owned`,
+      else a `known` id Steam has installed), or **Install on Steam** for an `owned` not
+      installed, or **Choose the game's file**. Beside it, a menu (Ways to play): the file's
+      name, Change the file, Show in folder, Forget the file; or, for a Steam game, Choose a
+      file instead. A file gone says so, and offers to choose it again.
+- [x] Tests: every command refuses a bad id; Steam's fixtures (two libraries, one game half
+      downloaded); the kept file survives a broken write; Play's choices with the bridge faked
+      (`setBridgeForTests`).
+- [x] `pnpm desktop:check` goes through choosing (a development build takes the file from
+      `SHELF_PICK`) and Play, with a batch file that writes down the folder it started in.
 
 **Done when** a game starts from its file, from its own folder; one that needs administrator
 gets Windows' prompt; a Steam game starts through Steam; and nothing a page sends starts
-anything else.
+anything else. Checked: the first and the last by `pnpm desktop:check` and the tests. The
+administrator's prompt and Steam itself are the owner's to see on their own games: no script
+here starts a real game or opens Steam.
 
 ### Step 4: Releases and updates. Asks
 

@@ -76,10 +76,10 @@ a command line. What the app may do is the list below, nothing more:
 | --- | --- |
 | `desktop_info` | The app's version: how a page knows it is inside the app |
 | `launcher` | For an entry, the file chosen for it on this computer, if any, and whether it is still there |
-| `choose_launcher` | Opens Windows' own file picker for an entry, and keeps the file chosen |
+| `choose_launcher` | Opens Windows' own file picker for an entry, titled with words the page gives, and keeps the file chosen |
 | `forget_launcher` | Forgets an entry's file |
 | `show_launcher` | Opens the folder of an entry's file in Explorer, the file selected |
-| `play` | Starts an entry: its file if one is chosen, else Steam for a Steam app id the page names |
+| `play` | Starts an entry from the file chosen for it |
 | `steam_installed` | Of the Steam app ids a page names, the ones Steam has installed on this computer |
 
 - **Only Shelf's origin may call them.** Tauri allows a remote page no command unless a
@@ -112,6 +112,10 @@ added again, or a version separated, is a new entry and asks for its file again.
   A Steam game not installed offers `steam://install/{app}`, which opens Steam's own installer.
 - **Which wins:** a chosen file, then Steam. A game owned on Steam but run from another file
   (a mod loader) is started from the file.
+- **Steam is reached by its links, not by a command** (as built, 25 Oct 2026): the page links
+  to `steam://rungameid/{app}` or `steam://install/{app}`, and the window hands those two to
+  Windows, as section 6 says. So `play` needs no Steam id, and a page that went wrong can open
+  nothing of Steam's but those two links, which a browser page can open too.
 
 ### 6. The window keeps to Shelf
 

@@ -1,0 +1,30 @@
+"libraryfolders"
+{
+	"0"
+	{
+		"path"		"{steam}"
+		"label"		""
+		"contentid"		"1000000000000000001"
+		"totalsize"		"0"
+		"update_clean_bytes_tally"		"1000"
+		"time_last_update_verified"		"1761350400"
+		"apps"
+		{
+			"219990"		"10000000000"
+		}
+	}
+	"1"
+	{
+		"path"		"{games}"
+		"label"		"Games"
+		"contentid"		"1000000000000000002"
+		"totalsize"		"1000000000000"
+		"update_clean_bytes_tally"		"1000"
+		"time_last_update_verified"		"1761350400"
+		"apps"
+		{
+			"292030"		"50000000000"
+			"1145350"		"20000000000"
+		}
+	}
+}

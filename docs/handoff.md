@@ -28,6 +28,9 @@ baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. De
   `pnpm desktop:build`. **The owner's PATH has a stray quote** after `C:\Program Files\dotnet`,
   which hides cargo from cmd and from Rust itself: run the desktop tools through their `pnpm
   desktop:` scripts, which tidy PATH, and tell the owner rather than edit Windows' settings.
+- **Step 3, choosing a file and Play, is built** (architecture section 25, row "Play in the app").
+  Step 4, releases, asks the owner where installers live; until then, `pnpm desktop:build` here
+  and the installer from `desktop/target/release/bundle/nsis/`.
 - **Never in a check:** a real game started, a real Steam opened, or production signed in to by
   a script. The app is checked against `pnpm serve:test`, its web view driven through WebView2's
   debugging port.
