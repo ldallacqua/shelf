@@ -157,5 +157,8 @@ export default defineConfig([
     'playwright-report/**',
     'test-results/**',
     'coverage/**',
+    // Shelf for Windows' build, and the schemas tauri-build writes (ADR 005).
+    'desktop/target/**',
+    'desktop/gen/**',
   ]),
 ])

@@ -23,6 +23,11 @@ baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. De
   `OwnerGame.steam` and the button on Mine's own line. To see it on `serve:test`, link the
   made-up Steam account first (`/api/v1/me/platforms/steam/connect`, then sync): the sample
   shelf has no Steam items until then.
+- **Step 2, the app that opens Shelf, is built** (architecture section 25, row "Desktop app"). The
+  installer is `desktop/target/release/bundle/nsis/Shelf_0.1.0_x64-setup.exe` after
+  `pnpm desktop:build`. **The owner's PATH has a stray quote** after `C:\Program Files\dotnet`,
+  which hides cargo from cmd and from Rust itself: run the desktop tools through their `pnpm
+  desktop:` scripts, which tidy PATH, and tell the owner rather than edit Windows' settings.
 - **Never in a check:** a real game started, a real Steam opened, or production signed in to by
   a script. The app is checked against `pnpm serve:test`, its web view driven through WebView2's
   debugging port.

@@ -6,7 +6,8 @@
  * checks took about 75 of the month's 2,000 each time. A build step is done
  * when this passes on its last commit.
  *
- *   1. Format, lint, types, translations, unit and component tests (pnpm check)
+ *   1. Format, lint, types, translations, unit and component tests (pnpm check),
+ *      and the desktop app's Rust tests where Rust is installed
  *   2. A production build, served on port 3300 with the test doubles for
  *      IGDB and Twitch, on a fresh copy of the database
  *   3. JavaScript budgets
@@ -30,6 +31,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
 import { BASE_URL } from './lib/budgets.ts'
+import { rustEnv } from './lib/rust-env.ts'
 
 const flags = new Set(process.argv.slice(2))
 const quick = flags.has('--quick')
@@ -96,6 +98,10 @@ if (await answers(`${BASE_URL}/en`)) {
 }
 
 run('Format, lint, types, translations, unit and component tests', 'pnpm', ['check'])
+// Shelf for Windows (ADR 005): its Rust side's tests, wherever Rust is installed.
+if (spawnSync('cargo', ['--version'], { stdio: 'ignore', env: rustEnv() }).status === 0)
+  run('Desktop app: the Rust side’s tests', 'pnpm', ['desktop:test'])
+else console.log('\n── Desktop app: skipped, Rust is not installed here (cargo not found)')
 run('Production build', 'pnpm', ['build'])
 
 console.log(`\n── Serving the build at ${BASE_URL}\n`)

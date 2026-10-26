@@ -1,0 +1,31 @@
+[package]
+name = "shelf-desktop"
+version = "0.1.0"
+description = "Shelf for Windows: the shelf in a window of its own, and Play"
+edition = "2024"
+rust-version = "1.90"
+publish = false
+
+# Named apart from the program: on Windows a library and a program of one name write the same
+# debugging file.
+[lib]
+name = "shelf_desktop_lib"
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+tauri-plugin-opener = "2.7"
+tauri-plugin-single-instance = "2.5"
+tauri-plugin-window-state = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

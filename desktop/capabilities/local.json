@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "local",
+  "description": "The app's own page, shown until Shelf answers: it may ask to open Shelf, and nothing else.",
+  "windows": ["main"],
+  "permissions": ["allow-open-shelf"]
+}

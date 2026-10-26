@@ -34,6 +34,10 @@
     "perf:3d": "node scripts/perf-3d.ts",
     "storybook": "storybook dev -p 6300 --no-open",
     "storybook:build": "storybook build",
+    "desktop:dev": "node scripts/desktop.ts dev",
+    "desktop:build": "node scripts/desktop.ts build",
+    "desktop:test": "node scripts/desktop.ts test",
+    "desktop:check": "node scripts/desktop-check.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm i18n:check && pnpm test",
     "verify": "node scripts/verify.ts"
   },
@@ -69,6 +73,7 @@
     "@storybook/addon-docs": "10.6.2",
     "@storybook/nextjs-vite": "10.6.2",
     "@tailwindcss/postcss": "4.3.3",
+    "@tauri-apps/cli": "2.12.4",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
