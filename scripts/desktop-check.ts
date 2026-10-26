@@ -11,9 +11,11 @@
  * and must start in its own folder. The file is a batch file that only
  * writes that folder down; no game is started, and Steam's link is read,
  * never followed. Fails if a page reads differently, if the bridge does not
- * answer Shelf's page, if linking Steam (the test double) does not come back
- * to the app, if Play does not start the file where it should, or if the
- * console has an error.
+ * answer Shelf's page, if the header is not the window's bar (ADR 005,
+ * section 8), if linking Steam (the test double) does not come back to the
+ * app, if Play does not start the file where it should, or if the console
+ * has an error. `DESKTOP_CHECK_SHOTS=<folder>` keeps a picture of the window
+ * at each step, for a person to look at.
  *
  * Start the server first: pnpm build && pnpm serve:test. Never against
  * production: it signs in with the test doubles' made-up password.
@@ -29,6 +31,7 @@ import { BASE_URL } from './lib/budgets.ts'
 import { rustEnv } from './lib/rust-env.ts'
 
 const PORT = 9333
+const SHOTS = process.env.DESKTOP_CHECK_SHOTS
 const OWNER = { email: 'owner@shelf.test', password: 'test-doubles-only-owner-password' }
 
 /** The pages the owner reads most, as the made-up owner has them. */
@@ -114,6 +117,10 @@ try {
       .find((page) => page.url().startsWith(BASE_URL))
   await until('the app opening Shelf', 30, async () => (await pageOfApp()) !== undefined)
   const shelf = (await pageOfApp())!
+  /** A picture of the app's page, when a person asked for them. */
+  const shot = async (name: string) => {
+    if (SHOTS) await shelf.screenshot({ path: join(SHOTS, `${name.replace(/[^\w-]+/g, '_')}.png`) })
+  }
   const errors: string[] = []
   shelf.on('console', (message) => {
     if (message.type() === 'error') errors.push(`${shelf.url()}: ${message.text()}`)
@@ -134,6 +141,34 @@ try {
   if (info && typeof (info as { version?: unknown }).version === 'string')
     pass(`its bridge answers Shelf's page (version ${(info as { version: string }).version})`)
   else fail('its bridge did not answer Shelf’s page')
+
+  // The window has no Windows bar: Shelf's header is the bar, with the window's controls.
+  // In English, whatever Windows' language, so the controls are found by their English names.
+  await shelf.goto(`${BASE_URL}/en`)
+  // What makes the header the bar is fetched once the page runs, in that window only.
+  await shelf
+    .waitForFunction(() => document.querySelector('header[data-tauri-drag-region]'), null, {
+      timeout: 10_000,
+    })
+    .catch(() => {})
+  const bar = await shelf.evaluate(() => ({
+    frameless: document.documentElement.getAttribute('data-window'),
+    drag: document.querySelector('header')?.getAttribute('data-tauri-drag-region'),
+  }))
+  const control = (name: string) =>
+    shelf.locator('header').getByRole('button', { name, exact: true })
+  const shown = await Promise.all(
+    ['Minimize', 'Maximize', 'Close'].map((name) => control(name).isVisible()),
+  )
+  if (bar.frameless === 'frameless' && bar.drag === 'deep' && shown.every(Boolean))
+    pass('its header is the window’s bar, with minimize, maximize and close')
+  else fail(`its header is not the window’s bar: ${JSON.stringify({ ...bar, shown })}`)
+  await shot('header')
+  await control('Maximize').click()
+  await control('Restore').waitFor({ timeout: 5_000 })
+  await control('Restore').click()
+  await control('Maximize').waitFor({ timeout: 5_000 })
+  pass('maximizes and restores from its header')
 
   const size = await shelf.evaluate(() => ({
     width: window.innerWidth,
@@ -156,6 +191,7 @@ try {
     ])
     if (inApp === inBrowser) pass(`${path} reads the same (${inApp.length} characters)`)
     else fail(`${path} reads differently:\n${difference(inApp, inBrowser)}`)
+    await shot(path)
   }
 
   console.log('\nLinking Steam (the test double)')

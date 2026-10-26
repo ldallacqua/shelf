@@ -12,7 +12,13 @@
     "menu": "Menu",
     "igdbCredit": "Game data and covers from <link>IGDB.com</link>.",
     "dismiss": "Dismiss",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "window": {
+      "minimize": "Minimize",
+      "maximize": "Maximize",
+      "restore": "Restore",
+      "close": "Close"
+    }
   },
   "Theme": {
     "label": "Theme",

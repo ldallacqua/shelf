@@ -7,7 +7,16 @@
     <link rel="stylesheet" href="style.css" />
     <script src="app.js" defer></script>
   </head>
-  <body>
+  <!-- The window has no Windows bar: the page moves it, and has its own minimize and close. -->
+  <body data-tauri-drag-region="deep">
+    <div class="controls">
+      <button id="minimize" type="button" aria-label="Minimize">
+        <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M0 5h10" /></svg>
+      </button>
+      <button id="close" class="close" type="button" aria-label="Close">
+        <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M0 0l10 10M10 0L0 10" /></svg>
+      </button>
+    </div>
     <main>
       <p id="opening" class="quiet">Opening Shelf…</p>
       <section id="unreachable" hidden>

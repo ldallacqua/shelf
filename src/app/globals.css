@@ -30,6 +30,10 @@
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 @custom-variant pointer-coarse (@media (pointer: coarse));
+/* Shelf for Windows' window without a Windows bar, where Shelf's header is the bar (features/desktop/window-script.tsx). */
+@custom-variant frameless (&:where([data-window='frameless'], [data-window='frameless'] *));
+/* That window, maximized (features/desktop/frame.ts). */
+@custom-variant maximized (&:where([data-maximized], [data-maximized] *));
 /* A window too small for the 3D shelf: TOO_SMALL_FOR_3D in features/library/preferences.ts. */
 @custom-variant too-small-for-3d {
   /* The shorthand form would split this list at its comma. */
@@ -70,6 +74,9 @@
   /* A screenshot or a video full screen: dark whatever the theme, as a cinema is. */
   --color-cinema: #000;
   --color-on-cinema: #fff;
+  /* The window's close button under the pointer, in Shelf for Windows: Windows' own red, in either theme. */
+  --color-window-close: #c42b1c;
+  --color-on-window-close: #fff;
 
   /* One family for titles and interface: a wide, heavy cut for titles. */
   --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
@@ -218,4 +225,12 @@
  */
 html:has(.library) .site-search {
   display: none;
+}
+
+/*
+ * In Shelf for Windows' window without a bar, Windows' scrollbar would run the window's whole
+ * height, beside the close button. Shelf draws its own below the header (features/desktop/frame.ts).
+ */
+html[data-window='frameless'] {
+  scrollbar-width: none;
 }

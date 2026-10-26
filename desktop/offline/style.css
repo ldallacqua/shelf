@@ -7,6 +7,7 @@
   --muted: #4a5060;
   --accent: #5b3ee0;
   --on-accent: #fff;
+  --hover: rgb(11 13 18 / 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -16,6 +17,7 @@
     --muted: #9aa1b2;
     --accent: #7c5cff;
     --on-accent: #fff;
+    --hover: rgb(242 244 248 / 0.1);
   }
 }
 
@@ -63,6 +65,48 @@ button {
   font: inherit;
   font-weight: 500;
   cursor: pointer;
+}
+
+/* Minimize and close, as Windows draws them, at the window's top right. */
+.controls {
+  position: fixed;
+  top: 0;
+  right: 0;
+  display: flex;
+}
+
+.controls button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 32px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.controls button:hover {
+  background: var(--hover);
+}
+
+.controls .close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+.controls svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+
+.controls button:focus-visible {
+  outline-offset: -2px;
 }
 
 button:focus-visible {

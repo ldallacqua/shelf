@@ -1,51 +1,21 @@
 import { z } from 'zod'
 
+import { call } from './tauri'
+
 /**
- * Shelf for Windows' commands (ADR 005, section 3), as Shelf's own pages ask
- * them: the only code that knows Tauri's global. Outside the app there is no
- * bridge, and a page goes on as it does in any browser. Every answer passes
- * a schema first, as everything read from outside does.
+ * Shelf for Windows' commands (ADR 005, section 3) that answer with data, as
+ * Shelf's own pages ask them through `tauri.ts`. Every answer passes a schema
+ * first, as everything read from outside does. Zod comes with it, so only
+ * code that a page fetches when it needs it imports this (Play, in the
+ * editor's own chunk): the header's window controls import `tauri.ts` alone.
  */
 
-type Invoke = (command: string, args?: Record<string, unknown>) => Promise<unknown>
+export { inDesktopApp, refusalOf, refusals, setBridgeForTests, type Refusal } from './tauri'
 
 const launcherSchema = z.object({ name: z.string(), path: z.string(), exists: z.boolean() })
 
 /** A game's file on this computer: its name, where it is, and whether it is still there. */
 export type Launcher = z.infer<typeof launcherSchema>
-
-/** Why the app did nothing, in its own words (`desktop/src/commands.rs`). */
-export const refusals = ['invalid', 'unset', 'missing', 'refused', 'failed'] as const
-export type Refusal = (typeof refusals)[number]
-
-let standIn: Invoke | null | undefined
-
-/**
- * For tests: the app's commands answered by `invoke`, or no app at all
- * (`null`). `undefined` puts Tauri's own back.
- */
-export const setBridgeForTests = (invoke: Invoke | null | undefined) => {
-  standIn = invoke
-}
-
-const tauri = (): Invoke | undefined => {
-  if (standIn !== undefined) return standIn ?? undefined
-  if (typeof window === 'undefined') return undefined
-  return (window as { __TAURI__?: { core?: { invoke?: Invoke } } }).__TAURI__?.core?.invoke
-}
-
-/** Whether this page is inside Shelf for Windows. */
-export const inDesktopApp = (): boolean => tauri() !== undefined
-
-/** A command's refusal as a word; anything else it throws is `failed`. */
-export const refusalOf = (error: unknown): Refusal =>
-  refusals.find((refusal) => refusal === error) ?? 'failed'
-
-const call = async (command: string, args: Record<string, unknown>) => {
-  const invoke = tauri()
-  if (!invoke) throw 'failed'
-  return invoke(command, args)
-}
 
 export const desktop = {
   /** The file chosen for a game on this computer, or null. */

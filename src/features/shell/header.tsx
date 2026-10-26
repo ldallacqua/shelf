@@ -2,6 +2,8 @@ import { useTranslations } from 'next-intl'
 
 import type { AddActions } from '@/features/add-game/actions'
 import { AddButton } from '@/features/add-game/add-button'
+import { WindowControls } from '@/features/desktop/window-controls'
+import { WindowFrame } from '@/features/desktop/window-frame'
 import { LanguageSwitch } from '@/features/language/language-switch'
 import { AccountMenu } from '@/features/owner/account-menu'
 import { ThemeSwitch } from '@/features/theme/theme-switch'
@@ -15,7 +17,8 @@ import { NavLinks } from './nav-links'
 /**
  * The header on every page: the name, the links into the shelf in the
  * address (or one's own), search, theme and language, and the account's
- * menu. Signed in, Add, for one's own shelf.
+ * menu. Signed in, Add, for one's own shelf. In Shelf for Windows it is
+ * also the window's bar, with the window's controls at its right end.
  */
 export function Header({ add }: { add?: AddActions }) {
   const t = useTranslations('Shell')
@@ -23,7 +26,10 @@ export function Header({ add }: { add?: AddActions }) {
 
   return (
     // It stays in view while the page scrolls, so theme and language are always in reach.
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-wall/85 backdrop-blur-md">
+    <header
+      data-title-bar=""
+      className="sticky top-0 z-40 border-b border-line/70 bg-wall/85 backdrop-blur-md frameless:pr-34.5"
+    >
       <div className="mx-auto flex h-14 w-full max-w-360 items-stretch gap-2 px-4 sm:px-6 lg:px-10">
         <Link
           href="/"
@@ -47,6 +53,8 @@ export function Header({ add }: { add?: AddActions }) {
           <MobileNav className="sm:hidden" />
         </div>
       </div>
+      <WindowControls />
+      <WindowFrame />
     </header>
   )
 }

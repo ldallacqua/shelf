@@ -8,6 +8,8 @@ const words = navigator.language.toLowerCase().startsWith('pt')
       title: 'Não foi possível abrir o Shelf',
       why: 'Confira a conexão com a internet e tente de novo.',
       again: 'Tentar de novo',
+      minimize: 'Minimizar',
+      close: 'Fechar',
     }
   : {
       lang: 'en',
@@ -15,6 +17,8 @@ const words = navigator.language.toLowerCase().startsWith('pt')
       title: "Shelf can't be reached",
       why: 'Check the internet connection, then try again.',
       again: 'Try again',
+      minimize: 'Minimize',
+      close: 'Close',
     }
 
 const opening = document.getElementById('opening')
@@ -26,11 +30,19 @@ opening.textContent = words.opening
 document.getElementById('title').textContent = words.title
 document.getElementById('why').textContent = words.why
 again.textContent = words.again
+document.getElementById('minimize').setAttribute('aria-label', words.minimize)
+document.getElementById('close').setAttribute('aria-label', words.close)
+
+const invoke = window.__TAURI__.core.invoke
+document
+  .getElementById('minimize')
+  .addEventListener('click', () => invoke('plugin:window|minimize'))
+document.getElementById('close').addEventListener('click', () => invoke('plugin:window|close'))
 
 async function open() {
   again.disabled = true
   try {
-    const address = await window.__TAURI__.core.invoke('open_shelf')
+    const address = await invoke('open_shelf')
     window.location.replace(address)
   } catch {
     opening.hidden = true

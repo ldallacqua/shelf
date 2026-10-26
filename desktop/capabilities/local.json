@@ -1,7 +1,13 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "local",
-  "description": "The app's own page, shown until Shelf answers: it may ask to open Shelf, and nothing else.",
+  "description": "The app's own page, shown until Shelf answers: it may ask to open Shelf, and move, minimize and close its window.",
   "windows": ["main"],
-  "permissions": ["allow-open-shelf"]
+  "permissions": [
+    "allow-open-shelf",
+    "core:window:allow-minimize",
+    "core:window:allow-close",
+    "core:window:allow-start-dragging",
+    "core:window:allow-internal-toggle-maximize"
+  ]
 }

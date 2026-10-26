@@ -12,7 +12,13 @@
     "menu": "Menu",
     "igdbCredit": "Dados e capas dos jogos: <link>IGDB.com</link>.",
     "dismiss": "Dispensar",
-    "privacy": "Privacidade"
+    "privacy": "Privacidade",
+    "window": {
+      "minimize": "Minimizar",
+      "maximize": "Maximizar",
+      "restore": "Restaurar",
+      "close": "Fechar"
+    }
   },
   "Theme": {
     "label": "Tema",

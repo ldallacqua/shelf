@@ -24,6 +24,11 @@ use navigation::Decision;
 /// The Shelf a release build opens.
 const PRODUCTION: &str = "https://shelf-ldallacqua.vercel.app";
 
+/// Run in every page before its own scripts: the window has no Windows bar,
+/// so Shelf's header is the bar and draws the window's controls (ADR 005,
+/// section 8). An app with Windows' bar never says it, and the site draws none.
+const FRAMELESS: &str = "window.__SHELF_WINDOW__ = 'frameless'";
+
 /// How long Shelf has to answer before the app says it cannot be reached.
 const REACH_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -116,14 +121,18 @@ async fn open_shelf(shelf: State<'_, Shelf>) -> Result<String, String> {
 }
 
 pub fn run() {
-    tauri::Builder::default()
-        // A second start brings the first window forward.
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.set_focus();
-            }
-        }))
+    let builder = tauri::Builder::default();
+    // A second start brings the first window forward. Not in a development
+    // build, which would otherwise close itself and bring forward the
+    // installed app, when it is open.
+    #[cfg(not(debug_assertions))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.set_focus();
+        }
+    }));
+    builder
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -151,7 +160,14 @@ pub fn run() {
                     .permission("allow-forget-launcher")
                     .permission("allow-show-launcher")
                     .permission("allow-play")
-                    .permission("allow-steam-installed"),
+                    .permission("allow-steam-installed")
+                    // The window's own controls, in Shelf's header: this window only.
+                    .permission("core:window:allow-minimize")
+                    .permission("core:window:allow-toggle-maximize")
+                    .permission("core:window:allow-close")
+                    .permission("core:window:allow-is-maximized")
+                    .permission("core:window:allow-start-dragging")
+                    .permission("core:window:allow-internal-toggle-maximize"),
             )?;
             app.manage(Shelf(shelf.clone()));
             let folder = match data_dir() {
@@ -168,6 +184,8 @@ pub fn run() {
                     .inner_size(1280.0, 800.0)
                     .min_inner_size(960.0, 600.0)
                     .center()
+                    .decorations(false)
+                    .initialization_script(FRAMELESS)
                     .on_navigation(move |url| {
                         let decision = navigation::decide(url, &shelf);
                         let stays = decision == Decision::Stay;

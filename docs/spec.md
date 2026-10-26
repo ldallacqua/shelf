@@ -1125,13 +1125,21 @@ it for one game.
 ### 7.7 Playing a game
 
 **Built in the steps of [the desktop guide](desktop.md#4-the-steps) on 25 Oct 2026: Play on
-Steam in a browser, the app, and Play in it; hours not yet.** The owner
+Steam in a browser, the app, Play in it, and the window's own title bar. Written the same day,
+not yet built: Ready to play, updates and the installer in one step. Hours not yet.** The owner
 asked on 25 Oct 2026: "quero converter esse projeto não somente em um browser mas tbm em um
 projeto que vai rodar no meu computar para eu executar meus jogos direito dele, tipo o hydra
 sabe. [...] Eu vou poder apontar o caminho no meu pc do game local e ele vai rodar o game, se o
 game for da steam ele vai rodar o comando que executa o game pela steam." Then, choosing Tauri:
 "Desde que o projeto continue mostrando todos os meus dados corretamente na versão baixada ta
-tudo certo."
+tudo certo." Then, having installed it:
+"* vai ter um instalador no github para as pessoas baixarem ne mas eu queria atualização
+automatica, é o melhor cenario, tem como? * Tem como tirar a barra de cima nativa do windows?
+queria algo mais parecido com o discord, mais integrado sabe? Sem redundacia do nome shelf
+tanto na barra nativa quanto na nav bar. * No app instalado precisamos de um "filtro" que
+mostre jogos instalados. Igual o botão da steam "Exibir apenas jogos prontos para jogar" * Se
+possivel queria que o instalador fosse mais paracido com o do discord. Que não tem que ficar
+clicando setup setup, next, next. E sim aparecesse uma splashzinha."
 
 - **Shelf for Windows** ([ADR 005](adr/005-desktop-app.md)) is the same Shelf in a window of
   its own: the same pages, the same sign-in, the same data, served by the same server. What it
@@ -1152,6 +1160,19 @@ tudo certo."
   **Choose a file instead**. A file no longer there says so and offers to choose it again.
 - **The files chosen stay on this computer.** Shelf's server never sees them, and another
   computer keeps its own.
+- **Its own title bar.** The app's window has no Windows bar: Shelf's header is the bar, with
+  minimize, maximize and close at its right end. Dragging the header moves the window, and a
+  double click maximizes it.
+- **Ready to play** (Prontos para jogar), on my own shelf, in the app: a button among the
+  library's controls that leaves only the games I can start on this computer, as Steam's "show
+  only games ready to play" does: a file chosen and still there, or a Steam app installed here.
+  It is this computer's choice and stays until pressed again. Counts, filters and sorting work
+  on what it leaves; with nothing ready, the shelf says so and offers to show every game.
+- **Installing** asks nothing: a small window with Shelf's mark shows while it installs, then
+  Shelf opens.
+- **Updates come by themselves.** Each time the app starts, a small window looks for a newer
+  version; it downloads and installs one, saying how far it is, then opens Shelf.
+- **The installer is public,** on this repository's releases.
 - **Hours,** built after Play: the time a game started from its file is open is added to its
   PC copy, as a store's hours are. A game started through Steam is counted by Steam and its
   sync, never twice.
@@ -1166,6 +1187,12 @@ tudo certo."
 - A Steam game starts through Steam, and nothing a page sends can start anything but a file I
   chose or Steam.
 - A visitor sees no Play, and a phone no Play on Steam.
+- The window has one bar, Shelf's, and Shelf's name once; it moves, maximizes, minimizes and
+  closes from the header.
+- Ready to play leaves exactly the games with a file that is still there or a Steam app
+  installed, in every view, with counts to match.
+- The installer opens Shelf without a click, and a newer release is installed at the next start
+  without one.
 
 ---
 
@@ -1588,3 +1615,7 @@ Made on 25 Oct 2026 for playing a game (7.7), with the owner's choice of Tauri:
 | 36 | The app counts hours only for games it starts from a file | Every game it starts, Steam's too, which would count them twice |
 | 37 | Windows only, at first | Mac and Linux too, untested |
 | 38 | The installer is not signed, and Windows warns once | A signing service, open to individuals in the USA and Canada only |
+| 39 | Shelf's header is the app's title bar | Windows' bar above the header, and the name twice |
+| 40 | Ready to play is this computer's choice, kept on it | A filter in the address, which means nothing on another computer |
+| 41 | Installers and updates are releases of this repository, made public by the owner | A public repository of installers only, the code staying private |
+| 42 | The app looks for an update as it starts, and installs it before opening Shelf | Asking first, or updating while Shelf is open |

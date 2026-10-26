@@ -32,3 +32,13 @@ export function CartridgeIcon(props: IconProps) {
     </svg>
   )
 }
+
+/** A window restored from maximized, as Windows' restore button draws it: one window behind another. */
+export function WindowRestoreIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="7" width="14" height="14" rx="2" />
+      <path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2" />
+    </svg>
+  )
+}
