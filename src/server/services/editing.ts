@@ -20,7 +20,7 @@ import {
 import { formats, type Format } from '@/domain/library/values'
 import { database, type Db } from '@/server/db/client'
 import { copies, entryVersions, games, removedEntries } from '@/server/db/schema'
-import { readArchived, readOwnerGame } from '@/server/library/read'
+import { readArchived, readOwnerGame, readOwnerPlay } from '@/server/library/read'
 import {
   addCopy,
   findEntryIdBySlug,
@@ -223,3 +223,7 @@ export const separateMine = checked(z.tuple([slug, id]), (editing, s, gameId) =>
 )
 
 export const myArchived = checked(z.tuple([]), (editing) => editing.archived(), false)
+
+/** Each of my games' entry and apps on Steam: what Ready to play in the desktop app reads (spec 7.7). */
+export const myPlayable = () =>
+  forAccount(async (account) => ({ games: await readOwnerPlay(database(), account.id) }), false)

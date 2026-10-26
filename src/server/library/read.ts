@@ -3,7 +3,7 @@ import 'server-only'
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
 import { EROTIC, lengthMinutes, type StoreId } from '@/domain/igdb/game'
-import type { ArchivedGame, OwnerGame, SteamApps } from '@/domain/library/editing'
+import type { ArchivedGame, OwnerGame, PlayableGame, SteamApps } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
 import {
   emptyTally,
@@ -538,6 +538,62 @@ export const readOwnerGame = async (
   ])
   if (steam) owned.steam = steam
   return owned
+}
+
+/**
+ * Each of my games' entry and apps on Steam (spec 7.7), worked out as one
+ * game's `steam` is: what Ready to play in the desktop app matches against
+ * what this computer has. Archived games are not on the shelf, so not here.
+ * Only for its library's owner: the caller checks.
+ */
+export const readOwnerPlay = async (db: Executor, libraryId: string): Promise<PlayableGame[]> => {
+  const [versionRows, steamRows] = await Promise.all([
+    db
+      .select({
+        entryId: entryVersions.entryId,
+        relation: entryVersions.relation,
+        slug: games.slug,
+        igdbId: games.igdbId,
+        storeIds: games.storeIds,
+      })
+      .from(entryVersions)
+      .innerJoin(entries, eq(entries.id, entryVersions.entryId))
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(and(eq(entries.userId, libraryId), isNull(entries.archivedAt))),
+    db
+      .select({
+        entryId: copies.entryId,
+        storeId: sourceItems.storeId,
+        igdbId: sourceItems.igdbId,
+        minutes: sourceItems.minutes,
+      })
+      .from(sourceItems)
+      .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+      .where(and(eq(sourceItems.userId, libraryId), eq(sourceItems.source, 'steam'))),
+  ])
+  const versionsOf = byEntry(versionRows)
+  const itemsOf = byEntry(steamRows)
+  return [...versionsOf]
+    .flatMap(([entryId, versions]) => {
+      const primary = versions.find((row) => row.relation === 'primary')
+      if (!primary) return []
+      const steam = steamAppsOf(primary.igdbId, itemsOf.get(entryId) ?? [], [
+        primary,
+        ...versions.filter((row) => row !== primary),
+      ])
+      return [{ slug: primary.slug, entryId, steam: steam?.known ?? [] }]
+    })
+    .sort((a, b) => a.slug.localeCompare(b.slug))
+}
+
+const byEntry = <Row extends { entryId: string }>(rows: readonly Row[]) => {
+  const grouped = new Map<string, Row[]>()
+  for (const row of rows) {
+    const group = grouped.get(row.entryId)
+    if (group) group.push(row)
+    else grouped.set(row.entryId, [row])
+  }
+  return grouped
 }
 
 /**

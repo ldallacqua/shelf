@@ -333,6 +333,33 @@ describe('Toolbar', () => {
     expect(onChange).toHaveBeenCalledWith(false)
   })
 
+  it('offers Ready to play only where it is given, pressed while it is on (spec 7.7)', async () => {
+    const onChange = vi.fn()
+    const toolbar = (ready?: { on: boolean; onChange: (on: boolean) => void }) => (
+      <Toolbar
+        view="list"
+        onView={vi.fn()}
+        group="platform"
+        onGroup={vi.fn()}
+        density="covers"
+        onDensity={vi.fn()}
+        wallSize="medium"
+        onWallSize={vi.fn()}
+        dimension="2d"
+        onDimension={vi.fn()}
+        {...(ready ? { ready } : {})}
+      />
+    )
+    renderWithIntl(toolbar())
+    expect(screen.queryByRole('button', { name: 'Ready to play' })).toBeNull()
+    cleanup()
+    renderWithIntl(toolbar({ on: false, onChange }))
+    const button = screen.getByRole('button', { name: 'Ready to play' })
+    expect(button).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.click(button)
+    expect(onChange).toHaveBeenCalledWith(true)
+  })
+
   it('offers 2D or 3D on the shelf only, with the one shown pressed', async () => {
     const { onDimension } = setup('shelf')
     const pair = screen.getByRole('radiogroup', { name: 'Shelf in 2D or 3D' })
@@ -547,6 +574,7 @@ describe('device preferences', () => {
     document.documentElement.removeAttribute('data-density')
     document.documentElement.removeAttribute('data-wall-size')
     document.documentElement.removeAttribute('data-adult')
+    document.documentElement.removeAttribute('data-ready-to-play')
   })
 
   const runScript = () => new Function(preferenceScript())()
@@ -573,6 +601,14 @@ describe('device preferences', () => {
     expect(document.documentElement).toHaveAttribute('data-adult', 'hidden')
     writePreference(adultPreference, 'shown')
     expect(window.localStorage.getItem('shelf:adult')).toBeNull()
+  })
+
+  it('the head script keeps Ready to play on where this computer turned it on (spec 7.7)', () => {
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-ready-to-play', 'all')
+    window.localStorage.setItem('shelf:ready-to-play', 'ready')
+    runScript()
+    expect(document.documentElement).toHaveAttribute('data-ready-to-play', 'ready')
   })
 
   it('the head script survives storage being blocked', () => {

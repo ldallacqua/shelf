@@ -21,6 +21,7 @@ import {
   apiAdditions,
   apiArchived,
   apiArchivedGames,
+  apiPlayable,
   apiBroughtBack,
   apiSeparated,
   apiAddUndo,
@@ -139,6 +140,7 @@ export const openApiDocument = () => {
     apiBroughtBack,
     apiSeparated,
     apiArchivedGames,
+    apiPlayable,
     apiPastedLines,
     apiLineMatch,
     apiListMatch,
@@ -400,6 +402,17 @@ export const openApiDocument = () => {
           security: OWNER,
           responses: {
             200: { description: 'Archived games', ...json('ArchivedGames') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/me/play': {
+        get: {
+          summary:
+            'Each of the signed-in account’s games, by its address, with its entry and its apps on Steam: what Ready to play in Shelf for Windows reads. Signed in.',
+          security: OWNER,
+          responses: {
+            200: { description: 'Games, to play', ...json('Playable') },
             ...REFUSALS,
           },
         },

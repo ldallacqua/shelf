@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { call } from './tauri'
+import { call, launchersChanged } from './tauri'
 
 /**
  * Shelf for Windows' commands (ADR 005, section 3) that answer with data, as
@@ -22,10 +22,16 @@ export const desktop = {
   launcher: async (entry: string): Promise<Launcher | null> =>
     launcherSchema.nullable().parse(await call('launcher', { entry })),
   /** Windows' file picker for a game, titled `title`, its files called `files`; null when closed. */
-  choose: async (entry: string, title: string, files: string): Promise<Launcher | null> =>
-    launcherSchema.nullable().parse(await call('choose_launcher', { entry, title, files })),
+  choose: async (entry: string, title: string, files: string): Promise<Launcher | null> => {
+    const chosen = launcherSchema
+      .nullable()
+      .parse(await call('choose_launcher', { entry, title, files }))
+    if (chosen) launchersChanged()
+    return chosen
+  },
   forget: async (entry: string): Promise<void> => {
     await call('forget_launcher', { entry })
+    launchersChanged()
   },
   /** Explorer, at the game's file. */
   show: async (entry: string): Promise<void> => {

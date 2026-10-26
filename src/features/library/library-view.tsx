@@ -15,6 +15,7 @@ import {
 
 import { groupings, type Grouping } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
+import { onlyReady } from '@/domain/library/ready'
 import type { SmartShelf } from '@/domain/library/shelves'
 import { writeSort, type Sort } from '@/domain/library/sort'
 import { libraryStats } from '@/domain/library/stats'
@@ -80,6 +81,7 @@ import { Button } from '@/ui/button'
 import { GhostShelves } from './ghosts'
 import { GhostList, ListView } from './list-view'
 import { markPageLive } from './live'
+import { NothingReady } from './nothing-ready'
 import { PlaceWaiting } from './place-waiting'
 import type { Dimension } from './preferences'
 import { anchorIn2d, ShelfStage } from './shelf-stage'
@@ -89,10 +91,12 @@ import { useShelf } from './shelf'
 import { libraryHref, smartShelfHref } from './shelf-address'
 import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
+import { useReadySlugs } from './use-ready'
 import { revealRow } from './use-row-window'
 import {
   tooSmallFor3dNow,
   useAdult,
+  useReadyToPlay,
   useDensity,
   useDimension,
   useReducedMotion,
@@ -236,6 +240,7 @@ export function LibraryView({
   const [density, setDensity] = useDensity()
   const [adult, setAdult] = useAdult()
   const hideAdult = adult === 'hidden'
+  const [readyChoice, setReadyChoice] = useReadyToPlay()
   const [wallSize, setWallSize] = useWallSize()
   const [dimension, setDimension] = useDimension()
   /** Set when 3D gave way to 2D on this page, and why. */
@@ -268,6 +273,9 @@ export function LibraryView({
   // A game the owner just added or changed here: its library's version, and the game.
   const edit = useLibraryChange()
   const version = Math.max(first.version, edit?.version ?? 0)
+  // Ready to play (spec 7.7): in the app, on my own shelf, only what this computer can start.
+  const ready = useReadySlugs(actions !== undefined, version)
+  const readyOnly = readyChoice === 'ready' && ready !== null
   const state = useLibrary(files, version, (whole) => {
     const library = keepFirstScreen(whole, first)
     const index = indexOnce(library)
@@ -288,7 +296,10 @@ export function LibraryView({
   const whole = state.status === 'ready' ? keepFirstScreen(state.library, first) : undefined
   // A device that hides adult games has none in its library at all (spec 3.13): no box, no
   // count, no filter value of one.
-  const library = whole && hideAdult ? withoutAdult(whole) : whole
+  const seen = whole && hideAdult ? withoutAdult(whole) : whole
+  // Only the games ready here, once that is known: until then nothing is drawn, rather than
+  // every game first.
+  const library = readyOnly ? (seen && ready ? onlyReady(seen, ready) : undefined) : seen
   const adultOnShelf = whole ? whole.games.some((game) => game.adult) : first.hidden !== undefined
   const counted = hideAdult && first.hidden ? first.hidden : first
 
@@ -323,7 +334,7 @@ export function LibraryView({
       locale,
       standingCopies(index, drawn.tree),
     ).map((each) => ({ ...each, total: each.items.length }))
-  } else if (asBuilt) {
+  } else if (asBuilt && !readyOnly) {
     shelves = firstScreenShelves(first)
     if (hideAdult) {
       shelves = shelves.map((each) => ({
@@ -629,7 +640,7 @@ export function LibraryView({
     ? Object.fromEntries(
         facetCounts(index, parsed.tree, 'status').map((value) => [value.word, value.count]),
       )
-    : query.q === builtFor.q
+    : query.q === builtFor.q && !readyOnly
       ? counted.statusCounts
       : undefined
   // Unsorted stays in the row while the shelf has any, whatever the filter matches. Until the
@@ -645,7 +656,8 @@ export function LibraryView({
   // The totals follow the filter. The server drew them for the address the page came
   // with; from the first change they are worked out here.
   const liveStats =
-    matching && (drawnQ !== builtFor.q || library?.version !== first.version || counted !== first)
+    matching &&
+    (readyOnly || drawnQ !== builtFor.q || library?.version !== first.version || counted !== first)
       ? libraryStats(matching)
       : undefined
 
@@ -782,6 +794,14 @@ export function LibraryView({
             ? { hidden: hideAdult, onChange: (hidden) => setAdult(hidden ? 'hidden' : 'shown') }
             : undefined
         }
+        ready={
+          ready !== null
+            ? {
+                on: readyChoice === 'ready',
+                onChange: (on) => setReadyChoice(on ? 'ready' : 'all'),
+              }
+            : undefined
+        }
         filters={
           <Button
             variant="secondary"
@@ -841,7 +861,9 @@ export function LibraryView({
         </div>
       ) : null}
 
-      {matching?.length === 0 ? (
+      {readyOnly && library?.games.length === 0 ? (
+        <NothingReady onShowAll={() => setReadyChoice('all')} />
+      ) : matching?.length === 0 ? (
         <NoResults onClear={clearFilters} />
       ) : shelves.length === 0 ? (
         // Asked for another arrangement before the library file arrived: ghosts until it does.

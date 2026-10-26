@@ -1125,8 +1125,8 @@ it for one game.
 ### 7.7 Playing a game
 
 **Built in the steps of [the desktop guide](desktop.md#4-the-steps) on 25 Oct 2026: Play on
-Steam in a browser, the app, Play in it, and the window's own title bar. Written the same day,
-not yet built: Ready to play, updates and the installer in one step. Hours not yet.** The owner
+Steam in a browser, the app, Play in it, the window's own title bar and Ready to play. Written
+the same day, not yet built: updates and the installer in one step. Hours not yet.** The owner
 asked on 25 Oct 2026: "quero converter esse projeto não somente em um browser mas tbm em um
 projeto que vai rodar no meu computar para eu executar meus jogos direito dele, tipo o hydra
 sabe. [...] Eu vou poder apontar o caminho no meu pc do game local e ele vai rodar o game, se o

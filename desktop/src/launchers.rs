@@ -51,6 +51,17 @@ impl Launchers {
         }
     }
 
+    /// Every entry with a file chosen, and its file.
+    pub fn all(&self) -> Vec<(String, PathBuf)> {
+        self.kept
+            .lock()
+            .unwrap()
+            .launchers
+            .iter()
+            .map(|(entry, launcher)| (entry.clone(), launcher.path.clone()))
+            .collect()
+    }
+
     pub fn get(&self, entry: &str) -> Option<Launcher> {
         self.kept.lock().unwrap().launchers.get(entry).cloned()
     }

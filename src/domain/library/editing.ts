@@ -66,6 +66,13 @@ export type OwnerGame = {
   steam?: SteamApps
 }
 
+/**
+ * What Ready to play needs of one of my games (spec 7.7): where it is in the
+ * library file, its entry (by which the desktop app keeps its file), and
+ * every app on Steam it may be, as `SteamApps.known`.
+ */
+export type PlayableGame = { slug: string; entryId: string; steam: string[] }
+
 /** A game's apps on Steam (spec 7.7), by Steam's app ids. */
 export type SteamApps = {
   /** The one the Steam sync found I own, on one of my copies: what Play on Steam opens. */

@@ -370,6 +370,22 @@ export const apiArchivedGames = z
   })
   .meta({ id: 'ArchivedGames' })
 
+export const apiPlayable = z
+  .object({
+    games: z.array(
+      z.object({
+        slug: z.string().describe('Its address, as the library file names it'),
+        entryId: z.string().describe('Its entry: what Shelf for Windows keeps a file chosen by'),
+        steam: z
+          .array(z.string())
+          .describe(
+            'Every Steam app it may be, by app id: the ones the Steam sync found the account owns, then the ones IGDB lists',
+          ),
+      }),
+    ),
+  })
+  .meta({ id: 'Playable' })
+
 const toApiResult = (result: Candidate): z.input<typeof apiSearchResult> => ({
   igdbId: result.igdbId,
   slug: result.slug,

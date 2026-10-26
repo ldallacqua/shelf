@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  CirclePlayIcon,
   EyeOffIcon,
   ChevronDownIcon,
   Columns4Icon,
@@ -57,6 +58,8 @@ type ToolbarProps = {
   sort?: ReactNode
   /** Whether adult games are hidden on this device (spec 3.13); absent while the shelf has none. */
   adult?: { hidden: boolean; onChange: (hidden: boolean) => void }
+  /** Whether only the games ready to play here are shown (spec 7.7): in the app, on my own shelf. */
+  ready?: { on: boolean; onChange: (on: boolean) => void }
 }
 
 const viewIcons = { shelf: Rows3Icon, wall: LayoutGridIcon, list: ListIcon } as const
@@ -84,6 +87,7 @@ export function Toolbar({
   filters,
   sort,
   adult,
+  ready,
 }: ToolbarProps) {
   const t = useTranslations('Library')
   const reasonId = useId()
@@ -99,6 +103,19 @@ export function Toolbar({
       <div className="flex min-w-0 items-center gap-2 max-sm:w-full sm:contents">
         {filters}
         {sort}
+        {ready ? (
+          <Button
+            variant="secondary"
+            aria-pressed={ready.on}
+            // Shelf for Windows' own: `pnpm desktop:check` reads pages without it.
+            data-play=""
+            className={cn('flex-none max-sm:px-3', ready.on && 'border-accent bg-accent/15')}
+            onClick={() => ready.onChange(!ready.on)}
+          >
+            <CirclePlayIcon aria-hidden="true" />
+            {t('ready.label')}
+          </Button>
+        ) : null}
       </div>
 
       {/* How it is laid out: a phone's second row. */}

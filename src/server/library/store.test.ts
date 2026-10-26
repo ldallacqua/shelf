@@ -16,7 +16,13 @@ import {
   sourceItems,
   tags,
 } from '@/server/db/schema'
-import { readArchived, readLibrary, readOwnerGame, readStanding } from '@/server/library/read'
+import {
+  readArchived,
+  readLibrary,
+  readOwnerGame,
+  readOwnerPlay,
+  readStanding,
+} from '@/server/library/read'
 import {
   addCopy,
   addVersion,
@@ -883,5 +889,34 @@ describe('a game’s apps on Steam (spec 7.7)', () => {
     await steamItem(other, '333', 9999, 10, copy!.id)
 
     expect((await readOwnerGame(db, me, entry))?.steam).toBeUndefined()
+  })
+
+  it('gives every game of mine, by its address, with its entry and its apps, for Ready to play', async () => {
+    const grimDawn = await saveGame(
+      db,
+      game(9999, 'Grim Dawn', { platforms: [PC], ...onSteam('219990') }),
+      { lineage: [] },
+    )
+    const listed = await createEntry(db, me, { primaryGameId: grimDawn, status: 'backlog' })
+    const owned = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'playing',
+      copies: [{ platformId: PC, format: 'digital' }],
+    })
+    const [copy] = await db.select().from(copies).where(eq(copies.entryId, owned))
+    await steamItem(me, '1145360', 113112, 30, copy!.id)
+    const plain = await createEntry(db, me, { primaryGameId: skyrimSwitch, status: 'backlog' })
+    // Another library's game, and a game of mine archived, are not on my shelf.
+    await createEntry(db, other, { primaryGameId: grimDawn, status: 'backlog' })
+
+    const play = await readOwnerPlay(db, me)
+    expect(play).toEqual(
+      expect.arrayContaining([
+        { slug: 'grim-dawn', entryId: listed, steam: ['219990'] },
+        { slug: 'hades', entryId: owned, steam: ['1145360'] },
+        expect.objectContaining({ entryId: plain, steam: [] }),
+      ]),
+    )
+    expect(play).toHaveLength(3)
   })
 })

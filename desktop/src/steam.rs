@@ -3,7 +3,7 @@
 //! `steamapps/libraryfolders.vdf`, and each app's `appmanifest_{id}.acf` in
 //! the library holding it. Read only; Steam is never asked anything.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -127,6 +127,33 @@ pub fn installed(steam: &Path, apps: &[String]) -> Vec<String> {
         .collect()
 }
 
+/// Every app installed in any of Steam's libraries, each once: what Ready to
+/// play reads (spec 7.7). An app is named by its manifest's file,
+/// `appmanifest_{id}.acf`, and counted once Steam's state flag says it is
+/// fully installed.
+pub fn all_installed(steam: &Path) -> Vec<String> {
+    let mut found = BTreeSet::new();
+    for library in libraries(steam) {
+        let Ok(files) = fs::read_dir(library.join("steamapps")) else {
+            continue;
+        };
+        for file in files.flatten() {
+            let name = file.file_name();
+            let Some(app) = name
+                .to_str()
+                .and_then(|name| name.strip_prefix("appmanifest_"))
+                .and_then(|name| name.strip_suffix(".acf"))
+            else {
+                continue;
+            };
+            if crate::ids::steam_app(app) && installed_in(&library, app) {
+                found.insert(app.to_string());
+            }
+        }
+    }
+    found.into_iter().collect()
+}
+
 /// Steam's folder, as Steam records it for this Windows account.
 #[cfg(windows)]
 pub fn folder() -> Option<PathBuf> {
@@ -220,6 +247,18 @@ mod tests {
         steam.manifest("games", "1145350", DOWNLOADING);
         let asked = ["1145350", "292030", "219990", "72850"].map(String::from);
         assert_eq!(installed(&steam.steam(), &asked), vec!["292030", "219990"]);
+    }
+
+    #[test]
+    fn lists_every_app_installed_in_every_library_once() {
+        let steam = Steam::new("all");
+        steam.folders();
+        steam.manifest("steam", "219990", INSTALLED);
+        steam.manifest("games", "292030", INSTALLED);
+        steam.manifest("games", "1145350", DOWNLOADING);
+        // Not an app's manifest, whatever its name says.
+        steam.manifest("games", "x1", INSTALLED);
+        assert_eq!(all_installed(&steam.steam()), vec!["219990", "292030"]);
     }
 
     #[test]

@@ -145,6 +145,7 @@ pub fn run() {
             commands::show_launcher,
             commands::play,
             commands::steam_installed,
+            commands::playable,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -161,6 +162,7 @@ pub fn run() {
                     .permission("allow-show-launcher")
                     .permission("allow-play")
                     .permission("allow-steam-installed")
+                    .permission("allow-playable")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")

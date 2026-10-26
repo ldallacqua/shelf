@@ -295,6 +295,15 @@
     "adult": {
       "hide": "Hide adult games"
     },
+    "ready": {
+      "label": "Ready to play",
+      "none": {
+        "label": "Nothing ready",
+        "title": "Nothing on this shelf is ready to play here.",
+        "body": "No game has a file chosen on this computer that is still there, or a Steam app installed. Choose a game’s file under Mine, or show every game.",
+        "showAll": "Show every game"
+      }
+    },
     "metaTitle": "Library",
     "title": "Library",
     "emptyTitle": "The shelf is being stocked.",
