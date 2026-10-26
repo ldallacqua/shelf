@@ -41,6 +41,15 @@ baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. De
 - **Step 5, Ready to play, is built** (architecture section 25, row "Ready to play"). The
   library's script is at 276.9 KB of its 277: the next change to the library will need room
   made or the budget raised, with its reason in `scripts/lib/budgets.ts`.
+- **Step 6, updates and the installer in one step, is built** (architecture section 25, row
+  "Updates"). **The key updates are signed with is in `.env.local`
+  (`TAURI_SIGNING_PRIVATE_KEY`), and nowhere else but the owner's copy:** lose it and installed
+  apps take no more updates. A release is `pnpm desktop:release`, by hand, from `main`, after a
+  pull request that raises the version in `tauri.conf.json` and `Cargo.toml`. The repository is
+  public since the owner chose it on 25 Oct 2026; nothing secret was in its history.
+- **The installer's template is ours** (`desktop/installer/installer.nsi`): Tauri 2.12.4's with
+  changes marked "Shelf:". Upgrading the Tauri CLI means starting again from its template.
+  `SetCtlColors` takes colors only as written in the script; a variable reads as black.
 - **Never in a check:** a real game started, a real Steam opened, or production signed in to by
   a script. The app is checked against `pnpm serve:test`, its web view driven through WebView2's
   debugging port.

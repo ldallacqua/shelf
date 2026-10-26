@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shelf</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <!-- The splash has no bar: any part of it moves the window. -->
+  <body data-tauri-drag-region="deep">
+    <main>
+      <!-- Shelf's icon, as the installer and Windows show it (src/app/icon.svg). -->
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="#0b0d12" />
+        <rect x="5.5" y="6.5" width="6" height="15" rx="1.2" fill="#f2f4f8" />
+        <rect x="13" y="9.5" width="6" height="12" rx="1.2" fill="#f2f4f8" opacity="0.72" />
+        <rect x="20.5" y="7.5" width="6" height="14" rx="1.2" fill="#f2f4f8" opacity="0.48" />
+        <rect x="4" y="23.5" width="24" height="2.6" rx="1.3" fill="#7c5cff" />
+      </svg>
+      <div id="working" class="working">
+        <p id="status" class="status" role="status">Opening Shelf</p>
+        <div id="bar" class="bar" aria-hidden="true"><div id="fill" class="fill"></div></div>
+      </div>
+      <section id="unreachable" class="unreachable" hidden>
+        <h1 id="title">Shelf can't be reached</h1>
+        <p id="why">Check the internet connection, then try again.</p>
+        <div class="actions">
+          <button id="again" type="button">Try again</button>
+          <button id="close" class="quiet" type="button">Close</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

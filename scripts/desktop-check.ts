@@ -118,6 +118,13 @@ try {
       .find((page) => page.url().startsWith(BASE_URL))
   await until('the app opening Shelf', 30, async () => (await pageOfApp()) !== undefined)
   const shelf = (await pageOfApp())!
+  // The splash opened Shelf in the main window, and goes once Shelf is there (ADR 005, section 9).
+  const splashOf = (connected: Browser) =>
+    connected
+      .contexts()
+      .flatMap((context) => context.pages())
+      .find((page) => page.url().includes('tauri.localhost'))
+  await until('the splash closing once Shelf is there', 20, async () => !splashOf(browser))
   /** A picture of the app's page, when a person asked for them. */
   const shot = async (name: string) => {
     if (SHOTS) await shelf.screenshot({ path: join(SHOTS, `${name.replace(/[^\w-]+/g, '_')}.png`) })
@@ -129,7 +136,7 @@ try {
   shelf.on('pageerror', (error) => errors.push(`${shelf.url()}: ${error.message}`))
 
   console.log('\nThe app')
-  pass(`opened ${BASE_URL}`)
+  pass(`opened ${BASE_URL}, and the splash went`)
 
   const info = await shelf.evaluate(async () => {
     const tauri = (
@@ -263,6 +270,44 @@ try {
   const steam = shelf.locator('[data-play] a[href^="steam://"]')
   await steam.waitFor({ timeout: 10_000 })
   pass(`Skyrim offers “${await steam.textContent()}”, to ${await steam.getAttribute('href')}`)
+
+  console.log('\nThe splash, with no Shelf to open')
+  // A second app, on an address nothing answers, with a profile and a port of its own.
+  const nowhere = mkdtempSync(join(tmpdir(), 'shelf-desktop-check-'))
+  const lost = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
+    env: {
+      ...process.env,
+      SHELF_URL: 'http://127.0.0.1:9',
+      SHELF_DATA_DIR: nowhere,
+      WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT + 1}`,
+    },
+    stdio: 'inherit',
+  })
+  try {
+    await until(
+      'its web view opening its debugging port',
+      60,
+      async () => (await fetch(`http://127.0.0.1:${PORT + 1}/json/version`)).ok,
+    )
+    const other = await chromium.connectOverCDP(`http://127.0.0.1:${PORT + 1}`)
+    await until('the splash', 20, async () => splashOf(other) !== undefined)
+    const splash = splashOf(other)!
+    await splash
+      .getByRole('button', { name: /^(Try again|Tentar de novo)$/ })
+      .waitFor({ timeout: 20_000 })
+    const words = await splash.locator('body').innerText()
+    if (/can't be reached|Não foi possível abrir/.test(words))
+      pass('says Shelf can’t be reached, with Try again and Close')
+    else fail(`the splash said: ${words.replace(/\s+/g, ' ')}`)
+    if (SHOTS) await splash.screenshot({ path: join(SHOTS, 'splash-unreachable.png') })
+  } finally {
+    if (lost.pid) spawnSync('taskkill', ['/pid', String(lost.pid), '/t', '/f'], { stdio: 'ignore' })
+    try {
+      rmSync(nowhere, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
+    } catch {
+      console.log(`(Left ${nowhere} behind: a web view process still holds it.)`)
+    }
+  }
 
   console.log('\nThe console')
   if (errors.length === 0) pass('no error')

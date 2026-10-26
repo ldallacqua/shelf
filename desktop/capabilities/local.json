@@ -1,11 +1,10 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "local",
-  "description": "The app's own page, shown until Shelf answers: it may ask to open Shelf, and move, minimize and close its window.",
-  "windows": ["main"],
+  "description": "The splash, the app's own page: it may ask to start (an update, then Shelf), and move and close its window.",
+  "windows": ["splash"],
   "permissions": [
-    "allow-open-shelf",
-    "core:window:allow-minimize",
+    "allow-start",
     "core:window:allow-close",
     "core:window:allow-start-dragging",
     "core:window:allow-internal-toggle-maximize"
