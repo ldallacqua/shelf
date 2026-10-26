@@ -195,18 +195,79 @@ anything else. Checked: the first and the last by `pnpm desktop:check` and the t
 administrator's prompt and Steam itself are the owner's to see on their own games: no script
 here starts a real game or opens Steam.
 
-### Step 4: Releases and updates. Asks
+Steps 4 to 6 are what the owner asked once the app was installed (ADR 005, sections 8 to 10).
+Where installers live was theirs to answer: this repository, made public.
 
-The installer is built here (`pnpm desktop:build`). Where the owner downloads it from, and
-whether the app updates itself, is the owner's to decide:
+### Step 4: The window's own title bar
 
-- **A release on this repository** (`gh release create`, the installer attached): private, so
-  only the owner's GitHub account downloads it. Updating is by hand.
-- **Tauri's updater,** which needs the installers somewhere it can read without signing in (a
-  public repository of releases only, or Shelf serving the update's description), and a key of
-  its own to sign updates, kept with the other secrets.
+- [ ] The window without Windows' bar (`decorations(false)`; Windows keeps its edges, shadow,
+      rounded corners and snapping), and the app's line that tells Shelf's pages so
+      (`window.__SHELF_WINDOW__ = 'frameless'`, before any of the page's scripts), mirrored on
+      `<html>` as `data-window="frameless"` by Shelf's head script before the first paint.
+- [ ] Shelf's header as the bar: `data-tauri-drag-region="deep"` (its empty parts move the
+      window, a double click maximizes it), room kept at its right end, and minimize, maximize
+      (restore, when maximized) and close there, as wide as Windows draws them, close turning
+      red. Through the bridge, Tauri's window commands, allowed to Shelf's origin: `minimize`,
+      `toggle_maximize`, `close`, `is_maximized`, `start_dragging`, `internal_toggle_maximize`.
+- [ ] The page's scrollbar in the app: Windows' would run beside the close button, so it is
+      hidden there and a thin one of Shelf's is drawn below the header, over the page, shown
+      while the page scrolls or the pointer is on it, and draggable.
+- [ ] Tests: the controls are drawn only in a window without a bar, and each asks its command;
+      the scrollbar follows the page.
 
-### Step 5: Hours for the games started from a file
+**Done when** the window has one bar, Shelf's: it moves, maximizes, restores, minimizes and
+closes from the header, resizes from its edges, and Shelf's name shows once. An app from step 3,
+which has Windows' bar, shows no second set of controls.
+
+### Step 5: Ready to play
+
+- [ ] `playable`: the entries whose file is chosen and still there, and every Steam app
+      installed here (each library's manifests, flag 4). It takes nothing.
+- [ ] `GET /api/v1/me/play`: each of my games' entry id and apps on Steam, worked out as
+      `steam.known` is for one game; `private, no-store`.
+- [ ] **Ready to play** (Prontos para jogar) among the library's controls, on one's own shelf in
+      the app only: a choice of this device (`preferences.ts`) that leaves only the ready games
+      in the library before anything is drawn from it, as hiding adult games does. While what is
+      ready is not known yet, the shelf waits in ghosts rather than show every game first. What
+      is ready is read again when the window comes back to the front and when Play changes a
+      file.
+- [ ] Nothing ready: the shelf says so, and offers to show every game.
+- [ ] Tests: Steam's fixtures (an installed game listed, a half-downloaded one not); the read
+      gives each of my entries with its apps, never another library's; the choice leaves only
+      the ready games, with counts to match.
+
+**Done when** Ready to play leaves exactly the games with a file that is still there or a Steam
+app installed, in every view, with counts to match, and is still on the next time the app
+opens.
+
+### Step 6: Updates, and the installer in one step
+
+- [ ] The repository public (the owner's choice), after its whole history is searched for
+      anything secret.
+- [ ] A signing key: the private half in `.env.local` (`TAURI_SIGNING_PRIVATE_KEY` and
+      `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, names in `.env.example`), the public half in
+      `tauri.conf.json`. The owner keeps a copy of the private half elsewhere.
+- [ ] Tauri's updater (`tauri-plugin-updater`), reading
+      `https://github.com/ldallacqua/shelf/releases/latest/download/latest.json`, installing in
+      the installer's passive mode.
+- [ ] The splash: a small window of the app's own, first at every start. It looks for an update
+      (a few seconds at most), downloads one showing how far, installs it and starts the new
+      version; then opens Shelf in the main window, unseen until its page is there, and closes.
+      Shelf not answering: it says so, with Try again and Close. A development build skips
+      the update.
+- [ ] The installer in one step: a template of our own (`desktop/installer/`), Tauri 2.12.4's
+      without its pages. One small window like the splash while it installs, then Shelf opens;
+      an update runs the same.
+- [ ] `pnpm desktop:release`: from a clean `main`, builds the version `tauri.conf.json` names,
+      signed, writes `latest.json`, and publishes the release `desktop-v{version}` with the
+      installer, its signature and `latest.json`.
+- [ ] Version 0.2.0, the first released. It is installed by hand once over 0.1.0, which has no
+      updater; every later version arrives by itself.
+
+**Done when** the installer opens Shelf without a click, and a newer release published is
+installed at the next start without one.
+
+### Step 7: Hours for the games started from a file
 
 - [ ] The app watches what it started (`sysinfo`, every 15 seconds): the process it started,
       or, once that ends within a minute, a process running from the same folder. A session

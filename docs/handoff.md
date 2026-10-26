@@ -12,7 +12,7 @@ mesmo, Desde que o projeto continue mostrando todos os meus dados corretamente n
 baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. Depois inicie".
 
 - **The decision is [ADR 005](adr/005-desktop-app.md);** what Play does is spec 7.7; how to
-  build, run and install it, and the five steps it is built in, are
+  build, run and install it, and the seven steps it is built in, are
   [the desktop guide](desktop.md). Decisions 32 to 38 in spec section 19 are mine; the owner's
   one condition is that the app shows all their data correctly, which the app meets by opening
   the hosted Shelf rather than a copy of it.
@@ -29,8 +29,10 @@ baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. De
   which hides cargo from cmd and from Rust itself: run the desktop tools through their `pnpm
   desktop:` scripts, which tidy PATH, and tell the owner rather than edit Windows' settings.
 - **Step 3, choosing a file and Play, is built** (architecture section 25, row "Play in the app").
-  Step 4, releases, asks the owner where installers live; until then, `pnpm desktop:build` here
-  and the installer from `desktop/target/release/bundle/nsis/`.
+- **Then the owner installed it and asked four things** (ADR 005, sections 8 to 10): Shelf's
+  header as the window's bar, Ready to play, automatic updates and an installer that asks
+  nothing. Asked where installers live, the repository being private, they chose to make it
+  public. These are the guide's steps 4 to 6; hours moved to step 7.
 - **Never in a check:** a real game started, a real Steam opened, or production signed in to by
   a script. The app is checked against `pnpm serve:test`, its web view driven through WebView2's
   debugging port.
