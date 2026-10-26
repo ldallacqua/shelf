@@ -2,8 +2,8 @@ import 'server-only'
 
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
-import { EROTIC, lengthMinutes } from '@/domain/igdb/game'
-import type { ArchivedGame, OwnerGame } from '@/domain/library/editing'
+import { EROTIC, lengthMinutes, type StoreId } from '@/domain/igdb/game'
+import type { ArchivedGame, OwnerGame, SteamApps } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
 import {
   emptyTally,
@@ -46,7 +46,7 @@ import {
  * here asks whether the reader may see it: the services do.
  */
 
-const union = (lists: readonly (readonly number[])[]): number[] => [...new Set(lists.flat())]
+const union = <T>(lists: readonly (readonly T[])[]): T[] => [...new Set(lists.flat())]
 
 const byId = <T extends { id: number }>(a: T, b: T) => a.id - b.id
 
@@ -406,7 +406,7 @@ export const readOwnerGame = async (
   libraryId: string,
   entryId: string,
 ): Promise<OwnerGame | undefined> => {
-  const [entryRows, versionRows, copyRows, timeRows, tagRows] = await Promise.all([
+  const [entryRows, versionRows, copyRows, timeRows, tagRows, steamRows] = await Promise.all([
     db
       .select()
       .from(entries)
@@ -416,6 +416,8 @@ export const readOwnerGame = async (
     db
       .select({
         gameId: games.id,
+        igdbId: games.igdbId,
+        storeIds: games.storeIds,
         slug: games.slug,
         title: games.title,
         relation: entryVersions.relation,
@@ -444,6 +446,22 @@ export const readOwnerGame = async (
       .innerJoin(tags, eq(tags.id, entryTags.tagId))
       .where(eq(entryTags.entryId, entryId))
       .orderBy(tags.name),
+    // The Steam apps the sync found I own, feeding this game's copies (spec 7.7).
+    db
+      .select({
+        storeId: sourceItems.storeId,
+        igdbId: sourceItems.igdbId,
+        minutes: sourceItems.minutes,
+      })
+      .from(sourceItems)
+      .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+      .where(
+        and(
+          eq(sourceItems.userId, libraryId),
+          eq(sourceItems.source, 'steam'),
+          eq(copies.entryId, entryId),
+        ),
+      ),
   ])
   const entry = entryRows[0]
   const primary = versionRows.find((row) => row.relation === 'primary')
@@ -514,7 +532,41 @@ export const readOwnerGame = async (
   if (entry.rating !== null) owned.rating = entry.rating
   if (entry.completedOn) owned.completedOn = entry.completedOn
   if (entry.notes) owned.notes = entry.notes
+  const steam = steamAppsOf(primary.igdbId, steamRows, [
+    primary,
+    ...versionRows.filter((row) => row !== primary),
+  ])
+  if (steam) owned.steam = steam
   return owned
+}
+
+/**
+ * A game's apps on Steam (spec 7.7). The one I own is the app of a Steam
+ * item on one of its copies: the main version's first, since a game with
+ * its expanded edition can have both, then the one played most. The other
+ * apps I own follow, then IGDB's own list, for the desktop app to look up in
+ * Steam.
+ */
+const steamAppsOf = (
+  primaryIgdbId: number | null,
+  items: readonly { storeId: string; igdbId: number | null; minutes: number }[],
+  versions: readonly { storeIds: readonly StoreId[] }[],
+): SteamApps | undefined => {
+  const mine = [...items]
+    .sort(
+      (a, b) =>
+        Number(b.igdbId === primaryIgdbId) - Number(a.igdbId === primaryIgdbId) ||
+        b.minutes - a.minutes,
+    )
+    .map((item) => item.storeId)
+  const known = union([
+    mine,
+    ...versions.map((version) =>
+      version.storeIds.flatMap((store) => (store.source === 'steam' ? [store.uid] : [])),
+    ),
+  ])
+  if (known.length === 0) return undefined
+  return mine[0] ? { owned: mine[0], known } : { known }
 }
 
 /**

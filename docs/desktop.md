@@ -116,15 +116,20 @@ the owner has to answer is marked **Asks**.
 
 What a browser can already do, and what the app builds on.
 
-- [ ] `readOwnerGame` and the API's `OwnerGame` carry `steam`: `{ owned?: string, known: string[] }`.
+**Built 25 Oct 2026.**
+
+- [x] `readOwnerGame` and the API's `OwnerGame` carry `steam`: `{ owned?: string, known: string[] }`.
       `owned` is the app id of a Steam item feeding one of the entry's copies (the primary
-      version's first, then the most played); `known` is every Steam id IGDB lists for the
-      entry's versions (`games.store_ids`), `owned` first.
-- [ ] Under Mine, first, on one's own shelf: **Play on Steam**, a link to
-      `steam://rungameid/{owned}`, when there is an `owned`. Not on a phone.
-- [ ] Messages in both languages; the skeleton holds its place.
-- [ ] Tests: the read picks the right app id (primary first, most played next, none without a
-      Steam item); Mine shows the link with it, and none to a visitor or without one.
+      version's first, then the most played); `known` is every app of those items, then every
+      Steam id IGDB lists for the entry's versions (`games.store_ids`), `owned` first.
+- [x] On Mine's own line, on one's own shelf: **Play on Steam**, a link to
+      `steam://rungameid/{owned}` (`steamPlayLink`, digits only), when there is an `owned`. Not
+      on a coarse pointer, a phone's.
+- [x] Messages in both languages; Mine's line is as tall as the button in the editor and its
+      skeleton alike (`mineTop`), so a game with Play moves nothing below it.
+- [x] Tests: the read picks the right app id (primary first, most played next, none without a
+      Steam item, never another library's); Mine shows the link with it, and none without one;
+      the link takes digits only.
 
 **Done when** a game the Steam sync brought in opens Steam from its page in a browser.
 

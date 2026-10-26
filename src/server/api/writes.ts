@@ -298,6 +298,18 @@ export const apiOwnerGame = z
     platforms: z.array(
       z.object({ id: z.int(), key: z.string(), name: z.string(), short: z.string() }),
     ),
+    steam: z
+      .object({
+        owned: z
+          .string()
+          .optional()
+          .describe('The app the Steam sync found the account owns, on one of its copies'),
+        known: z
+          .array(z.string())
+          .describe('Every app the account owns for it and every one IGDB lists, owned first'),
+      })
+      .optional()
+      .describe('Its apps on Steam, by app id, to play it there; absent when it has none'),
   })
   .meta({ id: 'OwnerGame' })
 

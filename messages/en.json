@@ -1204,6 +1204,7 @@
   },
   "Edit": {
     "saving": "Saving…",
+    "playOnSteam": "Play on Steam",
     "played": "Hours played",
     "hourFewer": "One hour fewer",
     "hourMore": "One hour more",

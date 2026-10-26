@@ -21,3 +21,6 @@ export const mineCard = 'grid gap-3 rounded-panel border border-line bg-surface-
 
 /** Where a new copy is put together, set apart from the copies I have. */
 export const mineNewCard = 'grid gap-3 rounded-panel border border-dashed border-line-strong p-3'
+
+/** The line "Mine" is written on, as tall as Play beside it, which only some games have. */
+export const mineTop = 'flex min-h-8 items-center justify-between gap-3'

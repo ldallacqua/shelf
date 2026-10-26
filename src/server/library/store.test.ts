@@ -782,3 +782,106 @@ describe('the library version', () => {
     expect(await readVersion(db, me)).toBe(before + 1)
   })
 })
+
+describe('a game’s apps on Steam (spec 7.7)', () => {
+  /** A Steam app feeding a copy of mine, as a sync leaves it. */
+  const steamItem = (
+    library: string,
+    storeId: string,
+    igdbId: number,
+    minutes: number,
+    copyId: string,
+  ) =>
+    db.insert(sourceItems).values({
+      id: `steam-${library}-${storeId}`,
+      userId: library,
+      source: 'steam',
+      storeId,
+      title: storeId,
+      evidence: 'owned',
+      minutes,
+      firstSeenAt: 1,
+      lastSeenAt: 1,
+      igdbId,
+      resolvedBy: 'store_id',
+      decision: 'copy',
+      copyId,
+    })
+
+  const onSteam = (uid: string) => ({
+    external_games: [{ uid, external_game_source: 1, platform: PC }],
+  })
+
+  it('names the app the Steam sync found I own, the main version’s before one played more', async () => {
+    const ds2 = await saveGame(
+      db,
+      game(2368, 'Dark Souls II', { platforms: [PC], ...onSteam('236430') }),
+      { lineage: [] },
+    )
+    const scholar = await saveGame(
+      db,
+      game(9727, 'Dark Souls II: Scholar of the First Sin', {
+        platforms: [PC],
+        game_type: { id: 10 },
+        parent_game: 2368,
+        ...onSteam('335300'),
+      }),
+      { lineage: [{ igdbId: 2368, via: 'expanded' }] },
+    )
+    const entry = await createEntry(db, me, {
+      primaryGameId: ds2,
+      status: 'playing',
+      copies: [{ platformId: PC, format: 'digital' }],
+    })
+    await addVersion(db, me, entry, scholar, 'expanded')
+    const [copy] = await db.select().from(copies).where(eq(copies.entryId, entry))
+    await steamItem(me, '335300', 9727, 1200, copy!.id)
+    await steamItem(me, '236430', 2368, 60, copy!.id)
+
+    expect((await readOwnerGame(db, me, entry))?.steam).toEqual({
+      owned: '236430',
+      known: ['236430', '335300'],
+    })
+  })
+
+  it('names the one played most when none is the main version’s', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'playing',
+      copies: [{ platformId: PC, format: 'digital' }],
+    })
+    const [copy] = await db.select().from(copies).where(eq(copies.entryId, entry))
+    await steamItem(me, '111', 9999, 10, copy!.id)
+    await steamItem(me, '222', 9998, 90, copy!.id)
+
+    expect((await readOwnerGame(db, me, entry))?.steam).toEqual({
+      owned: '222',
+      known: ['222', '111'],
+    })
+  })
+
+  it('without a Steam item, names only what IGDB lists, and nothing when IGDB lists none', async () => {
+    const grimDawn = await saveGame(
+      db,
+      game(9999, 'Grim Dawn', { platforms: [PC], ...onSteam('219990') }),
+      { lineage: [] },
+    )
+    const listed = await createEntry(db, me, { primaryGameId: grimDawn, status: 'backlog' })
+    expect((await readOwnerGame(db, me, listed))?.steam).toEqual({ known: ['219990'] })
+
+    const unlisted = await createEntry(db, me, { primaryGameId: skyrimSwitch, status: 'backlog' })
+    expect((await readOwnerGame(db, me, unlisted))?.steam).toBeUndefined()
+  })
+
+  it('never takes another library’s Steam item', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'playing',
+      copies: [{ platformId: PC, format: 'digital' }],
+    })
+    const [copy] = await db.select().from(copies).where(eq(copies.entryId, entry))
+    await steamItem(other, '333', 9999, 10, copy!.id)
+
+    expect((await readOwnerGame(db, me, entry))?.steam).toBeUndefined()
+  })
+})

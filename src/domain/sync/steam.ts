@@ -164,6 +164,16 @@ export const STEAM_OPENID = 'https://steamcommunity.com/openid/login'
  */
 export const STEAM_PRIVACY_SETTINGS = 'https://steamcommunity.com/my/edit/settings'
 
+/** A Steam app id as Steam's links take it: digits only. */
+const STEAM_APP = /^\d{1,10}$/
+
+/**
+ * Steam's link that starts one of its apps (spec 7.7): Steam opens and runs
+ * it, or offers to install it first. Nothing for what is not an app id.
+ */
+export const steamPlayLink = (app: string): string | undefined =>
+  STEAM_APP.test(app) ? `steam://rungameid/${app}` : undefined
+
 const OPENID_NS = 'http://specs.openid.net/auth/2.0'
 const IDENTIFIER_SELECT = 'http://specs.openid.net/auth/2.0/identifier_select'
 

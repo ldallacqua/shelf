@@ -3,8 +3,8 @@
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
   Written and built on 25 Oct 2026: two statuses (3.12), hiding adult games (3.13), archiving a
   game (7.4), wishing for a game on one platform (7.5), separating a version (7.6) and a game
-  only I see (11.1). Written on 25 Oct 2026, not built yet: playing a game (7.7), with the
-  desktop app of [ADR 005](adr/005-desktop-app.md).
+  only I see (11.1). Written on 25 Oct 2026: playing a game (7.7), with the desktop app of
+  [ADR 005](adr/005-desktop-app.md); Play on Steam in a browser is built, the app not yet.
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -1124,7 +1124,8 @@ it for one game.
 
 ### 7.7 Playing a game
 
-**Not built yet; built in the steps of [the desktop guide](desktop.md#4-the-steps).** The owner
+**Built in the steps of [the desktop guide](desktop.md#4-the-steps): Play on Steam in a browser
+on 25 Oct 2026; the app not yet.** The owner
 asked on 25 Oct 2026: "quero converter esse projeto não somente em um browser mas tbm em um
 projeto que vai rodar no meu computar para eu executar meus jogos direito dele, tipo o hydra
 sabe. [...] Eu vou poder apontar o caminho no meu pc do game local e ele vai rodar o game, se o

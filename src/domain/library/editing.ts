@@ -62,6 +62,16 @@ export type OwnerGame = {
   versions: OwnedVersion[]
   /** Every platform it was released on, in any version, and any a copy is on. */
   platforms: PlatformLabel[]
+  /** Its apps on Steam, to play it there (spec 7.7). Absent when it has none. */
+  steam?: SteamApps
+}
+
+/** A game's apps on Steam (spec 7.7), by Steam's app ids. */
+export type SteamApps = {
+  /** The one the Steam sync found I own, on one of my copies: what Play on Steam opens. */
+  owned?: string
+  /** Every one I own and every one IGDB lists for its versions, `owned` first: the app looks these up in Steam. */
+  known: string[]
 }
 
 /** An archived game, as the account page lists it (spec 7.4). */

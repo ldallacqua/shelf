@@ -269,3 +269,29 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     expect(client.update).toHaveBeenLastCalledWith('entry-hours', { minutes: 1200 })
   })
 })
+
+describe('MineEditor, Play in a browser (spec 7.7)', () => {
+  const steamGame = (slug: string, steam?: OwnerGame['steam']): OwnerGame => ({
+    ...wished(slug, []),
+    status: 'playing',
+    ...(steam ? { steam } : {}),
+  })
+
+  it('opens Steam on a game the Steam sync found I own', async () => {
+    server.games.set('owned', steamGame('owned', { owned: '236430', known: ['236430', '335300'] }))
+    editor('owned')
+    const play = await screen.findByRole('link', { name: 'Play on Steam' })
+    expect(play).toHaveAttribute('href', 'steam://rungameid/236430')
+  })
+
+  it('offers nothing for a game only IGDB lists on Steam, or none at all', async () => {
+    server.games.set('listed', steamGame('listed', { known: ['219990'] }))
+    server.games.set('none', steamGame('none'))
+    editor('listed')
+    await screen.findByRole('group', { name: 'Status' })
+    expect(screen.queryByRole('link', { name: 'Play on Steam' })).not.toBeInTheDocument()
+    editor('none')
+    await waitFor(() => expect(screen.getAllByRole('group', { name: 'Status' })).toHaveLength(2))
+    expect(screen.queryByRole('link', { name: 'Play on Steam' })).not.toBeInTheDocument()
+  })
+})
