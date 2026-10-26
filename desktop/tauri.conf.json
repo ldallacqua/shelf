@@ -1,10 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Shelf",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.ldallacqua.shelf",
   "build": {
-    "frontendDist": "offline"
+    "frontendDist": "splash"
   },
   "app": {
     "windows": [],
@@ -24,9 +24,23 @@
       "nsis": {
         "installMode": "currentUser",
         "languages": ["English", "PortugueseBR"],
-        "displayLanguageSelector": false
+        "displayLanguageSelector": false,
+        "template": "installer/installer.nsi",
+        "installerIcon": "icons/icon.ico"
       },
-      "webviewInstallMode": { "type": "downloadBootstrapper" }
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUxNzkwNUQ1MTYyRkZBRTEKUldUaCtpOFcxUVY1VVVaS0x4VGxPZHNvQW1GM2VjektEMG53QWRjN1R5Z1ltUkQ4bEpYNUhaS0gK",
+      "endpoints": ["https://github.com/ldallacqua/shelf/releases/latest/download/latest.json"],
+      "requireSignedVersion": true,
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

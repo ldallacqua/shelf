@@ -19,9 +19,13 @@ steps it is built in.
 
 ## 1. Using it
 
-1. **Install it** from `Shelf_<version>_x64-setup.exe`. Windows warns the first time, since
-   the installer is not signed (ADR 005): **More info**, then **Run anyway**. It installs for
-   this Windows account only and needs no administrator.
+1. **Install it** from `Shelf_<version>_x64-setup.exe`, on
+   [this repository's latest release](https://github.com/ldallacqua/shelf/releases/latest).
+   Windows warns the first time, since the installer is not signed (ADR 005): **More info**,
+   then **Run anyway**. Then it asks nothing: a small window shows while it installs, for this
+   Windows account only and without administrator, and Shelf opens.
+   **It updates itself:** each time it starts, a small window looks for a newer version and
+   installs it before opening Shelf.
 2. **Sign in** as on the site. The app remembers it, as a browser does, for seven days after
    the last use.
 3. **On a game of your own,** under Mine:
@@ -58,6 +62,7 @@ folder to forget everything.
 | `pnpm desktop:dev` | The app against the local server, `http://localhost:3300`, rebuilt when its Rust changes. Start `pnpm serve:test` (or `pnpm dev`) first. |
 | `pnpm desktop:build` | The installer, a release build that opens production: `desktop/target/release/bundle/nsis/Shelf_<version>_x64-setup.exe` |
 | `pnpm desktop:test` | The Rust side's tests (`cargo test`) |
+| `pnpm desktop:release` | From a clean `main` that is GitHub's: the installer for the version in `tauri.conf.json`, signed with the key in `.env.local`, and `latest.json`, published as the release `desktop-v{version}`, which every installed app finds at its next start ([step 6](#step-6-updates-and-the-installer-in-one-step)) |
 | `pnpm desktop:check` | The app against `pnpm serve:test`, driven through its web view's debugging port: signs in as the made-up owner and checks that the pages show what a browser shows ([section 5](#5-checking-it)) |
 
 The first build compiles Tauri and its dependencies, about five minutes; later ones take
@@ -75,7 +80,10 @@ desktop/
   Cargo.toml, build.rs   The Rust program, shelf-desktop
   tauri.conf.json        The app: name, identifier, window, installer
   capabilities/          What the local page may ask (Shelf's origin gets its own in lib.rs)
-  offline/               The one local page: "Shelf can't be reached", and Try again
+  splash/                The one local page, the splash: an update, then Shelf, or "Shelf can't
+                         be reached" with Try again
+  installer/             The installer's template: Tauri's, with its pages taken out
+                         and its one page drawn as the splash
   icons/                 Made from src/app/icon.svg by the Tauri CLI's `icon` command, Windows' only
   src/
     main.rs, lib.rs      The window, and what the app keeps while it runs
@@ -112,6 +120,11 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
   app starts names that address in its `remote` URLs, and `build.rs` lists every command, so
   none is allowed without one.
 - A path comes only from the file picker. No command takes one.
+- An update is installed only when its signature is made with the app's key and names the
+  version `latest.json` announces (`requireSignedVersion`): a `latest.json` that pairs a newer
+  number with an older release is refused. `pnpm desktop:release` refuses to publish a
+  signature without its version.
+- The splash may ask `start`, and move and close its own window; nothing else.
 - No plugin's JavaScript API is allowed to any page.
 - Shelf's origin may also use Tauri's window commands for the window it is in: minimize,
   maximize, close, whether it is maximized, and dragging. The app's own page may minimize,
@@ -282,30 +295,41 @@ the sample's 230 games, Bloodborne and two whose Steam apps this computer has in
 
 ### Step 6: Updates, and the installer in one step
 
-- [ ] The repository public (the owner's choice), after its whole history is searched for
+**Built 25 Oct 2026.**
+
+- [x] The repository public (the owner's choice), after its whole history is searched for
       anything secret.
-- [ ] A signing key: the private half in `.env.local` (`TAURI_SIGNING_PRIVATE_KEY` and
+- [x] A signing key: the private half in `.env.local` (`TAURI_SIGNING_PRIVATE_KEY` and
       `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, names in `.env.example`), the public half in
       `tauri.conf.json`. The owner keeps a copy of the private half elsewhere.
-- [ ] Tauri's updater (`tauri-plugin-updater`), reading
+- [x] Tauri's updater (`tauri-plugin-updater`), reading
       `https://github.com/ldallacqua/shelf/releases/latest/download/latest.json`, installing in
       the installer's passive mode.
-- [ ] The splash: a small window of the app's own, first at every start. It looks for an update
+- [x] The splash: a small window of the app's own, first at every start. It looks for an update
       (a few seconds at most), downloads one showing how far, installs it and starts the new
       version; then opens Shelf in the main window, unseen until its page is there, and closes.
       Shelf not answering: it says so, with Try again and Close. A development build skips
       the update.
-- [ ] The installer in one step: a template of our own (`desktop/installer/`), Tauri 2.12.4's
+- [x] The installer in one step: a template of our own (`desktop/installer/`), Tauri 2.12.4's
       without its pages. One small window like the splash while it installs, then Shelf opens;
       an update runs the same.
-- [ ] `pnpm desktop:release`: from a clean `main`, builds the version `tauri.conf.json` names,
+- [x] `pnpm desktop:release`: from a clean `main`, builds the version `tauri.conf.json` names,
       signed, writes `latest.json`, and publishes the release `desktop-v{version}` with the
       installer, its signature and `latest.json`.
-- [ ] Version 0.2.0, the first released. It is installed by hand once over 0.1.0, which has no
+- [x] Version 0.2.0, the first released. It is installed by hand once over 0.1.0, which has no
       updater; every later version arrives by itself.
 
 **Done when** the installer opens Shelf without a click, and a newer release published is
-installed at the next start without one.
+installed at the next start without one. Checked: the installer, built under another name so
+the owner's Shelf was left alone, installs with no question, shows the splash's window (Shelf's
+icon, "INSTALANDO O SHELF", the bar, in Windows' dark), and opens the app; `pnpm desktop:check`
+sees the splash open Shelf and go, and say Shelf can't be reached when nothing answers. An
+update arriving is seen only with a second release: 0.2.0 is the first.
+
+Two things the window kept were fixed on the way: the size and place it remembers no longer
+include whether it had Windows' bar (0.1.0 remembered yes, and would have put it back), and a
+development build with a profile of its own no longer reads or writes the installed app's
+memory of its window.
 
 ### Step 7: Hours for the games started from a file
 
@@ -355,6 +379,8 @@ Steam is still counted once.
 | --- | --- |
 | Windows says it protected the PC | The installer is not signed: More info, Run anyway |
 | "Shelf can't be reached" | No internet, or the site is down: Try again when it is back |
+| An update never arrives | The app looks at `latest.json` on this repository's latest release, for five seconds at each start: if GitHub is slow it goes on to Shelf and tries the next time. A release whose signature is not made with the key in `.env.local` is refused by every installed app |
+| The key in `.env.local` is lost | Installed apps cannot be updated any more: make a new key, put its public half in `tauri.conf.json`, and install that version by hand once |
 | Play says the file is gone | The game moved or was uninstalled: Choose the file again |
 | A game opens and closes at once | It needs another folder or arguments: point at its launcher, or at a shortcut (`.lnk`) that has them |
 | Steam opens on the game's page, not the game | Steam does that for a game with several ways to start: pick one there once |

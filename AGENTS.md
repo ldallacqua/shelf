@@ -53,6 +53,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm desktop:dev`               | Shelf for Windows against the local server ([the desktop guide](docs/desktop.md)). Needs Rust                         |
 | `pnpm desktop:build`             | The desktop app's installer, which opens production                                                                   |
 | `pnpm desktop:test`              | The desktop app's Rust tests                                                                                          |
+| `pnpm desktop:release`           | Publishes the desktop app's version in `tauri.conf.json` as a release, signed; from a clean `main` only               |
 | `pnpm desktop:check`             | The desktop app against `pnpm serve:test`, its pages read beside a plain Chromium's. Needs a running server           |
 
 Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**

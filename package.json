@@ -38,6 +38,7 @@
     "desktop:build": "node scripts/desktop.ts build",
     "desktop:test": "node scripts/desktop.ts test",
     "desktop:check": "node scripts/desktop-check.ts",
+    "desktop:release": "node scripts/desktop-release.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm i18n:check && pnpm test",
     "verify": "node scripts/verify.ts"
   },
