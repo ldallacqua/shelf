@@ -3,6 +3,8 @@
 
 # generated
 .next/
+desktop/target/
+desktop/gen/
 node_modules/
 storybook-static/
 playwright-report/

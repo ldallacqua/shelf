@@ -21,7 +21,7 @@ const toolbar = (...sources: string[]) => (preview ? sources : [])
 /**
  * What a page may load and do (architecture, section 20). Scripts and styles
  * come from the site itself, covers from IGDB's image servers, and nothing
- * else is fetched; a game's video, once pressed, plays in YouTube's frame. Inline scripts are allowed: pages are built ahead of
+ * else is fetched but the desktop app's commands; a game's video, once pressed, plays in YouTube's frame. Inline scripts are allowed: pages are built ahead of
  * time, so they cannot carry a fresh nonce, and Next.js and React write
  * inline scripts of their own. React needs `eval` while developing only.
  */
@@ -42,7 +42,13 @@ const contentSecurityPolicy = Object.entries({
     ...toolbar('https://vercel.live', 'https://vercel.com'),
   ],
   'font-src': ["'self'", ...toolbar('https://vercel.live', 'https://assets.vercel.com')],
-  'connect-src': ["'self'", ...toolbar('https://vercel.live', 'wss://ws-us3.pusher.com')],
+  'connect-src': [
+    "'self'",
+    // Shelf for Windows' channel to its own commands, on Windows (ADR 005): nothing answers
+    // there in a browser.
+    'http://ipc.localhost',
+    ...toolbar('https://vercel.live', 'wss://ws-us3.pusher.com'),
+  ],
   // A game's video, once pressed (spec 7.1): YouTube's privacy-enhanced player, nothing else.
   'frame-src': ['https://www.youtube-nocookie.com', ...toolbar('https://vercel.live')],
   'object-src': ["'none'"],

@@ -68,9 +68,9 @@ ignores `SHELF_URL` and opens production only.
 desktop/
   Cargo.toml, build.rs   The Rust program, shelf-desktop
   tauri.conf.json        The app: name, identifier, window, installer
-  capabilities/          What each page may ask: Shelf's origin, the local page
+  capabilities/          What the local page may ask (Shelf's origin gets its own in lib.rs)
   offline/               The one local page: "Shelf can't be reached", and Try again
-  icons/                 Made from src/app/icon.svg by `pnpm tauri icon`
+  icons/                 Made from src/app/icon.svg by the Tauri CLI's `icon` command, Windows' only
   src/
     main.rs, lib.rs      The window, the commands, the rules for where it may go
     navigation.rs        Which addresses stay in the window (unit-tested)
@@ -92,8 +92,9 @@ Steam app ids (digits), and refuses anything else as `invalid`.
 
 ### Rules that keep it safe
 
-- Only the address the build opens may call a command (`capabilities/shelf.json`'s
-  `remote.urls`, written from that address when the app starts).
+- Only the address the build opens may call a command: the capability `lib.rs` adds when the
+  app starts names that address in its `remote` URLs, and `build.rs` lists every command, so
+  none is allowed without one.
 - A path comes only from the file picker. No command takes one.
 - No plugin's JavaScript API is allowed to any page.
 - The window keeps Shelf's pages and the platforms' sign-in pages (`navigation.rs`); any other
@@ -135,17 +136,21 @@ What a browser can already do, and what the app builds on.
 
 ### Step 2: The app opens Shelf
 
-- [ ] `desktop/`: Tauri 2, one window (1440 by 900, at least 960 by 600) on the build's
-      address, the app's name and icon, one instance (a second start brings the first to the
-      front), an NSIS installer for the current user.
-- [ ] `navigation.rs` with its tests; the offline page with Try again, shown when the address
-      does not answer within ten seconds.
-- [ ] `capabilities/shelf.json` for the address the build opens, and `desktop_info`.
-- [ ] `src/features/desktop/bridge.ts`: `inDesktopApp()` and `desktopInfo()`.
-- [ ] `connect-src` gains `http://ipc.localhost`.
-- [ ] `pnpm desktop:dev`, `desktop:build`, `desktop:test`; `pnpm verify` runs `desktop:test`
+**Built 25 Oct 2026.**
+
+- [x] `desktop/`: Tauri 2, one window (1280 by 800, at least 960 by 600, its size and place
+      remembered) on the build's address, the app's name and icon, one instance (a second start
+      brings the first to the front), an NSIS installer for the current user (1.4 MB).
+- [x] `navigation.rs` with its tests; the app's own page, which opens Shelf once its server
+      answers within ten seconds and otherwise says it can't be reached, with Try again.
+- [x] A capability for the address the build opens, added by `lib.rs` when the app starts (a
+      file cannot know a development build's `SHELF_URL`), and `desktop_info`.
+- [x] `connect-src` gains `http://ipc.localhost`.
+- [x] `pnpm desktop:dev`, `desktop:build`, `desktop:test`; `pnpm verify` runs `desktop:test`
       when `cargo` is there and says so when it is not.
-- [ ] `pnpm desktop:check` ([section 5](#5-checking-it)).
+- [x] `pnpm desktop:check` ([section 5](#5-checking-it)).
+- The site's bridge (`src/features/desktop/bridge.ts`) waits for step 3, its first user: the
+  check calls `desktop_info` from Shelf's page itself.
 
 **Done when,** against `pnpm serve:test`, signed in as the made-up owner, the app shows the
 same as a browser on: the shelf (2D, 3D, wall, list), a game's page and panel with Mine and its
@@ -235,3 +240,4 @@ Steam is still counted once.
 | A game opens and closes at once | It needs another folder or arguments: point at its launcher, or at a shortcut (`.lnk`) that has them |
 | Steam opens on the game's page, not the game | Steam does that for a game with several ways to start: pick one there once |
 | The app opens blank | WebView2 is missing or broken: Windows Update, or Microsoft's WebView2 installer |
+| `cargo` not found, though Rust is installed | A stray `"` in Windows' PATH (the owner's has one after `C:\Program Files\dotnet`) hides every folder after it from cmd and from Rust. The `desktop:` scripts tidy PATH for what they start; remove the quote in Windows' environment variables to fix it everywhere |

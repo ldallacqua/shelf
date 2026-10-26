@@ -50,6 +50,10 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm db:generate`               | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`                    |
 | `pnpm db:migrate`                | Applies migrations without touching the data                                                                          |
 | `pnpm fixtures:fetch`            | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff           |
+| `pnpm desktop:dev`               | Shelf for Windows against the local server ([the desktop guide](docs/desktop.md)). Needs Rust                         |
+| `pnpm desktop:build`             | The desktop app's installer, which opens production                                                                   |
+| `pnpm desktop:test`              | The desktop app's Rust tests                                                                                          |
+| `pnpm desktop:check`             | The desktop app against `pnpm serve:test`, its pages read beside a plain Chromium's. Needs a running server           |
 
 Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**
 (Actions minutes are limited). **Run every test once, before merging a pull request**, not
@@ -81,6 +85,7 @@ fixtures/       Real IGDB records for seeds and tests. See fixtures/README.md.
 drizzle/        Database migrations, as SQL. Generated; reviewed; never edited after merging.
 e2e/            Browser tests and reference screenshots
 scripts/        Seeds, checks and measurements
+desktop/        Shelf for Windows, a Tauri program in Rust (ADR 005): it opens the hosted site
 ```
 
 Lint enforces these imports, and that three.js is imported only inside
