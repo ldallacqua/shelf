@@ -38,6 +38,9 @@ baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. De
   Windows' bar, is unchanged until it is replaced. A development build no longer takes the
   single-instance lock: with the owner's installed app open, it used to close itself and bring
   theirs forward.
+- **Step 5, Ready to play, is built** (architecture section 25, row "Ready to play"). The
+  library's script is at 276.9 KB of its 277: the next change to the library will need room
+  made or the budget raised, with its reason in `scripts/lib/budgets.ts`.
 - **Never in a check:** a real game started, a real Steam opened, or production signed in to by
   a script. The app is checked against `pnpm serve:test`, its web view driven through WebView2's
   debugging port.

@@ -88,11 +88,27 @@ export const adultPreference: Preference<AdultChoice> = {
   fallback: 'shown',
 }
 
+export const readyChoices = ['all', 'ready'] as const
+export type ReadyChoice = (typeof readyChoices)[number]
+
+/**
+ * Whether one's own shelf shows only the games ready to play on this
+ * computer (spec 7.7, Ready to play): offered only in Shelf for Windows, and
+ * kept on it, as Steam keeps its own.
+ */
+export const readyPreference: Preference<ReadyChoice> = {
+  storageKey: 'shelf:ready-to-play',
+  attribute: 'ready-to-play',
+  values: readyChoices,
+  fallback: 'all',
+}
+
 const preferences = [
   densityPreference,
   wallSizePreference,
   dimensionPreference,
   adultPreference,
+  readyPreference,
 ] as const
 
 const parse = <Value extends string>(preference: Preference<Value>, value: unknown): Value =>

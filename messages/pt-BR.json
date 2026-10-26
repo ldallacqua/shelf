@@ -295,6 +295,15 @@
     "adult": {
       "hide": "Esconder jogos adultos"
     },
+    "ready": {
+      "label": "Prontos para jogar",
+      "none": {
+        "label": "Nada pronto",
+        "title": "Nada nesta estante está pronto para jogar aqui.",
+        "body": "Nenhum jogo tem um arquivo escolhido neste computador que ainda esteja lá, nem um app da Steam instalado. Escolha o arquivo de um jogo em Meu, ou mostre todos os jogos.",
+        "showAll": "Mostrar todos os jogos"
+      }
+    },
     "metaTitle": "Biblioteca",
     "title": "Biblioteca",
     "emptyTitle": "A estante está sendo abastecida.",

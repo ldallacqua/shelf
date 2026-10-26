@@ -11,6 +11,7 @@ fn main() {
             "show_launcher",
             "play",
             "steam_installed",
+            "playable",
         ]),
     ))
     .expect("tauri-build failed");

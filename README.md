@@ -33,7 +33,7 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 8 | Landing page | Done |
 | Step 9 | The trophy wall; phone and tablet, accessibility and speed passes; the daily refresh | Done |
 | Sync | Steam, then Nintendo, then PlayStation and Xbox: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md); placing what a sync brought in ([spec 4.5](docs/spec.md#45-placing-what-a-sync-brought-in)); setting a new shelf up ([spec 4.6](docs/spec.md#46-setting-a-new-shelf-up)) | Steam and Nintendo done and in use; the page for placing their games and the one that sets a new shelf up built; PlayStation and Xbox next ([handoff](docs/handoff.md)) |
-| Desktop | Shelf for Windows, which plays the games from their files or through Steam: [`docs/adr/005-desktop-app.md`](docs/adr/005-desktop-app.md), built in the steps of [`docs/desktop.md`](docs/desktop.md) | Play on Steam on the site, the app, Play in it from a file or through Steam, and its own title bar, built; next Ready to play, then updates and the installer in one step, then hours |
+| Desktop | Shelf for Windows, which plays the games from their files or through Steam: [`docs/adr/005-desktop-app.md`](docs/adr/005-desktop-app.md), built in the steps of [`docs/desktop.md`](docs/desktop.md) | Play on Steam on the site, the app, Play in it from a file or through Steam, its own title bar and Ready to play, built; next updates and the installer in one step, then hours |
 | Step 10 | Final review | Not started |
 
 What is on screen today: a landing page that shows what Shelf does with an example shelf, and,

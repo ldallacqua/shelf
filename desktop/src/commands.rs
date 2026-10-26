@@ -1,7 +1,7 @@
 //! The commands Shelf's pages may ask of this computer (ADR 005, section 3).
 //! Each takes an entry's id or Steam app ids, checked before anything is
-//! done, and never a path: a path comes only from the file picker, which the
-//! person sees and answers.
+//! done, or nothing, and never a path: a path comes only from the file
+//! picker, which the person sees and answers.
 
 use std::path::PathBuf;
 
@@ -172,6 +172,33 @@ pub async fn steam_installed(apps: Vec<String>) -> Vec<String> {
     })
     .await
     .unwrap_or_default()
+}
+
+/// What is ready to play on this computer (spec 7.7, Ready to play).
+#[derive(Debug, Serialize)]
+pub struct Playable {
+    /// The entries whose chosen file is still there.
+    entries: Vec<String>,
+    /// Every Steam app installed here.
+    steam: Vec<String>,
+}
+
+/// What Ready to play leaves: the entries whose chosen file is still there,
+/// and every app installed in Steam's libraries (none when Steam is not
+/// installed). It takes nothing.
+#[tauri::command]
+pub async fn playable(launchers: State<'_, Launchers>) -> Result<Playable, Refusal> {
+    let kept = launchers.all();
+    tauri::async_runtime::spawn_blocking(move || Playable {
+        entries: kept
+            .into_iter()
+            .filter(|(_, path)| path.is_file())
+            .map(|(entry, _)| entry)
+            .collect(),
+        steam: steam::folder().map_or_else(Vec::new, |folder| steam::all_installed(&folder)),
+    })
+    .await
+    .map_err(|_| Refusal::Failed)
 }
 
 #[cfg(test)]

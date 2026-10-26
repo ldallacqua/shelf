@@ -51,6 +51,21 @@ export const call = async (command: string, args: Record<string, unknown> = {}) 
   return invoke(command, args)
 }
 
+const changes = new Set<() => void>()
+
+/** Calls `listener` whenever a game's file is chosen or forgotten on this page; returns what stops it. */
+export const onLaunchersChange = (listener: () => void): (() => void) => {
+  changes.add(listener)
+  return () => {
+    changes.delete(listener)
+  }
+}
+
+/** Says a game's file was chosen or forgotten, to whatever reads what is ready to play. */
+export const launchersChanged = () => {
+  for (const listener of changes) listener()
+}
+
 /** The window this page is in: Tauri's own window commands, allowed to Shelf's pages. */
 export const appWindow = {
   minimize: async (): Promise<void> => {

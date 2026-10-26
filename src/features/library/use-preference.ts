@@ -7,6 +7,7 @@ import {
   densityPreference,
   dimensionPreference,
   readPreference,
+  readyPreference,
   subscribeToPreferences,
   TOO_SMALL_FOR_3D,
   wallSizePreference,
@@ -14,6 +15,7 @@ import {
   type AdultChoice,
   type Density,
   type Dimension,
+  type ReadyChoice,
   type WallSize,
 } from './preferences'
 
@@ -100,4 +102,14 @@ export function useReducedMotion(): boolean {
     () => window.matchMedia(REDUCED_MOTION).matches,
     () => false,
   )
+}
+
+/** Whether one's own shelf shows only the games ready to play here (spec 7.7), and a way to change it. */
+export function useReadyToPlay(): [ReadyChoice, (value: ReadyChoice) => void] {
+  const value = useSyncExternalStore(
+    subscribeToPreferences,
+    () => readPreference(readyPreference),
+    () => readyPreference.fallback,
+  )
+  return [value, (next) => writePreference(readyPreference, next)]
 }

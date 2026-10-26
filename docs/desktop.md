@@ -32,6 +32,9 @@ steps it is built in.
    folder** and **Forget the file**.
 5. **The header is the window's bar:** drag it to move the window, double-click it to
    maximize, and minimize, maximize and close are at its right end.
+6. **Ready to play,** among your shelf's controls, leaves only the games you can start on this
+   computer: a file chosen and still there, or a Steam app installed. It stays on until you
+   press it again.
 
 What the app keeps on this computer is only the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`. Uninstalling leaves that file; delete the
@@ -81,12 +84,13 @@ desktop/
     navigation.rs        Which addresses stay in the window (unit-tested)
     launchers.rs         The files chosen, kept in launchers.json
     launch.rs            Starting a file as Explorer does, or Steam
-    steam.rs             Steam's folders: which apps are installed
+    steam.rs             Steam's folders: which apps are installed, asked or all
   tests/fixtures/        Steam's files as Steam writes them, for the tests
 src/features/desktop/    The site's side: Tauri's global (tauri.ts), the commands that answer
                          with data (bridge.ts), and the window's bar (window-script.tsx,
                          window-controls.tsx, and frame.ts, fetched only in the app)
 src/features/game-detail/play.tsx   Play, under Mine
+src/features/library/use-ready.ts   Ready to play: which of my games this computer can start
 ```
 
 ### The bridge
@@ -129,6 +133,13 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
   Windows' bar would refuse the drag, and say so in the console), acts on the controls' clicks,
   marks `<html>` `data-maximized` for the restore button, and draws the page's scrollbar below
   the header, Windows' own being hidden there.
+- Ready to play asks `playable` (no argument: the entries whose file is still there, every
+  Steam app installed) and `GET /api/v1/me/play` (each of my games' address, entry and apps on
+  Steam), both in `features/desktop/playable.ts`, fetched only in the app on one's own shelf
+  and read without Zod; `domain/library/ready.ts` matches them. The library leaves the other
+  games out before drawing anything (`onlyReady`, as `withoutAdult`), and waits in ghosts until
+  both have answered. The button carries `data-play`, so `pnpm desktop:check` reads pages
+  without it.
 - Mine's Play (`play.tsx`) reads `steam` from the owner's game (`GET /api/v1/entries/{id}`):
   the app id the Steam sync recorded on one of its copies, and the ones IGDB lists for it. It
   carries `data-play`, so `pnpm desktop:check` reads every page without it: the app's and a
@@ -247,24 +258,27 @@ which closed it at once and brought the installed app forward whenever that was 
 
 ### Step 5: Ready to play
 
-- [ ] `playable`: the entries whose file is chosen and still there, and every Steam app
+**Built 25 Oct 2026.**
+
+- [x] `playable`: the entries whose file is chosen and still there, and every Steam app
       installed here (each library's manifests, flag 4). It takes nothing.
-- [ ] `GET /api/v1/me/play`: each of my games' entry id and apps on Steam, worked out as
+- [x] `GET /api/v1/me/play`: each of my games' entry id and apps on Steam, worked out as
       `steam.known` is for one game; `private, no-store`.
-- [ ] **Ready to play** (Prontos para jogar) among the library's controls, on one's own shelf in
+- [x] **Ready to play** (Prontos para jogar) among the library's controls, on one's own shelf in
       the app only: a choice of this device (`preferences.ts`) that leaves only the ready games
       in the library before anything is drawn from it, as hiding adult games does. While what is
       ready is not known yet, the shelf waits in ghosts rather than show every game first. What
       is ready is read again when the window comes back to the front and when Play changes a
       file.
-- [ ] Nothing ready: the shelf says so, and offers to show every game.
-- [ ] Tests: Steam's fixtures (an installed game listed, a half-downloaded one not); the read
+- [x] Nothing ready: the shelf says so, and offers to show every game.
+- [x] Tests: Steam's fixtures (an installed game listed, a half-downloaded one not); the read
       gives each of my entries with its apps, never another library's; the choice leaves only
       the ready games, with counts to match.
 
 **Done when** Ready to play leaves exactly the games with a file that is still there or a Steam
 app installed, in every view, with counts to match, and is still on the next time the app
-opens.
+opens. Checked by `pnpm desktop:check`: with Bloodborne's file chosen, Ready to play left 3 of
+the sample's 230 games, Bloodborne and two whose Steam apps this computer has installed.
 
 ### Step 6: Updates, and the installer in one step
 

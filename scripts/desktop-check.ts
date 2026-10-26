@@ -13,7 +13,8 @@
  * never followed. Fails if a page reads differently, if the bridge does not
  * answer Shelf's page, if the header is not the window's bar (ADR 005,
  * section 8), if linking Steam (the test double) does not come back to the
- * app, if Play does not start the file where it should, or if the console
+ * app, if Play does not start the file where it should, if Ready to play
+ * does not leave the game whose file was chosen (spec 7.7), or if the console
  * has an error. `DESKTOP_CHECK_SHOTS=<folder>` keeps a picture of the window
  * at each step, for a person to look at.
  *
@@ -207,6 +208,37 @@ try {
   const folder = readFileSync(started, 'utf8').trim()
   if (folder.toLowerCase() === game.toLowerCase()) pass(`started the file, in its own folder`)
   else fail(`started the file in ${folder}, not in its own folder, ${game}`)
+
+  console.log('\nReady to play')
+  // Bloodborne has a file now. What else is ready comes from this computer's own Steam, read,
+  // never opened: the count is checked against the whole shelf, not against a number.
+  await shelf.goto(`${BASE_URL}/en/u/sample?view=list`)
+  const counted = async () =>
+    Number(
+      (await shelf.locator('main').innerText())
+        .match(/([\d,]+)\s*games/i)?.[1]
+        ?.replace(/,/g, '') ?? Number.NaN,
+    )
+  const ready = shelf.getByRole('button', { name: 'Ready to play' })
+  await ready.waitFor({ timeout: 10_000 })
+  const whole = await counted()
+  await ready.click()
+  await shelf
+    .locator('main')
+    .getByText('Bloodborne', { exact: true })
+    .first()
+    .waitFor({ timeout: 10_000 })
+    .catch(async (error: unknown) => {
+      await shot('ready-to-play')
+      throw error
+    })
+  const left = await counted()
+  if (left >= 1 && left < whole) pass(`leaves ${left} of ${whole} games, Bloodborne among them`)
+  else fail(`Ready to play left ${left} of ${whole} games`)
+  await shot('ready-to-play')
+  await ready.click()
+
+  await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
   await shelf.getByRole('button', { name: 'Ways to play' }).click()
   await shelf.getByRole('menuitem', { name: 'Forget the file' }).click()
   await shelf.getByRole('button', { name: 'Choose the game’s file' }).waitFor({ timeout: 10_000 })

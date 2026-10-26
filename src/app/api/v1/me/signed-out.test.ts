@@ -14,6 +14,7 @@ import { POST as syncStep } from './platforms/[source]/sync/route'
 import { GET as myPlatforms } from './platforms/route'
 import { GET as myKeywords } from './keywords/route'
 import { GET as myLibrary } from './library/route'
+import { GET as myPlayable } from './play/route'
 import { GET as me, PATCH as changeMe } from './route'
 import { GET as myShelves } from './shelves/route'
 import { GET as myTags } from './tags/route'
@@ -75,6 +76,7 @@ const reads: [string, () => Promise<Response>][] = [
   ['its platforms', () => myPlatforms()],
   ['its unsorted games', () => myUnsorted()],
   ['its games by status', () => myTally()],
+  ['its games, to play', () => myPlayable()],
   [
     'a sync step',
     () => syncStep(asked('/api/v1/me/platforms/steam/sync', post({ read: true })), steamParams),
