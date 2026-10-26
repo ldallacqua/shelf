@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderWithIntl } from '@/test/render'
 
-import { setBridgeForTests } from './bridge'
+import { setBridgeForTests } from './tauri'
 import { PageScrollbar, TitleBar, WindowControls } from './window-frame'
 
 /**

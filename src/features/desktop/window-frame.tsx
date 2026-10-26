@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { cn } from '@/ui/cn'
 import { WindowRestoreIcon } from '@/ui/icons'
 
-import { desktop, framelessWindow } from './bridge'
+import { appWindow, framelessWindow } from './tauri'
 
 /**
  * Shelf for Windows' window has no Windows bar: Shelf's header is the bar
@@ -50,7 +50,7 @@ export function WindowControls() {
     let current = true
     // Maximized by the button, a double click on the header, a drag to the top or Windows' keys.
     const read = () => {
-      desktop.window.isMaximized().then(
+      appWindow.isMaximized().then(
         (now) => {
           if (current) setMaximized(now)
         },
@@ -76,7 +76,7 @@ export function WindowControls() {
         aria-label={t('minimize')}
         title={t('minimize')}
         className={cn(caption, 'hover:bg-text/10 active:bg-text/15')}
-        onClick={act(desktop.window.minimize)}
+        onClick={act(appWindow.minimize)}
       >
         <MinusIcon aria-hidden="true" strokeWidth={1.5} />
       </button>
@@ -85,7 +85,7 @@ export function WindowControls() {
         aria-label={maximized ? t('restore') : t('maximize')}
         title={maximized ? t('restore') : t('maximize')}
         className={cn(caption, 'hover:bg-text/10 active:bg-text/15')}
-        onClick={act(desktop.window.toggleMaximize)}
+        onClick={act(appWindow.toggleMaximize)}
       >
         {maximized ? (
           <WindowRestoreIcon aria-hidden="true" strokeWidth={1.5} />
@@ -101,7 +101,7 @@ export function WindowControls() {
           caption,
           'hover:bg-window-close hover:text-on-window-close active:bg-window-close/90 active:text-on-window-close',
         )}
-        onClick={act(desktop.window.close)}
+        onClick={act(appWindow.close)}
       >
         <XIcon aria-hidden="true" strokeWidth={1.5} />
       </button>

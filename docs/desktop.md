@@ -90,8 +90,11 @@ src/features/game-detail/play.tsx   Play, under Mine
 
 ### The bridge
 
-The site calls the commands of ADR 005 section 3 through `src/features/desktop/bridge.ts`,
-which is the only code that knows Tauri's global, and reads every answer through a schema.
+The site calls the commands of ADR 005 section 3 through `src/features/desktop/tauri.ts`,
+the only code that knows Tauri's global. It imports nothing, so the window's controls in every
+page's header cost a visitor next to nothing. The commands that answer with data go through
+`bridge.ts`, which reads every answer through a Zod schema; Zod must never reach a page's first
+load (`zod-script.tsx` says why), so only code fetched when needed imports it, as Play is.
 Outside the app there is no bridge, and Play falls back to what a browser can do (Play on
 Steam, or nothing). The commands' Rust side is `commands.rs`; each takes an entry id (letters,
 digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything else as
@@ -316,7 +319,7 @@ Steam is still counted once.
 
 - **The Rust side:** `pnpm desktop:test`. Steam's folders are read from
   `desktop/tests/fixtures/`, never from this computer's Steam.
-- **The site's side:** Vitest, with the bridge faked (`src/features/desktop/bridge.ts` takes a
+- **The site's side:** Vitest, with the bridge faked (`src/features/desktop/tauri.ts` takes a
   stand-in in tests).
 - **Pictures:** `DESKTOP_CHECK_SHOTS=<folder> pnpm desktop:check` keeps a picture of the app's
   page at each step, for a person to look at.
