@@ -6,6 +6,7 @@ import {
   kindsFromSteam,
   reportedFromSteam,
   STEAM_OPENID,
+  steamPlayLink,
   steamSignInAddress,
   steamStoreItemsSchema,
   storeItemsQuestion,
@@ -160,5 +161,14 @@ describe('signing in through Steam', () => {
     expect(isValidAnswer('ns:http://specs.openid.net/auth/2.0\nis_valid:true\n')).toBe(true)
     expect(isValidAnswer('ns:http://specs.openid.net/auth/2.0\nis_valid:false\n')).toBe(false)
     expect(isValidAnswer('is_valid:truex')).toBe(false)
+  })
+})
+
+describe('playing a game through Steam (spec 7.7)', () => {
+  it('links to Steam running an app, by its id and nothing else', () => {
+    expect(steamPlayLink('236430')).toBe('steam://rungameid/236430')
+    expect(steamPlayLink('236430 -console')).toBeUndefined()
+    expect(steamPlayLink('../../uninstall/236430')).toBeUndefined()
+    expect(steamPlayLink('')).toBeUndefined()
   })
 })

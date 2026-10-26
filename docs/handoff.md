@@ -19,6 +19,10 @@ baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. De
 - **The order:** Play on Steam on the site, then the app that opens Shelf, then choosing a file
   and Play, then releases (the owner chooses where installers live), then hours for games
   started from a file. One pull request each.
+- **Step 1, Play on Steam on the site, is built** (architecture section 25, row "Play on Steam"):
+  `OwnerGame.steam` and the button on Mine's own line. To see it on `serve:test`, link the
+  made-up Steam account first (`/api/v1/me/platforms/steam/connect`, then sync): the sample
+  shelf has no Steam items until then.
 - **Never in a check:** a real game started, a real Steam opened, or production signed in to by
   a script. The app is checked against `pnpm serve:test`, its web view driven through WebView2's
   debugging port.

@@ -37,7 +37,9 @@ import {
   mineGroups,
   mineHeading,
   mineNewCard,
+  mineTop,
 } from './mine-layout'
+import { Play } from './play'
 
 /**
  * The records read so far this visit, by game: a game opened again is
@@ -271,11 +273,14 @@ export function MineEditor({
 
   return (
     <section className="game-section" aria-busy={saving > 0 || drawing}>
-      <div className="flex items-baseline justify-between gap-3">
+      <div className={mineTop}>
         <Level className="readout text-[0.6875rem] text-muted">{game('mine')}</Level>
-        <p className="text-xs text-muted" aria-live="polite">
-          {saving > 0 ? t('saving') : ''}
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs text-muted" aria-live="polite">
+            {saving > 0 ? t('saving') : ''}
+          </p>
+          <Play steam={owned.steam} />
+        </div>
       </div>
       {problem ? (
         <p

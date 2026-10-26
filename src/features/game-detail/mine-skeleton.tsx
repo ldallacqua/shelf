@@ -6,7 +6,14 @@ import { formats, statuses } from '@/domain/library/values'
 import { cn } from '@/ui/cn'
 import { Textarea } from '@/ui/field'
 
-import { mineCard, mineGroup, mineGroupRuled, mineGroups, mineHeading } from './mine-layout'
+import {
+  mineCard,
+  mineGroup,
+  mineGroupRuled,
+  mineGroups,
+  mineHeading,
+  mineTop,
+} from './mine-layout'
 
 type MineSkeletonProps = {
   game: LibraryGame
@@ -70,7 +77,7 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
 
   return (
     <section className="game-section" data-mine-skeleton="">
-      <div className="flex items-baseline justify-between gap-3">
+      <div className={mineTop}>
         <Level className="readout text-[0.6875rem] text-muted">{words('mine')}</Level>
       </div>
       <div aria-hidden="true" inert className={mineGroups}>
