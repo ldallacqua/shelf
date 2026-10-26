@@ -4,7 +4,26 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: building the five changes in the spec, one pull request each (25 Oct 2026)
+## Now: Shelf for Windows, the desktop app that plays the games (25 Oct 2026)
+
+The owner asked for an app on their computer that starts their games, "tipo o hydra", from a
+file they point at or through Steam. Shown the research, they chose Tauri: "vamos usar tauri
+mesmo, Desde que o projeto continue mostrando todos os meus dados corretamente na versão
+baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. Depois inicie".
+
+- **The decision is [ADR 005](adr/005-desktop-app.md);** what Play does is spec 7.7; how to
+  build, run and install it, and the five steps it is built in, are
+  [the desktop guide](desktop.md). Decisions 32 to 38 in spec section 19 are mine; the owner's
+  one condition is that the app shows all their data correctly, which the app meets by opening
+  the hosted Shelf rather than a copy of it.
+- **The order:** Play on Steam on the site, then the app that opens Shelf, then choosing a file
+  and Play, then releases (the owner chooses where installers live), then hours for games
+  started from a file. One pull request each.
+- **Never in a check:** a real game started, a real Steam opened, or production signed in to by
+  a script. The app is checked against `pnpm serve:test`, its web view driven through WebView2's
+  debugging port.
+
+## Just before: building the five changes in the spec, one pull request each (25 Oct 2026)
 
 The owner, after the add search was fixed: "vai pros proximos items da lista", the five
 sections written into the spec. In this order, each merged before the next starts: Someday
@@ -50,7 +69,7 @@ decisions 15 to 24 are built as written; the owner did not change them.
   Edition too, so a way to split one version into a game of its own was offered instead; it
   waits for the owner.
 
-## Just before: five changes written into the spec, and the add search finds half a word (25 Oct 2026)
+## Before: five changes written into the spec, and the add search finds half a word (25 Oct 2026)
 
 - **The add search finds a word still being typed** (the owner: "astral cha -> não acha nada na
   busca. Astral Chain -> acha o jogo correto."). IGDB's `search` matches whole words only;
@@ -80,7 +99,7 @@ not PS4.
   public library file and every public answer, and reach its own account by `/api/v1/me/…`,
   as a private shelf does.
 
-## Before: stores and consoles are named in words, with a few pictures where words are slow (25 Oct 2026)
+## Earlier: stores and consoles are named in words, with a few pictures where words are slow (25 Oct 2026)
 
 The owner asked (in Portuguese) for Steam, Nintendo, PlayStation and Xbox icons where they
 apply, and pictures where they help, "without going over the top", researched first. The

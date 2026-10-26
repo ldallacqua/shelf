@@ -3,7 +3,8 @@
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
   Written and built on 25 Oct 2026: two statuses (3.12), hiding adult games (3.13), archiving a
   game (7.4), wishing for a game on one platform (7.5), separating a version (7.6) and a game
-  only I see (11.1).
+  only I see (11.1). Written on 25 Oct 2026, not built yet: playing a game (7.7), with the
+  desktop app of [ADR 005](adr/005-desktop-app.md).
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
@@ -1121,6 +1122,49 @@ it for one game.
 - A copy both fed is split, and no hour is counted twice or lost.
 - The next sync changes neither.
 
+### 7.7 Playing a game
+
+**Not built yet; built in the steps of [the desktop guide](desktop.md#4-the-steps).** The owner
+asked on 25 Oct 2026: "quero converter esse projeto não somente em um browser mas tbm em um
+projeto que vai rodar no meu computar para eu executar meus jogos direito dele, tipo o hydra
+sabe. [...] Eu vou poder apontar o caminho no meu pc do game local e ele vai rodar o game, se o
+game for da steam ele vai rodar o comando que executa o game pela steam." Then, choosing Tauri:
+"Desde que o projeto continue mostrando todos os meus dados corretamente na versão baixada ta
+tudo certo."
+
+- **Shelf for Windows** ([ADR 005](adr/005-desktop-app.md)) is the same Shelf in a window of
+  its own: the same pages, the same sign-in, the same data, served by the same server. What it
+  adds is Play.
+- **Play** (Jogar) is the first thing under Mine, on my own shelf only, never to a visitor.
+- **In a browser,** on a computer: **Play on Steam** (Jogar na Steam), for a game the Steam
+  sync brought in. It opens Steam on that game; the browser asks once whether it may open
+  Steam. Nothing else: a browser cannot start a file. Not on a phone.
+- **In the app,** Play starts the game:
+  - a game with a file chosen for it starts from that file, in the file's own folder;
+  - else a game owned on Steam, or one IGDB lists on Steam and Steam has installed here, starts
+    through Steam;
+  - a game owned on Steam and not installed offers **Install on Steam** (Instalar na Steam);
+  - any other offers **Choose the game's file** (Escolher o arquivo do jogo): Windows' own
+    picker, for an `.exe`, a shortcut (`.lnk`, `.url`) or a `.bat`.
+- **The file's name** shows beside Play, with **Change**, **Show in folder** and **Forget**. A
+  file no longer there says so and offers to choose it again.
+- **The files chosen stay on this computer.** Shelf's server never sees them, and another
+  computer keeps its own.
+- **Hours,** built after Play: the time a game started from its file is open is added to its
+  PC copy, as a store's hours are. A game started through Steam is counted by Steam and its
+  sync, never twice.
+
+**Done when**
+
+- Signed in in the app, every page shows what a browser shows: the shelf in every view, a
+  game's page and panel with Mine and private notes, a private game, the trophy wall, the
+  placing page and the account page.
+- Play starts a game from its file, from its folder, and one that needs administrator gets
+  Windows' prompt.
+- A Steam game starts through Steam, and nothing a page sends can start anything but a file I
+  chose or Steam.
+- A visitor sees no Play, and a phone no Play on Steam.
+
 ---
 
 ## 8. Data model
@@ -1470,7 +1514,7 @@ Not built now. The design leaves room for each.
 | Export and import, backups | Stable ids; every table holds plain data; filters are text |
 | Importing from the reference app | Entries link to IGDB ids, which the reference app also stores |
 | PlayStation, Xbox and Nintendo sync | Steam is built ([section 4.4](#44-from-a-store-or-console)). The others plug into the same matcher and memory; how each is read: [ADR 003](adr/003-platform-sync.md) |
-| Installable app, offline use | The library is one loaded data set filtered on the device |
+| Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
@@ -1530,3 +1574,15 @@ Made on 25 Oct 2026 for a game's videos (7.1):
 | 29 | A video's tile shows one of the game's own screenshots, so a page reaches YouTube only when a video is pressed | YouTube's own thumbnail, fetched from YouTube on every visit |
 | 30 | A video plays over the page, in YouTube's privacy-enhanced player | A link out to YouTube |
 | 31 | At most six videos a game, in IGDB's order | All of them |
+
+Made on 25 Oct 2026 for playing a game (7.7), with the owner's choice of Tauri:
+
+| # | Decision | Alternative |
+| --- | --- | --- |
+| 32 | The app opens the hosted Shelf, so it shows exactly what the site does | A copy of the site inside the app, with a server of its own |
+| 33 | A game's file is kept on the computer that chose it, never on the server | Kept with the account, for every computer |
+| 34 | In a browser, Play on Steam only for a game the Steam sync brought in | Also for a game IGDB lists on Steam, which may be owned elsewhere |
+| 35 | A chosen file wins over Steam | Steam first, for a game owned there |
+| 36 | The app counts hours only for games it starts from a file | Every game it starts, Steam's too, which would count them twice |
+| 37 | Windows only, at first | Mac and Linux too, untested |
+| 38 | The installer is not signed, and Windows warns once | A signing service, open to individuals in the USA and Canada only |
