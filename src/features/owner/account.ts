@@ -17,6 +17,8 @@ export type SignedIn = {
   name: string
   image?: string
   shelfPublic: boolean
+  /** How many of its games wait for a status (spec 4.5), for the header's count; unknown until said. */
+  waiting?: number
 }
 
 export type AccountState =
@@ -41,7 +43,14 @@ const set = (next: AccountState) => {
 const hinted = (): boolean => document.cookie.split(/;\s*/).includes(`${HINT}=1`)
 
 type Answer =
-  | { signedIn: true; handle: string; name: string; image?: string; shelfPublic: boolean }
+  | {
+      signedIn: true
+      handle: string
+      name: string
+      image?: string
+      shelfPublic: boolean
+      waiting?: number
+    }
   | { signedIn: false }
 
 const ask = () => {
@@ -54,12 +63,19 @@ const ask = () => {
   return asking
 }
 
-const signedIn = ({ handle, name, image, shelfPublic }: Omit<SignedIn, 'status'>): SignedIn => ({
+const signedIn = ({
+  handle,
+  name,
+  image,
+  shelfPublic,
+  waiting,
+}: Omit<SignedIn, 'status'>): SignedIn => ({
   status: 'signed-in',
   handle,
   name,
   shelfPublic,
   ...(image ? { image } : {}),
+  ...(waiting === undefined ? {} : { waiting }),
 })
 
 const current = (): AccountState => {
@@ -94,7 +110,16 @@ export const signedInAccount = (): SignedIn | undefined => {
 }
 
 /** After the account page saved a change: the new name, handle or visibility, everywhere at once. */
-export const accountChanged = (next: Omit<SignedIn, 'status'>) => set(signedIn(next))
+export const accountChanged = (next: Omit<SignedIn, 'status'>) =>
+  set(signedIn({ waiting: state?.status === 'signed-in' ? state.waiting : undefined, ...next }))
+
+/**
+ * After games were placed, or the library changed under them: how many wait now, for the
+ * header's count. The library and the page for placing say so as they learn it.
+ */
+export const waitingChanged = (waiting: number) => {
+  if (state?.status === 'signed-in' && state.waiting !== waiting) set({ ...state, waiting })
+}
 
 /** After signing out, or deleting the account: a visitor again, at once. */
 export const forgetAccount = () => {

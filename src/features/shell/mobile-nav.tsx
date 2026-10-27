@@ -15,8 +15,9 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
 
-import { isCurrent, navItems } from './nav'
-import { useNavHandle, useOwnHandle } from './nav-handle'
+import { isCurrent, navItems, placingItem } from './nav'
+import { useNavHandle, useOwnHandle, useOwnWaiting } from './nav-handle'
+import { WaitingCount } from './waiting-count'
 
 type MenuProps = { handle?: string; pathname?: string; className?: string }
 
@@ -25,6 +26,7 @@ function Menu({ handle, pathname, className }: MenuProps) {
   const account = useTranslations('Account')
   // Signed in, the account menu beside this one has the way out; a visitor's ways in are here.
   const visitor = useAccount().status === 'visitor'
+  const waiting = useOwnWaiting(handle)
 
   return (
     <DropdownMenu>
@@ -46,6 +48,17 @@ function Menu({ handle, pathname, className }: MenuProps) {
               </DropdownMenuItem>
             ))
           : null}
+        {waiting === undefined ? null : (
+          <DropdownMenuItem asChild>
+            <Link
+              href={placingItem.href}
+              aria-current={isCurrent(placingItem, pathname) ? 'page' : undefined}
+            >
+              {t(placingItem.label)}
+              <WaitingCount count={waiting} />
+            </Link>
+          </DropdownMenuItem>
+        )}
         {visitor ? (
           <>
             {handle ? <DropdownMenuSeparator /> : null}

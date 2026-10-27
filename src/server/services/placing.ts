@@ -23,6 +23,10 @@ export const myUnsorted = (): Promise<Done<Placing>> =>
 export const myTally = (): Promise<Done<Standing>> =>
   forAccount((account) => readStanding(database(), account.id))
 
+/** How many of an account's games wait for a status: the count beside the header's link to them. */
+export const waitingOf = async (accountId: string): Promise<number> =>
+  (await readStanding(database(), accountId)).tally.unsorted
+
 /** Many of my games given one status, in one write; or none, if any is not mine. */
 export const placeMine = (body: unknown): Promise<Done<Changed>> => {
   const parsed = placeMany.safeParse(body)

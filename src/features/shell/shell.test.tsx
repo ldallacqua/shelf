@@ -1,6 +1,6 @@
-import { screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type * as Accounts from '@/features/owner/account'
 import { setPathname } from '@/test/navigation'
@@ -11,6 +11,7 @@ import { Footer } from './footer'
 import { Header } from './header'
 import { MobileNav } from './mobile-nav'
 import { NavLinks } from './nav-links'
+import { NavigationProgress } from './navigation-progress'
 import { MAIN_ID, SkipLink } from './skip-link'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
@@ -121,6 +122,43 @@ describe('Header', () => {
       'href',
       '/en/u/sample',
     )
+    // Placing one's own games is no part of another's shelf.
+    expect(within(nav).queryByRole('link', { name: /^Place games/ })).not.toBeInTheDocument()
+  })
+
+  it('signed in, on one’s own shelf, links on to placing the games that wait, counting them (spec 4.5)', () => {
+    who.account = { ...ANA, waiting: 180 }
+    onShelf('/u/[handle]', '/en/u/ana', 'ana')
+    renderWithIntl(<Header />)
+    const nav = screen.getByRole('navigation', { name: 'Main' })
+    const placing = within(nav).getByRole('link', { name: 'Place games, 180 games waiting' })
+    expect(placing).toHaveAttribute('href', '/en/account/unsorted')
+    expect(placing).not.toHaveAttribute('aria-current')
+    expect(within(placing).getByText('180')).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('counts no further than 999, and says nothing over the link when none wait', () => {
+    who.account = { ...ANA, waiting: 1200 }
+    onShelf('/u/[handle]', '/en/u/ana', 'ana')
+    const { unmount } = renderWithIntl(<Header />)
+    expect(
+      screen.getByRole('link', { name: 'Place games, 1,200 games waiting' }),
+    ).toHaveTextContent('999+')
+    unmount()
+    who.account = { ...ANA, waiting: 0 }
+    renderWithIntl(<Header />)
+    expect(screen.getByRole('link', { name: 'Place games' })).toHaveTextContent(/^Place games$/)
+  })
+
+  it('marks placing as the current page on it, in Portuguese too', () => {
+    who.account = { ...ANA, waiting: 1 }
+    setPathname('/account/unsorted', 'pt-BR')
+    page.path = '/pt-BR/account/unsorted'
+    renderWithIntl(<Header />, 'pt-BR')
+    expect(screen.getByRole('link', { name: 'Organizar, 1 jogo esperando' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 
   it('is in Portuguese on a Portuguese page', () => {
@@ -189,6 +227,18 @@ describe('MobileNav', () => {
       '/en/sign-in',
     )
   })
+
+  it('has the way to placing one’s games on one’s own shelf, counting them', async () => {
+    who.account = { ...ANA, waiting: 3 }
+    onShelf('/u/[handle]', '/en/u/ana', 'ana')
+    renderWithIntl(<MobileNav />)
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }))
+    expect(
+      within(screen.getByRole('menu')).getByRole('menuitem', {
+        name: 'Place games, 3 games waiting',
+      }),
+    ).toHaveAttribute('href', '/en/account/unsorted')
+  })
 })
 
 describe('Footer', () => {
@@ -249,5 +299,63 @@ describe('EmptyLedge', () => {
     expect(screen.getByText('0')).toBeInTheDocument()
     expect(screen.getByText('The shelf is being stocked.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add your first game' })).toBeInTheDocument()
+  })
+})
+
+describe('NavigationProgress', () => {
+  // A link Next.js opens in place prevents the browser's own move; the router changes the
+  // address once the page is drawn. A plain anchor stands for one here, with no router.
+  const page = (opened = true) => (
+    <>
+      <NavigationProgress />
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+      <a href="/en/u/sample/trophies" onClick={(event) => opened && event.preventDefault()}>
+        Trophies
+      </a>
+    </>
+  )
+  const line = () => document.querySelector<HTMLElement>('.navigation-progress')!
+  const arrive = () => act(() => window.history.pushState(null, '', '/en/u/sample/trophies'))
+
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/en/u/sample')
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('draws a line while a link’s page is slow to open, and ends it as the page opens', () => {
+    render(page())
+    fireEvent.click(screen.getByRole('link', { name: 'Trophies' }))
+    act(() => vi.advanceTimersByTime(100))
+    expect(line().dataset.state).toBe('')
+    act(() => vi.advanceTimersByTime(100))
+    expect(line().dataset.state).toBe('loading')
+    expect(line()).toHaveAttribute('aria-hidden', 'true')
+    arrive()
+    act(() => vi.advanceTimersByTime(50))
+    expect(line().dataset.state).toBe('done')
+  })
+
+  it('draws nothing for a page that opens at once', () => {
+    render(page())
+    fireEvent.click(screen.getByRole('link', { name: 'Trophies' }))
+    arrive()
+    act(() => vi.advanceTimersByTime(500))
+    expect(line().dataset.state).toBe('')
+  })
+
+  it('leaves the browser’s own moves alone: a link it follows, or one for a new tab', () => {
+    const { unmount } = render(page(false))
+    fireEvent.click(screen.getByRole('link', { name: 'Trophies' }))
+    act(() => vi.advanceTimersByTime(500))
+    expect(line().dataset.state).toBeUndefined()
+    unmount()
+    render(page())
+    fireEvent.click(screen.getByRole('link', { name: 'Trophies' }), { ctrlKey: true })
+    act(() => vi.advanceTimersByTime(500))
+    expect(line().dataset.state).toBeUndefined()
   })
 })

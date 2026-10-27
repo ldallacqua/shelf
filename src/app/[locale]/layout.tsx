@@ -13,6 +13,7 @@ import { WindowScript } from '@/features/desktop/window-script'
 import { PreferenceScript } from '@/features/library/preference-script'
 import { Footer } from '@/features/shell/footer'
 import { Header } from '@/features/shell/header'
+import { NavigationProgress } from '@/features/shell/navigation-progress'
 import { Notices } from '@/features/shell/notices'
 import { ReadyMark } from '@/features/shell/ready-mark'
 import { MAIN_ID, SkipLink } from '@/features/shell/skip-link'
@@ -83,6 +84,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
           </main>
           <Footer />
           <Notices />
+          {/* Over everything, sheets too: a link in one can lead to a page that takes a while. */}
+          <NavigationProgress />
         </NextIntlClientProvider>
       </body>
     </html>

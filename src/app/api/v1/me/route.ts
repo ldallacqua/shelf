@@ -3,12 +3,13 @@ import { bodyOf } from '@/server/api/writes'
 import { checkAccount } from '@/server/auth/account'
 import { SIGNED_IN_HINT_COOKIE } from '@/server/auth/auth'
 import { changeMyAccount } from '@/server/services/account'
+import { waitingOf } from '@/server/services/placing'
 
 /**
  * Who is asking: an account, or nobody in particular. The page asks only
  * when the hint cookie says it is worth it, and draws edit controls only on
- * the account's own shelf, after a yes (architecture, section 9). Never
- * cached anywhere.
+ * the account's own shelf, after a yes (architecture, section 9). An account
+ * hears how many of its games wait for a status too. Never cached anywhere.
  */
 
 const PRIVATE = { 'Cache-Control': 'private, no-store' }
@@ -23,8 +24,9 @@ export async function GET(request: Request) {
     headers.append('Set-Cookie', `${SIGNED_IN_HINT_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`)
   }
   if (!account) return Response.json({ signedIn: false }, { headers })
-  const { id: _, ...shown } = account
-  return Response.json({ signedIn: true, ...shown }, { headers })
+  const { id, ...shown } = account
+  // How many games wait for a status, for the header's count (spec 4.5).
+  return Response.json({ signedIn: true, ...shown, waiting: await waitingOf(id) }, { headers })
 }
 
 /**

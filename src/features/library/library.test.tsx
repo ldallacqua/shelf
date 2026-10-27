@@ -22,7 +22,6 @@ import { GameBox, platformFor, platformsOwned } from './game-box'
 import { LibrarySkeleton } from './library-skeleton'
 import { ListView } from './list-view'
 import { markPageLive, pageIsLive, resetPageLive } from './live'
-import { PlaceWaiting } from './place-waiting'
 import { resetPreviews } from './preview-queue'
 import {
   densityPreference,
@@ -481,18 +480,6 @@ describe('EmptyLibrary', () => {
     unmount()
     renderWithIntl(onShelf(<EmptyLibrary />), 'pt-BR')
     expect(screen.getByText('A estante está sendo abastecida.')).toBeInTheDocument()
-  })
-})
-
-describe('PlaceWaiting', () => {
-  it('counts the games waiting for a status, as the way to the page for placing them', () => {
-    const { unmount } = renderWithIntl(<PlaceWaiting count={180} />)
-    expect(
-      screen.getByRole('link', { name: 'Place the 180 games with no status' }),
-    ).toHaveAttribute('href', '/en/account/unsorted')
-    unmount()
-    renderWithIntl(<PlaceWaiting count={1} />, 'pt-BR')
-    expect(screen.getByRole('link', { name: 'Organizar o jogo sem status' })).toBeInTheDocument()
   })
 })
 
