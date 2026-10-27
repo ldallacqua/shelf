@@ -169,7 +169,7 @@ Phone:
 
 | Control | Does |
 | --- | --- |
-| Status row | One tap filters to a status. The commonest filter gets the shortest path. Unsorted is in it only while a shelf has unsorted games, and Someday and Retired only while it has a game in one (3.12). |
+| Status row | One tap filters to a status. The commonest filter gets the shortest path. Unsorted is in it only while a shelf has unsorted games, and Someday and Retired only while it has a game in one (3.12). Not shown from 1536px, where the filters' column has the statuses (12). |
 | Filters | Opens the filter panel. Shows how many conditions are active. Not shown from 1536px, where the panel stands beside the library (12). |
 | Group | None, platform, status, year |
 | Sort | The sort key and direction |
@@ -1391,13 +1391,15 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 
 Every gesture has a plain tap equivalent. Sheets close with Back.
 
-**Wide screens.** From 1536px the library's filters stand in a column of their own, 288px wide,
+**Wide screens.** From 1536px the library's filters stand in a column of their own, 304px wide,
 left of the shelves, and the library's page widens from 1440px to as much as 2560px, the header
-and footer with it, so on a 1080p screen the shelves gain room: at 1920 they are 1512px wide, where
-they were 1360. The title and totals head the shelves' side, so the column starts just under the
-header and is whole on the first screen; it stays in view as the shelves scroll, its list
-scrolling inside it with a slim scrollbar, and an edge with more of the list past it fades.
-Between 1536 and about 1770px the column takes a little of theirs. The
+and footer with it, so on a 1080p screen the shelves gain room: at 1920 they are 1496px wide, where
+they were 1360. Only the library's pages widen; every other page keeps 1440px. The title and
+totals head the shelves' side, so the column starts just under the header and is whole on the
+first screen; it stays in view as the shelves scroll, its list scrolling inside it with a slim
+scrollbar, and an edge with more of the list past it fades. The status row is not shown there:
+the column's Status section, open from the start and counting, does its work. Between 1536 and
+about 1785px the column takes a little of the shelves' room. The
 breakpoint is where the shelves keep about as much room beside the column as a 1200px laptop
 gives them, so a 1080p screen at 125% scaling has it and a 1440px one does not. Browser zoom
 moves it, as it moves every breakpoint here.

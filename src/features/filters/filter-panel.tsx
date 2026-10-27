@@ -339,8 +339,8 @@ export function FilterPanel({
         </div>
         {/* Not a status: the library says what a filter leaves (`ResultStatus`) once it settles. */}
         <p className="flex-none px-4 pt-1 pb-3 text-sm text-muted">{results}</p>
-        {/* The scrollbar's gutter is most of the right side's padding. */}
-        <div className="library-filters-body scrollbar-quiet flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-t border-line pt-3 pr-1 pb-4 pl-4">
+        {/* On the right, room between the counts and the scrollbar's thumb, then its gutter. */}
+        <div className="library-filters-body scrollbar-quiet flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-t border-line pt-3 pr-3 pb-4 pl-4">
           <div aria-hidden="true" className="filters-edge" data-edge="top" />
           {beside ? controls(index) : beside === undefined ? <FilterGhosts /> : null}
           <div aria-hidden="true" className="filters-edge" data-edge="bottom" />

@@ -61,8 +61,8 @@ export function LibrarySkeleton({ title }: { title?: string }) {
               />
               <span className={cn('ghost w-16 flex-none', BUTTON)} />
             </div>
-            {/* The status row. */}
-            <div className="flex h-[2.375rem] items-center gap-1 overflow-hidden pointer-coarse:h-[2.625rem]">
+            {/* The status row, but where the filters stand beside the library. */}
+            <div className="flex h-[2.375rem] items-center gap-1 overflow-hidden pointer-coarse:h-[2.625rem] filters-beside:hidden">
               {['w-11', 'w-18', 'w-19', 'w-23', 'w-19', 'w-21'].map((width, index) => (
                 <span
                   key={width + index}

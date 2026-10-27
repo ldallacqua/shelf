@@ -13,7 +13,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   row "Filters beside"). From 1536px; the library's page widens with it, to 2560px. The
   library's script is 277.7 KB of its 279: the budget was raised with its reason. After it, the
   owner asked for a quieter scroll in the column and for the title over the search, so the
-  column is whole from the first screen (row "Filters' column, whole").
+  column is whole from the first screen (row "Filters' column, whole"). Then: only the
+  library widens (other pages had gone wide after a click from it), the status row steps aside
+  beside the column, and the column is a little wider (row "Library width only").
 - **`pnpm desktop:check` no longer times out on a library page** (row "Desktop check, idle"):
   Chromium's refresh of a cached Trophies prefetch is never reported finished, so the check's
   browsers now have their HTTP cache off. Production was never affected. The browser tests'

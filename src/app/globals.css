@@ -269,8 +269,12 @@
 /*
  * The header's search opens the library. On the library itself, and on a smart shelf, the
  * library's own field filters as you type, so the header's steps aside.
+ *
+ * Only a library that is shown counts, here and below: Next.js keeps a page left by a link in
+ * the document, hidden by `display: none` on its frame (React's Activity), so that Back finds
+ * it as it was. Matched by that hiding, the library left behind is not this page's.
  */
-html:has(.library) .site-search {
+html:has(.library:not([style*='display: none'] .library)) .site-search {
   display: none;
 }
 
@@ -285,7 +289,7 @@ html:has(.library) .site-search {
 }
 
 @media (width >= 96rem) {
-  html:has(.library) {
+  html:has(.library:not([style*='display: none'] .library)) {
     --page-width: 160rem;
   }
 }

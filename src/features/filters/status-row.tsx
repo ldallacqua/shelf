@@ -26,6 +26,8 @@ const EDGE_PX = 16
  * 3.12): the commonest filter gets the shortest path.
  * One tap sets the status, in every group of the filter; All takes it away.
  * On a phone the row scrolls sideways, and keeps the pressed status in sight.
+ * Where the filters stand beside the library, their Status section, open
+ * from the start and counting, does the row's work, so the row is not shown.
  */
 export function StatusRow({ value, counts, onShelf, onChange }: StatusRowProps) {
   const t = useTranslations('Filters')
@@ -56,6 +58,7 @@ export function StatusRow({ value, counts, onShelf, onChange }: StatusRowProps) 
       className={cn(
         'max-w-full [scrollbar-width:none] overflow-x-auto border-transparent bg-transparent p-0',
         'max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] max-sm:max-w-none max-sm:px-4',
+        'filters-beside:hidden',
       )}
     >
       <SegmentedItem value="all" className="shrink-0">
