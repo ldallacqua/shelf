@@ -5,7 +5,10 @@ import { cn } from '@/ui/cn'
 /** The column every page's content sits in. */
 export function Page({ className, ...props }: ComponentProps<'div'>) {
   return (
-    <div className={cn('mx-auto w-full max-w-360 px-4 sm:px-6 lg:px-10', className)} {...props} />
+    <div
+      className={cn('mx-auto w-full max-w-(--page-width) px-4 sm:px-6 lg:px-10', className)}
+      {...props}
+    />
   )
 }
 

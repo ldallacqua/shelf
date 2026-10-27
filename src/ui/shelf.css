@@ -845,6 +845,54 @@
     }
   }
 
+  /*
+   * On a wide window the filters stand in a column of their own, left of the library
+   * (FILTERS_BESIDE in features/filters/beside.ts), and stay in view as the shelves scroll.
+   * Narrower, the column is hidden and the two frames around it are no boxes at all, so
+   * everything inside is laid out by `.library` as before: on a phone, the toolbar at the
+   * bottom and the shelf the screen's height.
+   */
+  .library-body,
+  .library-main {
+    display: contents;
+  }
+
+  .library-filters {
+    display: none;
+  }
+
+  @media (width >= 96rem) {
+    .library-body {
+      display: grid;
+      grid-template-columns: 18rem minmax(0, 1fr);
+      column-gap: 2.5rem;
+      align-items: start;
+    }
+
+    .library-main {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+    }
+
+    /* Under the header (3.5rem and a hairline), as tall as the window leaves, scrolling inside. */
+    .library-filters {
+      position: sticky;
+      top: calc(3.5rem + 1px + 1rem);
+      display: flex;
+      max-height: calc(100dvh - 3.5rem - 1px - 2rem);
+      flex-direction: column;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-panel);
+      background: var(--surface);
+    }
+
+    .library-filters-body {
+      scrollbar-gutter: stable;
+      scrollbar-width: thin;
+    }
+  }
+
   @media (max-width: 39.99rem) {
     /* The header is 3.5rem and a hairline. */
     .library[data-view='shelf'] {

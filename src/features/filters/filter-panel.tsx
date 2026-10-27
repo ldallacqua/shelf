@@ -2,7 +2,7 @@
 
 import { ChevronRightIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 import { numberToDay } from '@/domain/library/snapshot'
 import type { LibraryIndex } from '@/domain/query/evaluate'
@@ -27,8 +27,13 @@ import { Segmented, SegmentedItem } from '@/ui/segmented'
 import { Sheet, SheetContent } from '@/ui/sheet'
 
 import { comparisonLabel, isIgdbName, keyLabel, valueLabel } from './labels'
+import { FilterGhosts } from './filter-ghosts'
 import { ListSection } from './list-section'
 import { RangeSection } from './range-section'
+import { SEARCH_ID } from './search-field'
+
+/** The column the filters stand in beside the library, for the F key to reach. */
+export const FILTERS_ID = 'library-filters'
 
 /** The panel's sections, mine first (spec 5.1). */
 const MINE: readonly FilterKey[] = [
@@ -66,8 +71,11 @@ const IGDB: readonly FilterKey[] = [
 const OPEN_AT_FIRST: readonly FilterKey[] = ['status', 'owned', 'genre']
 
 type FilterPanelProps = {
+  /** The sheet's state. It never opens while the filters stand beside the library. */
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** The window is wide enough for the filters to stand beside the library (`beside.ts`). */
+  beside: boolean
   tree: QueryNode | undefined
   /** Undefined while the library is still arriving. */
   index: LibraryIndex | undefined
@@ -83,12 +91,21 @@ type FilterPanelProps = {
  * The filter panel (spec 5.2): level 1 is each value off, included or
  * excluded, with any-of or all-of per filter, and filters combined with and;
  * level 2 is groups of those, joined with or. Every change applies at once,
- * on the next frame; there is no Apply button. The count at the foot says
- * how many games match.
+ * on the next frame; there is no Apply button. The count says how many games
+ * match.
+ *
+ * On a wide window the panel is a column beside the library, always there
+ * (issue #62); narrower, it is a sheet the Filters button opens. Both are
+ * drawn from here, so which sections are open carries over when the window
+ * changes width. The column is in every page, as the server cannot tell a
+ * window's width, and hidden by CSS where it does not fit. Its sections are
+ * drawn only once the browser says it fits: until then, and on a phone, ghosts
+ * hold their place, so a phone hydrates no filter it cannot see.
  */
 export function FilterPanel({
   open,
   onOpenChange,
+  beside,
   tree,
   index,
   matching,
@@ -115,6 +132,7 @@ export function FilterPanel({
     (part) => part.type !== 'text' && !(part.type === 'not' && part.child.type === 'text'),
   )
   const [opened, setOpened] = useState<ReadonlySet<FilterKey>>(() => new Set(OPEN_AT_FIRST))
+  const titleId = useId()
 
   const editList = (key: ListKey, condition: ListCondition) => {
     onChange(setList(tree, current, key, condition))
@@ -135,14 +153,15 @@ export function FilterPanel({
     if (isOpen && key === 'keyword') onWantKeywords()
   }
 
-  const summary = (key: FilterKey): string | undefined => {
+  // Each takes the index it counts from: the column's is withheld while the column is hidden.
+  const summary = (key: FilterKey, at: LibraryIndex | undefined): string | undefined => {
     if (isListKey(key)) {
       const condition = group.lists[key]
       if (!condition) return undefined
       const parts = [
-        ...condition.include.map((word) => valueLabel(key, word, index, words)),
+        ...condition.include.map((word) => valueLabel(key, word, at, words)),
         ...condition.exclude.map((word) =>
-          t('panel.notValue', { value: valueLabel(key, word, index, words) }),
+          t('panel.notValue', { value: valueLabel(key, word, at, words) }),
         ),
       ]
       return parts.length > 0
@@ -153,10 +172,10 @@ export function FilterPanel({
     return range ? comparisonLabel(key, range, words) : undefined
   }
 
-  const section = (key: FilterKey) => {
+  const section = (key: FilterKey, at: LibraryIndex | undefined) => {
     const label = keyLabel(key, words)
     const isOpen = opened.has(key)
-    const said = summary(key)
+    const said = summary(key, at)
     return (
       <details
         key={key}
@@ -183,15 +202,15 @@ export function FilterPanel({
             <span className="min-w-0 truncate text-xs font-normal text-muted">{said}</span>
           ) : null}
         </summary>
-        {isOpen ? <div className="pb-4 pl-6">{body(key, label)}</div> : null}
+        {isOpen ? <div className="pb-4 pl-6">{body(key, label, at)}</div> : null}
       </details>
     )
   }
 
-  const body = (key: FilterKey, label: string) => {
-    if (!index) return <p className="text-sm text-muted">{t('panel.loading')}</p>
+  const body = (key: FilterKey, label: string, at: LibraryIndex | undefined) => {
+    if (!at) return <p className="text-sm text-muted">{t('panel.loading')}</p>
     if (isListKey(key)) {
-      if (key === 'keyword' && !index.keywords) {
+      if (key === 'keyword' && !at.keywords) {
         return <p className="text-sm text-muted">{t('panel.loadingKeywords')}</p>
       }
       return (
@@ -199,15 +218,15 @@ export function FilterPanel({
           filterKey={key}
           label={label}
           condition={group.lists[key] ?? NO_CONDITION}
-          values={facetCounts(index, node, key)}
-          labelOf={(word) => valueLabel(key, word, index, words)}
+          values={facetCounts(at, node, key)}
+          labelOf={(word) => valueLabel(key, word, at, words)}
           isEnglish={(word) => isIgdbName(key, word)}
           onChange={(condition) => editList(key, condition)}
         />
       )
     }
     const rangeKey = key as RangeKey
-    const extent = extentOf(isDateKey(rangeKey) ? index.dates[rangeKey] : index.numbers[rangeKey])
+    const extent = extentOf(isDateKey(rangeKey) ? at.dates[rangeKey] : at.numbers[rangeKey])
     const shown = extent
       ? ((isDateKey(rangeKey)
           ? [numberToDay(extent[0]).slice(0, 4), numberToDay(extent[1]).slice(0, 4)]
@@ -224,90 +243,125 @@ export function FilterPanel({
     )
   }
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        title={t('panel.title')}
-        description={t('panel.description')}
-        closeLabel={t('panel.close')}
-        className="sm:w-[28rem]"
-        data-slot="filter-panel"
-        footer={
-          <>
-            <p role="status" className="text-sm">
-              {matching === undefined
-                ? t('panel.loading')
-                : t('panel.results', { count: matching })}
-            </p>
-            <Button variant="secondary" size="sm" onClick={onClear} disabled={!tree}>
-              {t('chips.clear')}
-            </Button>
-          </>
-        }
-      >
-        {count > 1 ? (
-          <div className="mb-3 grid gap-2">
-            <p className="text-xs text-muted">{t('panel.groups')}</p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Segmented
-                aria-label={t('panel.groupsLabel')}
-                value={String(current)}
-                onValueChange={(value) => setChosen(Number(value))}
-              >
-                {Array.from({ length: count }, (_, at) => (
-                  <SegmentedItem key={at} value={String(at)}>
-                    {t('panel.group', { number: at + 1 })}
-                  </SegmentedItem>
-                ))}
-              </Segmented>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (current >= groups.length) setStarting(false)
-                  else onChange(removeGroup(tree, current))
-                  setChosen(Math.max(0, current - 1))
-                }}
-              >
-                <Trash2Icon aria-hidden="true" />
-                {t('panel.removeGroup', { number: current + 1 })}
-              </Button>
-            </div>
-          </div>
-        ) : null}
-
-        {written.length > 0 ? (
-          <div className="mb-3 rounded-control border border-dashed border-line-strong p-3 text-sm">
-            <p className="text-muted">{t('panel.asText')}</p>
-            <ul className="mt-1 grid gap-1">
-              {written.map((part, at) => (
-                <li key={at}>
-                  <code className="font-mono text-xs">{writeQuery(part)}</code>
-                </li>
+  /** Everything but the title, the count and Clear: the same in the column and in the sheet. */
+  const controls = (at: LibraryIndex | undefined) => (
+    <>
+      {count > 1 ? (
+        <div className="mb-3 grid gap-2">
+          <p className="text-xs text-muted">{t('panel.groups')}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Segmented
+              aria-label={t('panel.groupsLabel')}
+              value={String(current)}
+              onValueChange={(value) => setChosen(Number(value))}
+            >
+              {Array.from({ length: count }, (_, place) => (
+                <SegmentedItem key={place} value={String(place)}>
+                  {t('panel.group', { number: place + 1 })}
+                </SegmentedItem>
               ))}
-            </ul>
+            </Segmented>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (current >= groups.length) setStarting(false)
+                else onChange(removeGroup(tree, current))
+                setChosen(Math.max(0, current - 1))
+              }}
+            >
+              <Trash2Icon aria-hidden="true" />
+              {t('panel.removeGroup', { number: current + 1 })}
+            </Button>
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
-        <h3 className="pt-1 readout text-[0.625rem] text-muted uppercase">{t('panel.mine')}</h3>
-        {MINE.map(section)}
-        <h3 className="pt-5 readout text-[0.625rem] text-muted uppercase">{t('panel.igdb')}</h3>
-        {IGDB.map(section)}
+      {written.length > 0 ? (
+        <div className="mb-3 rounded-control border border-dashed border-line-strong p-3 text-sm">
+          <p className="text-muted">{t('panel.asText')}</p>
+          <ul className="mt-1 grid gap-1">
+            {written.map((part, place) => (
+              <li key={place}>
+                <code className="font-mono text-xs">{writeQuery(part)}</code>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-4"
-          disabled={starting || groups.length === 0}
-          onClick={() => {
-            setStarting(true)
-            setChosen(count)
-          }}
+      <h3 className="pt-1 readout text-[0.625rem] text-muted uppercase">{t('panel.mine')}</h3>
+      {MINE.map((key) => section(key, at))}
+      <h3 className="pt-5 readout text-[0.625rem] text-muted uppercase">{t('panel.igdb')}</h3>
+      {IGDB.map((key) => section(key, at))}
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-4 self-start"
+        disabled={starting || groups.length === 0}
+        onClick={() => {
+          setStarting(true)
+          setChosen(count)
+        }}
+      >
+        <PlusIcon aria-hidden="true" />
+        {t('panel.addGroup')}
+      </Button>
+    </>
+  )
+
+  const results =
+    matching === undefined ? t('panel.loading') : t('panel.results', { count: matching })
+  const clear = (
+    <Button variant="secondary" size="sm" onClick={onClear} disabled={!tree}>
+      {t('chips.clear')}
+    </Button>
+  )
+
+  return (
+    <>
+      <aside id={FILTERS_ID} aria-labelledby={titleId} className="library-filters">
+        {/* Past every filter to the search field, which leads on to the shelves. */}
+        <button
+          type="button"
+          className="sr-only rounded-control bg-accent text-sm font-medium text-on-accent focus-visible:not-sr-only focus-visible:absolute focus-visible:top-3 focus-visible:left-3 focus-visible:z-10 focus-visible:px-3 focus-visible:py-2"
+          onClick={() => document.getElementById(SEARCH_ID)?.focus()}
         >
-          <PlusIcon aria-hidden="true" />
-          {t('panel.addGroup')}
-        </Button>
-      </SheetContent>
-    </Sheet>
+          {t('panel.skip')}
+        </button>
+        <div className="flex flex-none items-center justify-between gap-3 px-4 pt-4">
+          <h2 id={titleId} className="title text-xl">
+            {t('panel.title')}
+          </h2>
+          {clear}
+        </div>
+        {/* Not a status: the library says what a filter leaves (`ResultStatus`) once it settles. */}
+        <p className="flex-none px-4 pt-1 pb-3 text-sm text-muted">{results}</p>
+        <div className="library-filters-body flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain border-t border-line px-4 pt-3 pb-4">
+          {beside ? controls(index) : <FilterGhosts />}
+        </div>
+      </aside>
+
+      <Sheet open={open && !beside} onOpenChange={onOpenChange}>
+        <SheetContent
+          title={t('panel.title')}
+          description={t('panel.description')}
+          closeLabel={t('panel.close')}
+          className="sm:w-[28rem]"
+          data-slot="filter-panel"
+          footer={
+            <>
+              <p role="status" className="text-sm">
+                {results}
+              </p>
+              {clear}
+            </>
+          }
+        >
+          {controls(index)}
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }

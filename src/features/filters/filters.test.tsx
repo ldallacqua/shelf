@@ -1,19 +1,22 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, render, renderHook, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NextIntlClientProvider } from 'next-intl'
-import type { ReactElement } from 'react'
+import type { ComponentProps, ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { Sort } from '@/domain/library/sort'
 import { testGame, testLibrary } from '@/domain/library/testing'
 import { buildIndex } from '@/domain/query/evaluate'
 import { parseQuery } from '@/domain/query/parse'
+import { writeQuery } from '@/domain/query/write'
 import { messages, renderWithIntl } from '@/test/render'
 
+import { FILTERS_BESIDE, useFiltersBeside } from './beside'
 import { FilterChips } from './filter-chips'
+import { FilterPanel } from './filter-panel'
 import { ListSection } from './list-section'
 import { ResultStatus } from './result-status'
-import { SearchField } from './search-field'
+import { SEARCH_ID, SearchField } from './search-field'
 import { SortControl } from './sort-control'
 import { StatusRow } from './status-row'
 
@@ -336,5 +339,100 @@ describe('ListSection', () => {
     section()
     const strategy = screen.getByRole('button', { name: 'Strategy, 0 games' }).closest('li')
     expect(strategy).toHaveAttribute('data-empty')
+  })
+})
+
+describe('FilterPanel: beside the library, or in a sheet (issue #62)', () => {
+  const panel = (
+    beside: boolean,
+    open: boolean,
+    props: Partial<ComponentProps<typeof FilterPanel>> = {},
+  ) => (
+    <FilterPanel
+      open={open}
+      onOpenChange={() => {}}
+      beside={beside}
+      tree={undefined}
+      index={index}
+      matching={1}
+      onChange={() => {}}
+      onClear={() => {}}
+      onWantKeywords={() => {}}
+      {...props}
+    />
+  )
+  const column = () => screen.getByRole('complementary', { name: 'Filters' })
+
+  it('on a wide window is a column of its own, counting, and never a sheet', () => {
+    renderWithIntl(panel(true, true))
+    expect(within(column()).getByText('1 game matches')).toBeInTheDocument()
+    expect(within(column()).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('on a narrower window draws ghosts in the hidden column, and opens as a sheet', () => {
+    renderWithIntl(panel(false, true))
+    // The sheet is modal: everything else, the column too, is hidden from assistive technology.
+    const hidden = screen.getByRole('complementary', { name: 'Filters', hidden: true })
+    expect(hidden.querySelector('details')).not.toBeInTheDocument()
+    expect(hidden.querySelector('.ghost')).toBeInTheDocument()
+    const sheet = screen.getByRole('dialog', { name: 'Filters' })
+    expect(within(sheet).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
+  })
+
+  it('changes the filter from the column, and clears it', async () => {
+    const onChange = vi.fn()
+    const onClear = vi.fn()
+    const { rerender } = render(intl(panel(true, false, { onChange, onClear })))
+    await userEvent.click(within(column()).getByRole('button', { name: 'Backlog, 1 game' }))
+    expect(writeQuery(onChange.mock.calls[0]![0])).toBe('status:backlog')
+    rerender(intl(panel(true, false, { onChange, onClear, tree: onChange.mock.calls[0]![0] })))
+    await userEvent.click(within(column()).getByRole('button', { name: 'Clear all' }))
+    expect(onClear).toHaveBeenCalled()
+  })
+
+  it('keeps the sections opened in the sheet open in the column when the window widens', async () => {
+    const { rerender } = render(intl(panel(false, true)))
+    const sheet = screen.getByRole('dialog', { name: 'Filters' })
+    await userEvent.click(within(sheet).getByText('Theme'))
+    rerender(intl(panel(true, false)))
+    expect(column().querySelector('details[data-filter="theme"]')).toHaveAttribute('open')
+    expect(within(column()).getByRole('button', { name: 'Horror, 1 game' })).toBeInTheDocument()
+  })
+
+  it('starts with a way past every filter, to the search field', async () => {
+    renderWithIntl(
+      <>
+        {panel(true, false)}
+        <input id={SEARCH_ID} aria-label="Search" />
+      </>,
+    )
+    const skip = within(column()).getAllByRole('button')[0]!
+    expect(skip).toHaveAccessibleName('Skip the filters')
+    await userEvent.click(skip)
+    expect(screen.getByRole('textbox', { name: 'Search' })).toHaveFocus()
+  })
+})
+
+describe('useFiltersBeside', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('follows the window across the width where the filters stand beside the library', () => {
+    let wide = false
+    const listeners = new Set<() => void>()
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      get matches() {
+        return query === FILTERS_BESIDE && wide
+      },
+      addEventListener: (_: string, listener: () => void) => listeners.add(listener),
+      removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
+    }))
+    const { result } = renderHook(() => useFiltersBeside())
+    expect(result.current).toBe(false)
+    act(() => {
+      wide = true
+      for (const listener of listeners) listener()
+    })
+    expect(result.current).toBe(true)
   })
 })

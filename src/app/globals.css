@@ -52,6 +52,8 @@
     @slot;
   }
 }
+/* Where the library's filters stand in a column beside it: FILTERS_BESIDE in features/filters/beside.ts. */
+@custom-variant filters-beside (@media (width >= 96rem));
 
 @theme inline {
   --color-wall: var(--wall);
@@ -225,6 +227,21 @@
  */
 html:has(.library) .site-search {
   display: none;
+}
+
+/*
+ * The column every page sits in (features/shell/page.tsx), and the header's and footer's with
+ * it. Where the library's filters stand beside it, the library takes more of a wide screen, so
+ * the column beside them costs the shelves nothing (features/filters/beside.ts).
+ */
+:root {
+  --page-width: 90rem;
+}
+
+@media (width >= 96rem) {
+  html:has(.library) {
+    --page-width: 160rem;
+  }
 }
 
 /*

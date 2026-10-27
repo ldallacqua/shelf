@@ -507,6 +507,14 @@ describe('LibrarySkeleton', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
+  it('holds the place of the filters’ column beside the shelves, for a window wide enough (issue #62)', () => {
+    const { container } = renderWithIntl(<LibrarySkeleton />)
+    const body = container.querySelector('.library-body')
+    expect(body?.firstElementChild).toHaveClass('library-filters')
+    expect(body?.firstElementChild).toHaveAttribute('aria-hidden', 'true')
+    expect(body?.querySelector('.library-main .ghost-case')).toBeInTheDocument()
+  })
+
   it('has the smart shelf’s name when it is one', () => {
     renderWithIntl(<LibrarySkeleton title="Short ones" />)
     expect(screen.getByRole('heading', { level: 1, name: 'Short ones' })).toBeInTheDocument()

@@ -12,7 +12,7 @@ export function Footer() {
 
   return (
     <footer className="mt-auto border-t border-line/70">
-      <div className="mx-auto flex w-full max-w-360 flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 py-6 text-sm text-muted sm:px-6 lg:px-10">
+      <div className="mx-auto flex w-full max-w-(--page-width) flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 py-6 text-sm text-muted sm:px-6 lg:px-10">
         <p>
           {t.rich('igdbCredit', {
             link: (chunks) => (

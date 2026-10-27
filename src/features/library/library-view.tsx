@@ -49,8 +49,9 @@ import {
 } from '@/domain/query/panel'
 import { parseQuery } from '@/domain/query/parse'
 import { mentions, type QueryNode } from '@/domain/query/tree'
+import { FILTERS_BESIDE, useFiltersBeside } from '@/features/filters/beside'
 import { FilterChips } from '@/features/filters/filter-chips'
-import { FilterPanel } from '@/features/filters/filter-panel'
+import { FILTERS_ID, FilterPanel } from '@/features/filters/filter-panel'
 import { NoResults } from '@/features/filters/no-results'
 import { ResultStatus } from '@/features/filters/result-status'
 import { SaveShelf } from '@/features/filters/save-shelf'
@@ -262,6 +263,10 @@ export function LibraryView({
   /** The open game's panel, once its code has arrived. */
   const [GamePanel, setGamePanel] = useState<GamePanelComponent>()
   const [panelOpen, setPanelOpen] = useState(false)
+  // Wide enough for the filters to stand beside the library: the sheet is not needed, and a
+  // sheet open as the window widens is closed, not left to open again as it narrows.
+  const beside = useFiltersBeside()
+  if (beside && panelOpen) setPanelOpen(false)
   const [groupMenu, setGroupMenu] = useState(false)
   const [sortMenu, setSortMenu] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
@@ -483,7 +488,10 @@ export function LibraryView({
       if (!shortcutsOn()) return
       switch (event.key.toLowerCase()) {
         case 'f':
-          setPanelOpen(true)
+          // Beside the library the filters are already open: F takes focus to their first.
+          if (window.matchMedia(FILTERS_BESIDE).matches) {
+            document.getElementById(FILTERS_ID)?.querySelector<HTMLElement>('summary')?.focus()
+          } else setPanelOpen(true)
           break
         case 'g':
           setGroupMenu(true)
@@ -719,184 +727,206 @@ export function LibraryView({
         )}
       </div>
 
-      {/* The toolbar stays a child of .library: on a phone it moves to the bottom of the screen. */}
-      <div className="grid flex-none gap-3">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <SearchField
-            value={query.q}
-            onChange={(text, typed) => writeQ(text, typed)}
-            className="flex-1 sm:max-w-xl"
-          />
-          <ShelvesMenu shelves={smartShelves} current={shelf?.slug} />
-          {/* On a phone the owner's buttons are icons, so the search keeps its width. */}
-          {actions && (!shelf || changed) ? (
-            <Button
-              variant="primary"
-              className="flex-none max-sm:px-3"
-              onClick={() => setSaveOpen(true)}
-            >
-              <BookmarkPlusIcon aria-hidden="true" />
-              <span className="max-sm:sr-only">
-                {shelf ? shelfWords('saveChanges') : shelfWords('saveShelf')}
-              </span>
-            </Button>
-          ) : null}
-          {actions && shelf && !changed ? (
-            <Button
-              variant="ghost"
-              className="flex-none max-sm:px-3"
-              onClick={() => setSaveOpen(true)}
-            >
-              <PencilIcon aria-hidden="true" />
-              <span className="max-sm:sr-only">{shelfWords('edit')}</span>
-            </Button>
-          ) : null}
-        </div>
-
-        <StatusRow
-          value={statusValue}
-          counts={statusCounts}
-          onShelf={onShelf}
-          onChange={(status) =>
-            writeTree(
-              setListEverywhere(
-                parsed.tree,
-                'status',
-                status === 'all' ? NO_CONDITION : { include: [status], all: false, exclude: [] },
-              ),
-            )
-          }
+      {/* The filters' column, then the library beside it; on a narrower window, neither is a box. */}
+      <div className="library-body">
+        <FilterPanel
+          open={panelOpen}
+          onOpenChange={setPanelOpen}
+          beside={beside}
+          tree={parsed.tree}
+          index={index}
+          matching={matching?.length}
+          onChange={writeTree}
+          onClear={clearFilters}
+          onWantKeywords={() => setKeywordsAsked(true)}
         />
-        {/*
-         * On my own shelf, while any game waits for a status, one line under the row that counts
-         * them leads to the page for placing them (spec 4.5), whatever the filter. It goes when
-         * the last one is placed.
-         */}
-        {actions && unsortedCount ? <PlaceWaiting count={unsortedCount} /> : null}
-      </div>
 
-      <Toolbar
-        view={view}
-        onView={(value: View) => change(setView, value)}
-        group={group}
-        onGroup={(value: Grouping) => change(setGroup, value)}
-        groupOpen={groupMenu}
-        onGroupOpen={setGroupMenu}
-        density={density}
-        onDensity={(value) => change(setDensity, value)}
-        wallSize={wallSize}
-        onWallSize={setWallSize}
-        dimension={shown}
-        onDimension={switchTo}
-        noThreeD={noThreeD}
-        adult={
-          adultOnShelf
-            ? { hidden: hideAdult, onChange: (hidden) => setAdult(hidden ? 'hidden' : 'shown') }
-            : undefined
-        }
-        ready={
-          ready !== null
-            ? {
-                on: readyChoice === 'ready',
-                onChange: (on) => setReadyChoice(on ? 'ready' : 'all'),
+        {/* The toolbar is laid out by .library on a phone, which moves it to the bottom of the screen. */}
+        <div className="library-main">
+          <div className="grid flex-none gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <SearchField
+                value={query.q}
+                onChange={(text, typed) => writeQ(text, typed)}
+                className="flex-1 sm:max-w-xl"
+              />
+              <ShelvesMenu shelves={smartShelves} current={shelf?.slug} />
+              {/* On a phone the owner's buttons are icons, so the search keeps its width. */}
+              {actions && (!shelf || changed) ? (
+                <Button
+                  variant="primary"
+                  className="flex-none max-sm:px-3"
+                  onClick={() => setSaveOpen(true)}
+                >
+                  <BookmarkPlusIcon aria-hidden="true" />
+                  <span className="max-sm:sr-only">
+                    {shelf ? shelfWords('saveChanges') : shelfWords('saveShelf')}
+                  </span>
+                </Button>
+              ) : null}
+              {actions && shelf && !changed ? (
+                <Button
+                  variant="ghost"
+                  className="flex-none max-sm:px-3"
+                  onClick={() => setSaveOpen(true)}
+                >
+                  <PencilIcon aria-hidden="true" />
+                  <span className="max-sm:sr-only">{shelfWords('edit')}</span>
+                </Button>
+              ) : null}
+            </div>
+
+            <StatusRow
+              value={statusValue}
+              counts={statusCounts}
+              onShelf={onShelf}
+              onChange={(status) =>
+                writeTree(
+                  setListEverywhere(
+                    parsed.tree,
+                    'status',
+                    status === 'all'
+                      ? NO_CONDITION
+                      : { include: [status], all: false, exclude: [] },
+                  ),
+                )
               }
-            : undefined
-        }
-        filters={
-          <Button
-            variant="secondary"
-            className="flex-none max-sm:px-3"
-            aria-label={filters('open', { count: conditions })}
-            onClick={() => setPanelOpen(true)}
-          >
-            <SlidersHorizontalIcon aria-hidden="true" />
-            <span aria-hidden="true">{filters('openShort')}</span>
-            {conditions > 0 ? (
-              <span
-                aria-hidden="true"
-                className="-mr-1 rounded-full bg-accent px-1.5 readout text-[0.625rem] text-on-accent"
-              >
-                {conditions}
-              </span>
-            ) : null}
-          </Button>
-        }
-        sort={
-          <SortControl
-            sort={sort}
-            onSort={writeSortTo}
-            onShuffle={shuffle}
-            open={sortMenu}
-            onOpenChange={setSortMenu}
-          />
-        }
-      />
-
-      <FilterChips
-        tree={parsed.tree}
-        problems={parsed.problems}
-        index={index}
-        onRemove={(chip) => writeTree(removeChip(parsed.tree, chip))}
-        onRemoveProblem={(problem) => writeQ(withoutProblem(query.q, problem))}
-        onClear={clearFilters}
-        className="mt-3 flex-none"
-      />
-
-      <ResultStatus q={drawnQ} sort={sort} count={matching?.length} />
-      {view === 'shelf' && fallback ? (
-        <p role="status" className="mt-3 text-sm text-muted">
-          {t(`shelf3d.fallback.${fallback}`)}
-        </p>
-      ) : null}
-
-      {state.status === 'failed' ? (
-        <div
-          role="alert"
-          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-panel border border-line bg-surface px-4 py-3 text-sm"
-        >
-          <p>{t('error.title')}</p>
-          <Button size="sm" onClick={state.retry}>
-            {t('error.retry')}
-          </Button>
-        </div>
-      ) : null}
-
-      {readyOnly && library?.games.length === 0 ? (
-        <NothingReady onShowAll={() => setReadyChoice('all')} />
-      ) : matching?.length === 0 ? (
-        <NoResults onClear={clearFilters} />
-      ) : shelves.length === 0 ? (
-        // Asked for another arrangement before the library file arrived: ghosts until it does.
-        <div aria-busy="true" className="contents">
-          <p className="sr-only" role="status">
-            {t('loading')}
-          </p>
-          {view === 'shelf' ? <GhostShelves /> : null}
-          {view === 'wall' ? <GhostWall size={wallSize} /> : null}
-          {view === 'list' ? <GhostList /> : null}
-        </div>
-      ) : (
-        <div
-          // A change of view or grouping crossfades under reduced motion; so does a new
-          // order, in place of the boxes sliding to it (spec 6).
-          key={calm ? `${view}:${group}:${sortText}:${seed}` : `${view}:${group}`}
-          className="motion-reduce:[&>*]:library-swap contents"
-        >
-          {view === 'shelf' ? (
-            <ShelfStage
-              {...viewProps}
-              density={density}
-              dimension={asked}
-              fallback={fallback}
-              onFallback={setFallback}
-              anchor={anchor}
-              handleRef={shelf3d}
             />
+            {/*
+             * On my own shelf, while any game waits for a status, one line under the row that counts
+             * them leads to the page for placing them (spec 4.5), whatever the filter. It goes when
+             * the last one is placed.
+             */}
+            {actions && unsortedCount ? <PlaceWaiting count={unsortedCount} /> : null}
+          </div>
+
+          <Toolbar
+            view={view}
+            onView={(value: View) => change(setView, value)}
+            group={group}
+            onGroup={(value: Grouping) => change(setGroup, value)}
+            groupOpen={groupMenu}
+            onGroupOpen={setGroupMenu}
+            density={density}
+            onDensity={(value) => change(setDensity, value)}
+            wallSize={wallSize}
+            onWallSize={setWallSize}
+            dimension={shown}
+            onDimension={switchTo}
+            noThreeD={noThreeD}
+            adult={
+              adultOnShelf
+                ? { hidden: hideAdult, onChange: (hidden) => setAdult(hidden ? 'hidden' : 'shown') }
+                : undefined
+            }
+            ready={
+              ready !== null
+                ? {
+                    on: readyChoice === 'ready',
+                    onChange: (on) => setReadyChoice(on ? 'ready' : 'all'),
+                  }
+                : undefined
+            }
+            filters={
+              <Button
+                variant="secondary"
+                // Where the filters stand beside the library, there is nothing to open.
+                className="flex-none max-sm:px-3 filters-beside:hidden"
+                aria-label={filters('open', { count: conditions })}
+                onClick={() => setPanelOpen(true)}
+              >
+                <SlidersHorizontalIcon aria-hidden="true" />
+                <span aria-hidden="true">{filters('openShort')}</span>
+                {conditions > 0 ? (
+                  <span
+                    aria-hidden="true"
+                    className="-mr-1 rounded-full bg-accent px-1.5 readout text-[0.625rem] text-on-accent"
+                  >
+                    {conditions}
+                  </span>
+                ) : null}
+              </Button>
+            }
+            sort={
+              <SortControl
+                sort={sort}
+                onSort={writeSortTo}
+                onShuffle={shuffle}
+                open={sortMenu}
+                onOpenChange={setSortMenu}
+              />
+            }
+          />
+
+          <FilterChips
+            tree={parsed.tree}
+            problems={parsed.problems}
+            index={index}
+            onRemove={(chip) => writeTree(removeChip(parsed.tree, chip))}
+            onRemoveProblem={(problem) => writeQ(withoutProblem(query.q, problem))}
+            onClear={clearFilters}
+            className="mt-3 flex-none"
+          />
+
+          <ResultStatus q={drawnQ} sort={sort} count={matching?.length} />
+          {view === 'shelf' && fallback ? (
+            <p role="status" className="mt-3 text-sm text-muted">
+              {t(`shelf3d.fallback.${fallback}`)}
+            </p>
           ) : null}
-          {view === 'wall' ? <WallView {...viewProps} size={wallSize} /> : null}
-          {view === 'list' ? <ListView {...viewProps} sort={sort} onSort={writeSortTo} /> : null}
+
+          {state.status === 'failed' ? (
+            <div
+              role="alert"
+              className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-panel border border-line bg-surface px-4 py-3 text-sm"
+            >
+              <p>{t('error.title')}</p>
+              <Button size="sm" onClick={state.retry}>
+                {t('error.retry')}
+              </Button>
+            </div>
+          ) : null}
+
+          {readyOnly && library?.games.length === 0 ? (
+            <NothingReady onShowAll={() => setReadyChoice('all')} />
+          ) : matching?.length === 0 ? (
+            <NoResults onClear={clearFilters} />
+          ) : shelves.length === 0 ? (
+            // Asked for another arrangement before the library file arrived: ghosts until it does.
+            <div aria-busy="true" className="contents">
+              <p className="sr-only" role="status">
+                {t('loading')}
+              </p>
+              {view === 'shelf' ? <GhostShelves /> : null}
+              {view === 'wall' ? <GhostWall size={wallSize} /> : null}
+              {view === 'list' ? <GhostList /> : null}
+            </div>
+          ) : (
+            <div
+              // A change of view or grouping crossfades under reduced motion; so does a new
+              // order, in place of the boxes sliding to it (spec 6).
+              key={calm ? `${view}:${group}:${sortText}:${seed}` : `${view}:${group}`}
+              className="motion-reduce:[&>*]:library-swap contents"
+            >
+              {view === 'shelf' ? (
+                <ShelfStage
+                  {...viewProps}
+                  density={density}
+                  dimension={asked}
+                  fallback={fallback}
+                  onFallback={setFallback}
+                  anchor={anchor}
+                  handleRef={shelf3d}
+                />
+              ) : null}
+              {view === 'wall' ? <WallView {...viewProps} size={wallSize} /> : null}
+              {view === 'list' ? (
+                <ListView {...viewProps} sort={sort} onSort={writeSortTo} />
+              ) : null}
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {GamePanel ? (
         <GamePanel
@@ -912,17 +942,6 @@ export function LibraryView({
           onNext={next ? () => stepTo(next) : undefined}
         />
       ) : null}
-
-      <FilterPanel
-        open={panelOpen}
-        onOpenChange={setPanelOpen}
-        tree={parsed.tree}
-        index={index}
-        matching={matching?.length}
-        onChange={writeTree}
-        onClear={clearFilters}
-        onWantKeywords={() => setKeywordsAsked(true)}
-      />
 
       <ShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} />
 

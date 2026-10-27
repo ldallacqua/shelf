@@ -170,7 +170,7 @@ Phone:
 | Control | Does |
 | --- | --- |
 | Status row | One tap filters to a status. The commonest filter gets the shortest path. Unsorted is in it only while a shelf has unsorted games, and Someday and Retired only while it has a game in one (3.12). |
-| Filters | Opens the filter panel. Shows how many conditions are active. |
+| Filters | Opens the filter panel. Shows how many conditions are active. Not shown from 1536px, where the panel stands beside the library (12). |
 | Group | None, platform, status, year |
 | Sort | The sort key and direction |
 | Shelf, Wall, List | Switches view |
@@ -833,7 +833,10 @@ Three levels, each a superset of the one before.
 
 **Level 1: the panel.** Each value of a list filter has three states: off, include, exclude.
 On a desktop, clicking a value cycles through them. On touch, each value has explicit include
-and exclude buttons, because a hidden cycle is not discoverable.
+and exclude buttons, because a hidden cycle is not discoverable. On a window 1536px wide or
+more the panel is a column left of the library, always open and in view as the shelves scroll;
+narrower, it is a sheet the Filters button opens. The two are one panel: a section open in one
+is open in the other, and the filter is the same either way.
 
 - Several included values in one filter mean **any of** them. A switch on the filter changes
   that to **all of**.
@@ -1369,7 +1372,7 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 | Shelf default | 2D | 2D | 3D |
 | Shelf layout | One shelf per screen, swipe between | Shelves stacked, ledges wrap | 2D: stacked. 3D: bays along a wall. |
 | Main controls | Bar at the bottom | Row under the header | Row under the header |
-| Filters | Bottom sheet | Side panel | Side panel |
+| Filters | Bottom sheet | Side panel | Side panel; from 1536px, a column beside the library |
 | Sort and group | Bottom sheet | Menus | Menus |
 | Detail | Bottom sheet, two heights | Side panel; sheet in portrait | Side panel |
 | Add | Full-screen sheet | Dialog | Dialog |
@@ -1388,9 +1391,17 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 
 Every gesture has a plain tap equivalent. Sheets close with Back.
 
+**Wide screens.** From 1536px the library's filters stand in a column of their own, 288px wide,
+left of the shelves, and the library's page widens from 1440px to as much as 2560px, the header
+and footer with it, so the column costs the shelves nothing: at 1920 they are 1512px wide, where
+they were 1360. The breakpoint is where the shelves keep about as much room beside the column as
+a 1200px laptop gives them, so a 1080p screen at 125% scaling has it and a 1440px one does not.
+Browser zoom moves it, as it moves every breakpoint here.
+
 **Done when**
 
-- Each screen is reviewed at 390, 820 and 1440 pixels wide, in both themes.
+- Each screen is reviewed at 390, 820 and 1440 pixels wide, in both themes, and the library
+  at 1920 as well, with its filters beside it.
 - Nothing scrolls sideways unintentionally at any width from 320px up.
 - Every gesture's alternative reaches the same result.
 

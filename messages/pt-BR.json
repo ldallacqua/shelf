@@ -655,6 +655,7 @@
       "title": "Filtros",
       "description": "Cada valor fica desligado, incluído ou excluído. As mudanças valem na hora.",
       "close": "Fechar os filtros",
+      "skip": "Pular os filtros",
       "groups": "Combina com qualquer um destes grupos",
       "groupsLabel": "Grupos",
       "group": "Grupo {number}",

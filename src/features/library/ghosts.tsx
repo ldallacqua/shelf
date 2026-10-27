@@ -14,8 +14,11 @@ import { caseShapes } from '@/ui/game-case'
  * No hooks and no words, so the page built ahead of time can use them too.
  */
 
-/** Places in the widest row of the loading shelf: more than the widest page holds. */
-const WIDEST_ROW = 10
+/**
+ * Places in the widest row of the loading shelf: more than the widest page holds. That is the
+ * library beside its filters at 2560px (`--page-width`), about twelve cases.
+ */
+const WIDEST_ROW = 13
 
 /** The case the loading shelf is drawn with: the one a box with no platform known gets. */
 const PLAIN = caseShapes.keepCase
