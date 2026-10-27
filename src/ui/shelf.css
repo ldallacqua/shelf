@@ -869,7 +869,7 @@
         'filters head'
         'filters main';
       grid-template-rows: auto 1fr;
-      grid-template-columns: 18rem minmax(0, 1fr);
+      grid-template-columns: 19rem minmax(0, 1fr);
       column-gap: 2.5rem;
       align-items: start;
       padding-top: 1rem;
@@ -917,7 +917,7 @@
       z-index: 1;
       flex: none;
       height: 1.5rem;
-      margin-inline: -1rem -0.25rem;
+      margin-inline: -1rem -0.75rem;
       pointer-events: none;
       opacity: 0;
     }

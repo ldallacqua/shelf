@@ -16,7 +16,7 @@ import { caseShapes } from '@/ui/game-case'
 
 /**
  * Places in the widest row of the loading shelf: more than the widest page holds. That is the
- * library beside its filters at 2560px (`--page-width`), fourteen cases.
+ * library beside its filters at 2560px (`--page-width`), thirteen cases.
  */
 const WIDEST_ROW = 15
 
