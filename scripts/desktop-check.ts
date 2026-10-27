@@ -190,6 +190,7 @@ try {
   const browserPage = await context.newPage()
   // Counts that count up as they appear would be read halfway: both read the calm version.
   for (const page of [shelf, browserPage]) await page.emulateMedia({ reducedMotion: 'reduce' })
+  for (const page of [shelf, browserPage]) await askEveryTime(page)
 
   for (const page of [shelf, browserPage]) await signIn(page)
   pass('signed in as the made-up owner')
@@ -383,6 +384,22 @@ async function signIn(page: Page) {
   await page.getByLabel('Password', { exact: true }).fill(OWNER.password)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await page.waitForURL((url) => !url.pathname.endsWith('/sign-in'), { timeout: 20_000 })
+}
+
+/**
+ * Has a page's browser ask the server for every answer, as production makes
+ * it: Vercel sends a shelf's pages and their prefetches to a browser with
+ * `max-age=0, must-revalidate`, where `next start` sends
+ * `stale-while-revalidate`. With that, from the second page on, Chromium
+ * answered the header's prefetch of Trophies from its cache and refreshed
+ * its copy behind the page, a refresh it never reports finished, so a page
+ * never went idle (`readPage`) and the check timed out on about every other
+ * run.
+ */
+async function askEveryTime(page: Page) {
+  const session = await page.context().newCDPSession(page)
+  await session.send('Network.enable')
+  await session.send('Network.setCacheDisabled', { cacheDisabled: true })
 }
 
 /**

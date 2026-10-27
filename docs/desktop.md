@@ -368,8 +368,10 @@ Steam is still counted once.
   `pnpm serve:test` with WebView2's debugging port open
   (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333`), connects to it
   as Playwright connects to any Chromium, signs in as the made-up owner and reads the pages,
-  each beside the same page read in a plain Chromium. It is a check run by hand, not one of the
-  browser tests, which stay off until the MVP.
+  each beside the same page read in a plain Chromium. Both have their HTTP cache off, so they ask
+  the server for every answer, as a browser does on production (architecture section 25, row
+  "Desktop check, idle"). It is a check run by hand, not one of the browser tests, which stay
+  off until the MVP.
 - **Never:** a real game started by a test, a real Steam opened, production signed in to by a
   script.
 
