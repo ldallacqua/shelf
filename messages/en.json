@@ -655,6 +655,7 @@
       "title": "Filters",
       "description": "Each value is off, included or excluded. Changes apply at once.",
       "close": "Close filters",
+      "skip": "Skip the filters",
       "groups": "Match any of these groups",
       "groupsLabel": "Groups",
       "group": "Group {number}",

@@ -30,7 +30,7 @@ export function Header({ add }: { add?: AddActions }) {
       data-title-bar=""
       className="sticky top-0 z-40 border-b border-line/70 bg-wall/85 backdrop-blur-md frameless:pr-34.5"
     >
-      <div className="mx-auto flex h-14 w-full max-w-360 items-stretch gap-2 px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto flex h-14 w-full max-w-(--page-width) items-stretch gap-2 px-4 sm:px-6 lg:px-10">
         <Link
           href="/"
           aria-label={t('home')}

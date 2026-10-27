@@ -1,10 +1,25 @@
-# Handoff: 25 October 2026
+# Handoff: 27 October 2026
 
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
-## Now: Shelf for Windows, the desktop app that plays the games (25 Oct 2026)
+## Now: the owner's issues, highest priority first (27 Oct 2026)
+
+The owner: "look at shelf issues and start by the highest priority items". The issues are
+[on GitHub](https://github.com/ldallacqua/shelf/issues), labelled P0 (most urgent) to P3.
+
+- **#62 (P0), the filters beside the library on a wide screen, is built** (architecture section 25,
+  row "Filters beside"). From 1536px; the library's page widens with it, to 2560px. The
+  library's script is 277.7 KB of its 279: the budget was raised with its reason.
+- **Next, the P1s:** #66 (the wall's and the trophies' group headings sit on a darker band), #63
+  (3D and compact behind an experimental setting, off by default), #72 (Steam achievements,
+  which #68, the trophy page, and the Xbox and PlayStation tickets build on), then #68.
+- **Checking the library in this app's browser pane does not work while the pane is hidden:** the
+  streamed library is never revealed and the skeleton stays. A headless Chromium script against
+  `pnpm dev` or a production build sees it.
+
+## Just before: Shelf for Windows, the desktop app that plays the games (25 Oct 2026)
 
 The owner asked for an app on their computer that starts their games, "tipo o hydra", from a
 file they point at or through Steam. Shown the research, they chose Tauri: "vamos usar tauri
@@ -54,7 +69,7 @@ baixada ta tudo certo. Escreva a documentação e passos para serem seguidos. De
   a script. The app is checked against `pnpm serve:test`, its web view driven through WebView2's
   debugging port.
 
-## Just before: building the five changes in the spec, one pull request each (25 Oct 2026)
+## Before: building the five changes in the spec, one pull request each (25 Oct 2026)
 
 The owner, after the add search was fixed: "vai pros proximos items da lista", the five
 sections written into the spec. In this order, each merged before the next starts: Someday
@@ -100,7 +115,7 @@ decisions 15 to 24 are built as written; the owner did not change them.
   Edition too, so a way to split one version into a game of its own was offered instead; it
   waits for the owner.
 
-## Before: five changes written into the spec, and the add search finds half a word (25 Oct 2026)
+## Earlier: five changes written into the spec, and the add search finds half a word (25 Oct 2026)
 
 - **The add search finds a word still being typed** (the owner: "astral cha -> não acha nada na
   busca. Astral Chain -> acha o jogo correto."). IGDB's `search` matches whole words only;
