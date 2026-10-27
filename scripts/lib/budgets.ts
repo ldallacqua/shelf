@@ -24,7 +24,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // on (the filter language and the example shelf are fetched only when one
   // is typed), the views turning, the figures counting, and the marker for
   // browsers that cannot tie an animation to scrolling.
-  { path: '/en', name: 'Home', kilobytes: 211 },
+  // Placing in the header (27 Oct 2026): measured 212.2 KB, from 210.6. On every page the
+  // line across the top while a link's page is on its way, and, on one's own shelf, the link to
+  // placing the games that wait, with their count: the owner asked for both.
+  { path: '/en', name: 'Home', kilobytes: 213 },
   // Step 3: measured 228.9 KB. The shell (191 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
@@ -57,7 +60,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // panel drawn as a column as well as a sheet, the query that says which, the column's skip
   // button and the F key's way into it. Its sections are drawn only on a window wide enough,
   // so a phone hydrates ghosts, not 26 hidden filters; no room was left to make elsewhere.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 279 },
+  // Placing in the header (27 Oct 2026): measured 279.3 KB, from 277.8. On every page the
+  // line across the top while a link's page is on its way, and, on one's own shelf, the link to
+  // placing the games that wait, with their count: the owner asked for both.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 281 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
@@ -66,7 +72,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // decoder for the blurred previews of the covers below the first screen),
   // the figures settling into place, which shelf the page is, and the loader
   // that fetches a private shelf's wall only when one is drawn.
-  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 209 },
+  // Placing in the header (27 Oct 2026): measured 209.9 KB, from 208.3. On every page the
+  // line across the top while a link's page is on its way, and, on one's own shelf, the link to
+  // placing the games that wait, with their count: the owner asked for both.
+  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 211 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
   // screenshots and their viewer, and the way back to the library.
   // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf
@@ -77,7 +86,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // player itself is fetched only when a video is pressed. The play sign is
   // drawn in CSS, not an icon. The owner asked for the videos and for the
   // strip without its scrollbar.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 219 },
+  // Placing in the header (27 Oct 2026): measured 219.9 KB, from 218.3. On every page the
+  // line across the top while a link's page is on its way, and, on one's own shelf, the link to
+  // placing the games that wait, with their count: the owner asked for both.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 221 },
 ]
 
 /**
