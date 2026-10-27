@@ -5,9 +5,10 @@ import { cn } from '@/ui/cn'
 const ROWS = ['w-12', 'w-24', 'w-16', 'w-14', 'w-12', 'w-14', 'w-12', 'w-18', 'w-14', 'w-10']
 
 /**
- * The filters' sections before the column draws them: in the page built ahead of time, and
- * until the browser says the window is wide enough for the column. On a phone, where the column
- * is hidden, this is all of it there is. No hooks and no words, so the skeleton can use it too.
+ * The filters' sections before the column draws them: in the page built ahead of time, until
+ * the browser says whether the window is wide enough for the column. So a phone, where the
+ * column is hidden, hydrates these and not every filter. No hooks and no words, so the skeleton
+ * can use it too.
  */
 export function FilterGhosts() {
   return (

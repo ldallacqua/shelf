@@ -344,7 +344,7 @@ describe('ListSection', () => {
 
 describe('FilterPanel: beside the library, or in a sheet (issue #62)', () => {
   const panel = (
-    beside: boolean,
+    beside: boolean | undefined,
     open: boolean,
     props: Partial<ComponentProps<typeof FilterPanel>> = {},
   ) => (
@@ -370,12 +370,19 @@ describe('FilterPanel: beside the library, or in a sheet (issue #62)', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('on a narrower window draws ghosts in the hidden column, and opens as a sheet', () => {
+  it('holds the column’s place with ghosts until the window’s width is known', () => {
+    renderWithIntl(panel(undefined, false))
+    expect(column().querySelector('details')).not.toBeInTheDocument()
+    expect(column().querySelector('.ghost')).toBeInTheDocument()
+  })
+
+  it('on a narrower window leaves the hidden column empty, and opens as a sheet', () => {
     renderWithIntl(panel(false, true))
     // The sheet is modal: everything else, the column too, is hidden from assistive technology.
     const hidden = screen.getByRole('complementary', { name: 'Filters', hidden: true })
     expect(hidden.querySelector('details')).not.toBeInTheDocument()
-    expect(hidden.querySelector('.ghost')).toBeInTheDocument()
+    // Nothing is on its way, so no ghost says so: a page settles once its ghosts are gone.
+    expect(hidden.querySelector('.ghost')).not.toBeInTheDocument()
     const sheet = screen.getByRole('dialog', { name: 'Filters' })
     expect(within(sheet).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
   })

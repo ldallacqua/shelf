@@ -74,8 +74,8 @@ type FilterPanelProps = {
   /** The sheet's state. It never opens while the filters stand beside the library. */
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** The window is wide enough for the filters to stand beside the library (`beside.ts`). */
-  beside: boolean
+  /** The window is wide enough for the filters to stand beside the library (`beside.ts`); undefined until known. */
+  beside: boolean | undefined
   tree: QueryNode | undefined
   /** Undefined while the library is still arriving. */
   index: LibraryIndex | undefined
@@ -99,8 +99,9 @@ type FilterPanelProps = {
  * drawn from here, so which sections are open carries over when the window
  * changes width. The column is in every page, as the server cannot tell a
  * window's width, and hidden by CSS where it does not fit. Its sections are
- * drawn only once the browser says it fits: until then, and on a phone, ghosts
- * hold their place, so a phone hydrates no filter it cannot see.
+ * drawn only once the browser says it fits: until the browser has said, ghosts
+ * hold their place, so a phone hydrates no filter it cannot see, and once it
+ * has said no, the hidden column holds nothing.
  */
 export function FilterPanel({
   open,
@@ -339,7 +340,7 @@ export function FilterPanel({
         {/* Not a status: the library says what a filter leaves (`ResultStatus`) once it settles. */}
         <p className="flex-none px-4 pt-1 pb-3 text-sm text-muted">{results}</p>
         <div className="library-filters-body flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain border-t border-line px-4 pt-3 pb-4">
-          {beside ? controls(index) : <FilterGhosts />}
+          {beside ? controls(index) : beside === undefined ? <FilterGhosts /> : null}
         </div>
       </aside>
 

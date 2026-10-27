@@ -6,7 +6,8 @@
  * view's debugging port open, connects to it as to any Chromium, signs in as
  * the made-up owner, and reads each page beside the same page read in a plain
  * Chromium the same size, Play left out (the app's and a browser's differ by
- * design). Then Play: a file is chosen (a development build takes it from
+ * design), then the library's views again with the window maximized, where a
+ * screen 1536 pixels wide or more puts the filters beside the library. Then Play: a file is chosen (a development build takes it from
  * `SHELF_PICK`, since no script can answer Windows' picker) and started,
  * and must start in its own folder. The file is a batch file that only
  * writes that folder down; no game is started, and Steam's link is read,
@@ -46,6 +47,8 @@ const PAGES = [
   '/en/account/unsorted',
   '/pt-BR/u/sample?view=list',
 ]
+/** The library's views, read again with the window maximized. */
+const WIDE_PAGES = ['/en/u/sample', '/en/u/sample?view=wall', '/pt-BR/u/sample?view=list']
 
 const problems: string[] = []
 const fail = (problem: string) => {
@@ -201,6 +204,46 @@ try {
     else fail(`${path} reads differently:\n${difference(inApp, inBrowser)}`)
     await shot(path)
   }
+
+  // Maximized on a wide screen the filters stand beside the library (spec 12, issue #62). The
+  // window opens at 1280, where they do not, so the library is read again maximized. The
+  // window's controls are found by their English names, so from an English page.
+  const inEnglish = async () => {
+    await shelf.goto(`${BASE_URL}/en`)
+    await shelf
+      .waitForFunction(() => document.querySelector('header[data-tauri-drag-region]'), null, {
+        timeout: 10_000,
+      })
+      .catch(() => {})
+  }
+  await inEnglish()
+  await control('Maximize').click()
+  await control('Restore').waitFor({ timeout: 5_000 })
+  const wide = await shelf.evaluate(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    beside: window.matchMedia('(width >= 96rem)').matches,
+  }))
+  await browserPage.setViewportSize({ width: wide.width, height: wide.height })
+  console.log(`\nMaximized, beside a plain Chromium at ${wide.width} by ${wide.height}`)
+  for (const path of WIDE_PAGES) {
+    const [inApp, inBrowser] = await Promise.all([
+      readPage(shelf, path),
+      readPage(browserPage, path),
+    ])
+    if (inApp === inBrowser) pass(`${path} reads the same (${inApp.length} characters)`)
+    else fail(`${path} reads differently:\n${difference(inApp, inBrowser)}`)
+    const column = shelf.locator('#library-filters')
+    const drawn = (await column.isVisible()) && (await column.locator('details').count()) > 0
+    if (wide.beside === drawn)
+      pass(drawn ? 'its filters stand beside it' : 'its filters stay in their sheet')
+    else fail(`its filters ${drawn ? 'stand' : 'do not stand'} beside it at ${wide.width} pixels`)
+    await shot(`maximized${path}`)
+  }
+  if (!wide.beside) console.log('  (This screen is too narrow for the filters beside the library.)')
+  await inEnglish()
+  await control('Restore').click()
+  await control('Maximize').waitFor({ timeout: 5_000 })
 
   console.log('\nLinking Steam (the test double)')
   await shelf.goto(`${BASE_URL}/api/v1/me/platforms/steam/connect?locale=en`)

@@ -18,11 +18,14 @@ const subscribe = (listener: () => void) => {
   return () => query.removeEventListener('change', listener)
 }
 
-/** Whether the filters stand beside the library now. The server cannot tell: it says no. */
-export function useFiltersBeside(): boolean {
+/**
+ * Whether the filters stand beside the library now. Undefined until the page comes alive: the
+ * server cannot tell, and the column holds ghosts until it is known.
+ */
+export function useFiltersBeside(): boolean | undefined {
   return useSyncExternalStore(
     subscribe,
     () => window.matchMedia(FILTERS_BESIDE).matches,
-    () => false,
+    () => undefined,
   )
 }
