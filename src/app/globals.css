@@ -157,6 +157,51 @@
   text-transform: uppercase;
 }
 
+/*
+ * A quiet scrollbar for a panel that scrolls inside the page: a slim rounded thumb, with no
+ * track or arrows, like the page's own in the app's window (features/desktop/frame.ts). It
+ * widens under the pointer. Firefox styles scrollbars only by the standard properties, so it
+ * gets its thin one in the same colors.
+ */
+@utility scrollbar-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+
+  /* Chromium and WebKit ignore the pseudo-elements while the standard properties are set. */
+  @supports selector(::-webkit-scrollbar) {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+
+    &::-webkit-scrollbar {
+      width: 0.75rem;
+      height: 0.75rem;
+      background: transparent;
+    }
+
+    /* Clear of the panel's rounded corners. */
+    &::-webkit-scrollbar-track {
+      margin-block: 0.375rem;
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border: 3px solid transparent;
+      border-radius: 9999px;
+      background: var(--line-strong) padding-box;
+    }
+
+    &::-webkit-scrollbar-thumb:hover,
+    &::-webkit-scrollbar-thumb:active {
+      border-width: 2px;
+      background-color: var(--text-muted);
+    }
+
+    &::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+  }
+}
+
 /* Durations by name: duration-quick, duration-base and so on. */
 @utility duration-instant {
   transition-duration: var(--motion-instant);

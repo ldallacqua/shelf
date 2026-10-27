@@ -368,6 +368,12 @@ describe('FilterPanel: beside the library, or in a sheet (issue #62)', () => {
     expect(within(column()).getByText('1 game matches')).toBeInTheDocument()
     expect(within(column()).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // Its edges' fades are drawing, not content.
+    const edges = column().querySelectorAll('.filters-edge')
+    expect(edges).toHaveLength(2)
+    for (const edge of edges) {
+      expect(edge).toHaveAttribute('aria-hidden', 'true')
+    }
   })
 
   it('holds the column’s place with ghosts until the window’s width is known', () => {

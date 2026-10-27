@@ -848,9 +848,10 @@
   /*
    * On a wide window the filters stand in a column of their own, left of the library
    * (FILTERS_BESIDE in features/filters/beside.ts), and stay in view as the shelves scroll.
-   * Narrower, the column is hidden and the two frames around it are no boxes at all, so
-   * everything inside is laid out by `.library` as before: on a phone, the toolbar at the
-   * bottom and the shelf the screen's height.
+   * The title and totals head the library's column, so the filters' starts as high as the
+   * window lets it and is whole from the first screen. Narrower, the column is hidden and
+   * the frames around it are no boxes at all, so everything inside is laid out by `.library`
+   * as before: on a phone, the toolbar at the bottom and the shelf the screen's height.
    */
   .library-body,
   .library-main {
@@ -864,24 +865,38 @@
   @media (width >= 96rem) {
     .library-body {
       display: grid;
+      grid-template-areas:
+        'filters head'
+        'filters main';
+      grid-template-rows: auto 1fr;
       grid-template-columns: 18rem minmax(0, 1fr);
       column-gap: 2.5rem;
       align-items: start;
+      padding-top: 1rem;
+    }
+
+    .library-head {
+      grid-area: head;
     }
 
     .library-main {
       display: flex;
       min-width: 0;
       flex-direction: column;
+      grid-area: main;
     }
 
-    /* Under the header (3.5rem and a hairline), as tall as the window leaves, scrolling inside. */
+    /*
+     * Under the header (3.5rem and a hairline) by as much as the body starts below it, so it
+     * is where it sticks from the start; as tall as the window leaves, scrolling inside.
+     */
     .library-filters {
       position: sticky;
       top: calc(3.5rem + 1px + 1rem);
       display: flex;
       max-height: calc(100dvh - 3.5rem - 1px - 2rem);
       flex-direction: column;
+      grid-area: filters;
       border: 1px solid var(--line);
       border-radius: var(--radius-panel);
       background: var(--surface);
@@ -889,7 +904,56 @@
 
     .library-filters-body {
       scrollbar-gutter: stable;
-      scrollbar-width: thin;
+    }
+
+    /*
+     * Where the list runs on past the column's top or bottom, that edge fades into the
+     * surface, following the list's own scroll with no script. Each lies across the body's
+     * padding (filter-panel.tsx) and takes no room. Where the browser cannot (Firefox), the
+     * edges stay away.
+     */
+    .filters-edge {
+      position: sticky;
+      z-index: 1;
+      flex: none;
+      height: 1.5rem;
+      margin-inline: -1rem -0.25rem;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .filters-edge[data-edge='top'] {
+      top: 0;
+      margin-block: -0.75rem;
+      background: linear-gradient(to bottom, var(--surface), transparent);
+    }
+
+    .filters-edge[data-edge='bottom'] {
+      bottom: 0;
+      margin-block: -1.5rem -1rem;
+      background: linear-gradient(to top, var(--surface), transparent);
+    }
+
+    @supports (animation-timeline: scroll()) {
+      .filters-edge {
+        animation: filters-edge linear both;
+        animation-timeline: scroll(nearest);
+      }
+
+      .filters-edge[data-edge='top'] {
+        animation-range: 0 1.5rem;
+      }
+
+      .filters-edge[data-edge='bottom'] {
+        animation-direction: reverse;
+        animation-range: calc(100% - 1.5rem) 100%;
+      }
+    }
+  }
+
+  @keyframes filters-edge {
+    to {
+      opacity: 1;
     }
   }
 
