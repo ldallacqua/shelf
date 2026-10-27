@@ -22,21 +22,21 @@ export function LibrarySkeleton({ title }: { title?: string }) {
 
   return (
     <div className="library" data-view="shelf" aria-busy="true">
-      <div className="flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5">
-        <h1 className="title text-2xl sm:text-5xl">{title ?? t('title')}</h1>
-        {/* The totals: three, wrapping where the real ones would. */}
-        <div aria-hidden="true" className="flex flex-wrap gap-x-5 gap-y-1">
-          {['w-20', 'w-24', 'w-24'].map((width, index) => (
-            <span key={width + index} className="flex h-6 items-center sm:h-7">
-              <span className={cn('ghost h-3.5', width)} style={ghostOrder(index)} />
-            </span>
-          ))}
-        </div>
-      </div>
-      <p className="sr-only" role="status">
-        {t('loading')}
-      </p>
       <div className="library-body">
+        <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5 filters-beside:pt-0">
+          <h1 className="title text-2xl sm:text-5xl">{title ?? t('title')}</h1>
+          {/* The totals: three, wrapping where the real ones would. */}
+          <div aria-hidden="true" className="flex flex-wrap gap-x-5 gap-y-1">
+            {['w-20', 'w-24', 'w-24'].map((width, index) => (
+              <span key={width + index} className="flex h-6 items-center sm:h-7">
+                <span className={cn('ghost h-3.5', width)} style={ghostOrder(index)} />
+              </span>
+            ))}
+          </div>
+        </div>
+        <p className="sr-only" role="status">
+          {t('loading')}
+        </p>
         {/* The filters' column, on a window wide enough for it: its title, then its sections. */}
         <div aria-hidden="true" className="library-filters">
           <div className="flex items-center justify-between gap-3 px-4 pt-4">

@@ -11,7 +11,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
 
 - **#62 (P0), the filters beside the library on a wide screen, is built** (architecture section 25,
   row "Filters beside"). From 1536px; the library's page widens with it, to 2560px. The
-  library's script is 277.7 KB of its 279: the budget was raised with its reason.
+  library's script is 277.7 KB of its 279: the budget was raised with its reason. After it, the
+  owner asked for a quieter scroll in the column and for the title over the search, so the
+  column is whole from the first screen (row "Filters' column, whole").
 - **Next, the P1s:** #66 (the wall's and the trophies' group headings sit on a darker band), #63
   (3D and compact behind an experimental setting, off by default), #72 (Steam achievements,
   which #68, the trophy page, and the Xbox and PlayStation tickets build on), then #68.

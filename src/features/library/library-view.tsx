@@ -695,40 +695,43 @@ export function LibraryView({
       onPointerOver={(event) => onAGame(event.target) && void loadPanel(handle)}
       onFocus={(event) => onAGame(event.target) && void loadPanel(handle)}
     >
-      <div className="flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h1 className="title text-2xl sm:text-5xl">{heading}</h1>
-          {changed ? (
-            <p className="flex items-baseline gap-3 text-sm">
-              <span className="readout text-[0.625rem] text-muted uppercase">
-                {shelfWords('changed')}
-              </span>
-              <Button
-                variant="link"
-                size="sm"
-                className="h-auto px-0"
-                onClick={() => {
-                  capture()
-                  void setAddress({ q: null, sort: null, seed: null })
-                  void setGroup(null)
-                }}
-              >
-                {shelfWords('reset')}
-              </Button>
-            </p>
-          ) : null}
-        </div>
-        {liveStats ? (
-          <StatsLine stats={liveStats} settle={false} />
-        ) : counted !== first && drawnQ === builtFor.q ? (
-          <StatsLine stats={counted.stats} settle={false} />
-        ) : (
-          stats
-        )}
-      </div>
-
-      {/* The filters' column, then the library beside it; on a narrower window, neither is a box. */}
+      {/*
+       * The title, then the filters' column, then the library; on a wide window the title heads
+       * the library's column, beside the filters (shelf.css). Narrower, none of the frames is a box.
+       */}
       <div className="library-body">
+        <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5 filters-beside:pt-0">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h1 className="title text-2xl sm:text-5xl">{heading}</h1>
+            {changed ? (
+              <p className="flex items-baseline gap-3 text-sm">
+                <span className="readout text-[0.625rem] text-muted uppercase">
+                  {shelfWords('changed')}
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-0"
+                  onClick={() => {
+                    capture()
+                    void setAddress({ q: null, sort: null, seed: null })
+                    void setGroup(null)
+                  }}
+                >
+                  {shelfWords('reset')}
+                </Button>
+              </p>
+            ) : null}
+          </div>
+          {liveStats ? (
+            <StatsLine stats={liveStats} settle={false} />
+          ) : counted !== first && drawnQ === builtFor.q ? (
+            <StatsLine stats={counted.stats} settle={false} />
+          ) : (
+            stats
+          )}
+        </div>
+
         <FilterPanel
           open={panelOpen}
           onOpenChange={setPanelOpen}

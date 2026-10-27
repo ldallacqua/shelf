@@ -197,7 +197,7 @@ function SheetContent({
         <div
           data-sheet-body=""
           className={cn(
-            'min-h-0 flex-1 overflow-y-auto overscroll-contain',
+            'scrollbar-quiet min-h-0 flex-1 overflow-y-auto overscroll-contain',
             bleed ? '' : 'px-5 pt-2 pb-6',
           )}
         >

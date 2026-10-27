@@ -510,9 +510,11 @@ describe('LibrarySkeleton', () => {
   it('holds the place of the filters’ column beside the shelves, for a window wide enough (issue #62)', () => {
     const { container } = renderWithIntl(<LibrarySkeleton />)
     const body = container.querySelector('.library-body')
-    expect(body?.firstElementChild).toHaveClass('library-filters')
-    expect(body?.firstElementChild).toHaveAttribute('aria-hidden', 'true')
-    expect(body?.querySelector('.library-main .ghost-case')).toBeInTheDocument()
+    // The title first, as it is read; on a wide window it heads the shelves' side, not the column.
+    expect(body?.firstElementChild).toHaveClass('library-head')
+    expect(body?.firstElementChild?.querySelector('h1')).toBeInTheDocument()
+    expect(body?.querySelector(':scope > .library-filters')).toHaveAttribute('aria-hidden', 'true')
+    expect(body?.querySelector(':scope > .library-main .ghost-case')).toBeInTheDocument()
   })
 
   it('has the smart shelf’s name when it is one', () => {
