@@ -1,4 +1,5 @@
 import type { IgdbGame, IgdbLineage, IgdbTimeToBeat } from '@/domain/igdb/schema'
+import { ADULTS_ONLY, ageWordsOf } from '@/domain/library/ages'
 import { dayOf, type Day, type Format, type Kind } from '@/domain/library/values'
 
 /**
@@ -85,12 +86,11 @@ export type GameData = {
   igdbUrl?: string
   /** When IGDB last changed the record, in milliseconds. */
   igdbUpdatedAt?: number
+  /** What each board that rates games says of it, as filter words (`pegi-18`, spec 5.1). */
+  ages: string[]
   /** The ESRB rates it Adults Only (spec 3.13). */
   adultsOnly: boolean
 }
-
-/** IGDB's id for the ESRB among the boards that rate games, read from the live API on 25 Oct 2026. */
-const ESRB = 1
 
 /** IGDB's theme Erotic (spec 3.13). */
 export const EROTIC = 42
@@ -215,6 +215,7 @@ const ARTWORK_ORDER: GameArtwork['type'][] = ['key', 'key-logo', 'art', 'concept
 
 export const toGameData = (record: IgdbGame, time?: IgdbTimeToBeat): GameData => {
   const releasedOn = dayFromSeconds(record.first_release_date)
+  const ages = ageWordsOf(record.age_ratings)
   const companies = new Map<number, Company>()
   for (const { company } of record.involved_companies) companies.set(company.id, company)
 
@@ -295,9 +296,8 @@ export const toGameData = (record: IgdbGame, time?: IgdbTimeToBeat): GameData =>
       })),
     releases: [...releases.values()],
     storeIds: [...storeIds.values()],
-    adultsOnly: record.age_ratings.some(
-      (rating) => rating.organization === ESRB && rating.rating_category?.rating === 'AO',
-    ),
+    ages,
+    adultsOnly: ages.includes(ADULTS_ONLY),
   }
 
   if (record.version_title?.trim()) data.versionTitle = record.version_title.trim()

@@ -1,4 +1,5 @@
 import { families } from '@/domain/platforms/platforms'
+import { ageWords } from '@/domain/library/ages'
 import { formats, kinds, statuses } from '@/domain/library/values'
 
 /**
@@ -24,6 +25,7 @@ export const listKeys = [
   'is',
   'genre',
   'theme',
+  'age',
   'keyword',
   'mode',
   'perspective',
@@ -87,6 +89,7 @@ export const closedValues: Partial<Record<ListKey, readonly string[]>> = {
   kind: kinds,
   has: hasValues,
   is: isValues,
+  age: ageWords,
 }
 
 /** Platform families, which `owned:`, `wanted:` and `platform:` take as well as a platform's own key. */

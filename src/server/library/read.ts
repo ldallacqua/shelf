@@ -94,6 +94,7 @@ export const readLibrary = async (
         igdbRating: games.igdbRating,
         igdbRatingCount: games.igdbRatingCount,
         adultsOnly: games.adultsOnly,
+        ages: games.ages,
         length: games.length,
         genres: games.genres,
         themes: games.themes,
@@ -233,6 +234,7 @@ export const readLibrary = async (
     if (entry.status === 'wishlist' && entry.wanted?.length) game.wanted = entry.wanted
     if (entry.isPrivate) game.private = true
     if (primary.adultsOnly || primary.themes.includes(EROTIC)) game.adult = true
+    if (primary.ages?.length) game.ages = primary.ages
     if (primary.releasedOn) {
       game.releasedOn = primary.releasedOn
       game.year = Number(primary.releasedOn.slice(0, 4))

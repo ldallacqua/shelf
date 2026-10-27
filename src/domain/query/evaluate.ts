@@ -1,3 +1,4 @@
+import { ageLabel, ageWords } from '@/domain/library/ages'
 import type { Library, LibraryCopy, LibraryGame, Named } from '@/domain/library/library'
 import { dayToNumber } from '@/domain/library/snapshot'
 import { formats, kinds, statuses } from '@/domain/library/values'
@@ -93,6 +94,7 @@ const listOf = (): Record<ListKey, Map<string, IndexValue>> => ({
   is: new Map(),
   genre: new Map(),
   theme: new Map(),
+  age: new Map(),
   keyword: new Map(),
   mode: new Map(),
   perspective: new Map(),
@@ -236,6 +238,7 @@ export const buildIndex = (library: Library): LibraryIndex => {
         if (named) add(lists[key], filterWord(key, id, named.slug), named.name, size, at)
       }
     }
+    for (const word of game.ages ?? []) add(lists.age, word, ageLabel(word), size, at)
     for (const [key, ids] of [
       ['developer', game.developers],
       ['publisher', game.publishers],
@@ -259,6 +262,13 @@ export const buildIndex = (library: Library): LibraryIndex => {
     dates.added[at] = dayToNumber(game.addedOn)
     if (game.completedOn) dates.completed[at] = dayToNumber(game.completedOn)
   })
+  // Board by board, youngest first, not in the order the games happened to bring them.
+  lists.age = new Map(
+    ageWords.flatMap((word) => {
+      const value = lists.age.get(word)
+      return value ? [[word, value] as const] : []
+    }),
+  )
 
   return {
     library,

@@ -1,5 +1,6 @@
 import type { useFormatter, useTranslations } from 'next-intl'
 
+import { ageLabel } from '@/domain/library/ages'
 import type { LibraryIndex } from '@/domain/query/evaluate'
 import {
   closedValues,
@@ -50,6 +51,9 @@ export const valueLabel = (
       return t(`values.has.${word as 'notes'}`)
     case 'is':
       return t(`values.is.${word as 'featured'}`)
+    case 'age':
+      // A board's own name and rating, the same in every language.
+      return ageLabel(word)
     case 'owned':
     case 'wanted':
     case 'platform':

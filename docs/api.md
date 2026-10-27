@@ -48,13 +48,15 @@ The parameter `q` is a filter, exactly as the library's address and a smart shel
 | Kind | Keys |
 | --- | --- |
 | Mine | `status`, `owned`, `format`, `copies`, `rating`, `hours`, `completed`, `added`, `tag`, `has`, `is` |
-| From IGDB | `genre`, `theme`, `keyword`, `mode`, `perspective`, `kind`, `platform`, `franchise`, `series`, `developer`, `publisher`, `year`, `igdb`, `length` |
+| From IGDB | `genre`, `theme`, `age`, `keyword`, `mode`, `perspective`, `kind`, `platform`, `franchise`, `series`, `developer`, `publisher`, `year`, `igdb`, `length` |
 
 - Values are lower case with hyphens: `developer:eidos-montreal`, `tag:couch-co-op`. The
   values a key takes, with how many games each would match, are what
   [`/u/{handle}/facets`](#get-uhandlefacets) lists.
 - `rating` is out of 10; `hours` and `length` (time to beat) are in hours; `igdb` is IGDB's
   rating out of 100; `copies` is how many platforms a game is owned on.
+- `age` is an age rating, the board first: `age:esrb-ao` (the ESRB's Adults Only), `age:pegi-18`,
+  `age:classind-l`. The boards are the ESRB, PEGI, CERO, USK, GRAC, ClassInd and ACB.
 - `owned:` takes a platform (`owned:switch`) or a family (`owned:playstation`). In one group,
   `owned:` and `format:` describe the same copy: `owned:switch format:physical` is a game
   owned on a Switch cartridge.

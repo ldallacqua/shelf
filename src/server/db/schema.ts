@@ -137,6 +137,11 @@ export const games = sqliteTable(
      * asked: the daily refresh asks again for those first.
      */
     adultsOnly: integer({ mode: 'boolean' }),
+    /**
+     * What each board that rates games says of it, as filter words (`pegi-18`, spec 5.1). Null
+     * for a record stored before they were asked for: the daily refresh stores those again.
+     */
+    ages: text({ mode: 'json' }).$type<string[]>(),
     /** When Shelf last stored this record. */
     fetchedAt: integer().notNull(),
     /** When Shelf last asked IGDB whether it changed. The daily refresh takes the oldest. */

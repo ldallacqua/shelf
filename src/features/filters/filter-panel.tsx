@@ -53,6 +53,7 @@ const MINE: readonly FilterKey[] = [
 const IGDB: readonly FilterKey[] = [
   'genre',
   'theme',
+  'age',
   'mode',
   'perspective',
   'kind',
