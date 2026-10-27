@@ -14,6 +14,11 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   library's script is 277.7 KB of its 279: the budget was raised with its reason. After it, the
   owner asked for a quieter scroll in the column and for the title over the search, so the
   column is whole from the first screen (row "Filters' column, whole").
+- **`pnpm desktop:check` no longer times out on a library page** (row "Desktop check, idle"):
+  Chromium's refresh of a cached Trophies prefetch is never reported finished, so the check's
+  browsers now have their HTTP cache off. Production was never affected. The browser tests'
+  security spec waits for idle the same way, so it needs the same change when those tests
+  return after the MVP.
 - **Next, the P1s:** #66 (the wall's and the trophies' group headings sit on a darker band), #63
   (3D and compact behind an experimental setting, off by default), #72 (Steam achievements,
   which #68, the trophy page, and the Xbox and PlayStation tickets build on), then #68.
