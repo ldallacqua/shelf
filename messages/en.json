@@ -570,6 +570,7 @@
       "is": "Featured",
       "genre": "Genre",
       "theme": "Theme",
+      "age": "Age rating",
       "keyword": "Keyword",
       "mode": "Game mode",
       "perspective": "Perspective",

@@ -140,6 +140,7 @@ export const gameColumns = (data: GameData, lineage: readonly LineageStep[], now
   igdbUrl: data.igdbUrl ?? null,
   igdbUpdatedAt: data.igdbUpdatedAt ?? null,
   adultsOnly: data.adultsOnly,
+  ages: data.ages,
   fetchedAt: now,
   checkedAt: now,
 })

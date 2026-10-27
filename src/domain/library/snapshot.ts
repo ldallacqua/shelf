@@ -1,4 +1,5 @@
 import { isHex, type Palette } from '@/domain/color/palette'
+import { ageWords } from '@/domain/library/ages'
 import {
   emptyNames,
   type Library,
@@ -59,6 +60,8 @@ type GameRow = [
   tags: number[],
   // Last, and only when there are any: a file without them reads as it always did.
   wanted?: number[],
+  /** Positions in `ageWords`; with them, `wanted` is there, empty if need be. */
+  ages?: number[],
 ]
 
 type NamedRow = [id: number, name: string, slug: string]
@@ -154,7 +157,9 @@ const baseRow = (game: LibraryGame): GameRow => [
 
 const encodeGame = (game: LibraryGame): GameRow => {
   const row = baseRow(game)
-  if (game.wanted?.length) row.push(game.wanted)
+  const ages = game.ages?.map((word) => ageWords.indexOf(word)).filter((at) => at >= 0)
+  if (game.wanted?.length || ages?.length) row.push(game.wanted ?? [])
+  if (ages?.length) row.push(ages)
   return row
 }
 
@@ -199,6 +204,8 @@ const decodeGame = (row: GameRow): LibraryGame => {
   if (colors) game.colors = colors
   if (row[15]) game.hash = row[15]
   if (row[28]?.length) game.wanted = row[28]
+  const ages = row[29]?.flatMap((at) => ageWords[at] ?? [])
+  if (ages?.length) game.ages = ages
   if (row[16] & PRIVATE) game.private = true
   if (row[16] & ADULT) game.adult = true
   return game

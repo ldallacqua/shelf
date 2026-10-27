@@ -63,6 +63,7 @@ export const createRefresh = (deps: RecordsDeps) => {
       length: games.length,
       updatedAt: games.igdbUpdatedAt,
       adultsOnly: games.adultsOnly,
+      ages: games.ages,
       videos: games.videos,
     }
     // The games of the accounts that have all of theirs asked about each day.
@@ -98,9 +99,10 @@ export const createRefresh = (deps: RecordsDeps) => {
         !stored ||
         (data.igdbUpdatedAt ?? null) !== stored.updatedAt ||
         !same(data.length, stored.length) ||
-        // Stored before its age ratings were asked for (spec 3.13), or its videos (spec
-        // 7.1): stored again, once.
+        // Stored before its age ratings were asked for (spec 3.13), each board's rating
+        // (spec 5.1), or its videos (spec 7.1): stored again, once.
         stored.adultsOnly === null ||
+        stored.ages === null ||
         stored.videos === null
       )
     })

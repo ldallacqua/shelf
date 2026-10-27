@@ -16,6 +16,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   column is whole from the first screen (row "Filters' column, whole"). Then: only the
   library widens (other pages had gone wide after a click from it), the status row steps aside
   beside the column, and the column is a little wider (row "Library width only").
+- **The age rating filter** (row "Age rating"): `age:esrb-ao`, `age:pegi-18`. The owner makes
+  any shelf of it themself: "dont add for everyone a nsfw filter or shelf". Only the sample
+  set's fixtures have ratings; the stress set's would come with a whole `pnpm fixtures:fetch`.
 - **`pnpm desktop:check` no longer times out on a library page** (row "Desktop check, idle"):
   Chromium's refresh of a cached Trophies prefetch is never reported finished, so the check's
   browsers now have their HTTP cache off. Production was never affected. The browser tests'

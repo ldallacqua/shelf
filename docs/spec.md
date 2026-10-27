@@ -800,6 +800,7 @@ a moment ahead of the browser's. A sync is never said to be in the future.
 | --- | --- | --- |
 | Genre | `genre` | List |
 | Theme | `theme` | List |
+| Age rating | `age` | List: each board's rating, the board first: `esrb-ao`, `esrb-m`, `pegi-18`, `classind-l`. The ESRB, PEGI, CERO, USK, GRAC, ClassInd and ACB, as IGDB records them. |
 | Keyword | `keyword` | List |
 | Game mode | `mode` | List |
 | Player perspective | `perspective` | List |

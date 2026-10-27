@@ -304,6 +304,47 @@ describe('each filter on its own (spec 5.1)', () => {
   })
 })
 
+describe('age rating (spec 5.1)', () => {
+  const erotic = { id: 42, name: 'Erotic', slug: 'erotic' }
+  const rated = testLibrary(
+    [
+      testGame('Adults only', { ages: ['esrb-ao', 'pegi-18'] }),
+      testGame('Mature', { ages: ['esrb-m', 'pegi-18'] }),
+      testGame('Erotic, unrated', { themes: [42] }),
+      testGame('Unrated'),
+    ],
+    { theme: [erotic] },
+  )
+  const ratedIndex = buildIndex(rated)
+  const titles = (text: string) => {
+    const parsed = parseQuery(text)
+    expect(parsed.problems, text).toEqual([])
+    return gamesIn(ratedIndex, evaluate(ratedIndex, parsed.tree)).map((game) => game.title)
+  }
+
+  it('by a board’s rating', () => {
+    expect(titles('age:esrb-ao')).toEqual(['Adults only'])
+    expect(titles('age:pegi-18')).toEqual(['Adults only', 'Mature'])
+    expect(titles('-age:pegi-18')).toEqual(['Erotic, unrated', 'Unrated'])
+  })
+
+  it('joins with other keys in a group, as any list does', () => {
+    expect(titles('theme:erotic OR age:esrb-ao')).toEqual(['Adults only', 'Erotic, unrated'])
+  })
+
+  it('counts each rating the library has, named by its board, board by board, youngest first', () => {
+    expect(facetCounts(ratedIndex, undefined, 'age')).toEqual([
+      { word: 'esrb-m', name: 'ESRB Mature 17+', count: 1 },
+      { word: 'esrb-ao', name: 'ESRB Adults Only 18+', count: 1 },
+      { word: 'pegi-18', name: 'PEGI 18', count: 2 },
+    ])
+  })
+
+  it('points out a rating no board gives', () => {
+    expect(parseQuery('age:esrb-z').problems).not.toEqual([])
+  })
+})
+
 describe('combining them (spec 5.2 and 5.3)', () => {
   it('and, or and not', () => {
     expect(matching('genre:rpg status:completed')).toEqual([POKEMON])

@@ -141,6 +141,17 @@ describe('the library file', () => {
     expect(file.games[1]).toHaveLength(28)
   })
 
+  it('carries each board’s age rating, as positions after the wishlist’s platforms (spec 5.1)', () => {
+    const rated = { ...bare, ages: ['esrb-m', 'pegi-18'] }
+    const wished = { ...rated, status: 'wishlist' as const, wanted: [130] }
+    const file = encodeLibrary({ ...library, games: [rated, wished, bare] })
+    expect(decodeLibrary(file).games).toEqual([rated, wished, bare])
+    // Positions in the list, not words; an empty wishlist's place kept before them.
+    expect(file.games[0]?.[28]).toEqual([])
+    expect(file.games[0]?.[29]).toEqual([expect.any(Number), expect.any(Number)])
+    expect(file.games[2]).toHaveLength(28)
+  })
+
   it('carries that a game is for adults (spec 3.13)', () => {
     const adult = { ...bare, adult: true as const }
     expect(decodeLibrary(encodeLibrary({ ...library, games: [adult, bare] })).games).toEqual([

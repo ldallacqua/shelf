@@ -103,6 +103,19 @@ describe('toGameData', () => {
     expect(toGameData(parse({})).adultsOnly).toBe(false)
   })
 
+  it('keeps what each board that rates games says of it, as filter words (spec 5.1)', () => {
+    const game = toGameData(
+      parse({
+        age_ratings: [
+          { organization: 2, rating_category: { rating: '18' } },
+          { organization: 1, rating_category: { rating: 'M' } },
+        ],
+      }),
+    )
+    expect(game.ages).toEqual(['esrb-m', 'pegi-18'])
+    expect(toGameData(parse({})).ages).toEqual([])
+  })
+
   it('keeps up to six videos by their YouTube ids, with what IGDB calls each (spec 7.1)', () => {
     const videos = toGameData(
       parse({

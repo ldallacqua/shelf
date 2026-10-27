@@ -192,6 +192,19 @@ describe('the daily refresh', () => {
     expect(await refresh()(100, NOW + 1)).toMatchObject({ changed: 0 })
   })
 
+  it('asks once for each board’s rating of a record stored before they were asked for (spec 5.1)', async () => {
+    igdbWith()
+    await db.update(games).set({ ages: null, checkedAt: 0 }).where(eq(games.igdbId, SKYRIM))
+
+    const result = await refresh()(100, NOW)
+
+    expect(result).toMatchObject({ changed: 1, libraries: [sample] })
+    const [row] = await db.select().from(games).where(eq(games.igdbId, SKYRIM))
+    // Skyrim, as IGDB rates it.
+    expect(row?.ages).toEqual(expect.arrayContaining(['esrb-m', 'pegi-18']))
+    expect(await refresh()(100, NOW + 1)).toMatchObject({ changed: 0 })
+  })
+
   it('asks once for the videos of a record stored before they were asked for (spec 7.1)', async () => {
     igdbWith()
     await db.update(games).set({ videos: null, checkedAt: 0 }).where(eq(games.igdbId, SKYRIM))

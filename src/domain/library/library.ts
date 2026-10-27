@@ -65,6 +65,8 @@ export type LibraryGame = {
   private?: true
   /** IGDB's theme Erotic, or the ESRB's Adults Only: hidden while a device asks (spec 3.13). */
   adult?: true
+  /** What each board that rates games says of it, as words in `ageWords` (spec 5.1); absent when none. */
+  ages?: string[]
 }
 
 export type Named = { id: number; name: string; slug: string }
