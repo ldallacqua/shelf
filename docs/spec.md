@@ -695,10 +695,15 @@ status errado ou não tiver dado uma nota ainda ele está desaparecendo. [...] S
 pagina e voltar pro organize seus jogos ai beleza".
 
 - **A page of its own**, `/account/unsorted`, for my unsorted games, reached from each
-  platform's card ("240 games to place", the games that source brought in still unsorted); on
-  my own shelf, from one line under the status row, "Place the 180 games with no status",
-  there whenever any game waits, whatever the filter, and gone when none does; and from the
-  page that sets a new shelf up (4.6). Its intro says what the page is for, in one sentence,
+  platform's card ("240 games to place", the games that source brought in still unsorted);
+  from the header, among my own shelf's links, "Place games" ("Organizar"), with how many
+  wait in a small accent count after it, up to "999+", and no count when none does; and from
+  the page that sets a new shelf up (4.6). The count follows the library as games are placed
+  or synced, on the shelf and on this page. The owner, 27 Oct 2026: "O botão Organizar os
+  jogos sem status não esta bom no lugar que ele esta. Adicione uma rota nova na header nav e
+  quando tiver jogos sem organizar deixe um numerozinho mostrando quantos faltam". The count
+  is after the word, not over it: on a text link, design systems put a count beside the label
+  and keep it to four characters; its words are read out, so it is never only a colored shape. Its intro says what the page is for, in one sentence,
   and nothing of how it behaves, which using it shows (the owner, 24 Oct 2026: "esse texto ta
   explicando demais [...] So explica pra que serve e ponto").
 - **One row per game:** cover, title and year, the platforms of its copies, hours on each
@@ -751,8 +756,8 @@ The owner asked for it on 24 Oct 2026: "precisamos de uma pagina de onboarding. 
 usuário que acabou de criar uma conta vai poder fazer algumas ações. Tipo importar seus games,
 ir na lista e arrumar os jogos que estão errados durante o import". They also asked for
 something that says how many games have no status, but "não quero que vc fique adicionando
-botões a torto e a direito": the line under the status row (4.5) is that, and nothing else
-was added.
+botões a torto e a direito": the line under the status row (4.5) was that, and nothing else
+was added. On 27 Oct 2026 they moved it into the header, as a link with a count (4.5).
 
 - **A page of its own**, `/account/start`, titled "Set up your shelf", where signing up leads.
   An empty shelf leads there too.
@@ -766,10 +771,11 @@ was added.
      bar, and the way to the page for placing them (4.5). Done once none is unsorted. Leaving
      some for another day is fine, and the step says so.
 - **See my shelf** ends the page, its main action once both steps are done.
-- **Nothing else points here:** no badge, no banner, no menu item. What waits has its own
-  place: platforms on the account page, unsorted games in the line under the status row. A
-  badge would never go, since leaving games unsorted is allowed; a banner would push the
-  games down to say what the line says; a tour teaches less than doing (Nielsen Norman Group
+- **Nothing else points here:** no banner, no menu item. What waits has its own place:
+  platforms on the account page, unsorted games in the header's link to placing them, with
+  their count (the owner chose a count on 27 Oct 2026, though leaving games unsorted is
+  allowed, so it may stay a while); a banner would push the games down to say what the link
+  says; a tour teaches less than doing (Nielsen Norman Group
   found that deck-of-cards tutorials did not help people finish tasks, and made the tasks
   seem harder).
 

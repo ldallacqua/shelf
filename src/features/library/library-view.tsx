@@ -72,7 +72,7 @@ import {
 import type { GamePanel as GamePanelType } from '@/features/game-detail/game-panel'
 import { HERO_COVER } from '@/features/game-detail/hero'
 import { morph } from '@/features/game-detail/morph'
-import { signedInAccount, useIsMine } from '@/features/owner/account'
+import { signedInAccount, useIsMine, waitingChanged } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
@@ -83,7 +83,6 @@ import { GhostShelves } from './ghosts'
 import { GhostList, ListView } from './list-view'
 import { markPageLive } from './live'
 import { NothingReady } from './nothing-ready'
-import { PlaceWaiting } from './place-waiting'
 import type { Dimension } from './preferences'
 import { anchorIn2d, ShelfStage } from './shelf-stage'
 import { StatsLine } from './stats-line'
@@ -651,10 +650,15 @@ export function LibraryView({
     : query.q === builtFor.q && !readyOnly
       ? counted.statusCounts
       : undefined
-  // Unsorted stays in the row while the shelf has any, whatever the filter matches. Until the
-  // library arrives, the counts sent with the page are the best word on it.
-  const unsortedCount = statusOnShelf(library, first, 'unsorted')
-  // Someday and Retired likewise, while a game has one (spec 3.12).
+  // On my own shelf, the header's count of the games waiting for a status follows the library
+  // as it changes here (spec 4.5): all of it, whatever this device hides.
+  const waiting = actions && whole ? statusOnShelf(whole, first, 'unsorted') : undefined
+  useEffect(() => {
+    if (waiting !== undefined) waitingChanged(waiting)
+  }, [waiting])
+  // Unsorted, Someday and Retired stay in the row while a game has one (spec 3.12), whatever
+  // the filter matches. Until the library arrives, the counts sent with the page are the best
+  // word on it.
   const onShelf = occasionalStatuses.filter((status) => {
     const count = statusOnShelf(library, first, status)
     return count === undefined ? (counted.statusCounts[status] ?? 0) > 0 : count > 0
@@ -795,12 +799,6 @@ export function LibraryView({
                 )
               }
             />
-            {/*
-             * On my own shelf, while any game waits for a status, one line under the row that counts
-             * them leads to the page for placing them (spec 4.5), whatever the filter. It goes when
-             * the last one is placed.
-             */}
-            {actions && unsortedCount ? <PlaceWaiting count={unsortedCount} /> : null}
           </div>
 
           <Toolbar

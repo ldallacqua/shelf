@@ -18,7 +18,7 @@ import type { Status } from '@/domain/library/values'
 import { Cover } from '@/features/library/cover'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { StatusMark } from '@/features/library/status-mark'
-import { useAccount } from '@/features/owner/account'
+import { useAccount, waitingChanged } from '@/features/owner/account'
 import { SavedRating } from '@/features/owner/fields'
 import { announceChange } from '@/features/owner/library-change'
 import { FindIt } from '@/features/platforms/find-it'
@@ -321,6 +321,12 @@ function PlacingList({ handle }: { handle: string }) {
     })
     return () => abort.abort()
   }, [attempt])
+
+  // The header counts what is left, so it falls as games are placed here.
+  const left = loaded?.tally.unsorted
+  useEffect(() => {
+    if (left !== undefined) waitingChanged(left)
+  }, [left])
 
   useEffect(() => {
     const id = focusNext.current

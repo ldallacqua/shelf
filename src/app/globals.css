@@ -295,6 +295,47 @@ html:has(.library:not([style*='display: none'] .library)) .site-search {
 }
 
 /*
+ * The line across the top while a link's page is on its way (features/shell/navigation-progress.tsx):
+ * it runs most of the way at once and then slows, never quite reaching the end, which it
+ * reaches only when the page opens, and fades. With reduced motion it is there, still, and goes.
+ */
+.navigation-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 70;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 calc(var(--glow) * 8px) var(--accent);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+}
+
+.navigation-progress[data-state='loading'] {
+  opacity: 1;
+  transform: scaleX(0.85);
+  transition:
+    transform 8s cubic-bezier(0.1, 0.6, 0.2, 1),
+    opacity var(--motion-quick);
+}
+
+.navigation-progress[data-state='done'] {
+  opacity: 0;
+  transform: scaleX(1);
+  transition:
+    transform var(--motion-quick) ease-out,
+    opacity var(--motion-base) var(--motion-quick);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navigation-progress[data-state] {
+    transform: scaleX(1);
+    transition: opacity var(--motion-quick);
+  }
+}
+
+/*
  * In Shelf for Windows' window without a bar, Windows' scrollbar would run the window's whole
  * height, beside the close button. Shelf draws its own below the header (features/desktop/frame.ts).
  */

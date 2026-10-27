@@ -12,7 +12,8 @@ import { PlaceGames } from './place-games'
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 
 let who: AccountState
-vi.mock('@/features/owner/account', () => ({ useAccount: () => who }))
+const waitingChanged = vi.hoisted(() => vi.fn())
+vi.mock('@/features/owner/account', () => ({ useAccount: () => who, waitingChanged }))
 
 const notices: Omit<Notice, 'id'>[] = []
 vi.mock('@/features/shell/notices', () => ({
@@ -152,6 +153,8 @@ describe('PlaceGames', () => {
     expect(chip('Hades', 'Playing')).toHaveAttribute('aria-pressed', 'false')
     expect(within(tally()).getByText('2 games left to place.')).toBeInTheDocument()
     expect(within(tally()).getByText('6')).toBeInTheDocument()
+    // The header's count falls with it.
+    expect(waitingChanged).toHaveBeenLastCalledWith(2)
     await waitFor(() =>
       expect(patches()).toEqual([
         { path: '/api/v1/entries/hades', method: 'PATCH', body: { status: 'backlog' } },

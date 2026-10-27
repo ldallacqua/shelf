@@ -6,11 +6,21 @@ import { Suspense } from 'react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 
-import { isCurrent, navItems } from './nav'
-import { useNavHandle, useOwnHandle } from './nav-handle'
+import { isCurrent, navItems, placingItem } from './nav'
+import { useNavHandle, useOwnHandle, useOwnWaiting } from './nav-handle'
+import { WaitingCount } from './waiting-count'
+
+const linkClass = cn(
+  'relative flex items-center rounded-control px-3 text-sm font-medium text-muted',
+  'transition-colors duration-quick ease-settle hover:text-text',
+  'after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-accent after:opacity-0',
+  'after:shadow-[0_0_calc(var(--glow)*12px)_var(--accent)]',
+  'aria-[current=page]:text-text aria-[current=page]:after:opacity-100',
+)
 
 function NavList({ handle, pathname }: { handle?: string; pathname?: string }) {
   const t = useTranslations('Shell')
+  const waiting = useOwnWaiting(handle)
 
   if (!handle) return null
   return (
@@ -20,18 +30,24 @@ function NavList({ handle, pathname }: { handle?: string; pathname?: string }) {
           <Link
             href={item.href(handle)}
             aria-current={isCurrent(item, pathname) ? 'page' : undefined}
-            className={cn(
-              'relative flex items-center rounded-control px-3 text-sm font-medium text-muted',
-              'transition-colors duration-quick ease-settle hover:text-text',
-              'after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-accent after:opacity-0',
-              'after:shadow-[0_0_calc(var(--glow)*12px)_var(--accent)]',
-              'aria-[current=page]:text-text aria-[current=page]:after:opacity-100',
-            )}
+            className={linkClass}
           >
             {t(item.label)}
           </Link>
         </li>
       ))}
+      {waiting === undefined ? null : (
+        <li className="flex">
+          <Link
+            href={placingItem.href}
+            aria-current={isCurrent(placingItem, pathname) ? 'page' : undefined}
+            className={linkClass}
+          >
+            {t(placingItem.label)}
+            <WaitingCount count={waiting} />
+          </Link>
+        </li>
+      )}
     </ul>
   )
 }
@@ -46,8 +62,9 @@ function NavListForAccount() {
 
 /**
  * The header's links into a shelf, with the current page marked by a lit
- * line. Until the address is known, the links to one's own shelf show, with
- * none marked.
+ * line; on one's own, a link on to placing the games that wait for a status,
+ * counting them. Until the address is known, the links to one's own shelf
+ * show, with none marked.
  */
 export function NavLinks() {
   return (

@@ -872,7 +872,8 @@
       grid-template-columns: 19rem minmax(0, 1fr);
       column-gap: 2.5rem;
       align-items: start;
-      padding-top: 1rem;
+      /* As far above the footer, where the column comes to rest at the page's end. */
+      padding-block: 1rem;
     }
 
     .library-head {
