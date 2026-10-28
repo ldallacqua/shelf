@@ -35,6 +35,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
 - **#72, Steam achievements,** is built (architecture section 25, row "Achievements from
   Steam"; spec 7.8; ADR 003's "Built: achievements"). Read in steps after each sync, shown on
   each game's page; the totals #68 needs are `summary()` in `server/services/achievements.ts`.
+  Reading was then batched: Steam counts a hundred games' unlocks in one question, a step
+  reads for 15 seconds, and a game is asked about on its own only for a list not read yet or
+  new unlocks (ADR 003's "Counted first").
   **Still to do, by the owner:** press Sync now on production once and look at a few games'
   achievements, since production is real data and no check here may write to it. Existing
   links need no new sign-in: the next sync, or the daily one, reads them.

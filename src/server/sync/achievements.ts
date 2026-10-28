@@ -47,6 +47,8 @@ export type App = {
   lastPlayedAt: number | null
   set?: SetRow
   progress?: ProgressRow
+  /** The account's unlocks in its set as last read. */
+  unlocked: number
 }
 
 /** What the sync's ladder of due work reads of an app. */
@@ -75,6 +77,10 @@ export const shelvedApps = async (
       lastPlayedAt: sourceItems.lastPlayedAt,
       set: achievementSets,
       progress: achievementProgress,
+      unlocked:
+        sql<number>`(select count(*) from ${achievementUnlocks} where ${achievementUnlocks.userId} = ${userId} and ${achievementUnlocks.setId} = ${achievementSets.id})`.mapWith(
+          Number,
+        ),
     })
     .from(sourceItems)
     .leftJoin(
@@ -126,10 +132,11 @@ const inOne = async <Statement extends Parameters<Db['batch']>[0][number]>(
 
 /**
  * A set's definitions as the provider gave them just now, in English and in
- * the site's other languages: new achievements are added, changed ones
- * brought up to date, and those the provider took out are taken out, with
- * every account's unlock of them. `undefined` is a game with none.
- * Translations that say what the English says are not kept.
+ * the site's other languages, with the unlock rates the English came with:
+ * new achievements are added, changed ones brought up to date, and those
+ * the provider took out are taken out, with every account's unlock of them.
+ * `undefined` is a game with none. Translations that say what the English
+ * says are not kept.
  */
 export const saveDefinitions = async (
   db: Db,
@@ -182,9 +189,11 @@ export const saveDefinitions = async (
       icon: each.icon ?? null,
       iconLocked: each.iconLocked ?? null,
       hidden: each.hidden,
+      rate: each.rate ?? null,
       firstSeenAt: now,
     }
   })
+  const rated = listed.some((each) => each.rate !== undefined)
 
   const statements = [
     db
@@ -197,6 +206,7 @@ export const saveDefinitions = async (
         count: listed.length,
         definedAt: now,
         changedAt: changed ? now : null,
+        ratesAt: rated ? now : null,
         triedAt: now,
         failed: false,
       })
@@ -207,6 +217,7 @@ export const saveDefinitions = async (
           count: listed.length,
           definedAt: now,
           ...(changed ? { changedAt: now } : {}),
+          ...(rated ? { ratesAt: now } : {}),
           triedAt: now,
           failed: false,
         },
@@ -220,12 +231,14 @@ export const saveDefinitions = async (
           set: {
             position: sql`excluded.position`,
             name: sql`excluded.name`,
-            // A hidden one's description, which Steam gives only with an account's progress, stays.
+            // A description given only with an account's progress stays.
             description: sql`coalesce(excluded.description, ${achievements.description})`,
             translations: sql`excluded.translations`,
             icon: sql`excluded.icon`,
             iconLocked: sql`excluded.icon_locked`,
             hidden: sql`excluded.hidden`,
+            // One the provider no longer gives a share for is not known.
+            rate: sql`excluded.rate`,
           },
         }),
     ),
@@ -257,38 +270,10 @@ export const noteDefinitionsFailed = (
     })
     .onConflictDoUpdate({ target: achievementSets.id, set: { triedAt: now, failed: true } })
 
-/** The provider's unlock rates for a set, read just now: one it no longer gives is not known. */
-export const saveRates = async (db: Db, setId: string, rates: Map<string, number>, now: number) => {
-  const statements = [
-    db.update(achievements).set({ rate: null }).where(eq(achievements.setId, setId)),
-    ...chunks([...rates]).map((chunk) =>
-      db
-        .update(achievements)
-        .set({
-          rate: sql`case ${achievements.achievementId} ${sql.join(
-            chunk.map(([id, rate]) => sql`when ${id} then ${rate}`),
-            sql` `,
-          )} end`,
-        })
-        .where(
-          and(
-            eq(achievements.setId, setId),
-            inArray(
-              achievements.achievementId,
-              chunk.map(([id]) => id),
-            ),
-          ),
-        ),
-    ),
-    db.update(achievementSets).set({ ratesAt: now }).where(eq(achievementSets.id, setId)),
-  ]
-  await inOne(db, statements)
-}
-
 /**
- * Descriptions the provider gave with an account's progress, for the
- * achievements its definitions gave none: Steam describes a hidden one only
- * there. One that already has a description keeps it.
+ * Descriptions the provider gave with an account's progress, for any
+ * achievement its definitions gave none. One that already has a
+ * description keeps it.
  */
 export const fillDescriptions = async (
   db: Db,
@@ -400,6 +385,29 @@ export const saveProgress = async (
   ]
   await inOne(db, statements)
 }
+
+/**
+ * The provider counts as many unlocks of a set as the account's last read
+ * found: the same ones, since an unlock is not taken back. Read again just
+ * now, without asking for them one by one.
+ */
+export const progressUnchanged = (
+  db: Db,
+  userId: string,
+  setId: string,
+  read: { externalId: string; copyId: string; playedAt: number | null },
+  now: number,
+) =>
+  db
+    .update(achievementProgress)
+    .set({ copyId: read.copyId, readAt: now, playedAt: read.playedAt, triedAt: now, problem: null })
+    .where(
+      and(
+        eq(achievementProgress.userId, userId),
+        eq(achievementProgress.setId, setId),
+        eq(achievementProgress.externalId, read.externalId),
+      ),
+    )
 
 /** A read of an account's progress that did not work. What the last good read found stays. */
 export const noteProgressFailed = (

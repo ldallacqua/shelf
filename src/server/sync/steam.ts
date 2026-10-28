@@ -4,14 +4,15 @@ import type {
   AchievementLanguage,
   DefinedSet,
   ProgressAnswer,
+  ProgressTotal,
 } from '@/domain/achievements/achievements'
 import {
   definedFromSteam,
   playerFromSteam,
-  ratesFromSteam,
   STEAM_LANGUAGE,
-  steamRatesAnswerSchema,
-  steamSchemaAnswerSchema,
+  steamGameAchievementsSchema,
+  steamTotalsSchema,
+  totalsFromSteam,
 } from '@/domain/achievements/steam'
 import type { Reported, StoreKindOf } from '@/domain/sync/items'
 import {
@@ -34,7 +35,8 @@ import { SourceError } from '@/server/sync/source-error'
  * addresses. It asks the Web API, with Shelf's key, what an account that
  * signed in through Steam owns and what it is called, the store what kind
  * of app each game is, and each game's achievements and the account's
- * progress through them; and it checks that sign-in with Steam itself.
+ * progress through them, many games at a time where Steam allows it; and it
+ * checks that sign-in with Steam itself.
  * Nothing here writes; the sync decides what the answers become.
  */
 
@@ -42,6 +44,14 @@ export const STEAM_API = 'https://api.steampowered.com'
 
 /** Apps asked of the store in one request: the question travels in the address. */
 const APPS_PER_REQUEST = 100
+
+/**
+ * Apps whose achievement totals one request asks for: their ids travel in
+ * the address, which Steam refuses past a few thousand characters.
+ */
+export const TOTALS_PER_REQUEST = 100
+/** Unlocked achievements a game's totals may list: more than any game has, so all are counted. */
+const EVERY_UNLOCK = 10_000
 
 /**
  * How long to wait before asking Steam again, after it answered that it is
@@ -122,22 +132,52 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
     }
   }
 
-  /** A game's achievements in one language, or nothing when it has none. */
-  const achievementSchema = async (
+  /**
+   * A game's achievements in one language, with each one's share of Steam's
+   * players, or nothing when it has none.
+   */
+  const gameAchievements = async (
     appId: string,
     language: AchievementLanguage,
   ): Promise<DefinedSet | undefined> => {
-    const { status, body } = await askStats('/ISteamUserStats/GetSchemaForGame/v2/', {
+    const { status, body } = await askStats('/IPlayerService/GetGameAchievements/v1/', {
       appid: appId,
-      l: STEAM_LANGUAGE[language],
+      language: STEAM_LANGUAGE[language],
     })
-    // A game Steam does not know, or one without stats, answers an empty `game`, or a 400 or 403.
+    // A game Steam does not know, or one without stats, answers an empty `response`, or a 400 or 403.
     if (status === 400 || status === 403) return undefined
-    const parsed = steamSchemaAnswerSchema.safeParse(body)
+    const parsed = steamGameAchievementsSchema.safeParse(body)
     if (status !== 200 || !parsed.success) {
       throw new SourceError('unreachable', 'Steam described achievements in a new shape.')
     }
-    return definedFromSteam(parsed.data)
+    return definedFromSteam(appId, parsed.data)
+  }
+
+  /**
+   * How many achievements each of these games has, and how many of them the
+   * account unlocked, in one request for up to a hundred: no moments, which
+   * only a game's own question gives. Undefined when Steam counted none,
+   * as for a profile whose game details are not public.
+   */
+  const achievementTotals = async (
+    steamId: string,
+    appIds: readonly string[],
+  ): Promise<Map<string, ProgressTotal> | undefined> => {
+    const params: Record<string, string> = {
+      steamid: steamId,
+      language: STEAM_LANGUAGE.en,
+      max_achievements: String(EVERY_UNLOCK),
+    }
+    appIds.slice(0, TOTALS_PER_REQUEST).forEach((id, at) => (params[`appids[${at}]`] = id))
+    const { status, body } = await askStats(
+      '/IPlayerService/GetTopAchievementsForGames/v1/',
+      params,
+    )
+    const parsed = steamTotalsSchema.safeParse(body)
+    if (status !== 200 || !parsed.success) {
+      throw new SourceError('unreachable', `Steam answered achievement totals with ${status}.`)
+    }
+    return totalsFromSteam(parsed.data)
   }
 
   /** The account's progress through a game's achievements. */
@@ -155,21 +195,6 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
       )
     }
     return answer
-  }
-
-  /** How many of Steam's players unlocked each of a game's achievements, by its id. */
-  const unlockRates = async (appId: string): Promise<Map<string, number>> => {
-    const { status, body } = await askStats(
-      '/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/',
-      { gameid: appId },
-    )
-    // A game without achievements answers 403 and nothing.
-    if (status === 403) return new Map()
-    const parsed = steamRatesAnswerSchema.safeParse(body)
-    if (status !== 200 || !parsed.success) {
-      throw new SourceError('unreachable', 'Steam gave unlock rates in a new shape.')
-    }
-    return ratesFromSteam(parsed.data)
   }
 
   /**
@@ -260,9 +285,9 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
     playerName,
     appKinds,
     verifySignIn,
-    achievementSchema,
+    gameAchievements,
+    achievementTotals,
     playerAchievements,
-    unlockRates,
   }
 }
 

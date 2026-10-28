@@ -2,7 +2,7 @@ import { apiAchievementStep } from '@/server/api/platforms'
 import { ownerRead } from '@/server/api/writes'
 import { readMyAchievements } from '@/server/services/achievements'
 
-/** Ten games' achievements a step, a few questions to Steam each: well inside a minute. */
+/** A step reads for a quarter of a minute, then answers: well inside a minute. */
 export const maxDuration = 60
 
 /**

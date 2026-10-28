@@ -19,7 +19,11 @@ import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
 import { readVersion, removeLibrary, updateEntry } from '@/server/library/store'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { MOCK_STEAM } from '@/server/mocks/owner'
-import { createSteamHandlers, newSteamMockState } from '@/server/mocks/steam'
+import {
+  createSteamHandlers,
+  newSteamMockState,
+  type AchievementAnswers,
+} from '@/server/mocks/steam'
 import { loadFixtures } from '@/server/seed/fixtures'
 import { forgetLink, saveLink } from '@/server/sync/memory'
 import { createNintendo } from '@/server/sync/nintendo'
@@ -27,7 +31,7 @@ import { createSteam, STEAM_API } from '@/server/sync/steam'
 import { createTestAccount, createTestDatabase } from '@/test/database'
 import { network } from '@/test/network'
 
-import { createAchievements, READ_PER_STEP } from './achievements'
+import { createAchievements } from './achievements'
 import { createSync } from './sync'
 
 /**
@@ -35,7 +39,14 @@ import { createSync } from './sync'
  * Half-Life 2 with four of six unlocked, one of them at a moment Steam does
  * not know, and a hidden one; Hades II with all three; Outer Wilds with
  * none of three and no unlock rates; every other game with no achievements.
+ * The double counts them for many games at once, as Steam does.
  */
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const fixture = require('../../../fixtures/steam/achievements.json') as Record<
+  string,
+  AchievementAnswers
+>
 
 const api = createIgdbApi(
   createIgdbClient({
@@ -63,7 +74,7 @@ const DAY = 24 * HOUR
 /** As the sync's own tests: after every game the made-up account played. */
 const NOW = (1_760_000_000 + 24 * 86_400) * 1000
 
-const SCHEMA = `${STEAM_API}/ISteamUserStats/GetSchemaForGame/v2/`
+const TOTALS = `${STEAM_API}/IPlayerService/GetTopAchievementsForGames/v1/`
 const PLAYER = `${STEAM_API}/ISteamUserStats/GetPlayerAchievements/v1/`
 
 let db: Db
@@ -118,6 +129,33 @@ const slugOfApp = async (libraryId: string, title: string) => {
   return row!.slug
 }
 
+/** Steam's questions asked since the count was last cleared, of one kind. */
+const times = (question: string) =>
+  steamState.asked.filter((path) => path.includes(question)).length
+
+/** Half-Life 2 played again, as Steam's list of games says at the next sync. */
+const playHalfLife = (at: number) => {
+  const owned = structuredClone(
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('../../../fixtures/steam/owned-games.json'),
+  ) as { response: { games: { appid: number; rtime_last_played: number }[] } }
+  for (const game of owned.response.games) {
+    if (game.appid === 220) game.rtime_last_played = at / 1000
+  }
+  network.use(
+    http.get(`${STEAM_API}/IPlayerService/GetOwnedGames/v1/`, () => HttpResponse.json(owned)),
+  )
+}
+
+/** Half-Life 2's achievements as Steam would list them now, in English and Portuguese. */
+const halfLifeDefined = (
+  change: (listed: AchievementAnswers['definitions'][string]['response']['achievements']) => void,
+) => {
+  const definitions = structuredClone(fixture['220']!.definitions)
+  for (const answer of Object.values(definitions)) change(answer.response.achievements)
+  steamState.achievements = { '220': { definitions } }
+}
+
 const halfLife = async (libraryId: string, language: 'en' | 'pt-BR' = 'en') => {
   const found = await achievements(libraryId).game(await slugOf(libraryId, HALF_LIFE_2), language, {
     mine: true,
@@ -126,16 +164,56 @@ const halfLife = async (libraryId: string, language: 'en' | 'pt-BR' = 'en') => {
 }
 
 describe('reading achievements from Steam', () => {
-  it('reads every game on the shelf in steps of ten, the latest played first', async () => {
+  it('reads every game on the shelf in one step, well inside its time', async () => {
     const me = await synced()
     const steps = await readAll(me)
+    expect(steps).toHaveLength(1)
     const games = steps[0]!.counts.games
-    expect(games).toBeGreaterThan(READ_PER_STEP)
-    expect(steps[0]!.read).toBe(READ_PER_STEP)
-    expect(steps[0]!.remaining).toBe(games - READ_PER_STEP)
-    expect(steps.at(-1)).toMatchObject({ remaining: 0, problem: null })
-    expect(steps.at(-1)!.counts).toEqual({ games, known: games, private: 0 })
-    expect(steps.length).toBe(Math.ceil(games / READ_PER_STEP))
+    expect(steps[0]).toMatchObject({ read: games, remaining: 0, problem: null })
+    expect(steps[0]!.counts).toEqual({ games, known: games, private: 0 })
+  })
+
+  it('goes on in further steps once a step’s time is spent, a few games each at least', async () => {
+    const me = await synced()
+    const slow = createAchievements({ db, steam, stepMs: 0 })
+    const steps = [await slow(me).step('steam', NOW)]
+    while (steps.at(-1)!.remaining > 0 && steps.length < 20) {
+      steps.push(await slow(me).step('steam', NOW))
+    }
+    const games = steps[0]!.counts.games
+    expect(steps[0]!.read).toBeGreaterThan(0)
+    expect(steps[0]!.read + steps[0]!.remaining).toBe(games)
+    expect(steps.length).toBeGreaterThan(1)
+    expect(steps.at(-1)).toMatchObject({
+      remaining: 0,
+      counts: { games, known: games, private: 0 },
+    })
+  })
+
+  it('counts every game’s achievements in one question, and asks about one on its own only for what that cannot tell', async () => {
+    const me = await synced()
+    steamState.asked.length = 0
+    await readAll(me)
+    expect(times('GetTopAchievementsForGames')).toBe(1)
+    // The three games with achievements: their list, in English and in Portuguese.
+    expect(times('GetGameAchievements')).toBe(6)
+    // Outer Wilds has none unlocked, so no moments to ask for.
+    expect(times('GetPlayerAchievements')).toBe(2)
+  })
+
+  it('asks about each game on its own when Steam does not count them', async () => {
+    const me = await synced()
+    network.use(http.get(TOTALS, () => new HttpResponse(null, { status: 500 })))
+    const steps = await readAll(me)
+    const games = steps.at(-1)!.counts.games
+    expect(steps.at(-1)).toMatchObject({
+      remaining: 0,
+      problem: null,
+      counts: { games, known: games, private: 0 },
+    })
+    expect(progressOf(await halfLife(me))).toMatchObject({ earned: 4, total: 6 })
+    const outer = (await achievements(me).game(await slugOfApp(me, 'Outer Wilds'), 'en'))!.sets[0]!
+    expect(progressOf(outer)).toMatchObject({ earned: 0, total: 3 })
   })
 
   it('keeps what Steam said, and only that: no moment for an unlock Steam has none for', async () => {
@@ -158,7 +236,7 @@ describe('reading achievements from Steam', () => {
       id: 'HL2_OUT_THE_WINDOW',
       name: 'Out the Window',
       description: 'Escape the apartment block.',
-      // Steam's older host, moved to the one the page's rules allow.
+      // Steam names a file in the game's folder on its image servers.
       icon: 'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/220/hl2_out_the_window.jpg',
       iconLocked:
         'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/220/hl2_out_the_window_bw.jpg',
@@ -171,7 +249,7 @@ describe('reading achievements from Steam', () => {
     expect(canals.state).toBe('unlocked')
     expect(canals).not.toHaveProperty('unlockedAt')
     expect(byId.get('HL2_EVERY_LAST_ONE')).toMatchObject({ state: 'locked', rate: 2.1 })
-    // Steam describes a hidden one only with an account's progress: kept from there.
+    // Steam describes a hidden one like the others; the page keeps it out of sight.
     expect(byId.get('HL2_BEHIND_THE_LAB')).toMatchObject({
       hidden: true,
       state: 'locked',
@@ -203,7 +281,7 @@ describe('reading achievements from Steam', () => {
     expect(byId.get('HL2_OUT_THE_WINDOW')).not.toHaveProperty('inEnglish')
     expect(byId.get('HL2_BEHIND_THE_LAB')).toMatchObject({
       name: 'Atrás do Laboratório',
-      description: 'Find the room behind the lab.',
+      description: 'Encontre a sala atrás do laboratório.',
     })
   })
 
@@ -234,9 +312,11 @@ describe('reading achievements from Steam', () => {
     expect((await readAll(me, NOW + HOUR))[0]).toMatchObject({ read: 0, remaining: 0 })
     expect(steamState.asked).toEqual([])
 
-    // A week on, the progress of each game with achievements is read again, and comes to the same.
+    // A week on, the progress of each game with achievements is read again, and comes to the
+    // same: Steam counts as many unlocks as before, so none is asked for one by one.
     const again = await readAll(me, NOW + 8 * DAY)
     expect(again[0]!.read).toBe(3)
+    expect(times('GetPlayerAchievements')).toBe(0)
     expect(await rows()).toEqual(before)
     expect(progressOf(await halfLife(me))).toMatchObject({ earned: 4, total: 6 })
   })
@@ -244,22 +324,35 @@ describe('reading achievements from Steam', () => {
   it('reads a game again once it is played, and only that game', async () => {
     const me = await synced()
     await readAll(me)
-    const owned = structuredClone(
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require('../../../fixtures/steam/owned-games.json'),
-    ) as { response: { games: { appid: number; rtime_last_played: number }[] } }
-    for (const game of owned.response.games) {
-      if (game.appid === 220) game.rtime_last_played = NOW / 1000 + 600
-    }
-    network.use(
-      http.get(`${STEAM_API}/IPlayerService/GetOwnedGames/v1/`, () => HttpResponse.json(owned)),
-    )
+    playHalfLife(NOW + 600_000)
     await sync(me).step('steam', { read: true }, NOW + 2 * HOUR)
     const steps = await readAll(me, NOW + 2 * HOUR)
     expect(steps).toHaveLength(1)
     expect(steps[0]).toMatchObject({ read: 1, remaining: 0 })
     // Steam's clock may run ahead of Shelf's: read once, it is not due again.
     expect((await readAll(me, NOW + 2 * HOUR + 1))[0]).toMatchObject({ read: 0 })
+  })
+
+  it('asks for a played game’s unlocks when Steam counts more of them', async () => {
+    const me = await synced()
+    await readAll(me)
+    const player = structuredClone(fixture['220']!.player!)
+    const last = player.playerstats.achievements.find(
+      (each) => each.apiname === 'HL2_EVERY_LAST_ONE',
+    )!
+    Object.assign(last, { achieved: 1, unlocktime: NOW / 1000 + 300 })
+    steamState.achievements = { '220': { player } }
+    playHalfLife(NOW + 600_000)
+    await sync(me).step('steam', { read: true }, NOW + 2 * HOUR)
+    steamState.asked.length = 0
+    expect((await readAll(me, NOW + 2 * HOUR))[0]).toMatchObject({ read: 1, remaining: 0 })
+    expect(times('GetPlayerAchievements')).toBe(1)
+    const set = await halfLife(me)
+    expect(progressOf(set)).toMatchObject({ earned: 5, total: 6 })
+    expect(set.achievements.find((each) => each.id === 'HL2_EVERY_LAST_ONE')).toMatchObject({
+      state: 'unlocked',
+      unlockedAt: NOW + 300_000,
+    })
   })
 
   it('reads Steam again after it is busy, and leaves a failing game for later without losing the rest', async () => {
@@ -300,24 +393,15 @@ describe('reading achievements from Steam', () => {
     const me = await synced()
     await readAll(me)
     // A month on, Steam lists one more, and does not answer for my progress.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const fixture = require('../../../fixtures/steam/achievements.json') as Record<
-      string,
-      { schema: { english: { game: { availableGameStats: { achievements: unknown[] } } } } }
-    >
-    const english = structuredClone(fixture['220']!.schema.english)
-    english.game.availableGameStats.achievements.push({
-      name: 'HL2_NEW_CHAPTER',
-      displayName: 'New Chapter',
-      hidden: 0,
-      description: 'Play the new chapter.',
-    })
+    halfLifeDefined((listed) =>
+      listed.push({
+        internal_name: 'HL2_NEW_CHAPTER',
+        localized_name: 'New Chapter',
+        localized_desc: 'Play the new chapter.',
+        hidden: false,
+      }),
+    )
     network.use(
-      http.get(SCHEMA, ({ request }) =>
-        new URL(request.url).searchParams.get('appid') === '220'
-          ? HttpResponse.json(english)
-          : undefined,
-      ),
       http.get(PLAYER, ({ request }) =>
         new URL(request.url).searchParams.get('appid') === '220'
           ? new HttpResponse(null, { status: 500 })
@@ -332,13 +416,6 @@ describe('reading achievements from Steam', () => {
     expect(progressOf(set)).toEqual({ earned: 4, total: 7, unknown: 1, complete: false })
 
     network.resetHandlers(...createHandlers(loadFixtures()), ...createSteamHandlers(steamState))
-    network.use(
-      http.get(SCHEMA, ({ request }) =>
-        new URL(request.url).searchParams.get('appid') === '220'
-          ? HttpResponse.json(english)
-          : undefined,
-      ),
-    )
     await readAll(me, NOW + 31 * DAY + HOUR)
     const read = await halfLife(me)
     expect(read.problem).toBeUndefined()
@@ -355,21 +432,10 @@ describe('reading achievements from Steam', () => {
   it('takes out an achievement Steam takes out, with my unlock of it', async () => {
     const me = await synced()
     await readAll(me)
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const fixture = require('../../../fixtures/steam/achievements.json') as Record<
-      string,
-      {
-        schema: { english: { game: { availableGameStats: { achievements: { name: string }[] } } } }
-      }
-    >
-    const english = structuredClone(fixture['220']!.schema.english)
-    english.game.availableGameStats.achievements =
-      english.game.availableGameStats.achievements.filter((each) => each.name !== 'HL2_COLLECTOR')
-    network.use(
-      http.get(SCHEMA, ({ request }) =>
-        new URL(request.url).searchParams.get('appid') === '220'
-          ? HttpResponse.json(english)
-          : undefined,
+    halfLifeDefined((listed) =>
+      listed.splice(
+        listed.findIndex((each) => each.internal_name === 'HL2_COLLECTOR'),
+        1,
       ),
     )
     await readAll(me, NOW + 31 * DAY)
@@ -400,11 +466,9 @@ describe('reading achievements from Steam', () => {
     const other = await synced('second')
     steamState.asked.length = 0
     await readAll(other)
-    expect(steamState.asked.filter((path) => path.includes('GetSchemaForGame'))).toEqual([])
-    // Each account's own progress is still its own to read: one question a game with achievements.
-    expect(steamState.asked.filter((path) => path.includes('GetPlayerAchievements'))).toHaveLength(
-      3,
-    )
+    expect(times('GetGameAchievements')).toBe(0)
+    // Each account's own progress is still its own to read: one question a game with unlocks.
+    expect(times('GetPlayerAchievements')).toBe(2)
     expect(progressOf(await halfLife(other))).toMatchObject({ earned: 4, total: 6 })
   })
 })

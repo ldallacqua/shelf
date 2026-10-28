@@ -2,9 +2,10 @@ import type { ProgressProblem } from '@/domain/achievements/achievements'
 
 /**
  * When a set and an account's progress through it are read again (issue
- * 72). Definitions and unlock rates are the same for everyone and change
- * seldom, so they are read again after weeks; progress changes only when
- * the game is played, so it is read again after a play, and after a week
+ * 72). Definitions, with their unlock rates, are the same for everyone and
+ * change seldom, so they are read again after a month, or as soon as the
+ * provider counts another number of them; progress changes only when the
+ * game is played, so it is read again after a play, and after a week
  * besides, for unlocks the provider learned late. A read that failed waits
  * an hour, so a sync that goes on step after step does not ask again and
  * again.
@@ -13,10 +14,8 @@ import type { ProgressProblem } from '@/domain/achievements/achievements'
 const DAY = 24 * 60 * 60 * 1000
 
 export const READ_AGAIN = {
-  /** A set's definitions: added achievements are found this long after at the latest. */
+  /** A set's definitions and their unlock rates, read again this long after. */
   definitions: 30 * DAY,
-  /** The provider's unlock rates, read with the set's next progress read after this. */
-  rates: 7 * DAY,
   /** An account's progress through a set not played since. */
   progress: 7 * DAY,
   /** Anything whose last read failed. */
@@ -30,7 +29,6 @@ export type KnownSet = {
   definedAt: number | null
   /** When an achievement was last added to it or taken out. */
   changedAt: number | null
-  ratesAt: number | null
   triedAt: number | null
   failed: boolean
 }
@@ -56,7 +54,7 @@ export type KnownApp = {
   progress?: KnownProgress
 }
 
-export type DueWork = { definitions: boolean; rates: boolean; progress: boolean }
+export type DueWork = { definitions: boolean; progress: boolean }
 
 const waited = (triedAt: number | null, now: number) =>
   triedAt === null || now - triedAt >= READ_AGAIN.failed
@@ -80,11 +78,7 @@ export const dueWork = (app: KnownApp, externalId: string, now: number): DueWork
     now - readAt > READ_AGAIN.progress
   const progressDue =
     has && stale && (!theirs || theirs.problem === null || waited(theirs.triedAt, now))
-  const rates =
-    (set?.count ?? 1) > 0 &&
-    (definitions || progressDue) &&
-    (set?.ratesAt == null || now - set.ratesAt > READ_AGAIN.rates)
-  return { definitions, rates, progress: progressDue }
+  return { definitions, progress: progressDue }
 }
 
 export const isDue = (work: DueWork): boolean => work.definitions || work.progress

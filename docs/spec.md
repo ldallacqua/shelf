@@ -636,11 +636,13 @@ owners do not allow, beyond Valve's own sign-in button.
    "No longer on Steam", for me to decide. **Disconnect** forgets what Steam listed and my
    answers about it; the games stay, with their hours, and so do their achievements, as they
    were when last read.
-5. **Achievements** are read once the games are in, ten games a step, the latest played
-   first: "Reading achievements: 120 of 480…", while the games are already on the shelf. The
-   card then says "Achievements read for 480 of 480 games". A game's achievements are read
-   again after it is played, and after a week; Steam's definitions after a month, so ones
-   Steam adds are found. Each game's page shows them (section 7.8).
+5. **Achievements** are read once the games are in, the latest played first, while the games
+   are already on the shelf: "Reading achievements: 120 of 480…". Steam counts a hundred
+   games' unlocks in one question, so a game is asked about on its own only for a list not
+   read yet or new unlocks; a large library takes a minute or two the first time, and moments
+   after. The card then says "Achievements read for 480 of 480 games". A game's achievements
+   are read again after it is played, and after a week; Steam's definitions after a month, or
+   as soon as Steam counts another number of them. Each game's page shows them (section 7.8).
 
 | Problem | Behavior |
 | --- | --- |
