@@ -54,9 +54,10 @@ export const smartShelfHref = (handle: string, slug: string) => ({
   params: { handle, slug },
 })
 
-export const trophiesHref = (handle: string) => ({
+export const trophiesHref = (handle: string, query?: Query) => ({
   pathname: '/u/[handle]/trophies' as const,
   params: { handle },
+  ...(query && Object.keys(query).length > 0 ? { query } : {}),
 })
 
 /** The handle of the shelf an address is in, `/u/{handle}/…`, without the language. */

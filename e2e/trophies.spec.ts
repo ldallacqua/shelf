@@ -9,17 +9,36 @@ test.describe('the trophy wall', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trophies')
 
     // The wall streams in behind its skeleton on a shelf's first visit.
-    await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible()
-    const years = await page.getByRole('heading', { level: 2 }).allTextContents()
+    const headings = page.locator('main .trophy-year > h2')
+    await expect(headings.first()).toBeVisible()
+    const years = await headings.allTextContents()
     const numbers = years.map((year) => Number(year.slice(0, 4)))
     expect(numbers.length).toBeGreaterThan(1)
     expect(numbers).toEqual([...numbers].sort((a, b) => b - a))
 
     // As many trophies as the stats say were finished.
     const stats = page.getByRole('group', { name: 'Trophy stats' })
-    const finished = stats.getByText('Finished', { exact: true }).locator('xpath=..')
+    const finished = stats
+      .getByText('Games finished', { exact: true })
+      .locator('xpath=following-sibling::p[1]')
     const trophies = await page.locator('main li.trophy').count()
     await expect(finished).toHaveText(new RegExp(`${trophies}$`))
+  })
+
+  test('is of one year once a year is chosen, and of all of them again (issue 68)', async ({
+    page,
+  }) => {
+    await page.goto(`/en${SHELF}/trophies`)
+    const period = page.getByRole('list', { name: 'Period' })
+    const year = period.getByRole('link').nth(1)
+    const chosen = (await year.textContent())!.trim()
+    await year.click()
+    await expect(page).toHaveURL(new RegExp(`year=${chosen}`))
+    await expect(page.getByText(`Finished in ${chosen}`, { exact: true })).toBeVisible()
+    const headings = await page.locator('main .trophy-year > h2').allTextContents()
+    expect(headings.map((heading) => heading.slice(0, 4))).toEqual([chosen])
+    await period.getByRole('link', { name: 'All time' }).click()
+    await expect(page.getByText('Games finished', { exact: true })).toBeVisible()
   })
 
   test('a trophy leads to its game', async ({ page }) => {
@@ -46,6 +65,8 @@ test.describe('the trophy wall', () => {
   test('reads in Portuguese', async ({ page }) => {
     await page.goto(`/pt-BR${SHELF}/trophies`)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Troféus')
-    await expect(page.getByRole('group', { name: 'Números dos troféus' })).toContainText('Zerados')
+    await expect(page.getByRole('group', { name: 'Números dos troféus' })).toContainText(
+      'Jogos zerados',
+    )
   })
 })

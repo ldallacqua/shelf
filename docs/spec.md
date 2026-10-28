@@ -378,20 +378,46 @@ The light is a small lamp above the cover throwing the game's own color down the
 cover stands on a short plinth. A trophy opens the game's page. A game finished on a day I
 never recorded stands last, under "Day not recorded".
 
-**Stats** at the top of the trophy wall:
+**Above the wall, its figures** (the first phase of issue 68, built 28 Oct 2026). The owner
+asked for the trophy page to become "a personal gaming museum", after Steam Replay and
+PlayStation Wrap-Up: "Every statistic should tell a story, and every story should let users
+explore the games behind it."
 
-- Games finished, in total and this year
-- Hours played, across the whole library
-- Average of my ratings, every game I rated, finished or not, to a tenth
-- Share of started games that I finished: started is playing, finished or dropped; a retired
-  game is out of it, since it had no end to reach (3.12)
-- Longest game: the finished game I played longest, with its hours
-- Most-played platform: by the hours on each game's main copy, since a game's hours are not
-  kept per copy
+- **Which trophies.** One row above everything it scopes: All time, then each year something
+  was finished in, newest first; and a filter in the library's own language (`genre:rpg
+  owned:switch`), with Clear. Both are in the address (`?year=2025&q=genre:rpg`), so a page of
+  one year or one filter can be shared, and both work before the page is alive. A year is the
+  games finished in it; a filter is the games it matches, as in the library, `keyword:` aside
+  (keywords are not in the library file). Every figure below is of the same games. A year or
+  filter that leaves nothing says "No finished game matches", with the way back to all time.
+- **The headline.** Games finished, large, and under it how many this year and the share of
+  started games finished. Beside it: hours played, across the whole library (of one year: the
+  hours on its games), the average of my ratings (of every game I rated, or of the year's
+  games), the median hours of a finished game, games dropped, the months in a row with a game
+  finished (still going while this month has none yet) with the best run, the finished game I
+  played longest, and the platform I played most on, by the hours on each game's main copy.
+- **Year by year.** A column for each year from the first finish to this one, a year with none
+  as an empty column. Each leads to that year's page; on a year's page, that year's column is in
+  the accent and the others are quiet, and it leads back to all time. The best year and this
+  year carry their numbers.
+- **Month by month.** Of all time, a row of twelve months for every year, darker for more; of
+  one year, its twelve months as columns. Each month leads to the library filtered to the games
+  finished in it (`completed:2025-08`).
+- **What is finished.** The eight genres, themes and platforms with the most games finished,
+  most first, each with the share of its started games finished once five were started. A
+  platform counts every game owned on it, as `owned:` does. Each leads to those games in the
+  library.
+- **Records.** The first finish recorded, the quickest finish, the game played longest of all
+  when that is not the longest finished, the best rated finish, the oldest game finished, the
+  best year and month, and the longest run of months. A month or a year leads to its games.
+- **Every chart has its table,** folded under it, and a tooltip on hover and on focus; nothing
+  is said by color alone. They are drawn without a script.
 
-What cannot be known yet (no ratings, nothing started, no hours) is left out, not shown as
-nothing. A public wall is listed for search engines once it has a trophy; an empty one is not.
-A private shelf's wall is drawn only in its own browser (ADR 004).
+Started is playing, finished or dropped; a retired game is out of it, since it had no end to
+reach (3.12). What cannot be known yet (no ratings, nothing started, no hours, one year only)
+is left out, not shown as nothing. Achievements are not among the figures yet: they are the
+issue's third phase. A public wall is listed for search engines once it has a trophy; an empty
+one is not. A private shelf's wall is drawn only in its own browser (ADR 004).
 
 **In the library**, the stats line (games, finished, hours) is always visible and follows the
 current filter. Numbers count up once when first seen, and are still under reduced motion.

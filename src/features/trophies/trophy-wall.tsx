@@ -1,15 +1,15 @@
 import { StarIcon } from 'lucide-react'
-import { useFormatter, useLocale, useTranslations } from 'next-intl'
-import { type CSSProperties, type ReactNode, useId } from 'react'
+import { useFormatter, useTranslations } from 'next-intl'
+import { type CSSProperties, useId } from 'react'
 
 import { ledFrom } from '@/domain/color/palette'
 import type { Trophy, TrophyStats, TrophyWall } from '@/domain/library/trophies'
 import { Cover } from '@/features/library/cover'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
-import { SettlingNumber } from '@/features/library/settling-number'
-import { gameHref } from '@/features/library/shelf-address'
+import { gameHref, trophiesHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 
+import { Dashboard, TrophyFilters } from './dashboard'
 import './trophies.css'
 
 /** How wide a trophy's cover is drawn, for the browser to choose a file by. */
@@ -17,98 +17,6 @@ const SIZES = '(min-width: 64rem) 176px, (min-width: 40rem) 152px, 40vw'
 
 /** The covers fetched at once: about the first screen's worth. */
 const EAGER = 6
-
-function Figure({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <dt className="readout text-[0.625rem] text-muted">{label}</dt>
-      <dd className="mt-1.5">{children}</dd>
-    </div>
-  )
-}
-
-/** A whole number that counts up into place once, when first seen. The true figure is what is read out. */
-function Counted({ value }: { value: number }) {
-  const format = useFormatter()
-  const locale = useLocale()
-  const text = format.number(value)
-  return (
-    <>
-      <span className="sr-only">{text}</span>
-      <SettlingNumber
-        value={value}
-        text={text}
-        locale={locale}
-        className="title text-3xl tabular-nums sm:text-4xl"
-      />
-    </>
-  )
-}
-
-/** The stats at the top of the wall (spec 3.9). What cannot be known yet is left out, not shown as nothing. */
-function Stats({ stats, handle }: { stats: TrophyStats; handle: string }) {
-  const t = useTranslations('Trophies.stats')
-  const format = useFormatter()
-  return (
-    <div role="group" aria-label={t('label')} className="mt-8 border-y border-line py-6">
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
-        <Figure label={t('finished')}>
-          <Counted value={stats.finished} />
-        </Figure>
-        <Figure label={t('thisYear', { year: String(stats.year) })}>
-          <Counted value={stats.thisYear} />
-        </Figure>
-        <Figure label={t('hours')}>
-          <Counted value={stats.hours} />
-        </Figure>
-        {stats.averageRating === undefined ? null : (
-          <Figure label={t('rating')}>
-            <span className="title text-3xl sm:text-4xl">
-              {/* An average keeps its tenth: 7.8, where one rating is shown in half steps. */}
-              {format.number(stats.averageRating / 10, { maximumFractionDigits: 1 })}
-            </span>
-            <span className="ml-1.5 readout text-[0.625rem] text-muted">{t('outOfTen')}</span>
-          </Figure>
-        )}
-        {stats.finishedShare === undefined ? null : (
-          <Figure label={t('share')}>
-            <span className="title text-xl sm:text-2xl">
-              {t('shareValue', {
-                share: format.number(stats.finishedShare, {
-                  style: 'percent',
-                  maximumFractionDigits: 0,
-                }),
-              })}
-            </span>
-          </Figure>
-        )}
-        {stats.longest ? (
-          <Figure label={t('longest')}>
-            <Link
-              href={gameHref(handle, stats.longest.slug)}
-              className="line-clamp-2 title text-xl text-balance underline-offset-4 hover:underline sm:text-2xl"
-            >
-              {stats.longest.title}
-            </Link>
-            <span className="readout text-[0.625rem] text-muted">
-              {t('hoursOf', { count: hoursOf(stats.longest.minutes) })}
-            </span>
-          </Figure>
-        ) : null}
-        {stats.platform ? (
-          <Figure label={t('platform')}>
-            <span className="line-clamp-2 title text-xl text-balance sm:text-2xl">
-              {stats.platform.name}
-            </span>
-            <span className="readout text-[0.625rem] text-muted">
-              {t('hoursOf', { count: hoursOf(stats.platform.minutes) })}
-            </span>
-          </Figure>
-        ) : null}
-      </dl>
-    </div>
-  )
-}
 
 /** One finished game, face-out under its own light: its cover, title, the day, the hours, my rating. */
 function TrophyCase({ trophy, handle, eager }: { trophy: Trophy; handle: string; eager: boolean }) {
@@ -204,12 +112,44 @@ function Year({
   )
 }
 
+/** The figures, and above them which trophies they are of. */
+function Figures({ stats, handle, q }: { stats: TrophyStats; handle: string; q?: string }) {
+  return (
+    <>
+      <TrophyFilters stats={stats} handle={handle} q={q} />
+      <Dashboard stats={stats} handle={handle} q={q} />
+    </>
+  )
+}
+
+/** A year or a filter that leaves nothing: said, with the way back to every trophy. */
+function NoneMatch({ handle }: { handle: string }) {
+  const t = useTranslations('Trophies.filters')
+  return (
+    <p className="mt-10 text-pretty text-muted">
+      {t('none')}{' '}
+      <Link href={trophiesHref(handle)} className="text-text underline underline-offset-4">
+        {t('allTime')}
+      </Link>
+    </p>
+  )
+}
+
 /**
- * The trophy wall (spec 3.9): the stats, then every finished game, face-out,
- * each under its own light, by the year it was finished. Drawn on the server
- * for a public shelf, and in its own browser for a private one.
+ * The trophy page (spec 3.9, issue 68): which trophies, the figures, then
+ * every finished game, face-out, each under its own light, by the year it was
+ * finished. Drawn on the server for a public shelf, and in its own browser for
+ * a private one. `q` is the filter the wall was worked out with.
  */
-export function TrophyWallView({ wall, handle }: { wall: TrophyWall; handle: string }) {
+export function TrophyWallView({
+  wall,
+  handle,
+  q,
+}: {
+  wall: TrophyWall
+  handle: string
+  q?: string
+}) {
   const t = useTranslations('Trophies')
   // How many trophies stand before each year's, for the first screen's covers to come first.
   const before = wall.years.map((_, index) =>
@@ -222,15 +162,16 @@ export function TrophyWallView({ wall, handle }: { wall: TrophyWall; handle: str
         // Both, and CSS shows the one this device's choice asks for (spec 3.13), from the first paint.
         <>
           <div data-when-adult="shown">
-            <Stats stats={wall.stats} handle={handle} />
+            <Figures stats={wall.stats} handle={handle} q={q} />
           </div>
           <div data-when-adult="hidden">
-            <Stats stats={wall.hidden} handle={handle} />
+            <Figures stats={wall.hidden} handle={handle} q={q} />
           </div>
         </>
       ) : (
-        <Stats stats={wall.stats} handle={handle} />
+        <Figures stats={wall.stats} handle={handle} q={q} />
       )}
+      {wall.years.length === 0 ? <NoneMatch handle={handle} /> : null}
       {wall.years.map(({ year, trophies }, index) => (
         <Year
           key={year ?? 'undated'}

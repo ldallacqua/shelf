@@ -48,7 +48,13 @@ The owner: "look at shelf issues and start by the highest priority items". The i
 - **Hiding adult games is on the account page now,** a switch after Experimental views, as the
   owner asked (architecture section 25, row "Adult games in settings"). The library's button and
   `H` are gone.
-- **Next, the P1:** #68, the trophy page, on `summary()` and the domain's `summarize`.
+- **#68's first phase is built** (architecture section 25, row "Trophy page, phase 1"; spec 3.9):
+  the headline, year by year, month by month, what is finished, records, and a year and a
+  filter in the address. Phases 2 to 4 are still the issue's: taste and ratings, franchises,
+  the timeline, insights; achievements (on `summary()` and the domain's `summarize`); the
+  backlog.
+- **Next:** the game page's achievements list is too long before its Show all (the owner, 28
+  Oct 2026); then #68's next phases.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
   `pnpm dev` or a production build sees it.

@@ -1,7 +1,11 @@
 import type { Library, LibraryGame } from '@/domain/library/library'
 import { sortByTitle } from '@/domain/library/sort'
-import { libraryStats } from '@/domain/library/stats'
-import type { Status } from '@/domain/library/values'
+import { buildIndex, evaluate, gamesIn } from '@/domain/query/evaluate'
+import { parseQuery } from '@/domain/query/parse'
+import { statsOf, type TrophyStats } from '@/domain/library/trophy-stats'
+import type { Day } from '@/domain/library/values'
+
+export type { TrophyStats } from '@/domain/library/trophy-stats'
 
 /** What a trophy shows (spec 3.9): the cover under its own light, the title, the day, the hours, my rating. */
 export type Trophy = Pick<
@@ -21,36 +25,12 @@ export type Trophy = Pick<
 /** The games finished in one year; without a year, the ones whose day was never recorded. */
 export type TrophyYear = { year?: number; trophies: Trophy[] }
 
-export type TrophyStats = {
-  finished: number
-  /** Finished in `year`. */
-  thisYear: number
-  /** The year it was when the wall was worked out. */
-  year: number
-  /** Whole hours played, across the whole library. */
-  hours: number
-  /** Of every rating given, finished or not, out of 100. */
-  averageRating?: number
-  /** Of the games started, how many were finished, from 0 to 1. */
-  finishedShare?: number
-  longest?: { slug: string; title: string; minutes: number }
-  /** By the hours on each game's main copy: the library does not split a game's hours by copy. */
-  platform?: { id: number; name: string; minutes: number }
-}
-
 export type TrophyWall = {
   stats: TrophyStats
   years: TrophyYear[]
   /** When the library has adult games: the stats without them, for a device that hides them (spec 3.13). */
   hidden?: TrophyStats
 }
-
-/**
- * Begun, whether or not finished: backlog, someday and wishlist games are not.
- * Nor is a retired one: it had no end to reach, so it neither raises nor
- * lowers the share finished (spec 3.12).
- */
-const STARTED: ReadonlySet<Status> = new Set(['playing', 'completed', 'dropped'])
 
 const trophyOf = ({
   slug,
@@ -76,46 +56,27 @@ const trophyOf = ({
   ...(adult ? { adult } : {}),
 })
 
-const statsOf = (library: Library, finished: readonly LibraryGame[], year: number): TrophyStats => {
-  const { hours } = libraryStats(library.games)
-  const ratings = library.games.flatMap((game) => (game.rating === undefined ? [] : [game.rating]))
-  const started = library.games.filter((game) => STARTED.has(game.status)).length
+/** Which games a wall is of, and the day it is worked out on. */
+export type WallOptions = {
+  /** Only the games finished in this year. */
+  scope?: number
+  /** Only the games this filter matches, in the library's filter language (issue 68). */
+  q?: string
+  /** Today, for the months in a row with a game finished. */
+  today?: Day
+}
 
-  let longest: TrophyStats['longest']
-  for (const game of finished) {
-    if (game.minutes > (longest?.minutes ?? 0)) {
-      longest = { slug: game.slug, title: game.title, minutes: game.minutes }
-    }
-  }
-
-  const byPlatform = new Map<number, number>()
-  for (const game of library.games) {
-    const main = game.copies[0]
-    if (main && game.minutes > 0) {
-      byPlatform.set(main.platform, (byPlatform.get(main.platform) ?? 0) + game.minutes)
-    }
-  }
-  let platform: TrophyStats['platform']
-  for (const [id, minutes] of byPlatform) {
-    const named = library.names.platform.find((each) => each.id === id)
-    if (named && minutes > (platform?.minutes ?? 0)) {
-      platform = { id, name: named.name, minutes }
-    }
-  }
-
-  return {
-    finished: finished.length,
-    thisYear: finished.filter((game) => game.completedOn?.startsWith(`${year}-`)).length,
-    year,
-    hours,
-    averageRating:
-      ratings.length > 0
-        ? ratings.reduce((sum, each) => sum + each, 0) / ratings.length
-        : undefined,
-    finishedShare: started > 0 ? finished.length / started : undefined,
-    longest,
-    platform,
-  }
+/**
+ * The games a filter matches, as a library of their own; the whole library
+ * without one. A part of the filter that cannot be understood is left out,
+ * as in the library. Keywords are not in the library file, so `keyword:`
+ * matches nothing here.
+ */
+export const filterLibrary = (library: Library, q: string | undefined): Library => {
+  const { tree } = parseQuery(q?.trim() ?? '')
+  if (!tree) return library
+  const index = buildIndex(library)
+  return { ...library, games: gamesIn(index, evaluate(index, tree)) }
 }
 
 /**
@@ -123,7 +84,13 @@ const statsOf = (library: Library, finished: readonly LibraryGame[], year: numbe
  * was finished, newest first, and the stats above it. `year` is this year,
  * passed in so the same library always makes the same wall.
  */
-export const trophyWall = (library: Library, year: number, locale = 'en'): TrophyWall => {
+export const trophyWall = (
+  library: Library,
+  year: number,
+  locale = 'en',
+  options: WallOptions = {},
+): TrophyWall => {
+  library = filterLibrary(library, options.q)
   // Title order first, so games finished on the same day stay in it.
   const finished = sortByTitle(
     library.games.filter((game) => game.status === 'completed'),
@@ -143,15 +110,21 @@ export const trophyWall = (library: Library, year: number, locale = 'en'): Troph
     else years.push({ year: finishedIn, trophies: [trophyOf(game)] })
   }
   const undated = finished.filter((game) => game.completedOn === undefined)
-  if (undated.length > 0) years.push({ trophies: undated.map(trophyOf) })
+  if (undated.length > 0 && options.scope === undefined)
+    years.push({ trophies: undated.map(trophyOf) })
 
-  const wall: TrophyWall = { stats: statsOf(library, finished, year), years }
+  const wall: TrophyWall = {
+    stats: statsOf(library, finished, year, options),
+    years:
+      options.scope === undefined ? years : years.filter((each) => each.year === options.scope),
+  }
   if (library.games.some((game) => game.adult)) {
     const games = library.games.filter((game) => !game.adult)
     wall.hidden = statsOf(
       { ...library, games },
       finished.filter((game) => !game.adult),
       year,
+      options,
     )
   }
   return wall

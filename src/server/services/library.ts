@@ -136,11 +136,20 @@ export const getLibrary = async (libraryId: string): Promise<Library> => {
  * and worked out again once a day besides, so its "this year" turns with the
  * calendar on a shelf nobody touches.
  */
-export const getTrophyWall = async (libraryId: string): Promise<TrophyWall> => {
+export const getTrophyWall = async (
+  libraryId: string,
+  scope?: number,
+  q?: string,
+): Promise<TrophyWall> => {
   'use cache'
   cacheTag(libraryTag(libraryId))
   cacheLife('days')
-  return trophyWall(await getLibrary(libraryId), new Date().getUTCFullYear())
+  const today = new Date().toISOString().slice(0, 10)
+  return trophyWall(await getLibrary(libraryId), new Date().getUTCFullYear(), 'en', {
+    scope,
+    q,
+    today,
+  })
 }
 
 /** A private library whole, for its own account only, read fresh and kept nowhere. */

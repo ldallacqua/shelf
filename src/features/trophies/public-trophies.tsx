@@ -2,6 +2,7 @@
 
 import { lazy, Suspense, type ReactNode } from 'react'
 
+import type { WallOptions } from '@/domain/library/trophies'
 import { useIsMine } from '@/features/owner/account'
 
 const OwnTrophies = lazy(() =>
@@ -14,12 +15,23 @@ const OwnTrophies = lazy(() =>
  * code is fetched only for it; until then, and when none of them is
  * finished, the server's wall stands.
  */
-export function PublicTrophies({ handle, children }: { handle: string; children: ReactNode }) {
+export function PublicTrophies({
+  handle,
+  which,
+  children,
+}: {
+  handle: string
+  /** Which trophies the address asks for. */
+  which: Pick<WallOptions, 'scope' | 'q'>
+  children: ReactNode
+}) {
   const mine = useIsMine(handle)
   if (!mine) return children
   return (
     <Suspense fallback={children}>
-      <OwnTrophies handle={handle}>{children}</OwnTrophies>
+      <OwnTrophies handle={handle} which={which}>
+        {children}
+      </OwnTrophies>
     </Suspense>
   )
 }
