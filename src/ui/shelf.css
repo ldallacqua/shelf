@@ -662,8 +662,12 @@
       visibility: hidden;
     }
 
-    /* Held by its own heading, so it stays inside its shelf as the shelves page sideways. */
-    header:has(> .fold-toggle) {
+    /*
+     * Held by its own heading, so it stays inside its shelf as the shelves page sideways.
+     * No weight of its own: the wall's label is pinned, which holds the toggle as well,
+     * and made relative, it kept its `top` and stood 3.5rem down, over its covers.
+     */
+    :where(header:has(> .fold-toggle)) {
       position: relative;
     }
   }
@@ -678,6 +682,14 @@
    * for every shelf, and a dozen blur layers on one page is a dozen surfaces
    * to redraw on every scroll. The Linux build of WebKit cannot paint that
    * many at all; its page stops answering.
+   *
+   * That band shows only while the label is pinned (issue 66). At rest the
+   * wall behind it is lit and grained, and a flat band of its color read as a
+   * darker strip, where the shelf's and the list's headings sit on the wall
+   * itself. So the band comes in over the first 1.5rem of scroll after the
+   * shelf's top passes under the top bar, the moment its covers start to go
+   * beneath. Where an animation cannot follow the scroll, the band stays, so
+   * no cover shows through a pinned label.
    */
   .wall-label {
     position: sticky;
@@ -689,6 +701,27 @@
     margin-inline: -0.25rem;
     padding: 0.5rem 0.25rem;
     background: color-mix(in srgb, var(--wall) 94%, transparent);
+  }
+
+  @supports (animation-timeline: view()) {
+    /* The label's shelf, seen from under the top bar. */
+    :has(> .wall-label) {
+      view-timeline: --wall-shelf block;
+      view-timeline-inset: 3.5rem 0;
+    }
+
+    .wall-label {
+      background: transparent;
+      animation: wall-label-pinned linear forwards;
+      animation-timeline: --wall-shelf;
+      animation-range: exit-crossing 0% exit-crossing 1.5rem;
+    }
+  }
+
+  @keyframes wall-label-pinned {
+    to {
+      background-color: color-mix(in srgb, var(--wall) 94%, transparent);
+    }
   }
 
   .wall-grid {

@@ -28,9 +28,12 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   (architecture section 25, row "Experimental views"). Every device now starts in 2D with
   covers. The browser tests that use 3D or compact store the setting on first (`e2e/fixtures.ts`);
   they have not been run, as no Playwright runs until the MVP.
-- **Next, the P1s:** #66 (the wall's and the trophies' group headings sit on a darker band), #72
-  (Steam achievements, which #68, the trophy page, and the Xbox and PlayStation tickets build
-  on), then #68.
+- **#66, the wall's and the trophies' labels on a darker band,** is fixed (architecture section
+  25, row "Wall labels, banded only when pinned"). The band shows only while a label is pinned,
+  and a phone's wall labels no longer stand on their first row of covers. Its browser test, in
+  `e2e/library.spec.ts`, has not been run.
+- **Next, the P1s:** #72 (Steam achievements, which #68, the trophy page, and the Xbox and
+  PlayStation tickets build on), then #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
   `pnpm dev` or a production build sees it.
