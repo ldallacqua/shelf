@@ -1,14 +1,23 @@
 import { sql } from 'drizzle-orm'
 import {
   check,
+  foreignKey,
   index,
   integer,
   primaryKey,
+  real,
   sqliteTable,
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core'
 
+import {
+  achievementProviders,
+  progressProblems,
+  type AchievementLanguage,
+  type AchievementProvider,
+  type ProgressProblem,
+} from '@/domain/achievements/achievements'
 import type { Palette } from '@/domain/color/palette'
 import type {
   GameArtwork,
@@ -484,6 +493,139 @@ export const sourceItems = sqliteTable(
       'source_items_kind',
       sql`${table.kind} is null or ${table.kind} in (${oneOf(storeKinds)})`,
     ),
+  ],
+)
+
+/**
+ * A provider's achievements for one of its games (issue 72): a Steam app's
+ * set, shared by every account that has the game, read once for all of
+ * them. Its id is the provider's and the provider's own id for the game
+ * (`steam:220`), so a set is never another provider's, nor another game's.
+ */
+export const achievementSets = sqliteTable(
+  'achievement_sets',
+  {
+    id: text().primaryKey(),
+    provider: text().$type<AchievementProvider>().notNull(),
+    /** The provider's id for the game: a Steam app id. */
+    providerSetId: text().notNull(),
+    /** The game's name there. */
+    title: text(),
+    /** Achievements as last read: 0 when the game has none there, null before the first read. */
+    count: integer(),
+    /** When its definitions were last read. */
+    definedAt: integer(),
+    /** When an achievement was last added to it or taken out, which makes progress read before unknown. */
+    changedAt: integer(),
+    /** When the provider's unlock rates were last read. */
+    ratesAt: integer(),
+    /** When its definitions were last asked for, and whether that failed: a failure waits an hour. */
+    triedAt: integer(),
+    failed: integer({ mode: 'boolean' }).notNull().default(false),
+  },
+  (table) => [
+    uniqueIndex('achievement_sets_provider_game').on(table.provider, table.providerSetId),
+    check('achievement_sets_provider', sql`${table.provider} in (${oneOf(achievementProviders)})`),
+    check('achievement_sets_count', sql`${table.count} is null or ${table.count} >= 0`),
+  ],
+)
+
+/**
+ * One achievement, as its provider defines it. Taken out of the set when
+ * the provider takes it out, with every account's unlock of it. Later
+ * providers add what is theirs alone as columns of their own (Xbox's
+ * Gamerscore, PlayStation's grade and trophy group), not Steam's.
+ */
+export const achievements = sqliteTable(
+  'achievements',
+  {
+    setId: text()
+      .notNull()
+      .references(() => achievementSets.id, { onDelete: 'cascade' }),
+    /** The provider's own id: Steam's API name. */
+    achievementId: text().notNull(),
+    /** Where the provider lists it. */
+    position: integer().notNull(),
+    /** In English, which every provider has. */
+    name: text().notNull(),
+    description: text(),
+    /** In the site's other languages, where the provider has them and they differ. */
+    translations: text({ mode: 'json' }).$type<
+      Partial<Record<AchievementLanguage, { name: string; description?: string }>>
+    >(),
+    icon: text(),
+    iconLocked: text(),
+    hidden: integer({ mode: 'boolean' }).notNull().default(false),
+    /** The share of the provider's players who unlocked it, 0 to 100. Null when not known. */
+    rate: real(),
+    /** When Shelf first saw it in the set. */
+    firstSeenAt: integer().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.setId, table.achievementId] }),
+    check('achievements_rate', sql`${table.rate} is null or (${table.rate} between 0 and 100)`),
+  ],
+)
+
+/**
+ * An account's progress through a set: whose account at the provider it was
+ * read for, the copy on the shelf it belongs to, and how the last read went.
+ * Kept when the account disconnects from the provider, as a snapshot; gone
+ * when another account at that provider is linked in its place, when the
+ * copy leaves the shelf, or with the account.
+ */
+export const achievementProgress = sqliteTable(
+  'achievement_progress',
+  {
+    userId: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    setId: text()
+      .notNull()
+      .references(() => achievementSets.id, { onDelete: 'cascade' }),
+    /** The account at the provider it was read for: a SteamID64. */
+    externalId: text().notNull(),
+    copyId: text()
+      .notNull()
+      .references(() => copies.id, { onDelete: 'cascade' }),
+    /** When it was last read. Null when it never was. */
+    readAt: integer(),
+    /** The game's last play as the source told it at that read: a later play reads it again. */
+    playedAt: integer(),
+    triedAt: integer().notNull(),
+    /** Why the last read did not work. Null when it did. */
+    problem: text().$type<ProgressProblem>(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.setId] }),
+    index('achievement_progress_copy').on(table.copyId),
+    check(
+      'achievement_progress_problem',
+      sql`${table.problem} is null or ${table.problem} in (${oneOf(progressProblems)})`,
+    ),
+  ],
+)
+
+/** An achievement an account has unlocked, as its last read said. */
+export const achievementUnlocks = sqliteTable(
+  'achievement_unlocks',
+  {
+    userId: text().notNull(),
+    setId: text().notNull(),
+    achievementId: text().notNull(),
+    /** When, as the provider says. Null when it does not know: never a made-up moment. */
+    unlockedAt: integer(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.setId, table.achievementId] }),
+    foreignKey({
+      columns: [table.userId, table.setId],
+      foreignColumns: [achievementProgress.userId, achievementProgress.setId],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.setId, table.achievementId],
+      foreignColumns: [achievements.setId, achievements.achievementId],
+    }).onDelete('cascade'),
   ],
 )
 

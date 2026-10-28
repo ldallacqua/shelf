@@ -265,6 +265,20 @@ Every keyword the library's games have, and which games have each, by slug. The 
 it the first time a keyword filter is used. Like the snapshot, it is kept for a year, moves
 when the library does, and an old version is sent on to the current one.
 
+## `GET /libraries/{key}/achievements/{slug}?locale=`
+
+A game's achievements in a public library, as its page shows them ([spec 7.8](spec.md#78-achievements)):
+each set the game has at a provider (`provider`, `setId`: a Steam app id, `title`), its
+`state` (`ready`, `pending`, `none`, `private` or `failed`), when the progress was read
+(`readAt`), whether it is a `snapshot` kept from a provider since disconnected, why the last
+read failed (`problem`), and, when `ready`, its achievements in the provider's order: `id`,
+`name`, `description`, artwork (`icon`, `iconLocked`), `hidden`, `state` (`unlocked`, `locked`,
+or `unknown` for one added since the read), `unlockedAt` when the provider says, and `rate`, the
+share of the provider's own players who unlocked it. `locale` is `en` or `pt-BR`; where the
+provider has no words in that language they are its English ones, marked `inEnglish`. A
+private game is no game here. Not versioned: a sync changes it without changing the library,
+so the edge keeps it a minute.
+
 ## `GET /handles/{handle}`
 
 Whether a shelf could have this handle: `{ "available": true }`, or `{ "available": false,
@@ -284,6 +298,7 @@ again on its next visit. Ratings are out of ten and time is in hours, as the rea
 | `GET /me` | Who is signed in: `{ "signedIn": true, "handle", "name", "shelfPublic" }`, or `{ "signedIn": false }` |
 | `PATCH /me` | Changes the name, the handle or whether the shelf is public: `{ "name"?, "handle"?, "shelfPublic"? }`. A taken handle answers 409 `handle-taken`; one that cannot be, 400 `handle-short`, `handle-long`, `handle-shape` or `handle-reserved`. |
 | `GET /me/library`, `GET /me/games/{slug}`, `GET /me/keywords`, `GET /me/tags`, `GET /me/shelves` | One's own library, as the public files and reads give a public one, read fresh: what a private shelf's pages are filled from |
+| `GET /me/achievements/{slug}?locale=` | A game's achievements in one's own library, private games among them, as `GET /libraries/{key}/achievements/{slug}` gives a public one's, read fresh |
 | `GET /me/unsorted` | One's unsorted games, what the page for placing a sync's games lists ([spec 4.5](spec.md#45-placing-what-a-sync-brought-in)): each with its entry id, cover, the platforms of its copies, its minutes and, on every source that feeds a copy, its minutes there and when it was last played; and how many games stand in each status (`tally`). In the library file's units: a rating out of 100, minutes. |
 | `GET /me/play` | Each of one's games, by its address in the library file, with its entry id and every app on Steam it may be (`steam`: the ones the Steam sync found the account owns, then the ones IGDB lists): what Ready to play in Shelf for Windows matches against what the computer has ([spec 7.7](spec.md#77-playing-a-game)) |
 | `GET /me/tally` | How many of one's games stand in each status, `{ "version", "tally" }`, and nothing else: what the page that sets a new shelf up reads ([spec 4.6](spec.md#46-setting-a-new-shelf-up)) |
@@ -314,6 +329,7 @@ Nintendo lists what was played, so each game waits for an answer saying how it i
 | `GET /me/platforms/{source}/items?list=` | The games it listed that need an answer (`needs-you`), were left out (`hidden`) or are no longer listed (`not-seen`), with their hours there and what the store says each is (`kind`: `game`, `demo`, `software`, `media`, `part`, `unknown`, or null until asked). A demo, software or media is left out by itself. A game Nintendo saw played that Shelf matched comes with its `match`: the IGDB game, title, year and cover, waiting to be confirmed. |
 | `POST /me/platforms/{source}/items/{id}` | An answer, carried out at once: `{ "kind": "pick", "igdbId" }` puts that game on the shelf (for Nintendo, with `"format": "physical"` or `"digital"`; without, the pick becomes the match, waiting); `{ "kind": "confirm", "format" }` takes the match as the game, owned that way; `{ "kind": "dismiss", "as": "not_a_game" }` or `"not_mine"`; `{ "kind": "again" }` undoes either, and puts back a game taken off the shelf |
 | `POST /me/platforms/{source}/answers` | One answer for many matches: `{ "ids", "answer": { "kind": "confirm", "format" } }`, up to 200 items. Items with no match are left as they are. Answers a step, as `…/sync` does; ask for more while `remaining` is above 0. |
+| `POST /me/platforms/{source}/achievements` | One step of reading the games' achievements there (Steam only), once its games are in: at most ten games a step, the latest played first. Answers `read`, `remaining` (ask again while above 0), `counts` (`games`, `known`, `private`) and `problem`: `private` (Steam keeps them private; stop asking) or `unreachable` (some games' answers wait for the next sync). `GET /me/platforms` gives the same `achievements` counts on Steam's link. |
 | `PATCH /me/platforms/{source}` | `{ "daily": false }`: no sync once a day |
 | `DELETE /me/platforms/{source}` | Disconnects: forgets what it listed and the answers. Its games stay on the shelf, with their hours. |
 

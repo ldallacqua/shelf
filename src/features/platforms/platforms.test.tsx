@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { AchievementStep } from '@/domain/achievements/achievements'
 import type { ItemView, LinkView, NintendoLinkOutcome, SyncStep } from '@/domain/sync/link'
 import { renderWithIntl } from '@/test/render'
 
@@ -76,6 +77,10 @@ const PLAYED: ItemView[] = [
 const sent: { path: string; method: string; body?: unknown }[] = []
 let platforms: PlatformRow[]
 let steps: SyncStep[]
+/** The steps of reading achievements, after a sync (issue 72). */
+let reads: AchievementStep[]
+/** Held, the last of those waits for it. */
+let lastReadHeld: Promise<unknown> | undefined
 let pasted: NintendoLinkOutcome
 /** What the needs-you list answers with. */
 let listed: ItemView[]
@@ -86,6 +91,8 @@ let answerFails: boolean
 beforeEach(() => {
   sent.length = 0
   steps = []
+  reads = []
+  lastReadHeld = undefined
   pasted = 'linked'
   listed = PLAYED
   answerHeld = undefined
@@ -96,6 +103,14 @@ beforeEach(() => {
     sent.push({ path, method, body: init?.body ? JSON.parse(String(init.body)) : undefined })
     if (path === '/api/v1/me/platforms') return Response.json(platforms)
     if (path.endsWith('/sync') || path.endsWith('/answers')) return Response.json(steps.shift())
+    if (path.endsWith('/achievements')) {
+      if (reads.length === 1) await lastReadHeld
+      const read = reads.shift()
+      // Asked past the steps given: the hour's allowance is spent.
+      return read
+        ? Response.json(read)
+        : Response.json({ error: { code: 'too-many' } }, { status: 429 })
+    }
     if (path === '/api/v1/me/platforms/nintendo/link') {
       // Linked, the platforms read again have the link in place.
       if (pasted === 'linked') platforms = rows(null, NINTENDO)
@@ -191,6 +206,64 @@ describe('Platforms', () => {
     )
     const asked = sent.filter((each) => each.path.endsWith('/sync'))
     expect(asked.map((each) => each.body)).toEqual([{ read: true }, { read: false }])
+  })
+
+  it('reads the games’ achievements once they are in, step after step, saying how far it got', async () => {
+    const counts = { games: 25, known: 0, private: 0 }
+    platforms = rows({ ...LINK, achievements: counts })
+    steps = [{ link: { ...LINK, achievements: counts }, added: 0, remaining: 0, version: 9 }]
+    let release: () => void = () => {}
+    lastReadHeld = new Promise<void>((resolve) => (release = resolve))
+    reads = [
+      { read: 10, remaining: 15, counts: { ...counts, known: 10 }, problem: null },
+      { read: 10, remaining: 5, counts: { ...counts, known: 20 }, problem: null },
+      { read: 5, remaining: 0, counts: { ...counts, known: 25 }, problem: null },
+    ]
+    renderWithIntl(<Platforms handle="ana" />)
+    expect(await screen.findByText('Achievements read for 0 of 25 games')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Sync now' }))
+    expect(await screen.findByText('Reading achievements: 20 of 25…')).toBeInTheDocument()
+    expect(
+      screen.getByRole('progressbar', { name: 'Achievements read from Steam' }),
+    ).toHaveAttribute('aria-valuenow', '20')
+    // The games are in while their achievements are read, and the card says so.
+    expect(screen.getByRole('status')).toHaveTextContent('2 games wait for your answer.')
+    expect(screen.getByRole('button', { name: 'Syncing…' })).toBeDisabled()
+
+    platforms = rows({ ...LINK, achievements: { ...counts, known: 25 } })
+    release()
+    expect(await screen.findByText('Achievements read for 25 of 25 games')).toBeInTheDocument()
+    expect(sent.filter((each) => each.path.endsWith('/achievements'))).toHaveLength(3)
+    expect(screen.getByRole('button', { name: 'Sync now' })).toBeEnabled()
+  })
+
+  it('says how to show achievements Steam keeps private, and stops asking', async () => {
+    const counts = { games: 25, known: 0, private: 0 }
+    platforms = rows({ ...LINK, achievements: counts })
+    steps = [{ link: { ...LINK, achievements: counts }, added: 0, remaining: 0, version: 9 }]
+    reads = [{ read: 0, remaining: 24, counts: { ...counts, private: 1 }, problem: 'private' }]
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Sync now' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Steam keeps your achievements private. Set Game details to Public',
+    )
+    expect(sent.filter((each) => each.path.endsWith('/achievements'))).toHaveLength(1)
+  })
+
+  it('says the rest come with the next sync when the hour’s reading is spent, not that Steam failed', async () => {
+    const counts = { games: 25, known: 0, private: 0 }
+    platforms = rows({ ...LINK, achievements: counts })
+    steps = [{ link: { ...LINK, achievements: counts }, added: 0, remaining: 0, version: 9 }]
+    reads = [{ read: 10, remaining: 15, counts: { ...counts, known: 10 }, problem: null }]
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Sync now' }))
+    // The second step is refused: too many this hour.
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'That is a lot at once. The rest come in with the next sync.',
+      ),
+    )
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('asks before disconnecting, and says the games stay', async () => {

@@ -634,11 +634,19 @@ owners do not allow, beyond Valve's own sign-in button.
 4. **Afterwards:** **Sync now**, and once a day by itself while **Sync once a day** is on. A
    game I take off my shelf stays off. A game Steam stops listing stays on the shelf, under
    "No longer on Steam", for me to decide. **Disconnect** forgets what Steam listed and my
-   answers about it; the games stay, with their hours.
+   answers about it; the games stay, with their hours, and so do their achievements, as they
+   were when last read.
+5. **Achievements** are read once the games are in, ten games a step, the latest played
+   first: "Reading achievements: 120 of 480…", while the games are already on the shelf. The
+   card then says "Achievements read for 480 of 480 games". A game's achievements are read
+   again after it is played, and after a week; Steam's definitions after a month, so ones
+   Steam adds are found. Each game's page shows them (section 7.8).
 
 | Problem | Behavior |
 | --- | --- |
 | Steam's game details are private | "Steam is not showing your games", with a link to where to change it |
+| Steam keeps the achievements private | "Steam keeps your achievements private", with the same link; no game is shown as having none unlocked |
+| Steam fails on one game's achievements | The others are kept; that game is read again an hour later, or with the next sync |
 | Steam does not answer | Said on the card; the next sync tries again |
 | A very large library | The rest of the games come with the next step, or the next sync, past 2,000 an hour |
 
@@ -652,6 +660,8 @@ owners do not allow, beyond Valve's own sign-in button.
 - The sign-in links nothing for an answer the browser did not ask for, or one used before.
 - A synced game starts unsorted or playing, never in the backlog; demos, playtests and
   software never reach the shelf.
+- Every synced game's achievements are read without linking again, in steps, and reading
+  them again adds nothing twice.
 
 **Nintendo** reads the play history Nintendo keeps for the account, the one the Nintendo Store
 app shows: every game played on a Switch or a Switch 2, with its hours.
@@ -1003,6 +1013,7 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
 | **About** | IGDB's summary and storyline, in their paragraphs. A long one shows about a screen's worth, and the rest behind **Read more**, opened in place |
 | **Videos and screenshots** | One strip, videos first: each video on one of the game's own pictures with a play button and what it is ("Launch Trailer"), then the screenshots. No scrollbar: an edge with more past it fades, and on a pointer that can hover an arrow there moves the strip. A screenshot opens a full-screen viewer (arrow keys, swipe, pinch to zoom); a video plays over the page, from YouTube, which nothing reaches before it is pressed |
+| **Achievements** | For a game a sync brought in from Steam: how many are unlocked, and each one (section 7.8) |
 | **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat, IGDB rating and how many ratings it rests on |
 | **Versions** | The editions and ports linked to this entry (signed in) |
 
@@ -1224,6 +1235,48 @@ clicando setup setup, next, next. E sim aparecesse uma splashzinha."
   without one.
 
 ---
+
+### 7.8 Achievements
+
+A game a sync brought in from Steam has an **Achievements** section, after its videos and
+screenshots, asked for as the page opens (never part of the library file).
+
+- **How far:** "34 of 50 unlocked", a bar, and 68%, rounded down, so 99.5% is never 100%.
+  "All 50 unlocked" when every one is. Under it, where they are from and when: "From Steam,
+  read 3 hours ago."
+- **Each achievement:** Steam's artwork, its name and description, and in words whether it is
+  unlocked and when ("Unlocked Oct 10, 2025", or "Unlocked, day not known" when Steam does not
+  say; never a made-up date), and how rare it is: "2.1% of Steam players", Steam's own share,
+  not Shelf's. Locked ones are dimmed and say "Locked".
+- **Hidden ones** say "Hidden achievement" until they are unlocked, with no name or
+  description, until I turn on "Show the 3 hidden ones".
+- **Which and in what order:** All, Unlocked or Locked, each with its count; Steam's order,
+  Recently unlocked, or Rarest first. A long list shows 30, then "Show all 120".
+- **A game with two Steam apps** (a game and its multiplayer app) shows each set apart, named:
+  "Half-Life 2 on Steam".
+- **In Portuguese** the names are Steam's own Portuguese ones where Steam has them, and its
+  English ones, marked as English, where it does not.
+
+| State | Shown |
+| --- | --- |
+| Not read yet | "Not read from Steam yet. They come with the next sync." |
+| No achievements | "This game has no achievements on Steam." Never "0 of 0" |
+| Kept private on Steam | "Steam keeps these achievements private." Never "0 unlocked" |
+| Steam did not answer | Said, and read again with the next sync; what was read before stays, "as of" its day |
+| One added since the last read | Counted, but no percentage until it is read: "One achievement was added since, and is read with the next sync." |
+| Steam disconnected | What was read stays, "From Steam, as of Oct 19, 2025. Steam is no longer linked, so they are not read again." |
+| Could not be loaded | "The achievements could not be loaded." and **Try again** |
+
+A private game's achievements are its own account's alone, on its page and in every total. A
+shelf's achievements change no status, rating or date of mine, and say nothing about whether I
+finished a game.
+
+**Done when**
+
+- A game's page shows its achievements, and how many are unlocked, from what Steam last said.
+- A hidden achievement's details stay hidden until it is unlocked or I ask.
+- Private, not read, none and failed are each said, never shown as none unlocked.
+- Both languages, both themes, a phone and the keyboard work.
 
 ## 8. Data model
 

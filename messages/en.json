@@ -209,7 +209,7 @@
     "sync": {
       "eyebrow": "Steam and Nintendo",
       "title": "Bring your Steam and Switch games with you.",
-      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours on it. Link Nintendo, and the games you played on a Switch or a Switch 2 come too, once you say whether each is a cartridge or a download. Then both keep in step by themselves once a day. Games already on your shelf gain a copy, never a second box. The new ones wait, unsorted, on a page where you rate them and say where each stands, one tap at a time or many at once. PlayStation and Xbox come next.",
+      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours on it, and each game’s page shows its achievements. Link Nintendo, and the games you played on a Switch or a Switch 2 come too, once you say whether each is a cartridge or a download. Then both keep in step by themselves once a day. Games already on your shelf gain a copy, never a second box. The new ones wait, unsorted, on a page where you rate them and say where each stands, one tap at a time or many at once. PlayStation and Xbox come next.",
       "card": "Steam and Nintendo, syncing",
       "where": "PC · Steam",
       "whereNintendo": "Switch · Nintendo · cartridge",
@@ -281,7 +281,7 @@
       },
       "sync": {
         "q": "Can it bring in the games I already own?",
-        "a": "From Steam and Nintendo, yes: link them right after signing up, or later on your account page. Every game you own on Steam comes onto your shelf with its hours; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them, give each a status, and put right one taken for the wrong game. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
+        "a": "From Steam and Nintendo, yes: link them right after signing up, or later on your account page. Every game you own on Steam comes onto your shelf with its hours and achievements; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them, give each a status, and put right one taken for the wrong game. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
       },
       "who": {
         "q": "Who can see my shelf?",
@@ -476,6 +476,50 @@
     "readLess": "Show less",
     "screenshots": "Screenshots",
     "media": "Videos and screenshots",
+    "achievements": {
+      "title": "Achievements",
+      "setTitle": "{title} on {source}",
+      "readAt": "From {source}, read {when}.",
+      "snapshot": "From {source}, as of {day}. {source} is no longer linked, so they are not read again.",
+      "stale": {
+        "unreachable": "{source} didn’t answer the last time they were read: these are as of {day}.",
+        "private": "{source} keeps them private now: these are as of {day}."
+      },
+      "added": "{count, plural, one {One achievement was added since, and is read with the next sync.} other {# achievements were added since, and are read with the next sync.}}",
+      "earned": "{earned} of {total} unlocked",
+      "complete": "All {total} unlocked",
+      "progressLabel": "Achievements unlocked on {source}",
+      "state": {
+        "pending": "Not read from {source} yet. They come with the next sync.",
+        "none": "This game has no achievements on {source}.",
+        "private": "{source} keeps these achievements private.",
+        "failed": "{source} didn’t answer when they were read. They are read again with the next sync."
+      },
+      "filter": {
+        "label": "Which achievements",
+        "all": "All {count}",
+        "unlocked": "Unlocked {count}",
+        "locked": "Locked {count}"
+      },
+      "sort": {
+        "label": "Order",
+        "provider": "{source}’s order",
+        "recent": "Recently unlocked",
+        "rarest": "Rarest first"
+      },
+      "reveal": "{count, plural, one {Show the hidden one} other {Show the # hidden ones}}",
+      "hiddenName": "Hidden achievement",
+      "hiddenBody": "Its details stay hidden until it is unlocked.",
+      "unlockedOn": "Unlocked {when}",
+      "unlockedSometime": "Unlocked, day not known",
+      "locked": "Locked",
+      "unknown": "Not known yet",
+      "rate": "{rate} of {source} players",
+      "emptyFilter": "None of them.",
+      "more": "Show all {count}",
+      "loadFailed": "The achievements could not be loaded.",
+      "retry": "Try again"
+    },
     "video": "Video",
     "videoOpen": "Play {name}, {at} of {total}, {title}",
     "videoTitle": "{name}: {title}",
@@ -981,7 +1025,7 @@
     "intro": "Bring the games you own on a platform onto your shelf, and keep them in step.",
     "later": "PlayStation and Xbox come next.",
     "steam": {
-      "about": "Sign in through Steam, and every game you own there goes onto your shelf as a PC copy, with Steam’s hours on it. Shelf syncs again once a day. Your Steam password never reaches Shelf.",
+      "about": "Sign in through Steam, and every game you own there goes onto your shelf as a PC copy, with Steam’s hours on it, and its achievements on its page. Shelf syncs again once a day. Your Steam password never reaches Shelf.",
       "public": "Steam has to show your game details: open <settings>your Steam privacy settings</settings> (in Steam, Edit Profile, then Privacy Settings) and set Game details to Public.",
       "signIn": "Sign in through Steam"
     },
@@ -1025,6 +1069,13 @@
     "syncing": "Syncing…",
     "progress": "{done, plural, =0 {Matching your games…} other {Added # of {total}…}}",
     "progressLabel": "Games added from {source}",
+    "achievements": {
+      "known": "{games, plural, =0 {No achievements to read yet} other {Achievements read for {known} of {games, plural, one {# game} other {# games}}}}",
+      "reading": "Reading achievements: {known} of {games}…",
+      "progressLabel": "Achievements read from {source}",
+      "private": "{source} keeps your achievements private. Set Game details to Public in <settings>your Steam privacy settings</settings>; they are read with the next sync.",
+      "unreachable": "{source} did not answer for some games’ achievements. They are read again with the next sync."
+    },
     "done": "{count, plural, =0 {Up to date with {source}.} one {# game came in from {source}.} other {# games came in from {source}.}}",
     "waiting": "{count, plural, one {# game waits for your answer.} other {# games wait for your answer.}}",
     "daily": "Sync once a day",
@@ -1104,7 +1155,7 @@
       },
       "steam": {
         "title": "Steam",
-        "body": "If you link Steam, Shelf keeps your Steam account’s id and name, and the games Steam lists for it, with the hours played, when each was last played, and what Steam’s store calls each one (a game, a demo, software). Shelf reads them when you link Steam or press Sync now, and once a day while daily sync is on. Your Steam password never reaches Shelf. Disconnecting Steam deletes what Steam listed; the games it put on your shelf stay, as your own."
+        "body": "If you link Steam, Shelf keeps your Steam account’s id and name, and the games Steam lists for it, with the hours played, when each was last played, and what Steam’s store calls each one (a game, a demo, software). For those games, it keeps their achievements as Steam lists them, which of them you unlocked and when, and how many of Steam’s players unlocked each; their artwork is shown from Steam’s own servers. Shelf reads them when you link Steam or press Sync now, and once a day while daily sync is on. Your Steam password never reaches Shelf. Disconnecting Steam deletes what Steam listed; the games it put on your shelf stay, as your own, with their achievements as last read. Linking another Steam account deletes those."
       },
       "nintendo": {
         "title": "Nintendo",

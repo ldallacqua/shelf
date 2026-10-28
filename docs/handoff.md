@@ -32,8 +32,13 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   25, row "Wall labels, banded only when pinned"). The band shows only while a label is pinned,
   and a phone's wall labels no longer stand on their first row of covers. Its browser test, in
   `e2e/library.spec.ts`, has not been run.
-- **Next, the P1s:** #72 (Steam achievements, which #68, the trophy page, and the Xbox and
-  PlayStation tickets build on), then #68.
+- **#72, Steam achievements,** is built (architecture section 25, row "Achievements from
+  Steam"; spec 7.8; ADR 003's "Built: achievements"). Read in steps after each sync, shown on
+  each game's page; the totals #68 needs are `summary()` in `server/services/achievements.ts`.
+  **Still to do, by the owner:** press Sync now on production once and look at a few games'
+  achievements, since production is real data and no check here may write to it. Existing
+  links need no new sign-in: the next sync, or the daily one, reads them.
+- **Next, the P1:** #68, the trophy page, on `summary()` and the domain's `summarize`.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
   `pnpm dev` or a production build sees it.

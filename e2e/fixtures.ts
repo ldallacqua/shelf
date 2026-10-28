@@ -255,6 +255,14 @@ export const test = base.extend<Fixtures>({
       })
     })
 
+    // Nor on Steam's: an achievement's artwork is a flat color too (issue 72).
+    await page.route('https://cdn.akamai.steamstatic.com/**', (route) =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="hsl(200 40% 45%)"/></svg>',
+      }),
+    )
+
     const goto = page.goto.bind(page)
     page.goto = async (address, options) => {
       const response = await goto(address, options)

@@ -346,3 +346,65 @@ Nintendo's own page and Shelf keeps the session token, encrypted." What building
 - **What can break:** none of this is documented by Nintendo. If Nintendo changes the sign-in
   or the play history, the card says Nintendo did not answer, and the adapter
   (`server/sync/nintendo.ts`, the only code that knows Nintendo's addresses) is what changes.
+
+## Built: achievements (28 Oct 2026)
+
+Issue 72 asked for achievements as a feature of their own, Steam first, on a foundation the
+Xbox and PlayStation tickets extend rather than repeat. What building settled:
+
+- **A set is one provider's, for one of its games.** `achievement_sets` (id `steam:220`) and
+  `achievements` are shared by every account, read once for all of them. An account's
+  progress through a set is `achievement_progress`: the account at the provider it was read
+  for, the copy on the shelf it belongs to, when it was read and how the last read went. Its
+  unlocks are `achievement_unlocks`. Nothing is matched across providers by name, and a game
+  with two Steam apps (a game and its multiplayer app) has two sets, each shown apart.
+- **The games are the sync's own decisions.** A set is read for every Steam item on the shelf
+  (`source_items` with a copy), so editions and matches are what the sync already decided. A
+  game not on the shelf has nothing read.
+- **Three questions to Steam, with the key Shelf already has:** `ISteamUserStats/
+  GetSchemaForGame` (in English and in Brazilian Portuguese), `GetPlayerAchievements` and
+  `GetGlobalAchievementPercentagesForApp`. Checked against the live API on 28 Oct 2026: a
+  hidden achievement comes without its description, which `GetPlayerAchievements` gives and
+  Shelf keeps for when it is unlocked; a game without any answers an empty `game`, a 400 "no
+  stats" or a 403; a private profile answers 403 "Profile is not public"; the rates are text.
+  An unlock moment of 0 is not known, never 1970. A busy or failing Steam (429, 5xx) is asked
+  again twice, a second and then three seconds later, or as long as its `Retry-After` asks, up
+  to five seconds.
+- **In steps, after the games.** A step reads the next ten games due, the latest played
+  first, four at a time. The account page asks for steps once the games are in, and the daily
+  sync does the same after each link's own. Due: definitions after 30 days, to find added
+  achievements; progress once the game is played (by Steam's own last-played moment, never
+  Shelf's clock), once its set changed, and after a week; the rates with the next progress
+  read after a week. A failure waits an hour, and the other games' answers stay. Each account
+  may have 3,000 games' achievements read an hour on its asking.
+- **A read replaces the last.** The unlocks are Steam's latest answer, whole, so reading twice
+  counts nothing twice, and an achievement Steam takes out goes with its unlocks. One added
+  after the account's last read is `unknown` until the next: no percentage and no 100% until
+  every state is known. A game with no achievements is never 100%.
+- **Not the library.** Like the sync's memory, these rows raise no library's version and are
+  not in the library file. A game's facts say which providers have achievements for it; its
+  page then asks `/api/v1/libraries/{key}/achievements/{slug}` (a public shelf's, kept a minute
+  by the edge) or `/api/v1/me/achievements/{slug}` (one's own, fresh). A private game, and a
+  private shelf's every game, is in neither for anyone but its account, nor in the totals.
+- **Disconnecting keeps them, as a snapshot,** as it keeps the games and their hours: the page
+  says they are as of the last read, and that Steam is no longer linked. Linking another Steam
+  account forgets every unlock read for any other; deleting the account deletes them, with its
+  copies. The definitions stay: they are Steam's, not the account's.
+- **Totals for the trophy page** (issue 68) are `summarize` in `domain/achievements/progress.ts`
+  and `summary()` in `server/services/achievements.ts`: games with known progress, unlocked and
+  available achievements, perfect games (every set with achievements complete: Shelf's own
+  count, not Steam's "Perfect Games"), the latest unlocks by their real moment, and the rarest
+  by Steam's rates. Nothing infers a completion, a date or a status from them, and nothing
+  changes what I set.
+- **Steam's artwork** is used from Steam's image servers, as IGDB's covers are from IGDB's: the
+  pages' rules allow `cdn.akamai.steamstatic.com`, and the older hosts Steam still answers with
+  are moved to it.
+
+**For Xbox and PlayStation.** Each becomes a provider in `achievementProviders`
+(`domain/achievements/achievements.ts`), with an `AchievementSource` in
+`server/services/achievements.ts`: its definitions in each language, an account's progress,
+and its rates where it has them. Its sets are its own (`xbox:{title id}`,
+`playstation:{communication id}`), so a game on three platforms has three sets, never one.
+What only one provider has goes in columns of its own on `achievements`, added with that
+adapter: Xbox's Gamerscore, PlayStation's grade (bronze to platinum) and trophy group. A
+platinum is a PlayStation trophy of that grade, never inferred from a Steam set.

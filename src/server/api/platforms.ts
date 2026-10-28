@@ -2,6 +2,7 @@ import 'server-only'
 
 import { z } from 'zod'
 
+import { progressProblems } from '@/domain/achievements/achievements'
 import { syncSources } from '@/domain/library/values'
 import { decisions, storeKinds } from '@/domain/sync/items'
 import { linkProblems, nintendoLinkOutcomes } from '@/domain/sync/link'
@@ -24,6 +25,12 @@ const counts = z.object({
   unsorted: z.int().describe('On the shelf from this source, and not placed yet: status unsorted'),
 })
 
+const achievementCounts = z.object({
+  games: z.int().describe('Games on the shelf from the source'),
+  known: z.int().describe('Of those, games whose achievements are read, or that have none'),
+  private: z.int().describe('Of those, games whose achievements the source keeps private'),
+})
+
 export const apiLink = z
   .object({
     source: z.enum(syncSources),
@@ -37,6 +44,9 @@ export const apiLink = z
     syncedAt: moment.describe('When a sync last left nothing to add'),
     problem: z.enum(linkProblems).nullable(),
     counts,
+    achievements: achievementCounts
+      .optional()
+      .describe('How far its achievements are read, for a source Shelf reads them from'),
   })
   .meta({ id: 'PlatformLink' })
 
@@ -49,6 +59,18 @@ export const apiPlatforms = z
     }),
   )
   .meta({ id: 'Platforms' })
+
+export const apiAchievementStep = z
+  .object({
+    read: z.int().describe('Games whose achievements this step read'),
+    remaining: z.int().describe('Games still to read: ask for another step while above 0'),
+    counts: achievementCounts,
+    problem: z
+      .enum(progressProblems)
+      .nullable()
+      .describe('private: the source keeps them private; unreachable: it did not answer for some'),
+  })
+  .meta({ id: 'AchievementStep' })
 
 export const apiSyncStep = z
   .object({

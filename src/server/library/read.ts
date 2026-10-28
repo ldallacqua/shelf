@@ -2,6 +2,11 @@ import 'server-only'
 
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 
+import {
+  achievementProviders,
+  isAchievementProvider,
+  type AchievementProvider,
+} from '@/domain/achievements/achievements'
 import { EROTIC, lengthMinutes, type StoreId } from '@/domain/igdb/game'
 import type { ArchivedGame, OwnerGame, PlayableGame, SteamApps } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
@@ -26,6 +31,7 @@ import type { GameKeywords } from '@/domain/query/evaluate'
 import { comparePlatforms } from '@/domain/platforms/platforms'
 import type { Db, Executor } from '@/server/db/client'
 import {
+  achievementProgress,
   copies,
   entries,
   entryTags,
@@ -329,7 +335,7 @@ export const readGameExtras = async (
     .where(and(eq(games.slug, slug), eq(entryVersions.userId, libraryId)))
   if (!primary || primary.relation !== 'primary') return undefined
 
-  const [entryRows, versionRows] = await Promise.all([
+  const [entryRows, versionRows, fromProviders, keptProgress] = await Promise.all([
     db
       .select({ notes: entries.notes, notesPublic: entries.notesPublic })
       .from(entries)
@@ -350,10 +356,33 @@ export const readGameExtras = async (
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
       .where(eq(entryVersions.entryId, primary.entryId)),
+    // The providers with achievements for it (issue 72): those that put one of its copies on
+    // the shelf, and those whose progress for one was kept after a disconnect.
+    db
+      .selectDistinct({ source: sourceItems.source })
+      .from(sourceItems)
+      .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+      .where(
+        and(
+          eq(copies.entryId, primary.entryId),
+          inArray(sourceItems.source, [...achievementProviders]),
+        ),
+      ),
+    db
+      .selectDistinct({ setId: achievementProgress.setId })
+      .from(achievementProgress)
+      .innerJoin(copies, eq(copies.id, achievementProgress.copyId))
+      .where(eq(copies.entryId, primary.entryId)),
   ])
   const entry = entryRows[0]
   const main = versionRows.find((row) => row.relation === 'primary')
   if (!entry || !main) return undefined
+  const providers = new Set<AchievementProvider>()
+  for (const { source } of fromProviders) if (isAchievementProvider(source)) providers.add(source)
+  for (const { setId } of keptProgress) {
+    const provider = setId.slice(0, setId.indexOf(':'))
+    if (isAchievementProvider(provider)) providers.add(provider)
+  }
 
   const extras: GameExtras = {
     artworks: main.artworks,
@@ -369,6 +398,7 @@ export const readGameExtras = async (
   if (main.length) extras.length = main.length
   if (main.igdbUrl) extras.igdbUrl = main.igdbUrl
   if (entry.notes) extras.notes = entry.notes
+  if (providers.size > 0) extras.achievements = [...providers]
   return extras
 }
 

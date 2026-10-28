@@ -242,7 +242,8 @@ It takes effect on the next production deployment. Without it, the account page 
 and says Steam sync is not set up on this server yet.
 
 **Check it worked:** on production, open your account page, then **Platforms**, then **Sign in
-through Steam**. Your games arrive with their hours. If the card says Steam is not showing
+through Steam**. Your games arrive with their hours, then their achievements, read with the
+same key (nothing else to set). If the card says Steam is not showing
 your games, set **Game details** to **Public** in Steam's privacy settings (Edit Profile,
 Privacy Settings) and press **Sync now**.
 

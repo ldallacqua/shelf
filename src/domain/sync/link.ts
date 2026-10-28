@@ -1,3 +1,4 @@
+import type { AchievementCounts } from '@/domain/achievements/achievements'
 import type { SyncSource } from '@/domain/library/values'
 import type { Decision, ItemState, StoreKind } from '@/domain/sync/items'
 
@@ -44,6 +45,8 @@ export type LinkView = {
   syncedAt: number | null
   problem: LinkProblem | null
   counts: ItemCounts
+  /** How far its achievements are read, for a source Shelf reads them from (issue 72). */
+  achievements?: AchievementCounts
 }
 
 /** One step of a sync. The page asks for steps until nothing is left to add. */
