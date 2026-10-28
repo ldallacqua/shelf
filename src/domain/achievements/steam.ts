@@ -5,21 +5,27 @@ import type {
   DefinedSet,
   Definition,
   ProgressAnswer,
+  ProgressTotal,
   Unlock,
 } from '@/domain/achievements/achievements'
 
 /**
  * What Steam sends about achievements (issue 72), for the three questions
- * the sync asks its Web API: a game's achievements (`ISteamUserStats/
- * GetSchemaForGame`), an account's progress through them
- * (`GetPlayerAchievements`), and how many of Steam's players unlocked each
- * (`GetGlobalAchievementPercentagesForApp`). Every answer passes these
- * schemas first. Checked against the live API on 28 Oct 2026: a hidden
- * achievement has no description, a game with none answers an empty
- * `game`, and the rates are text.
+ * the sync asks its Web API:
+ * - a game's achievements in one language, with each one's share of Steam's
+ *   players (`IPlayerService/GetGameAchievements`);
+ * - how many achievements each of up to a hundred games has, and how many the
+ *   account unlocked of each (`IPlayerService/GetTopAchievementsForGames`);
+ * - the account's unlocks in one game, with their moments
+ *   (`ISteamUserStats/GetPlayerAchievements`).
+ * Every answer passes these schemas first. Checked against the live API on
+ * 28 Oct 2026: a game with none answers an empty `response`, a hidden
+ * achievement is described like the others, the artwork is a file name in
+ * the game's folder, the shares are text, and the totals of a profile whose
+ * game details are not public are an empty `response`.
  */
 
-/** Steam's own name for each of the site's languages, as `l` takes it. */
+/** Steam's own name for each of the site's languages, as its Web API takes it. */
 export const STEAM_LANGUAGE: Record<AchievementLanguage, string> = {
   en: 'english',
   'pt-BR': 'brazilian',
@@ -30,70 +36,116 @@ const text = z
   .transform((value) => value.trim())
   .optional()
 
-export const steamSchemaAnswerSchema = z.object({
-  game: z
+/** A share of Steam's players, 0 to 100, as text or a number. Anything else is not one. */
+const shareOf = (value: number | string | undefined): number | undefined => {
+  const share =
+    typeof value === 'number' ? value : value?.trim() ? Number(value.trim()) : Number.NaN
+  return Number.isFinite(share) && share >= 0 && share <= 100 ? share : undefined
+}
+
+export const steamGameAchievementsSchema = z.object({
+  response: z
     .object({
-      gameName: text,
-      availableGameStats: z
-        .object({
-          achievements: z
-            .array(
-              z.object({
-                name: z.string().trim().min(1),
-                displayName: text,
-                hidden: z.number().int().optional(),
-                description: text,
-                icon: z.string().optional(),
-                icongray: z.string().optional(),
-              }),
-            )
-            .optional(),
-        })
+      achievements: z
+        .array(
+          z.object({
+            internal_name: z.string().trim().min(1),
+            localized_name: text,
+            localized_desc: text,
+            icon: z.string().optional(),
+            icon_gray: z.string().optional(),
+            hidden: z.boolean().optional(),
+            player_percent_unlocked: z.union([z.number(), z.string()]).optional(),
+          }),
+        )
         .optional(),
     })
     .default({}),
 })
 
-export type SteamSchemaAnswer = z.infer<typeof steamSchemaAnswerSchema>
-
-/**
- * Steam's achievement artwork, by its own address. Steam has answered with
- * three hosts for the same files; the page's rules allow one, so each is
- * moved to it. Anything else is not kept.
- */
-const STEAM_IMAGE =
-  /^https:\/\/(?:steamcdn-a\.akamaihd\.net|cdn\.akamai\.steamstatic\.com|cdn\.cloudflare\.steamstatic\.com)\/steamcommunity\/public\/images\/apps\/(\d{1,10}\/[\w.-]{1,120}\.(?:jpg|png))$/
+export type SteamGameAchievements = z.infer<typeof steamGameAchievementsSchema>
 
 export const STEAM_IMAGE_HOST = 'https://cdn.akamai.steamstatic.com'
 
-export const steamImage = (address: string | undefined): string | undefined => {
-  const path = address ? STEAM_IMAGE.exec(address.trim())?.[1] : undefined
-  return path ? `${STEAM_IMAGE_HOST}/steamcommunity/public/images/apps/${path}` : undefined
+/**
+ * An achievement's artwork: Steam names a file in the game's folder on its
+ * image servers. Anything that is not a plain image file name is not kept.
+ */
+export const steamImage = (appId: string, file: string | undefined): string | undefined => {
+  const name = file?.trim()
+  if (!name || !/^\d{1,10}$/.test(appId) || !/^[\w-][\w.-]{0,119}\.(?:jpg|png)$/.test(name)) {
+    return undefined
+  }
+  return `${STEAM_IMAGE_HOST}/steamcommunity/public/images/apps/${appId}/${name}`
 }
 
 /** A game's achievements as Steam defines them, or nothing when it has none. */
-export const definedFromSteam = (answer: SteamSchemaAnswer): DefinedSet | undefined => {
-  const listed = answer.game.availableGameStats?.achievements ?? []
+export const definedFromSteam = (
+  appId: string,
+  answer: SteamGameAchievements,
+): DefinedSet | undefined => {
+  const listed = answer.response.achievements ?? []
   if (listed.length === 0) return undefined
   const seen = new Set<string>()
   const achievements: Definition[] = []
   for (const each of listed) {
-    if (seen.has(each.name)) continue
-    seen.add(each.name)
+    if (seen.has(each.internal_name)) continue
+    seen.add(each.internal_name)
     const definition: Definition = {
-      id: each.name,
+      id: each.internal_name,
       // A name Steam left empty is its id: Steam's own word for it, not one made up.
-      name: each.displayName || each.name,
-      hidden: each.hidden === 1,
+      name: each.localized_name || each.internal_name,
+      hidden: each.hidden === true,
     }
-    if (each.description) definition.description = each.description
-    const icon = steamImage(each.icon)
-    const locked = steamImage(each.icongray)
+    if (each.localized_desc) definition.description = each.localized_desc
+    const icon = steamImage(appId, each.icon)
+    const locked = steamImage(appId, each.icon_gray)
     if (icon) definition.icon = icon
     if (locked) definition.iconLocked = locked
+    const rate = shareOf(each.player_percent_unlocked)
+    if (rate !== undefined) definition.rate = rate
     achievements.push(definition)
   }
-  return { ...(answer.game.gameName ? { title: answer.game.gameName } : {}), achievements }
+  return { achievements }
+}
+
+export const steamTotalsSchema = z.object({
+  response: z
+    .object({
+      games: z
+        .array(
+          z.object({
+            appid: z.number().int(),
+            total_achievements: z.number().int().nonnegative().optional(),
+            /** The account's unlocked ones, as many as were asked for: only their number is read. */
+            achievements: z.array(z.unknown()).optional(),
+          }),
+        )
+        .optional(),
+    })
+    .default({}),
+})
+
+export type SteamTotals = z.infer<typeof steamTotalsSchema>
+
+/**
+ * How many achievements each game has, and how many the account unlocked,
+ * by app id. A game Steam does not know is left out. Undefined when Steam
+ * counted none of them: it says nothing of a profile whose game details are
+ * not public.
+ */
+export const totalsFromSteam = (answer: SteamTotals): Map<string, ProgressTotal> | undefined => {
+  const listed = answer.response.games
+  if (!listed) return undefined
+  const totals = new Map<string, ProgressTotal>()
+  for (const game of listed) {
+    if (game.total_achievements === undefined) continue
+    totals.set(String(game.appid), {
+      total: game.total_achievements,
+      unlocked: game.achievements?.length ?? 0,
+    })
+  }
+  return totals
 }
 
 export const steamPlayerAnswerSchema = z.object({
@@ -139,32 +191,4 @@ export const playerFromSteam = (status: number, body: unknown): ProgressAnswer |
     )
   }
   return { kind: 'read', unlocks, descriptions }
-}
-
-export const steamRatesAnswerSchema = z.object({
-  achievementpercentages: z
-    .object({
-      achievements: z
-        .array(
-          z.object({
-            name: z.string().trim().min(1),
-            percent: z.union([z.number(), z.string()]),
-          }),
-        )
-        .default([]),
-    })
-    .optional(),
-})
-
-export type SteamRatesAnswer = z.infer<typeof steamRatesAnswerSchema>
-
-/** Each achievement's share of Steam's players, 0 to 100. A figure that is not one is left out. */
-export const ratesFromSteam = (answer: SteamRatesAnswer): Map<string, number> => {
-  const rates = new Map<string, number>()
-  for (const { name, percent } of answer.achievementpercentages?.achievements ?? []) {
-    const value =
-      typeof percent === 'number' ? percent : percent.trim() ? Number(percent.trim()) : NaN
-    if (Number.isFinite(value) && value >= 0 && value <= 100) rates.set(name, value)
-  }
-  return rates
 }

@@ -33,13 +33,15 @@ export type Definition = {
   /** The provider's own id for it: Steam's API name. */
   id: string
   name: string
-  /** Absent where the provider gives none: Steam gives none for a hidden one. */
+  /** Absent where the provider gives none. */
   description?: string
   /** Artwork, unlocked and locked, as addresses on the provider's image servers. */
   icon?: string
   iconLocked?: string
   /** Its provider keeps its details hidden until it is unlocked. */
   hidden: boolean
+  /** The share of the provider's own players who unlocked it, 0 to 100: Steam's, not Shelf's. */
+  rate?: number
 }
 
 /** A set's definitions, as one read of its provider gave them, in the order it lists them. */
@@ -48,14 +50,19 @@ export type DefinedSet = {
   achievements: Definition[]
 }
 
+/**
+ * How many achievements a game has at its provider, and how many of them the
+ * account unlocked, as the provider counts them for many games at once.
+ */
+export type ProgressTotal = { total: number; unlocked: number }
+
 /** One achievement the account has unlocked, and when, if the provider says. */
 export type Unlock = { id: string; at?: number }
 
 /**
  * What a provider said about an account's progress through a set:
  * - `read`: its unlocks, with the provider's descriptions of the
- *   achievements it listed, for those the definitions lack: Steam describes
- *   a hidden one only here.
+ *   achievements it listed, for any the definitions lack.
  * - `private`: the account there keeps its achievements private.
  * - `none`: the game keeps no achievements there.
  */
@@ -90,8 +97,6 @@ export type AchievementView = Definition & {
   state: AchievementState
   /** Milliseconds since 1970, when the provider gave the moment; never a made-up one. */
   unlockedAt?: number
-  /** The share of the provider's own players who unlocked it, 0 to 100: Steam's, not Shelf's. */
-  rate?: number
 }
 
 /** One of a game's sets, with the account's progress through it. */

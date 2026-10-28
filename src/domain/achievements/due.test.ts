@@ -9,7 +9,6 @@ const set = (more: Partial<KnownSet> = {}): KnownSet => ({
   count: 10,
   definedAt: NOW - 1000,
   changedAt: NOW - 2000,
-  ratesAt: NOW - 1000,
   triedAt: NOW - 1000,
   failed: false,
   ...more,
@@ -25,10 +24,9 @@ const read = (more: Partial<NonNullable<KnownApp['progress']>> = {}) => ({
 })
 
 describe('what is due', () => {
-  it('reads a game never read: its definitions, rates and progress', () => {
+  it('reads a game never read: its definitions and progress', () => {
     expect(dueWork({ lastPlayedAt: null }, ME, NOW)).toEqual({
       definitions: true,
-      rates: true,
       progress: true,
     })
   })
@@ -36,7 +34,6 @@ describe('what is due', () => {
   it('reads nothing of a game read a moment ago and not played since', () => {
     expect(dueWork({ lastPlayedAt: 500, set: set(), progress: read() }, ME, NOW)).toEqual({
       definitions: false,
-      rates: false,
       progress: false,
     })
   })
@@ -63,7 +60,6 @@ describe('what is due', () => {
     expect(dueWork({ lastPlayedAt: null, set: old }, ME, NOW).definitions).toBe(true)
     expect(dueWork({ lastPlayedAt: null, set: set({ count: 0 }) }, ME, NOW)).toEqual({
       definitions: false,
-      rates: false,
       progress: false,
     })
   })

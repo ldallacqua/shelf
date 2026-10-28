@@ -3,42 +3,47 @@ import { describe, expect, it } from 'vitest'
 import {
   definedFromSteam,
   playerFromSteam,
-  ratesFromSteam,
+  steamGameAchievementsSchema,
   steamImage,
-  steamRatesAnswerSchema,
-  steamSchemaAnswerSchema,
+  steamTotalsSchema,
+  totalsFromSteam,
 } from './steam'
 
 /** Steam's achievement answers, in the shapes the live API gave on 28 Oct 2026. */
 
 describe('a game’s achievements from Steam', () => {
-  it('reads each one, a hidden one without the description Steam leaves out', () => {
-    const answer = steamSchemaAnswerSchema.parse({
-      game: {
-        gameName: 'Outer Wilds',
-        gameVersion: '12',
-        availableGameStats: {
-          achievements: [
-            {
-              name: 'ACH_LIFTOFF',
-              defaultvalue: 0,
-              displayName: 'Liftoff',
-              hidden: 0,
-              description: ' Leave the village. ',
-              icon: 'https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/753640/a1b2.jpg',
-              icongray:
-                'https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/753640/c3d4.jpg',
-            },
-            { name: 'ACH_EYE', defaultvalue: 0, displayName: 'The Eye', hidden: 1 },
-            // Listed twice: kept once.
-            { name: 'ACH_EYE', defaultvalue: 0, displayName: 'The Eye', hidden: 1 },
-          ],
-          stats: [],
-        },
+  it('reads each one with Steam’s share of its players, a hidden one described like the others', () => {
+    const answer = steamGameAchievementsSchema.parse({
+      response: {
+        achievements: [
+          {
+            internal_name: 'ACH_LIFTOFF',
+            localized_name: 'Liftoff',
+            localized_desc: ' Leave the village. ',
+            icon: 'a1b2.jpg',
+            icon_gray: 'c3d4.jpg',
+            hidden: false,
+            player_percent_unlocked: '80.9',
+            internal_key: 0,
+            groupid: 0,
+            archived: false,
+            progress_type: 0,
+          },
+          {
+            internal_name: 'ACH_EYE',
+            localized_name: 'The Eye',
+            localized_desc: 'Reach the eye.',
+            hidden: true,
+            player_percent_unlocked: 9,
+          },
+          // Listed twice: kept once.
+          { internal_name: 'ACH_EYE', localized_name: 'The Eye', hidden: true },
+          // No name: Steam's own id for it.
+          { internal_name: 'ACH_QUIET', localized_name: '', hidden: false },
+        ],
       },
     })
-    expect(definedFromSteam(answer)).toEqual({
-      title: 'Outer Wilds',
+    expect(definedFromSteam('753640', answer)).toEqual({
       achievements: [
         {
           id: 'ACH_LIFTOFF',
@@ -48,25 +53,81 @@ describe('a game’s achievements from Steam', () => {
           iconLocked:
             'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/753640/c3d4.jpg',
           hidden: false,
+          rate: 80.9,
         },
-        { id: 'ACH_EYE', name: 'The Eye', hidden: true },
+        { id: 'ACH_EYE', name: 'The Eye', description: 'Reach the eye.', hidden: true, rate: 9 },
+        { id: 'ACH_QUIET', name: 'ACH_QUIET', hidden: false },
       ],
     })
   })
 
-  it('is nothing for a game without any: Steam answers an empty game', () => {
-    expect(definedFromSteam(steamSchemaAnswerSchema.parse({ game: {} }))).toBeUndefined()
-    expect(definedFromSteam(steamSchemaAnswerSchema.parse({}))).toBeUndefined()
-  })
-
-  it('keeps artwork only from Steam’s own image servers', () => {
-    expect(steamImage('https://example.com/steamcommunity/public/images/apps/1/a.jpg')).toBe(
+  it('is nothing for a game without any: Steam answers an empty response', () => {
+    expect(definedFromSteam('70', steamGameAchievementsSchema.parse({ response: {} }))).toBe(
       undefined,
     )
-    expect(
-      steamImage('https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1/../a.jpg'),
-    ).toBe(undefined)
-    expect(steamImage(undefined)).toBeUndefined()
+    expect(definedFromSteam('70', steamGameAchievementsSchema.parse({}))).toBeUndefined()
+  })
+
+  it('keeps artwork only as an image file in the game’s own folder', () => {
+    expect(steamImage('220', 'a.jpg')).toBe(
+      'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/220/a.jpg',
+    )
+    expect(steamImage('220', '../a.jpg')).toBeUndefined()
+    expect(steamImage('220', 'https://example.com/a.jpg')).toBeUndefined()
+    expect(steamImage('220', 'a.gif')).toBeUndefined()
+    expect(steamImage('../220', 'a.jpg')).toBeUndefined()
+    expect(steamImage('220', undefined)).toBeUndefined()
+  })
+
+  it('leaves out a share that is not one', () => {
+    const shares = definedFromSteam(
+      '220',
+      steamGameAchievementsSchema.parse({
+        response: {
+          achievements: ['', 'lots', '120', '-1'].map((share, at) => ({
+            internal_name: `A${at}`,
+            player_percent_unlocked: share,
+          })),
+        },
+      }),
+    )!.achievements
+    expect(shares.every((each) => each.rate === undefined)).toBe(true)
+  })
+})
+
+describe('many games’ totals from Steam', () => {
+  it('counts each game’s achievements and the account’s unlocked ones', () => {
+    const totals = totalsFromSteam(
+      steamTotalsSchema.parse({
+        response: {
+          games: [
+            {
+              appid: 646570,
+              total_achievements: 46,
+              achievements: [
+                { statid: 1, bit: 14, name: 'You Are Nothing', player_percent_unlocked: '13.0' },
+                { statid: 1, bit: 30, name: 'Speed Climber', player_percent_unlocked: '6.7' },
+              ],
+            },
+            { appid: 332310, total_achievements: 71 },
+            { appid: 570, total_achievements: 0 },
+            // A game Steam does not know.
+            { appid: 999999999 },
+          ],
+        },
+      }),
+    )
+    expect(totals).toEqual(
+      new Map([
+        ['646570', { total: 46, unlocked: 2 }],
+        ['332310', { total: 71, unlocked: 0 }],
+        ['570', { total: 0, unlocked: 0 }],
+      ]),
+    )
+  })
+
+  it('is nothing when Steam counts none, as for a profile whose game details are private', () => {
+    expect(totalsFromSteam(steamTotalsSchema.parse({ response: {} }))).toBeUndefined()
   })
 })
 
@@ -107,33 +168,5 @@ describe('an account’s progress from Steam', () => {
     expect(playerFromSteam(500, { playerstats: { success: false } })).toBeUndefined()
     expect(playerFromSteam(200, { playerstats: { success: false } })).toBeUndefined()
     expect(playerFromSteam(200, '<html>')).toBeUndefined()
-  })
-})
-
-describe('unlock rates from Steam', () => {
-  it('reads them as text or numbers, and leaves out what is not a share', () => {
-    const rates = ratesFromSteam(
-      steamRatesAnswerSchema.parse({
-        achievementpercentages: {
-          achievements: [
-            { name: 'A', percent: '80.9' },
-            { name: 'B', percent: 9 },
-            { name: 'C', percent: '' },
-            { name: 'D', percent: 'lots' },
-            { name: 'E', percent: '120' },
-          ],
-        },
-      }),
-    )
-    expect(rates).toEqual(
-      new Map([
-        ['A', 80.9],
-        ['B', 9],
-      ]),
-    )
-  })
-
-  it('is none for a game without achievements: Steam answers nothing', () => {
-    expect(ratesFromSteam(steamRatesAnswerSchema.parse({}))).toEqual(new Map())
   })
 })

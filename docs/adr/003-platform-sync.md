@@ -361,22 +361,47 @@ Xbox and PlayStation tickets extend rather than repeat. What building settled:
 - **The games are the sync's own decisions.** A set is read for every Steam item on the shelf
   (`source_items` with a copy), so editions and matches are what the sync already decided. A
   game not on the shelf has nothing read.
-- **Three questions to Steam, with the key Shelf already has:** `ISteamUserStats/
-  GetSchemaForGame` (in English and in Brazilian Portuguese), `GetPlayerAchievements` and
-  `GetGlobalAchievementPercentagesForApp`. Checked against the live API on 28 Oct 2026: a
-  hidden achievement comes without its description, which `GetPlayerAchievements` gives and
-  Shelf keeps for when it is unlocked; a game without any answers an empty `game`, a 400 "no
-  stats" or a 403; a private profile answers 403 "Profile is not public"; the rates are text.
+- **Three questions to Steam, with the key Shelf already has:**
+  - `IPlayerService/GetTopAchievementsForGames` counts, for up to a hundred games in one
+    question, each one's achievements and the account's unlocked ones.
+  - `IPlayerService/GetGameAchievements` gives a game's achievements in one language, with each
+    one's share of Steam's players. It is read in English and in Brazilian Portuguese.
+  - `ISteamUserStats/GetPlayerAchievements` gives the account's unlocks in one game, with their
+    moments.
+
+  Checked against the live API on 28 Oct 2026:
+  - A game without any answers an empty `response`, a 400 "no stats" or a 403.
+  - A hidden achievement is described like the others, and its artwork is a file name in the
+    game's folder. The shares are text.
+  - A profile whose game details are private gets an empty count from the first, and 403
+    "Profile is not public" from the last.
+  - `IPlayerService/GetAchievementsProgress`, which would count without listing, refuses a Web
+    API key (401), and `GetSchemaForGame` gives no shares, which would cost a third question
+    for each game.
+
   An unlock moment of 0 is not known, never 1970. A busy or failing Steam (429, 5xx) is asked
   again twice, a second and then three seconds later, or as long as its `Retry-After` asks, up
   to five seconds.
-- **In steps, after the games.** A step reads the next ten games due, the latest played
-  first, four at a time. The account page asks for steps once the games are in, and the daily
-  sync does the same after each link's own. Due: definitions after 30 days, to find added
-  achievements; progress once the game is played (by Steam's own last-played moment, never
-  Shelf's clock), once its set changed, and after a week; the rates with the next progress
-  read after a week. A failure waits an hour, and the other games' answers stay. Each account
-  may have 3,000 games' achievements read an hour on its asking.
+- **In steps, after the games.** A step reads the games due, the latest played first, eight at
+  a time, for 15 seconds, and then answers; the next step goes on from there. The account page
+  asks for steps once the games are in, and the daily sync does the same after each link's own.
+- **Counted first, asked one by one only for what the count cannot tell.** A step asks Steam
+  to count the next hundred games. Then:
+  - A game counted with none is read as none, with no other question.
+  - One with none unlocked has every achievement locked.
+  - One with as many unlocked as last read, of a set that did not change, is read as before.
+  - Only a game whose list is not read yet, or that has new unlocks, is asked about on its own.
+  - A game Steam does not count, or every game when the count fails, is asked about as before.
+
+  On a public profile's hundred latest played games, read for the first time, that was 276
+  questions in 20 seconds, against 398 one game at a time. Read again, it is one question, and
+  one more for each game with a new unlock. The definitions are shared, so a game read for one
+  account is not asked about again for the next.
+- **Due:** definitions and their shares after 30 days, or as soon as Steam counts another
+  number of them; progress once the game is played (by Steam's own last-played moment, never
+  Shelf's clock), once its set changed, and after a week. A failure waits an hour, and the
+  other games' answers stay. Each account may ask for 240 steps an hour on its asking: an
+  hour of Steam's time.
 - **A read replaces the last.** The unlocks are Steam's latest answer, whole, so reading twice
   counts nothing twice, and an achievement Steam takes out goes with its unlocks. One added
   after the account's last read is `unknown` until the next: no percentage and no 100% until

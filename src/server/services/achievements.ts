@@ -14,6 +14,7 @@ import {
   type DefinedSet,
   type GameAchievements,
   type ProgressAnswer,
+  type ProgressTotal,
 } from '@/domain/achievements/achievements'
 import { dueWork, isDue, readOrder } from '@/domain/achievements/due'
 import {
@@ -35,69 +36,98 @@ import {
   knownOf,
   noteDefinitionsFailed,
   noteProgressFailed,
+  progressUnchanged,
   readSetsOf,
   saveDefinitions,
   saveProgress,
-  saveRates,
   shelvedApps,
   type App,
 } from '@/server/sync/achievements'
 import { readLink } from '@/server/sync/memory'
 import { SourceError } from '@/server/sync/source-error'
-import { steam, type Steam } from '@/server/sync/steam'
+import { steam, TOTALS_PER_REQUEST, type Steam } from '@/server/sync/steam'
 
 /**
  * Achievements (issue 72): reading them from a provider in steps, and
  * answering a game's page and a library's totals with them. A step reads
- * the next few games due, the latest played first, a few at a time; the
+ * the games due, the latest played first, for a quarter of a minute; the
  * account page asks for steps until none is due, and the daily sync does
- * the same after each link's own sync. A game the provider fails on waits
- * an hour and leaves the others' answers in place.
+ * the same after each link's own sync. The provider first counts each
+ * game's achievements and the account's unlocks, a hundred games a
+ * question; a game is asked about on its own only for what that count
+ * cannot tell: definitions not read yet, and unlocks that changed. A game
+ * the provider fails on waits an hour and leaves the others' answers in
+ * place.
  */
 
 /** What is asked of a provider. */
 type AchievementSource = {
-  /** A game's achievements in one language, or nothing when it has none. */
+  /**
+   * A game's achievements in one language, with each one's share of the
+   * provider's players, or nothing when it has none.
+   */
   definitions: (game: string, language: AchievementLanguage) => Promise<DefinedSet | undefined>
+  /**
+   * How many achievements each of these games has, and how many the account
+   * unlocked, by game. Undefined when the provider does not say: each game
+   * is then asked about on its own.
+   */
+  totals: (
+    account: string,
+    games: readonly string[],
+  ) => Promise<Map<string, ProgressTotal> | undefined>
   progress: (account: string, game: string) => Promise<ProgressAnswer>
-  /** Each achievement's share of the provider's players, by its id. */
-  rates: (game: string) => Promise<Map<string, number>>
 }
 
-/** Games read in one step: a few requests each, a step well inside a function's time. */
-export const READ_PER_STEP = 10
+/**
+ * How long a step goes on reading, checked before each few games: well
+ * inside a function's minute, and often enough for the account page to show
+ * how far it has got.
+ */
+export const STEP_MS = 15_000
 /** Games read at the same time, so a provider is not asked too much at once. */
-const AT_ONCE = 4
+const AT_ONCE = 8
 
 /** The site's languages besides English, whose definitions are read beside it. */
 const TRANSLATED = achievementLanguages.filter((language) => language !== 'en')
 
-export type AchievementsDeps = { db: Db; steam: Steam }
+export type AchievementsDeps = {
+  db: Db
+  steam: Steam
+  /** How long a step goes on reading: tests make it short. */
+  stepMs?: number
+}
 
 type Outcome = 'read' | 'none' | 'private' | 'unreachable'
 
 export const createAchievements = (deps: AchievementsDeps) => {
   const sources: Record<AchievementProvider, AchievementSource> = {
     steam: {
-      definitions: (game, language) => deps.steam.achievementSchema(game, language),
+      definitions: (game, language) => deps.steam.gameAchievements(game, language),
+      totals: (account, games) => deps.steam.achievementTotals(account, games),
       progress: (account, game) => deps.steam.playerAchievements(account, game),
-      rates: (game) => deps.steam.unlockRates(game),
     },
   }
-  return (libraryId: string) => forLibrary(libraryId, deps.db, sources)
+  const stepMs = deps.stepMs ?? STEP_MS
+  return (libraryId: string) => forLibrary(libraryId, deps.db, sources, stepMs)
 }
 
 const forLibrary = (
   libraryId: string,
   db: Db,
   sources: Record<AchievementProvider, AchievementSource>,
+  stepMs: number,
 ) => {
-  /** One game's achievements, read as far as they are due. */
+  /**
+   * One game's achievements, read as far as they are due, with the
+   * provider's count of them and of the account's unlocks when it gave one.
+   */
   const readApp = async (
     provider: AchievementProvider,
     app: App,
     externalId: string,
     now: number,
+    total: ProgressTotal | undefined,
   ): Promise<Outcome> => {
     const source = sources[provider]
     const setId = setIdOf(provider, app.storeId)
@@ -132,17 +162,34 @@ const forLibrary = (
       }
     }
 
-    if (work.definitions && !(await define()) && count === null) return 'unreachable'
-    if (count === 0) return 'none'
-    if (work.rates) {
-      // Rates are a nicety: without them, the list shows no rarity, and the next read tries again.
-      const rates = await source.rates(app.storeId).catch((error: unknown) => {
-        if (error instanceof SourceError) return undefined
-        throw error
-      })
-      if (rates) await saveRates(db, setId, rates, now)
+    // The provider counts another number than the set has: it changed since it was read.
+    const recount = total !== undefined && count !== null && total.total !== count
+    if (total?.total === 0 && (work.definitions || recount)) {
+      // None, as the provider counts them: nothing to ask it about the game.
+      const saved = await saveDefinitions(db, provider, app.storeId, undefined, {}, now)
+      count = saved.count
+      changed = saved.changed
+    } else if ((work.definitions || recount) && !(await define()) && count === null) {
+      return 'unreachable'
     }
+    if (count === 0) return 'none'
     if (!work.progress && !changed) return 'read'
+
+    // What the provider's count tells without asking for the unlocks one by one.
+    const theirs = app.progress?.externalId === externalId ? app.progress : undefined
+    const read = { externalId, copyId: app.copyId, playedAt: app.lastPlayedAt }
+    if (total && total.total === count) {
+      if (total.unlocked === 0) {
+        // None unlocked: each one is locked, and there is no moment to ask for.
+        await saveProgress(db, libraryId, setId, { ...read, unlocks: [], defined: new Set() }, now)
+        return 'read'
+      }
+      // As many as last read, of a set that did not change just now: the same ones.
+      if (!changed && theirs?.readAt && total.unlocked === app.unlocked) {
+        await progressUnchanged(db, libraryId, setId, read, now)
+        return 'read'
+      }
+    }
 
     const failed = (problem: 'private' | 'unreachable') =>
       noteProgressFailed(db, libraryId, setId, { externalId, copyId: app.copyId, problem }, now)
@@ -169,19 +216,7 @@ const forLibrary = (
       if (await define()) defined = await definedIds(db, setId)
     }
     await fillDescriptions(db, setId, answer.descriptions)
-    await saveProgress(
-      db,
-      libraryId,
-      setId,
-      {
-        externalId,
-        copyId: app.copyId,
-        playedAt: app.lastPlayedAt,
-        unlocks: answer.unlocks,
-        defined,
-      },
-      now,
-    )
+    await saveProgress(db, libraryId, setId, { ...read, unlocks: answer.unlocks, defined }, now)
     return 'read'
   }
 
@@ -189,29 +224,52 @@ const forLibrary = (
     apps.filter((app) => isDue(dueWork(knownOf(app), externalId, now)))
 
   /**
-   * One step: the next games due, the latest played first. A provider that
-   * keeps the account's achievements private ends the step, since it does
-   * the same for every game.
+   * One step: the games due, the latest played first, until the step's time
+   * is spent; at least a few, however slow the provider is. Their totals are
+   * asked for a hundred at a time, as the step comes to them. A provider
+   * that keeps the account's achievements private ends the step, since it
+   * does the same for every game.
    */
   const step = async (
     provider: AchievementProvider,
     now = Date.now(),
   ): Promise<AchievementStep> => {
+    const source = sources[provider]
     const link = await readLink(db, libraryId, provider)
     if (!link) throw new LibraryError('not-found', `This shelf is not linked to ${provider}`)
-    const batch = dueOf(await shelvedApps(db, libraryId, provider), link.externalId, now)
-      .sort(readOrder)
-      .slice(0, READ_PER_STEP)
+    const due = dueOf(await shelvedApps(db, libraryId, provider), link.externalId, now).sort(
+      readOrder,
+    )
+    const ends = Date.now() + stepMs
     let read = 0
     let problem: AchievementStep['problem'] = null
-    for (let at = 0; at < batch.length && problem !== 'private'; at += AT_ONCE) {
-      const outcomes = await Promise.all(
-        batch.slice(at, at + AT_ONCE).map((app) => readApp(provider, app, link.externalId, now)),
-      )
-      for (const outcome of outcomes) {
-        if (outcome === 'read' || outcome === 'none') read += 1
-        else if (outcome === 'private') problem = 'private'
-        else problem ??= 'unreachable'
+    let started = false
+    const goOn = () => problem !== 'private' && (!started || Date.now() < ends)
+    reading: for (let from = 0; from < due.length && goOn(); from += TOTALS_PER_REQUEST) {
+      const batch = due.slice(from, from + TOTALS_PER_REQUEST)
+      // Without the provider's count, each game is asked about on its own.
+      const totals = await source
+        .totals(
+          link.externalId,
+          batch.map((app) => app.storeId),
+        )
+        .catch((error: unknown) => {
+          if (error instanceof SourceError) return undefined
+          throw error
+        })
+      for (let at = 0; at < batch.length; at += AT_ONCE) {
+        if (!goOn()) break reading
+        started = true
+        const outcomes = await Promise.all(
+          batch
+            .slice(at, at + AT_ONCE)
+            .map((app) => readApp(provider, app, link.externalId, now, totals?.get(app.storeId))),
+        )
+        for (const outcome of outcomes) {
+          if (outcome === 'read' || outcome === 'none') read += 1
+          else if (outcome === 'private') problem = 'private'
+          else problem ??= 'unreachable'
+        }
       }
     }
     const apps = await shelvedApps(db, libraryId, provider)
@@ -312,7 +370,7 @@ const invalid = (): Promise<Refusal> => Promise.resolve({ ok: false, reason: 'in
 export const readMyAchievements = (source: unknown) => {
   if (!isAchievementProvider(source)) return invalid()
   return forAccount(async (account) => {
-    await spend(account, 'achievements', READ_PER_STEP)
+    await spend(account, 'achievements')
     return achievementsFor(account.id).step(source)
   }, true)
 }
