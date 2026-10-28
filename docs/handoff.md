@@ -41,6 +41,10 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   **Still to do, by the owner:** press Sync now on production once and look at a few games'
   achievements, since production is real data and no check here may write to it. Existing
   links need no new sign-in: the next sync, or the daily one, reads them.
+- **Steam's "did not answer" on the owner's card was ours** (architecture section 25, row
+  "Achievements from the count"): Steam keeps some games' own lists from the Web API for their
+  content, and Shelf did not read their unlocks from the count, which has them. The next sync
+  reads them.
 - **Hiding adult games is on the account page now,** a switch after Experimental views, as the
   owner asked (architecture section 25, row "Adult games in settings"). The library's button and
   `H` are gone.

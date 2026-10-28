@@ -56,6 +56,7 @@ export const steamGameAchievementsSchema = z.object({
             icon_gray: z.string().optional(),
             hidden: z.boolean().optional(),
             player_percent_unlocked: z.union([z.number(), z.string()]).optional(),
+            internal_key: z.number().int().nonnegative().optional(),
           }),
         )
         .optional(),
@@ -104,6 +105,7 @@ export const definedFromSteam = (
     if (locked) definition.iconLocked = locked
     const rate = shareOf(each.player_percent_unlocked)
     if (rate !== undefined) definition.rate = rate
+    if (each.internal_key !== undefined) definition.key = String(each.internal_key)
     achievements.push(definition)
   }
   return { achievements }
@@ -117,8 +119,15 @@ export const steamTotalsSchema = z.object({
           z.object({
             appid: z.number().int(),
             total_achievements: z.number().int().nonnegative().optional(),
-            /** The account's unlocked ones, as many as were asked for: only their number is read. */
-            achievements: z.array(z.unknown()).optional(),
+            /** The account's unlocked ones, as many as were asked for, each by its stat and bit. */
+            achievements: z
+              .array(
+                z.object({
+                  statid: z.number().int().nonnegative().optional(),
+                  bit: z.number().int().nonnegative().optional(),
+                }),
+              )
+              .optional(),
           }),
         )
         .optional(),
@@ -129,8 +138,16 @@ export const steamTotalsSchema = z.object({
 export type SteamTotals = z.infer<typeof steamTotalsSchema>
 
 /**
+ * An achievement's `internal_key` in a game's definitions, from the stat and
+ * bit a count lists it by: `(statid << 8) | bit`. Checked live on 28 Oct
+ * 2026, on 3,727 unlocks of 39 games, each one's name agreeing.
+ */
+export const steamKey = (statid: number, bit: number) => String(statid * 256 + bit)
+
+/**
  * How many achievements each game has, and how many the account unlocked,
- * by app id. A game Steam does not know is left out. Undefined when Steam
+ * by app id, with the unlocked ones' keys where Steam gives each its stat
+ * and bit. A game Steam does not know is left out. Undefined when Steam
  * counted none of them: it says nothing of a profile whose game details are
  * not public.
  */
@@ -140,10 +157,12 @@ export const totalsFromSteam = (answer: SteamTotals): Map<string, ProgressTotal>
   const totals = new Map<string, ProgressTotal>()
   for (const game of listed) {
     if (game.total_achievements === undefined) continue
-    totals.set(String(game.appid), {
-      total: game.total_achievements,
-      unlocked: game.achievements?.length ?? 0,
-    })
+    const unlocked = game.achievements ?? []
+    const total: ProgressTotal = { total: game.total_achievements, unlocked: unlocked.length }
+    if (unlocked.every((each) => each.statid !== undefined && each.bit !== undefined)) {
+      total.keys = unlocked.map((each) => steamKey(each.statid!, each.bit!))
+    }
+    totals.set(String(game.appid), total)
   }
   return totals
 }

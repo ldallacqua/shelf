@@ -391,7 +391,7 @@ describe('reading achievements from Steam', () => {
 
   it('reads on when Steam keeps one game’s achievements from Shelf, as for a game I no longer own', async () => {
     const me = await synced()
-    steamState.withheldApps = new Set(['220'])
+    steamState.unownedApps = new Set(['220'])
     const steps = await readAll(me)
     const games = steps.at(-1)!.counts.games
     expect(steps.at(-1)).toMatchObject({
@@ -403,6 +403,32 @@ describe('reading achievements from Steam', () => {
     expect(progressOf(await halfLife(me))).toMatchObject({ earned: 0, total: 6 })
     const hades = await achievements(me).game(await slugOfApp(me, 'Hades II'), 'en', { mine: true })
     expect(progressOf(hades!.sets[0]!)).toMatchObject({ earned: 3, total: 3 })
+  })
+
+  it('reads a game Steam keeps from Shelf for its content from its count, without the moments', async () => {
+    const me = await synced()
+    steamState.withheldApps = new Set(['220'])
+    const steps = await readAll(me)
+    const games = steps.at(-1)!.counts.games
+    expect(steps.at(-1)).toMatchObject({
+      remaining: 0,
+      problem: null,
+      counts: { games, known: games, private: 0 },
+    })
+    // Four of six, as Steam's count names them, matched by key to the definitions.
+    expect(progressOf(await halfLife(me))).toMatchObject({ earned: 4, total: 6 })
+    const unlocks = await db
+      .select({ id: achievementUnlocks.achievementId, at: achievementUnlocks.unlockedAt })
+      .from(achievementUnlocks)
+      .where(and(eq(achievementUnlocks.userId, me), eq(achievementUnlocks.setId, 'steam:220')))
+    expect(unlocks).toHaveLength(4)
+    // The count gives no moments, and none is made up.
+    expect(unlocks.every((each) => each.at === null)).toBe(true)
+
+    // Nothing new: the count agrees, and nothing is asked of the game itself.
+    steamState.asked.length = 0
+    await readAll(me, NOW + 8 * DAY)
+    expect(times('GetPlayerAchievements')).toBe(0)
   })
 
   it('reads a game Steam does not count, and keeps from me, as none unlocked', async () => {

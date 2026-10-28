@@ -33,10 +33,16 @@ export type SteamMockState = {
   achievementsPrivate?: boolean
   /**
    * Apps whose own progress answer is "Profile is not public" though the
-   * profile is public, as Steam answers for a game the account no longer
-   * owns; Steam counts none of their achievements unlocked.
+   * profile is public, as Steam answers for a game it keeps from anonymous
+   * eyes for its content, adult games first; its count still names their
+   * unlocked achievements.
    */
   withheldApps?: Set<string>
+  /**
+   * Apps the account does not own: their own progress answer is "Profile is
+   * not public" too, and Steam counts none of their achievements unlocked.
+   */
+  unownedApps?: Set<string>
   /**
    * A game's achievements or the account's progress through them as Steam
    * gives them now, by app, in place of the fixture's: its totals count them.
@@ -157,7 +163,7 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
             if (!game) return { appid: Number(app), total_achievements: 0 }
             const listed = game.definitions.english!.response.achievements
             const unlocked = new Set(
-              (state.withheldApps?.has(app) ? undefined : game.player)?.playerstats.achievements
+              (state.unownedApps?.has(app) ? undefined : game.player)?.playerstats.achievements
                 .filter((each) => each.achieved === 1)
                 .map((each) => each.apiname),
             )
@@ -168,10 +174,16 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
                   Number(a.player_percent_unlocked ?? 0) - Number(b.player_percent_unlocked ?? 0),
               )
               .slice(0, most)
-              .map(({ internal_name: _, localized_name, localized_desc, ...rest }) => ({
-                name: localized_name,
-                desc: localized_desc,
-                ...rest,
+              // As Steam lists them: by stat and bit, which the definitions' internal key encodes.
+              .map((each) => ({
+                statid: Math.floor(Number(each.internal_key ?? 0) / 256),
+                bit: Number(each.internal_key ?? 0) % 256,
+                name: each.localized_name,
+                desc: each.localized_desc,
+                icon: each.icon,
+                icon_gray: each.icon_gray,
+                hidden: each.hidden,
+                player_percent_unlocked: each.player_percent_unlocked,
               }))
             return {
               appid: Number(app),
@@ -194,7 +206,8 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
       if (
         address.searchParams.get('steamid') !== MOCK_STEAM.steamId ||
         state.achievementsPrivate ||
-        state.withheldApps?.has(app)
+        state.withheldApps?.has(app) ||
+        state.unownedApps?.has(app)
       ) {
         return HttpResponse.json(notPublic, { status: 403 })
       }

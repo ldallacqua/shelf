@@ -5,6 +5,7 @@ import {
   playerFromSteam,
   steamGameAchievementsSchema,
   steamImage,
+  steamKey,
   steamTotalsSchema,
   totalsFromSteam,
 } from './steam'
@@ -47,6 +48,7 @@ describe('a game’s achievements from Steam', () => {
       achievements: [
         {
           id: 'ACH_LIFTOFF',
+          key: '0',
           name: 'Liftoff',
           description: 'Leave the village.',
           icon: 'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/753640/a1b2.jpg',
@@ -119,11 +121,31 @@ describe('many games’ totals from Steam', () => {
     )
     expect(totals).toEqual(
       new Map([
-        ['646570', { total: 46, unlocked: 2 }],
-        ['332310', { total: 71, unlocked: 0 }],
-        ['570', { total: 0, unlocked: 0 }],
+        ['646570', { total: 46, unlocked: 2, keys: ['270', '286'] }],
+        ['332310', { total: 71, unlocked: 0, keys: [] }],
+        ['570', { total: 0, unlocked: 0, keys: [] }],
       ]),
     )
+  })
+
+  it('names an unlock by the key its definition has: the stat, shifted a byte, and the bit', () => {
+    // A game's first two, as GetGameAchievements keys them.
+    expect(steamKey(1, 0)).toBe('256')
+    expect(steamKey(1, 6)).toBe('262')
+    expect(steamKey(100, 30)).toBe('25630')
+  })
+
+  it('counts the unlocked ones without their keys when Steam leaves out a stat or a bit', () => {
+    const totals = totalsFromSteam(
+      steamTotalsSchema.parse({
+        response: {
+          games: [
+            { appid: 646570, total_achievements: 46, achievements: [{ name: 'Speed Climber' }] },
+          ],
+        },
+      }),
+    )
+    expect(totals?.get('646570')).toEqual({ total: 46, unlocked: 1 })
   })
 
   it('is nothing when Steam counts none, as for a profile whose game details are private', () => {
