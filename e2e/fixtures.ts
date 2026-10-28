@@ -181,9 +181,11 @@ type Fixtures = {
    */
   signedIn: boolean
   /**
-   * The shelf's 2D or 3D choice, stored before the page loads. 2D unless a
-   * test asks for 3D, so the tests written for 2D read 2D on every project;
-   * `device` stores nothing and leaves it to the device's default.
+   * The shelf's 2D or 3D choice, stored before the page loads with
+   * experimental views on (issue 63), so the tests find the controls they
+   * were written with. 2D unless a test asks for 3D, so the tests written for
+   * 2D read 2D on every project; `device` stores nothing at all, as a fresh
+   * browser has it.
    */
   dimension: '2d' | '3d' | 'device'
   /**
@@ -235,6 +237,7 @@ export const test = base.extend<Fixtures>({
   page: async ({ page, dimension }, use) => {
     if (dimension !== 'device') {
       await page.addInitScript((value) => {
+        window.localStorage.setItem('shelf:experimental', 'on')
         window.localStorage.setItem('shelf:dimension', value)
       }, dimension)
     }

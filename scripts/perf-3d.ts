@@ -28,6 +28,8 @@ const browser = await chromium.launch({
 })
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
 await context.addInitScript(() => {
+  // 3D is offered only with experimental views on (issue 63).
+  localStorage.setItem('shelf:experimental', 'on')
   localStorage.setItem('shelf:dimension', '3d')
   window.__shelf3dProbe = {}
 })

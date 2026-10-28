@@ -6,23 +6,40 @@ import {
   adultPreference,
   densityPreference,
   dimensionPreference,
+  experimentalPreference,
   readPreference,
   readyPreference,
   subscribeToPreferences,
   TOO_SMALL_FOR_3D,
   wallSizePreference,
+  writeExperimental,
   writePreference,
   type AdultChoice,
   type Density,
   type Dimension,
+  type ExperimentalChoice,
   type ReadyChoice,
   type WallSize,
 } from './preferences'
 
 /**
+ * Whether this device is offered the unfinished views (issue 63), and a way
+ * to change it. The server says no; the stored choice follows once the page
+ * has hydrated.
+ */
+export function useExperimental(): [ExperimentalChoice, (value: ExperimentalChoice) => void] {
+  const value = useSyncExternalStore(
+    subscribeToPreferences,
+    () => readPreference(experimentalPreference),
+    () => experimentalPreference.fallback,
+  )
+  return [value, writeExperimental]
+}
+
+/**
  * Whether this device draws the shelf in 2D or 3D, and a way to change it.
- * The server always draws 2D; the stored choice, or the device's default,
- * follows once the page has hydrated.
+ * The server always draws 2D; a choice of 3D follows once the page has
+ * hydrated, and only while experimental views are on.
  */
 export function useDimension(): [Dimension, (value: Dimension) => void] {
   const value = useSyncExternalStore(

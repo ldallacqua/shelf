@@ -107,7 +107,8 @@ Library query string, in full:
 | `view` | `shelf`, `wall`, `list` | `shelf` |
 | `seed` | Only with `sort=random`: keeps a shuffle stable | none |
 
-2D or 3D is **not** in the address. It is a per-device preference ([section 3.6](#36-switching-2d-and-3d)).
+2D or 3D is **not** in the address. It is a per-device preference, and 3D is offered only with
+experimental views on ([section 3.6](#36-switching-2d-and-3d)).
 
 **Header, on every page:** the name; Library and Trophies of the shelf in the address (or,
 elsewhere, one's own); a search field over it; theme switch, language switch. On the right, a
@@ -136,7 +137,7 @@ Desktop:
 │                                                            │
 │ All  Playing  Backlog  Completed  Dropped  Wishlist        │
 │ Filters 2   Group Platform   Sort Title                     │
-│                               Shelf  Wall  List    2D  3D   │
+│                                         Shelf  Wall  List  │
 │ Genre: RPG  x     Not theme: Horror  x     Clear all        │
 ├────────────────────────────────────────────────────────────┤
 │ PlayStation 4    38                                        │
@@ -174,7 +175,8 @@ Phone:
 | Group | None, platform, status, year |
 | Sort | The sort key and direction |
 | Shelf, Wall, List | Switches view |
-| 2D, 3D | Only in Shelf view. Two labeled buttons, with the current one pressed. |
+| 2D, 3D | Only in Shelf view, with experimental views on (3.6). Two labeled buttons, with the current one pressed. |
+| Covers, Compact | The same: only in Shelf view, with experimental views on (3.6). |
 | Active filter chips | One per condition, each removable, with Clear all |
 | Search | Finds games in the library by title as you type. It also accepts filter syntax. |
 | Stats line | Games, finished, hours. Reflects the current filter. |
@@ -187,7 +189,7 @@ Phone:
 | **Ledge** | One physical row. A long shelf wraps onto several ledges. |
 | **Box** | One game as an object: a game case. Its shape and plastic color follow the platform's real case ([research, section 4](research.md#4-physical-inspiration)). |
 | **Cover-out** | A box standing with its cover toward you. This is how games stand on the shelf ([ADR 002](adr/002-visual-direction.md)). |
-| **Compact** | The dense option: boxes stand spine-out, so more fit on a ledge. A spine shows a platform band and the title, and is generated, because IGDB has no spine art. |
+| **Compact** | The dense option, experimental (3.6): boxes stand spine-out, so more fit on a ledge. A spine shows a platform band and the title, and is generated, because IGDB has no spine art. |
 | **LED** | The light bar along the back of each ledge. Its color follows the game in focus. |
 
 **How a box shows its state.** Never by color alone:
@@ -210,7 +212,7 @@ first one I added.
 
 ### 3.3 Shelf in 3D
 
-Built to look best on a desktop.
+Built to look best on a desktop. Experimental: offered only with experimental views on (3.6).
 
 - **Scene.** A game room's display wall. Each shelf is a bay of black ledges, and the bays run
   left to right. Every ledge has an LED bar along its back edge, so the boxes in front of it
@@ -274,16 +276,29 @@ Built to feel best on a phone and on modest hardware. It is a design of its own,
 
 ### 3.6 Switching 2D and 3D
 
+**Experimental views.** The 3D shelf and the compact shelf are unfinished: in 3D covers are
+hard to read, and spines make games hard to recognize (issue 63). They stay out of sight until
+I turn on **Experimental views** (Visualizações experimentais) on my account page, a switch with
+a line that says they are unfinished and may look or work wrong.
+
+- It belongs to this device, like the theme: off in a fresh browser, kept over a reload and
+  over a restart of Shelf for Windows.
+- While it is off, the shelf is 2D with covers. Neither pair of buttons is shown, `D` does
+  nothing and is not in the list of keys, and a choice of 3D or compact stored before cannot
+  bring either back, from the first paint on.
+- Turned on, both pairs of buttons appear in the library's row of controls, under a label
+  "Experimental" with a flask. The shelf stays in 2D with covers until I press 3D or Compact.
+- Turned off, the shelf goes back to 2D with covers and the choices made under it are
+  forgotten. Filters, sort and grouping are in the address, so nothing else changes.
+
 **Default**
 
 | Situation | Starts in |
 | --- | --- |
-| Desktop with WebGL | 3D |
-| Phone or tablet | 2D |
+| Every device | 2D |
 | No WebGL | 2D, and the 3D button is disabled with a reason |
-| Reduced motion requested | 2D |
 
-Once I press either button, that choice is remembered on this device and overrides the default.
+Once I press either button, that choice is remembered on this device.
 
 **Covers or spines.** Beside 2D and 3D sits a second pair of buttons: Covers and Compact.
 Covers is the default everywhere. Compact stands the boxes spine-out. It is also a per-device
@@ -306,7 +321,9 @@ choice, it is not in the address, and it works in both 2D and 3D.
 - Every library test passes in both views.
 - Switching views leaves the address unchanged and the anchor game on screen.
 - The choice survives a reload and a new visit on the same device.
-- A phone that has never chosen gets 2D; a desktop that has never chosen gets 3D.
+- A device that has never chosen gets 2D, a desktop too.
+- With experimental views off, nothing a control, a key or a stored choice does shows 3D or
+  compact.
 - With 500 games the 3D view holds 60 frames per second on a mid-range laptop.
 
 ### 3.7 Grouping
@@ -403,7 +420,7 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | `G` | Change grouping |
 | `S` | Change sort |
 | `V` | Next view |
-| `D` | Switch 2D and 3D |
+| `D` | Switch 2D and 3D, with experimental views on (3.6) |
 | `H` | Hide or show adult games, on a shelf that has any (3.13) |
 | `R` | Shuffle ("surprise me") |
 | `A` | Add a game (signed in) |
@@ -1376,7 +1393,7 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 
 | | Phone (under 640px) | Tablet (640 to 1023px) | Desktop (1024px and up) |
 | --- | --- | --- | --- |
-| Shelf default | 2D | 2D | 3D |
+| Shelf default | 2D | 2D | 2D; 3D is experimental (3.6) |
 | Shelf layout | One shelf per screen, swipe between | Shelves stacked, ledges wrap | 2D: stacked. 3D: bays along a wall. |
 | Main controls | Bar at the bottom | Row under the header | Row under the header |
 | Filters | Bottom sheet | Side panel | Side panel; from 1536px, a column beside the library |

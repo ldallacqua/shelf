@@ -140,9 +140,10 @@ facts file. The sample library gives Donkey Kong Country a private note.
 
 ## The 3D shelf in browser tests
 
-**Every test starts in 2D**, whatever the device would choose: the `dimension` option in
-`e2e/fixtures.ts` stores 2D before the page loads. A test about 3D asks for it with
-`test.use({ dimension: '3d' })`, or for the device's own default with `'device'`.
+**Every test starts in 2D, with experimental views on** (spec 3.6): the `dimension` option in
+`e2e/fixtures.ts` stores both before the page loads, so the 2D and 3D buttons and the compact
+ones are there. A test about 3D asks for it with `test.use({ dimension: '3d' })`, or for a
+fresh browser, with nothing stored and experimental views off, with `'device'`.
 
 **`shelfSettled(page)` waits for the shelf to finish deciding.** It reads the pair of buttons:
 if 3D is pressed, it waits until the 3D shelf has taken over (`[data-shelf-phase="3d"]`) or
@@ -151,7 +152,7 @@ said why it could not, and returns `'3d'`, `'fallback'` or `'2d'`. `openLibrary`
 **Where a browser cannot draw 3D, the test is skipped, not failed.** Test browsers draw WebGL
 in software, and some cannot make a context at all. Then the app's own fallback runs, and
 the fallback has tests of its own (no WebGL 2, a lost context). The tests about the scene
-itself run at desktop width, where 3D is the default; a phone is checked for having no 3D.
+itself run at desktop width; a phone is checked for having no 3D.
 
 **The scene's numbers** (draw calls, texture memory, which box is pulled, where the camera
 is) are read through `window.__shelf3dProbe`. Set it to `{}` in an init script and the scene

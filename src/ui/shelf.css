@@ -1188,11 +1188,11 @@
   /*
    * A visitor who chose the compact shelf must not see covers flash first.
    * The page arrives drawn with covers; until it is live, their shelves are
-   * held back, and the control that shows the choice with them.
+   * held back. The buttons that show that choice, and 3D's, are not drawn
+   * until then at all: they wait for the browser to know experimental views
+   * are on (issue 63).
    */
-  html[data-density='compact']:not([data-ready])
-    :is(.shelf-grid:not([data-rows]), [data-preference='density']),
-  html[data-shelf-mode='3d']:not([data-ready]) [data-preference='shelf-mode'],
+  html[data-density='compact']:not([data-ready]) .shelf-grid:not([data-rows]),
   html:is([data-wall-size='small'], [data-wall-size='large']):not([data-ready])
     :is(.wall-grid, [data-preference='wall-size']) {
     visibility: hidden;

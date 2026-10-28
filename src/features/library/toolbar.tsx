@@ -5,6 +5,7 @@ import {
   EyeOffIcon,
   ChevronDownIcon,
   Columns4Icon,
+  FlaskConicalIcon,
   LayoutGridIcon,
   ListIcon,
   RectangleVerticalIcon,
@@ -47,6 +48,8 @@ type ToolbarProps = {
   onWallSize: (size: WallSize) => void
   dimension: Dimension
   onDimension: (dimension: Dimension) => void
+  /** Experimental views are on, on this device: 2D or 3D and covers or compact are offered (issue 63). */
+  experimental?: boolean
   /** This browser cannot draw 3D: the 3D button is disabled, and says why. */
   noThreeD?: boolean
   /** The group menu's open state, so the G key can open it. */
@@ -67,8 +70,9 @@ const densityIcons = { covers: RectangleVerticalIcon, compact: Columns4Icon } as
 
 /**
  * The library's controls: filters and sort, then grouping, which view, and,
- * per view, how boxes stand or how large covers are. Filters, sort, view and
- * grouping live in the address; the other two belong to this device.
+ * per view, how large covers are, or, with experimental views on, how the
+ * shelf is drawn and how boxes stand. Filters, sort, view and grouping live
+ * in the address; the others belong to this device.
  */
 export function Toolbar({
   view,
@@ -81,6 +85,7 @@ export function Toolbar({
   onWallSize,
   dimension,
   onDimension,
+  experimental = false,
   noThreeD = false,
   groupOpen,
   onGroupOpen,
@@ -146,56 +151,69 @@ export function Toolbar({
         </DropdownMenu>
 
         <div className="ml-auto flex flex-none items-center gap-2 sm:gap-3">
-          {view === 'shelf' ? (
-            <Segmented
-              aria-label={t('dimension.label')}
-              data-preference="shelf-mode"
-              // A phone is not offered 3D (TOO_SMALL_FOR_3D), so there is nothing to choose.
-              // Hidden by CSS, so it is right from the first paint.
-              className="too-small-for-3d:hidden"
-              value={dimension}
-              onValueChange={(value) => {
-                if (!(value === '3d' && noThreeD)) onDimension(value)
-              }}
+          {view === 'shelf' && experimental ? (
+            // Unfinished (issue 63), and said so: offered only once this device asked for them.
+            <div
+              role="group"
+              aria-label={t('experimental.label')}
+              className="flex items-center gap-2 sm:gap-3"
             >
-              {dimensions.map((value) => (
-                <SegmentedItem
-                  key={value}
-                  value={value}
-                  // Unavailable, not disabled: it stays in reach of the keyboard, so its reason can be heard.
-                  aria-disabled={value === '3d' && noThreeD ? true : undefined}
-                  aria-describedby={value === '3d' && noThreeD ? reasonId : undefined}
-                  title={value === '3d' && noThreeD ? t('dimension.unsupported') : undefined}
-                  className="aria-disabled:opacity-50"
-                >
-                  {t(`dimension.${value}`)}
-                </SegmentedItem>
-              ))}
-            </Segmented>
-          ) : null}
-          {view === 'shelf' && noThreeD ? (
-            <span id={reasonId} className="sr-only">
-              {t('dimension.unsupported')}
-            </span>
-          ) : null}
-
-          {view === 'shelf' ? (
-            <Segmented
-              aria-label={t('density.label')}
-              data-preference="density"
-              value={density}
-              onValueChange={onDensity}
-            >
-              {densities.map((value) => {
-                const Icon = densityIcons[value]
-                return (
-                  <SegmentedItem key={value} value={value} aria-label={t(`density.${value}`)}>
-                    <Icon aria-hidden="true" className="sm:hidden" />
-                    <span className="max-sm:hidden">{t(`density.${value}`)}</span>
+              <span
+                aria-hidden="true"
+                title={t('experimental.label')}
+                className="flex items-center gap-1 readout text-[0.625rem] text-muted"
+              >
+                <FlaskConicalIcon className="size-3.5" />
+                <span className="max-lg:hidden">{t('experimental.tag')}</span>
+              </span>
+              <Segmented
+                aria-label={t('dimension.label')}
+                data-preference="shelf-mode"
+                // A phone is not offered 3D (TOO_SMALL_FOR_3D), so there is nothing to choose.
+                // Hidden by CSS, so it is right from the first paint.
+                className="too-small-for-3d:hidden"
+                value={dimension}
+                onValueChange={(value) => {
+                  if (!(value === '3d' && noThreeD)) onDimension(value)
+                }}
+              >
+                {dimensions.map((value) => (
+                  <SegmentedItem
+                    key={value}
+                    value={value}
+                    // Unavailable, not disabled: it stays in reach of the keyboard, so its reason can be heard.
+                    aria-disabled={value === '3d' && noThreeD ? true : undefined}
+                    aria-describedby={value === '3d' && noThreeD ? reasonId : undefined}
+                    title={value === '3d' && noThreeD ? t('dimension.unsupported') : undefined}
+                    className="aria-disabled:opacity-50"
+                  >
+                    {t(`dimension.${value}`)}
                   </SegmentedItem>
-                )
-              })}
-            </Segmented>
+                ))}
+              </Segmented>
+              {noThreeD ? (
+                <span id={reasonId} className="sr-only">
+                  {t('dimension.unsupported')}
+                </span>
+              ) : null}
+
+              <Segmented
+                aria-label={t('density.label')}
+                data-preference="density"
+                value={density}
+                onValueChange={onDensity}
+              >
+                {densities.map((value) => {
+                  const Icon = densityIcons[value]
+                  return (
+                    <SegmentedItem key={value} value={value} aria-label={t(`density.${value}`)}>
+                      <Icon aria-hidden="true" className="sm:hidden" />
+                      <span className="max-sm:hidden">{t(`density.${value}`)}</span>
+                    </SegmentedItem>
+                  )
+                })}
+              </Segmented>
+            </div>
           ) : null}
 
           {view === 'wall' ? (

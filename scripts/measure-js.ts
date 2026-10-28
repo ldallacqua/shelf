@@ -66,7 +66,11 @@ for (const budget of javascriptBudgets) {
  */
 const scriptsOf = async (dimension: '2d' | '3d'): Promise<Map<string, number>> => {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
-  await context.addInitScript((value) => localStorage.setItem('shelf:dimension', value), dimension)
+  // 3D is offered only with experimental views on (issue 63): on for both visits, so they differ only in 3D.
+  await context.addInitScript((value) => {
+    localStorage.setItem('shelf:experimental', 'on')
+    localStorage.setItem('shelf:dimension', value)
+  }, dimension)
   const page = await context.newPage()
   const session = await context.newCDPSession(page)
   await session.send('Network.enable')

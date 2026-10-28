@@ -32,9 +32,12 @@ const KEYS = [
 export function ShortcutsDialog({
   open,
   onOpenChange,
+  experimental = false,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Experimental views are on, on this device: D, which switches 2D and 3D, is listed too (issue 63). */
+  experimental?: boolean
 }) {
   const t = useTranslations('Shortcuts')
   const on = useShortcutsOn()
@@ -44,7 +47,7 @@ export function ShortcutsDialog({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent title={t('title')} description={t('description')} closeLabel={t('close')}>
         <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm">
-          {KEYS.map(([name, keys]) => (
+          {KEYS.filter(([name]) => experimental || name !== 'dimension').map(([name, keys]) => (
             <div key={name} className="contents">
               <dt>
                 <kbd className="rounded-[3px] border border-line-strong px-1.5 py-0.5 readout text-[0.6875rem] whitespace-nowrap">

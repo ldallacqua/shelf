@@ -1,10 +1,14 @@
 /**
- * Choices that belong to this device, not to the address: how boxes stand on
- * the shelf, whether the shelf is drawn in 2D or 3D, and how large covers are
- * on the wall. They are kept in the
- * browser's storage and mirrored on the page's <html> element, where a small
- * script puts them before the first paint (see `preference-script.tsx`).
+ * Choices that belong to this device, not to the address: whether the
+ * unfinished views are offered, how boxes stand on the shelf, whether the
+ * shelf is drawn in 2D or 3D, and how large covers are on the wall. They are
+ * kept in the browser's storage and mirrored on the page's <html> element,
+ * where a small script puts them before the first paint (see
+ * `preference-script.tsx`).
  */
+
+export const experimentalChoices = ['off', 'on'] as const
+export type ExperimentalChoice = (typeof experimentalChoices)[number]
 
 export const densities = ['covers', 'compact'] as const
 export type Density = (typeof densities)[number]
@@ -24,12 +28,22 @@ type Preference<Value extends string> = {
   /** What the server draws, and what applies when nothing better is known. */
   fallback: Value
   /**
-   * For a choice whose default depends on the device: an expression the head
-   * script evaluates, before the first paint, when nothing is stored. A choice
-   * with one is always stored once made, even when it equals the default,
-   * because the default could differ the next time.
+   * A choice of an unfinished view (issue 63): it applies only while
+   * experimental views are on, on this device. Otherwise the fallback does,
+   * whatever is stored, so a choice made before cannot bring the view back.
    */
-  deviceDefault?: string
+  experimental?: true
+}
+
+/**
+ * Whether this device is offered the unfinished views, the 3D shelf and the
+ * compact one (issue 63). Off until it is turned on, on the account page.
+ */
+export const experimentalPreference: Preference<ExperimentalChoice> = {
+  storageKey: 'shelf:experimental',
+  attribute: 'experimental',
+  values: experimentalChoices,
+  fallback: 'off',
 }
 
 export const densityPreference: Preference<Density> = {
@@ -37,6 +51,7 @@ export const densityPreference: Preference<Density> = {
   attribute: 'density',
   values: densities,
   fallback: 'covers',
+  experimental: true,
 }
 
 export const wallSizePreference: Preference<WallSize> = {
@@ -47,9 +62,8 @@ export const wallSizePreference: Preference<WallSize> = {
 }
 
 /**
- * The desktop that can draw it starts in 3D: a fine pointer that can hover, a
- * wide window, WebGL 2, and no request for reduced motion. Phones and tablets
- * start in 2D (spec 3.6). Whether WebGL 2 really works is only known once a
+ * Every device starts in 2D (spec 3.6): 3D is experimental, and only drawn
+ * once it is chosen. Whether WebGL 2 really works is only known once a
  * context is made; if it does not, the shelf says so and stays in 2D.
  */
 export const dimensionPreference: Preference<Dimension> = {
@@ -57,10 +71,7 @@ export const dimensionPreference: Preference<Dimension> = {
   attribute: 'shelf-mode',
   values: dimensions,
   fallback: '2d',
-  deviceDefault:
-    "matchMedia('(hover: hover) and (pointer: fine) and (min-width: 64rem)').matches&&" +
-    "!matchMedia('(prefers-reduced-motion: reduce)').matches&&" +
-    "'WebGL2RenderingContext' in window?'3d':'2d'",
+  experimental: true,
 }
 
 /**
@@ -103,7 +114,9 @@ export const readyPreference: Preference<ReadyChoice> = {
   fallback: 'all',
 }
 
+// Experimental views first: the head script reads them back for the choices they hold.
 const preferences = [
+  experimentalPreference,
   densityPreference,
   wallSizePreference,
   dimensionPreference,
@@ -123,22 +136,39 @@ export const subscribeToPreferences = (listener: () => void): (() => void) => {
   }
 }
 
+const attributeOf = (preference: Preference<string>): string => `data-${preference.attribute}`
+
+const experimentalOn = (): boolean =>
+  document.documentElement.getAttribute(attributeOf(experimentalPreference)) === 'on'
+
 export const readPreference = <Value extends string>(preference: Preference<Value>): Value =>
-  parse(preference, document.documentElement.getAttribute(`data-${preference.attribute}`))
+  preference.experimental && !experimentalOn()
+    ? preference.fallback
+    : parse(preference, document.documentElement.getAttribute(attributeOf(preference)))
 
 export const writePreference = <Value extends string>(
   preference: Preference<Value>,
   value: Value,
 ): void => {
   try {
-    if (value === preference.fallback && !preference.deviceDefault) {
-      window.localStorage.removeItem(preference.storageKey)
-    } else window.localStorage.setItem(preference.storageKey, value)
+    if (value === preference.fallback) window.localStorage.removeItem(preference.storageKey)
+    else window.localStorage.setItem(preference.storageKey, value)
   } catch {
     // Storage is blocked: the choice still applies to this page.
   }
-  document.documentElement.setAttribute(`data-${preference.attribute}`, value)
+  document.documentElement.setAttribute(attributeOf(preference), value)
   for (const listener of listeners) listener()
+}
+
+/**
+ * Turns experimental views on or off. Either way the shelf starts again in
+ * 2D with covers: turned off, a view it was in goes away with its buttons;
+ * turned on, nothing changes until one is chosen.
+ */
+export const writeExperimental = (value: ExperimentalChoice): void => {
+  writePreference(dimensionPreference, dimensionPreference.fallback)
+  writePreference(densityPreference, densityPreference.fallback)
+  writePreference(experimentalPreference, value)
 }
 
 /**
@@ -152,15 +182,15 @@ export const preferenceScript = (): string =>
       const key = JSON.stringify(preference.storageKey)
       const allowed = JSON.stringify(preference.values)
       const fallback = JSON.stringify(preference.fallback)
-      const attribute = JSON.stringify(`data-${preference.attribute}`)
-      // Worked out only when nothing usable is stored. It must never throw either.
-      const otherwise = preference.deviceDefault
-        ? `(function(){try{return ${preference.deviceDefault}}catch(e){return ${fallback}}})()`
-        : fallback
+      const attribute = JSON.stringify(attributeOf(preference))
+      // An unfinished view's choice is not even read while experimental views are off.
+      const off = preference.experimental
+        ? `d.getAttribute(${JSON.stringify(attributeOf(experimentalPreference))})!=="on"||`
+        : ''
       return (
         `try{var v=localStorage.getItem(${key});` +
-        `d.setAttribute(${attribute},${allowed}.indexOf(v)<0?${otherwise}:v)}` +
-        `catch(e){d.setAttribute(${attribute},${otherwise})}`
+        `d.setAttribute(${attribute},${off}${allowed}.indexOf(v)<0?${fallback}:v)}` +
+        `catch(e){d.setAttribute(${attribute},${fallback})}`
       )
     })
     .join('') +

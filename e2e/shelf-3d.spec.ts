@@ -40,45 +40,42 @@ async function open3d(page: Page, address = '/en/u/sample') {
 test.describe('which the shelf starts in (spec 3.6)', () => {
   test.use({ dimension: 'device' })
 
-  test('a desktop starts in 3D, a phone or a tablet in 2D @smoke', async ({ page, size }) => {
-    await openLibrary(page)
-    const settled = await shelfSettled(page)
-    if (size === 'desktop') {
-      expect(['3d', 'fallback']).toContain(settled)
-      if (settled === '3d')
-        await expect(pair(page).getByRole('radio', { name: '3D' })).toBeChecked()
-    } else {
-      expect(settled).toBe('2d')
-      // A phone is not offered 3D at all; a tablet is, and starts in 2D.
-      if (size === 'phone') await expect(pair(page)).toBeHidden()
-      else await expect(pair(page).getByRole('radio', { name: '2D' })).toBeChecked()
-    }
-  })
-
-  test('a desktop asking for reduced motion starts in 2D', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' })
+  test('a fresh browser starts in 2D, offered neither 3D nor compact @smoke', async ({ page }) => {
     await openLibrary(page)
     expect(await shelfSettled(page)).toBe('2d')
+    await expect(pair(page)).toHaveCount(0)
+    await expect(page.getByRole('radio', { name: 'Compact' })).toHaveCount(0)
+    await page.keyboard.press('d')
+    await expect(page.locator('[data-shelf-3d]')).toHaveCount(0)
   })
 
-  test('the choice is remembered on this device, and is not in the address', async ({
+  test('a choice of 3D made before cannot bring it back while experimental views are off', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('shelf:dimension', '3d')
+      localStorage.setItem('shelf:density', 'compact')
+    })
+    await openLibrary(page)
+    expect(await shelfSettled(page)).toBe('2d')
+    await expect(page.locator('.game-spine')).toHaveCount(0)
+    await expect(page.locator('html')).toHaveAttribute('data-shelf-mode', '2d')
+  })
+
+  test('with experimental views on, 2D until 3D is chosen; the choice is remembered, and is not in the address', async ({
     page,
     size,
   }) => {
-    test.skip(size === 'phone', 'the choice is made with a pointer or a keyboard here')
+    test.skip(size === 'phone', 'a phone is not offered 3D')
+    await page.addInitScript(() => localStorage.setItem('shelf:experimental', 'on'))
     await openLibrary(page)
-    await shelfSettled(page)
-    const other = size === 'desktop' ? '2D' : '3D'
-    await pair(page).getByRole('radio', { name: other }).click()
+    expect(await shelfSettled(page)).toBe('2d')
+    await pair(page).getByRole('radio', { name: '3D' }).click()
     await expect(page).toHaveURL(/\/en\/u\/sample$/)
 
     await openLibrary(page)
-    const settled = await shelfSettled(page)
-    if (other === '2D') expect(settled).toBe('2d')
-    else expect(['3d', 'fallback']).toContain(settled)
-    expect(await page.evaluate(() => localStorage.getItem('shelf:dimension'))).toBe(
-      other.toLowerCase(),
-    )
+    expect(['3d', 'fallback']).toContain(await shelfSettled(page))
+    expect(await page.evaluate(() => localStorage.getItem('shelf:dimension'))).toBe('3d')
   })
 })
 

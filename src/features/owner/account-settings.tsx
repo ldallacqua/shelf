@@ -13,6 +13,7 @@ import { Input } from '@/ui/field'
 
 import { accountChanged, forgetAccount, openAfresh, type SignedIn, useAccount } from './account'
 import { ArchivedGames } from './archived-games'
+import { ExperimentalViews } from './experimental-views'
 import { HandleField, useHandleCheck } from './handle-field'
 import { PasswordField } from './password-field'
 import { VisibilityChoice } from './visibility-choice'
@@ -332,7 +333,8 @@ function DeleteAccount() {
 
 /**
  * One's account (ADR 004): what the shelf is called and where, who may see
- * it, the password, the sessions, and the way out for good. Drawn in the
+ * it, the views this device offers, the password, the sessions, and the way
+ * out for good. Drawn in the
  * browser, for the account signed in.
  */
 export function AccountSettings() {
@@ -374,6 +376,7 @@ export function AccountSettings() {
       <ShelfSettings account={account} />
       <Platforms handle={account.handle} />
       <ArchivedGames />
+      <ExperimentalViews />
       <PasswordSettings />
       <SignOutEverywhere />
       <DeleteAccount />
