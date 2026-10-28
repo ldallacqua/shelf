@@ -312,33 +312,6 @@ describe('Toolbar', () => {
     return handlers
   }
 
-  it('offers to hide adult games only on a shelf that has any, pressed while they are hidden (spec 3.13)', async () => {
-    const onChange = vi.fn()
-    const toolbar = (adult?: { hidden: boolean; onChange: (hidden: boolean) => void }) => (
-      <Toolbar
-        view="wall"
-        onView={vi.fn()}
-        group="platform"
-        onGroup={vi.fn()}
-        density="covers"
-        onDensity={vi.fn()}
-        wallSize="medium"
-        onWallSize={vi.fn()}
-        dimension="2d"
-        onDimension={vi.fn()}
-        {...(adult ? { adult } : {})}
-      />
-    )
-    renderWithIntl(toolbar())
-    expect(screen.queryByRole('button', { name: 'Hide adult games' })).toBeNull()
-    cleanup()
-    renderWithIntl(toolbar({ hidden: true, onChange }))
-    const button = screen.getByRole('button', { name: 'Hide adult games' })
-    expect(button).toHaveAttribute('aria-pressed', 'true')
-    await userEvent.click(button)
-    expect(onChange).toHaveBeenCalledWith(false)
-  })
-
   it('offers Ready to play only where it is given, pressed while it is on (spec 7.7)', async () => {
     const onChange = vi.fn()
     const toolbar = (ready?: { on: boolean; onChange: (on: boolean) => void }) => (

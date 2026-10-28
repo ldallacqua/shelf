@@ -239,8 +239,8 @@ export function LibraryView({
   const sortText = writeSort(sort)
 
   const [density, setDensity] = useDensity()
-  const [adult, setAdult] = useAdult()
-  const hideAdult = adult === 'hidden'
+  // Chosen on the account page (spec 3.13): nothing on the shelf shows that anything is hidden.
+  const hideAdult = useAdult()[0] === 'hidden'
   const [readyChoice, setReadyChoice] = useReadyToPlay()
   const [wallSize, setWallSize] = useWallSize()
   const [dimension, setDimension] = useDimension()
@@ -307,7 +307,6 @@ export function LibraryView({
   // Only the games ready here, once that is known: until then nothing is drawn, rather than
   // every game first.
   const library = readyOnly ? (seen && ready ? onlyReady(seen, ready) : undefined) : seen
-  const adultOnShelf = whole ? whole.games.some((game) => game.adult) : first.hidden !== undefined
   const counted = hideAdult && first.hidden ? first.hidden : first
 
   // The filter as typed this moment, for the field, the chips and the panel; and the one
@@ -466,9 +465,6 @@ export function LibraryView({
     switchTo,
     nextView,
     shuffle,
-    adultOnShelf,
-    hideAdult,
-    setAdult,
   })
   useEffect(() => {
     keys.current = {
@@ -478,9 +474,6 @@ export function LibraryView({
       switchTo,
       nextView,
       shuffle,
-      adultOnShelf,
-      hideAdult,
-      setAdult,
     }
   })
   useEffect(() => {
@@ -521,10 +514,6 @@ export function LibraryView({
         case 'd':
           if (!now.experimental || now.view !== 'shelf' || tooSmallFor3dNow()) return
           now.switchTo(now.shown === '3d' ? '2d' : '3d')
-          break
-        case 'h':
-          if (!now.adultOnShelf) return
-          now.setAdult(now.hideAdult ? 'shown' : 'hidden')
           break
         default:
           return
@@ -830,11 +819,6 @@ export function LibraryView({
             onDimension={switchTo}
             experimental={experimental}
             noThreeD={noThreeD}
-            adult={
-              adultOnShelf
-                ? { hidden: hideAdult, onChange: (hidden) => setAdult(hidden ? 'hidden' : 'shown') }
-                : undefined
-            }
             ready={
               ready !== null
                 ? {

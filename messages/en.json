@@ -294,9 +294,6 @@
     }
   },
   "Library": {
-    "adult": {
-      "hide": "Hide adult games"
-    },
     "ready": {
       "label": "Ready to play",
       "none": {
@@ -817,7 +814,6 @@
       "sort": "Change the sort",
       "view": "Next view",
       "dimension": "Switch between 2D and 3D",
-      "adult": "Hide or show adult games, on a shelf that has any",
       "shuffle": "Surprise me: shuffle the shelves",
       "add": "Add a game, when signed in",
       "help": "Show this list"
@@ -926,6 +922,11 @@
       "title": "Experimental views",
       "label": "Offer the 3D shelf and the compact shelf on this device",
       "body": "Both are unfinished: covers can be hard to make out, and things may look or work wrong. This changes only this browser, as the theme does. Turned off, the shelf goes back to 2D with covers."
+    },
+    "adult": {
+      "title": "Adult games",
+      "label": "Hide adult games on this device",
+      "body": "Games IGDB marks Erotic, and the ones the ESRB rates Adults Only. Hidden, they are not drawn on any shelf seen in this browser, yours or anyone's, and nothing counts them. This changes only this browser, as the theme does."
     },
     "devices": "Signed-in devices",
     "devicesBody": "Signs you out here and on every other device and browser, assistants included.",

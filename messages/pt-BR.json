@@ -294,9 +294,6 @@
     }
   },
   "Library": {
-    "adult": {
-      "hide": "Esconder jogos adultos"
-    },
     "ready": {
       "label": "Prontos para jogar",
       "none": {
@@ -817,7 +814,6 @@
       "sort": "Mudar a ordem",
       "view": "Próxima visualização",
       "dimension": "Alternar entre 2D e 3D",
-      "adult": "Esconder ou mostrar jogos adultos, numa estante que tenha algum",
       "shuffle": "Me surpreenda: embaralhar as prateleiras",
       "add": "Adicionar um jogo, com login",
       "help": "Mostrar esta lista"
@@ -926,6 +922,11 @@
       "title": "Visualizações experimentais",
       "label": "Oferecer a estante 3D e a estante compacta neste aparelho",
       "body": "As duas ainda não estão prontas: as capas podem ficar difíceis de reconhecer, e coisas podem aparecer ou funcionar errado. Muda só este navegador, como o tema. Desligadas, a estante volta ao 2D com capas."
+    },
+    "adult": {
+      "title": "Jogos adultos",
+      "label": "Esconder jogos adultos neste aparelho",
+      "body": "Os jogos que o IGDB marca como Erotic e os que a ESRB classifica como Adults Only. Escondidos, eles não aparecem em nenhuma estante vista neste navegador, a sua ou a de outra pessoa, e nada os conta. Muda só este navegador, como o tema."
     },
     "devices": "Aparelhos conectados",
     "devicesBody": "Sai da conta aqui e em todos os outros aparelhos e navegadores, assistentes incluídos.",

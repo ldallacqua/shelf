@@ -423,7 +423,6 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | `S` | Change sort |
 | `V` | Next view |
 | `D` | Switch 2D and 3D, with experimental views on (3.6) |
-| `H` | Hide or show adult games, on a shelf that has any (3.13) |
 | `R` | Shuffle ("surprise me") |
 | `A` | Add a game (signed in) |
 | `?` | Show this list |
@@ -503,32 +502,36 @@ mostrar esses games."
   for the games already cached as the daily refresh reaches them, about a hundred a day, so an
   Adults Only game not Erotic too is known within days. The ESRB gives AO for violence too
   (Hatred, Thrill Kill): those count, as the owner asked for Adults Only.
-- **One button, Hide adult games** (Esconder jogos adultos), pressed or not, in the library's
-  row of controls, before the views; an eye crossed out, with its words on a wide screen; and
-  `H`. It is there only while the shelf has an
-  adult game, so a shelf with none never shows it.
+- **One switch, Hide adult games on this device** (Esconder jogos adultos neste aparelho), on
+  my account page, in a section of its own, Adult games, after Experimental views (3.6), with a
+  line that says which games it hides. No shelf has a button or a key for it, so nothing beside
+  a shelf shows that anything is hidden, or offers to. It began as a button in the library's
+  row of controls, shown only on a shelf with an adult game, and `H`; the owner moved it on 28
+  Oct 2026: "Vc pode por favor mover o botão esconder jogos adultos do início pras
+  configuração?"
 - **Remembered on this device,** like 2D or 3D, before the first paint: a reload, a new visit
-  and every page keep it until it is pressed again. It is not in the address, so a link I share
+  and every page keep it until it is switched off. It is not in the address, so a link I share
   shows the person who opens it what they chose. It belongs to whoever is at this screen, so it
   is per device, not per account, and holds on every shelf seen on it.
-- **While it is pressed, adult games are drawn nowhere:** not on the shelf, the wall, the list,
+- **While it is on, adult games are drawn nowhere:** not on the shelf, the wall, the list,
   3D, the trophy wall, the placing page, or in the search inside the library, and never drawn
   first and taken away. The counts, the stats line and the stats leave them out, so the numbers
   agree with what is on the screen. A page the server drew holds them until it comes alive,
   except on the trophy wall, whose stats are drawn both ways: a reload shows the library's
-  totals with them for a moment, its boxes never. Nothing counts what is hidden: the pressed button is the one
-  sign that something is.
-- **A game's own page,** reached by its address while it is pressed, shows no cover, art or
+  totals with them for a moment, its boxes never. Nothing counts what is hidden, and nothing
+  on a shelf is a sign that something is.
+- **A game's own page,** reached by its address while it is on, shows no cover, art or
   screenshots, says the game is hidden on this device, and offers to show adult games again.
-- **A visitor** to a public shelf has the same button, for their own device. Until it is
-  pressed, adult games show, for everyone.
+- **A visitor** to a public shelf who has an account has the same switch, on their own account
+  page, for their device; one with no account has none. Until it is on, adult games show, for
+  everyone.
 
 **Done when**
 
-- With it pressed, no adult game's cover or title is drawn on any page of a shelf, in any view,
+- With it on, no adult game's cover or title is drawn on any page of a shelf, in any view,
   from the first paint, and a reload keeps it so.
-- Pressed again, they are back, and that survives a reload too.
-- A shelf with no adult game has no button, and `H` does what the button does.
+- Switched off, they are back, and that survives a reload too.
+- No shelf has a button or a key for it, and the list of keys does not name one.
 
 ---
 
@@ -1680,8 +1683,8 @@ Made on 25 Oct 2026 for the five sections not built yet (3.12, 3.13, 7.4, 7.5, 1
 | 17 | Archiving asks nothing and offers Undo; removing still asks | Both ask |
 | 18 | An archived game's address is not found, to me too: I bring it back to look at it | Its own account sees its page, marked archived |
 | 19 | Adult is IGDB's Erotic theme or the ESRB's Adults Only | Also IGDB's keywords for sexual content, or a mark of my own per game |
-| 20 | Hiding adult games is per device, and off until pressed, for visitors too | Per account, or on by default for visitors |
-| 21 | Nothing counts the hidden adult games; the pressed button is the only sign | Say how many are hidden |
+| 20 | Hiding adult games is per device, and off until turned on, for visitors too | Per account, or on by default for visitors |
+| 21 | Nothing counts the hidden adult games, and from 28 Oct 2026 nothing on a shelf is a sign of them: the switch is on the account page | Say how many are hidden |
 | 22 | IGDB's results when adding a game are not hidden: they are not the shelf's games, and it is me typing | Hidden too, which needs every result's themes and age ratings |
 | 23 | A wished game stays on the Not owned shelf, in the case of the platform I want it on | It stands, outlined, on that platform's shelf |
 | 24 | A wish names platforms, not physical or digital | The format too |
