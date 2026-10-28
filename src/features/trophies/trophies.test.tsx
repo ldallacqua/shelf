@@ -45,17 +45,17 @@ const library = testLibrary(
   { platform: [switchPlatform] },
 )
 
+/** A link's filter, as the library's address carries it. */
+const filterOf = (link: HTMLElement) =>
+  new URL(link.getAttribute('href')!, 'https://shelf.test').searchParams.get('q')
+
 describe('the trophy wall', () => {
   it('stands every finished game under its year, newest first, each a way to its page', () => {
     renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
 
     expect(screen.getByRole('heading', { level: 1, name: 'Trophies' })).toBeInTheDocument()
-    const years = screen.getAllByRole('heading', { level: 2 })
-    expect(years.map((year) => year.textContent)).toEqual([
-      '2026 1 game',
-      '2025 1 game',
-      'Day not recorded 1 game',
-    ])
+    expect(screen.getByRole('region', { name: '2026 1 game' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Day not recorded 1 game' })).toBeInTheDocument()
 
     const year = screen.getByRole('region', { name: '2025 1 game' })
     const hades = within(year).getByRole('link', { name: 'Hades' })
@@ -66,18 +66,20 @@ describe('the trophy wall', () => {
     expect(within(trophy).getByText('8.5 out of 10')).toBeInTheDocument()
   })
 
-  it('says how far the shelf got, and leaves out what it cannot know', () => {
+  it('leads with the games finished, and says how far the shelf got, leaving out what it cannot know', () => {
     renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
     const stats = screen.getByRole('group', { name: 'Trophy stats' })
 
+    expect(within(stats).getByText('Games finished').nextElementSibling).toHaveTextContent('3')
+    // One of four started is still being played.
+    expect(within(stats).getByText('1 in 2026 · 75% of the games started')).toBeInTheDocument()
     const figure = (label: string) => within(stats).getByText(label).nextElementSibling
-    expect(figure('Finished')).toHaveTextContent('3')
-    expect(figure('In 2026')).toHaveTextContent('1')
     expect(figure('Hours played')).toHaveTextContent('52')
     // 85 and 70: 7.75, kept to its tenth.
     expect(figure('Average rating')).toHaveTextContent('7.8out of 10')
-    // Three finished of four started.
-    expect(figure('Of the games started')).toHaveTextContent('75% finished')
+    // 12 and 40 hours: 26 in the middle.
+    expect(figure('Median playtime')).toHaveTextContent('26hours')
+    expect(figure('Dropped')).toHaveTextContent('0')
     expect(within(stats).getByRole('link', { name: 'Hades' })).toHaveAttribute(
       'href',
       '/en/u/ana/game/hades',
@@ -85,11 +87,84 @@ describe('the trophy wall', () => {
     expect(figure('Played most on')).toHaveTextContent('Nintendo Switch40 hours')
   })
 
+  it('draws the years as columns, each a way to that year’s trophies alone, with a table too', () => {
+    renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
+    const years = screen.getByRole('region', { name: 'Finished, year by year' })
+    expect(within(years).getByRole('link', { name: '2025: 1 game finished' })).toHaveAttribute(
+      'href',
+      '/en/u/ana/trophies?year=2025',
+    )
+    const table = within(years).getByRole('table', { name: 'Finished, year by year' })
+    expect(within(table).getByRole('row', { name: '2026 1' })).toBeInTheDocument()
+  })
+
+  it('leads from a month, and from a platform, to the games behind it in the library', () => {
+    renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
+    const months = screen.getByRole('region', { name: 'Finished, month by month' })
+    expect(filterOf(within(months).getByRole('link', { name: 'November 2025' }))).toBe(
+      'completed:2025-11',
+    )
+    const kinds = screen.getByRole('region', { name: 'What is finished' })
+    const platform = within(kinds).getByRole('link', { name: 'Nintendo Switch: 1 game finished' })
+    expect(platform.getAttribute('href')).toMatch(/^\/en\/u\/ana\?/)
+    expect(filterOf(platform)).toBe('status:completed owned:switch')
+  })
+
+  it('keeps the records: the first finish, the quickest, the best rated', () => {
+    renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
+    const records = screen.getByRole('region', { name: 'Records' })
+    const record = (label: string) => within(records).getByText(label).nextElementSibling
+    expect(record('First finish recorded')).toHaveTextContent('HadesNov 20, 2025')
+    expect(record('Quickest finish')).toHaveTextContent('Tunic12 hours')
+    expect(record('Rated highest')).toHaveTextContent('Hades8.5 out of 10')
+  })
+
+  it('is of one year when the address asks, the way back to all of them first', () => {
+    renderWithIntl(
+      <TrophyWallView wall={trophyWall(library, 2026, 'en', { scope: 2025 })} handle="ana" />,
+    )
+    const stats = screen.getByRole('group', { name: 'Trophy stats' })
+    expect(within(stats).getByText('Finished in 2025').nextElementSibling).toHaveTextContent('1')
+    expect(within(stats).getByText('Hours on them').nextElementSibling).toHaveTextContent('40')
+    const period = screen.getByRole('list', { name: 'Period' })
+    expect(within(period).getByRole('link', { name: '2025' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(within(period).getByRole('link', { name: 'All time' })).toHaveAttribute(
+      'href',
+      '/en/u/ana/trophies',
+    )
+    // The year's own column leads back to every year.
+    const years = screen.getByRole('region', { name: 'Finished, year by year' })
+    expect(within(years).getByRole('link', { name: '2025: 1 game finished' })).toHaveAttribute(
+      'href',
+      '/en/u/ana/trophies',
+    )
+    expect(screen.queryByRole('region', { name: '2026 1 game' })).toBeNull()
+    expect(screen.getByRole('region', { name: '2025 1 game' })).toBeInTheDocument()
+  })
+
+  it('keeps the filter it was worked out with in every way onward, and says when nothing matches', () => {
+    // Nothing finished is still being played.
+    const q = 'status:playing'
+    renderWithIntl(
+      <TrophyWallView wall={trophyWall(library, 2026, 'en', { q })} handle="ana" q={q} />,
+    )
+    expect(screen.getByRole('searchbox', { name: /Filter/ })).toHaveValue(q)
+    expect(screen.getByText('No finished game matches.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Clear' })).toHaveAttribute(
+      'href',
+      '/en/u/ana/trophies',
+    )
+  })
+
   it('reads in Portuguese', () => {
     renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />, 'pt-BR')
     expect(screen.getByRole('heading', { level: 1, name: 'Troféus' })).toBeInTheDocument()
     expect(screen.getByText('Dia não registrado')).toBeInTheDocument()
-    expect(screen.getByText('75% zerados')).toBeInTheDocument()
+    expect(screen.getByText('1 em 2026 · 75% dos jogos começados')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Zerados, ano a ano' })).toBeInTheDocument()
   })
 })
 

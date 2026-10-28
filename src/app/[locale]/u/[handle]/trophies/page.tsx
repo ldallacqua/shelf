@@ -12,6 +12,7 @@ import { TrophiesSkeleton } from '@/features/trophies/trophies-skeleton'
 import { EmptyTrophies } from '@/features/trophies/empty-trophies'
 import { PublicTrophies } from '@/features/trophies/public-trophies'
 import { TrophyWallView } from '@/features/trophies/trophy-wall'
+import { wallAddress } from '@/features/trophies/wall-address'
 import { findLibrary, getTrophyWall } from '@/server/services/library'
 
 import { NO_HANDLE, shelfInfoOf } from '../shelf-info'
@@ -40,42 +41,52 @@ export async function generateMetadata({
   }
 }
 
-/** Whose wall, by the handle in the address: its trophies, a private shelf's frame, or no shelf. */
+/**
+ * Whose wall, by the handle in the address: its trophies, a private shelf's
+ * frame, or no shelf. The year and the filter in the address say which
+ * trophies (issue 68).
+ */
 async function ShelfTrophies({
   params,
-}: Pick<PageProps<'/[locale]/u/[handle]/trophies'>, 'params'>) {
+  searchParams,
+}: Pick<PageProps<'/[locale]/u/[handle]/trophies'>, 'params' | 'searchParams'>) {
   const { handle } = await params
+  const which = wallAddress(await searchParams, new Date().getUTCFullYear())
   const library = await findLibrary(handle)
   if (!library) return <NoShelf />
   const shelf = shelfInfoOf(library)
   if (!library.public) {
     return (
       <ShelfProvider shelf={shelf}>
-        <PrivateTrophiesLater />
+        <PrivateTrophiesLater which={which} />
       </ShelfProvider>
     )
   }
-  const wall = await getTrophyWall(library.id)
+  const wall = await getTrophyWall(library.id, which.scope, which.q)
+  const asked = which.scope !== undefined || which.q !== undefined
   return (
-    <PublicTrophies handle={library.handle}>
-      {wall.years.length === 0 ? (
+    <PublicTrophies handle={library.handle} which={which}>
+      {wall.years.length === 0 && !asked ? (
         <EmptyTrophies />
       ) : (
-        <TrophyWallView wall={wall} handle={library.handle} />
+        <TrophyWallView wall={wall} handle={library.handle} q={which.q} />
       )}
     </PublicTrophies>
   )
 }
 
 /** A shelf's trophy wall (spec 3.9). */
-export default function TrophiesPage({ params }: PageProps<'/[locale]/u/[handle]/trophies'>) {
+export default function TrophiesPage({
+  params,
+  searchParams,
+}: PageProps<'/[locale]/u/[handle]/trophies'>) {
   // Covers come from IGDB's image servers: open the connection while the page arrives.
   preconnect(IMAGE_HOST)
 
   return (
     <Page>
       <Suspense fallback={<TrophiesSkeleton />}>
-        <ShelfTrophies params={params} />
+        <ShelfTrophies params={params} searchParams={searchParams} />
       </Suspense>
     </Page>
   )
