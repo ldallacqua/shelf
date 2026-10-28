@@ -220,7 +220,7 @@
     "views": {
       "eyebrow": "Views",
       "title": "Shelf, wall or list.",
-      "body": "Walk it as a shelf, scan it as a wall of covers, or sort it as a list of numbers. On a computer, the shelf can stand in 3D.",
+      "body": "Walk it as a shelf, scan it as a wall of covers, or sort it as a list of numbers.",
       "label": "View",
       "shelf": "Shelf",
       "wall": "Wall",
@@ -351,6 +351,10 @@
       "status": "Status",
       "year": "Year",
       "none": "None"
+    },
+    "experimental": {
+      "label": "Experimental views",
+      "tag": "Experimental"
     },
     "density": {
       "label": "How boxes stand",
@@ -874,6 +878,11 @@
     "passwordHint": "At least {min} characters.",
     "changePassword": "Change password",
     "passwordChanged": "Password changed. Every other device was signed out.",
+    "experimental": {
+      "title": "Experimental views",
+      "label": "Offer the 3D shelf and the compact shelf on this device",
+      "body": "Both are unfinished: covers can be hard to make out, and things may look or work wrong. This changes only this browser, as the theme does. Turned off, the shelf goes back to 2D with covers."
+    },
     "devices": "Signed-in devices",
     "devicesBody": "Signs you out here and on every other device and browser, assistants included.",
     "signOutEverywhere": "Sign out everywhere",

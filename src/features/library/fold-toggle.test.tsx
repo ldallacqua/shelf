@@ -76,6 +76,7 @@ describe('the head script for folded shelves', () => {
 
   it('runs whole as the page carries it, after the other choices of this device', () => {
     window.localStorage.setItem(COLLAPSED_KEY, JSON.stringify(['platform:130']))
+    window.localStorage.setItem('shelf:experimental', 'on')
     window.localStorage.setItem('shelf:density', 'compact')
     const { container } = render(<PreferenceScript />)
     const script = container.querySelector('script')!.textContent!

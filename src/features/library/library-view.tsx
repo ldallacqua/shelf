@@ -99,6 +99,7 @@ import {
   useReadyToPlay,
   useDensity,
   useDimension,
+  useExperimental,
   useReducedMotion,
   useTooSmallFor3d,
   useWallSize,
@@ -243,6 +244,8 @@ export function LibraryView({
   const [readyChoice, setReadyChoice] = useReadyToPlay()
   const [wallSize, setWallSize] = useWallSize()
   const [dimension, setDimension] = useDimension()
+  // 3D and compact are unfinished (issue 63): neither is offered until this device turns them on.
+  const experimental = useExperimental()[0] === 'on'
   /** Set when 3D gave way to 2D on this page, and why. */
   const [fallback, setFallback] = useState<FallbackReason>()
   /** The game a switch into 3D starts at. */
@@ -358,7 +361,7 @@ export function LibraryView({
   /** 2D or 3D, as asked for by the buttons or the D key. Nothing else about the library changes. */
   const switchTo = (next: Dimension) => {
     if (next === '3d') {
-      if (noThreeD || tooSmallFor3dNow()) return
+      if (!experimental || noThreeD || tooSmallFor3dNow()) return
       setAnchor(anchorIn2d(scope.current))
       // 3D gave way earlier on this page: asking again tries again.
       setFallback(undefined)
@@ -459,6 +462,7 @@ export function LibraryView({
   const keys = useRef({
     view,
     shown,
+    experimental,
     switchTo,
     nextView,
     shuffle,
@@ -467,7 +471,17 @@ export function LibraryView({
     setAdult,
   })
   useEffect(() => {
-    keys.current = { view, shown, switchTo, nextView, shuffle, adultOnShelf, hideAdult, setAdult }
+    keys.current = {
+      view,
+      shown,
+      experimental,
+      switchTo,
+      nextView,
+      shuffle,
+      adultOnShelf,
+      hideAdult,
+      setAdult,
+    }
   })
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -505,7 +519,7 @@ export function LibraryView({
           now.shuffle()
           break
         case 'd':
-          if (now.view !== 'shelf' || tooSmallFor3dNow()) return
+          if (!now.experimental || now.view !== 'shelf' || tooSmallFor3dNow()) return
           now.switchTo(now.shown === '3d' ? '2d' : '3d')
           break
         case 'h':
@@ -814,6 +828,7 @@ export function LibraryView({
             onWallSize={setWallSize}
             dimension={shown}
             onDimension={switchTo}
+            experimental={experimental}
             noThreeD={noThreeD}
             adult={
               adultOnShelf
@@ -944,7 +959,7 @@ export function LibraryView({
         />
       ) : null}
 
-      <ShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} />
+      <ShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} experimental={experimental} />
 
       {actions ? (
         <SaveShelf

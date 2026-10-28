@@ -220,7 +220,7 @@
     "views": {
       "eyebrow": "Visualizações",
       "title": "Estante, mural ou lista.",
-      "body": "Percorra como uma estante, passe os olhos como um mural de capas, ou ordene como uma lista de números. No computador, a estante pode ficar em 3D.",
+      "body": "Percorra como uma estante, passe os olhos como um mural de capas, ou ordene como uma lista de números.",
       "label": "Visualização",
       "shelf": "Estante",
       "wall": "Mural",
@@ -351,6 +351,10 @@
       "status": "Status",
       "year": "Ano",
       "none": "Nenhum"
+    },
+    "experimental": {
+      "label": "Visualizações experimentais",
+      "tag": "Experimental"
     },
     "density": {
       "label": "Como as caixas ficam",
@@ -874,6 +878,11 @@
     "passwordHint": "Pelo menos {min} caracteres.",
     "changePassword": "Trocar a senha",
     "passwordChanged": "Senha trocada. Todos os outros aparelhos saíram da conta.",
+    "experimental": {
+      "title": "Visualizações experimentais",
+      "label": "Oferecer a estante 3D e a estante compacta neste aparelho",
+      "body": "As duas ainda não estão prontas: as capas podem ficar difíceis de reconhecer, e coisas podem aparecer ou funcionar errado. Muda só este navegador, como o tema. Desligadas, a estante volta ao 2D com capas."
+    },
     "devices": "Aparelhos conectados",
     "devicesBody": "Sai da conta aqui e em todos os outros aparelhos e navegadores, assistentes incluídos.",
     "signOutEverywhere": "Sair de todos",

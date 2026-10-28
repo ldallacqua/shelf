@@ -2,7 +2,8 @@
 
 A personal game library that feels like standing in front of your own lit shelf.
 
-Add games from IGDB, then browse them on a shelf (2D or 3D) with filters and sorting.
+Add games from IGDB, then browse them on a shelf, a wall of covers or a list, with filters and
+sorting. A 3D shelf and a compact one are there for whoever turns on experimental views.
 
 ## Run it
 

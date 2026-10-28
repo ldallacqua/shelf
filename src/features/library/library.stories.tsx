@@ -204,3 +204,22 @@ export const Controls: Story = {
     </div>
   ),
 }
+
+/** The same, on a device that turned experimental views on (issue 63): 2D or 3D, covers or compact. */
+export const ControlsWithExperimentalViews: Story = {
+  render: () => (
+    <Toolbar
+      view="shelf"
+      group="platform"
+      density="covers"
+      wallSize="medium"
+      onView={() => undefined}
+      onGroup={() => undefined}
+      onDensity={() => undefined}
+      onWallSize={() => undefined}
+      dimension="2d"
+      onDimension={() => undefined}
+      experimental
+    />
+  ),
+}

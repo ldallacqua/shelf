@@ -27,9 +27,11 @@ import {
   densityPreference,
   dimensionPreference,
   adultPreference,
+  experimentalPreference,
   preferenceScript,
   readPreference,
   wallSizePreference,
+  writeExperimental,
   writePreference,
 } from './preferences'
 import { ShelfProvider } from './shelf'
@@ -283,7 +285,11 @@ describe('the design system and the data agree', () => {
 })
 
 describe('Toolbar', () => {
-  const setup = (view: 'shelf' | 'wall' | 'list' = 'shelf', noThreeD = false) => {
+  const setup = (
+    view: 'shelf' | 'wall' | 'list' = 'shelf',
+    noThreeD = false,
+    experimental = true,
+  ) => {
     const handlers = {
       onView: vi.fn(),
       onGroup: vi.fn(),
@@ -298,6 +304,7 @@ describe('Toolbar', () => {
         density="covers"
         wallSize="medium"
         dimension="2d"
+        experimental={experimental}
         noThreeD={noThreeD}
         {...handlers}
       />,
@@ -357,6 +364,22 @@ describe('Toolbar', () => {
     expect(button).toHaveAttribute('aria-pressed', 'false')
     await userEvent.click(button)
     expect(onChange).toHaveBeenCalledWith(true)
+  })
+
+  it('offers neither 2D or 3D nor covers or compact until experimental views are on (issue 63)', () => {
+    setup('shelf', false, false)
+    expect(screen.queryByRole('group', { name: 'Experimental views' })).toBeNull()
+    expect(screen.queryByRole('radiogroup', { name: 'Shelf in 2D or 3D' })).toBeNull()
+    expect(screen.queryByRole('radiogroup', { name: 'How boxes stand' })).toBeNull()
+    expect(screen.getByRole('radiogroup', { name: 'View' })).toBeInTheDocument()
+  })
+
+  it('says the two pairs are experimental, once they are on', () => {
+    setup('shelf')
+    const group = screen.getByRole('group', { name: 'Experimental views' })
+    expect(within(group).getByRole('radiogroup', { name: 'Shelf in 2D or 3D' })).toBeInTheDocument()
+    expect(within(group).getByRole('radiogroup', { name: 'How boxes stand' })).toBeInTheDocument()
+    expect(group).toHaveTextContent('Experimental')
   })
 
   it('offers 2D or 3D on the shelf only, with the one shown pressed', async () => {
@@ -431,11 +454,13 @@ describe('Toolbar', () => {
         onWallSize={vi.fn()}
         dimension="3d"
         onDimension={vi.fn()}
+        experimental
       />,
       'pt-BR',
     )
     expect(screen.getByRole('toolbar', { name: 'Visualização da biblioteca' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Estante' })).toBeChecked()
+    expect(screen.getByRole('group', { name: 'Visualizações experimentais' })).toBeInTheDocument()
     expect(screen.getByRole('radiogroup', { name: 'Estante em 2D ou 3D' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: '3D' })).toBeChecked()
   })
@@ -568,6 +593,7 @@ describe('format', () => {
 describe('device preferences', () => {
   afterEach(() => {
     window.localStorage.clear()
+    document.documentElement.removeAttribute('data-experimental')
     document.documentElement.removeAttribute('data-density')
     document.documentElement.removeAttribute('data-wall-size')
     document.documentElement.removeAttribute('data-adult')
@@ -578,11 +604,13 @@ describe('device preferences', () => {
 
   it('the head script applies the defaults when nothing is stored', () => {
     runScript()
+    expect(document.documentElement).toHaveAttribute('data-experimental', 'off')
     expect(document.documentElement).toHaveAttribute('data-density', 'covers')
     expect(document.documentElement).toHaveAttribute('data-wall-size', 'medium')
   })
 
   it('the head script applies what is stored, and ignores what it does not know', () => {
+    window.localStorage.setItem('shelf:experimental', 'on')
     window.localStorage.setItem('shelf:density', 'compact')
     window.localStorage.setItem('shelf:wall-size', 'enormous')
     runScript()
@@ -618,6 +646,7 @@ describe('device preferences', () => {
   })
 
   it('a choice is stored, shown on the page, and the default is not stored at all', () => {
+    writeExperimental('on')
     writePreference(densityPreference, 'compact')
     expect(window.localStorage.getItem('shelf:density')).toBe('compact')
     expect(readPreference(densityPreference)).toBe('compact')
@@ -631,66 +660,71 @@ describe('device preferences', () => {
   })
 })
 
-describe('2D or 3D on this device', () => {
-  /** A device, as the head script can tell it: which media queries match, and whether WebGL 2 exists. */
-  const device = ({ desktop = false, calm = false, webgl2 = true } = {}) => {
-    vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: query.includes('reduced-motion') ? calm : desktop,
-    }))
-    if (webgl2) vi.stubGlobal('WebGL2RenderingContext', function WebGL2RenderingContext() {})
-    else Reflect.deleteProperty(window, 'WebGL2RenderingContext')
-  }
+describe('experimental views on this device (issue 63)', () => {
   const runScript = () => new Function(preferenceScript())()
+  const html = document.documentElement
+  const forget = () => {
+    for (const name of ['data-experimental', 'data-shelf-mode', 'data-density']) {
+      html.removeAttribute(name)
+    }
+  }
 
   afterEach(() => {
-    vi.unstubAllGlobals()
     window.localStorage.clear()
-    document.documentElement.removeAttribute('data-shelf-mode')
+    forget()
   })
 
-  it('starts a desktop that can draw it in 3D', () => {
-    device({ desktop: true })
+  it('starts every device in 2D with covers, a desktop that could draw 3D too', () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }))
     runScript()
-    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '3d')
+    vi.unstubAllGlobals()
+    expect(html).toHaveAttribute('data-experimental', 'off')
+    expect(html).toHaveAttribute('data-shelf-mode', '2d')
+    expect(html).toHaveAttribute('data-density', 'covers')
   })
 
-  it('starts a phone or a tablet in 2D', () => {
-    device({ desktop: false })
+  it('keeps a 3D or compact choice made before from bringing either back while they are off', () => {
+    window.localStorage.setItem('shelf:dimension', '3d')
+    window.localStorage.setItem('shelf:density', 'compact')
     runScript()
-    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+    expect(html).toHaveAttribute('data-shelf-mode', '2d')
+    expect(html).toHaveAttribute('data-density', 'covers')
+
+    // Nor can a page that says 3D: what is read is 2D.
+    html.setAttribute('data-shelf-mode', '3d')
+    expect(readPreference(dimensionPreference)).toBe('2d')
   })
 
-  it('starts in 2D when reduced motion is asked for, or there is no WebGL 2', () => {
-    device({ desktop: true, calm: true })
-    runScript()
-    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+  it('applies a stored 3D and compact once they are on, and keeps them over a reload', () => {
+    writeExperimental('on')
+    writePreference(dimensionPreference, '3d')
+    writePreference(densityPreference, 'compact')
+    expect(readPreference(dimensionPreference)).toBe('3d')
 
-    device({ desktop: true, webgl2: false })
+    forget()
     runScript()
-    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+    expect(html).toHaveAttribute('data-experimental', 'on')
+    expect(html).toHaveAttribute('data-shelf-mode', '3d')
+    expect(html).toHaveAttribute('data-density', 'compact')
   })
 
-  it('starts in 2D when the device cannot be asked', () => {
-    vi.stubGlobal('matchMedia', () => {
-      throw new Error('no media queries')
-    })
-    expect(runScript).not.toThrow()
-    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
-  })
+  it('turned off, goes back to 2D with covers and forgets the choice; turned on, starts there too', () => {
+    writeExperimental('on')
+    writePreference(dimensionPreference, '3d')
+    writePreference(densityPreference, 'compact')
 
-  it('remembers a choice over the default, even a choice equal to it', () => {
-    device({ desktop: false })
-    writePreference(dimensionPreference, '2d')
-    expect(window.localStorage.getItem('shelf:dimension')).toBe('2d')
-
-    device({ desktop: true })
-    runScript()
-    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '2d')
+    writeExperimental('off')
+    expect(readPreference(experimentalPreference)).toBe('off')
+    expect(readPreference(dimensionPreference)).toBe('2d')
+    expect(readPreference(densityPreference)).toBe('covers')
+    expect(window.localStorage.getItem('shelf:experimental')).toBeNull()
+    expect(window.localStorage.getItem('shelf:dimension')).toBeNull()
+    expect(window.localStorage.getItem('shelf:density')).toBeNull()
 
     window.localStorage.setItem('shelf:dimension', '3d')
-    device({ desktop: false })
-    runScript()
-    expect(document.documentElement).toHaveAttribute('data-shelf-mode', '3d')
+    writeExperimental('on')
+    expect(window.localStorage.getItem('shelf:experimental')).toBe('on')
+    expect(readPreference(dimensionPreference)).toBe('2d')
   })
 })
 
