@@ -12,6 +12,7 @@ import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
 
 import { accountChanged, forgetAccount, openAfresh, type SignedIn, useAccount } from './account'
+import { AdultGames } from './adult-games'
 import { ArchivedGames } from './archived-games'
 import { ExperimentalViews } from './experimental-views'
 import { HandleField, useHandleCheck } from './handle-field'
@@ -333,9 +334,9 @@ function DeleteAccount() {
 
 /**
  * One's account (ADR 004): what the shelf is called and where, who may see
- * it, the views this device offers, the password, the sessions, and the way
- * out for good. Drawn in the
- * browser, for the account signed in.
+ * it, the views this device offers and whether it hides adult games, the
+ * password, the sessions, and the way out for good. Drawn in the browser,
+ * for the account signed in.
  */
 export function AccountSettings() {
   const t = useTranslations('AccountPage')
@@ -377,6 +378,7 @@ export function AccountSettings() {
       <Platforms handle={account.handle} />
       <ArchivedGames />
       <ExperimentalViews />
+      <AdultGames />
       <PasswordSettings />
       <SignOutEverywhere />
       <DeleteAccount />

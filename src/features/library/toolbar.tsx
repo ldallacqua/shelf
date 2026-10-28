@@ -2,7 +2,6 @@
 
 import {
   CirclePlayIcon,
-  EyeOffIcon,
   ChevronDownIcon,
   Columns4Icon,
   FlaskConicalIcon,
@@ -59,8 +58,6 @@ type ToolbarProps = {
   filters?: ReactNode
   /** The sort, after the filters. */
   sort?: ReactNode
-  /** Whether adult games are hidden on this device (spec 3.13); absent while the shelf has none. */
-  adult?: { hidden: boolean; onChange: (hidden: boolean) => void }
   /** Whether only the games ready to play here are shown (spec 7.7): in the app, on my own shelf. */
   ready?: { on: boolean; onChange: (on: boolean) => void }
 }
@@ -91,7 +88,6 @@ export function Toolbar({
   onGroupOpen,
   filters,
   sort,
-  adult,
   ready,
 }: ToolbarProps) {
   const t = useTranslations('Library')
@@ -229,22 +225,6 @@ export function Toolbar({
                 </SegmentedItem>
               ))}
             </Segmented>
-          ) : null}
-
-          {adult ? (
-            <Button
-              variant="secondary"
-              aria-pressed={adult.hidden}
-              aria-label={t('adult.hide')}
-              data-preference="adult"
-              className={cn('flex-none max-sm:px-3', adult.hidden && 'border-accent bg-accent/15')}
-              onClick={() => adult.onChange(!adult.hidden)}
-            >
-              <EyeOffIcon aria-hidden="true" />
-              <span aria-hidden="true" className="max-lg:hidden">
-                {t('adult.hide')}
-              </span>
-            </Button>
           ) : null}
 
           <Segmented aria-label={t('view.label')} value={view} onValueChange={onView}>
