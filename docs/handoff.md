@@ -53,8 +53,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   filter in the address. Phases 2 to 4 are still the issue's: taste and ratings, franchises,
   the timeline, insights; achievements (on `summary()` and the domain's `summarize`); the
   backlog.
-- **Next:** the game page's achievements list is too long before its Show all (the owner, 28
-  Oct 2026); then #68's next phases.
+- **A game's achievements open as their icons** (architecture section 25, row "Achievements as
+  icons"; spec 7.8), as the owner asked: the list was too long before its Show all.
+- **Next:** #68's next phases.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
   `pnpm dev` or a production build sees it.
