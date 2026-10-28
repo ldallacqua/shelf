@@ -11,10 +11,10 @@ import { STEAM_API } from '@/server/sync/steam'
 /**
  * A test double for Steam, answering as Steam answers: the made-up
  * account's games from `fixtures/steam/`, an empty answer for its private
- * twin, the store's word on what kind of app each is, and Steam's sign-in
- * check for answers this double signed. Any other
- * key, account or address is refused, so a test can never be talking to the
- * real Steam.
+ * twin, the store's word on what kind of app each is, three games'
+ * achievements and the account's progress through them, and Steam's
+ * sign-in check for answers this double signed. Any other key, account or
+ * address is refused, so a test can never be talking to the real Steam.
  */
 
 export { mockSteamAnswer, MOCK_STEAM_SIGNATURE } from '@/server/mocks/steam-answer'
@@ -26,6 +26,17 @@ export type SteamMockState = {
   checked: Set<string>
   /** When set, the Web API answers with this status instead. */
   failWith?: number
+  /** Apps whose achievement questions answer 500, as Steam does when it is failing. */
+  failApps?: Set<string>
+  /** The account's achievements answered as a profile whose game details are not public. */
+  achievementsPrivate?: boolean
+}
+
+/** One game's achievement answers in `fixtures/steam/achievements.json`, as Steam sends them. */
+type AchievementAnswers = {
+  schema: Record<string, Record<string, unknown>>
+  player?: Record<string, unknown>
+  rates?: Record<string, unknown>
 }
 
 export const newSteamMockState = (): SteamMockState => ({ asked: [], checked: new Set() })
@@ -45,6 +56,11 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
       read('store-items.json') as { response: { store_items: { id: number }[] } }
     ).response.store_items.map((item) => [item.id, item]),
   )
+
+  const achievements = read('achievements.json') as Record<string, AchievementAnswers>
+  /** As Steam answers a profile whose game details are not public, and a game without stats. */
+  const notPublic = { playerstats: { error: 'Profile is not public', success: false } }
+  const noStats = { playerstats: { error: 'Requested app has no stats', success: false } }
 
   const keyed = (request: Request) => {
     const address = new URL(request.url)
@@ -83,6 +99,45 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
         },
       })
     }),
+
+    // A game's achievements, in the language asked: English where the game has no other.
+    http.get(`${STEAM_API}/ISteamUserStats/GetSchemaForGame/v2/`, ({ request }) => {
+      const { refused, address } = keyed(request)
+      if (refused) return refused
+      const app = address.searchParams.get('appid') ?? ''
+      if (state.failApps?.has(app)) return new HttpResponse(null, { status: 500 })
+      const game = achievements[app]
+      if (!game) return HttpResponse.json({ game: {} })
+      return HttpResponse.json(
+        game.schema[address.searchParams.get('l') ?? 'english'] ?? game.schema.english,
+      )
+    }),
+
+    http.get(`${STEAM_API}/ISteamUserStats/GetPlayerAchievements/v1/`, ({ request }) => {
+      const { refused, address } = keyed(request)
+      if (refused) return refused
+      const app = address.searchParams.get('appid') ?? ''
+      if (state.failApps?.has(app)) return new HttpResponse(null, { status: 500 })
+      const game = achievements[app]
+      // Steam says a game has no stats before it says whose profile is private.
+      if (!game?.player) return HttpResponse.json(noStats, { status: 400 })
+      if (address.searchParams.get('steamid') !== MOCK_STEAM.steamId || state.achievementsPrivate) {
+        return HttpResponse.json(notPublic, { status: 403 })
+      }
+      return HttpResponse.json(game.player)
+    }),
+
+    http.get(
+      `${STEAM_API}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/`,
+      ({ request }) => {
+        const { refused, address } = keyed(request)
+        if (refused) return refused
+        const app = address.searchParams.get('gameid') ?? ''
+        if (state.failApps?.has(app)) return new HttpResponse(null, { status: 500 })
+        const rates = achievements[app]?.rates
+        return rates ? HttpResponse.json(rates) : HttpResponse.json({}, { status: 403 })
+      },
+    ),
 
     // The store, item by item for the apps asked; one it has no page for, as Steam answers it.
     http.get(`${STEAM_API}/IStoreBrowseService/GetItems/v1/`, ({ request }) => {

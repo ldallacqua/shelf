@@ -1,5 +1,6 @@
 'use client'
 
+import type { AchievementStep } from '@/domain/achievements/achievements'
 import type { Answer } from '@/domain/library/adding'
 import type { Format, SyncSource } from '@/domain/library/values'
 import type {
@@ -34,6 +35,10 @@ export const connectAddress = (source: SyncSource, locale: string, page: LinkPag
 
 export const syncStep = (source: SyncSource, read: boolean, signal?: AbortSignal) =>
   callApi<SyncStep>('POST', `${base(source)}/sync`, { read }, signal)
+
+/** One step of reading the account's achievements there (issue 72). */
+export const achievementStep = (source: SyncSource, signal?: AbortSignal) =>
+  callApi<AchievementStep>('POST', `${base(source)}/achievements`, {}, signal)
 
 export const readItems = (source: SyncSource, list: ItemList, signal?: AbortSignal) =>
   callApi<ItemView[]>('GET', `${base(source)}/items?list=${list}`, undefined, signal)

@@ -1,3 +1,4 @@
+import type { AchievementProvider } from '@/domain/achievements/achievements'
 import type { GameArtwork, GameImage, GameVideo, Length, Release } from '@/domain/igdb/game'
 import type {
   Library,
@@ -37,6 +38,8 @@ export type GameFacts = {
   igdbUrl?: string
   /** Mine, when I have made them public for this game. Private notes are never here. */
   notes?: string
+  /** The providers with achievements for it, which its page asks for as it opens (issue 72). */
+  achievements?: AchievementProvider[]
   names: GameNames
 }
 
@@ -62,6 +65,7 @@ export type GameExtras = {
   igdbUrl?: string
   notes?: string
   notesPublic: boolean
+  achievements?: AchievementProvider[]
 }
 
 const pick = (names: readonly Named[], ids: Iterable<number>): Named[] => {
@@ -142,6 +146,7 @@ export const buildGamePage = (
   if (extras.igdbUrl) facts.igdbUrl = extras.igdbUrl
   // A visitor never sees a private note: it does not leave the server.
   if (extras.notes && extras.notesPublic) facts.notes = extras.notes
+  if (extras.achievements) facts.achievements = extras.achievements
 
   return {
     game,

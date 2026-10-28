@@ -209,7 +209,7 @@
     "sync": {
       "eyebrow": "Steam e Nintendo",
       "title": "Traga seus jogos da Steam e do Switch com você.",
-      "body": "Entre pela Steam, e cada jogo que você tem lá chega à sua estante com as suas horas. Conecte a Nintendo, e os jogos que você jogou num Switch ou num Switch 2 vêm também, assim que você disser se cada um é um cartucho ou um download. Depois, as duas se mantêm em dia sozinhas, uma vez por dia. Jogos que já estão na sua estante ganham uma cópia, nunca uma segunda caixa. Os novos esperam, a definir, numa página onde você dá a nota e diz em que pé está cada um, um toque por vez ou vários de uma vez. PlayStation e Xbox vêm a seguir.",
+      "body": "Entre pela Steam, e cada jogo que você tem lá chega à sua estante com as suas horas, e a página de cada jogo mostra as conquistas dele. Conecte a Nintendo, e os jogos que você jogou num Switch ou num Switch 2 vêm também, assim que você disser se cada um é um cartucho ou um download. Depois, as duas se mantêm em dia sozinhas, uma vez por dia. Jogos que já estão na sua estante ganham uma cópia, nunca uma segunda caixa. Os novos esperam, a definir, numa página onde você dá a nota e diz em que pé está cada um, um toque por vez ou vários de uma vez. PlayStation e Xbox vêm a seguir.",
       "card": "Steam e Nintendo, sincronizando",
       "where": "PC · Steam",
       "whereNintendo": "Switch · Nintendo · cartucho",
@@ -281,7 +281,7 @@
       },
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",
-        "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um, e corrigir um jogo reconhecido errado. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
+        "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas e as conquistas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um, e corrigir um jogo reconhecido errado. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
@@ -476,6 +476,50 @@
     "readLess": "Ler menos",
     "screenshots": "Capturas de tela",
     "media": "Vídeos e capturas de tela",
+    "achievements": {
+      "title": "Conquistas",
+      "setTitle": "{title} na {source}",
+      "readAt": "Da {source}, lidas {when}.",
+      "snapshot": "Da {source}, como estavam em {day}. A {source} não está mais conectada, então elas não são lidas de novo.",
+      "stale": {
+        "unreachable": "A {source} não respondeu da última vez que elas foram lidas: estas são de {day}.",
+        "private": "A {source} as mantém privadas agora: estas são de {day}."
+      },
+      "added": "{count, plural, one {Uma conquista foi adicionada desde então, e é lida na próxima sincronização.} other {# conquistas foram adicionadas desde então, e são lidas na próxima sincronização.}}",
+      "earned": "{earned} de {total} desbloqueadas",
+      "complete": "Todas as {total} desbloqueadas",
+      "progressLabel": "Conquistas desbloqueadas na {source}",
+      "state": {
+        "pending": "Ainda não lidas da {source}. Elas vêm na próxima sincronização.",
+        "none": "Este jogo não tem conquistas na {source}.",
+        "private": "A {source} mantém estas conquistas privadas.",
+        "failed": "A {source} não respondeu quando elas foram lidas. Elas são lidas de novo na próxima sincronização."
+      },
+      "filter": {
+        "label": "Quais conquistas",
+        "all": "Todas {count}",
+        "unlocked": "Desbloqueadas {count}",
+        "locked": "Bloqueadas {count}"
+      },
+      "sort": {
+        "label": "Ordem",
+        "provider": "Ordem da {source}",
+        "recent": "Desbloqueadas há menos tempo",
+        "rarest": "Mais raras primeiro"
+      },
+      "reveal": "{count, plural, one {Mostrar a oculta} other {Mostrar as # ocultas}}",
+      "hiddenName": "Conquista oculta",
+      "hiddenBody": "Os detalhes ficam ocultos até ela ser desbloqueada.",
+      "unlockedOn": "Desbloqueada em {when}",
+      "unlockedSometime": "Desbloqueada, dia desconhecido",
+      "locked": "Bloqueada",
+      "unknown": "Ainda desconhecida",
+      "rate": "{rate} dos jogadores da {source}",
+      "emptyFilter": "Nenhuma.",
+      "more": "Mostrar todas as {count}",
+      "loadFailed": "Não foi possível carregar as conquistas.",
+      "retry": "Tentar de novo"
+    },
     "video": "Vídeo",
     "videoOpen": "Tocar {name}, {at} de {total}, {title}",
     "videoTitle": "{name}: {title}",
@@ -981,7 +1025,7 @@
     "intro": "Traga para a sua estante os jogos que você tem numa plataforma, e mantenha tudo em dia.",
     "later": "PlayStation e Xbox vêm a seguir.",
     "steam": {
-      "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam. O Shelf sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega ao Shelf.",
+      "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam, e as conquistas na página do jogo. O Shelf sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega ao Shelf.",
       "public": "A Steam precisa mostrar os detalhes dos seus jogos: abra <settings>suas configurações de privacidade na Steam</settings> (na Steam, Editar perfil, depois Configurações de privacidade) e deixe Detalhes dos jogos como Público.",
       "signIn": "Entrar pela Steam"
     },
@@ -1025,6 +1069,13 @@
     "syncing": "Sincronizando…",
     "progress": "{done, plural, =0 {Encontrando seus jogos…} other {Adicionados # de {total}…}}",
     "progressLabel": "Jogos adicionados da {source}",
+    "achievements": {
+      "known": "{games, plural, =0 {Nenhuma conquista para ler ainda} other {Conquistas lidas de {known} de {games, plural, one {# jogo} other {# jogos}}}}",
+      "reading": "Lendo as conquistas: {known} de {games}…",
+      "progressLabel": "Conquistas lidas da {source}",
+      "private": "A {source} mantém suas conquistas privadas. Deixe Detalhes de jogos como Público <settings>nas configurações de privacidade da Steam</settings>; elas são lidas na próxima sincronização.",
+      "unreachable": "A {source} não respondeu sobre as conquistas de alguns jogos. Elas são lidas de novo na próxima sincronização."
+    },
     "done": "{count, plural, =0 {Tudo em dia com a {source}.} one {# jogo veio da {source}.} other {# jogos vieram da {source}.}}",
     "waiting": "{count, plural, one {# jogo espera sua resposta.} other {# jogos esperam sua resposta.}}",
     "daily": "Sincronizar uma vez por dia",
@@ -1104,7 +1155,7 @@
       },
       "steam": {
         "title": "Steam",
-        "body": "Se você conectar a Steam, o Shelf guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas, quando cada um foi jogado pela última vez e o que a loja da Steam diz que cada um é (um jogo, uma demo, um programa). O Shelf os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Shelf. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
+        "body": "Se você conectar a Steam, o Shelf guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas, quando cada um foi jogado pela última vez e o que a loja da Steam diz que cada um é (um jogo, uma demo, um programa). Desses jogos, guarda as conquistas como a Steam as lista, quais você desbloqueou e quando, e quantos jogadores da Steam desbloquearam cada uma; as imagens delas são mostradas dos próprios servidores da Steam. O Shelf os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Shelf. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus, com as conquistas como foram lidas por último. Conectar outra conta Steam apaga essas."
       },
       "nintendo": {
         "title": "Nintendo",

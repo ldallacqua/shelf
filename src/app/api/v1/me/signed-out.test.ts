@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type * as Accounts from '@/server/auth/account'
 
+import { GET as myAchievements } from './achievements/[slug]/route'
 import { GET as myGame } from './games/[slug]/route'
+import { POST as achievementStep } from './platforms/[source]/achievements/route'
 import { POST as answerMany } from './platforms/[source]/answers/route'
 import { GET as connect } from './platforms/[source]/connect/route'
 import { POST as answerItem } from './platforms/[source]/items/[id]/route'
@@ -70,6 +72,13 @@ const reads: [string, () => Promise<Response>][] = [
         params: Promise.resolve({ slug: 'bloodborne' }),
       }),
   ],
+  [
+    'a game’s achievements',
+    () =>
+      myAchievements(asked('/api/v1/me/achievements/bloodborne?locale=en'), {
+        params: Promise.resolve({ slug: 'bloodborne' }),
+      }),
+  ],
   ['its keywords', () => myKeywords(asked('/api/v1/me/keywords'))],
   ['its tags', () => myTags(asked('/api/v1/me/tags'))],
   ['its smart shelves', () => myShelves(asked('/api/v1/me/shelves'))],
@@ -80,6 +89,10 @@ const reads: [string, () => Promise<Response>][] = [
   [
     'a sync step',
     () => syncStep(asked('/api/v1/me/platforms/steam/sync', post({ read: true })), steamParams),
+  ],
+  [
+    'a step of reading achievements',
+    () => achievementStep(asked('/api/v1/me/platforms/steam/achievements', post({})), steamParams),
   ],
   [
     'what Steam listed',

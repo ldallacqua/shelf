@@ -1,5 +1,18 @@
 import 'server-only'
 
+import type {
+  AchievementLanguage,
+  DefinedSet,
+  ProgressAnswer,
+} from '@/domain/achievements/achievements'
+import {
+  definedFromSteam,
+  playerFromSteam,
+  ratesFromSteam,
+  STEAM_LANGUAGE,
+  steamRatesAnswerSchema,
+  steamSchemaAnswerSchema,
+} from '@/domain/achievements/steam'
 import type { Reported, StoreKindOf } from '@/domain/sync/items'
 import {
   checkAuthenticationBody,
@@ -19,8 +32,9 @@ import { SourceError } from '@/server/sync/source-error'
 /**
  * Steam, the first source (ADR 003): the only code that knows Steam's
  * addresses. It asks the Web API, with Shelf's key, what an account that
- * signed in through Steam owns and what it is called, and the store what
- * kind of app each game is; and it checks that sign-in with Steam itself.
+ * signed in through Steam owns and what it is called, the store what kind
+ * of app each game is, and each game's achievements and the account's
+ * progress through them; and it checks that sign-in with Steam itself.
  * Nothing here writes; the sync decides what the answers become.
  */
 
@@ -29,13 +43,25 @@ export const STEAM_API = 'https://api.steampowered.com'
 /** Apps asked of the store in one request: the question travels in the address. */
 const APPS_PER_REQUEST = 100
 
+/**
+ * How long to wait before asking Steam again, after it answered that it is
+ * busy or failing: twice, then the question fails, to be asked on a later step.
+ */
+const RETRY_AFTER_MS = [1_000, 3_000]
+/** The longest wait Steam's own `Retry-After` may ask for here. */
+const LONGEST_WAIT_MS = 5_000
+
 export type SteamDeps = {
   key: () => string | undefined
   fetch?: typeof fetch
   timeoutMs?: number
+  /** How a retry waits: tests do not. */
+  sleep?: (ms: number) => Promise<void>
 }
 
-export const createSteam = ({ key, fetch: given, timeoutMs = 15_000 }: SteamDeps) => {
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wait }: SteamDeps) => {
   // Looked up at each call, not when made, so whatever wraps fetch later is used.
   const send: typeof fetch = (input, init) => (given ?? fetch)(input, init)
   /** A Web API question. The key travels in the address, as Steam asks; that address is never logged. */
@@ -55,6 +81,95 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000 }: SteamDeps
     return response.json().catch(() => {
       throw new SourceError('unreachable', `Steam's answer to ${path} was not JSON.`)
     })
+  }
+
+  /**
+   * An achievement question, answered with its status and body, whatever the
+   * status: Steam says "private" and "no achievements" with a 403 and a 400.
+   * Busy (429) or failing (5xx), or not reached, Steam is asked again after a
+   * wait, twice; then the question fails.
+   */
+  const askStats = async (
+    path: string,
+    params: Record<string, string>,
+  ): Promise<{ status: number; body: unknown }> => {
+    const secret = key()
+    if (!secret) throw new SourceError('unset', 'This server has no Steam Web API key.')
+    const address = new URL(`${STEAM_API}${path}`)
+    address.search = new URLSearchParams({ key: secret, format: 'json', ...params }).toString()
+    for (let attempt = 0; ; attempt += 1) {
+      let response: Response | undefined
+      try {
+        response = await send(address, { signal: AbortSignal.timeout(timeoutMs) })
+      } catch {
+        response = undefined
+      }
+      const busy = !response || response.status === 429 || response.status >= 500
+      if (!busy) {
+        return { status: response!.status, body: await response!.json().catch(() => undefined) }
+      }
+      const delay = RETRY_AFTER_MS[attempt]
+      if (delay === undefined) {
+        throw new SourceError(
+          'unreachable',
+          `Steam did not answer ${path}${response ? ` (${response.status})` : ''}.`,
+        )
+      }
+      const asked = Number(response?.headers.get('retry-after'))
+      await sleep(
+        Number.isFinite(asked) && asked > 0 ? Math.min(asked * 1000, LONGEST_WAIT_MS) : delay,
+      )
+    }
+  }
+
+  /** A game's achievements in one language, or nothing when it has none. */
+  const achievementSchema = async (
+    appId: string,
+    language: AchievementLanguage,
+  ): Promise<DefinedSet | undefined> => {
+    const { status, body } = await askStats('/ISteamUserStats/GetSchemaForGame/v2/', {
+      appid: appId,
+      l: STEAM_LANGUAGE[language],
+    })
+    // A game Steam does not know, or one without stats, answers an empty `game`, or a 400 or 403.
+    if (status === 400 || status === 403) return undefined
+    const parsed = steamSchemaAnswerSchema.safeParse(body)
+    if (status !== 200 || !parsed.success) {
+      throw new SourceError('unreachable', 'Steam described achievements in a new shape.')
+    }
+    return definedFromSteam(parsed.data)
+  }
+
+  /** The account's progress through a game's achievements. */
+  const playerAchievements = async (steamId: string, appId: string): Promise<ProgressAnswer> => {
+    const { status, body } = await askStats('/ISteamUserStats/GetPlayerAchievements/v1/', {
+      steamid: steamId,
+      appid: appId,
+      l: STEAM_LANGUAGE.en,
+    })
+    const answer = playerFromSteam(status, body)
+    if (!answer) {
+      throw new SourceError(
+        'unreachable',
+        `Steam answered an account's achievements with ${status}.`,
+      )
+    }
+    return answer
+  }
+
+  /** How many of Steam's players unlocked each of a game's achievements, by its id. */
+  const unlockRates = async (appId: string): Promise<Map<string, number>> => {
+    const { status, body } = await askStats(
+      '/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/',
+      { gameid: appId },
+    )
+    // A game without achievements answers 403 and nothing.
+    if (status === 403) return new Map()
+    const parsed = steamRatesAnswerSchema.safeParse(body)
+    if (status !== 200 || !parsed.success) {
+      throw new SourceError('unreachable', 'Steam gave unlock rates in a new shape.')
+    }
+    return ratesFromSteam(parsed.data)
   }
 
   /**
@@ -140,7 +255,15 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000 }: SteamDeps
     return isValidAnswer(await response.text()) ? claimed : undefined
   }
 
-  return { ownedGames, playerName, appKinds, verifySignIn }
+  return {
+    ownedGames,
+    playerName,
+    appKinds,
+    verifySignIn,
+    achievementSchema,
+    playerAchievements,
+    unlockRates,
+  }
 }
 
 export type Steam = ReturnType<typeof createSteam>

@@ -4,6 +4,7 @@ import { ExternalLinkIcon, InboxIcon, RefreshCwIcon, UnlinkIcon } from 'lucide-r
 import { useFormatter, useLocale, useNow, useTranslations } from 'next-intl'
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
+import type { AchievementCounts } from '@/domain/achievements/achievements'
 import type { Answer } from '@/domain/library/adding'
 import type { SyncSource } from '@/domain/library/values'
 import type { LinkPage, LinkView, SyncStep } from '@/domain/sync/link'
@@ -16,6 +17,7 @@ import { Progress } from '@/ui/progress'
 import { ItemLists } from './item-lists'
 import { NintendoSignIn } from './nintendo-sign-in'
 import {
+  achievementStep,
   connectAddress,
   readPlatforms,
   setDaily,
@@ -79,8 +81,9 @@ type Running = { done: number; total: number }
  * One platform, linked or not (ADR 003). Unlinked: what linking does, and
  * the way to the platform's own sign-in: Steam's button, or Nintendo's page
  * and the link to paste back. Linked: when it last synced, how many games
- * it put on the shelf, Sync now with its progress, the daily switch, the
- * lists of games that need an answer, and the way to disconnect.
+ * it put on the shelf and how many of their achievements are read, Sync now
+ * with its progress, the daily switch, the lists of games that need an
+ * answer, and the way to disconnect.
  */
 function PlatformCard({
   row,
@@ -120,6 +123,10 @@ function PlatformCard({
   )
   const [asking, setAsking] = useState(false)
   const [stamp, setStamp] = useState(0)
+  /** Reading achievements, after the games are in (issue 72): how far it has got. */
+  const [reading, setReading] = useState<AchievementCounts>()
+  /** How the last reading of achievements went, when not well. */
+  const [unread, setUnread] = useState<'private' | 'unreachable'>()
   const stopped = useRef(false)
 
   useEffect(() => {
@@ -128,6 +135,34 @@ function PlatformCard({
       stopped.current = true
     }
   }, [])
+
+  /**
+   * The games' achievements, step after step until none is due, once the
+   * games are in: the library is whole while they are read, and says so.
+   */
+  const readAchievements = useCallback(
+    async (counts: AchievementCounts) => {
+      setUnread(undefined)
+      setReading(counts)
+      let answer = await achievementStep(source)
+      let problem: 'private' | 'unreachable' | undefined
+      while (answer.ok && !stopped.current) {
+        setReading(answer.value.counts)
+        if (answer.value.problem) problem = answer.value.problem
+        if (answer.value.remaining === 0 || answer.value.problem === 'private') break
+        answer = await achievementStep(source)
+      }
+      if (stopped.current) return
+      setReading(undefined)
+      // Past the hour's allowance, the rest are read with the next sync: Steam did nothing wrong.
+      if (!answer.ok && answer.reason === 'too-many') setSaid({ tone: 'done', text: t('tooMany') })
+      else setUnread(answer.ok ? problem : 'unreachable')
+      const platforms = await readPlatforms()
+      if (platforms.ok)
+        onChange(platforms.value.find((each) => each.source === source)?.link ?? null)
+    },
+    [onChange, source, t],
+  )
 
   /** After the first step, the rest until nothing is left, the progress shown as they come. */
   const steps = useCallback(
@@ -150,6 +185,8 @@ function PlatformCard({
           text: answer.reason === 'too-many' ? t('tooMany') : t('failed'),
         })
       } else if (!answer.value.link.problem) {
+        const counts = answer.value.link.achievements
+        if (counts) void readAchievements(counts)
         // Games waiting for me are not "up to date": the card says how many.
         const waiting = answer.value.link.counts['needs-you']
         const came = t('done', { count: done, source: name })
@@ -164,7 +201,7 @@ function PlatformCard({
         })
       }
     },
-    [name, onChange, source, t],
+    [name, onChange, readAchievements, source, t],
   )
 
   const sync = () => {
@@ -255,6 +292,14 @@ function PlatformCard({
         <>
           <div className="grid gap-1 text-sm">
             <p>{t('onShelf', { count: link.counts['on-shelf'], source: name })}</p>
+            {link.achievements && !reading ? (
+              <p>
+                {t('achievements.known', {
+                  known: link.achievements.known,
+                  games: link.achievements.games,
+                })}
+              </p>
+            ) : null}
             <p className="text-muted">
               {link.syncedAt
                 ? t('syncedOn', {
@@ -287,11 +332,32 @@ function PlatformCard({
             </div>
           ) : null}
           <Message said={said} />
+          {reading ? (
+            <div className="grid max-w-md gap-2" aria-live="polite">
+              <Progress
+                value={reading.known}
+                max={Math.max(reading.games, 1)}
+                aria-label={t('achievements.progressLabel', { source: name })}
+              />
+              <p className="text-sm text-muted">
+                {t('achievements.reading', { known: reading.known, games: reading.games })}
+              </p>
+            </div>
+          ) : null}
+          {unread ? (
+            <p role="alert" className="rounded-control border border-line-strong px-4 py-3 text-sm">
+              {t.rich(`achievements.${unread}`, { source: name, settings: steamSettings })}
+            </p>
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Button variant="primary" disabled={running !== undefined} onClick={sync}>
+            <Button
+              variant="primary"
+              disabled={running !== undefined || reading !== undefined}
+              onClick={sync}
+            >
               <RefreshCwIcon aria-hidden="true" />
-              {running ? t('syncing') : t('syncNow')}
+              {running || reading ? t('syncing') : t('syncNow')}
             </Button>
             {link.counts.unsorted > 0 && page === 'account' ? (
               // What it brought in waits for me to say where each game stands (spec 4.5). On the

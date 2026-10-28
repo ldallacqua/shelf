@@ -1,0 +1,408 @@
+{
+  "220": {
+    "schema": {
+      "english": {
+        "game": {
+          "gameName": "Half-Life 2",
+          "gameVersion": "7",
+          "availableGameStats": {
+            "achievements": [
+              {
+                "name": "HL2_OUT_THE_WINDOW",
+                "defaultvalue": 0,
+                "displayName": "Out the Window",
+                "hidden": 0,
+                "description": "Escape the apartment block.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_out_the_window.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_out_the_window_bw.jpg"
+              },
+              {
+                "name": "HL2_TRUSTY_TOOL",
+                "defaultvalue": 0,
+                "displayName": "Trusty Tool",
+                "hidden": 0,
+                "description": "Pick up the crowbar.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_trusty_tool.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_trusty_tool_bw.jpg"
+              },
+              {
+                "name": "HL2_DOWN_THE_CANALS",
+                "defaultvalue": 0,
+                "displayName": "Down the Canals",
+                "hidden": 0,
+                "description": "Reach the end of the canals.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_down_the_canals.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_down_the_canals_bw.jpg"
+              },
+              {
+                "name": "HL2_BEHIND_THE_LAB",
+                "defaultvalue": 0,
+                "displayName": "Behind the Lab",
+                "hidden": 1,
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_behind_the_lab.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_behind_the_lab_bw.jpg"
+              },
+              {
+                "name": "HL2_EVERY_LAST_ONE",
+                "defaultvalue": 0,
+                "displayName": "Every Last One",
+                "hidden": 0,
+                "description": "Finish the game without dying.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_every_last_one.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_every_last_one_bw.jpg"
+              },
+              {
+                "name": "HL2_COLLECTOR",
+                "defaultvalue": 0,
+                "displayName": "Collector",
+                "hidden": 0,
+                "description": "Find every supply cache.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_collector.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_collector_bw.jpg"
+              }
+            ]
+          }
+        }
+      },
+      "brazilian": {
+        "game": {
+          "gameName": "Half-Life 2",
+          "gameVersion": "7",
+          "availableGameStats": {
+            "achievements": [
+              {
+                "name": "HL2_OUT_THE_WINDOW",
+                "defaultvalue": 0,
+                "displayName": "Pela Janela",
+                "hidden": 0,
+                "description": "Fuja do prédio de apartamentos.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_out_the_window.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_out_the_window_bw.jpg"
+              },
+              {
+                "name": "HL2_TRUSTY_TOOL",
+                "defaultvalue": 0,
+                "displayName": "Ferramenta de Confiança",
+                "hidden": 0,
+                "description": "Pegue o pé de cabra.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_trusty_tool.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_trusty_tool_bw.jpg"
+              },
+              {
+                "name": "HL2_DOWN_THE_CANALS",
+                "defaultvalue": 0,
+                "displayName": "Down the Canals",
+                "hidden": 0,
+                "description": "Reach the end of the canals.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_down_the_canals.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_down_the_canals_bw.jpg"
+              },
+              {
+                "name": "HL2_BEHIND_THE_LAB",
+                "defaultvalue": 0,
+                "displayName": "Atrás do Laboratório",
+                "hidden": 1,
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_behind_the_lab.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_behind_the_lab_bw.jpg"
+              },
+              {
+                "name": "HL2_EVERY_LAST_ONE",
+                "defaultvalue": 0,
+                "displayName": "Até o Último",
+                "hidden": 0,
+                "description": "Termine o jogo sem morrer.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_every_last_one.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_every_last_one_bw.jpg"
+              },
+              {
+                "name": "HL2_COLLECTOR",
+                "defaultvalue": 0,
+                "displayName": "Colecionador",
+                "hidden": 0,
+                "description": "Encontre todos os esconderijos de suprimentos.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_collector.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/220/hl2_collector_bw.jpg"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "player": {
+      "playerstats": {
+        "steamID": "76561190000000001",
+        "gameName": "Half-Life 2",
+        "achievements": [
+          {
+            "apiname": "HL2_OUT_THE_WINDOW",
+            "achieved": 1,
+            "unlocktime": 1760086000,
+            "name": "HL2_OUT_THE_WINDOW",
+            "description": "Escape the apartment block."
+          },
+          {
+            "apiname": "HL2_TRUSTY_TOOL",
+            "achieved": 1,
+            "unlocktime": 1760000000,
+            "name": "HL2_TRUSTY_TOOL",
+            "description": "Pick up the crowbar."
+          },
+          {
+            "apiname": "HL2_DOWN_THE_CANALS",
+            "achieved": 1,
+            "unlocktime": 0,
+            "name": "HL2_DOWN_THE_CANALS",
+            "description": "Reach the end of the canals."
+          },
+          {
+            "apiname": "HL2_BEHIND_THE_LAB",
+            "achieved": 0,
+            "unlocktime": 0,
+            "name": "HL2_BEHIND_THE_LAB",
+            "description": "Find the room behind the lab."
+          },
+          {
+            "apiname": "HL2_EVERY_LAST_ONE",
+            "achieved": 0,
+            "unlocktime": 0,
+            "name": "HL2_EVERY_LAST_ONE",
+            "description": "Finish the game without dying."
+          },
+          {
+            "apiname": "HL2_COLLECTOR",
+            "achieved": 1,
+            "unlocktime": 1759900000,
+            "name": "HL2_COLLECTOR",
+            "description": "Find every supply cache."
+          }
+        ],
+        "success": true
+      }
+    },
+    "rates": {
+      "achievementpercentages": {
+        "achievements": [
+          {
+            "name": "HL2_TRUSTY_TOOL",
+            "percent": "91.3"
+          },
+          {
+            "name": "HL2_OUT_THE_WINDOW",
+            "percent": "84.0"
+          },
+          {
+            "name": "HL2_DOWN_THE_CANALS",
+            "percent": "61.7"
+          },
+          {
+            "name": "HL2_BEHIND_THE_LAB",
+            "percent": "12.5"
+          },
+          {
+            "name": "HL2_COLLECTOR",
+            "percent": "5.4"
+          },
+          {
+            "name": "HL2_EVERY_LAST_ONE",
+            "percent": "2.1"
+          }
+        ]
+      }
+    }
+  },
+  "1145350": {
+    "schema": {
+      "english": {
+        "game": {
+          "gameName": "Hades II",
+          "gameVersion": "7",
+          "availableGameStats": {
+            "achievements": [
+              {
+                "name": "HADES2_FIRST_NIGHT",
+                "defaultvalue": 0,
+                "displayName": "First Night",
+                "hidden": 0,
+                "description": "Clear the first region.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_first_night.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_first_night_bw.jpg"
+              },
+              {
+                "name": "HADES2_FAMILIAR",
+                "defaultvalue": 0,
+                "displayName": "Familiar Face",
+                "hidden": 0,
+                "description": "Meet a familiar.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_familiar.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_familiar_bw.jpg"
+              },
+              {
+                "name": "HADES2_THE_END",
+                "defaultvalue": 0,
+                "displayName": "Past the Crossroads",
+                "hidden": 0,
+                "description": "Clear every region.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_the_end.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_the_end_bw.jpg"
+              }
+            ]
+          }
+        }
+      },
+      "brazilian": {
+        "game": {
+          "gameName": "Hades II",
+          "gameVersion": "7",
+          "availableGameStats": {
+            "achievements": [
+              {
+                "name": "HADES2_FIRST_NIGHT",
+                "defaultvalue": 0,
+                "displayName": "Primeira Noite",
+                "hidden": 0,
+                "description": "Transponha a primeira região.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_first_night.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_first_night_bw.jpg"
+              },
+              {
+                "name": "HADES2_FAMILIAR",
+                "defaultvalue": 0,
+                "displayName": "Rosto Familiar",
+                "hidden": 0,
+                "description": "Conheça um familiar.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_familiar.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_familiar_bw.jpg"
+              },
+              {
+                "name": "HADES2_THE_END",
+                "defaultvalue": 0,
+                "displayName": "Além da Encruzilhada",
+                "hidden": 0,
+                "description": "Transponha todas as regiões.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_the_end.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/1145350/hades2_the_end_bw.jpg"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "player": {
+      "playerstats": {
+        "steamID": "76561190000000001",
+        "gameName": "Hades II",
+        "achievements": [
+          {
+            "apiname": "HADES2_FIRST_NIGHT",
+            "achieved": 1,
+            "unlocktime": 1760200000,
+            "name": "HADES2_FIRST_NIGHT",
+            "description": "Clear the first region."
+          },
+          {
+            "apiname": "HADES2_FAMILIAR",
+            "achieved": 1,
+            "unlocktime": 1760210000,
+            "name": "HADES2_FAMILIAR",
+            "description": "Meet a familiar."
+          },
+          {
+            "apiname": "HADES2_THE_END",
+            "achieved": 1,
+            "unlocktime": 1760259000,
+            "name": "HADES2_THE_END",
+            "description": "Clear every region."
+          }
+        ],
+        "success": true
+      }
+    },
+    "rates": {
+      "achievementpercentages": {
+        "achievements": [
+          {
+            "name": "HADES2_FIRST_NIGHT",
+            "percent": 88.2
+          },
+          {
+            "name": "HADES2_FAMILIAR",
+            "percent": 70.4
+          },
+          {
+            "name": "HADES2_THE_END",
+            "percent": 9.8
+          }
+        ]
+      }
+    }
+  },
+  "753640": {
+    "schema": {
+      "english": {
+        "game": {
+          "gameName": "Outer Wilds",
+          "gameVersion": "7",
+          "availableGameStats": {
+            "achievements": [
+              {
+                "name": "OW_LIFTOFF",
+                "defaultvalue": 0,
+                "displayName": "Liftoff",
+                "hidden": 0,
+                "description": "Leave the village in your ship.",
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/753640/ow_liftoff.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/753640/ow_liftoff_bw.jpg"
+              },
+              {
+                "name": "OW_QUANTUM",
+                "defaultvalue": 0,
+                "displayName": "Seen and Unseen",
+                "hidden": 1,
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/753640/ow_quantum.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/753640/ow_quantum_bw.jpg"
+              },
+              {
+                "name": "OW_EYE",
+                "defaultvalue": 0,
+                "displayName": "The Eye",
+                "hidden": 1,
+                "icon": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/753640/ow_eye.jpg",
+                "icongray": "https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/753640/ow_eye_bw.jpg"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "player": {
+      "playerstats": {
+        "steamID": "76561190000000001",
+        "gameName": "Outer Wilds",
+        "achievements": [
+          {
+            "apiname": "OW_LIFTOFF",
+            "achieved": 0,
+            "unlocktime": 0,
+            "name": "OW_LIFTOFF",
+            "description": "Leave the village in your ship."
+          },
+          {
+            "apiname": "OW_QUANTUM",
+            "achieved": 0,
+            "unlocktime": 0,
+            "name": "OW_QUANTUM",
+            "description": "Photograph a quantum object."
+          },
+          {
+            "apiname": "OW_EYE",
+            "achieved": 0,
+            "unlocktime": 0,
+            "name": "OW_EYE",
+            "description": "Reach the eye."
+          }
+        ],
+        "success": true
+      }
+    }
+  }
+}

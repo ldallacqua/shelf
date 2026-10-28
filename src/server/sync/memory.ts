@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 
 import { and, asc, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
 
+import { isAchievementProvider } from '@/domain/achievements/achievements'
 import type { SyncSource } from '@/domain/library/values'
 import {
   isSetAside,
@@ -19,6 +20,7 @@ import { MAX_LISTED } from '@/domain/sync/link'
 import type { Evidence } from '@/domain/sync/sources'
 import type { Db, Executor } from '@/server/db/client'
 import { copies, entries, platformLinks, sourceItems } from '@/server/db/schema'
+import { countAchievements, forgetOtherProgress, shelvedApps } from '@/server/sync/achievements'
 
 /**
  * The sync's own rows (ADR 003, decision 3): each account's links to its
@@ -55,8 +57,9 @@ export type Linked = { externalId: string; name?: string; sealed?: string }
 /**
  * Links an account to its account at a source, or signs it in there again.
  * A new sign-in clears what went wrong with the last. Linking another
- * account at the same source forgets what the first one reported: its games
- * stay on the shelf, but its answers were about someone else's list.
+ * account at the same source forgets what the first one reported, and its
+ * achievements, kept or not since it was disconnected: its games stay on
+ * the shelf, but its answers were about someone else's list.
  */
 export const saveLink = async (
   db: Db,
@@ -81,6 +84,7 @@ export const saveLink = async (
         },
       }),
     ...(another ? [db.delete(sourceItems).where(ofSource(userId, source))] : []),
+    ...(isAchievementProvider(source) ? [forgetOtherProgress(db, userId, source, externalId)] : []),
   ])
 }
 
@@ -429,6 +433,14 @@ export const viewOf = async (db: Executor, link: Link): Promise<LinkView> => ({
   syncedAt: link.syncedAt,
   problem: link.problem,
   counts: await countItems(db, link),
+  ...(isAchievementProvider(link.source)
+    ? {
+        achievements: countAchievements(
+          await shelvedApps(db, link.userId, link.source),
+          link.externalId,
+        ),
+      }
+    : {}),
 })
 
 /**

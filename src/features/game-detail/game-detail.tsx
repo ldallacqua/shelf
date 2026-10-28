@@ -13,6 +13,7 @@ import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 
+import { Achievements } from './achievements'
 import { HERO_COVER } from './hero'
 import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
@@ -449,6 +450,18 @@ export function GameDetail({
       </Section>
     )
 
+  // Asked for as the page opens, only for a game a provider has achievements for (issue 72).
+  const achievements = facts?.achievements ? (
+    <Section title={t('achievements.title')} level={level}>
+      <Achievements
+        slug={game.slug}
+        providers={facts.achievements}
+        minor={Minor}
+        loading={<Ghosts lines={3} />}
+      />
+    </Section>
+  ) : null
+
   const releasePlatforms = new Map(names?.platform.map((platform) => [platform.id, platform]))
   /** The platforms it came out on, by the date it did, in the order the dates come. */
   const releasedOn = (releases: GameFacts['releases']) => {
@@ -566,6 +579,7 @@ export function GameDetail({
           <div className="grid min-w-0 content-start gap-10">
             {about}
             {shots}
+            {achievements}
             {details}
           </div>
           <aside className="row-start-1 lg:col-start-2">{mine}</aside>
@@ -596,6 +610,7 @@ export function GameDetail({
           <>
             {about}
             {shots}
+            {achievements}
             {details}
           </>
         )}

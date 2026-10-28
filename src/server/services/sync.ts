@@ -69,6 +69,8 @@ import {
   type Resolved,
 } from '@/server/sync/memory'
 import { nintendo, type Nintendo } from '@/server/sync/nintendo'
+import { isAchievementProvider } from '@/domain/achievements/achievements'
+import { achievementsFor } from '@/server/services/achievements'
 import { open, seal } from '@/server/sync/sealed'
 import { SourceError } from '@/server/sync/source-error'
 import { steam, type Steam } from '@/server/sync/steam'
@@ -726,8 +728,9 @@ const DAILY_LINKS = 200
 /**
  * The daily sync (ADR 003, decision 6), which Vercel starts once a day:
  * every link that asks for it, the longest unsynced first, step after step
- * until each is done or the run's time is spent. What is left waits for
- * the next day, or for "Sync now". Returns the libraries whose version moved.
+ * until each is done or the run's time is spent, then its achievements
+ * the same way (issue 72). What is left waits for the next day, or for
+ * "Sync now". Returns the libraries whose version moved.
  */
 export const syncDaily = async (budgetMs = 240_000) => {
   const started = Date.now()
@@ -744,6 +747,13 @@ export const syncDaily = async (budgetMs = 240_000) => {
       while (step.remaining > 0 && inTime()) step = await library.step(link.source)
       if (step.version !== before) changed.push(link.userId)
       synced += 1
+      if (isAchievementProvider(link.source) && step.remaining === 0 && !step.link.problem) {
+        const achievements = achievementsFor(link.userId)
+        let read = await achievements.step(link.source)
+        while (read.remaining > 0 && read.problem !== 'private' && inTime()) {
+          read = await achievements.step(link.source)
+        }
+      }
     } catch (error) {
       console.error('A daily sync failed', link.source, error)
     }

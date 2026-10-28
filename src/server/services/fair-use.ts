@@ -35,6 +35,11 @@ export const FAIR_USE = {
   sync: { per: HOUR, max: 2000 },
   /** Times a source is read on my asking. */
   read: { per: HOUR, max: 60 },
+  /**
+   * Games whose achievements are read on my asking (issue 72): a large
+   * Steam library at once, four questions to Steam a game at most.
+   */
+  achievements: { per: HOUR, max: 3000 },
 } as const
 
 export type FairUse = keyof typeof FAIR_USE
