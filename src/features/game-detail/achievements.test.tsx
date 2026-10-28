@@ -86,6 +86,16 @@ const show = (locale: 'en' | 'pt-BR' = 'en') =>
   )
 
 const rows = () => within(screen.getByRole('list')).getAllByRole('listitem')
+const icons = () => within(screen.getByRole('listbox')).getAllByRole('option')
+
+/** From the icons to the list, where each is told in full. */
+const asList = (name = 'List') =>
+  userEvent.click(
+    within(screen.getByRole('radiogroup', { name: /Show them as|Mostrar como/ })).getByRole(
+      'radio',
+      { name },
+    ),
+  )
 
 describe('Achievements', () => {
   it('asks for them when it opens, then says how many are unlocked, from where and when', async () => {
@@ -104,10 +114,47 @@ describe('Achievements', () => {
     expect(screen.getByText('From Steam, read 3 hours ago.')).toBeInTheDocument()
   })
 
+  it('opens on every one as its icon, the rarest unlocked told in full and glowing', async () => {
+    answering(halfLife())
+    show()
+    await screen.findByText('4 of 6 unlocked')
+    expect(icons()).toHaveLength(6)
+    const chosen = screen.getByRole('option', { selected: true })
+    expect(chosen).toHaveAccessibleName('Name of collector, Unlocked Oct 8, 2025')
+    expect(chosen).toHaveAttribute('data-rare')
+    // Only an unlock under a tenth of the players is rare: 84% is not.
+    expect(screen.getByRole('option', { name: /^Name of window/ })).not.toHaveAttribute('data-rare')
+    expect(screen.getByText('About collector')).toBeInTheDocument()
+    expect(screen.getByText('Rare')).toBeInTheDocument()
+    expect(screen.getByText('5.4% of Steam players')).toBeInTheDocument()
+  })
+
+  it('tells another in full when it is chosen, by pointer or by the arrow keys, one stop for the keyboard', async () => {
+    answering(halfLife())
+    show()
+    await screen.findByText('4 of 6 unlocked')
+    expect(icons().filter((icon) => icon.tabIndex === 0)).toHaveLength(1)
+
+    await userEvent.click(screen.getByRole('option', { name: 'Name of last, Locked' }))
+    expect(screen.getByText('About last')).toBeInTheDocument()
+    expect(screen.getByRole('option', { selected: true })).toHaveFocus()
+
+    await userEvent.keyboard('{Home}')
+    expect(screen.getByRole('option', { selected: true })).toHaveAccessibleName(
+      'Name of window, Unlocked Oct 10, 2025',
+    )
+    await userEvent.keyboard('{ArrowRight}')
+    expect(screen.getByRole('option', { selected: true })).toHaveFocus()
+    expect(screen.getByText('About crowbar')).toBeInTheDocument()
+    await userEvent.keyboard('{End}')
+    expect(screen.getByText('About collector')).toBeInTheDocument()
+  })
+
   it('says in words whether each is unlocked and when, and how rare Steam says it is', async () => {
     answering(halfLife())
     show()
     await screen.findByText('4 of 6 unlocked')
+    await asList()
     const [window, , canals, , last] = rows()
     expect(within(window!).getByText('Name of window')).toBeInTheDocument()
     expect(within(window!).getByText('Unlocked Oct 10, 2025')).toBeInTheDocument()
@@ -122,6 +169,9 @@ describe('Achievements', () => {
     answering(halfLife())
     show()
     await screen.findByText('4 of 6 unlocked')
+    expect(screen.getByRole('option', { name: 'Hidden achievement, Locked' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /Name of lab/ })).toBeNull()
+    await asList()
     expect(screen.queryByText('Name of lab')).toBeNull()
     expect(screen.queryByText('Find the room behind the lab.')).toBeNull()
     expect(screen.getByText('Hidden achievement')).toBeInTheDocument()
@@ -137,6 +187,9 @@ describe('Achievements', () => {
     await screen.findByText('4 of 6 unlocked')
     const group = screen.getByRole('radiogroup', { name: 'Which achievements' })
     await userEvent.click(within(group).getByRole('radio', { name: 'Locked 2' }))
+    // The icons follow the filter too.
+    expect(icons()).toHaveLength(2)
+    await asList()
     expect(rows()).toHaveLength(2)
     await userEvent.click(within(group).getByRole('radio', { name: 'Unlocked 4' }))
     expect(rows()).toHaveLength(4)
@@ -183,16 +236,22 @@ describe('Achievements', () => {
     expect(await screen.findByText('1 of 2 unlocked')).toBeInTheDocument()
     expect(screen.queryByText('50%')).toBeNull()
     expect(screen.getByText(/One achievement was added since/)).toBeInTheDocument()
-    expect(screen.getByText('Not known yet')).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Name of b, Not known yet' })).toBeInTheDocument()
   })
 
-  it('shows a long list a part at a time', async () => {
+  it('shows every icon at once, and a long list a part at a time', async () => {
     answering(
       halfLife({ achievements: Array.from({ length: 40 }, (_, at) => achievement(`a${at}`)) }),
     )
     show()
     await screen.findByText('0 of 40 unlocked')
-    expect(rows()).toHaveLength(30)
+    expect(icons()).toHaveLength(40)
+    // Nothing unlocked: it opens on the first.
+    expect(screen.getByRole('option', { selected: true })).toHaveAccessibleName(
+      'Name of a0, Locked',
+    )
+    await asList()
+    expect(rows()).toHaveLength(10)
     await userEvent.click(screen.getByRole('button', { name: 'Show all 40' }))
     expect(rows()).toHaveLength(40)
   })
@@ -269,6 +328,8 @@ describe('Achievements', () => {
       expect.anything(),
     )
     expect(screen.getByRole('radiogroup', { name: 'Quais conquistas' })).toBeInTheDocument()
+    expect(screen.getByText('Rara')).toBeInTheDocument()
+    await asList('Lista')
     expect(screen.getByText('Conquista oculta')).toBeInTheDocument()
     await waitFor(() => expect(screen.getAllByText(/dos jogadores da Steam/).length).toBe(6))
     // Steam has it only in English: said as English.

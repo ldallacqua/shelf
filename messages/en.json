@@ -492,6 +492,11 @@
         "private": "{source} keeps these achievements private.",
         "failed": "{source} didn’t answer when they were read. They are read again with the next sync."
       },
+      "view": {
+        "label": "Show them as",
+        "grid": "Icons",
+        "list": "List"
+      },
       "filter": {
         "label": "Which achievements",
         "all": "All {count}",
@@ -512,8 +517,10 @@
       "locked": "Locked",
       "unknown": "Not known yet",
       "rate": "{rate} of {source} players",
+      "rare": "Rare",
       "emptyFilter": "None of them.",
       "more": "Show all {count}",
+      "iconsLabel": "{source} achievements: choose one to see it in full",
       "loadFailed": "The achievements could not be loaded.",
       "retry": "Try again"
     },

@@ -492,6 +492,11 @@
         "private": "A {source} mantém estas conquistas privadas.",
         "failed": "A {source} não respondeu quando elas foram lidas. Elas são lidas de novo na próxima sincronização."
       },
+      "view": {
+        "label": "Mostrar como",
+        "grid": "Ícones",
+        "list": "Lista"
+      },
       "filter": {
         "label": "Quais conquistas",
         "all": "Todas {count}",
@@ -512,8 +517,10 @@
       "locked": "Bloqueada",
       "unknown": "Ainda desconhecida",
       "rate": "{rate} dos jogadores da {source}",
+      "rare": "Rara",
       "emptyFilter": "Nenhuma.",
       "more": "Mostrar todas as {count}",
+      "iconsLabel": "Conquistas da {source}: escolha uma para ver por inteiro",
       "loadFailed": "Não foi possível carregar as conquistas.",
       "retry": "Tentar de novo"
     },
