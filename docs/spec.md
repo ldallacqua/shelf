@@ -1277,14 +1277,24 @@ screenshots, asked for as the page opens (never part of the library file).
 - **How far:** "34 of 50 unlocked", a bar, and 68%, rounded down, so 99.5% is never 100%.
   "All 50 unlocked" when every one is. Under it, where they are from and when: "From Steam,
   read 3 hours ago."
-- **Each achievement:** Steam's artwork, its name and description, and in words whether it is
-  unlocked and when ("Unlocked Oct 10, 2025", or "Unlocked, day not known" when Steam does not
-  say; never a made-up date), and how rare it is: "2.1% of Steam players", Steam's own share,
-  not Shelf's. Locked ones are dimmed and say "Locked".
+- **Every one at once, as its icon** (the owner, 28 Oct 2026: the list "expands too long"):
+  Steam's artwork in color when unlocked, its gray one when locked, a closed eye for a hidden
+  one. An unlock fewer than a tenth of Steam's players have glows in the room's light, as
+  Steam's own library marks them, and says "Rare". A set of 49 takes about three rows on a
+  game's page.
+- **One told in full, under the icons:** Steam's artwork, its name and description, and in
+  words whether it is unlocked and when ("Unlocked Oct 10, 2025", or "Unlocked, day not known"
+  when Steam does not say; never a made-up date), and how rare it is: "2.1% of Steam players",
+  Steam's own share, not Shelf's. It opens on the rarest one unlocked, or the first when none
+  is; choosing another icon tells that one. The icons take one stop of the keyboard, and the
+  arrow keys move between them, up and down by the row as drawn.
+- **As a list,** one choice away (Icons or List): each told in full, locked ones dimmed and
+  saying "Locked", in two columns where the section is wide enough. It shows 10, then "Show
+  all 120".
 - **Hidden ones** say "Hidden achievement" until they are unlocked, with no name or
   description, until I turn on "Show the 3 hidden ones".
-- **Which and in what order:** All, Unlocked or Locked, each with its count; Steam's order,
-  Recently unlocked, or Rarest first. A long list shows 30, then "Show all 120".
+- **Which and in what order,** for the icons and the list alike: All, Unlocked or Locked, each
+  with its count; Steam's order, Recently unlocked, or Rarest first.
 - **A game with two Steam apps** (a game and its multiplayer app) shows each set apart, named:
   "Half-Life 2 on Steam".
 - **In Portuguese** the names are Steam's own Portuguese ones where Steam has them, and its

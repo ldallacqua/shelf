@@ -1,8 +1,8 @@
 'use client'
 
-import { EyeOffIcon, LockIcon, TrophyIcon } from 'lucide-react'
+import { EyeOffIcon, LayoutGridIcon, ListIcon, LockIcon, TrophyIcon } from 'lucide-react'
 import { useFormatter, useLocale, useNow, useTranslations } from 'next-intl'
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 
 import type {
   AchievementProvider,
@@ -34,6 +34,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
  * how much of it is unlocked, and its achievements, which can be filtered
  * and ordered. A hidden one keeps its name and description out of sight
  * until it is unlocked, or until the reader asks to see them.
+ *
+ * A set opens as its icons, every one at once, the rare unlocks glowing,
+ * and one of them told in full below, the rarest unlocked first: the whole
+ * set in a few rows, and its story first (the owner, 28 Oct 2026: the list
+ * "expands too long"). The list, a part at a time, is one choice away.
  */
 
 /** Where a game's achievements are: one's own, fresh; a public shelf's, as the edge keeps them. */
@@ -48,8 +53,37 @@ type Loaded = { address: string } & (
   { status: 'ready'; achievements: GameAchievements } | { status: 'failed' }
 )
 
-/** A long list shows this many before "Show all". */
-const SHOWN = 30
+/** The list shows this many before "Show all": enough to see what it holds. */
+const SHOWN = 10
+
+/** Under this share of a provider's players, an unlock is rare and glows, as Steam's library marks them. */
+const RARE = 10
+
+const views = ['grid', 'list'] as const
+type View = (typeof views)[number]
+const viewIcons = { grid: LayoutGridIcon, list: ListIcon } as const
+
+const isRare = (achievement: AchievementView) =>
+  achievement.state === 'unlocked' && achievement.rate !== undefined && achievement.rate < RARE
+
+const isConcealed = (achievement: AchievementView, reveal: boolean) =>
+  achievement.hidden && achievement.state !== 'unlocked' && !reveal
+
+/** Whether it is unlocked, and when, in words. */
+function useStateOf() {
+  const t = useTranslations('Game.achievements')
+  const format = useFormatter()
+  return (achievement: AchievementView) =>
+    achievement.state === 'unlocked'
+      ? achievement.unlockedAt
+        ? t('unlockedOn', {
+            when: format.dateTime(new Date(achievement.unlockedAt), { dateStyle: 'medium' }),
+          })
+        : t('unlockedSometime')
+      : achievement.state === 'locked'
+        ? t('locked')
+        : t('unknown')
+}
 
 /** The artwork, or a trophy where there is none or it does not load. */
 function Artwork({ achievement, concealed }: { achievement: AchievementView; concealed: boolean }) {
@@ -83,32 +117,28 @@ function Artwork({ achievement, concealed }: { achievement: AchievementView; con
   )
 }
 
-function AchievementRow({
+/** One achievement told in full: its artwork, name, description, whether and when, how rare. */
+function AchievementCard({
   achievement,
   source,
   reveal,
+  as: Box,
+  className,
 }: {
   achievement: AchievementView
   source: string
   reveal: boolean
+  as: 'li' | 'div'
+  className?: string
 }) {
   const t = useTranslations('Game.achievements')
   const format = useFormatter()
-  const concealed = achievement.hidden && achievement.state !== 'unlocked' && !reveal
+  const stateOf = useStateOf()
+  const concealed = isConcealed(achievement, reveal)
   // Steam's words where it has none in this language: a screen reader says them as English.
   const lang = achievement.inEnglish && !concealed ? 'en' : undefined
-  const state =
-    achievement.state === 'unlocked'
-      ? achievement.unlockedAt
-        ? t('unlockedOn', {
-            when: format.dateTime(new Date(achievement.unlockedAt), { dateStyle: 'medium' }),
-          })
-        : t('unlockedSometime')
-      : achievement.state === 'locked'
-        ? t('locked')
-        : t('unknown')
   return (
-    <li className="flex items-start gap-3 py-3">
+    <Box className={cn('flex items-start gap-3 py-3', className)}>
       <Artwork achievement={achievement} concealed={concealed} />
       <div className="grid min-w-0 flex-1 gap-0.5">
         <p
@@ -124,7 +154,10 @@ function AchievementRow({
           {concealed ? t('hiddenBody') : (achievement.description ?? null)}
         </p>
         <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 readout text-[0.625rem] text-muted">
-          <span className={cn(achievement.state === 'unlocked' && 'text-text')}>{state}</span>
+          <span className={cn(achievement.state === 'unlocked' && 'text-text')}>
+            {stateOf(achievement)}
+          </span>
+          {isRare(achievement) ? <span className="text-text">{t('rare')}</span> : null}
           {achievement.rate === undefined ? null : (
             <span>
               {t('rate', {
@@ -138,7 +171,101 @@ function AchievementRow({
           )}
         </p>
       </div>
-    </li>
+    </Box>
+  )
+}
+
+/**
+ * Every achievement as its icon, a few rows for the whole set: the rare
+ * unlocks glow in the room's light. One is chosen at a time, and told in
+ * full below. The arrow keys move between them, Home and End go to the
+ * ends, and the keyboard stops on the set once, not on each.
+ */
+function Icons({
+  achievements,
+  chosen,
+  onChoose,
+  reveal,
+  label,
+}: {
+  achievements: readonly AchievementView[]
+  chosen: AchievementView
+  onChoose: (id: string) => void
+  reveal: boolean
+  label: string
+}) {
+  const t = useTranslations('Game.achievements')
+  const stateOf = useStateOf()
+  const list = useRef<HTMLUListElement>(null)
+  const at = achievements.findIndex((each) => each.id === chosen.id)
+  /** The icons as drawn, read when a key or a pointer asks, never while drawing. */
+  const tiles = () => [...(list.current?.children ?? [])] as HTMLElement[]
+
+  const go = (next: number) => {
+    const to = Math.max(0, Math.min(achievements.length - 1, next))
+    onChoose(achievements[to]!.id)
+    tiles()[to]?.focus()
+  }
+  /** How many icons stand in a row as drawn now: the rows wrap with the page's width. */
+  const perRow = () => {
+    const drawn = tiles()
+    const wrapped = drawn.findIndex((tile) => tile.offsetTop !== drawn[0]!.offsetTop)
+    return wrapped === -1 ? drawn.length : wrapped
+  }
+  const onKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
+    const moves: Record<string, () => number> = {
+      ArrowRight: () => at + 1,
+      ArrowLeft: () => at - 1,
+      ArrowDown: () => at + perRow(),
+      ArrowUp: () => at - perRow(),
+      Home: () => 0,
+      End: () => achievements.length - 1,
+    }
+    const move = moves[event.key]
+    if (!move) return
+    event.preventDefault()
+    go(move())
+  }
+
+  return (
+    <ul
+      ref={list}
+      role="listbox"
+      aria-label={label}
+      onKeyDown={onKeyDown}
+      // One listener for every icon: the one under the pointer is chosen.
+      onClick={(event) => {
+        const tile = (event.target as HTMLElement).closest('[role="option"]')
+        const index = tiles().findIndex((each) => each === tile)
+        if (index !== -1) go(index)
+      }}
+      className="flex flex-wrap gap-2"
+    >
+      {achievements.map((achievement, index) => {
+        const concealed = isConcealed(achievement, reveal)
+        const name = concealed ? t('hiddenName') : achievement.name
+        const selected = index === at
+        return (
+          <li
+            key={achievement.id}
+            role="option"
+            aria-selected={selected}
+            aria-label={`${name}, ${stateOf(achievement)}`}
+            title={name}
+            tabIndex={selected ? 0 : -1}
+            data-rare={isRare(achievement) ? '' : undefined}
+            className={cn(
+              'cursor-pointer rounded-[8px] p-0.5 transition-shadow duration-quick ease-settle outline-none',
+              'focus-visible:ring-2 focus-visible:ring-focus',
+              isRare(achievement) && 'shadow-glow',
+              selected && 'ring-2 ring-text',
+            )}
+          >
+            <Artwork achievement={achievement} concealed={concealed} />
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
@@ -171,6 +298,8 @@ function SetOf({
   const [sort, setSort] = useState<AchievementSort>('provider')
   const [reveal, setReveal] = useState(false)
   const [all, setAll] = useState(false)
+  const [view, setView] = useState<View>('grid')
+  const [chosenId, setChosenId] = useState<string>()
 
   const when = (at: number) => format.relativeTime(Math.min(at, now.getTime()), now)
   const heading = several ? (
@@ -195,6 +324,14 @@ function SetOf({
   }
   const arranged = arrangeAchievements(set.achievements, filter, sort)
   const shown = all ? arranged : arranged.slice(0, SHOWN)
+  // The icons open on the rarest unlocked: the set's story first. Without one, on the first.
+  const rarest = arranged
+    .filter((each) => each.state === 'unlocked' && each.rate !== undefined)
+    .reduce<AchievementView | undefined>(
+      (best, each) => (best === undefined || each.rate! < best.rate! ? each : best),
+      undefined,
+    )
+  const chosen = arranged.find((each) => each.id === chosenId) ?? rarest ?? arranged[0]
   const day = format.dateTime(new Date(set.readAt!), { dateStyle: 'medium' })
   const freshness = set.snapshot
     ? t('snapshot', { source, day })
@@ -203,7 +340,7 @@ function SetOf({
       : t('readAt', { source, when: when(set.readAt!) })
 
   return (
-    <div className="grid gap-4">
+    <div className="@container grid gap-4">
       {heading}
       <div className="grid gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -230,6 +367,19 @@ function SetOf({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+        <Segmented aria-label={t('view.label')} value={view} onValueChange={setView}>
+          {views.map((each) => {
+            const Icon = viewIcons[each]
+            return (
+              <SegmentedItem key={each} value={each} aria-label={t(`view.${each}`)}>
+                <Icon aria-hidden="true" />
+                <span aria-hidden="true" className="max-sm:hidden">
+                  {t(`view.${each}`)}
+                </span>
+              </SegmentedItem>
+            )
+          })}
+        </Segmented>
         <Segmented
           aria-label={t('filter.label')}
           value={filter}
@@ -273,25 +423,46 @@ function SetOf({
         ) : null}
       </div>
 
-      {shown.length === 0 ? (
+      {!chosen ? (
         <Said>{t('emptyFilter')}</Said>
+      ) : view === 'grid' ? (
+        <div className="grid gap-3">
+          <Icons
+            achievements={arranged}
+            chosen={chosen}
+            onChoose={setChosenId}
+            reveal={reveal}
+            label={t('iconsLabel', { source })}
+          />
+          {/* The one chosen, said again when another is. */}
+          <div
+            aria-live="polite"
+            className="min-h-24 rounded-panel border border-line bg-surface px-4"
+          >
+            <AchievementCard achievement={chosen} source={source} reveal={reveal} as="div" />
+          </div>
+        </div>
       ) : (
-        <ul className="divide-y divide-line border-y border-line">
-          {shown.map((achievement) => (
-            <AchievementRow
-              key={achievement.id}
-              achievement={achievement}
-              source={source}
-              reveal={reveal}
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="grid border-t border-line @2xl:grid-cols-2 @2xl:gap-x-8">
+            {shown.map((achievement) => (
+              <AchievementCard
+                key={achievement.id}
+                achievement={achievement}
+                source={source}
+                reveal={reveal}
+                as="li"
+                className="border-b border-line"
+              />
+            ))}
+          </ul>
+          {shown.length < arranged.length ? (
+            <Button variant="secondary" size="sm" className="w-fit" onClick={() => setAll(true)}>
+              {t('more', { count: arranged.length })}
+            </Button>
+          ) : null}
+        </>
       )}
-      {shown.length < arranged.length ? (
-        <Button variant="secondary" size="sm" className="w-fit" onClick={() => setAll(true)}>
-          {t('more', { count: arranged.length })}
-        </Button>
-      ) : null}
     </div>
   )
 }
