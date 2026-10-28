@@ -69,8 +69,8 @@ type AchievementSource = {
   definitions: (game: string, language: AchievementLanguage) => Promise<DefinedSet | undefined>
   /**
    * How many achievements each of these games has, and how many the account
-   * unlocked, by game. Undefined when the provider does not say: each game
-   * is then asked about on its own.
+   * unlocked, by game. Undefined when the provider counted none of them, as
+   * it does for an account that keeps its achievements private.
    */
   totals: (
     account: string,
@@ -100,6 +100,13 @@ export type AchievementsDeps = {
 
 type Outcome = 'read' | 'none' | 'private' | 'unreachable'
 
+/**
+ * What the provider's count said of a step's next games: their totals; none
+ * counted (`blank`), as for an account that keeps its achievements private;
+ * or no answer (`failed`). Short of totals, each game is asked about on its own.
+ */
+type Counted = Map<string, ProgressTotal> | 'blank' | 'failed'
+
 export const createAchievements = (deps: AchievementsDeps) => {
   const sources: Record<AchievementProvider, AchievementSource> = {
     steam: {
@@ -119,18 +126,19 @@ const forLibrary = (
   stepMs: number,
 ) => {
   /**
-   * One game's achievements, read as far as they are due, with the
-   * provider's count of them and of the account's unlocks when it gave one.
+   * One game's achievements, read as far as they are due, with what the
+   * provider's count said of the step's games.
    */
   const readApp = async (
     provider: AchievementProvider,
     app: App,
     externalId: string,
     now: number,
-    total: ProgressTotal | undefined,
+    counted: Counted,
   ): Promise<Outcome> => {
     const source = sources[provider]
     const setId = setIdOf(provider, app.storeId)
+    const total = counted instanceof Map ? counted.get(app.storeId) : undefined
     const work = dueWork(knownOf(app), externalId, now)
     let count = app.set?.count ?? null
     let definedNow = false
@@ -202,8 +210,21 @@ const forLibrary = (
       return 'unreachable'
     }
     if (answer.kind === 'private') {
-      await failed('private')
-      return 'private'
+      // Steam counted none of the account's games, and keeps this one's from Shelf too: the
+      // account's achievements are private, and every game would say so.
+      if (counted === 'blank') {
+        await failed('private')
+        return 'private'
+      }
+      // Steam counts the account's games, so this answer is this game's alone: Steam says it
+      // of a game the account no longer owns, and its count of one has none unlocked.
+      if (counted instanceof Map && !total?.unlocked) {
+        await saveProgress(db, libraryId, setId, { ...read, unlocks: [], defined: new Set() }, now)
+        return 'read'
+      }
+      // Whether the account's achievements are private is not known: asked again later.
+      await failed('unreachable')
+      return 'unreachable'
     }
     if (answer.kind === 'none') {
       // Definitions, but no stats to read them against: the provider contradicts itself.
@@ -228,7 +249,8 @@ const forLibrary = (
    * is spent; at least a few, however slow the provider is. Their totals are
    * asked for a hundred at a time, as the step comes to them. A provider
    * that keeps the account's achievements private ends the step, since it
-   * does the same for every game.
+   * does the same for every game; one that keeps a single game's from Shelf
+   * does not.
    */
   const step = async (
     provider: AchievementProvider,
@@ -247,23 +269,25 @@ const forLibrary = (
     const goOn = () => problem !== 'private' && (!started || Date.now() < ends)
     reading: for (let from = 0; from < due.length && goOn(); from += TOTALS_PER_REQUEST) {
       const batch = due.slice(from, from + TOTALS_PER_REQUEST)
-      // Without the provider's count, each game is asked about on its own.
-      const totals = await source
+      const counted: Counted = await source
         .totals(
           link.externalId,
           batch.map((app) => app.storeId),
         )
-        .catch((error: unknown) => {
-          if (error instanceof SourceError) return undefined
-          throw error
-        })
+        .then(
+          (totals) => totals ?? 'blank',
+          (error: unknown) => {
+            if (error instanceof SourceError) return 'failed'
+            throw error
+          },
+        )
       for (let at = 0; at < batch.length; at += AT_ONCE) {
         if (!goOn()) break reading
         started = true
         const outcomes = await Promise.all(
           batch
             .slice(at, at + AT_ONCE)
-            .map((app) => readApp(provider, app, link.externalId, now, totals?.get(app.storeId))),
+            .map((app) => readApp(provider, app, link.externalId, now, counted)),
         )
         for (const outcome of outcomes) {
           if (outcome === 'read' || outcome === 'none') read += 1

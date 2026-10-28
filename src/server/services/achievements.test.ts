@@ -389,6 +389,50 @@ describe('reading achievements from Steam', () => {
     expect(progressOf(set)).toBeUndefined()
   })
 
+  it('reads on when Steam keeps one game’s achievements from Shelf, as for a game I no longer own', async () => {
+    const me = await synced()
+    steamState.withheldApps = new Set(['220'])
+    const steps = await readAll(me)
+    const games = steps.at(-1)!.counts.games
+    expect(steps.at(-1)).toMatchObject({
+      remaining: 0,
+      problem: null,
+      counts: { games, known: games, private: 0 },
+    })
+    // Steam's count says none unlocked, so its own answer is not asked for.
+    expect(progressOf(await halfLife(me))).toMatchObject({ earned: 0, total: 6 })
+    const hades = await achievements(me).game(await slugOfApp(me, 'Hades II'), 'en', { mine: true })
+    expect(progressOf(hades!.sets[0]!)).toMatchObject({ earned: 3, total: 3 })
+  })
+
+  it('reads a game Steam does not count, and keeps from me, as none unlocked', async () => {
+    const me = await synced()
+    steamState.withheldApps = new Set(['220'])
+    network.use(
+      http.get(TOTALS, () => HttpResponse.json({ response: { games: [{ appid: 220 }] } })),
+    )
+    const steps = await readAll(me)
+    expect(steps.at(-1)).toMatchObject({ remaining: 0, problem: null })
+    expect(progressOf(await halfLife(me))).toMatchObject({ earned: 0, total: 6 })
+  })
+
+  it('does not take one game’s answer for the whole account’s when Steam does not count them', async () => {
+    const me = await synced()
+    steamState.withheldApps = new Set(['220'])
+    network.use(http.get(TOTALS, () => new HttpResponse(null, { status: 500 })))
+    const steps = await readAll(me)
+    const games = steps.at(-1)!.counts.games
+    expect(steps.some((step) => step.problem === 'private')).toBe(false)
+    expect(steps.at(-1)).toMatchObject({
+      remaining: 0,
+      counts: { games, known: games - 1, private: 0 },
+    })
+    // Not known whether the account is private: asked again later.
+    expect((await halfLife(me)).state).toBe('failed')
+    const hades = await achievements(me).game(await slugOfApp(me, 'Hades II'), 'en', { mine: true })
+    expect(hades!.sets[0]!.state).toBe('ready')
+  })
+
   it('finds achievements added to a game, unknown to me until my progress is read again', async () => {
     const me = await synced()
     await readAll(me)
