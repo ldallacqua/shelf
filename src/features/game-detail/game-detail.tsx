@@ -13,7 +13,8 @@ import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 
-import { Achievements } from './achievements'
+import { AchievementsLater } from './achievements-later'
+import { Ghosts } from './ghosts'
 import { HERO_COVER } from './hero'
 import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
@@ -146,21 +147,6 @@ function Passage({
         <div className="game-prose">{all(rest)}</div>
       </details>
     </>
-  )
-}
-
-/** Bars where words are on their way. */
-function Ghosts({ lines }: { lines: number }) {
-  return (
-    <div aria-hidden="true" className="grid gap-2.5 pt-1">
-      {Array.from({ length: lines }, (_, line) => (
-        <span
-          key={line}
-          className={cn('ghost h-3', line === lines - 1 ? 'w-2/3' : 'w-full')}
-          style={{ '--i': line } as CSSProperties}
-        />
-      ))}
-    </div>
   )
 }
 
@@ -453,7 +439,7 @@ export function GameDetail({
   // Asked for as the page opens, only for a game a provider has achievements for (issue 72).
   const achievements = facts?.achievements ? (
     <Section title={t('achievements.title')} level={level}>
-      <Achievements
+      <AchievementsLater
         slug={game.slug}
         providers={facts.achievements}
         minor={Minor}
