@@ -32,6 +32,12 @@ export type SteamMockState = {
   /** The account's achievements answered as a profile whose game details are not public. */
   achievementsPrivate?: boolean
   /**
+   * Apps whose own progress answer is "Profile is not public" though the
+   * profile is public, as Steam answers for a game the account no longer
+   * owns; Steam counts none of their achievements unlocked.
+   */
+  withheldApps?: Set<string>
+  /**
    * A game's achievements or the account's progress through them as Steam
    * gives them now, by app, in place of the fixture's: its totals count them.
    */
@@ -151,7 +157,7 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
             if (!game) return { appid: Number(app), total_achievements: 0 }
             const listed = game.definitions.english!.response.achievements
             const unlocked = new Set(
-              game.player?.playerstats.achievements
+              (state.withheldApps?.has(app) ? undefined : game.player)?.playerstats.achievements
                 .filter((each) => each.achieved === 1)
                 .map((each) => each.apiname),
             )
@@ -185,7 +191,11 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
       const game = answersFor(app)
       // Steam says a game has no stats before it says whose profile is private.
       if (!game?.player) return HttpResponse.json(noStats, { status: 400 })
-      if (address.searchParams.get('steamid') !== MOCK_STEAM.steamId || state.achievementsPrivate) {
+      if (
+        address.searchParams.get('steamid') !== MOCK_STEAM.steamId ||
+        state.achievementsPrivate ||
+        state.withheldApps?.has(app)
+      ) {
         return HttpResponse.json(notPublic, { status: 403 })
       }
       return HttpResponse.json(game.player)

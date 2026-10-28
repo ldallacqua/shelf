@@ -375,6 +375,13 @@ Xbox and PlayStation tickets extend rather than repeat. What building settled:
     game's folder. The shares are text.
   - A profile whose game details are private gets an empty count from the first, and 403
     "Profile is not public" from the last.
+  - The last gives the same 403 for one game on a public profile: a game the account no
+    longer owns, and an odd one it owns but never launched. The count never comes back empty
+    for a public profile, whatever games are in it. So the account's achievements are private
+    only when the count is empty and a game says so too. On a counted account, a game's own
+    403 is read as none unlocked, as Steam's count of such a game says; with no count at all,
+    that game is asked again an hour later. The first version took any game's 403 for the
+    whole account's, and stopped reading at it.
   - `IPlayerService/GetAchievementsProgress`, which would count without listing, refuses a Web
     API key (401), and `GetSchemaForGame` gives no shares, which would cost a third question
     for each game.
