@@ -203,6 +203,42 @@ test.describe('the wall and the list', () => {
     await expect(page.locator('.wall-grid').first()).toHaveAttribute('data-size', 'large')
   })
 
+  test('a shelf’s label stands over its covers, on the wall itself, and is banded only while pinned (issue 66)', async ({
+    page,
+  }) => {
+    await openLibrary(page, '/en/u/sample?view=wall')
+    const label = page.locator('.wall-label').first()
+    const shelf = page.locator('section:has(> .wall-label)').first()
+    const opacity = () =>
+      label.evaluate((element) => {
+        const color = getComputedStyle(element).backgroundColor
+        return color === 'rgba(0, 0, 0, 0)' ? 0 : Number(/\/ ([\d.]+)\)$/.exec(color)?.[1] ?? 1)
+      })
+    /** Scrolls so the shelf's top is this far past the top bar's foot. */
+    const past = (pixels: number) =>
+      shelf.evaluate((element, by) => {
+        const top = element.getBoundingClientRect().top + window.scrollY
+        window.scrollTo(0, top - 56 + by)
+      }, pixels)
+
+    // A phone's label too: it once stood 3.5rem down, on its first row.
+    const [labelBox, gridBox] = await Promise.all([
+      label.boundingBox(),
+      shelf.locator('.wall-grid').boundingBox(),
+    ])
+    expect(labelBox!.y + labelBox!.height).toBeLessThanOrEqual(gridBox!.y + 1)
+
+    const follows = await page.evaluate(() => CSS.supports('animation-timeline: view()'))
+    test.skip(!follows, 'this browser cannot tie an animation to scrolling: the band stays')
+    await past(-40)
+    await expect.poll(opacity).toBe(0)
+    await past(200)
+    await expect.poll(opacity).toBeGreaterThan(0.9)
+    expect((await label.boundingBox())!.y).toBeCloseTo(56, 0)
+    await past(-40)
+    await expect.poll(opacity).toBe(0)
+  })
+
   test('the list is a real table, and a row opens its game', async ({ page, size }) => {
     await openLibrary(page, '/en/u/sample?view=list')
     const table = page.getByRole('table', { name: 'Games on the PlayStation 5 shelf' })
