@@ -652,6 +652,7 @@ owners do not allow, beyond Valve's own sign-in button.
 | Steam's game details are private | "Steam is not showing your games", with a link to where to change it |
 | Steam keeps the achievements private | "Steam keeps your achievements private", with the same link; no game is shown as having none unlocked |
 | Steam keeps one game's achievements from Shelf (a game no longer owned) | That game is read as none unlocked, as Steam counts it; the others are read, and nothing says the account is private |
+| Steam keeps a game's own list from Shelf for its content (adult games, some mature ones) | Its unlocks are read from Steam's count of them, each "Unlocked, day not known": Steam gives no days there |
 | Steam fails on one game's achievements | The others are kept; that game is read again an hour later, or with the next sync |
 | Steam does not answer | Said on the card; the next sync tries again |
 | A very large library | The rest of the games come with the next step, or the next sync, past 2,000 an hour |

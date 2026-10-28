@@ -382,6 +382,13 @@ Xbox and PlayStation tickets extend rather than repeat. What building settled:
     403 is read as none unlocked, as Steam's count of such a game says; with no count at all,
     that game is asked again an hour later. The first version took any game's 403 for the
     whole account's, and stopped reading at it.
+  - It gives the same 403, too, for every game it keeps from anonymous eyes for its content,
+    on a public profile: adult games, and some mature ones. Its count lists their unlocks all
+    the same, each by `statid` and `bit`, which GetGameAchievements gives as `internal_key`,
+    `(statid << 8) | bit` (checked on 28 Oct 2026: 3,727 unlocks of 39 such games, every name
+    agreeing). So a game whose own answer is 403 and whose count names unlocks is read from
+    the count, matched to its definitions by key, with no moments, which only the game's own
+    answer gives. Before, those games were asked again every hour and never read.
   - `IPlayerService/GetAchievementsProgress`, which would count without listing, refuses a Web
     API key (401), and `GetSchemaForGame` gives no shares, which would cost a third question
     for each game.

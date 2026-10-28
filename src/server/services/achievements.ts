@@ -141,7 +141,8 @@ const forLibrary = (
     const total = counted instanceof Map ? counted.get(app.storeId) : undefined
     const work = dueWork(knownOf(app), externalId, now)
     let count = app.set?.count ?? null
-    let definedNow = false
+    /** The definitions in English, as this read gave them. */
+    let definedNow: DefinedSet | undefined
     let changed = false
 
     const define = async (): Promise<boolean> => {
@@ -161,7 +162,7 @@ const forLibrary = (
         const saved = await saveDefinitions(db, provider, app.storeId, english, translated, now)
         count = saved.count
         changed ||= saved.changed
-        definedNow = true
+        definedNow = english ?? { achievements: [] }
         return true
       } catch (error) {
         if (!(error instanceof SourceError)) throw error
@@ -201,6 +202,26 @@ const forLibrary = (
 
     const failed = (problem: 'private' | 'unreachable') =>
       noteProgressFailed(db, libraryId, setId, { externalId, copyId: app.copyId, problem }, now)
+    /**
+     * The unlocks a count names by key, as the definitions read now name
+     * them, or as the provider gives them again; nothing if it does not.
+     */
+    const unlockedByKey = async (keys: readonly string[]) => {
+      let set = definedNow
+      if (!set) {
+        try {
+          set = await source.definitions(app.storeId, 'en')
+        } catch (error) {
+          if (!(error instanceof SourceError)) throw error
+          return undefined
+        }
+      }
+      const byKey = new Map(
+        (set?.achievements ?? []).flatMap((each) => (each.key ? [[each.key, each.id]] : [])),
+      )
+      const ids = keys.map((key) => byKey.get(key))
+      return ids.every((id) => id !== undefined) ? ids.map((id) => ({ id })) : undefined
+    }
     let answer: ProgressAnswer
     try {
       answer = await source.progress(externalId, app.storeId)
@@ -221,6 +242,16 @@ const forLibrary = (
       if (counted instanceof Map && !total?.unlocked) {
         await saveProgress(db, libraryId, setId, { ...read, unlocks: [], defined: new Set() }, now)
         return 'read'
+      }
+      // Steam says it too of a game it keeps from anonymous eyes for its content, adult games
+      // first, and its count still names the unlocked ones: read from it, without the moments.
+      if (total?.keys) {
+        const unlocks = await unlockedByKey(total.keys)
+        if (unlocks) {
+          const defined = await definedIds(db, setId)
+          await saveProgress(db, libraryId, setId, { ...read, unlocks, defined }, now)
+          return 'read'
+        }
       }
       // Whether the account's achievements are private is not known: asked again later.
       await failed('unreachable')

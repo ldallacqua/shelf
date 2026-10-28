@@ -32,6 +32,8 @@ export const isAchievementLanguage = (value: unknown): value is AchievementLangu
 export type Definition = {
   /** The provider's own id for it: Steam's API name. */
   id: string
+  /** The provider's other id for it, by which its count names the unlocked ones: Steam's stat and bit. */
+  key?: string
   name: string
   /** Absent where the provider gives none. */
   description?: string
@@ -54,7 +56,12 @@ export type DefinedSet = {
  * How many achievements a game has at its provider, and how many of them the
  * account unlocked, as the provider counts them for many games at once.
  */
-export type ProgressTotal = { total: number; unlocked: number }
+export type ProgressTotal = {
+  total: number
+  unlocked: number
+  /** The unlocked ones, by their definitions' `key`, where the provider names each. */
+  keys?: readonly string[]
+}
 
 /** One achievement the account has unlocked, and when, if the provider says. */
 export type Unlock = { id: string; at?: number }
