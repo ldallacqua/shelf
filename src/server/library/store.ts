@@ -254,6 +254,7 @@ const checkMine = (input: {
   rating?: number | null
   completedOn?: Day | null
   minutes?: number
+  idle?: number
   wanted?: readonly number[] | null
 }) => {
   if (input.status !== undefined && !isStatus(input.status)) throw invalid('Unknown status')
@@ -272,6 +273,9 @@ const checkMine = (input: {
   }
   if (input.minutes !== undefined && (!Number.isInteger(input.minutes) || input.minutes < 0)) {
     throw invalid('Playtime is a whole number of minutes')
+  }
+  if (input.idle !== undefined && (!Number.isInteger(input.idle) || input.idle < 0)) {
+    throw invalid('Idle time is a whole number of minutes')
   }
 }
 
@@ -891,11 +895,13 @@ export const patchEntry = (
   db: Db,
   libraryId: string,
   entryId: string,
-  patch: { mine?: EntryPatch; tags?: readonly string[]; minutes?: number },
+  /** `idle`: minutes of what its stores report that sat idle, taken off them (0 keeps them whole). */
+  patch: { mine?: EntryPatch; tags?: readonly string[]; minutes?: number; idle?: number },
   now = Date.now(),
 ) => {
   if (patch.mine) checkMine(patch.mine)
   if (patch.minutes !== undefined) checkMine({ minutes: patch.minutes })
+  if (patch.idle !== undefined) checkMine({ idle: patch.idle })
   return db.transaction(async (tx) => {
     await requireEntry(tx, libraryId, entryId)
     if (patch.mine && Object.keys(patch.mine).length > 0) {
@@ -914,7 +920,10 @@ export const patchEntry = (
     }
     if (patch.tags) await writeTags(tx, libraryId, entryId, patch.tags)
     if (patch.minutes !== undefined) await writeManualMinutes(tx, entryId, patch.minutes, now)
-    await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
+    await tx
+      .update(entries)
+      .set({ updatedAt: now, ...(patch.idle === undefined ? {} : { idleMinutes: patch.idle }) })
+      .where(eq(entries.id, entryId))
     await bumpVersion(tx, libraryId)
   })
 }
@@ -1308,6 +1317,10 @@ export const rematchEntry = (
           ...(target.status === 'unsorted' ? { status: wrong.status } : {}),
           ...(target.rating === null ? { rating: wrong.rating } : {}),
           ...(target.notes === null ? { notes: wrong.notes, notesPublic: wrong.notesPublic } : {}),
+          // Its copies brought their hours, so the time they sat idle comes too.
+          ...(wrong.idleMinutes === null
+            ? {}
+            : { idleMinutes: (target.idleMinutes ?? 0) + wrong.idleMinutes }),
           updatedAt: now,
         })
         .where(eq(entries.id, target.id))

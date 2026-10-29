@@ -178,7 +178,7 @@ describe('a game the sync took for the wrong one', () => {
     const doom = await synced(DOOM_APP)
     const portal = await synced(PORTAL_APP)
     const portalGame = await titleOf(portal.entryId)
-    await patchEntry(db, player, doom.entryId, { mine: { rating: 70 } })
+    await patchEntry(db, player, doom.entryId, { mine: { rating: 70 }, idle: 30 })
 
     const done = await adding.rematch(doom.entryId, portalGame!.igdbId!)
 
@@ -190,6 +190,8 @@ describe('a game the sync took for the wrong one', () => {
     expect(item?.copyId).toBe(portal.copy.id)
     const [kept] = await db.select().from(entries).where(eq(entries.id, portal.entryId))
     expect(kept?.rating).toBe(70)
+    // Its hours came, and so did the time they sat idle.
+    expect(kept?.idleMinutes).toBe(30)
   })
 
   it('finds nothing of another library’s', async () => {

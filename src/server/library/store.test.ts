@@ -22,6 +22,7 @@ import {
   readOwnerGame,
   readOwnerPlay,
   readStanding,
+  readStoreHours,
 } from '@/server/library/read'
 import {
   addCopy,
@@ -1049,5 +1050,122 @@ describe('the day a game was finished (spec 7.3)', () => {
     await feedCopies(db, me, 'steam')
     const [row] = await db.select().from(entries).where(eq(entries.id, theirs))
     expect(row?.completedOn).toBeNull()
+  })
+})
+
+describe('time a game sat open, unplayed (ADR 003)', () => {
+  let entry: string
+
+  /** What Steam reports for the game: 112 hours. */
+  const STEAM = 6720
+
+  beforeEach(async () => {
+    entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'completed',
+      copies: [{ platformId: PC, format: 'digital' }],
+    })
+    const [copy] = await db.select().from(copies).where(eq(copies.entryId, entry))
+    await db.insert(sourceItems).values({
+      id: 'steam-hades',
+      userId: me,
+      source: 'steam',
+      storeId: '1145360',
+      title: 'Hades',
+      evidence: 'played',
+      minutes: STEAM,
+      firstSeenAt: 1,
+      lastSeenAt: 1,
+      igdbId: 113112,
+      resolvedBy: 'store_id',
+      decision: 'copy',
+      copyId: copy!.id,
+    })
+    await feedCopies(db, me, 'steam')
+    // IGDB: 20 hours for a playthrough, 40 to see everything.
+    await db
+      .update(games)
+      .set({ length: { normally: 1200, completely: 2400 } })
+      .where(eq(games.id, hades))
+  })
+
+  const minutes = async () => (await readLibrary(db, me)).games[0]?.minutes
+
+  it('comes off what its stores report, and the owner’s record says how much', async () => {
+    expect(await minutes()).toBe(STEAM)
+    expect((await readOwnerGame(db, me, entry))?.idle).toBeUndefined()
+    const before = await readVersion(db, me)
+    await patchEntry(db, me, entry, { idle: 4320 })
+    expect(await minutes()).toBe(2400)
+    expect((await readOwnerGame(db, me, entry))?.idle).toBe(4320)
+    expect(await readVersion(db, me)).toBeGreaterThan(before)
+  })
+
+  it('stays taken off as the store reports more, and never takes it below nothing', async () => {
+    await patchEntry(db, me, entry, { idle: 4320 })
+    await db
+      .update(sourceItems)
+      .set({ minutes: STEAM + 120 })
+      .where(eq(sourceItems.id, 'steam-hades'))
+    await feedCopies(db, me, 'steam')
+    expect(await minutes()).toBe(2520)
+    await patchEntry(db, me, entry, { idle: 99_999 })
+    expect(await minutes()).toBe(0)
+  })
+
+  it('never comes off what I typed', async () => {
+    await setManualMinutes(db, me, entry, 3000)
+    await patchEntry(db, me, entry, { idle: 4320 })
+    expect(await minutes()).toBe(3000)
+  })
+
+  it('is a whole number of minutes, none below nothing', async () => {
+    for (const idle of [-60, 1.5]) {
+      // Refused before anything is written.
+      await expect(async () => patchEntry(db, me, entry, { idle })).rejects.toMatchObject({
+        code: 'invalid',
+      })
+    }
+  })
+
+  it('offers the game for a look while its stores report far past IGDB and nothing is said', async () => {
+    expect(await readStoreHours(db, me)).toEqual([
+      expect.objectContaining({
+        entryId: entry,
+        slug: 'hades',
+        title: 'Hades',
+        reported: STEAM,
+        sources: ['steam'],
+        igdb: { minutes: 2400, of: 'completely' },
+      }),
+    ])
+    // Kept as they are, or with time taken out: asked once.
+    await patchEntry(db, me, entry, { idle: 0 })
+    expect(await readStoreHours(db, me)).toEqual([])
+    expect(await minutes()).toBe(STEAM)
+  })
+
+  it('offers none whose hours are what I typed, none archived and none of another library', async () => {
+    expect(await readStoreHours(db, other)).toEqual([])
+    await setArchived(db, me, entry, true)
+    expect(await readStoreHours(db, me)).toEqual([])
+    await setArchived(db, me, entry, false)
+    await setManualMinutes(db, me, entry, 7000)
+    expect(await readStoreHours(db, me)).toEqual([])
+  })
+
+  it('offers none within twice IGDB’s time', async () => {
+    await db
+      .update(games)
+      .set({ length: { normally: 2400, completely: 3600 } })
+      .where(eq(games.id, hades))
+    expect(await readStoreHours(db, me)).toEqual([])
+  })
+
+  it('goes with the game when it is removed and put back', async () => {
+    await patchEntry(db, me, entry, { idle: 4320 })
+    const undo = await removeEntryForUndo(db, me, entry)
+    const back = await restoreEntry(db, me, undo)
+    expect((await readOwnerGame(db, me, back))?.idle).toBe(4320)
   })
 })

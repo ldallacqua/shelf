@@ -17,6 +17,7 @@ import { ArchivedGames } from './archived-games'
 import { ExperimentalViews } from './experimental-views'
 import { HandleField, useHandleCheck } from './handle-field'
 import { PasswordField } from './password-field'
+import { StoreHours } from './store-hours'
 import { VisibilityChoice } from './visibility-choice'
 
 /** Said after an action, in the section it belongs to. */
@@ -334,7 +335,7 @@ function DeleteAccount() {
 
 /**
  * One's account (ADR 004): what the shelf is called and where, who may see
- * it, the views this device offers and whether it hides adult games, the
+ * it, the stores it syncs and the hours they count, the views this device offers and whether it hides adult games, the
  * password, the sessions, and the way out for good. Drawn in the browser,
  * for the account signed in.
  */
@@ -376,6 +377,7 @@ export function AccountSettings() {
       {/* Saved, the fields already hold what the account now is: kept, with what was said. */}
       <ShelfSettings account={account} />
       <Platforms handle={account.handle} />
+      <StoreHours />
       <ArchivedGames />
       <ExperimentalViews />
       <AdultGames />

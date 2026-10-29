@@ -61,7 +61,7 @@ export const apiGame = z
     hoursPlayed: z
       .number()
       .describe(
-        'Hours played, to one decimal: the larger of what was typed and what its sources report',
+        'Hours played, to one decimal: the larger of what was typed and what its sources report, less what was said to have sat idle',
       ),
     timeToBeat: z.number().nullable().describe('Hours for a normal playthrough, from IGDB'),
     addedOn: z.string().describe('YYYY-MM-DD'),

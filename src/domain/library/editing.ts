@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { Palette } from '@/domain/color/palette'
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
+import type { IgdbTime } from '@/domain/library/hours'
 import {
   formats,
   statuses,
@@ -59,6 +60,11 @@ export type OwnerGame = {
   notesPublic: boolean
   /** Minutes I typed in. */
   minutes: number
+  /**
+   * Minutes of what its stores report that I said sat idle, taken off them.
+   * Absent until I have said; 0 when I kept them as they are.
+   */
+  idle?: number
   copies: OwnedCopy[]
   tags: string[]
   versions: OwnedVersion[]
@@ -95,6 +101,26 @@ export type ArchivedGame = {
   hash?: string
   /** The platforms of its copies, by their short names. */
   platforms: string[]
+}
+
+/**
+ * One of my games whose stores report far past IGDB's time (`pastIgdb`), as
+ * the account page offers it: to take time left idle out of, or keep as it
+ * is. Only until I have said.
+ */
+export type StoreHoursGame = {
+  entryId: string
+  slug: string
+  title: string
+  year?: number
+  /** IGDB image id. */
+  cover?: string
+  colors?: Palette
+  hash?: string
+  /** Minutes its stores report together, and which stores they are. */
+  reported: number
+  sources: SyncSource[]
+  igdb: IgdbTime
 }
 
 export const MAX_NOTES = 10_000
@@ -136,7 +162,13 @@ export type BroughtBack = Restored & { title: string }
 export type Separated = Restored & { title: string }
 
 /** Changes the editor sends at once: what is mine, and the rest of a game's patch. */
-export type EditPatch = MinePatch & { tags?: string[]; minutes?: number; mainVersion?: string }
+export type EditPatch = MinePatch & {
+  tags?: string[]
+  minutes?: number
+  /** Minutes of what the stores report that sat idle. */
+  idle?: number
+  mainVersion?: string
+}
 
 /** The ways to edit a game. Each is checked on the server: the owner only. */
 export type EditActions = {

@@ -579,6 +579,7 @@
       "shareLine": "{share} of the games started",
       "hours": "Hours played",
       "hoursOn": "Hours on them",
+      "hoursNote": "Time with each game open",
       "rating": "Average rating",
       "outOfTen": "out of 10",
       "median": "Median playtime",
@@ -1215,6 +1216,18 @@
   "AccountPage": {
     "metaTitle": "Your account",
     "title": "Your account",
+    "hours": {
+      "title": "Hours from your stores",
+      "intro": "Steam and Nintendo count the whole time a game is open, played or not, so a game left running counts as played. For these games they report well past IGDB’s time. If one sat open for a while, you can take that time out, and your shelf and trophies count the rest. Each is asked about once.",
+      "counted": "{stores}: {hours, number} h",
+      "igdb": {
+        "completely": "IGDB: {hours, number} h to see everything",
+        "normally": "IGDB: {hours, number} h to finish"
+      },
+      "keep": "Keep the hours",
+      "kept": "Kept as they are.",
+      "taken": "Saved: {hours, number} h count now."
+    },
     "archived": {
       "title": "Archived games",
       "intro": "Out of sight and out of every count, with everything you set. Bring one back to put it on your shelf as it was.",
@@ -1622,6 +1635,10 @@
     "hourFewer": "One hour fewer",
     "hourMore": "One hour more",
     "playedSynced": "Your stores report {hours, number} h on the copies below. Shelf shows the larger of the two.",
+    "playedSyncedIdle": "Your stores report {hours, number} h on the copies below, {counted, number} h without the idle time. Shelf shows the larger of the two.",
+    "idleStart": "Take out idle time",
+    "idle": "Time left idle",
+    "idleHint": "Steam and Nintendo count the whole time a game is open, played or not. These hours come off what they report, never off what you typed.",
     "lastPlayed": "Last played {date}. With no day chosen, that one counts.",
     "privateTitle": "Private",
     "privateHint": "Only you see this game, here and on a public shelf.",

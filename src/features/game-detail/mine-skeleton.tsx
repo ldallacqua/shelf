@@ -55,7 +55,8 @@ function Ghost({
  * known from the library file: the status, whether there is a completion
  * date, the copies, whether a copy could still be added, and the tags. Not
  * known there, and so drawn only by the editor: the line under the hours when
- * a store reports some, and the versions.
+ * a store reports some, the time left idle under it once there is any, and
+ * the versions.
  */
 export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkeletonProps) {
   const t = useTranslations('Edit')

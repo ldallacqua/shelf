@@ -136,6 +136,8 @@ function Headline({ stats }: { stats: TrophyStats }) {
       key: 'hours',
       label: scoped ? t('hoursOn') : t('hours'),
       value: <Counted value={stats.hours} className="trophy-kpi-number" />,
+      // What the figure is: stores count the time a game is open, played or not (ADR 003).
+      note: t('hoursNote'),
     },
     stats.averageRating === undefined
       ? undefined

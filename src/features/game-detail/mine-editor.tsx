@@ -93,7 +93,15 @@ export function MineEditor({
   const [separating, setSeparating] = useState<string>()
   // The platform I wanted it on, once it has left the wishlist: its first copy starts there.
   const [wasWanted, setWasWanted] = useState<number>()
+  // Asked for, the field for time left idle shows before it holds any.
+  const [idling, setIdling] = useState(false)
+  const idleField = useRef<HTMLDivElement>(null)
   const shown = useRef<OwnerGame | undefined>(owned)
+
+  // Asked for from the line above it, the field takes the focus the button had.
+  useEffect(() => {
+    if (idling) idleField.current?.querySelector('input')?.focus()
+  }, [idling])
 
   useEffect(() => {
     let current = true
@@ -181,6 +189,9 @@ export function MineEditor({
   const synced = owned.copies
     .flatMap((copy) => copy.synced ?? [])
     .reduce((sum, each) => sum + each.minutes, 0)
+  // Of that, what I said sat idle: it comes off the stores' hours, never off mine.
+  const idle = owned.idle ?? 0
+  const tenths = (minutes: number) => Math.round(minutes / 6) / 10
 
   /** Out of sight, kept whole (spec 7.4): nothing is lost, so nothing is asked first. */
   const archive = async () => {
@@ -329,13 +340,54 @@ export function MineEditor({
             decreaseLabel={t('hourFewer')}
             increaseLabel={t('hourMore')}
             hint={
-              synced > 0 ? t('playedSynced', { hours: Math.round(synced / 6) / 10 }) : undefined
+              synced > 0 ? (
+                <>
+                  {idle > 0
+                    ? t('playedSyncedIdle', {
+                        hours: tenths(synced),
+                        counted: tenths(Math.max(0, synced - idle)),
+                      })
+                    : t('playedSynced', { hours: tenths(synced) })}
+                  {idle > 0 || idling ? null : (
+                    <>
+                      {' '}
+                      <button
+                        type="button"
+                        onClick={() => setIdling(true)}
+                        className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
+                      >
+                        {t('idleStart')}
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : undefined
             }
             onCommit={(hours) => {
               const minutes = Math.round((hours ?? 0) * 60)
               void update({ minutes }, { minutes })
             }}
           />
+
+          {synced > 0 && (idle > 0 || idling) ? (
+            <div ref={idleField}>
+              <NumberField
+                label={t('idle')}
+                value={idle > 0 ? idle / 60 : undefined}
+                decimals={1}
+                max={synced / 60}
+                unit="h"
+                format={hoursText}
+                decreaseLabel={t('hourFewer')}
+                increaseLabel={t('hourMore')}
+                hint={t('idleHint')}
+                onCommit={(hours) => {
+                  const minutes = Math.round((hours ?? 0) * 60)
+                  void update({ idle: minutes }, { idle: minutes })
+                }}
+              />
+            </div>
+          ) : null}
 
           {owned.status === 'completed' || owned.completedOn ? (
             <DayField

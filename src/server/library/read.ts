@@ -8,8 +8,15 @@ import {
   type AchievementProvider,
 } from '@/domain/achievements/achievements'
 import { EROTIC, lengthMinutes, type StoreId } from '@/domain/igdb/game'
-import type { ArchivedGame, OwnerGame, PlayableGame, SteamApps } from '@/domain/library/editing'
+import type {
+  ArchivedGame,
+  OwnerGame,
+  PlayableGame,
+  SteamApps,
+  StoreHoursGame,
+} from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
+import { pastIgdb, playedMinutes } from '@/domain/library/hours'
 import {
   emptyTally,
   type Placing,
@@ -122,15 +129,13 @@ export const readLibrary = async (
       .from(copies)
       .where(sql`${copies.entryId} in ${own}`)
       .orderBy(copies.createdAt, sql`rowid`),
-    // A game's hours are the larger of what I typed and what its sources
-    // report together, so a sync never counts the same play twice (ADR 003).
+    // What I typed and what its sources report together, apart: a game's
+    // hours are made of both (`playedMinutes`).
     db
       .select({
         entryId: playTime.entryId,
-        minutes: sql<number>`max(
-          coalesce(sum(case when ${playTime.source} = 'manual' then ${playTime.minutes} end), 0),
-          coalesce(sum(case when ${playTime.source} != 'manual' then ${playTime.minutes} end), 0)
-        )`,
+        typed: sql<number>`coalesce(sum(case when ${playTime.source} = 'manual' then ${playTime.minutes} end), 0)`,
+        reported: sql<number>`coalesce(sum(case when ${playTime.source} != 'manual' then ${playTime.minutes} end), 0)`,
       })
       .from(playTime)
       .where(sql`${playTime.entryId} in ${own}`)
@@ -165,7 +170,14 @@ export const readLibrary = async (
     else copiesByEntry.set(row.entryId, [row])
   }
 
-  const minutesByEntry = new Map(timeRows.map((row) => [row.entryId, Number(row.minutes) || 0]))
+  const timeByEntry = new Map(timeRows.map((row) => [row.entryId, row]))
+  /** A game's hours: the larger of what I typed and what its sources report, less what sat idle (ADR 003). */
+  const minutesOf = (entry: (typeof entryRows)[number]) => {
+    const time = timeByEntry.get(entry.id)
+    return time
+      ? playedMinutes(Number(time.typed) || 0, Number(time.reported) || 0, entry.idleMinutes ?? 0)
+      : 0
+  }
 
   const tagPosition = new Map(tagRows.map((tag, index) => [tag.id, index]))
   const tagsByEntry = new Map<string, number[]>()
@@ -218,7 +230,7 @@ export const readLibrary = async (
       title: primary.title,
       status: entry.status,
       addedOn: dayOf(entry.addedAt),
-      minutes: minutesByEntry.get(entry.id) ?? 0,
+      minutes: minutesOf(entry),
       igdbRatingCount: primary.igdbRatingCount,
       kind: primary.kind,
       featured: entry.featured,
@@ -526,6 +538,7 @@ export const readOwnerGame = async (
     minutes: timeRows
       .filter((row) => row.source === 'manual')
       .reduce((sum, row) => sum + row.minutes, 0),
+    ...(entry.idleMinutes === null ? {} : { idle: entry.idleMinutes }),
     copies: copyRows.map((copy) => {
       const synced = timeRows.flatMap((row) =>
         row.copyId === copy.id && row.source !== 'manual'
@@ -715,6 +728,7 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
           rating: entries.rating,
           addedAt: entries.addedAt,
           displayCopyId: entries.displayCopyId,
+          idleMinutes: entries.idleMinutes,
           slug: games.slug,
           title: games.title,
           year: games.year,
@@ -804,8 +818,8 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
       slug: row.slug,
       title: row.title,
       addedOn: dayOf(row.addedAt),
-      // The shelf's rule: the larger of what I typed and what the sources report together.
-      minutes: Math.max(manual.get(row.entryId) ?? 0, reported),
+      // The shelf's rule: the larger of what I typed and what the sources report, less what sat idle.
+      minutes: playedMinutes(manual.get(row.entryId) ?? 0, reported, row.idleMinutes ?? 0),
       platforms: [...new Set(platformsOf.get(row.entryId) ?? [])],
       played: played.sort((a, b) => b.minutes - a.minutes),
     }
@@ -899,4 +913,90 @@ export const readArchived = async (db: Executor, libraryId: string): Promise<Arc
     if (row.thumbhash) game.hash = row.thumbhash
     return game
   })
+}
+
+/**
+ * My games whose stores report far past IGDB's time, and that I have said
+ * nothing about yet: the most hours first. Only games whose hours are the
+ * stores' (what I typed is less), and none archived.
+ */
+export const readStoreHours = async (
+  db: Executor,
+  libraryId: string,
+): Promise<StoreHoursGame[]> => {
+  const rows = await db
+    .select({
+      entryId: entries.id,
+      slug: games.slug,
+      title: games.title,
+      year: games.year,
+      cover: games.cover,
+      colors: games.colors,
+      thumbhash: games.thumbhash,
+      length: games.length,
+    })
+    .from(entries)
+    .innerJoin(
+      entryVersions,
+      and(eq(entryVersions.entryId, entries.id), eq(entryVersions.relation, 'primary')),
+    )
+    .innerJoin(games, eq(games.id, entryVersions.gameId))
+    .where(
+      and(
+        eq(entries.userId, libraryId),
+        isNull(entries.archivedAt),
+        isNull(entries.idleMinutes),
+        isNotNull(games.length),
+      ),
+    )
+  if (rows.length === 0) return []
+  const time = await db
+    .select({
+      entryId: playTime.entryId,
+      source: playTime.source,
+      minutes: sql<number>`sum(${playTime.minutes})`,
+    })
+    .from(playTime)
+    .where(
+      sql`${playTime.entryId} in (select ${entries.id} from ${entries} where ${entries.userId} = ${libraryId})`,
+    )
+    .groupBy(playTime.entryId, playTime.source)
+  const typed = new Map<string, number>()
+  const stores = new Map<string, Map<SyncSource, number>>()
+  for (const row of time) {
+    const minutes = Number(row.minutes) || 0
+    if (row.source === 'manual') {
+      typed.set(row.entryId, minutes)
+      continue
+    }
+    const bySource = stores.get(row.entryId) ?? new Map<SyncSource, number>()
+    bySource.set(row.source, minutes)
+    stores.set(row.entryId, bySource)
+  }
+  return rows
+    .flatMap((row): StoreHoursGame[] => {
+      const bySource = stores.get(row.entryId)
+      if (!bySource) return []
+      const reported = [...bySource.values()].reduce((sum, minutes) => sum + minutes, 0)
+      if (reported <= (typed.get(row.entryId) ?? 0)) return []
+      const igdb = pastIgdb(reported, row.length ?? undefined)
+      if (!igdb) return []
+      const game: StoreHoursGame = {
+        entryId: row.entryId,
+        slug: row.slug,
+        title: row.title,
+        reported,
+        sources: [...bySource.entries()]
+          .filter(([, minutes]) => minutes > 0)
+          .sort((a, b) => b[1] - a[1])
+          .map(([source]) => source),
+        igdb,
+      }
+      if (row.year !== null) game.year = row.year
+      if (row.cover) game.cover = row.cover.id
+      if (row.colors) game.colors = row.colors
+      if (row.thumbhash) game.hash = row.thumbhash
+      return [game]
+    })
+    .sort((a, b) => b.reported - a.reported || a.title.localeCompare(b.title))
 }
