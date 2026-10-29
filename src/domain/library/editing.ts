@@ -53,6 +53,8 @@ export type OwnerGame = {
   private: boolean
   rating?: number
   completedOn?: Day
+  /** The day it was last played on any linked platform; absent when none saw it played. */
+  lastPlayedOn?: Day
   notes?: string
   notesPublic: boolean
   /** Minutes I typed in. */

@@ -17,6 +17,7 @@ import {
   type SmartShelf,
 } from '@/domain/library/shelves'
 import {
+  dayOf,
   isDay,
   isFormat,
   isRating,
@@ -642,6 +643,46 @@ export type FromSource = {
 }
 
 /**
+ * A completed game with no finish date takes the day it was last played on
+ * any linked platform (spec 7.3): the owner seldom remembers the day, and the
+ * last play is nearer it than the day it was marked. Once set it stays, so a
+ * later play moves nothing; a game no platform saw played keeps none. Among
+ * `entryIds` only, when given. True when one changed.
+ */
+const dateFinishes = async (
+  tx: Executor,
+  libraryId: string,
+  entryIds?: readonly string[],
+): Promise<boolean> => {
+  if (entryIds?.length === 0) return false
+  const rows = await tx
+    .select({ id: entries.id, last: sql<number | null>`max(${sourceItems.lastPlayedAt})` })
+    .from(entries)
+    .innerJoin(copies, eq(copies.entryId, entries.id))
+    .innerJoin(sourceItems, eq(sourceItems.copyId, copies.id))
+    .where(
+      and(
+        eq(entries.userId, libraryId),
+        eq(sourceItems.userId, libraryId),
+        eq(entries.status, 'completed'),
+        isNull(entries.completedOn),
+        ...(entryIds ? [inArray(entries.id, [...entryIds])] : []),
+      ),
+    )
+    .groupBy(entries.id)
+  const dated = rows.flatMap((row) =>
+    row.last && row.last > 0 ? [{ ...row, last: row.last }] : [],
+  )
+  for (const row of dated) {
+    await tx
+      .update(entries)
+      .set({ completedOn: dayOf(row.last) })
+      .where(eq(entries.id, row.id))
+  }
+  return dated.length > 0
+}
+
+/**
  * A game from a source, onto the shelf, in one transaction (ADR 003): the
  * record placed as ADR 001 places any other, the source's items pointed at
  * the copy on its platform and format, and that copy given the source's
@@ -682,6 +723,7 @@ export const addFromSource = (
         await sourceMinutes(tx, libraryId, feed.source, [copy.id]),
         now,
       )
+      await dateFinishes(tx, libraryId, [added.entryId])
       await bumpVersion(tx, libraryId)
       return added
     }),
@@ -691,7 +733,8 @@ export const addFromSource = (
 /**
  * Brings every copy's hours from a source up to date with what its items
  * last reported, in one transaction that raises the version only when one
- * changed. A day's sync changes a few; the rest cost nothing.
+ * changed. A day's sync changes a few; the rest cost nothing. Completed games
+ * still without a finish date take their last play's (`dateFinishes`).
  */
 export const feedCopies = (
   db: Db,
@@ -707,8 +750,9 @@ export const feedCopies = (
       await sourceMinutes(tx, libraryId, source),
       now,
     )
-    if (changed) await bumpVersion(tx, libraryId)
-    return changed
+    const dated = await dateFinishes(tx, libraryId)
+    if (changed || dated) await bumpVersion(tx, libraryId)
+    return changed || dated
   })
 
 /**
@@ -799,6 +843,10 @@ const letGo = (patch: Pick<EntryPatch, 'status' | 'wanted'>): { wanted?: number[
   return { wanted: patch.wanted?.length ? [...new Set(patch.wanted)] : null }
 }
 
+/** Whether a change may leave a completed game without its finish date: one for `dateFinishes`. */
+const undated = (patch: Pick<EntryPatch, 'status' | 'completedOn'>) =>
+  patch.status === 'completed' || patch.completedOn === null
+
 export const updateEntry = (
   db: Db,
   libraryId: string,
@@ -829,6 +877,7 @@ export const updateEntry = (
         updatedAt: now,
       })
       .where(eq(entries.id, entryId))
+    if (undated(patch)) await dateFinishes(tx, libraryId, [entryId])
     await bumpVersion(tx, libraryId)
   })
 }
@@ -861,6 +910,7 @@ export const patchEntry = (
           ...(notes === undefined ? {} : { notes }),
         })
         .where(eq(entries.id, entryId))
+      if (undated(patch.mine)) await dateFinishes(tx, libraryId, [entryId])
     }
     if (patch.tags) await writeTags(tx, libraryId, entryId, patch.tags)
     if (patch.minutes !== undefined) await writeManualMinutes(tx, entryId, patch.minutes, now)
@@ -919,6 +969,7 @@ export const setStatuses = async (
         .update(entries)
         .set({ status, ...letGo({ status }), updatedAt: now })
         .where(own)
+      if (status === 'completed') await dateFinishes(tx, libraryId, some)
     }
     await bumpVersion(tx, libraryId)
   })

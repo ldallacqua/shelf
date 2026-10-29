@@ -161,12 +161,18 @@ describe('many games given one status', () => {
     expect((await readUnsorted(db, player)).games).toHaveLength(ids.length)
   })
 
-  it('changes nothing about them but their status', async () => {
+  it('changes nothing about them but their status, and a finish’s day (spec 7.3)', async () => {
     const [first] = (await readUnsorted(db, player)).games
     await patchEntry(db, player, first!.entryId, { mine: { rating: 70 } })
     await setStatuses(db, player, [first!.entryId], 'completed')
     const [row] = await db.select().from(entries).where(eq(entries.id, first!.entryId))
-    expect(row).toMatchObject({ status: 'completed', rating: 70, completedOn: null })
+    // Completed, it takes the day a platform last saw it played.
+    const last = Math.max(...first!.played.flatMap((each) => each.lastPlayedAt ?? []))
+    expect(row).toMatchObject({
+      status: 'completed',
+      rating: 70,
+      completedOn: new Date(last).toISOString().slice(0, 10),
+    })
   })
 
   it('changes none when one is another library’s', async () => {

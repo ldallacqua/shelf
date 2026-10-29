@@ -1363,6 +1363,7 @@
     "hourFewer": "Uma hora a menos",
     "hourMore": "Uma hora a mais",
     "playedSynced": "Suas lojas contam {hours, number} h nas cópias abaixo. O Shelf mostra o maior dos dois.",
+    "lastPlayed": "Jogado pela última vez em {date}. Sem um dia escolhido, vale esse.",
     "privateTitle": "Privado",
     "privateHint": "Só você vê este jogo, aqui e numa estante pública.",
     "noCopies": "Nenhuma cópia ainda.",

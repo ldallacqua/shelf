@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { EditPatch, OwnerGame } from '@/domain/library/editing'
+import { today } from '@/features/owner/fields'
 import { renderWithIntl } from '@/test/render'
 
 import { MineEditor } from './mine-editor'
@@ -22,6 +23,7 @@ const client = vi.hoisted(() => ({
     server.games.set(slug, {
       ...game,
       ...(patch.status ? { status: patch.status } : {}),
+      ...(patch.completedOn ? { completedOn: patch.completedOn } : {}),
       ...(patch.private === undefined ? {} : { private: patch.private }),
       wanted: leaving ? [] : (patch.wanted ?? game.wanted),
     })
@@ -267,6 +269,32 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     await userEvent.clear(field)
     await userEvent.type(field, '2a0{Enter}')
     expect(client.update).toHaveBeenLastCalledWith('entry-hours', { minutes: 1200 })
+  })
+
+  it('marks a game completed on the day a platform last saw it played, and says so', async () => {
+    server.games.set('finished', { ...owned('finished'), lastPlayedOn: '2024-03-10' })
+    editor('finished')
+    await userEvent.click(await screen.findByRole('radio', { name: 'Completed' }))
+    expect(client.update).toHaveBeenCalledWith('entry-finished', {
+      status: 'completed',
+      completedOn: '2024-03-10',
+    })
+    const day = await screen.findByRole('button', { name: /Completed on/ })
+    expect(day).toHaveTextContent('Mar 10, 2024')
+    expect(day).toHaveAccessibleDescription(
+      'Last played Mar 10, 2024. With no day chosen, that one counts.',
+    )
+  })
+
+  it('marks one no platform saw played completed today', async () => {
+    server.games.set('unplayed', owned('unplayed'))
+    editor('unplayed')
+    await userEvent.click(await screen.findByRole('radio', { name: 'Completed' }))
+    expect(client.update).toHaveBeenCalledWith('entry-unplayed', {
+      status: 'completed',
+      completedOn: today(),
+    })
+    expect(screen.queryByText(/Last played/)).not.toBeInTheDocument()
   })
 })
 

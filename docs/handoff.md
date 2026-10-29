@@ -55,6 +55,8 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   backlog.
 - **A game's achievements open as their icons** (architecture section 25, row "Achievements as
   icons"; spec 7.8), as the owner asked: the list was too long before its Show all.
+- **A completed game is finished on its last play** (architecture section 25, row "Finished on
+  the last play"; spec 7.3), as the owner asked: the next sync dates those still without a day.
 - **Next:** #68's next phases.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against

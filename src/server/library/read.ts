@@ -438,63 +438,70 @@ export const readOwnerGame = async (
   libraryId: string,
   entryId: string,
 ): Promise<OwnerGame | undefined> => {
-  const [entryRows, versionRows, copyRows, timeRows, tagRows, steamRows] = await Promise.all([
-    db
-      .select()
-      .from(entries)
-      .where(
-        and(eq(entries.id, entryId), eq(entries.userId, libraryId), isNull(entries.archivedAt)),
-      ),
-    db
-      .select({
-        gameId: games.id,
-        igdbId: games.igdbId,
-        storeIds: games.storeIds,
-        slug: games.slug,
-        title: games.title,
-        relation: entryVersions.relation,
-        kind: games.kind,
-        year: games.year,
-        platforms: games.platforms,
-        cover: games.cover,
-        colors: games.colors,
-        thumbhash: games.thumbhash,
-      })
-      .from(entryVersions)
-      .innerJoin(games, eq(games.id, entryVersions.gameId))
-      .where(eq(entryVersions.entryId, entryId)),
-    db
-      .select({ id: copies.id, platformId: copies.platformId, format: copies.format })
-      .from(copies)
-      .where(eq(copies.entryId, entryId))
-      .orderBy(copies.createdAt, sql`rowid`),
-    db
-      .select({ source: playTime.source, copyId: playTime.copyId, minutes: playTime.minutes })
-      .from(playTime)
-      .where(eq(playTime.entryId, entryId)),
-    db
-      .select({ name: tags.name })
-      .from(entryTags)
-      .innerJoin(tags, eq(tags.id, entryTags.tagId))
-      .where(eq(entryTags.entryId, entryId))
-      .orderBy(tags.name),
-    // The Steam apps the sync found I own, feeding this game's copies (spec 7.7).
-    db
-      .select({
-        storeId: sourceItems.storeId,
-        igdbId: sourceItems.igdbId,
-        minutes: sourceItems.minutes,
-      })
-      .from(sourceItems)
-      .innerJoin(copies, eq(copies.id, sourceItems.copyId))
-      .where(
-        and(
-          eq(sourceItems.userId, libraryId),
-          eq(sourceItems.source, 'steam'),
-          eq(copies.entryId, entryId),
+  const [entryRows, versionRows, copyRows, timeRows, tagRows, steamRows, playedRows] =
+    await Promise.all([
+      db
+        .select()
+        .from(entries)
+        .where(
+          and(eq(entries.id, entryId), eq(entries.userId, libraryId), isNull(entries.archivedAt)),
         ),
-      ),
-  ])
+      db
+        .select({
+          gameId: games.id,
+          igdbId: games.igdbId,
+          storeIds: games.storeIds,
+          slug: games.slug,
+          title: games.title,
+          relation: entryVersions.relation,
+          kind: games.kind,
+          year: games.year,
+          platforms: games.platforms,
+          cover: games.cover,
+          colors: games.colors,
+          thumbhash: games.thumbhash,
+        })
+        .from(entryVersions)
+        .innerJoin(games, eq(games.id, entryVersions.gameId))
+        .where(eq(entryVersions.entryId, entryId)),
+      db
+        .select({ id: copies.id, platformId: copies.platformId, format: copies.format })
+        .from(copies)
+        .where(eq(copies.entryId, entryId))
+        .orderBy(copies.createdAt, sql`rowid`),
+      db
+        .select({ source: playTime.source, copyId: playTime.copyId, minutes: playTime.minutes })
+        .from(playTime)
+        .where(eq(playTime.entryId, entryId)),
+      db
+        .select({ name: tags.name })
+        .from(entryTags)
+        .innerJoin(tags, eq(tags.id, entryTags.tagId))
+        .where(eq(entryTags.entryId, entryId))
+        .orderBy(tags.name),
+      // The Steam apps the sync found I own, feeding this game's copies (spec 7.7).
+      db
+        .select({
+          storeId: sourceItems.storeId,
+          igdbId: sourceItems.igdbId,
+          minutes: sourceItems.minutes,
+        })
+        .from(sourceItems)
+        .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+        .where(
+          and(
+            eq(sourceItems.userId, libraryId),
+            eq(sourceItems.source, 'steam'),
+            eq(copies.entryId, entryId),
+          ),
+        ),
+      // Its last play on any platform, which a finish without a day takes (spec 7.3).
+      db
+        .select({ last: sql<number | null>`max(${sourceItems.lastPlayedAt})` })
+        .from(sourceItems)
+        .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+        .where(and(eq(sourceItems.userId, libraryId), eq(copies.entryId, entryId))),
+    ])
   const entry = entryRows[0]
   const primary = versionRows.find((row) => row.relation === 'primary')
   if (!entry || !primary) return undefined
@@ -563,6 +570,8 @@ export const readOwnerGame = async (
   }
   if (entry.rating !== null) owned.rating = entry.rating
   if (entry.completedOn) owned.completedOn = entry.completedOn
+  const last = playedRows[0]?.last
+  if (last && last > 0) owned.lastPlayedOn = dayOf(last)
   if (entry.notes) owned.notes = entry.notes
   const steam = steamAppsOf(primary.igdbId, steamRows, [
     primary,

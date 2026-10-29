@@ -1074,7 +1074,15 @@ how I play it (status, rating, hours, completion date), what I own, tags and not
 the versions, and archiving or removing.
 
 - **Status** changes take effect on the shelf at once: the box changes posture.
-- **Completed** sets the completion date to today, editable.
+- **Completed** sets the completion date to the day a linked platform (Steam, Nintendo, any
+  that syncs) last saw the game played, editable. The owner, 28 Oct 2026: "I don't remember
+  most of the time when I finished my games", and the last play is nearer the finish than the
+  day it was marked. A line under the date says that day. A game no platform saw played takes
+  today, as before.
+  - **Every way of marking it does the same:** many at once (4.5), the API and the MCP tools.
+    A completed game left with no date, or whose date I take away, takes its last play's; a
+    sync dates those a platform has only now seen played. Once set the day stays: a later play
+    moves nothing, and a day I chose is never replaced.
 - **Hours played** takes only a number, typed with a point or a comma, or stepped an hour at a
   time with − and + beside it (ten with Shift) or the arrow keys. When a store reports hours on
   a copy, a line under it says how many, and that the larger of the two is shown.

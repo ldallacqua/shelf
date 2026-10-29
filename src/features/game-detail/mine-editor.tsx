@@ -161,8 +161,10 @@ export function MineEditor({
     save({ ...owned, ...next }, () => actions.update(owned.entryId, patch))
 
   const setStatus = (status: Status) => {
-    // Completed sets the date to today, which stays editable.
-    const completedOn = status === 'completed' && !owned.completedOn ? today() : undefined
+    // Completed takes the day it was last played on a platform, or else today (spec 7.3);
+    // either stays editable.
+    const completedOn =
+      status === 'completed' && !owned.completedOn ? (owned.lastPlayedOn ?? today()) : undefined
     // Off the wishlist, what I wanted is let go (spec 7.5); the copy to add starts on it.
     const leaving = owned.status === 'wishlist' && status !== 'wishlist'
     if (leaving && owned.wanted[0] !== undefined) setWasWanted(owned.wanted[0])
@@ -340,9 +342,22 @@ export function MineEditor({
               label={t('completedOn')}
               value={owned.completedOn}
               clearable
-              onChange={(day) =>
-                void update({ completedOn: day ?? null }, { completedOn: day ?? undefined })
+              hint={
+                owned.lastPlayedOn && owned.status === 'completed'
+                  ? t('lastPlayed', {
+                      date: new Intl.DateTimeFormat(locale, {
+                        timeZone: 'UTC',
+                        dateStyle: 'medium',
+                      }).format(new Date(`${owned.lastPlayedOn}T00:00:00Z`)),
+                    })
+                  : undefined
               }
+              onChange={(day) => {
+                // Taken away, a completed game's day is its last play's again: the server does
+                // the same.
+                const shown = day ?? (owned.status === 'completed' ? owned.lastPlayedOn : undefined)
+                void update({ completedOn: day ?? null }, { completedOn: shown })
+              }}
             />
           ) : null}
         </div>
