@@ -10,6 +10,7 @@ import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 
 import { Achievements, Vault } from './achievements'
+import { Backlog } from './backlog'
 import { AsTable, Columns, RankedList, scopeHref, Section, withFilter } from './chart-parts'
 import { History, Insights, Ratings, Series } from './taste'
 
@@ -525,6 +526,7 @@ export function Dashboard({
       {of ? <Vault {...of} /> : null}
       <Records stats={stats} handle={handle} q={q} />
       <History stats={stats} handle={handle} q={q} />
+      <Backlog stats={stats} handle={handle} q={q} />
     </>
   )
 }
