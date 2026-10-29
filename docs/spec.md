@@ -483,6 +483,17 @@ explore the games behind it."
 - **Records.** The first finish recorded, the quickest finish, the game played longest of all
   when that is not the longest finished, the best rated finish, the oldest game finished, the
   best year and month, and the longest run of months. A month or a year leads to its games.
+- **Still to play** (phase 4, of all time, after Your years). The backlog, the games I mean to
+  play, with Someday beside it; the hours left, IGDB's time for a normal playthrough less the
+  hours played, of the backlog's games IGDB has a time for, said as its estimate and of how
+  many; and the months they would take at the hours of what I finished in the last twelve
+  months, rounded up. Then six games each, three on a phone: the backlog's quickest to finish
+  by that time (a game played past it has no end it can say), the best rated by IGDB's players
+  of what is waiting (once ten rated it), and the released longest ago; and what is waiting by
+  genre and by platform, five each. Every figure and game leads to its games. Games a sync
+  brought in and nobody placed are in neither, and counted under it as a way to them. How the
+  backlog grew is not shown: a game's day on the shelf is the day it came to Shelf, not the
+  day it was bought, so no shelf has that history yet.
 - **Every chart has its table,** folded under it, and a tooltip on hover and on focus; nothing
   is said by color alone. They are drawn without a script.
 - **To share** (phase 3). A public shelf's page ends with its card: what a link to it shows

@@ -1,5 +1,6 @@
 import type { Library, LibraryGame, Named } from '@/domain/library/library'
 import { libraryStats } from '@/domain/library/stats'
+import { backlogOf, type BacklogStats } from '@/domain/library/trophy-backlog'
 import {
   decadesOf,
   INSIGHTS_SHOWN,
@@ -92,6 +93,8 @@ export type TrophyStats = {
   timeline: TimelineYear[]
   /** What is worth saying about it all, most telling first. */
   insights: Insight[]
+  /** What is still to play, when anything is in the backlog or Someday. All time only. */
+  backlog?: BacklogStats
   records: {
     first?: StatGame & { on: Day }
     quickest?: StatGame & { minutes: number }
@@ -394,6 +397,8 @@ export const statsOf = (
     ? timelineOf(library, dated, bestYear && bestYear.finished > 0 ? bestYear.year : undefined)
     : []
 
+  const backlog = all ? backlogOf(library, today) : undefined
+
   // The sentences, most telling first: of time, of taste, then of play.
   const insights: Insight[] = all ? timeInsights(perYear, dated, year, today) : []
   const favorite = rank(shown, begun, (game) => game.genres, genreNames)[0]
@@ -469,6 +474,7 @@ export const statsOf = (
     series: all ? seriesOf(library) : { shown: [], complete: 0 },
     timeline,
     insights: insights.slice(0, INSIGHTS_SHOWN),
+    ...(all && backlog ? { backlog } : {}),
     records: {
       ...(first ? { first: { ...gameOf(first), on: first.completedOn! } } : {}),
       ...(quickest && quickest !== longest

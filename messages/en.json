@@ -806,6 +806,28 @@
       "closeOf": "{earned} of {total}",
       "left": "{count} left"
     },
+    "backlog": {
+      "title": "Still to play",
+      "inBacklog": "In the backlog",
+      "someday": "{count, plural, =0 {Nothing for someday} other {# more for someday}}",
+      "left": "Hours left",
+      "hoursUnit": "{count, plural, one {hour} other {hours}}",
+      "timed": "IGDB's estimate, of {timed} of {count, plural, one {# game} other {# games}}",
+      "clear": "To clear it",
+      "monthsUnit": "{count, plural, one {month} other {months}}",
+      "pace": "At the {count, plural, one {# hour} other {# hours}} of what you finished in the last twelve months",
+      "quickest": "Quickest to finish",
+      "bestRated": "Best rated, still waiting",
+      "oldest": "Released longest ago",
+      "hoursLeft": "{count, plural, one {# hour left} other {# hours left}}",
+      "underAnHour": "Under an hour left",
+      "igdbRating": "{value} on IGDB",
+      "gameSays": "{title}, {said}",
+      "genres": "Waiting, by genre",
+      "platforms": "Waiting, by platform",
+      "countSays": "{name}: {count, plural, one {# game waiting} other {# games waiting}}",
+      "unsorted": "{count, plural, one {# more game} other {# more games}} from syncs, not placed yet"
+    },
     "card": {
       "brand": "SHELF · TROPHIES",
       "title": "{name}'s trophies",

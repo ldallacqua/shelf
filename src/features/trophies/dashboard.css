@@ -948,6 +948,61 @@
     }
   }
 
+  /*
+   * What is still to play: its lists side by side on a wide screen, each a
+   * column of small covers, as the vault's unlocks are of artwork.
+   */
+  .trophy-backlog-lists {
+    display: grid;
+    gap: 2rem;
+  }
+
+  @media (min-width: 48rem) {
+    .trophy-backlog-lists {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 2rem;
+    }
+  }
+
+  .trophy-waiting-list {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* A phone shows the first three of each: eighteen is a long way down one column. */
+  @media (max-width: 39.99rem) {
+    .trophy-waiting-list > li:nth-child(n + 4) {
+      display: none;
+    }
+  }
+
+  .trophy-waiting {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.375rem 0.5rem;
+    margin-inline: -0.5rem;
+    border-radius: var(--radius-control);
+    transition: background-color var(--motion-quick);
+  }
+
+  .trophy-waiting:hover {
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+  }
+
+  .trophy-waiting-cover {
+    display: block;
+    width: 2.5rem;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: var(--radius-case);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.28);
+  }
+
   /* The card to share, at the page's end: the image, and beside it how to share it. */
   .trophy-share {
     display: grid;

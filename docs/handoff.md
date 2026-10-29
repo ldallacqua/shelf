@@ -64,14 +64,18 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   3.9): the achievements (unlocked, perfect games, rarity and its score, year by year, by
   genre, records and milestones) and the trophy vault (rarities that keep it, the rarest and
   latest unlocks, perfect games and the nearly perfect), then its card to share (row "Trophy
-  card"): of all time or a year's recap, what a link to the page shows. Phase 4, the backlog,
-  is still the issue's.
+  card"): of all time or a year's recap, what a link to the page shows.
 - **The trophy page loads well** (architecture section 25, rows "Trophy page loads" and "Steam
   artwork moved"): its walls are in Vercel's runtime cache (`'use cache: remote'`), where plain
   `'use cache'` was one instance's memory and each visit worked them out again; its skeleton is
   its first screen; achievements' artwork comes from Steam's newer image host, and migration
   0022 moved the addresses stored before.
-- **Next:** #68's fourth phase, the backlog.
+- **#68's fourth phase is built** (architecture section 25, row "Trophy page, phase 4"; spec
+  3.9, Still to play): the backlog and Someday, the hours left by IGDB's estimate, the months
+  to clear it at my own pace, the quickest, best rated and oldest games waiting, and what is
+  waiting by genre and platform. Not built: how the backlog grew, since a game's day on the
+  shelf is the day it came to Shelf; it waits for shelves with that history.
+- **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
   `pnpm dev` or a production build sees it.

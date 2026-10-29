@@ -806,6 +806,28 @@
       "closeOf": "{earned} de {total}",
       "left": "faltam {count}"
     },
+    "backlog": {
+      "title": "Ainda por jogar",
+      "inBacklog": "Na fila",
+      "someday": "{count, plural, =0 {Nada para algum dia} other {Mais # para algum dia}}",
+      "left": "Horas restantes",
+      "hoursUnit": "{count, plural, one {hora} other {horas}}",
+      "timed": "Estimativa do IGDB, de {timed} de {count, plural, one {# jogo} other {# jogos}}",
+      "clear": "Para zerar a fila",
+      "monthsUnit": "{count, plural, one {mês} other {meses}}",
+      "pace": "No ritmo das {count, plural, one {# hora} other {# horas}} do que você zerou nos últimos doze meses",
+      "quickest": "Mais rápidos de zerar",
+      "bestRated": "Mais bem avaliados, ainda esperando",
+      "oldest": "Lançados há mais tempo",
+      "hoursLeft": "{count, plural, one {Falta # hora} other {Faltam # horas}}",
+      "underAnHour": "Falta menos de uma hora",
+      "igdbRating": "{value} no IGDB",
+      "gameSays": "{title}, {said}",
+      "genres": "Esperando, por gênero",
+      "platforms": "Esperando, por plataforma",
+      "countSays": "{name}: {count, plural, one {# jogo esperando} other {# jogos esperando}}",
+      "unsorted": "{count, plural, one {Mais # jogo} other {Mais # jogos}} das sincronizações, ainda a definir"
+    },
     "card": {
       "brand": "SHELF · TROFÉUS",
       "title": "Troféus de {name}",
