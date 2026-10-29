@@ -1,69 +1,537 @@
 /*
- * The trophy page's figures (issue 68). One series per chart, in the accent;
- * when one year is the page's, the other years go quiet, in the strong line
- * color. Marks are thin, end in a 4px round, and rise from a hairline; the
- * light of the room is the accent's own glow, faint in daylight. Every chart
- * also has its table, so nothing is told by color or hover alone.
+ * The trophy page's figures (issue 68), in chapters. Each chapter is a board
+ * of panels on one twelve-column grid; every panel is the same surface, with
+ * the same hairline, padding and title, so the page reads as one thing. The
+ * type has three voices only: the wide title face for chapters and the
+ * figures that matter, the plain face for names and sentences, and the mono
+ * capitals for labels and axes.
+ *
+ * One series per chart, in the accent; when one year is the page's, the
+ * other years go quiet, in the strong line color. Marks are thin, end in a
+ * 4px round, and rise from a hairline; the light of the room is the accent's
+ * own glow, faint in daylight. Every chart also has its table, so nothing is
+ * told by color or hover alone.
  */
 @layer components {
-  .trophy-section {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-    margin-top: 2.5rem;
+  /*
+   * The chapter links: under the site's header, they stay in view to the
+   * page's end. Their band reaches the window's edges as the header's does
+   * (a border image paints past the box without widening the page).
+   */
+  .trophy-nav {
+    position: sticky;
+    top: calc(3.5rem + 1px);
+    z-index: 30;
+    margin-top: 1.25rem;
+    border-image: linear-gradient(
+        to top,
+        var(--line) 1px,
+        color-mix(in srgb, var(--wall) 88%, transparent) 1px
+      )
+      fill 0 / /0 100vw;
+    backdrop-filter: blur(12px);
   }
 
-  @media (min-width: 40rem) {
-    .trophy-section {
-      margin-top: 3.5rem;
+  .trophy-nav ol {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    list-style: none;
+    scrollbar-width: none;
+  }
+
+  /* On a phone the links run past the edge: it fades, so there is more to scroll to. */
+  @media (max-width: 47.99rem) {
+    .trophy-nav ol {
+      padding-right: 2rem;
+      mask-image: linear-gradient(to left, transparent, #000 2.5rem);
     }
   }
 
-  /* A section's title, and beside it what its lists are ranked by. */
-  .trophy-section-head {
-    display: flex;
-    flex-wrap: wrap;
+  .trophy-nav a {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem 1.5rem;
+    min-height: 2.75rem;
+    padding-inline: 0.625rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--text-muted);
+    box-shadow: inset 0 -2px 0 transparent;
+    transition:
+      color var(--motion-quick),
+      box-shadow var(--motion-quick);
   }
 
-  /* What the lists are ranked by: chips that wrap, never wider than the page. */
-  .trophy-rank-by {
+  .trophy-nav li:first-child a {
+    margin-left: -0.625rem;
+  }
+
+  .trophy-nav a:hover {
+    color: var(--text);
+    box-shadow: inset 0 -2px 0 var(--line-strong);
+  }
+
+  /* A chapter: its title and a line on it, then its board. Linked to, it lands under the links. */
+  .trophy-chapter {
+    margin-top: 3rem;
+    scroll-margin-top: 7rem;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-chapter {
+      margin-top: 4.5rem;
+    }
+  }
+
+  /* The first chapter, the overview, starts close under the links. */
+  .trophy-nav ~ div > .trophy-chapter:first-child {
+    margin-top: 1.5rem;
+  }
+
+  .trophy-chapter-head {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .trophy-chapter-lede {
+    max-width: 42rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+    color: var(--text-muted);
+  }
+
+  .trophy-chapter-aside {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  /*
+   * The board: one column on a phone, two on a tablet, twelve wide. A panel
+   * says how many of the twelve it takes; the wide ones take the tablet's two.
+   */
+  .trophy-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 48rem) {
+    .trophy-board {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .trophy-board > :is([data-span='7'], [data-span='8'], [data-span='12']),
+    .trophy-board > :is(.trophy-kpis-band, .trophy-group, .trophy-board-note) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .trophy-board {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .trophy-board > [data-span='3'] {
+      grid-column: span 3;
+    }
+
+    .trophy-board > [data-span='4'] {
+      grid-column: span 4;
+    }
+
+    .trophy-board > [data-span='5'] {
+      grid-column: span 5;
+    }
+
+    .trophy-board > [data-span='6'] {
+      grid-column: span 6;
+    }
+
+    .trophy-board > [data-span='7'] {
+      grid-column: span 7;
+    }
+
+    .trophy-board > [data-span='8'] {
+      grid-column: span 8;
+    }
+
+    .trophy-board > [data-rows='2'] {
+      grid-row: span 2;
+    }
+
+    .trophy-board > [data-rows='3'] {
+      grid-row: span 3;
+    }
+  }
+
+  /* A line a chapter says across its board. */
+  .trophy-board-note {
+    max-width: 48rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+    color: var(--text-muted);
+  }
+
+  /* A run of cards with a title over it, as a panel's. */
+  .trophy-group {
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+    margin-top: 0.75rem;
+  }
+
+  .trophy-board-title,
+  .trophy-panel-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.005em;
+    color: var(--text);
+    text-wrap: balance;
+  }
+
+  /* A panel: one chart or list on the surface, under its title. */
+  .trophy-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-panel {
+      padding: 1.25rem 1.375rem;
+    }
+  }
+
+  .trophy-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+  }
+
+  .trophy-panel-caption {
+    flex-basis: 100%;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+    color: var(--text-muted);
+  }
+
+  /* What closes a panel, its scale and its table: at the bottom, however tall the row makes it. */
+  .trophy-panel-foot {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: auto;
+  }
+
+  /*
+   * A band of figures: cells split by hairlines, two a row on a phone, all
+   * in one row wide. Each cell draws its hairlines above and to its left; the
+   * band clips those at its own edges.
+   */
+  .trophy-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+  }
+
+  @media (min-width: 64rem) {
+    .trophy-kpis {
+      grid-template-columns: repeat(var(--kpis), minmax(0, 1fr));
+    }
+  }
+
+  .trophy-kpi {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 1rem;
+    box-shadow:
+      -1px 0 0 var(--line),
+      0 -1px 0 var(--line);
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-kpi {
+      padding: 1.125rem 1.375rem 1.25rem;
+    }
+  }
+
+  .trophy-kpi:is([data-hero], [data-wide]) {
+    grid-column: span 2;
+  }
+
+  @media (min-width: 64rem) {
+    .trophy-kpi[data-wide] {
+      grid-column: auto;
+    }
+  }
+
+  .trophy-kpi-value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.375rem;
+    margin-top: 0.625rem;
+  }
+
+  .trophy-kpi-number {
+    font-family: var(--font-display);
+    font-size: 1.875rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-kpi-number {
+      font-size: 2.25rem;
+    }
+  }
+
+  .trophy-kpi[data-hero] .trophy-kpi-number {
+    font-size: 3.75rem;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-kpi[data-hero] .trophy-kpi-number {
+      font-size: 4.5rem;
+    }
+  }
+
+  .trophy-kpi-link {
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.3em;
+  }
+
+  .trophy-kpi-link:hover {
+    text-decoration-line: underline;
+  }
+
+  .trophy-kpi-unit {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  .trophy-kpi-note {
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    text-wrap: pretty;
+    color: var(--text-muted);
+  }
+
+  /*
+   * Records: cards of one figure each, the game's cover beside it, as many a
+   * row as fit. Every card is the panel's surface, as tall as its row.
+   */
+  .trophy-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: 0.75rem;
+    margin: 0;
+  }
+
+  .trophy-board > .trophy-facts {
+    grid-column: 1 / -1;
+  }
+
+  @media (min-width: 64rem) {
+    .trophy-board > .trophy-facts[data-span='8'] {
+      grid-column: span 8;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .trophy-fact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
     gap: 0.375rem;
+    min-width: 0;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+  }
+
+  .trophy-fact[data-pictured] {
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    column-gap: 0.875rem;
+  }
+
+  .trophy-fact-cover {
+    grid-row: 1 / span 3;
+    display: block;
+    width: 2.75rem;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: var(--radius-case);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.28);
+  }
+
+  .trophy-fact[data-pictured] > :not(.trophy-fact-cover) {
+    grid-column: 2;
+  }
+
+  .trophy-fact-value {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    text-wrap: balance;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .trophy-fact-link {
+    text-underline-offset: 0.2em;
+  }
+
+  .trophy-fact-link:hover {
+    text-decoration-line: underline;
+  }
+
+  .trophy-fact-note {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  /* What the figures say: a few sentences, three a row wide, each card a way to its games. */
+  .trophy-insights {
+    display: grid;
+    gap: 0.75rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  /* The headline: the number of games finished, then the figures beside it. */
-  .trophy-headline {
-    display: grid;
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-    padding-block: 1.5rem;
-    border-block: 1px solid var(--line);
-  }
-
-  @media (min-width: 64rem) {
-    .trophy-headline {
-      grid-template-columns: minmax(14rem, 1fr) 3fr;
-      align-items: center;
-      gap: 3rem;
+  @media (min-width: 40rem) {
+    .trophy-insights {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  .trophy-figures {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
-    gap: 1.5rem;
-    margin: 0;
+  @media (min-width: 64rem) {
+    .trophy-insights {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
-  .trophy-figure {
+  .trophy-insight {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     min-width: 0;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+    transition: border-color var(--motion-quick);
+  }
+
+  .trophy-insight[data-linked]:hover {
+    border-color: var(--line-strong);
+  }
+
+  /*
+   * On a phone the cards of a run stand in one panel, a hairline between
+   * them: a card apiece is a long way down one column.
+   */
+  @media (max-width: 39.99rem) {
+    .trophy-facts,
+    .trophy-insights {
+      gap: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-panel);
+      background: var(--surface);
+    }
+
+    :is(.trophy-fact, .trophy-insight) {
+      border: 0;
+      border-radius: 0;
+      background: none;
+    }
+
+    .trophy-fact + .trophy-fact,
+    .trophy-insight + .trophy-insight {
+      border-top: 1px solid var(--line);
+    }
+  }
+
+  .trophy-insight-text {
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  /* The card's way to its games: its link, reaching across the whole card. */
+  .trophy-insight-link {
+    margin-top: auto;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .trophy-insight-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .trophy-insight-link:focus-visible {
+    outline: none;
+  }
+
+  .trophy-insight:has(.trophy-insight-link:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* A way on to more, at a list's end: the series' games in the library. */
+  .trophy-more-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  :is(.trophy-more-link, .trophy-insight-link) {
+    text-underline-offset: 0.25em;
+  }
+
+  :is(.trophy-more-link, .trophy-insight-link):hover {
+    text-decoration-line: underline;
   }
 
   /* Which trophies: all time or a year, and a filter. One row above all it scopes. */
@@ -111,6 +579,16 @@
     background: color-mix(in srgb, var(--accent) 15%, transparent);
   }
 
+  /* What the lists are ranked by: chips that wrap, never wider than the page. */
+  .trophy-rank-by {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
   .trophy-filter-form {
     display: flex;
     flex: 1 1 18rem;
@@ -135,20 +613,10 @@
     color: var(--text-muted);
   }
 
-  /* The years and the months, side by side on a wide screen. */
-  @media (min-width: 64rem) {
-    .trophy-timeline {
-      display: grid;
-      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-      align-items: start;
-      column-gap: 3rem;
-    }
-  }
-
   /* Columns: one per year or month, rising from a hairline, never wider than they need. */
   .trophy-columns {
     display: grid;
-    grid-template-columns: repeat(var(--columns), minmax(2.25rem, 4.5rem));
+    grid-template-columns: repeat(var(--columns), minmax(1.75rem, 1fr));
     margin: 0;
     padding: 0;
     overflow-x: auto;
@@ -260,10 +728,7 @@
   }
 
   /* A tip near the right edge opens leftward. */
-  .trophy-heat-cell:nth-child(13n + 10) .chart-tip,
-  .trophy-heat-cell:nth-child(13n + 11) .chart-tip,
-  .trophy-heat-cell:nth-child(13n + 12) .chart-tip,
-  .trophy-heat-cell:nth-child(13n) .chart-tip {
+  .trophy-ledger-months > .trophy-heat-cell:nth-child(n + 9) .chart-tip {
     left: auto;
     right: 0;
     translate: 0 0;
@@ -275,31 +740,181 @@
   }
 
   /*
-   * Month by month: a row of twelve for every year, darker for more. Four
-   * steps of the accent over the surface, mixed in OKLab so each step reads
-   * as lighter or darker, never as another color; an empty month is a ring.
-   * The lightest step stands at least 2:1 against the surface in both themes
-   * (checked as an ordinal ramp: one hue, every step a visible gap darker).
+   * Year by year: a row for each year, the latest first, of its twelve
+   * months, darker for more; then how many it finished, on a bar against the
+   * busiest year; then what led it and its milestones. The rows share the
+   * list's columns (subgrid), so the months and the bars line up.
+   *
+   * The months: four steps of the accent over the surface, mixed in OKLab so
+   * each step reads as lighter or darker, never as another color; an empty
+   * month is a ring. The lightest step stands at least 2:1 against the
+   * surface in both themes (checked as an ordinal ramp: one hue, every step a
+   * visible gap darker).
    */
-  .trophy-heat {
+  .trophy-ledger {
     display: grid;
-    grid-template-columns: auto repeat(12, minmax(0, 1fr));
-    gap: 3px;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    gap: 0.375rem 0.625rem;
     align-items: center;
-    width: 100%;
-    max-width: 26rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .trophy-heat-month,
-  .trophy-heat-year {
+  @media (min-width: 40rem) {
+    .trophy-ledger {
+      grid-template-columns: 3rem auto minmax(6rem, 14rem) minmax(0, 1fr);
+      column-gap: 1rem;
+    }
+  }
+
+  .trophy-ledger > li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    row-gap: 0.25rem;
+  }
+
+  .trophy-ledger-head {
+    font-family: var(--font-mono);
     font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
     color: var(--text-muted);
+  }
+
+  /* What the bars are of: wide, over them; on a phone the count is plain enough without. */
+  .trophy-ledger-head > :last-child {
+    visibility: hidden;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-ledger-head > :last-child {
+      visibility: visible;
+    }
+  }
+
+  .trophy-ledger-head .trophy-ledger-months > span {
     text-align: center;
   }
 
-  .trophy-heat-year {
-    padding-right: 0.5rem;
+  /* A year's way to its page: at least 24px tall to point at, however small its row's months. */
+  .trophy-ledger-label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    text-underline-offset: 0.25em;
+    transition: color var(--motion-quick);
+  }
+
+  .trophy-ledger-label:hover {
+    color: var(--text);
+    text-decoration-line: underline;
+  }
+
+  .trophy-ledger-months {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-ledger-months {
+      grid-template-columns: repeat(12, 1.375rem);
+    }
+  }
+
+  .trophy-ledger-total {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .trophy-ledger-bar {
+    display: none;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-ledger-bar {
+      display: block;
+      flex: 0 1 auto;
+      width: calc(var(--value) * (100% - 2rem));
+      min-width: 2px;
+      height: 0.5rem;
+      border-radius: 0 4px 4px 0;
+      background: var(--accent);
+    }
+
+    .trophy-ledger-bar[data-none] {
+      min-width: 0;
+      width: 0;
+    }
+  }
+
+  .trophy-ledger-count {
+    min-width: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
     text-align: right;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-ledger-count {
+      text-align: left;
+    }
+  }
+
+  /* What led the year and its milestones: under its months on a phone, beside them wide. */
+  .trophy-ledger-note {
+    grid-column: 2 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.125rem 0.875rem;
+    margin: 0 0 0.375rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--text-muted);
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-ledger-note {
+      grid-column: 4;
+      margin: 0;
+      font-size: 0.8125rem;
+    }
+  }
+
+  .trophy-ledger-game {
+    color: var(--text);
+    text-underline-offset: 0.2em;
+  }
+
+  .trophy-ledger-game:hover {
+    text-decoration-line: underline;
+  }
+
+  .trophy-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.0625rem 0.4375rem;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text);
   }
 
   .trophy-heat-cell {
@@ -336,6 +951,12 @@
     display: flex;
     align-items: center;
     gap: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
 
   .trophy-heat-scale .trophy-heat-cell {
@@ -350,92 +971,18 @@
     margin-left: 0.375rem;
   }
 
-  /* What is finished: three lists side by side on a wide screen. */
-  .trophy-kinds {
-    display: grid;
-    gap: 2rem;
-  }
-
-  @media (min-width: 48rem) {
-    .trophy-kinds {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  /* What the figures say: a few sentences in quiet tiles, under the headline. */
-  .trophy-insights-section {
-    margin-top: 1.5rem;
-  }
-
-  .trophy-insights {
-    display: grid;
-    gap: 0.75rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  @media (min-width: 40rem) {
-    .trophy-insights {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 64rem) {
-    .trophy-insights {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  .trophy-insight {
-    min-width: 0;
-    padding: 1rem 1.125rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-panel);
-    background: var(--surface);
-  }
-
-  /*
-   * Ratings: how they fall, then how they stand against IGDB's and the games
-   * furthest from it. On a wide screen the two lists go under the first chart,
-   * beside the square.
-   */
-  .trophy-ratings {
-    display: grid;
-    gap: 2rem;
-  }
-
-  .trophy-gap-lists {
-    display: grid;
-    gap: 2rem;
-  }
-
-  @media (min-width: 48rem) {
-    .trophy-ratings {
-      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-      align-items: start;
-    }
-
-    .trophy-ratings > :nth-child(2) {
-      grid-row: span 2;
-    }
-
-    .trophy-gap-lists {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
   /*
    * Mine against IGDB's: a dot a game, on a square from 0 to 10 each way, with
    * the line where the two agree. One series, in the accent; each dot wears a
-   * ring of the page so the ones that overlap stay apart.
+   * ring of the panel so the ones that overlap stay apart.
    */
   .trophy-scatter-frame {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0.375rem;
-    max-width: 20rem;
-    margin-top: 0.75rem;
+    width: 100%;
+    max-width: 22rem;
+    margin-inline: auto;
   }
 
   .trophy-scatter-axis {
@@ -494,7 +1041,7 @@
     height: 0.625rem;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 0 2px var(--wall);
+    box-shadow: 0 0 0 2px var(--surface);
     transition: scale var(--motion-quick);
   }
 
@@ -512,7 +1059,19 @@
     translate: 0 0;
   }
 
-  /* The games I rated far from IGDB, named with both ratings. */
+  /* The games I rated far from IGDB, above and below, side by side, with both ratings. */
+  .trophy-gap-lists {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-gap-lists {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 2rem;
+    }
+  }
+
   .trophy-gaps {
     display: grid;
     gap: 0.5rem;
@@ -528,14 +1087,28 @@
     gap: 0.75rem;
   }
 
-  /* Series: a bar each, finished over had; opened, its games. */
+  .trophy-gaps-pair {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--text-muted);
+  }
+
+  /* Series: a bar each, finished over had, two columns wide; opened, its games. */
   .trophy-series-list {
     display: grid;
-    gap: 0.25rem;
-    max-width: 40rem;
+    gap: 0.25rem 2.5rem;
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  @media (min-width: 48rem) {
+    .trophy-series-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
   }
 
   .trophy-series-row {
@@ -602,88 +1175,16 @@
   }
 
   /*
-   * My years, oldest first, read across then down: each on a hairline with a
-   * dot of the accent where it begins, its milestones under it.
-   */
-  .trophy-history {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: 1.5rem 2rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .trophy-history-year {
-    position: relative;
-    min-width: 0;
-    padding-top: 0.875rem;
-    border-top: 1px solid var(--line);
-  }
-
-  .trophy-history-year::before {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: 0;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--accent);
-  }
-
-  .trophy-history-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.25rem 0.75rem;
-    margin: 0;
-  }
-
-  .trophy-history-best {
-    padding: 0.0625rem 0.4375rem;
-    border: 1px solid var(--accent);
-    border-radius: 999px;
-    color: var(--text);
-  }
-
-  .trophy-history-milestones {
-    display: grid;
-    gap: 0.375rem;
-    margin: 0.625rem 0 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .trophy-history-milestones li {
-    display: grid;
-    grid-template-areas: 'what day' 'game game';
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0 0.75rem;
-  }
-
-  .trophy-history-milestones li > :nth-child(1) {
-    grid-area: what;
-  }
-
-  .trophy-history-milestones li > :nth-child(2) {
-    grid-area: game;
-  }
-
-  .trophy-history-milestones li > :nth-child(3) {
-    grid-area: day;
-  }
-
-  /*
-   * The rows share the list's columns (subgrid), so every bar's track is as
-   * long as the others' and the bars compare; what else is known sits beside
-   * the track rather than under it.
+   * A ranked list: its heads, then its rows, each a name and its figures on
+   * one line and the bar under the name. The rows share the list's columns
+   * (subgrid), so every bar's track is as long as the others' and the bars
+   * compare, and every figure stands under its head.
    */
   .trophy-ranked {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.125rem 0.75rem;
-    margin: 0.75rem 0 0;
+    grid-template-columns: minmax(0, 1fr) repeat(var(--figures, 1), auto);
+    gap: 0.125rem 1rem;
+    margin: 0;
     padding: 0;
     list-style: none;
   }
@@ -694,13 +1195,24 @@
     grid-template-columns: subgrid;
   }
 
+  .trophy-ranked-head {
+    padding-bottom: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    text-align: right;
+    color: var(--text-muted);
+  }
+
   .trophy-ranked-row {
     display: grid;
     grid-column: 1 / -1;
     grid-template-columns: subgrid;
-    align-items: center;
-    row-gap: 0.25rem;
-    padding: 0.375rem 0.5rem;
+    align-items: baseline;
+    row-gap: 0.375rem;
+    padding: 0.4375rem 0.5rem;
     margin-inline: -0.5rem;
     border-radius: var(--radius-control);
     transition: background-color var(--motion-quick);
@@ -710,14 +1222,34 @@
     background: color-mix(in srgb, var(--text) 5%, transparent);
   }
 
+  .trophy-ranked-name {
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .trophy-ranked-figure,
+  .trophy-ranked-beside {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .trophy-ranked-beside {
+    color: var(--text-muted);
+  }
+
   .trophy-ranked-track {
     grid-column: 1;
     display: block;
-    height: 0.375rem;
-  }
-
-  .trophy-ranked-row > :last-child:not(.trophy-ranked-track) {
-    text-align: right;
+    height: 0.3125rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text) 6%, transparent);
   }
 
   .trophy-ranked-bar {
@@ -725,30 +1257,22 @@
     width: calc(var(--value) * 100%);
     height: 100%;
     min-width: 2px;
-    border-radius: 0 4px 4px 0;
+    border-radius: 4px;
     background: var(--accent);
-  }
-
-  /* Records: a few named games and figures, in tiles. */
-  .trophy-records {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-    gap: 0.75rem;
-    margin: 0;
-  }
-
-  .trophy-record {
-    min-width: 0;
-    padding: 1rem 1.125rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-panel);
-    background: var(--surface);
   }
 
   /* A chart's table: folded under it until asked for. */
   .chart-table summary {
     width: max-content;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
     cursor: pointer;
+    transition: color var(--motion-quick);
+  }
+
+  .chart-table summary:hover {
+    color: var(--text);
   }
 
   .chart-table table {
@@ -785,36 +1309,12 @@
     }
   }
 
-  /*
-   * Achievements (phase 3): the figures, how the score is made under them,
-   * then the years and the records beside the genres, then the milestones.
-   * The vault pairs its rarities with the games nearly perfect the same way.
-   */
-  .trophy-achievement-charts {
-    display: grid;
-    gap: 2rem;
-  }
-
-  @media (min-width: 48rem) {
-    .trophy-achievement-charts {
-      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-      align-items: start;
-      column-gap: 3rem;
-    }
-  }
-
-  /* Beside the genres, the records two by two. */
-  @media (min-width: 48rem) {
-    .trophy-achievement-charts .trophy-records {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
+  /* The achievements' milestones: a hairline over each, as many a row as fit. */
   .trophy-achievement-milestones {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: 0.75rem 2rem;
-    margin: 0.75rem 0 0;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: 0.875rem 2rem;
+    margin: 0;
     padding: 0;
     list-style: none;
   }
@@ -823,7 +1323,7 @@
     display: grid;
     grid-template-areas: 'what day' 'unlock unlock';
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.125rem 0.75rem;
+    gap: 0.25rem 0.75rem;
     min-width: 0;
     padding-top: 0.625rem;
     border-top: 1px solid var(--line);
@@ -841,33 +1341,20 @@
     grid-area: day;
   }
 
+  .trophy-milestone-day {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
   /*
-   * The trophy vault: the unlocks by rarity, which keep the lists below to
-   * one when chosen; the rarest and the latest side by side, as tiles of
-   * Steam's artwork, the rare ones glowing as on a game's page; then the
-   * games perfected, face-out, and those close to it.
+   * The vault's unlocks: tiles of Steam's artwork, two a row in their panel,
+   * the rare ones glowing as on a game's page.
    */
-  .trophy-vault {
-    scroll-margin-top: 5rem;
-  }
-
-  .trophy-vault-lists {
-    display: grid;
-    gap: 2rem;
-  }
-
-  @media (min-width: 48rem) {
-    .trophy-vault-lists {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: 3rem;
-    }
-  }
-
   .trophy-unlocks {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
     gap: 0.25rem 1rem;
-    margin: 0.75rem 0 0;
+    margin: 0;
     padding: 0;
     list-style: none;
   }
@@ -904,7 +1391,7 @@
     border: 1px solid var(--line);
     border-radius: 6px;
     color: var(--text-muted);
-    background: var(--surface);
+    background: var(--wall);
   }
 
   .trophy-unlock-art[data-rare] {
@@ -921,7 +1408,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
     gap: 1rem 0.875rem;
-    margin: 0.75rem 0 0;
+    margin: 0;
     padding: 0;
     list-style: none;
   }
@@ -948,26 +1435,17 @@
     }
   }
 
-  /*
-   * What is still to play: its lists side by side on a wide screen, each a
-   * column of small covers, as the vault's unlocks are of artwork.
-   */
-  .trophy-backlog-lists {
-    display: grid;
-    gap: 2rem;
+  .trophy-perfect-note {
+    margin-top: 0.125rem;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
   }
 
-  @media (min-width: 48rem) {
-    .trophy-backlog-lists {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      column-gap: 2rem;
-    }
-  }
-
+  /* What is still to play: each list a column of small covers, as the vault's unlocks are of artwork. */
   .trophy-waiting-list {
     display: grid;
-    gap: 0.25rem;
-    margin: 0.75rem 0 0;
+    gap: 0.125rem;
+    margin: 0;
     padding: 0;
     list-style: none;
   }
@@ -1003,11 +1481,19 @@
     box-shadow: 0 0 0 1px rgb(0 0 0 / 0.28);
   }
 
+  .trophy-waiting-said {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
   /* The card to share, at the page's end: the image, and beside it how to share it. */
+  .trophy-share-board {
+    margin-block: 3.5rem 1.5rem;
+  }
+
   .trophy-share {
     display: grid;
     gap: 1.25rem;
-    margin-bottom: 1rem;
   }
 
   @media (min-width: 48rem) {
@@ -1024,7 +1510,7 @@
     height: auto;
     aspect-ratio: 1200 / 630;
     border: 1px solid var(--line);
-    border-radius: var(--radius-panel);
-    background: var(--surface);
+    border-radius: var(--radius-control);
+    background: var(--wall);
   }
 }

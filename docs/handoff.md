@@ -75,6 +75,11 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   to clear it at my own pace, the quickest, best rated and oldest games waiting, and what is
   waiting by genre and platform. Not built: how the backlog grew, since a game's day on the
   shelf is the day it came to Shelf; it waits for shelves with that history.
+- **The trophy page reads in chapters** (architecture section 25, row "Trophy page, in
+  chapters"; spec 3.9, In chapters): Overview, Timeline, Taste, Achievements, Vault, Backlog
+  and Wall, each a board of the same panels, with links to each pinned under the header. Your
+  years are the timeline's rows now. The wall's lights fade out with no edge (row "Wall light,
+  eased").
 - **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against

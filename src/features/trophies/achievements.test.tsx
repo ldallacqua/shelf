@@ -91,11 +91,15 @@ const draw = (options: AchievementOptions = {}, locale: 'en' | 'pt-BR' = 'en') =
 const addressOf = (link: HTMLElement) => new URL(link.getAttribute('href')!, 'https://shelf.test')
 
 /**
- * The figures a device that shows adult games draws: with adult games among
- * them the page draws both, and CSS shows one.
+ * The figures a device that shows adult games draws, or one that hides them:
+ * with adult games among them the page draws both, and CSS shows one. Each
+ * set's filters and chapter links stand apart from its chapters.
  */
-const shown = () =>
-  document.querySelector<HTMLElement>('[data-when-adult="shown"]') ?? document.body
+const figuresFor = (when: 'shown' | 'hidden') =>
+  [...document.querySelectorAll<HTMLElement>(`[data-when-adult="${when}"]`)].find((each) =>
+    each.querySelector('section'),
+  )
+const shown = () => figuresFor('shown') ?? document.body
 
 describe('the achievements (issue 68)', () => {
   it('say how many are unlocked, perfected, how rare and what they score', () => {
@@ -192,12 +196,18 @@ describe('the trophy vault (issue 68)', () => {
 
   it('leaves out adult games for a device that hides them', () => {
     draw()
-    const hidden = document.querySelector<HTMLElement>('[data-when-adult="hidden"]')!
+    const hidden = figuresFor('hidden')!
     expect(within(hidden).getByRole('region', { name: 'Trophy vault' })).not.toHaveTextContent(
       'Last Call',
     )
     expect(within(shown()).getByRole('region', { name: 'Trophy vault' })).toHaveTextContent(
       'Last Call',
+    )
+    // Each set's columns, and its chapter links, lead to its own vault.
+    const ultra = within(hidden).getByRole('link', { name: /^Ultra rare/ })
+    expect(addressOf(ultra).hash).toBe('#trophy-vault-safe')
+    expect(document.getElementById('trophy-vault-safe')).toBe(
+      within(hidden).getByRole('region', { name: 'Trophy vault' }),
     )
   })
 

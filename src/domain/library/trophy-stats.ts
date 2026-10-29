@@ -1,3 +1,4 @@
+import type { Palette } from '@/domain/color/palette'
 import type { Library, LibraryGame, Named } from '@/domain/library/library'
 import { libraryStats } from '@/domain/library/stats'
 import { backlogOf, type BacklogStats } from '@/domain/library/trophy-backlog'
@@ -27,6 +28,9 @@ import type { Day, Status } from '@/domain/library/values'
 
 /** A game a figure is about, by its address. */
 export type StatGame = { slug: string; title: string }
+
+/** A game a record is about, with its cover, for the record's card. */
+export type PicturedGame = StatGame & { cover?: string; colors?: Palette; hash?: string }
 
 /** How one genre, theme or platform stands among the games finished. */
 export type Ranked = {
@@ -65,7 +69,7 @@ export type TrophyStats = {
   dropped: number
   /** The middle of the finished games' minutes, of those with any. */
   medianMinutes?: number
-  longest?: StatGame & { minutes: number }
+  longest?: PicturedGame & { minutes: number }
   /** By the hours on each game's main copy: the library does not split a game's hours by copy. */
   platform?: { id: number; name: string; minutes: number }
   /** Finished each year, from the first such year to `year`, a year with none as 0. */
@@ -96,13 +100,13 @@ export type TrophyStats = {
   /** What is still to play, when anything is in the backlog or Someday. All time only. */
   backlog?: BacklogStats
   records: {
-    first?: StatGame & { on: Day }
-    quickest?: StatGame & { minutes: number }
+    first?: PicturedGame & { on: Day }
+    quickest?: PicturedGame & { minutes: number }
     /** Played longest of all, finished or not, when that is not the longest finished. All time only. */
-    mostPlayed?: StatGame & { minutes: number }
-    bestRated?: StatGame & { rating: number }
+    mostPlayed?: PicturedGame & { minutes: number }
+    bestRated?: PicturedGame & { rating: number }
     /** Released longest ago. */
-    oldest?: StatGame & { year: number }
+    oldest?: PicturedGame & { year: number }
     /** All time only. */
     bestYear?: { year: number; finished: number }
     /** Only when a month has more than one. */
@@ -125,6 +129,13 @@ export const RANKED = 8
 export const RANKED_MORE = 5
 
 const gameOf = ({ slug, title }: LibraryGame): StatGame => ({ slug, title })
+
+const picturedOf = (game: LibraryGame): PicturedGame => ({
+  ...gameOf(game),
+  ...(game.cover ? { cover: game.cover } : {}),
+  ...(game.colors ? { colors: game.colors } : {}),
+  ...(game.hash ? { hash: game.hash } : {}),
+})
 
 const monthOf = (day: Day) => day.slice(0, 7)
 const nextMonth = (month: string) => {
@@ -442,7 +453,7 @@ export const statsOf = (
     started: started.length,
     dropped: library.games.filter((game) => game.status === 'dropped').length,
     medianMinutes: median(minutes),
-    longest: longest ? { ...gameOf(longest), minutes: longest.minutes } : undefined,
+    longest: longest ? { ...picturedOf(longest), minutes: longest.minutes } : undefined,
     platform,
     perYear,
     perMonth,
@@ -476,15 +487,15 @@ export const statsOf = (
     insights: insights.slice(0, INSIGHTS_SHOWN),
     ...(all && backlog ? { backlog } : {}),
     records: {
-      ...(first ? { first: { ...gameOf(first), on: first.completedOn! } } : {}),
+      ...(first ? { first: { ...picturedOf(first), on: first.completedOn! } } : {}),
       ...(quickest && quickest !== longest
-        ? { quickest: { ...gameOf(quickest), minutes: quickest.minutes } }
+        ? { quickest: { ...picturedOf(quickest), minutes: quickest.minutes } }
         : {}),
       ...(mostPlayed && mostPlayed.slug !== longest?.slug
-        ? { mostPlayed: { ...gameOf(mostPlayed), minutes: mostPlayed.minutes } }
+        ? { mostPlayed: { ...picturedOf(mostPlayed), minutes: mostPlayed.minutes } }
         : {}),
-      ...(bestRated ? { bestRated: { ...gameOf(bestRated), rating: bestRated.rating! } } : {}),
-      ...(oldest ? { oldest: { ...gameOf(oldest), year: oldest.year! } } : {}),
+      ...(bestRated ? { bestRated: { ...picturedOf(bestRated), rating: bestRated.rating! } } : {}),
+      ...(oldest ? { oldest: { ...picturedOf(oldest), year: oldest.year! } } : {}),
       ...(bestYear && bestYear.finished > 0 ? { bestYear } : {}),
       ...(bestMonth && bestMonth.finished > 1 ? { bestMonth } : {}),
     },

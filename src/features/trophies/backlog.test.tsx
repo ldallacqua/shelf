@@ -36,7 +36,7 @@ const library = testLibrary(
 
 const draw = (options: { scope?: number; q?: string } = {}, locale: 'en' | 'pt-BR' = 'en') => {
   const { stats } = trophyWall(library, 2026, locale, { ...options, today: '2026-10-29' })
-  return renderWithIntl(<Backlog stats={stats} handle="ana" q={options.q} />, locale)
+  return renderWithIntl(<Backlog stats={stats} handle="ana" q={options.q} id="backlog" />, locale)
 }
 
 const section = (name: string) => screen.getByRole('region', { name })

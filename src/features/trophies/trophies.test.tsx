@@ -80,43 +80,58 @@ describe('the trophy wall', () => {
     // 12 and 40 hours: 26 in the middle.
     expect(figure('Median playtime')).toHaveTextContent('26hours')
     expect(figure('Dropped')).toHaveTextContent('0')
-    expect(within(stats).getByRole('link', { name: 'Hades' })).toHaveAttribute(
-      'href',
-      '/en/u/ana/game/hades',
-    )
-    expect(figure('Played most on')).toHaveTextContent('Nintendo Switch40 hours')
   })
 
-  it('draws the years as columns, each a way to that year’s trophies alone, with a table too', () => {
+  it('links to each of its chapters, the wall last', () => {
+    renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
+    const chapters = screen.getByRole('navigation', { name: 'On this page' })
+    const links = within(chapters).getAllByRole('link')
+    // Nothing waits in the backlog, and no game has achievements known: none of their chapters.
+    expect(links.map((link) => link.textContent)).toEqual(['Overview', 'Timeline', 'Taste', 'Wall'])
+    for (const link of links) {
+      const id = link.getAttribute('href')!.slice(1)
+      expect(document.getElementById(id)).toHaveAttribute('aria-labelledby', `${id}-title`)
+    }
+  })
+
+  it('draws the years as rows of their months, each a way to that year’s trophies alone, with a table too', () => {
     renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
     const years = screen.getByRole('region', { name: 'Finished, year by year' })
     expect(within(years).getByRole('link', { name: '2025: 1 game finished' })).toHaveAttribute(
       'href',
       '/en/u/ana/trophies?year=2025',
     )
-    const table = within(years).getByRole('table', { name: 'Finished, year by year' })
-    expect(within(table).getByRole('row', { name: '2026 1' })).toBeInTheDocument()
+    const table = within(years).getByRole('table', { name: 'Finished, month by month' })
+    expect(within(table).getByRole('row', { name: 'March 2026 1' })).toBeInTheDocument()
   })
 
   it('leads from a month, and from a platform, to the games behind it in the library', () => {
     renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
-    const months = screen.getByRole('region', { name: 'Finished, month by month' })
-    expect(filterOf(within(months).getByRole('link', { name: 'November 2025' }))).toBe(
+    const years = screen.getByRole('region', { name: 'Finished, year by year' })
+    expect(filterOf(within(years).getByRole('link', { name: 'November 2025' }))).toBe(
       'completed:2025-11',
     )
-    const kinds = screen.getByRole('region', { name: 'What is finished' })
-    const platform = within(kinds).getByRole('link', { name: 'Nintendo Switch: 1 game finished' })
+    const platforms = screen.getByRole('region', { name: 'Platforms' })
+    const platform = within(platforms).getByRole('link', {
+      name: 'Nintendo Switch: 1 game finished',
+    })
     expect(platform.getAttribute('href')).toMatch(/^\/en\/u\/ana\?/)
     expect(filterOf(platform)).toBe('status:completed owned:switch')
   })
 
-  it('keeps the records: the first finish, the quickest, the best rated', () => {
+  it('keeps the records: the first finish, the longest, the quickest, the best rated', () => {
     renderWithIntl(<TrophyWallView wall={trophyWall(library, 2026)} handle="ana" />)
     const records = screen.getByRole('region', { name: 'Records' })
-    const record = (label: string) => within(records).getByText(label).nextElementSibling
+    const record = (label: string) => within(records).getByText(label).parentElement
     expect(record('First finish recorded')).toHaveTextContent('HadesNov 20, 2025')
+    expect(record('Longest finished')).toHaveTextContent('Hades40 hours')
+    expect(within(records).getAllByRole('link', { name: 'Hades' })[0]).toHaveAttribute(
+      'href',
+      '/en/u/ana/game/hades',
+    )
     expect(record('Quickest finish')).toHaveTextContent('Tunic12 hours')
     expect(record('Rated highest')).toHaveTextContent('Hades8.5 out of 10')
+    expect(record('Played most on')).toHaveTextContent('Nintendo Switch40 hours')
   })
 
   it('is of one year when the address asks, the way back to all of them first', () => {
@@ -135,12 +150,12 @@ describe('the trophy wall', () => {
       'href',
       '/en/u/ana/trophies',
     )
-    // The year's own column leads back to every year.
-    const years = screen.getByRole('region', { name: 'Finished, year by year' })
-    expect(within(years).getByRole('link', { name: '2025: 1 game finished' })).toHaveAttribute(
-      'href',
-      '/en/u/ana/trophies',
-    )
+    // The year's timeline is its months, each a way to its games.
+    const months = screen.getByRole('region', { name: 'Finished, month by month' })
+    expect(
+      filterOf(within(months).getByRole('link', { name: 'November 2025: 1 game finished' })),
+    ).toBe('completed:2025-11')
+    expect(screen.queryByRole('region', { name: 'Finished, year by year' })).toBeNull()
     expect(screen.queryByRole('region', { name: '2026 1 game' })).toBeNull()
     expect(screen.getByRole('region', { name: '2025 1 game' })).toBeInTheDocument()
   })

@@ -383,6 +383,18 @@ The owner asked for the trophy page to become "a personal gaming museum", after 
 PlayStation Wrap-Up: "Every statistic should tell a story, and every story should let users
 explore the games behind it."
 
+- **In chapters** (redrawn 29 Oct 2026, when the owner found the figures "thrown on the screen
+  everywhere"). The figures read in order, each chapter a title, a line on what it holds, and
+  a board of panels on one grid: **Overview** (the headline, what the figures say, the
+  records), **Timeline** (when), **Taste** (what is finished, ratings, series),
+  **Achievements**, **Vault**, **Backlog** (still to play) and **Wall**, the trophies
+  themselves. Links to each stay in view under the site's header to the page's end, plain
+  links that work without a script; a chapter with nothing to say has no link. Every panel is
+  the same surface, title and padding; figures stand in one band split by hairlines; records
+  and sentences are cards, gathered in one panel on a phone; ranked lists carry their columns'
+  heads once rather than words on every row. Labels and axes are mono capitals, names and
+  sentences plain, the figures that matter in the wide title face.
+
 - **Which trophies.** One row above everything it scopes: All time, then each year something
   was finished in, newest first; and a filter in the library's own language (`genre:rpg
   owned:switch`), with Clear. Both are in the address (`?year=2025&q=genre:rpg`), so a page of
@@ -393,9 +405,8 @@ explore the games behind it."
 - **The headline.** Games finished, large, and under it how many this year and the share of
   started games finished. Beside it: hours played, across the whole library (of one year: the
   hours on its games), the average of my ratings (of every game I rated, or of the year's
-  games), the median hours of a finished game, games dropped, the months in a row with a game
-  finished (still going while this month has none yet) with the best run, the finished game I
-  played longest, and the platform I played most on, by the hours on each game's main copy.
+  games), the median hours of a finished game, and games dropped. The finished game I played
+  longest and the platform I played most on are records.
 - **What the figures say** (phase 2). Under the headline, up to six sentences, each from enough
   games to mean something and each with the way to its games:
   - this year against the years before: the best yet (past a year of three or more), ahead of
@@ -416,13 +427,16 @@ explore the games behind it."
   achievements, of all time only: this year's unlocks past all of last year's, or every year's
   before (twenty or more); the game fewest achievements from perfect; and the rarest unlock,
   when fewer than 5% of Steam's players have it.
-- **Year by year.** A column for each year from the first finish to this one, a year with none
-  as an empty column. Each leads to that year's page; on a year's page, that year's column is in
-  the accent and the others are quiet, and it leads back to all time. The best year and this
-  year carry their numbers.
-- **Month by month.** Of all time, a row of twelve months for every year, darker for more; of
-  one year, its twelve months as columns. Each month leads to the library filtered to the games
-  finished in it (`completed:2025-08`).
+- **Year by year** (the timeline, of all time). A row for every year from the first finish to
+  this one, the latest first: its twelve months, darker for more, how many it finished on a bar
+  against the busiest year, and what my years say of it: the genre that led it (when one leads
+  with two or more, of three or more games), the one it took over from, the best year marked,
+  and the milestones reached in it, the 1st, 10th, 25th, 50th, 100th, 250th, 500th and 1000th
+  finish and the first game I rated 10. Each year leads to its page; each month to the library
+  filtered to the games finished in it (`completed:2025-08`). On a phone what led the year goes
+  under its months.
+- **Month by month** (the timeline, of one year). Its twelve months as columns, each leading
+  to its games. The way back to every year is the period's All time.
 - **What is finished.** The eight genres, themes and platforms with the most games finished,
   most first, each with the share of its started games finished once five were started. A
   platform counts every game owned on it, as `owned:` does. Each leads to those games in the
@@ -447,11 +461,6 @@ explore the games behind it."
   lists its games by release with their status, and leads to them in the library. Beside the
   title, how many are finished whole. Only the games on the shelf are known: how many a series
   has in all is IGDB's to say, and is not asked.
-- **Your years** (phase 2, of all time). Every year with a finish, oldest first, read across
-  then down: how many, the genre that led it (when one leads with two or more, of three or more
-  games), the one it took over from, the best year marked, and the milestones reached in it: the
-  1st, 10th, 25th, 50th, 100th, 250th, 500th and 1000th finish, and the first game I rated 10.
-  Each year leads to its page.
 - **Achievements** (phase 3). From what Steam last said, for every game of the page's filter,
   whether finished or not; of a year's page, the unlocks in that year, by the day in UTC, and
   the games whose last unlock came in it. A game's page tells each one; here they add up:
@@ -480,10 +489,12 @@ explore the games behind it."
   each (six on a phone), as Steam's artwork with the name, the game, the share and the day,
   the rare ones glowing as on a game's page; then the games perfected, face-out, the latest
   first. Every unlock and game leads to its game's achievements (`#achievements`).
-- **Records.** The first finish recorded, the quickest finish, the game played longest of all
-  when that is not the longest finished, the best rated finish, the oldest game finished, the
-  best year and month, and the longest run of months. A month or a year leads to its games.
-- **Still to play** (phase 4, of all time, after Your years). The backlog, the games I mean to
+- **Records** (in the overview). The first finish recorded, the longest finished, the quickest
+  finish, the game played longest of all when that is not the longest finished, the best rated
+  finish, the oldest game finished, the platform I played most on (by the hours on each game's
+  main copy), the best year and month, and the longest run of months. A record of a game
+  carries its cover. A month or a year leads to its games.
+- **Still to play** (phase 4, of all time, after the vault). The backlog, the games I mean to
   play, with Someday beside it; the hours left, IGDB's time for a normal playthrough less the
   hours played, of the backlog's games IGDB has a time for, said as its estimate and of how
   many; and the months they would take at the hours of what I finished in the last twelve

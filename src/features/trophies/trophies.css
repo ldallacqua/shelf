@@ -5,6 +5,43 @@
  * comes from the lighting tokens, so one rule serves both themes.
  */
 @layer components {
+  /* Each year of the wall, its label pinned under the page's chapter links while its trophies pass. */
+  .trophy-year + .trophy-year {
+    margin-top: 2.5rem;
+  }
+
+  @media (min-width: 40rem) {
+    .trophy-year + .trophy-year {
+      margin-top: 3.5rem;
+    }
+  }
+
+  .trophy-year > .wall-label {
+    top: calc(3.5rem + 1px + 2.75rem);
+  }
+
+  @supports (animation-timeline: view()) {
+    .trophy-year:has(> .wall-label) {
+      view-timeline-inset: calc(3.5rem + 1px + 2.75rem) 0;
+    }
+  }
+
+  /* Under each title, quietly: the day, then the hours and my rating. */
+  .trophy-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 0.625rem;
+    margin-top: 0.125rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+  }
+
+  .trophy-meta:first-of-type {
+    margin-top: 0.25rem;
+  }
+
   .trophy-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));

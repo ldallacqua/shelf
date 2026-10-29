@@ -5,18 +5,17 @@ import { type CSSProperties, useId } from 'react'
 import type { AchievementInsight } from '@/domain/library/trophy-achievements'
 import type { TrophyStats } from '@/domain/library/trophy-stats'
 import { INSIGHTS_SHOWN, type Insight, type RatedGame } from '@/domain/library/trophy-taste'
-import { dateOf } from '@/features/library/format'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { StatusMark } from '@/features/library/status-mark'
 import { Link } from '@/i18n/navigation'
 
-import { AsTable, Columns, scopeHref, Section, withFilter } from './chart-parts'
+import { AsTable, BoardTitle, Columns, Panel, scopeHref, withFilter } from './chart-parts'
 
 /**
  * The trophy page's second phase (issue 68): what the figures say, in a few
- * sentences; my ratings, and how they stand against IGDB's players'; how far
- * through each series I am; and my years, oldest first, with their
- * milestones. Drawn without a script, as the first phase is.
+ * sentences; my ratings, and how they stand against IGDB's players'; and how
+ * far through each series I am. Drawn without a script, as the first phase
+ * is. My years and their milestones are the timeline's rows.
  */
 
 type Props = { stats: TrophyStats; handle: string; q?: string }
@@ -184,6 +183,7 @@ export function Insights({
   const t = useTranslations('Trophies.insights')
   const said = useSaid()
   const saidOfAchievements = useSaidOfAchievements()
+  const titleId = useId()
   const { stats } = props
   const more = achievements.slice(0, Math.max(2, INSIGHTS_SHOWN - stats.insights.length))
   const shown = [
@@ -198,31 +198,28 @@ export function Insights({
   ]
   if (shown.length === 0) return null
   return (
-    <section aria-label={t('label')} className="trophy-insights-section">
+    <section aria-labelledby={titleId} className="trophy-group">
+      <BoardTitle id={titleId}>{t('label')}</BoardTitle>
       <ul className="trophy-insights">
-        {shown.map(({ kind, text, href }) => {
-          return (
-            <li key={kind} className="trophy-insight">
-              <p className="readout text-[0.625rem] text-muted">{t(`kinds.${kind}`)}</p>
-              <p className="mt-1.5 text-sm text-pretty">{text}</p>
-              {href ? (
-                <Link
-                  href={href}
-                  className="mt-2 inline-block readout text-[0.625rem] underline-offset-4 hover:underline"
-                >
-                  {t('see')}
-                </Link>
-              ) : null}
-            </li>
-          )
-        })}
+        {shown.map(({ kind, text, href }) => (
+          // With a way to its games, the whole card is the way: its link reaches across it.
+          <li key={kind} className="trophy-insight" data-linked={href ? '' : undefined}>
+            <p className="readout text-[0.625rem] text-muted">{t(`kinds.${kind}`)}</p>
+            <p className="trophy-insight-text">{text}</p>
+            {href ? (
+              <Link href={href} className="trophy-insight-link">
+                {t('see')}
+              </Link>
+            ) : null}
+          </li>
+        ))}
       </ul>
     </section>
   )
 }
 
 /** How my ratings fall: a column for each whole point, a half step with the point below. */
-function Spread({ stats, handle, q }: Props) {
+function Spread({ stats, handle, q, wide }: Props & { wide: boolean }) {
   const t = useTranslations('Trophies.ratings')
   const format = useFormatter()
   const spread = stats.ratings!.spread
@@ -239,37 +236,34 @@ function Spread({ stats, handle, q }: Props) {
       ? t('spreadTen', { count })
       : t('spreadSays', { rating: String(point), half: half(point), count })
   return (
-    <div className="min-w-0">
-      <h3 className="readout text-[0.625rem] text-muted">
-        {t('spread', { count: stats.ratings!.rated })}
-      </h3>
-      <div className="mt-3">
-        <Columns
-          emphasis={false}
-          columns={points.map(({ point, count }) => ({
-            key: String(point),
-            label: String(point),
-            value: count,
-            says: says(point, count),
-            href: libraryHref(handle, {
-              q: withFilter(
-                `${point === 10 ? 'rating:10' : `rating:${point}..${point + 0.5}`}${scoped}`,
-                q,
-              ),
-            }),
-            labelled: count > 0 && count === busiest,
-          }))}
+    <Panel title={t('spread', { count: stats.ratings!.rated })} span={wide ? 12 : 7}>
+      <Columns
+        emphasis={false}
+        columns={points.map(({ point, count }) => ({
+          key: String(point),
+          label: String(point),
+          value: count,
+          says: says(point, count),
+          href: libraryHref(handle, {
+            q: withFilter(
+              `${point === 10 ? 'rating:10' : `rating:${point}..${point + 0.5}`}${scoped}`,
+              q,
+            ),
+          }),
+          labelled: count > 0 && count === busiest,
+        }))}
+      />
+      <div className="trophy-panel-foot">
+        <AsTable
+          caption={t('spreadCaption')}
+          head={[t('rating'), t('games')]}
+          rows={points.map(({ point, count }) => [
+            point === 10 ? '10' : `${point}–${half(point)}`,
+            format.number(count),
+          ])}
         />
       </div>
-      <AsTable
-        caption={t('spreadCaption')}
-        head={[t('rating'), t('games')]}
-        rows={points.map(({ point, count }) => [
-          point === 10 ? '10' : `${point}–${half(point)}`,
-          format.number(count),
-        ])}
-      />
-    </div>
+    </Panel>
   )
 }
 
@@ -293,10 +287,16 @@ function Versus({ stats, handle }: Props) {
     </>
   )
   return (
-    <figure className="m-0 min-w-0">
-      <figcaption className="readout text-[0.625rem] text-muted">
-        {t('versus', { count: versus.games.length })}
-      </figcaption>
+    <Panel
+      title={t('versus', { count: versus.games.length })}
+      caption={
+        gap === 0
+          ? t('gapNone')
+          : t('gap', { gap: tenths(Math.abs(gap)), direction: gap > 0 ? 'higher' : 'lower' })
+      }
+      span={5}
+      rows={2}
+    >
       {/* The table below says the same, a link for each game, for screen readers and keyboards. */}
       <div aria-hidden="true" className="trophy-scatter-frame">
         <span className="trophy-scatter-axis readout" data-axis="y">
@@ -329,23 +329,20 @@ function Versus({ stats, handle }: Props) {
           {ends(t('mine'))}
         </span>
       </div>
-      <p className="mt-2 text-sm text-muted">
-        {gap === 0
-          ? t('gapNone')
-          : t('gap', { gap: tenths(Math.abs(gap)), direction: gap > 0 ? 'higher' : 'lower' })}
-      </p>
-      <AsTable
-        caption={t('versusCaption')}
-        head={[t('game'), t('mine'), t('theirs')]}
-        rows={versus.games.map((game) => [
-          <Link key="game" href={gameHref(handle, game.slug)}>
-            {game.title}
-          </Link>,
-          tenths(game.mine),
-          tenths(game.theirs),
-        ])}
-      />
-    </figure>
+      <div className="trophy-panel-foot">
+        <AsTable
+          caption={t('versusCaption')}
+          head={[t('game'), t('mine'), t('theirs')]}
+          rows={versus.games.map((game) => [
+            <Link key="game" href={gameHref(handle, game.slug)}>
+              {game.title}
+            </Link>,
+            tenths(game.mine),
+            tenths(game.theirs),
+          ])}
+        />
+      </div>
+    </Panel>
   )
 }
 
@@ -357,9 +354,9 @@ function Gaps({ title, games, handle }: { title: string; games: RatedGame[]; han
   if (games.length === 0) return null
   return (
     <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
+      <h4 id={id} className="readout text-[0.625rem] text-muted">
         {title}
-      </h3>
+      </h4>
       <ol className="trophy-gaps">
         {games.map((game) => (
           <li key={game.slug}>
@@ -369,7 +366,7 @@ function Gaps({ title, games, handle }: { title: string; games: RatedGame[]; han
             >
               {game.title}
             </Link>
-            <span className="readout text-[0.625rem] text-muted">
+            <span className="trophy-gaps-pair">
               {t('pair', { mine: tenths(game.mine), theirs: tenths(game.theirs) })}
             </span>
           </li>
@@ -379,24 +376,28 @@ function Gaps({ title, games, handle }: { title: string; games: RatedGame[]; han
   )
 }
 
-/** My ratings: how they fall, how they stand against IGDB's, and the widest gaps. */
+/**
+ * My ratings, as panels: how they fall, and under it the games furthest from
+ * IGDB's players', beside the square of mine against theirs.
+ */
 export function Ratings(props: Props) {
   const t = useTranslations('Trophies.ratings')
   const ratings = props.stats.ratings
   if (!ratings) return null
+  const wide = !ratings.versus
   return (
-    <Section title={t('title')}>
-      <div className="trophy-ratings">
-        <Spread {...props} />
-        <Versus {...props} />
-        {ratings.gems.length + ratings.letdowns.length > 0 ? (
+    <>
+      <Spread {...props} wide={wide} />
+      <Versus {...props} />
+      {ratings.gems.length + ratings.letdowns.length > 0 ? (
+        <Panel title={t('gaps')} span={wide ? 12 : 7}>
           <div className="trophy-gap-lists">
             <Gaps title={t('gems')} games={ratings.gems} handle={props.handle} />
             <Gaps title={t('letdowns')} games={ratings.letdowns} handle={props.handle} />
           </div>
-        ) : null}
-      </div>
-    </Section>
+        </Panel>
+      ) : null}
+    </>
   )
 }
 
@@ -407,7 +408,7 @@ export function Series({ stats, handle, q }: Props) {
   const { shown, complete } = stats.series
   if (shown.length === 0) return null
   return (
-    <Section
+    <Panel
       title={t('title')}
       aside={
         complete > 0 ? (
@@ -465,7 +466,7 @@ export function Series({ stats, handle, q }: Props) {
                 </ul>
                 <Link
                   href={libraryHref(handle, { q: withFilter(`${series.kind}:${series.slug}`, q) })}
-                  className="mt-2 inline-block readout text-[0.625rem] underline-offset-4 hover:underline"
+                  className="trophy-more-link"
                 >
                   {t('inLibrary')}
                 </Link>
@@ -474,67 +475,6 @@ export function Series({ stats, handle, q }: Props) {
           )
         })}
       </ol>
-    </Section>
-  )
-}
-
-/** My years, oldest first: how many, what led each, and the milestones reached in it. */
-export function History({ stats, handle, q }: Props) {
-  const t = useTranslations('Trophies.history')
-  const format = useFormatter()
-  if (stats.timeline.length === 0) return null
-  return (
-    <Section title={t('title')}>
-      <ol className="trophy-history">
-        {stats.timeline.map((year) => (
-          <li key={year.year} className="trophy-history-year">
-            <p className="trophy-history-head">
-              <Link
-                href={scopeHref(handle, year.year, q, stats.by)}
-                className="title text-2xl underline-offset-4 hover:underline"
-              >
-                {String(year.year)}
-              </Link>
-              <span className="readout text-[0.625rem] text-muted">
-                {t('finished', { count: year.finished })}
-              </span>
-              {year.best ? (
-                <span className="trophy-history-best readout text-[0.5625rem]">{t('best')}</span>
-              ) : null}
-            </p>
-            {year.genre ? (
-              <p className="mt-1 text-sm text-muted">
-                {year.was
-                  ? t('shift', { genre: year.genre.name, was: year.was })
-                  : t('led', { genre: year.genre.name })}
-              </p>
-            ) : null}
-            {year.milestones.length > 0 ? (
-              <ul className="trophy-history-milestones">
-                {year.milestones.map((milestone) => (
-                  <li key={`${milestone.slug}-${milestone.nth ?? 'perfect'}`}>
-                    <span className="readout text-[0.5625rem] text-muted">
-                      {milestone.perfect ? t('perfect') : t('nth', { nth: milestone.nth! })}
-                    </span>
-                    <Link
-                      href={gameHref(handle, milestone.slug)}
-                      className="min-w-0 text-sm font-medium text-balance underline-offset-4 hover:underline"
-                    >
-                      {milestone.title}
-                    </Link>
-                    <span className="readout text-[0.5625rem] text-muted">
-                      {format.dateTime(dateOf(milestone.on), {
-                        dateStyle: 'medium',
-                        timeZone: 'UTC',
-                      })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </li>
-        ))}
-      </ol>
-    </Section>
+    </Panel>
   )
 }
