@@ -1,7 +1,6 @@
 import { useTranslations } from 'next-intl'
 import type { CSSProperties } from 'react'
 
-import { ghostOrder } from '@/features/library/ghosts'
 import { cn } from '@/ui/cn'
 
 import './dashboard.css'
@@ -30,10 +29,11 @@ const MONTH_ROWS = 4
  */
 export function TrophiesSkeleton() {
   const t = useTranslations('Trophies')
-  // Each ghost's turn in the wave that runs down the page.
+  // Each ghost's turn in the wave that runs down the page, as the library's ghosts take theirs
+  // (`ghostOrder`, not imported: its module brings the cases' shapes into this page's script).
   let turn = 0
   const ghost = (className: string, key?: number) => (
-    <span key={key} className={cn('ghost', className)} style={ghostOrder(turn++)} />
+    <span key={key} className={cn('ghost', className)} style={{ '--i': turn++ } as CSSProperties} />
   )
   return (
     <div aria-busy="true">
