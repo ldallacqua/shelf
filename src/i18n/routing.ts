@@ -22,8 +22,10 @@ export const routing = defineRouting({
     '/account': '/account',
     // Setting a new shelf up, where signing up leads.
     '/account/start': '/account/start',
-    // Placing the games a sync brought in (spec 4.5).
+    // Organizing one's games, a tab each (spec 4.5): placing the games a sync
+    // brought in, and the hours of games whose stores count far past IGDB's (4.7).
     '/account/unsorted': '/account/unsorted',
+    '/account/hours': '/account/hours',
     '/consent': '/consent',
     // What Shelf keeps, and how to remove it: Steam's terms ask for one (ADR 003).
     '/privacy': '/privacy',

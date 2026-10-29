@@ -127,6 +127,13 @@ describe('PlaceGames', () => {
       '/en/u/ana/game/hades',
     )
     expect(within(tally()).getByText('3 games left to place.')).toBeInTheDocument()
+    // The first of Organize's tabs.
+    const tabs = within(screen.getByRole('navigation', { name: 'What to organize' }))
+    expect(tabs.getByRole('link', { name: 'Unsorted' })).toHaveAttribute('aria-current', 'page')
+    expect(tabs.getByRole('link', { name: 'Store hours' })).toHaveAttribute(
+      'href',
+      '/en/account/hours',
+    )
   })
 
   it('leaves adult games out on a device that hides them (spec 3.13)', async () => {

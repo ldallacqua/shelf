@@ -81,8 +81,10 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   years are the timeline's rows now. The wall's lights fade out with no edge (row "Wall light,
   eased").
 - **A store's idle time can be taken out** (architecture section 25, row "Idle hours"; spec
-  4.7 and 7.3): Time left idle in the editor, and "Hours from your stores" on the account page
-  for the games whose stores report far past IGDB's time. The owner asked that it never read as
+  4.7 and 7.3): Time left idle in the editor, and Organize's Store hours tab for the games
+  whose stores report far past IGDB's time (row "Organize, in tabs": the owner moved it off
+  the account page, since it is about the games). Games completed without a rating are to be
+  Organize's next tab, when the owner asks for it. The owner asked that it never read as
   doubting the player: nothing marks hours as high, and typed hours are never offered. **Still
   to do:** the backlog's hours left as a range, from IGDB's hasty to normal times (it needs the
   hasty time in the library file), and Shelf for Windows' own counter pausing when no key,

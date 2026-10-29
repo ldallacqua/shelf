@@ -123,7 +123,7 @@ describe('Header', () => {
       '/en/u/sample',
     )
     // Placing one's own games is no part of another's shelf.
-    expect(within(nav).queryByRole('link', { name: /^Place games/ })).not.toBeInTheDocument()
+    expect(within(nav).queryByRole('link', { name: /^Organize/ })).not.toBeInTheDocument()
   })
 
   it('signed in, on one’s own shelf, links on to placing the games that wait, counting them (spec 4.5)', () => {
@@ -131,7 +131,7 @@ describe('Header', () => {
     onShelf('/u/[handle]', '/en/u/ana', 'ana')
     renderWithIntl(<Header />)
     const nav = screen.getByRole('navigation', { name: 'Main' })
-    const placing = within(nav).getByRole('link', { name: 'Place games, 180 games waiting' })
+    const placing = within(nav).getByRole('link', { name: 'Organize, 180 games waiting' })
     expect(placing).toHaveAttribute('href', '/en/account/unsorted')
     expect(placing).not.toHaveAttribute('aria-current')
     expect(within(placing).getByText('180')).toHaveAttribute('aria-hidden', 'true')
@@ -141,13 +141,13 @@ describe('Header', () => {
     who.account = { ...ANA, waiting: 1200 }
     onShelf('/u/[handle]', '/en/u/ana', 'ana')
     const { unmount } = renderWithIntl(<Header />)
-    expect(
-      screen.getByRole('link', { name: 'Place games, 1,200 games waiting' }),
-    ).toHaveTextContent('999+')
+    expect(screen.getByRole('link', { name: 'Organize, 1,200 games waiting' })).toHaveTextContent(
+      '999+',
+    )
     unmount()
     who.account = { ...ANA, waiting: 0 }
     renderWithIntl(<Header />)
-    expect(screen.getByRole('link', { name: 'Place games' })).toHaveTextContent(/^Place games$/)
+    expect(screen.getByRole('link', { name: 'Organize' })).toHaveTextContent(/^Organize$/)
   })
 
   it('marks placing as the current page on it, in Portuguese too', () => {
@@ -159,6 +159,14 @@ describe('Header', () => {
       'aria-current',
       'page',
     )
+  })
+
+  it('marks it as the current page on its hours tab too', () => {
+    who.account = { ...ANA, waiting: 0 }
+    setPathname('/account/hours')
+    page.path = '/en/account/hours'
+    renderWithIntl(<Header />)
+    expect(screen.getByRole('link', { name: 'Organize' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('is in Portuguese on a Portuguese page', () => {
@@ -235,7 +243,7 @@ describe('MobileNav', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Menu' }))
     expect(
       within(screen.getByRole('menu')).getByRole('menuitem', {
-        name: 'Place games, 3 games waiting',
+        name: 'Organize, 3 games waiting',
       }),
     ).toHaveAttribute('href', '/en/account/unsorted')
   })
