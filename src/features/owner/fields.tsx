@@ -178,6 +178,8 @@ type DayFieldProps = {
   onChange: (day: Day | undefined) => void
   /** Whether the day can be taken away again. */
   clearable?: boolean
+  /** Said under the field. */
+  hint?: string
   disabled?: boolean
   className?: string
 }
@@ -188,12 +190,14 @@ export function DayField({
   value,
   onChange,
   clearable,
+  hint,
   disabled,
   className,
 }: DayFieldProps) {
   const t = useTranslations('Fields')
   const locale = useLocale()
   const labelId = useId()
+  const hintId = useId()
   const now = today()
   return (
     <div className={className ?? 'grid gap-1.5'}>
@@ -202,6 +206,7 @@ export function DayField({
       </span>
       <DatePicker
         aria-labelledby={labelId}
+        aria-describedby={hint ? hintId : undefined}
         value={value}
         onChange={onChange}
         placeholder={t('pickDay')}
@@ -215,6 +220,11 @@ export function DayField({
         }}
         disabled={disabled}
       />
+      {hint ? (
+        <p id={hintId} className="text-xs text-muted">
+          {hint}
+        </p>
+      ) : null}
     </div>
   )
 }

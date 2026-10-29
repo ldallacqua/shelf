@@ -920,3 +920,134 @@ describe('a game’s apps on Steam (spec 7.7)', () => {
     expect(play).toHaveLength(3)
   })
 })
+
+describe('the day a game was finished (spec 7.3)', () => {
+  let entry: string
+  let pc: string
+  let onSwitch: string
+
+  /** One platform's record of the game, on one of its copies, last played at `at`. */
+  const played = (source: 'steam' | 'nintendo', copyId: string, at: number | null) =>
+    db.insert(sourceItems).values({
+      id: `${source}-${copyId}`,
+      userId: me,
+      source,
+      storeId: `${source}-hades`,
+      title: 'Hades',
+      evidence: 'played',
+      minutes: 600,
+      lastPlayedAt: at,
+      firstSeenAt: 1,
+      lastSeenAt: 1,
+      igdbId: 113112,
+      resolvedBy: 'store_id',
+      decision: 'copy',
+      copyId,
+    })
+
+  const finishedOn = async () =>
+    (await db.select().from(entries).where(eq(entries.id, entry)))[0]?.completedOn ?? null
+
+  beforeEach(async () => {
+    entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'playing',
+      copies: [
+        { platformId: PC, format: 'digital' },
+        { platformId: SWITCH, format: 'digital' },
+      ],
+    })
+    const rows = await db.select().from(copies).where(eq(copies.entryId, entry))
+    pc = rows.find((row) => row.platformId === PC)!.id
+    onSwitch = rows.find((row) => row.platformId === SWITCH)!.id
+  })
+
+  it('is the day it was last played on any platform, when it is marked completed without one', async () => {
+    await played('steam', pc, Date.parse('2024-03-10T20:00:00Z'))
+    await played('nintendo', onSwitch, Date.parse('2025-06-01T09:30:00Z'))
+    await updateEntry(db, me, entry, { status: 'completed' })
+    expect(await finishedOn()).toBe('2025-06-01')
+    expect((await readOwnerGame(db, me, entry))?.lastPlayedOn).toBe('2025-06-01')
+  })
+
+  it('keeps a day I chose, and a later play moves no day once set', async () => {
+    await played('steam', pc, Date.parse('2024-03-10T20:00:00Z'))
+    await updateEntry(db, me, entry, { status: 'completed', completedOn: '2023-01-01' })
+    expect(await finishedOn()).toBe('2023-01-01')
+
+    await updateEntry(db, me, entry, { completedOn: null })
+    expect(await finishedOn()).toBe('2024-03-10')
+    await db
+      .update(sourceItems)
+      .set({ lastPlayedAt: Date.parse('2026-01-05T12:00:00Z') })
+      .where(eq(sourceItems.copyId, pc))
+    await feedCopies(db, me, 'steam')
+    await updateEntry(db, me, entry, { status: 'completed' })
+    expect(await finishedOn()).toBe('2024-03-10')
+  })
+
+  it('stays unknown when no platform saw it played, and is no finish while not completed', async () => {
+    await played('steam', pc, null)
+    await updateEntry(db, me, entry, { status: 'completed' })
+    expect(await finishedOn()).toBeNull()
+    expect((await readOwnerGame(db, me, entry))?.lastPlayedOn).toBeUndefined()
+
+    await updateEntry(db, me, entry, { status: 'playing' })
+    await db
+      .update(sourceItems)
+      .set({ lastPlayedAt: Date.parse('2025-06-01T09:30:00Z') })
+      .where(eq(sourceItems.copyId, pc))
+    await feedCopies(db, me, 'steam')
+    expect(await finishedOn()).toBeNull()
+  })
+
+  it('comes with a sync for a completed game still without one, raising the version', async () => {
+    await updateEntry(db, me, entry, { status: 'completed' })
+    expect(await finishedOn()).toBeNull()
+    await played('nintendo', onSwitch, Date.parse('2025-06-01T09:30:00Z'))
+    const before = await readVersion(db, me)
+    expect(await feedCopies(db, me, 'nintendo')).toBe(true)
+    expect(await finishedOn()).toBe('2025-06-01')
+    expect(await readVersion(db, me)).toBeGreaterThan(before)
+  })
+
+  it('comes the same way for games marked completed many at once, or through the API', async () => {
+    await played('steam', pc, Date.parse('2024-03-10T20:00:00Z'))
+    await setStatuses(db, me, [entry], 'completed')
+    expect(await finishedOn()).toBe('2024-03-10')
+
+    await patchEntry(db, me, entry, { mine: { completedOn: '2022-02-02' } })
+    await patchEntry(db, me, entry, { mine: { completedOn: null } })
+    expect(await finishedOn()).toBe('2024-03-10')
+  })
+
+  it('is never taken from another library’s play', async () => {
+    const theirs = await createEntry(db, other, {
+      primaryGameId: hades,
+      status: 'completed',
+      copies: [{ platformId: PC, format: 'digital' }],
+    })
+    const [copy] = await db.select().from(copies).where(eq(copies.entryId, theirs))
+    await db.insert(sourceItems).values({
+      id: 'steam-theirs',
+      userId: other,
+      source: 'steam',
+      storeId: '1145360',
+      title: 'Hades',
+      evidence: 'played',
+      minutes: 60,
+      lastPlayedAt: Date.parse('2025-06-01T09:30:00Z'),
+      firstSeenAt: 1,
+      lastSeenAt: 1,
+      igdbId: 113112,
+      resolvedBy: 'store_id',
+      decision: 'copy',
+      copyId: copy!.id,
+    })
+    await updateEntry(db, me, entry, { status: 'completed' })
+    expect(await finishedOn()).toBeNull()
+    await feedCopies(db, me, 'steam')
+    const [row] = await db.select().from(entries).where(eq(entries.id, theirs))
+    expect(row?.completedOn).toBeNull()
+  })
+})

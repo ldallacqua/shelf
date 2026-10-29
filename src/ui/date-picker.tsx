@@ -28,6 +28,7 @@ type DatePickerProps = {
   }
   disabled?: boolean
   'aria-labelledby'?: string
+  'aria-describedby'?: string
   className?: string
 }
 
@@ -64,6 +65,7 @@ function DatePicker({
         id={id}
         disabled={disabled}
         aria-labelledby={[props['aria-labelledby'], valueId].filter(Boolean).join(' ')}
+        aria-describedby={props['aria-describedby']}
         data-slot="date-picker"
         data-placeholder={value ? undefined : ''}
         className={cn(

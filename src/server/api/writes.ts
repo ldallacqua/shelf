@@ -210,7 +210,13 @@ export const apiGamePatch = z
       .optional()
       .describe('Only its owner sees it: in no public page, file or answer'),
     rating: z.number().min(0).max(10).nullable().optional().describe('Out of ten; null clears it'),
-    completedOn: z.iso.date().nullable().optional(),
+    completedOn: z.iso
+      .date()
+      .nullable()
+      .optional()
+      .describe(
+        'The day it was finished. A completed game left without one takes the day a linked platform last saw it played',
+      ),
     notes: z.string().max(MAX_NOTES).nullable().optional(),
     notesPublic: z.boolean().optional(),
     tags: z.array(z.string().min(1).max(40)).max(20).optional().describe('All of them: replaces'),
@@ -263,6 +269,10 @@ export const apiOwnerGame = z
     private: z.boolean().describe('Only its owner sees it'),
     rating: z.number().min(0).max(10).optional().describe('Out of ten'),
     completedOn: z.iso.date().optional(),
+    lastPlayedOn: z.iso
+      .date()
+      .optional()
+      .describe('The day a linked platform last saw it played; absent when none did'),
     notes: z
       .string()
       .optional()
