@@ -41,7 +41,7 @@ const unlock = (name: string, rate: number, day?: string): Unlocked => ({
   key: `steam:1/${name}`,
   name,
   rate,
-  icon: `https://cdn.akamai.steamstatic.com/${name}.jpg`,
+  icon: `https://shared.akamai.steamstatic.com/community_assets/images/apps/1/${name}.jpg`,
   ...(day ? { at: at(day) } : {}),
 })
 

@@ -23,7 +23,7 @@ const SHELF: ShelfInfo = {
 }
 
 const NOW = Date.UTC(2025, 9, 20)
-const ICON = 'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/220'
+const ICON = 'https://shared.akamai.steamstatic.com/community_assets/images/apps/220'
 
 const achievement = (id: string, more: Partial<AchievementView> = {}): AchievementView => ({
   id,

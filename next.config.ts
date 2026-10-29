@@ -21,7 +21,8 @@ const toolbar = (...sources: string[]) => (preview ? sources : [])
 /**
  * What a page may load and do (architecture, section 20). Scripts and styles
  * come from the site itself, covers from IGDB's image servers, achievements'
- * artwork from Steam's (`domain/achievements/steam.ts`), and nothing
+ * artwork from Steam's (`domain/achievements/steam.ts`; the older host only
+ * until the addresses stored with it move), and nothing
  * else is fetched but the desktop app's commands; a game's video, once pressed, plays in YouTube's frame. Inline scripts are allowed: pages are built ahead of
  * time, so they cannot carry a fresh nonce, and Next.js and React write
  * inline scripts of their own. React needs `eval` while developing only.
@@ -40,6 +41,7 @@ const contentSecurityPolicy = Object.entries({
     'data:',
     'blob:',
     'https://images.igdb.com',
+    'https://shared.akamai.steamstatic.com',
     'https://cdn.akamai.steamstatic.com',
     ...toolbar('https://vercel.live', 'https://vercel.com'),
   ],

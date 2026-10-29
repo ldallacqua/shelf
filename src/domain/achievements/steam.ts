@@ -66,7 +66,12 @@ export const steamGameAchievementsSchema = z.object({
 
 export type SteamGameAchievements = z.infer<typeof steamGameAchievementsSchema>
 
-export const STEAM_IMAGE_HOST = 'https://cdn.akamai.steamstatic.com'
+/**
+ * Steam's image servers for achievements' artwork. Checked on 29 Oct 2026:
+ * the older `cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/`
+ * answers 404 for a game out this year, where this one has every game's.
+ */
+export const STEAM_IMAGE_HOST = 'https://shared.akamai.steamstatic.com'
 
 /**
  * An achievement's artwork: Steam names a file in the game's folder on its
@@ -77,7 +82,7 @@ export const steamImage = (appId: string, file: string | undefined): string | un
   if (!name || !/^\d{1,10}$/.test(appId) || !/^[\w-][\w.-]{0,119}\.(?:jpg|png)$/.test(name)) {
     return undefined
   }
-  return `${STEAM_IMAGE_HOST}/steamcommunity/public/images/apps/${appId}/${name}`
+  return `${STEAM_IMAGE_HOST}/community_assets/images/apps/${appId}/${name}`
 }
 
 /** A game's achievements as Steam defines them, or nothing when it has none. */

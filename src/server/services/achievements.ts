@@ -445,14 +445,15 @@ export const readMyAchievements = (source: unknown) => {
  * A public library's achievements on its trophy page (issue 68), in the
  * visitor's language. Kept until the library changes or a read of its
  * achievements does, and worked out again once a day besides, so "this
- * year" turns with the calendar.
+ * year" turns with the calendar. Kept where every server instance finds it,
+ * as the trophy wall is (`getTrophyWall`).
  */
 export const getAchievementWall = async (
   libraryId: string,
   language: AchievementLanguage,
   { scope, q, rarity }: AchievementOptions = {},
 ): Promise<AchievementWall> => {
-  'use cache'
+  'use cache: remote'
   cacheTag(libraryTag(libraryId), achievementsTag(libraryId))
   cacheLife('days')
   const [library, unlocks] = await Promise.all([
