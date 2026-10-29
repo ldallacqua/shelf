@@ -2,8 +2,9 @@ import { CheckIcon, ChevronDownIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
 import { type CSSProperties, useId } from 'react'
 
+import type { AchievementInsight } from '@/domain/library/trophy-achievements'
 import type { TrophyStats } from '@/domain/library/trophy-stats'
-import type { Insight, RatedGame } from '@/domain/library/trophy-taste'
+import { INSIGHTS_SHOWN, type Insight, type RatedGame } from '@/domain/library/trophy-taste'
 import { dateOf } from '@/features/library/format'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { StatusMark } from '@/features/library/status-mark'
@@ -127,20 +128,82 @@ function useSaid() {
   }
 }
 
-/** What the figures say, in a few sentences, each with the way to its games. */
-export function Insights(props: Props) {
+/** An achievement's insight in words, and where its game is. */
+function useSaidOfAchievements() {
+  const t = useTranslations('Trophies.insights')
+  const format = useFormatter()
+  return (
+    insight: AchievementInsight,
+    handle: string,
+  ): { text: string; href?: Parameters<typeof Link>[0]['href'] } => {
+    switch (insight.kind) {
+      case 'unlocks':
+        return {
+          text: insight.best
+            ? t('unlocksBest', {
+                count: insight.count,
+                best: insight.than.count,
+                bestYear: String(insight.than.year),
+              })
+            : t('unlocksAhead', {
+                count: insight.count,
+                last: insight.than.count,
+                lastYear: String(insight.than.year),
+              }),
+        }
+      case 'close':
+        return {
+          text: t('close', { count: insight.left, title: insight.game.title }),
+          href: { ...gameHref(handle, insight.game.slug), hash: 'achievements' },
+        }
+      case 'rarest':
+        return {
+          text: t('rarest', {
+            name: insight.unlock.name,
+            title: insight.unlock.game.title,
+            share: format.number(insight.unlock.rate! / 100, {
+              style: 'percent',
+              maximumFractionDigits: 1,
+            }),
+          }),
+          href: { ...gameHref(handle, insight.unlock.game.slug), hash: 'achievements' },
+        }
+    }
+  }
+}
+
+/**
+ * What the figures say, in a few sentences, each with the way to its games:
+ * the library's, and up to two of its achievements' (more where the library
+ * has less to say).
+ */
+export function Insights({
+  achievements = [],
+  ...props
+}: Props & { achievements?: readonly AchievementInsight[] }) {
   const t = useTranslations('Trophies.insights')
   const said = useSaid()
+  const saidOfAchievements = useSaidOfAchievements()
   const { stats } = props
-  if (stats.insights.length === 0) return null
+  const more = achievements.slice(0, Math.max(2, INSIGHTS_SHOWN - stats.insights.length))
+  const shown = [
+    ...stats.insights.slice(0, INSIGHTS_SHOWN - more.length).map((insight) => ({
+      kind: insight.kind,
+      ...said(insight, props),
+    })),
+    ...more.map((insight) => ({
+      kind: insight.kind,
+      ...saidOfAchievements(insight, props.handle),
+    })),
+  ]
+  if (shown.length === 0) return null
   return (
     <section aria-label={t('label')} className="trophy-insights-section">
       <ul className="trophy-insights">
-        {stats.insights.map((insight) => {
-          const { text, href } = said(insight, props)
+        {shown.map(({ kind, text, href }) => {
           return (
-            <li key={insight.kind} className="trophy-insight">
-              <p className="readout text-[0.625rem] text-muted">{t(`kinds.${insight.kind}`)}</p>
+            <li key={kind} className="trophy-insight">
+              <p className="readout text-[0.625rem] text-muted">{t(`kinds.${kind}`)}</p>
               <p className="mt-1.5 text-sm text-pretty">{text}</p>
               {href ? (
                 <Link

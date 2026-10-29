@@ -3,6 +3,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { type CSSProperties, useId } from 'react'
 
 import { ledFrom } from '@/domain/color/palette'
+import type { AchievementStats, AchievementWall } from '@/domain/library/trophy-achievements'
 import type { Trophy, TrophyStats, TrophyWall } from '@/domain/library/trophies'
 import { Cover } from '@/features/library/cover'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
@@ -113,11 +114,21 @@ function Year({
 }
 
 /** The figures, and above them which trophies they are of. */
-function Figures({ stats, handle, q }: { stats: TrophyStats; handle: string; q?: string }) {
+function Figures({
+  stats,
+  achievements,
+  handle,
+  q,
+}: {
+  stats: TrophyStats
+  achievements?: AchievementStats
+  handle: string
+  q?: string
+}) {
   return (
     <>
       <TrophyFilters stats={stats} handle={handle} q={q} />
-      <Dashboard stats={stats} handle={handle} q={q} />
+      <Dashboard stats={stats} achievements={achievements} handle={handle} q={q} />
     </>
   )
 }
@@ -139,14 +150,18 @@ function NoneMatch({ handle }: { handle: string }) {
  * The trophy page (spec 3.9, issue 68): which trophies, the figures, then
  * every finished game, face-out, each under its own light, by the year it was
  * finished. Drawn on the server for a public shelf, and in its own browser for
- * a private one. `q` is the filter the wall was worked out with.
+ * a private one. `q` is the filter the wall was worked out with, and the
+ * achievements' too.
  */
 export function TrophyWallView({
   wall,
+  achievements,
   handle,
   q,
 }: {
   wall: TrophyWall
+  /** Its games' achievements, worked out on the server (issue 68). */
+  achievements?: AchievementWall
   handle: string
   q?: string
 }) {
@@ -162,14 +177,19 @@ export function TrophyWallView({
         // Both, and CSS shows the one this device's choice asks for (spec 3.13), from the first paint.
         <>
           <div data-when-adult="shown">
-            <Figures stats={wall.stats} handle={handle} q={q} />
+            <Figures stats={wall.stats} achievements={achievements?.stats} handle={handle} q={q} />
           </div>
           <div data-when-adult="hidden">
-            <Figures stats={wall.hidden} handle={handle} q={q} />
+            <Figures
+              stats={wall.hidden}
+              achievements={achievements?.hidden}
+              handle={handle}
+              q={q}
+            />
           </div>
         </>
       ) : (
-        <Figures stats={wall.stats} handle={handle} q={q} />
+        <Figures stats={wall.stats} achievements={achievements?.stats} handle={handle} q={q} />
       )}
       {wall.years.length === 0 ? <NoneMatch handle={handle} /> : null}
       {wall.years.map(({ year, trophies }, index) => (

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { AchievementSetView, AchievementView } from './achievements'
-import { arrangeAchievements, progressOf, summarize } from './progress'
+import { arrangeAchievements, progressOf } from './progress'
 
 const achievement = (id: string, more: Partial<AchievementView> = {}): AchievementView => ({
   id,
@@ -49,55 +49,6 @@ describe('a set’s progress', () => {
     expect(progressOf(set([], { state: 'private' }))).toBeUndefined()
     expect(progressOf(set([], { state: 'none' }))).toBeUndefined()
     expect(progressOf(set([]))).toEqual({ earned: 0, total: 0, unknown: 0, complete: false })
-  })
-})
-
-describe('a library’s totals', () => {
-  const all = (id: string, at: number, rate: number) =>
-    achievement(id, { state: 'unlocked', unlockedAt: at, rate })
-
-  it('counts a game perfect only when every set of it with achievements is complete', () => {
-    const summary = summarize([
-      { slug: 'done', title: 'Done', sets: [set([all('a', 5, 50)]), set([], { state: 'none' })] },
-      {
-        slug: 'half',
-        title: 'Half',
-        sets: [set([all('b', 6, 3)]), set([achievement('c')], { setId: '2' })],
-      },
-      // Not read yet: neither counted nor perfect.
-      { slug: 'later', title: 'Later', sets: [set([], { state: 'pending' })] },
-      {
-        slug: 'unknown',
-        title: 'Unknown',
-        sets: [set([all('d', 7, 1)]), set([], { state: 'private' })],
-      },
-    ])
-    expect(summary).toMatchObject({ games: 3, unlocked: 3, available: 4, perfect: 1 })
-  })
-
-  it('lists the latest unlocks by when they were, and the rarest by Steam’s rates', () => {
-    const summary = summarize(
-      [
-        {
-          slug: 'one',
-          title: 'One',
-          sets: [
-            set([
-              all('old', 100, 40),
-              all('new', 300, 90),
-              achievement('when?', { state: 'unlocked', rate: 0.5 }),
-              achievement('locked', { rate: 0.1 }),
-            ]),
-          ],
-        },
-        { slug: 'two', title: 'Two', sets: [set([all('mid', 200, 2)], { readAt: 5000 })] },
-      ],
-      { recent: 2, rarest: 3 },
-    )
-    expect(summary.recent.map((each) => each.achievement.id)).toEqual(['new', 'mid'])
-    expect(summary.rarest.map((each) => each.achievement.id)).toEqual(['when?', 'mid', 'old'])
-    expect(summary.rarest[1]).toMatchObject({ slug: 'two', game: 'Two', provider: 'steam' })
-    expect(summary).toMatchObject({ readFrom: 1000, readTo: 5000 })
   })
 })
 

@@ -2,8 +2,9 @@
 
 import { lazy, Suspense, type ReactNode } from 'react'
 
-import type { WallOptions } from '@/domain/library/trophies'
 import { useIsMine } from '@/features/owner/account'
+
+import type { Which } from './wall-address'
 
 const OwnTrophies = lazy(() =>
   import('./own-trophies').then((module) => ({ default: module.OwnTrophies })),
@@ -12,8 +13,8 @@ const OwnTrophies = lazy(() =>
 /**
  * A public shelf's trophy wall, drawn by the server for everyone. To its own
  * account, the wall again with the games only it sees (spec 11.1), whose
- * code is fetched only for it; until then, and when none of them is
- * finished, the server's wall stands.
+ * code is fetched only for it; until then, and when it has none, the
+ * server's wall stands.
  */
 export function PublicTrophies({
   handle,
@@ -22,7 +23,7 @@ export function PublicTrophies({
 }: {
   handle: string
   /** Which trophies the address asks for. */
-  which: Pick<WallOptions, 'scope' | 'q' | 'by'>
+  which: Which
   children: ReactNode
 }) {
   const mine = useIsMine(handle)
