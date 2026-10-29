@@ -41,6 +41,22 @@ test.describe('the trophy wall', () => {
     await expect(page.getByText('Games finished', { exact: true })).toBeVisible()
   })
 
+  test('ranks what is finished as asked, and keeps it on the way to a year (issue 68)', async ({
+    page,
+  }) => {
+    await page.goto(`/en${SHELF}/trophies`)
+    const rankBy = page.getByRole('list', { name: 'Rank by' })
+    await rankBy.getByRole('link', { name: 'Hours' }).click()
+    await expect(page).toHaveURL(/by=hours/)
+    await expect(rankBy.getByRole('link', { name: 'Hours' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    await page.getByRole('list', { name: 'Period' }).getByRole('link').nth(1).click()
+    await expect(page).toHaveURL(/year=\d{4}.*by=hours/)
+    await expect(page.getByRole('region', { name: 'What is finished' })).toBeVisible()
+  })
+
   test('a trophy leads to its game', async ({ page }) => {
     await page.goto(`/en${SHELF}/trophies`)
     const first = page.locator('main li.trophy').first().getByRole('link')

@@ -39,7 +39,7 @@ function MyTrophies({ handle, which }: { handle: string; which: Which }) {
 }
 
 /** Which trophies the address asks for. */
-type Which = Pick<WallOptions, 'scope' | 'q'>
+type Which = Pick<WallOptions, 'scope' | 'q' | 'by'>
 
 /**
  * A private shelf's trophy wall (ADR 004). Its page is a frame; for its own

@@ -378,7 +378,7 @@ The light is a small lamp above the cover throwing the game's own color down the
 cover stands on a short plinth. A trophy opens the game's page. A game finished on a day I
 never recorded stands last, under "Day not recorded".
 
-**Above the wall, its figures** (the first phase of issue 68, built 28 Oct 2026). The owner
+**Above the wall, its figures** (the first two phases of issue 68, built 28 Oct 2026). The owner
 asked for the trophy page to become "a personal gaming museum", after Steam Replay and
 PlayStation Wrap-Up: "Every statistic should tell a story, and every story should let users
 explore the games behind it."
@@ -396,6 +396,23 @@ explore the games behind it."
   games), the median hours of a finished game, games dropped, the months in a row with a game
   finished (still going while this month has none yet) with the best run, the finished game I
   played longest, and the platform I played most on, by the hours on each game's main copy.
+- **What the figures say** (phase 2). Under the headline, up to six sentences, each from enough
+  games to mean something and each with the way to its games:
+  - this year against the years before: the best yet (past a year of three or more), ahead of
+    all of last year, or a few short of it;
+  - a game finished in this month of an earlier year;
+  - this year's leading genre, when it is not the favorite of all time;
+  - the genre I finish most of what I start, ten points or more above the rest (five started
+    or more);
+  - the developer I rate highest (three of its games rated);
+  - how my ratings stand against IGDB's players' (ten games or more, three tenths apart or
+    more);
+  - how long I take against IGDB's normal playthrough (five games, a quarter longer or a fifth
+    shorter);
+  - whether the games I finish came out long before (five years or more, for half of ten
+    games or more) or only just.
+
+  Of one year's page, only the ones about its own games.
 - **Year by year.** A column for each year from the first finish to this one, a year with none
   as an empty column. Each leads to that year's page; on a year's page, that year's column is in
   the accent and the others are quiet, and it leads back to all time. The best year and this
@@ -406,7 +423,32 @@ explore the games behind it."
 - **What is finished.** The eight genres, themes and platforms with the most games finished,
   most first, each with the share of its started games finished once five were started. A
   platform counts every game owned on it, as `owned:` does. Each leads to those games in the
-  library.
+  library. Phase 2 adds five each of modes, perspectives, developers and publishers, and the
+  games finished by the decade they came out in (each decade leads to `year:2010..2019`).
+  - **Rank by** Finished, Hours (on the games finished), Rating (my average, once three of the
+    kind's finished games are rated) or Share finished (once five were started; of all time
+    only, since a year's games began whenever they did). The choice is in the address
+    (`?by=hours`) and kept by the period, the filter and every way onward. A kind without
+    enough to say the measure is left out of that ranking. A rating or a share is drawn against
+    the whole; a count or hours against the longest. Each row also says how many it finished.
+- **Ratings** (phase 2). How my ratings fall, a column for each point (a half step with the
+  point below), each leading to the games of that rating (`rating:8..8.5`). Then mine against
+  IGDB's players', one dot a game, on a square where the dashed line is where the two agree;
+  both axes start at the same round point under the lowest rating, so the dots spread. Only
+  games ten or more IGDB players rated are drawn, and only from five. Under it, the average gap
+  in words, and the games I rated 1.5 points or more above IGDB's, and below, the widest first.
+- **Series** (phase 2, of all time). How far through each series or franchise on the shelf I
+  am: those with two games or more and one finished, the most finished first, eight of them,
+  as a bar of finished over had. Wishlist games are not had, and a retired one had no end to
+  reach, so neither counts. A series and a franchise of the same name are one. Opened, a series
+  lists its games by release with their status, and leads to them in the library. Beside the
+  title, how many are finished whole. Only the games on the shelf are known: how many a series
+  has in all is IGDB's to say, and is not asked.
+- **Your years** (phase 2, of all time). Every year with a finish, oldest first, read across
+  then down: how many, the genre that led it (when one leads with two or more, of three or more
+  games), the one it took over from, the best year marked, and the milestones reached in it: the
+  1st, 10th, 25th, 50th, 100th, 250th, 500th and 1000th finish, and the first game I rated 10.
+  Each year leads to its page.
 - **Records.** The first finish recorded, the quickest finish, the game played longest of all
   when that is not the longest finished, the best rated finish, the oldest game finished, the
   best year and month, and the longest run of months. A month or a year leads to its games.
@@ -416,7 +458,9 @@ explore the games behind it."
 Started is playing, finished or dropped; a retired game is out of it, since it had no end to
 reach (3.12). What cannot be known yet (no ratings, nothing started, no hours, one year only)
 is left out, not shown as nothing. Achievements are not among the figures yet: they are the
-issue's third phase. A public wall is listed for search engines once it has a trophy; an empty
+issue's third phase. Neither are replays, play sessions or how long a game took from start to
+finish: the library does not record them. Release generations are left out too, as no filter
+could lead to their games. A public wall is listed for search engines once it has a trophy; an empty
 one is not. A private shelf's wall is drawn only in its own browser (ADR 004).
 
 **In the library**, the stats line (games, finished, hours) is always visible and follows the

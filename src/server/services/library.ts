@@ -8,6 +8,7 @@ import type { Library } from '@/domain/library/library'
 import { encodeKeywords, encodeLibrary } from '@/domain/library/snapshot'
 import { sortByTitle } from '@/domain/library/sort'
 import { trophyWall, type TrophyWall } from '@/domain/library/trophies'
+import type { Measure } from '@/domain/library/trophy-taste'
 import type { GameKeywords } from '@/domain/query/evaluate'
 import { database } from '@/server/db/client'
 import { libraries, users } from '@/server/db/schema'
@@ -140,6 +141,7 @@ export const getTrophyWall = async (
   libraryId: string,
   scope?: number,
   q?: string,
+  by?: Measure,
 ): Promise<TrophyWall> => {
   'use cache'
   cacheTag(libraryTag(libraryId))
@@ -149,6 +151,7 @@ export const getTrophyWall = async (
     scope,
     q,
     today,
+    by,
   })
 }
 
