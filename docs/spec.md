@@ -374,8 +374,8 @@ Both views render only the rows on screen, so 1,000 games scroll as smoothly as 
 
 **Trophy wall** (`/trophies`). Every completed game, face-out, each under its own light, grouped
 by the year I finished it, newest first. Under each: title, date finished, hours, my rating.
-The light is a small lamp above the cover throwing the game's own color down the wall, and the
-cover stands on a short plinth. A trophy opens the game's page. A game finished on a day I
+The light is a small lamp above the cover throwing the game's own color down the wall, fading
+out softly with no edge to it, and the cover stands on a short plinth. A trophy opens the game's page. A game finished on a day I
 never recorded stands last, under "Day not recorded".
 
 **Above the wall, its figures** (the first three phases of issue 68, built 28 and 29 Oct 2026).

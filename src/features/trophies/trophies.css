@@ -32,6 +32,10 @@
   }
 
   .trophy-niche {
+    /* How far the light reaches past the case, beside it and above its lamp: short of the cases around it. */
+    --pool-side: 1rem;
+    --pool-above: 1.25rem;
+    --pool-peak: calc(var(--led-strength) * (38% + var(--glow) * 32%));
     position: relative;
     display: block;
     padding: 1.125rem 0.5rem 0;
@@ -40,35 +44,45 @@
 
   @media (min-width: 40rem) {
     .trophy-niche {
+      --pool-side: 2rem;
+      --pool-above: 2.25rem;
       padding: 1.5rem 0.875rem 0;
     }
   }
 
   /*
-   * The pool of light, in the game's color, falling from the lamp. The
-   * ellipse fades out before the box's edges, so no edge of it shows.
+   * The pool of light, in the game's color, falling from the lamp. It eases
+   * out to nothing, on a curve of stops, as the share card's does: a gradient
+   * that falls in a straight line to transparent shows an edge where it
+   * stops. Its ellipse is centred on the lamp, and above the lamp a mask
+   * fades it in, so the top of its box never shows either. (It reaches a
+   * little past the plinth, where it is all but out: a size of
+   * `calc(100% - …)` is not drawn at all.)
    */
   .trophy-niche::before {
+    --pool-color: var(--case-led, var(--led));
     content: '';
     position: absolute;
-    inset: 0 -0.75rem 0;
+    inset: calc(var(--pool-above) * -1) calc(var(--pool-side) * -1) 0;
     z-index: -1;
     pointer-events: none;
     background: radial-gradient(
-      50% 70% at 50% 0%,
-      color-mix(
-          in srgb,
-          var(--case-led, var(--led)) calc(var(--led-strength) * (34% + var(--glow) * 30%)),
-          transparent
-        )
-        0%,
-      color-mix(
-          in srgb,
-          var(--case-led, var(--led)) calc(var(--led-strength) * (14% + var(--glow) * 12%)),
-          transparent
-        )
-        55%,
+      50% 100% at 50% var(--pool-above),
+      color-mix(in srgb, var(--pool-color) var(--pool-peak), transparent) 0%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.75), transparent) 15%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.53), transparent) 30%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.34), transparent) 45%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.19), transparent) 60%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.08), transparent) 75%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.016), transparent) 90%,
       transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      rgb(0 0 0 / 0.14) calc(var(--pool-above) * 0.33),
+      rgb(0 0 0 / 0.47) calc(var(--pool-above) * 0.66),
+      #000 var(--pool-above)
     );
   }
 

@@ -151,7 +151,10 @@
     gap: 1.25rem 0.625rem;
   }
 
+  /* Its light reaches no further than the narrower gaps. */
   .finished-trophies .trophy-niche {
+    --pool-side: 0.75rem;
+    --pool-above: 1rem;
     padding: 1rem 0.375rem 0;
   }
 
