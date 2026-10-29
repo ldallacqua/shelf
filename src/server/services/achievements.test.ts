@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { progressOf } from '@/domain/achievements/progress'
+import { achievementStatsOf } from '@/domain/library/trophy-achievements'
 import type { Db } from '@/server/db/client'
 import {
   achievementProgress,
@@ -16,6 +17,7 @@ import {
 } from '@/server/db/schema'
 import { createIgdbApi } from '@/server/igdb/api'
 import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
+import { readLibrary } from '@/server/library/read'
 import { readVersion, removeLibrary, updateEntry } from '@/server/library/store'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { MOCK_STEAM } from '@/server/mocks/owner'
@@ -601,16 +603,20 @@ describe('whose achievements they are', () => {
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
       .where(and(eq(entryVersions.userId, me), eq(games.igdbId, HALF_LIFE_2)))
-    const visitor = await achievements(me).summary('en')
+    /** Every unlock the trophy page counts, for a visitor or for the account. */
+    const counted = async (mine: boolean) =>
+      (await achievements(me).unlocks('en', { mine })).reduce(
+        (sum, game) => sum + game.unlocked.length,
+        0,
+      )
+    const visitor = await counted(false)
     await updateEntry(db, me, row!.entryId, { private: true })
 
     expect(await achievements(me).game(slug, 'en')).toBeUndefined()
     expect(await achievements(me).game(slug, 'en', { mine: true })).toBeDefined()
-    const hidden = await achievements(me).summary('en')
-    expect(hidden.unlocked).toBe(visitor.unlocked - 4)
-    expect(hidden.rarest.map((each) => each.slug)).not.toContain(slug)
-    expect(hidden.recent.map((each) => each.slug)).not.toContain(slug)
-    expect((await achievements(me).summary('en', { mine: true })).unlocked).toBe(visitor.unlocked)
+    expect(await counted(false)).toBe(visitor - 4)
+    expect((await achievements(me).unlocks('en')).map((each) => each.slug)).not.toContain(slug)
+    expect(await counted(true)).toBe(visitor)
   })
 
   it('answers nothing of another library’s games', async () => {
@@ -623,27 +629,26 @@ describe('whose achievements they are', () => {
   })
 })
 
-describe('a library’s achievement totals', () => {
+describe('a library’s achievements on its trophy page (issue 68)', () => {
   it('counts what is known, perfect games by every set, and lists the latest and rarest unlocks', async () => {
     const me = await synced()
     await readAll(me)
-    const summary = await achievements(me).summary('en', { mine: true })
-    expect(summary).toMatchObject({
-      unlocked: 7,
-      available: 12,
-      perfect: 1,
-      readFrom: NOW,
-      readTo: NOW,
-    })
-    expect(summary.recent.map((each) => each.achievement.id).slice(0, 3)).toEqual([
+    const stats = achievementStatsOf(
+      await readLibrary(db, me, { mine: true }),
+      await achievements(me).unlocks('en', { mine: true }),
+      2026,
+    )!
+    expect(stats).toMatchObject({ unlocked: 7, available: 12, perfect: 1, readAt: NOW })
+    const idOf = (unlock: { key: string }) => unlock.key.slice(unlock.key.indexOf('/') + 1)
+    expect(stats.latest.map(idOf).slice(0, 3)).toEqual([
       'HADES2_THE_END',
       'HADES2_FAMILIAR',
       'HADES2_FIRST_NIGHT',
     ])
     // The unlock Steam has no moment for is not among the latest.
-    expect(summary.recent.map((each) => each.achievement.id)).not.toContain('HL2_DOWN_THE_CANALS')
+    expect(stats.latest.map(idOf)).not.toContain('HL2_DOWN_THE_CANALS')
     // Locked ones are not among them, however rare: Every Last One is 2.1%.
-    expect(summary.rarest.map((each) => [each.achievement.id, each.achievement.rate])).toEqual([
+    expect(stats.rarest.map((each) => [idOf(each), each.rate])).toEqual([
       ['HL2_COLLECTOR', 5.4],
       ['HADES2_THE_END', 9.8],
       ['HL2_DOWN_THE_CANALS', 61.7],

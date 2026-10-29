@@ -3,16 +3,21 @@ import { describe, expect, it } from 'vitest'
 import { wallAddress } from './wall-address'
 
 describe('the trophy page’s address (issue 68)', () => {
-  it('takes a year with something to finish in it, a filter and a ranking', () => {
-    expect(wallAddress({ year: '2025', q: ' genre:rpg ', by: 'hours' }, 2026)).toEqual({
+  it('takes a year with something to finish in it, a filter, a ranking and a rarity', () => {
+    expect(
+      wallAddress({ year: '2025', q: ' genre:rpg ', by: 'hours', rarity: 'ultra' }, 2026),
+    ).toEqual({
       scope: 2025,
       q: 'genre:rpg',
       by: 'hours',
+      rarity: 'ultra',
     })
   })
 
-  it('leaves out what it cannot use: a year out of reach, an empty filter, an unknown ranking', () => {
-    expect(wallAddress({ year: '1969', q: '  ', by: 'fame' }, 2026)).toEqual({})
+  it('leaves out what it cannot use: a year out of reach, an empty filter, an unknown ranking or rarity', () => {
+    expect(wallAddress({ year: '1969', q: '  ', by: 'fame', rarity: 'legendary' }, 2026)).toEqual(
+      {},
+    )
     expect(wallAddress({ year: '2028' }, 2026)).toEqual({})
     expect(wallAddress({ year: ['2025', '2024'], by: ['hours'] }, 2026)).toEqual({})
   })

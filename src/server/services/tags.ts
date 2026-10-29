@@ -8,6 +8,12 @@
 /** Everything that depends on one library's contents, or its account's name, handle and visibility. */
 export const libraryTag = (libraryId: string): string => `library:${libraryId}`
 
+/**
+ * Everything that depends on one library's achievements: the trophy page's.
+ * A read of them changes no game, so it expires this and not the library's.
+ */
+export const achievementsTag = (libraryId: string): string => `achievements:${libraryId}`
+
 /** Everything that depends on one library's smart shelves. */
 export const shelvesTag = (libraryId: string): string => `shelves:${libraryId}`
 

@@ -1,14 +1,10 @@
-import type {
-  AchievementProvider,
-  AchievementSetView,
-  AchievementView,
-} from '@/domain/achievements/achievements'
+import type { AchievementSetView, AchievementView } from '@/domain/achievements/achievements'
 
 /**
- * What achievements add up to (issue 72): a set's progress, and a library's
- * totals, for a game's page now and the trophy page later. Every figure is
- * worked out from the provider's latest answer, never added to the last
- * one, so reading a set twice counts it once.
+ * What achievements add up to (issue 72): a set's progress, for a game's
+ * page and, game by game, for the trophy page (`trophy-achievements.ts`).
+ * Every figure is worked out from the provider's latest answer, never added
+ * to the last one, so reading a set twice counts it once.
  */
 
 export type SetProgress = {
@@ -46,104 +42,11 @@ export const progressOf = (set: AchievementSetView): SetProgress | undefined => 
   }
 }
 
-/** A game's achievements, for the totals: only games a visitor may see are given. */
+/** A game's achievements, for the trophy page: only games a visitor may see are given. */
 export type AchievementGame = {
   slug: string
   title: string
   sets: readonly AchievementSetView[]
-}
-
-/** An unlocked achievement, with the game and set it is in. */
-export type UnlockedIn = {
-  slug: string
-  game: string
-  provider: AchievementProvider
-  setId: string
-  achievement: AchievementView
-}
-
-export type AchievementSummary = {
-  /** Games with at least one set whose progress is known. */
-  games: number
-  /** Achievements unlocked, in those games' known sets. */
-  unlocked: number
-  /** Achievements in those sets, unlocked or not. */
-  available: number
-  /**
-   * Games where every set that has achievements is complete, and one does.
-   * Shelf's own count: Steam's "Perfect Games" has rules of its own.
-   */
-  perfect: number
-  /** The latest unlocks with a known moment, newest first. */
-  recent: UnlockedIn[]
-  /** The unlocks fewest of the provider's players have, rarest first. */
-  rarest: UnlockedIn[]
-  /** The oldest and the newest read behind these figures. */
-  readFrom?: number
-  readTo?: number
-}
-
-/** A library's achievement totals, over the games given. */
-export const summarize = (
-  games: readonly AchievementGame[],
-  { recent = 10, rarest = 10 }: { recent?: number; rarest?: number } = {},
-): AchievementSummary => {
-  const summary: AchievementSummary = {
-    games: 0,
-    unlocked: 0,
-    available: 0,
-    perfect: 0,
-    recent: [],
-    rarest: [],
-  }
-  const unlocks: UnlockedIn[] = []
-  for (const game of games) {
-    let known = false
-    let perfect = true
-    let anyAchievements = false
-    for (const set of game.sets) {
-      const progress = progressOf(set)
-      if (!progress) {
-        // A set not known, or with none: it cannot make the game perfect, nor stop it.
-        if (set.state !== 'none') perfect = false
-        continue
-      }
-      known = true
-      summary.unlocked += progress.earned
-      summary.available += progress.total
-      if (progress.total > 0) anyAchievements = true
-      if (progress.total > 0 && !progress.complete) perfect = false
-      if (set.readAt !== undefined) {
-        summary.readFrom = Math.min(summary.readFrom ?? set.readAt, set.readAt)
-        summary.readTo = Math.max(summary.readTo ?? set.readAt, set.readAt)
-      }
-      for (const achievement of set.achievements) {
-        if (achievement.state !== 'unlocked') continue
-        unlocks.push({
-          slug: game.slug,
-          game: game.title,
-          provider: set.provider,
-          setId: set.setId,
-          achievement,
-        })
-      }
-    }
-    if (known) summary.games += 1
-    if (known && perfect && anyAchievements) summary.perfect += 1
-  }
-  summary.recent = unlocks
-    .filter((unlock) => unlock.achievement.unlockedAt !== undefined)
-    .sort((a, b) => b.achievement.unlockedAt! - a.achievement.unlockedAt!)
-    .slice(0, recent)
-  summary.rarest = unlocks
-    .filter((unlock) => unlock.achievement.rate !== undefined)
-    .sort(
-      (a, b) =>
-        a.achievement.rate! - b.achievement.rate! ||
-        (b.achievement.unlockedAt ?? 0) - (a.achievement.unlockedAt ?? 0),
-    )
-    .slice(0, rarest)
-  return summary
 }
 
 /** Which of a set's achievements a list shows. */

@@ -85,15 +85,18 @@ function Section({
   level: Level,
   children,
   className,
+  id,
 }: {
   title: string
   /** One below the game's title: h2 on the page, h3 in the panel, whose title is an h2. */
   level: 'h2' | 'h3'
   children: ReactNode
   className?: string
+  /** For an address to lead to it: the trophy page's unlocks lead to `#achievements`. */
+  id?: string
 }) {
   return (
-    <section className={cn('game-section', className)}>
+    <section id={id} className={cn('game-section', className)}>
       <Level className="readout text-[0.6875rem] text-muted">{title}</Level>
       {children}
     </section>
@@ -438,7 +441,7 @@ export function GameDetail({
 
   // Asked for as the page opens, only for a game a provider has achievements for (issue 72).
   const achievements = facts?.achievements ? (
-    <Section title={t('achievements.title')} level={level}>
+    <Section id="achievements" title={t('achievements.title')} level={level}>
       <AchievementsLater
         slug={game.slug}
         providers={facts.achievements}

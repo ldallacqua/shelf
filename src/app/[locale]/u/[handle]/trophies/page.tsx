@@ -13,6 +13,7 @@ import { EmptyTrophies } from '@/features/trophies/empty-trophies'
 import { PublicTrophies } from '@/features/trophies/public-trophies'
 import { TrophyWallView } from '@/features/trophies/trophy-wall'
 import { wallAddress } from '@/features/trophies/wall-address'
+import { getAchievementWall, languageOf } from '@/server/services/achievements'
 import { findLibrary, getTrophyWall } from '@/server/services/library'
 
 import { NO_HANDLE, shelfInfoOf } from '../shelf-info'
@@ -44,13 +45,13 @@ export async function generateMetadata({
 /**
  * Whose wall, by the handle in the address: its trophies, a private shelf's
  * frame, or no shelf. The year and the filter in the address say which
- * trophies (issue 68).
+ * trophies, and the rarity which of their unlocks the vault keeps (issue 68).
  */
 async function ShelfTrophies({
   params,
   searchParams,
 }: Pick<PageProps<'/[locale]/u/[handle]/trophies'>, 'params' | 'searchParams'>) {
-  const { handle } = await params
+  const { handle, locale } = await params
   const which = wallAddress(await searchParams, new Date().getUTCFullYear())
   const library = await findLibrary(handle)
   if (!library) return <NoShelf />
@@ -62,14 +63,26 @@ async function ShelfTrophies({
       </ShelfProvider>
     )
   }
-  const wall = await getTrophyWall(library.id, which.scope, which.q, which.by)
+  const [wall, achievements] = await Promise.all([
+    getTrophyWall(library.id, which.scope, which.q, which.by),
+    getAchievementWall(library.id, languageOf(locale), {
+      scope: which.scope,
+      q: which.q,
+      rarity: which.rarity,
+    }),
+  ])
   const asked = which.scope !== undefined || which.q !== undefined
   return (
     <PublicTrophies handle={library.handle} which={which}>
       {wall.years.length === 0 && !asked ? (
         <EmptyTrophies />
       ) : (
-        <TrophyWallView wall={wall} handle={library.handle} q={which.q} />
+        <TrophyWallView
+          wall={wall}
+          achievements={achievements}
+          handle={library.handle}
+          q={which.q}
+        />
       )}
     </PublicTrophies>
   )

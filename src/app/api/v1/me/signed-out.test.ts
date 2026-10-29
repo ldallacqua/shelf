@@ -21,6 +21,7 @@ import { GET as me, PATCH as changeMe } from './route'
 import { GET as myShelves } from './shelves/route'
 import { GET as myTags } from './tags/route'
 import { GET as myTally } from './tally/route'
+import { GET as myTrophyAchievements } from './trophies/achievements/route'
 import { GET as myUnsorted } from './unsorted/route'
 
 /**
@@ -71,6 +72,10 @@ const reads: [string, () => Promise<Response>][] = [
       myGame(asked('/api/v1/me/games/bloodborne'), {
         params: Promise.resolve({ slug: 'bloodborne' }),
       }),
+  ],
+  [
+    'its trophy page’s achievements',
+    () => myTrophyAchievements(asked('/api/v1/me/trophies/achievements?locale=en&year=2025')),
   ],
   [
     'a game’s achievements',

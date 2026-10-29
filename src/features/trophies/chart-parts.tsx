@@ -97,7 +97,8 @@ export type Column = {
   value: number
   /** What the column says, read out and shown on hover. */
   says: string
-  href: Parameters<typeof Link>[0]['href']
+  /** Where it leads. Without one it is a mark: its tooltip on hover, and its words in the table. */
+  href?: Parameters<typeof Link>[0]['href']
   /** Set apart from the rest: the year the page is of. */
   current?: boolean
   /** Shown with its number on top. */
@@ -110,17 +111,9 @@ export function Columns({ columns, emphasis }: { columns: readonly Column[]; emp
   const top = Math.max(1, ...columns.map((column) => column.value))
   return (
     <ol className="trophy-columns" style={{ '--columns': columns.length } as CSSProperties}>
-      {columns.map((column) => (
-        <li key={column.key} className="min-w-0">
-          <Link
-            href={column.href}
-            aria-label={column.says}
-            aria-current={column.current ? 'page' : undefined}
-            className="trophy-column"
-            data-quiet={emphasis && !column.current ? '' : undefined}
-            style={{ '--value': column.value / top } as CSSProperties}
-            scroll={false}
-          >
+      {columns.map((column) => {
+        const marks = (
+          <>
             <span aria-hidden="true" className="trophy-column-plot">
               {column.labelled || column.current ? (
                 <span className="trophy-column-value readout">{format.number(column.value)}</span>
@@ -133,9 +126,33 @@ export function Columns({ columns, emphasis }: { columns: readonly Column[]; emp
             <span aria-hidden="true" className="chart-tip">
               {column.says}
             </span>
-          </Link>
-        </li>
-      ))}
+          </>
+        )
+        const look = {
+          className: 'trophy-column',
+          'data-quiet': emphasis && !column.current ? '' : undefined,
+          style: { '--value': column.value / top } as CSSProperties,
+        }
+        return (
+          <li key={column.key} className="min-w-0">
+            {column.href ? (
+              <Link
+                href={column.href}
+                aria-label={column.says}
+                aria-current={column.current ? 'page' : undefined}
+                scroll={false}
+                {...look}
+              >
+                {marks}
+              </Link>
+            ) : (
+              <span role="img" aria-label={column.says} {...look}>
+                {marks}
+              </span>
+            )}
+          </li>
+        )
+      })}
     </ol>
   )
 }

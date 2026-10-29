@@ -34,7 +34,7 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   `e2e/library.spec.ts`, has not been run.
 - **#72, Steam achievements,** is built (architecture section 25, row "Achievements from
   Steam"; spec 7.8; ADR 003's "Built: achievements"). Read in steps after each sync, shown on
-  each game's page; the totals #68 needs are `summary()` in `server/services/achievements.ts`.
+  each game's page, and added up on the trophy page (#68's third phase).
   Reading was then batched: Steam counts a hundred games' unlocks in one question, a step
   reads for 15 seconds, and a game is asked about on its own only for a list not read yet or
   new unlocks (ADR 003's "Counted first").
@@ -51,8 +51,7 @@ The owner: "look at shelf issues and start by the highest priority items". The i
 - **#68's first phase is built** (architecture section 25, row "Trophy page, phase 1"; spec 3.9):
   the headline, year by year, month by month, what is finished, records, and a year and a
   filter in the address. Phases 2 to 4 are still the issue's: taste and ratings, franchises,
-  the timeline, insights; achievements (on `summary()` and the domain's `summarize`); the
-  backlog.
+  the timeline, insights; achievements; the backlog.
 - **A game's achievements open as their icons** (architecture section 25, row "Achievements as
   icons"; spec 7.8), as the owner asked: the list was too long before its Show all.
 - **A completed game is finished on its last play** (architecture section 25, row "Finished on
@@ -60,9 +59,13 @@ The owner: "look at shelf issues and start by the highest priority items". The i
 - **#68's second phase is built** (architecture section 25, row "Trophy page, phase 2"; spec
   3.9): what the figures say, rankings by finished, hours, rating or share, modes,
   perspectives, developers, publishers and decades, my ratings against IGDB's, series progress
-  and my years with their milestones. Phases 3 and 4 are still the issue's: achievements (on
-  `summary()` and the domain's `summarize`), and the backlog.
-- **Next:** #68's third phase, achievements.
+  and my years with their milestones.
+- **#68's third phase is built** (architecture section 25, row "Trophy page, phase 3"; spec
+  3.9): the achievements (unlocked, perfect games, rarity and its score, year by year, by
+  genre, records and milestones) and the trophy vault (rarities that keep it, the rarest and
+  latest unlocks, perfect games and the nearly perfect). The phase's shareable statistics and
+  yearly recap, and phase 4's backlog, are still the issue's.
+- **Next:** #68's shareable statistics and yearly recap.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
   `pnpm dev` or a production build sees it.

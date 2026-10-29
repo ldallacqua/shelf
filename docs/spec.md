@@ -378,8 +378,8 @@ The light is a small lamp above the cover throwing the game's own color down the
 cover stands on a short plinth. A trophy opens the game's page. A game finished on a day I
 never recorded stands last, under "Day not recorded".
 
-**Above the wall, its figures** (the first two phases of issue 68, built 28 Oct 2026). The owner
-asked for the trophy page to become "a personal gaming museum", after Steam Replay and
+**Above the wall, its figures** (the first three phases of issue 68, built 28 and 29 Oct 2026).
+The owner asked for the trophy page to become "a personal gaming museum", after Steam Replay and
 PlayStation Wrap-Up: "Every statistic should tell a story, and every story should let users
 explore the games behind it."
 
@@ -412,7 +412,10 @@ explore the games behind it."
   - whether the games I finish came out long before (five years or more, for half of ten
     games or more) or only just.
 
-  Of one year's page, only the ones about its own games.
+  Of one year's page, only the ones about its own games. Phase 3 adds up to two of the
+  achievements, of all time only: this year's unlocks past all of last year's, or every year's
+  before (twenty or more); the game fewest achievements from perfect; and the rarest unlock,
+  when fewer than 5% of Steam's players have it.
 - **Year by year.** A column for each year from the first finish to this one, a year with none
   as an empty column. Each leads to that year's page; on a year's page, that year's column is in
   the accent and the others are quiet, and it leads back to all time. The best year and this
@@ -449,6 +452,34 @@ explore the games behind it."
   games), the one it took over from, the best year marked, and the milestones reached in it: the
   1st, 10th, 25th, 50th, 100th, 250th, 500th and 1000th finish, and the first game I rated 10.
   Each year leads to its page.
+- **Achievements** (phase 3). From what Steam last said, for every game of the page's filter,
+  whether finished or not; of a year's page, the unlocks in that year, by the day in UTC, and
+  the games whose last unlock came in it. A game's page tells each one; here they add up:
+  - how many are unlocked, and of all time, the share of all the games' achievements (rounded
+    down, so nearly all is never all); the games perfected, every set with achievements
+    complete, and their share of the games with an unlock; the average unlock's rarity, as
+    the share of Steam's players who have it; and a rarity score, in which each unlock scores
+    100 divided by that share, up to 100 (a tenth of the players scores 10), said under it;
+  - the unlocks year by year, each year leading to its page; of a year, month by month;
+  - by genre, the share of their achievements unlocked, of genres with three games or more,
+    each leading to this page kept to the genre;
+  - records: the day with the most unlocks and the game most of them were in, the most days
+    in a row with one, and the quickest and slowest perfect game of ten achievements or more,
+    from its first unlock to its last;
+  - milestones: the 1st, 100th, 500th, 1000th, 2500th, 5000th and 10,000th unlock, the first
+    perfect game and the first unlock under 1%.
+
+  "From Steam, read" its day stands beside the title. An unlock Steam gave no moment for is
+  counted of all time only, and a perfect game without every moment has no day. Nothing here
+  changes a status, a rating or a date of mine.
+- **Trophy vault** (phase 3). The unlocks by rarity, a column for each: ultra rare (under 1%),
+  very rare (1% to 5%), rare (5% to 10%), uncommon, common and most players (50% or more).
+  Each column keeps the vault to its rarity (`?rarity=ultra`), and again lets go; "Every
+  rarity" lets go too. Beside it, the games five achievements or fewer from perfect and three
+  quarters done, the fewest left first. Under them, the rarest unlocks and the latest, twelve
+  each (six on a phone), as Steam's artwork with the name, the game, the share and the day,
+  the rare ones glowing as on a game's page; then the games perfected, face-out, the latest
+  first. Every unlock and game leads to its game's achievements (`#achievements`).
 - **Records.** The first finish recorded, the quickest finish, the game played longest of all
   when that is not the longest finished, the best rated finish, the oldest game finished, the
   best year and month, and the longest run of months. A month or a year leads to its games.
@@ -457,8 +488,9 @@ explore the games behind it."
 
 Started is playing, finished or dropped; a retired game is out of it, since it had no end to
 reach (3.12). What cannot be known yet (no ratings, nothing started, no hours, one year only)
-is left out, not shown as nothing. Achievements are not among the figures yet: they are the
-issue's third phase. Neither are replays, play sessions or how long a game took from start to
+is left out, not shown as nothing: a shelf with no achievements read has no Achievements or
+vault. Achievements are Steam's alone so far, so they are not split by platform. Not among the
+figures are replays, play sessions or how long a game took from start to
 finish: the library does not record them. Release generations are left out too, as no filter
 could lead to their games. A public wall is listed for search engines once it has a trophy; an empty
 one is not. A private shelf's wall is drawn only in its own browser (ADR 004).

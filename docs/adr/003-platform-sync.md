@@ -429,8 +429,8 @@ Xbox and PlayStation tickets extend rather than repeat. What building settled:
   says they are as of the last read, and that Steam is no longer linked. Linking another Steam
   account forgets every unlock read for any other; deleting the account deletes them, with its
   copies. The definitions stay: they are Steam's, not the account's.
-- **Totals for the trophy page** (issue 68) are `summarize` in `domain/achievements/progress.ts`
-  and `summary()` in `server/services/achievements.ts`: games with known progress, unlocked and
+- **Totals for the trophy page** (issue 68) are `unlocks()` in `server/services/achievements.ts`
+  and `domain/library/trophy-achievements.ts`: games with known progress, unlocked and
   available achievements, perfect games (every set with achievements complete: Shelf's own
   count, not Steam's "Perfect Games"), the latest unlocks by their real moment, and the rarest
   by Steam's rates. Nothing infers a completion, a date or a status from them, and nothing

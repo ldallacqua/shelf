@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { and, eq } from 'drizzle-orm'
+import { cacheLife, cacheTag, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 
 import {
@@ -17,17 +18,22 @@ import {
   type ProgressTotal,
 } from '@/domain/achievements/achievements'
 import { dueWork, isDue, readOrder } from '@/domain/achievements/due'
-import {
-  summarize,
-  type AchievementGame,
-  type AchievementSummary,
-} from '@/domain/achievements/progress'
+import type { AchievementGame } from '@/domain/achievements/progress'
 import type { Refusal } from '@/domain/library/adding'
+import {
+  achievementWall,
+  unlocksOf,
+  type AchievementOptions,
+  type AchievementWall,
+  type GameUnlocks,
+} from '@/domain/library/trophy-achievements'
 import { database, type Db } from '@/server/db/client'
 import { entries, entryVersions, games } from '@/server/db/schema'
 import { LibraryError } from '@/server/library/store'
 import { spend } from '@/server/services/fair-use'
 import { forAccount } from '@/server/services/for-account'
+import { getLibrary, readMyLibrary } from '@/server/services/library'
+import { achievementsTag, libraryTag } from '@/server/services/tags'
 import {
   copiesOf,
   countAchievements,
@@ -372,14 +378,14 @@ const forLibrary = (
   }
 
   /**
-   * The library's achievement totals (issue 72, for the trophy page of issue
-   * 68), over the games a visitor of this kind may see: a private game's
-   * achievements count only for its own account.
+   * Each game's unlocks, for the trophy page (issue 68), over the games a
+   * visitor of this kind may see: a private game's achievements count only
+   * for its own account. A game with none known is left out.
    */
-  const summary = async (
+  const unlocks = async (
     language: AchievementLanguage,
     { mine = false }: { mine?: boolean } = {},
-  ): Promise<AchievementSummary> => {
+  ): Promise<GameUnlocks[]> => {
     const rows = await db
       .select({
         entryId: entryVersions.entryId,
@@ -407,10 +413,10 @@ const forLibrary = (
       const sets = (copies.get(row.entryId) ?? []).flatMap((id) => byCopy.get(id) ?? [])
       return sets.length > 0 ? [{ slug: row.slug, title: row.title, sets }] : []
     })
-    return summarize(gamesWith)
+    return gamesWith.flatMap((each) => unlocksOf(each) ?? [])
   }
 
-  return { step, game, summary }
+  return { step, game, unlocks }
 }
 
 /* For routes: this server's database and Steam. */
@@ -421,14 +427,50 @@ export const achievementsFor = (libraryId: string) =>
 
 const invalid = (): Promise<Refusal> => Promise.resolve({ ok: false, reason: 'invalid' })
 
-/** One step of reading the signed-in account's achievements at a provider. */
+/**
+ * One step of reading the signed-in account's achievements at a provider.
+ * A step that read any expires the trophy page's figures of them.
+ */
 export const readMyAchievements = (source: unknown) => {
   if (!isAchievementProvider(source)) return invalid()
   return forAccount(async (account) => {
     await spend(account, 'achievements')
-    return achievementsFor(account.id).step(source)
+    const step = await achievementsFor(account.id).step(source)
+    if (step.read > 0) revalidateTag(achievementsTag(account.id), { expire: 0 })
+    return step
   }, true)
 }
+
+/**
+ * A public library's achievements on its trophy page (issue 68), in the
+ * visitor's language. Kept until the library changes or a read of its
+ * achievements does, and worked out again once a day besides, so "this
+ * year" turns with the calendar.
+ */
+export const getAchievementWall = async (
+  libraryId: string,
+  language: AchievementLanguage,
+  { scope, q, rarity }: AchievementOptions = {},
+): Promise<AchievementWall> => {
+  'use cache'
+  cacheTag(libraryTag(libraryId), achievementsTag(libraryId))
+  cacheLife('days')
+  const [library, unlocks] = await Promise.all([
+    getLibrary(libraryId),
+    achievementsFor(libraryId).unlocks(language),
+  ])
+  return achievementWall(library, unlocks, new Date().getUTCFullYear(), { scope, q, rarity })
+}
+
+/** The trophy page's achievements in the signed-in account's own library, private games among them. */
+export const myAchievementWall = (language: AchievementLanguage, options: AchievementOptions) =>
+  forAccount(async (account) => {
+    const [library, unlocks] = await Promise.all([
+      readMyLibrary(account.id),
+      achievementsFor(account.id).unlocks(language, { mine: true }),
+    ])
+    return achievementWall(library, unlocks, new Date().getUTCFullYear(), options)
+  })
 
 /** The language a request asks for: one of the site's, English otherwise. */
 export const languageOf = (value: unknown): AchievementLanguage =>

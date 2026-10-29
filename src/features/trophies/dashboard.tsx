@@ -1,6 +1,7 @@
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
 
+import type { AchievementStats } from '@/domain/library/trophy-achievements'
 import type { TrophyStats } from '@/domain/library/trophy-stats'
 import { measures } from '@/domain/library/trophy-taste'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
@@ -8,6 +9,7 @@ import { SettlingNumber } from '@/features/library/settling-number'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 
+import { Achievements, Vault } from './achievements'
 import { AsTable, Columns, RankedList, scopeHref, Section, withFilter } from './chart-parts'
 import { History, Insights, Ratings, Series } from './taste'
 
@@ -18,8 +20,9 @@ export { withFilter } from './chart-parts'
 /**
  * The trophy page's figures (issue 68): the headline numbers and what they
  * say, the games finished year by year and month by month, what they are and
- * who made them, ranked as asked, my ratings, the series, the records and the
- * years' milestones. Drawn without a script, on the server for a public
+ * who made them, ranked as asked, my ratings, the series, the achievements and
+ * their vault, the records and the years' milestones. Drawn without a script,
+ * on the server for a public
  * shelf: each chart is marks in the page, with a tooltip on hover and focus,
  * and a table that says the same. Every mark leads to the games behind it.
  */
@@ -496,17 +499,21 @@ function Records({ stats, handle, q }: { stats: TrophyStats; handle: string; q?:
 /** The figures above the wall, all of them of the same games. */
 export function Dashboard({
   stats,
+  achievements,
   handle,
   q,
 }: {
   stats: TrophyStats
+  /** Of the same games, from what Steam last said: none when none of them has any known. */
+  achievements?: AchievementStats
   handle: string
   q?: string
 }) {
+  const of = achievements && { stats: achievements, handle, q, by: stats.by }
   return (
     <>
       <Headline stats={stats} handle={handle} />
-      <Insights stats={stats} handle={handle} q={q} />
+      <Insights stats={stats} handle={handle} q={q} achievements={achievements?.insights} />
       <div className="trophy-timeline">
         <YearByYear stats={stats} handle={handle} q={q} />
         <MonthByMonth stats={stats} handle={handle} q={q} />
@@ -514,6 +521,8 @@ export function Dashboard({
       <Kinds stats={stats} handle={handle} q={q} />
       <Ratings stats={stats} handle={handle} q={q} />
       <Series stats={stats} handle={handle} q={q} />
+      {of ? <Achievements {...of} /> : null}
+      {of ? <Vault {...of} /> : null}
       <Records stats={stats} handle={handle} q={q} />
       <History stats={stats} handle={handle} q={q} />
     </>
