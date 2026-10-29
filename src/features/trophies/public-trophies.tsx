@@ -22,7 +22,7 @@ export function PublicTrophies({
 }: {
   handle: string
   /** Which trophies the address asks for. */
-  which: Pick<WallOptions, 'scope' | 'q'>
+  which: Pick<WallOptions, 'scope' | 'q' | 'by'>
   children: ReactNode
 }) {
   const mine = useIsMine(handle)

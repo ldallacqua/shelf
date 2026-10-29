@@ -19,11 +19,11 @@ export function OwnTrophies({
   children,
 }: {
   handle: string
-  which: Pick<WallOptions, 'scope' | 'q'>
+  which: Pick<WallOptions, 'scope' | 'q' | 'by'>
   children: ReactNode
 }) {
   const [own, setOwn] = useState<TrophyWall>()
-  const { scope, q } = which
+  const { scope, q, by } = which
 
   useEffect(() => {
     let current = true
@@ -32,13 +32,13 @@ export function OwnTrophies({
         const hidden = library.games.some((game) => game.private && game.status === 'completed')
         const today = new Date().toISOString().slice(0, 10)
         const year = new Date().getFullYear()
-        if (current && hidden) setOwn(trophyWall(library, year, 'en', { scope, q, today }))
+        if (current && hidden) setOwn(trophyWall(library, year, 'en', { scope, q, today, by }))
       })
       .catch(() => undefined)
     return () => {
       current = false
     }
-  }, [scope, q])
+  }, [scope, q, by])
 
   if (!own) return children
   if (own.years.length === 0 && scope === undefined && q === undefined) return <EmptyTrophies />

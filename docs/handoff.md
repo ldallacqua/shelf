@@ -57,7 +57,12 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   icons"; spec 7.8), as the owner asked: the list was too long before its Show all.
 - **A completed game is finished on its last play** (architecture section 25, row "Finished on
   the last play"; spec 7.3), as the owner asked: the next sync dates those still without a day.
-- **Next:** #68's next phases.
+- **#68's second phase is built** (architecture section 25, row "Trophy page, phase 2"; spec
+  3.9): what the figures say, rankings by finished, hours, rating or share, modes,
+  perspectives, developers, publishers and decades, my ratings against IGDB's, series progress
+  and my years with their milestones. Phases 3 and 4 are still the issue's: achievements (on
+  `summary()` and the domain's `summarize`), and the backlog.
+- **Next:** #68's third phase, achievements.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
   `pnpm dev` or a production build sees it.

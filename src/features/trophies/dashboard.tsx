@@ -1,46 +1,28 @@
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
-import { type CSSProperties, type ReactNode, useId } from 'react'
+import type { ReactNode } from 'react'
 
-import type { Ranked, TrophyStats } from '@/domain/library/trophy-stats'
+import type { TrophyStats } from '@/domain/library/trophy-stats'
+import { measures } from '@/domain/library/trophy-taste'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
 import { SettlingNumber } from '@/features/library/settling-number'
-import { gameHref, libraryHref, trophiesHref } from '@/features/library/shelf-address'
+import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
+
+import { AsTable, Columns, RankedList, scopeHref, Section, withFilter } from './chart-parts'
+import { History, Insights, Ratings, Series } from './taste'
 
 import './dashboard.css'
 
+export { withFilter } from './chart-parts'
+
 /**
- * The trophy page's figures (issue 68, phase 1): the headline numbers, the
- * games finished year by year and month by month, the genres, themes and
- * platforms finished, and the records. Drawn without a script, on the
- * server for a public shelf: each chart is marks in the page, with a
- * tooltip on hover and focus, and a table that says the same. Every mark
- * leads to the games behind it.
+ * The trophy page's figures (issue 68): the headline numbers and what they
+ * say, the games finished year by year and month by month, what they are and
+ * who made them, ranked as asked, my ratings, the series, the records and the
+ * years' milestones. Drawn without a script, on the server for a public
+ * shelf: each chart is marks in the page, with a tooltip on hover and focus,
+ * and a table that says the same. Every mark leads to the games behind it.
  */
-
-/** A filter in the library's language, kept to the one the page is filtered by. */
-export const withFilter = (filter: string, q?: string) =>
-  q?.trim() ? `${filter} (${q.trim()})` : filter
-
-/** The address of the trophy page for a year, or for all time, the filter kept. */
-const scopeHref = (handle: string, year: number | undefined, q?: string) => {
-  const query: Record<string, string> = {}
-  if (year !== undefined) query.year = String(year)
-  if (q?.trim()) query.q = q.trim()
-  return trophiesHref(handle, query)
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  const id = useId()
-  return (
-    <section aria-labelledby={id} className="trophy-section">
-      <h2 id={id} className="title text-xl sm:text-2xl">
-        {title}
-      </h2>
-      {children}
-    </section>
-  )
-}
 
 /** A whole number that counts up into place once, when first seen. The true figure is what is read out. */
 function Counted({ value, className }: { value: number; className: string }) {
@@ -61,41 +43,6 @@ function Figure({ label, children }: { label: string; children: ReactNode }) {
       <dt className="readout text-[0.625rem] text-muted">{label}</dt>
       <dd className="mt-1.5">{children}</dd>
     </div>
-  )
-}
-
-/** The same chart as rows and columns, for whoever cannot or would rather not read the marks. */
-function AsTable({
-  caption,
-  head,
-  rows,
-}: {
-  caption: string
-  head: readonly [string, string]
-  rows: readonly (readonly [ReactNode, ReactNode])[]
-}) {
-  const t = useTranslations('Trophies.charts')
-  return (
-    <details className="chart-table">
-      <summary className="readout text-[0.625rem] text-muted">{t('asTable')}</summary>
-      <table>
-        <caption className="sr-only">{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{head[0]}</th>
-            <th scope="col">{head[1]}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(([label, value], at) => (
-            <tr key={at}>
-              <th scope="row">{label}</th>
-              <td>{value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </details>
   )
 }
 
@@ -188,56 +135,6 @@ function Headline({ stats, handle }: { stats: TrophyStats; handle: string }) {
   )
 }
 
-type Column = {
-  key: string
-  /** Under the column. */
-  label: string
-  value: number
-  /** What the column says, read out and shown on hover. */
-  says: string
-  href: Parameters<typeof Link>[0]['href']
-  /** Set apart from the rest: the year the page is of. */
-  current?: boolean
-  /** Shown with its number on top. */
-  labelled?: boolean
-}
-
-/** Columns rising from one line, one series: the year the page is of in the accent, the others quiet. */
-function Columns({ columns, emphasis }: { columns: readonly Column[]; emphasis: boolean }) {
-  const format = useFormatter()
-  const top = Math.max(1, ...columns.map((column) => column.value))
-  return (
-    <ol className="trophy-columns" style={{ '--columns': columns.length } as CSSProperties}>
-      {columns.map((column) => (
-        <li key={column.key} className="min-w-0">
-          <Link
-            href={column.href}
-            aria-label={column.says}
-            aria-current={column.current ? 'page' : undefined}
-            className="trophy-column"
-            data-quiet={emphasis && !column.current ? '' : undefined}
-            style={{ '--value': column.value / top } as CSSProperties}
-            scroll={false}
-          >
-            <span aria-hidden="true" className="trophy-column-plot">
-              {column.labelled || column.current ? (
-                <span className="trophy-column-value readout">{format.number(column.value)}</span>
-              ) : null}
-              <span className="trophy-column-bar" data-none={column.value === 0 ? '' : undefined} />
-            </span>
-            <span aria-hidden="true" className="trophy-column-label readout">
-              {column.label}
-            </span>
-            <span aria-hidden="true" className="chart-tip">
-              {column.says}
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ol>
-  )
-}
-
 /** Each year from the first finished to this one: a way into each year's page. */
 function YearByYear({ stats, handle, q }: { stats: TrophyStats; handle: string; q?: string }) {
   const t = useTranslations('Trophies.charts')
@@ -250,7 +147,7 @@ function YearByYear({ stats, handle, q }: { stats: TrophyStats; handle: string; 
     value: finished,
     says: t('yearSays', { year: String(year), count: finished }),
     // The year the page is of leads back to all of them.
-    href: scopeHref(handle, stats.scope === year ? undefined : year, q),
+    href: scopeHref(handle, stats.scope === year ? undefined : year, q, stats.by),
     current: stats.scope === year,
     labelled: year === best || year === stats.year,
   }))
@@ -375,100 +272,101 @@ function MonthByMonth({ stats, handle, q }: { stats: TrophyStats; handle: string
   )
 }
 
-/** One kind's games finished, most first, each a way to them in the library. */
-function RankedList({
-  title,
-  items,
-  filterOf,
-  handle,
-  scope,
-  q,
-}: {
-  title: string
-  items: readonly Ranked[]
-  filterOf: (item: Ranked) => string
-  handle: string
-  scope?: number
-  q?: string
-}) {
+/** What the lists are ranked by: links, so the choice is in the address and works without a script. */
+function RankBy({ stats, handle, q }: { stats: TrophyStats; handle: string; q?: string }) {
+  const t = useTranslations('Trophies.charts')
+  // A year's games began whenever they did: its share finished says nothing.
+  const offered = measures.filter((measure) => measure !== 'share' || stats.scope === undefined)
+  return (
+    <ul aria-label={t('rankBy')} className="trophy-rank-by">
+      {offered.map((measure) => (
+        <li key={measure}>
+          <Link
+            href={scopeHref(handle, stats.scope, q, measure)}
+            aria-current={stats.by === measure ? 'page' : undefined}
+            className="trophy-chip readout text-[0.6875rem]"
+            scroll={false}
+          >
+            {t(`by.${measure}`)}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** When the games finished came out: a column for each decade. */
+function Decades({ stats, handle, q }: { stats: TrophyStats; handle: string; q?: string }) {
   const t = useTranslations('Trophies.charts')
   const format = useFormatter()
-  const id = useId()
-  if (items.length === 0) return null
-  const top = Math.max(...items.map((item) => item.finished))
+  if (stats.decades.length < 2) return null
+  const busiest = Math.max(...stats.decades.map(({ finished }) => finished))
+  const scoped = stats.scope === undefined ? '' : ` completed:${stats.scope}`
   return (
-    <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
-        {title}
-      </h3>
-      <ol className="trophy-ranked">
-        {items.map((item) => {
-          const share =
-            item.share === undefined
-              ? undefined
-              : t('shareOf', {
-                  share: format.number(item.share, { style: 'percent', maximumFractionDigits: 0 }),
-                })
-          const filter = `status:completed ${filterOf(item)}${scope === undefined ? '' : ` completed:${scope}`}`
-          return (
-            <li key={item.id}>
-              <Link
-                href={libraryHref(handle, { q: withFilter(filter, q) })}
-                aria-label={[t('rankedSays', { name: item.name, count: item.finished }), share]
-                  .filter(Boolean)
-                  .join(', ')}
-                className="trophy-ranked-row"
-                style={{ '--value': item.finished / top } as CSSProperties}
-              >
-                <span aria-hidden="true" className="truncate text-sm font-medium">
-                  {item.name}
-                </span>
-                <span aria-hidden="true" className="readout text-[0.6875rem] tabular-nums">
-                  {format.number(item.finished)}
-                </span>
-                <span aria-hidden="true" className="trophy-ranked-track">
-                  <span className="trophy-ranked-bar" />
-                </span>
-                {share ? (
-                  <span aria-hidden="true" className="readout text-[0.5625rem] text-muted">
-                    {share}
-                  </span>
-                ) : null}
-              </Link>
-            </li>
-          )
-        })}
-      </ol>
+    <section aria-label={t('decades')} className="min-w-0">
+      <h3 className="readout text-[0.625rem] text-muted">{t('decades')}</h3>
+      <div className="mt-3">
+        <Columns
+          emphasis={false}
+          columns={stats.decades.map(({ decade, finished }) => ({
+            key: String(decade),
+            label: t('decade', { decade: String(decade) }),
+            value: finished,
+            says: t('decadeSays', { decade: String(decade), count: finished }),
+            href: libraryHref(handle, {
+              q: withFilter(`status:completed year:${decade}..${decade + 9}${scoped}`, q),
+            }),
+            labelled: finished > 0 && finished === busiest,
+          }))}
+        />
+      </div>
+      <AsTable
+        caption={t('decades')}
+        head={[t('decadeHead'), t('finished')]}
+        rows={stats.decades.map(({ decade, finished }) => [
+          t('decade', { decade: String(decade) }),
+          format.number(finished),
+        ])}
+      />
     </section>
   )
 }
 
-/** What the games finished are: their genres, themes and the platforms they are owned on. */
+/**
+ * What the games finished are and who made them: genres, themes, the
+ * platforms they are owned on, modes, perspectives, developers and
+ * publishers, each ranked as the page asks, and the decades they came out in.
+ */
 function Kinds({ stats, handle, q }: { stats: TrophyStats; handle: string; q?: string }) {
   const t = useTranslations('Trophies.charts')
-  if (stats.genres.length + stats.themes.length + stats.platforms.length === 0) return null
-  const common = { handle, scope: stats.scope, q }
+  const lists = [
+    { key: 'genres', items: stats.genres, filter: 'genre' },
+    { key: 'themes', items: stats.themes, filter: 'theme' },
+    { key: 'platforms', items: stats.platforms, filter: 'owned' },
+    { key: 'modes', items: stats.modes, filter: 'mode' },
+    { key: 'perspectives', items: stats.perspectives, filter: 'perspective' },
+    { key: 'developers', items: stats.developers, filter: 'developer' },
+    { key: 'publishers', items: stats.publishers, filter: 'publisher' },
+  ] as const
+  if (stats.finished === 0) return null
+  const empty = lists.every(({ items }) => items.length === 0)
   return (
-    <Section title={t('kinds')}>
+    <Section title={t('kinds')} aside={<RankBy stats={stats} handle={handle} q={q} />}>
+      {empty ? <p className="text-sm text-muted">{t('rankedNone')}</p> : null}
       <div className="trophy-kinds">
-        <RankedList
-          title={t('genres')}
-          items={stats.genres}
-          filterOf={(item) => `genre:${item.slug}`}
-          {...common}
-        />
-        <RankedList
-          title={t('themes')}
-          items={stats.themes}
-          filterOf={(item) => `theme:${item.slug}`}
-          {...common}
-        />
-        <RankedList
-          title={t('platforms')}
-          items={stats.platforms}
-          filterOf={(item) => `owned:${item.slug}`}
-          {...common}
-        />
+        {lists.map(({ key, items, filter }) => (
+          <RankedList
+            key={key}
+            title={t(key)}
+            items={items}
+            filterOf={(item) => `${filter}:${item.slug}`}
+            handle={handle}
+            scope={stats.scope}
+            q={q}
+            by={stats.by}
+          />
+        ))}
+        <Decades stats={stats} handle={handle} q={q} />
       </div>
     </Section>
   )
@@ -553,7 +451,7 @@ function Records({ stats, handle, q }: { stats: TrophyStats; handle: string; q?:
         note={t('games', { count: records.bestYear.finished })}
       >
         <Link
-          href={scopeHref(handle, records.bestYear.year, q)}
+          href={scopeHref(handle, records.bestYear.year, q, stats.by)}
           className="underline-offset-4 hover:underline"
         >
           {String(records.bestYear.year)}
@@ -608,12 +506,16 @@ export function Dashboard({
   return (
     <>
       <Headline stats={stats} handle={handle} />
+      <Insights stats={stats} handle={handle} q={q} />
       <div className="trophy-timeline">
         <YearByYear stats={stats} handle={handle} q={q} />
         <MonthByMonth stats={stats} handle={handle} q={q} />
       </div>
       <Kinds stats={stats} handle={handle} q={q} />
+      <Ratings stats={stats} handle={handle} q={q} />
+      <Series stats={stats} handle={handle} q={q} />
       <Records stats={stats} handle={handle} q={q} />
+      <History stats={stats} handle={handle} q={q} />
     </>
   )
 }
@@ -640,7 +542,7 @@ export function TrophyFilters({
       <ul aria-label={t('period')} className="trophy-period">
         <li>
           <Link
-            href={scopeHref(handle, undefined, q)}
+            href={scopeHref(handle, undefined, q, stats.by)}
             aria-current={stats.scope === undefined ? 'page' : undefined}
             className={chip}
             scroll={false}
@@ -651,7 +553,7 @@ export function TrophyFilters({
         {years.map(({ year }) => (
           <li key={year}>
             <Link
-              href={scopeHref(handle, year, q)}
+              href={scopeHref(handle, year, q, stats.by)}
               aria-current={stats.scope === year ? 'page' : undefined}
               className={chip}
               scroll={false}
@@ -665,6 +567,7 @@ export function TrophyFilters({
         {stats.scope === undefined ? null : (
           <input type="hidden" name="year" value={String(stats.scope)} />
         )}
+        {stats.by === 'finished' ? null : <input type="hidden" name="by" value={stats.by} />}
         <label className="sr-only" htmlFor="trophy-filter">
           {t('filter')}
         </label>
@@ -683,7 +586,11 @@ export function TrophyFilters({
           {t('apply')}
         </button>
         {q?.trim() ? (
-          <Link href={scopeHref(handle, stats.scope)} className={chip} scroll={false}>
+          <Link
+            href={scopeHref(handle, stats.scope, undefined, stats.by)}
+            className={chip}
+            scroll={false}
+          >
             {t('clear')}
           </Link>
         ) : null}

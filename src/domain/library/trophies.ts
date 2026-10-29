@@ -3,6 +3,7 @@ import { sortByTitle } from '@/domain/library/sort'
 import { buildIndex, evaluate, gamesIn } from '@/domain/query/evaluate'
 import { parseQuery } from '@/domain/query/parse'
 import { statsOf, type TrophyStats } from '@/domain/library/trophy-stats'
+import type { Measure } from '@/domain/library/trophy-taste'
 import type { Day } from '@/domain/library/values'
 
 export type { TrophyStats } from '@/domain/library/trophy-stats'
@@ -64,6 +65,8 @@ export type WallOptions = {
   q?: string
   /** Today, for the months in a row with a game finished. */
   today?: Day
+  /** What the kinds are ranked by; games finished when not said. */
+  by?: Measure
 }
 
 /**

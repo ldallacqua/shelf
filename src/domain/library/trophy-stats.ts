@@ -1,5 +1,20 @@
 import type { Library, LibraryGame, Named } from '@/domain/library/library'
 import { libraryStats } from '@/domain/library/stats'
+import {
+  decadesOf,
+  INSIGHTS_SHOWN,
+  playInsights,
+  RATED_FROM,
+  ratingsOf,
+  seriesOf,
+  timeInsights,
+  timelineOf,
+  type Insight,
+  type Measure,
+  type Ratings,
+  type SeriesProgress,
+  type TimelineYear,
+} from '@/domain/library/trophy-taste'
 import type { Day, Status } from '@/domain/library/values'
 
 /**
@@ -23,6 +38,8 @@ export type Ranked = {
   minutes: number
   /** Of the games of it started, the share finished, once enough were started to say: 0 to 1. */
   share?: number
+  /** My average rating of the games of it finished, out of 100, once enough are rated. */
+  rating?: number
 }
 
 /** Months in a row with a game finished in each, as `YYYY-MM`. */
@@ -56,9 +73,25 @@ export type TrophyStats = {
   perMonth: { year: number; months: number[] }[]
   /** The months in a row up to this one, or the last if nothing is finished in this one yet. */
   streak: { current: number; longest?: Streak }
+  /** What the kinds below are ranked by. The share finished is of all time only. */
+  by: Measure
   genres: Ranked[]
   themes: Ranked[]
   platforms: Ranked[]
+  modes: Ranked[]
+  perspectives: Ranked[]
+  developers: Ranked[]
+  publishers: Ranked[]
+  /** The games finished by the decade they came out in, from the oldest to the newest. */
+  decades: { decade: number; finished: number }[]
+  /** Of every rating given, or of the games finished in the year. */
+  ratings?: Ratings
+  /** How far through each series. All time only, so none for a year. */
+  series: { shown: SeriesProgress[]; complete: number }
+  /** Every year with a finish, oldest first, with its milestones. All time only. */
+  timeline: TimelineYear[]
+  /** What is worth saying about it all, most telling first. */
+  insights: Insight[]
   records: {
     first?: StatGame & { on: Day }
     quickest?: StatGame & { minutes: number }
@@ -85,6 +118,8 @@ const STARTED: ReadonlySet<Status> = new Set(['playing', 'completed', 'dropped']
 export const SHARE_FROM = 5
 /** How many genres, themes and platforms are ranked. */
 export const RANKED = 8
+/** How many modes, perspectives, developers and publishers: lists read beside the first three. */
+export const RANKED_MORE = 5
 
 const gameOf = ({ slug, title }: LibraryGame): StatGame => ({ slug, title })
 
@@ -127,19 +162,42 @@ const later = (a: LibraryGame, b: LibraryGame) =>
       ? 1
       : 0
 
-/** Each kind's games finished, ranked by how many, then by the hours on them. */
+/** What each measure ranks by, among the kinds that have it; ties go to more finished, then the name. */
+const MEASURED: Record<Measure, (ranked: Ranked) => number | undefined> = {
+  finished: (ranked) => ranked.finished,
+  hours: (ranked) => (ranked.minutes > 0 ? ranked.minutes : undefined),
+  rating: (ranked) => ranked.rating,
+  share: (ranked) => ranked.share,
+}
+
+/**
+ * Each kind's games finished, ranked by `by`: how many, the hours on them, my
+ * rating of them, or the share of those started that were finished. A kind
+ * without enough to say the measure is left out of that ranking.
+ */
 const rank = (
   finished: readonly LibraryGame[],
   started: readonly LibraryGame[] | undefined,
   kindsOf: (game: LibraryGame) => readonly number[],
   named: ReadonlyMap<number, Pick<Named, 'name' | 'slug'>>,
+  by: Measure = 'finished',
+  limit = RANKED,
 ): Ranked[] => {
-  const tally = new Map<number, Ranked & { started: number }>()
+  type Tally = Ranked & { started: number; rated: number[] }
+  const tally = new Map<number, Tally>()
   const entry = (id: number) => {
     let found = tally.get(id)
     const name = named.get(id)
     if (!found && name) {
-      found = { id, name: name.name, slug: name.slug, finished: 0, minutes: 0, started: 0 }
+      found = {
+        id,
+        name: name.name,
+        slug: name.slug,
+        finished: 0,
+        minutes: 0,
+        started: 0,
+        rated: [],
+      }
       tally.set(id, found)
     }
     return found
@@ -150,6 +208,7 @@ const rank = (
       if (!found) continue
       found.finished += 1
       found.minutes += game.minutes
+      if (game.rating !== undefined) found.rated.push(game.rating)
     }
   }
   for (const game of started ?? []) {
@@ -158,14 +217,24 @@ const rank = (
       if (found) found.started += 1
     }
   }
+  const value = (ranked: Ranked) => MEASURED[by](ranked) ?? 0
   return [...tally.values()]
+    .map(({ started: begun, rated, ...ranked }): Ranked => ({
+      ...ranked,
+      ...(started && begun >= SHARE_FROM ? { share: ranked.finished / begun } : {}),
+      ...(rated.length >= RATED_FROM
+        ? { rating: rated.reduce((sum, each) => sum + each, 0) / rated.length }
+        : {}),
+    }))
+    .filter((ranked) => MEASURED[by](ranked) !== undefined)
     .sort(
-      (a, b) => b.finished - a.finished || b.minutes - a.minutes || a.name.localeCompare(b.name),
+      (a, b) =>
+        value(b) - value(a) ||
+        b.finished - a.finished ||
+        b.minutes - a.minutes ||
+        a.name.localeCompare(b.name),
     )
-    .slice(0, RANKED)
-    .map(({ started: begun, ...ranked }) =>
-      started && begun >= SHARE_FROM ? { ...ranked, share: ranked.finished / begun } : ranked,
-    )
+    .slice(0, limit)
 }
 
 const streaksOf = (months: ReadonlySet<string>, today: Day | undefined): TrophyStats['streak'] => {
@@ -202,9 +271,11 @@ export const statsOf = (
   library: Library,
   finished: readonly LibraryGame[],
   year: number,
-  { scope, today }: { scope?: number; today?: Day } = {},
+  { scope, today, by: asked }: { scope?: number; today?: Day; by?: Measure } = {},
 ): TrophyStats => {
   const all = scope === undefined
+  // The games of one year began whenever they did, so a year's share finished says nothing.
+  const by: Measure = asked === undefined || (asked === 'share' && !all) ? 'finished' : asked
   const shown = all
     ? finished
     : finished.filter((game) => game.completedOn?.startsWith(`${scope}-`))
@@ -315,6 +386,40 @@ export const statsOf = (
   const platforms = new Map(
     library.names.platform.map((each) => [each.id, { name: each.name, slug: each.key }]),
   )
+  const begun = all ? started : undefined
+  const genreNames = names(library.names.genre)
+  const companies = names(library.names.company)
+  const rated = ratingsOf(all ? library.games : shown)
+  const timeline = all
+    ? timelineOf(library, dated, bestYear && bestYear.finished > 0 ? bestYear.year : undefined)
+    : []
+
+  // The sentences, most telling first: of time, of taste, then of play.
+  const insights: Insight[] = all ? timeInsights(perYear, dated, year, today) : []
+  const favorite = rank(shown, begun, (game) => game.genres, genreNames)[0]
+  const leading = timeline.find((each) => each.year === year)?.genre
+  if (favorite && leading && leading.name !== favorite.name) {
+    insights.push({
+      kind: 'shift',
+      year,
+      genre: { name: leading.name, slug: leading.slug },
+      favorite: favorite.name,
+    })
+  }
+  const finisher = rank(shown, begun, (game) => game.genres, genreNames, 'share')[0]
+  const overall = all && started.length > 0 ? finished.length / started.length : undefined
+  if (finisher?.share !== undefined && overall !== undefined && finisher.share - overall >= 0.1) {
+    insights.push({ kind: 'finisher', genre: finisher, share: finisher.share, overall })
+  }
+  const maker = rank(shown, begun, (game) => game.developers, companies, 'rating')[0]
+  if (maker?.rating !== undefined) {
+    insights.push({ kind: 'maker', developer: maker, rating: maker.rating })
+  }
+  const versus = rated?.versus
+  if (versus && versus.games.length >= 10 && Math.abs(versus.gap) >= 3) {
+    insights.push({ kind: 'versus', gap: versus.gap, games: versus.games.length })
+  }
+  insights.push(...playInsights(shown))
 
   return {
     finished: shown.length,
@@ -337,25 +442,33 @@ export const statsOf = (
     perYear,
     perMonth,
     streak: streaksOf(new Set(dated.map((game) => monthOf(game.completedOn!))), today),
-    genres: rank(
-      shown,
-      all ? started : undefined,
-      (game) => game.genres,
-      names(library.names.genre),
-    ),
-    themes: rank(
-      shown,
-      all ? started : undefined,
-      (game) => game.themes,
-      names(library.names.theme),
-    ),
+    by,
+    genres: rank(shown, begun, (game) => game.genres, genreNames, by),
+    themes: rank(shown, begun, (game) => game.themes, names(library.names.theme), by),
     // Every platform a game is owned on, as `owned:` matches it, so a link finds the same games.
     platforms: rank(
       shown,
-      all ? started : undefined,
+      begun,
       (game) => game.copies.map((copy) => copy.platform),
       platforms,
+      by,
     ),
+    modes: rank(shown, begun, (game) => game.modes, names(library.names.mode), by, RANKED_MORE),
+    perspectives: rank(
+      shown,
+      begun,
+      (game) => game.perspectives,
+      names(library.names.perspective),
+      by,
+      RANKED_MORE,
+    ),
+    developers: rank(shown, begun, (game) => game.developers, companies, by, RANKED_MORE),
+    publishers: rank(shown, begun, (game) => game.publishers, companies, by, RANKED_MORE),
+    decades: decadesOf(shown),
+    ...(rated ? { ratings: rated } : {}),
+    series: all ? seriesOf(library) : { shown: [], complete: 0 },
+    timeline,
+    insights: insights.slice(0, INSIGHTS_SHOWN),
     records: {
       ...(first ? { first: { ...gameOf(first), on: first.completedOn! } } : {}),
       ...(quickest && quickest !== longest

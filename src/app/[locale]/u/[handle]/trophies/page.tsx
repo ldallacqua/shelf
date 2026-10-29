@@ -62,7 +62,7 @@ async function ShelfTrophies({
       </ShelfProvider>
     )
   }
-  const wall = await getTrophyWall(library.id, which.scope, which.q)
+  const wall = await getTrophyWall(library.id, which.scope, which.q, which.by)
   const asked = which.scope !== undefined || which.q !== undefined
   return (
     <PublicTrophies handle={library.handle} which={which}>
