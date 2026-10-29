@@ -93,6 +93,17 @@ function Standing({ cover }: { cover: CardCover }) {
           background: `radial-gradient(${pool / 2}px ${SHELF_TOP - 40}px at 50% ${LAMP_TOP}px, ${cover.led}8c 0%, ${cover.led}3d 30%, ${cover.led}14 62%, ${cover.led}00 100%)`,
         }}
       />
+      {/* The lamp's bloom: a gradient, where a wide blurred shadow costs the card seconds to draw. */}
+      <div
+        style={{
+          position: 'absolute',
+          top: LAMP_TOP - 44,
+          left: (COVER_WIDTH - 200) / 2,
+          width: 200,
+          height: 92,
+          background: `radial-gradient(100px 46px at 50% 50%, ${cover.led}cc 0%, ${cover.led}55 26%, ${cover.led}1c 58%, ${cover.led}00 100%)`,
+        }}
+      />
       <div
         style={{
           position: 'absolute',
@@ -102,7 +113,7 @@ function Standing({ cover }: { cover: CardCover }) {
           height: 4,
           borderRadius: 2,
           background: '#ffffff',
-          boxShadow: `0 0 8px 2px ${cover.led}, 0 0 26px 10px ${cover.led}88, 0 10px 44px 16px ${cover.led}44`,
+          boxShadow: `0 0 6px 1px ${cover.led}`,
         }}
       />
       <div
@@ -117,7 +128,7 @@ function Standing({ cover }: { cover: CardCover }) {
           background: cover.colors
             ? `linear-gradient(160deg, ${cover.colors[0]} 0%, ${cover.colors[2]} 100%)`
             : ROOM.surface,
-          boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 40px rgba(0, 0, 0, 0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
         {cover.src ? (
@@ -160,15 +171,28 @@ function Shelf() {
             background: `linear-gradient(180deg, ${ROOM.board} 0%, #12151e 100%)`,
           }}
         />
-        <div
-          style={{
-            display: 'flex',
-            height: 3,
-            borderRadius: 2,
-            background: `linear-gradient(90deg, ${INK.led}00 0%, ${INK.led} 18%, #b9a8ff 50%, ${INK.led} 82%, ${INK.led}00 100%)`,
-            boxShadow: `0 0 18px 3px ${INK.led}aa`,
-          }}
-        />
+        <div style={{ display: 'flex', position: 'relative', height: 3 }}>
+          {/* Its halo, as a gradient: a blurred shadow this long is slow to draw. */}
+          <div
+            style={{
+              position: 'absolute',
+              top: -15,
+              left: 0,
+              width: SHELF_WIDTH,
+              height: 33,
+              background: `radial-gradient(ellipse closest-side at 50% 50%, ${INK.led}99 0%, ${INK.led}33 45%, ${INK.led}00 100%)`,
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              width: SHELF_WIDTH,
+              height: 3,
+              borderRadius: 2,
+              background: `linear-gradient(90deg, ${INK.led}00 0%, ${INK.led} 18%, #b9a8ff 50%, ${INK.led} 82%, ${INK.led}00 100%)`,
+            }}
+          />
+        </div>
         <div
           style={{
             display: 'flex',
