@@ -152,6 +152,15 @@ describe('the library file', () => {
     expect(file.games[2]).toHaveLength(28)
   })
 
+  it('carries IGDB’s hasty time last, after empty places for the wishlist and the ages', () => {
+    const hasty = { ...bare, length: 1200, hastyShare: 75 }
+    const file = encodeLibrary({ ...library, games: [hasty, bare] })
+    expect(decodeLibrary(file).games).toEqual([hasty, bare])
+    expect(file.games[0]?.slice(28)).toEqual([[], [], 75])
+    // A file from before it reads as it always did.
+    expect(file.games[1]).toHaveLength(28)
+  })
+
   it('carries that a game is for adults (spec 3.13)', () => {
     const adult = { ...bare, adult: true as const }
     expect(decodeLibrary(encodeLibrary({ ...library, games: [adult, bare] })).games).toEqual([

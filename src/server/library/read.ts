@@ -260,6 +260,9 @@ export const readLibrary = async (
     if (primary.igdbRating !== null) game.igdbRating = primary.igdbRating
     const length = lengthMinutes(primary.length ?? undefined)
     if (length) game.length = length
+    const hasty = primary.length?.hastily
+    const share = length && hasty ? Math.round((hasty / length) * 100) : 0
+    if (share > 0 && share < 100) game.hastyShare = share
     if (primary.cover) {
       game.cover = primary.cover.id
       game.coverRatio = Math.round((primary.cover.width / primary.cover.height) * 100)

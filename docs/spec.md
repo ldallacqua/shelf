@@ -498,7 +498,11 @@ explore the games behind it."
   play, with Someday beside it; the hours left, IGDB's time for a normal playthrough less the
   hours played, of the backlog's games IGDB has a time for, said as its estimate and of how
   many; and the months they would take at the hours of what I finished in the last twelve
-  months, rounded up. Then six games each, three on a phone: the backlog's quickest to finish
+  months, rounded up. Where IGDB has hasty times shorter than its normal ones, both figures
+  are ranges, from a hasty playthrough to a normal one ("34–54 hours", "8–12 months"; read
+  out as "34 to 54"), said as "From IGDB's hasty to normal times, of 2 of 2 games", and on a
+  phone each takes its row. A range is the margin the data has: one figure would claim a
+  precision IGDB's players' times do not have (4.7). Then six games each, three on a phone: the backlog's quickest to finish
   by that time (a game played past it has no end it can say), the best rated by IGDB's players
   of what is waiting (once ten rated it), and the released longest ago; and what is waiting by
   genre and by platform, five each. Every figure and game leads to its games. Games a sync

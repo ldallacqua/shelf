@@ -809,6 +809,8 @@
       "left": "Horas restantes",
       "hoursUnit": "{count, plural, one {hora} other {horas}}",
       "timed": "Estimativa do IGDB, de {timed} de {count, plural, one {# jogo} other {# jogos}}",
+      "timedRange": "Do tempo rápido ao normal do IGDB, de {timed} de {count, plural, one {# jogo} other {# jogos}}",
+      "range": "{low} a {high}",
       "clear": "Para zerar a fila",
       "monthsUnit": "{count, plural, one {mês} other {meses}}",
       "pace": "No ritmo das {count, plural, one {# hora} other {# horas}} do que você zerou nos últimos doze meses",

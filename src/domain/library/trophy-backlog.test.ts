@@ -85,6 +85,25 @@ describe('the trophy page’s backlog (issue 68)', () => {
     expect(backlog.timed).toBe(3)
   })
 
+  it('says the low end at IGDB’s hasty times, or its normal ones where it has none', () => {
+    const hasty = testLibrary(
+      library.games.map((game) =>
+        game.title === 'Elden Ring' ? { ...game, hastyShare: 75 } : game,
+      ),
+      names,
+    )
+    const backlog = backlogOf(hasty, '2026-10-29')!
+    // Elden Ring 45 hours at a hasty pace, 35 left; Inside 4 with no hasty time; Vampire Survivors none.
+    expect(backlog).toMatchObject({
+      left: hours(54),
+      leftHasty: hours(39),
+      months: 9,
+      monthsHasty: 7,
+    })
+    // With no hasty time anywhere, the two ends are one.
+    expect(backlogOf(library, '2026-10-29')).toMatchObject({ leftHasty: hours(54), monthsHasty: 9 })
+  })
+
   it('estimates the months to clear it at the hours of the games finished in the last twelve', () => {
     const backlog = backlogOf(library, '2026-10-29')!
     // 75 hours finished in the twelve months to today; 54 left is under nine months of them.

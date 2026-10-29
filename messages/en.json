@@ -809,6 +809,8 @@
       "left": "Hours left",
       "hoursUnit": "{count, plural, one {hour} other {hours}}",
       "timed": "IGDB's estimate, of {timed} of {count, plural, one {# game} other {# games}}",
+      "timedRange": "From IGDB’s hasty to normal times, of {timed} of {count, plural, one {# game} other {# games}}",
+      "range": "{low} to {high}",
       "clear": "To clear it",
       "monthsUnit": "{count, plural, one {month} other {months}}",
       "pace": "At the {count, plural, one {# hour} other {# hours}} of what you finished in the last twelve months",
