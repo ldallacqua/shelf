@@ -9,7 +9,7 @@
     "mainNav": "Main",
     "library": "Library",
     "trophies": "Trophies",
-    "placing": "Place games",
+    "placing": "Organize",
     "waiting": "{count, plural, one {# game waiting} other {# games waiting}}",
     "menu": "Menu",
     "igdbCredit": "Game data and covers from <link>IGDB.com</link>.",
@@ -1216,18 +1216,6 @@
   "AccountPage": {
     "metaTitle": "Your account",
     "title": "Your account",
-    "hours": {
-      "title": "Hours from your stores",
-      "intro": "Steam and Nintendo count the whole time a game is open, played or not, so a game left running counts as played. For these games they report well past IGDB’s time. If one sat open for a while, you can take that time out, and your shelf and trophies count the rest. Each is asked about once.",
-      "counted": "{stores}: {hours, number} h",
-      "igdb": {
-        "completely": "IGDB: {hours, number} h to see everything",
-        "normally": "IGDB: {hours, number} h to finish"
-      },
-      "keep": "Keep the hours",
-      "kept": "Kept as they are.",
-      "taken": "Saved: {hours, number} h count now."
-    },
     "archived": {
       "title": "Archived games",
       "intro": "Out of sight and out of every count, with everything you set. Bring one back to put it on your shelf as it was.",
@@ -1278,10 +1266,30 @@
     }
   },
   "Placing": {
-    "metaTitle": "Place your games",
-    "title": "Place your games",
+    "metaTitle": "Organize your games",
+    "title": "Organize your games",
     "intro": "The games a sync brought onto your shelf wait here until you say where each one stands.",
-    "signInFirst": "Sign in to place your games.",
+    "tabs": {
+      "label": "What to organize",
+      "unsorted": "Unsorted",
+      "hours": "Store hours",
+      "count": "{count, plural, one {# game} other {# games}}"
+    },
+    "storeHours": {
+      "metaTitle": "Store hours",
+      "intro": "Steam and Nintendo count the whole time a game is open, played or not, so a game left running counts as played. For these games they report well past IGDB’s time. If one sat open for a while, you can take that time out, and your shelf and trophies count the rest. Each is asked about once.",
+      "counted": "{stores}: {hours, number} h",
+      "igdb": {
+        "completely": "IGDB: {hours, number} h to see everything",
+        "normally": "IGDB: {hours, number} h to finish"
+      },
+      "keep": "Keep the hours",
+      "kept": "Kept as they are.",
+      "taken": "Saved: {hours, number} h count now.",
+      "list": "Games whose stores count past IGDB’s time",
+      "empty": "No game’s store hours are far past IGDB’s time now."
+    },
+    "signInFirst": "Sign in to organize your games.",
     "loading": "Loading your games…",
     "failed": "Shelf could not read your games. Try again.",
     "retry": "Try again",

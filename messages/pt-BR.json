@@ -1216,18 +1216,6 @@
   "AccountPage": {
     "metaTitle": "Sua conta",
     "title": "Sua conta",
-    "hours": {
-      "title": "Horas das suas lojas",
-      "intro": "A Steam e a Nintendo contam todo o tempo em que um jogo fica aberto, jogando ou não, então um jogo esquecido aberto conta como jogado. Nestes jogos, elas contam bem mais que o tempo do IGDB. Se algum ficou aberto parado por um tempo, dá para tirar esse tempo, e a estante e os troféus contam o resto. Cada um é perguntado uma vez só.",
-      "counted": "{stores}: {hours, number} h",
-      "igdb": {
-        "completely": "IGDB: {hours, number} h para ver tudo",
-        "normally": "IGDB: {hours, number} h para zerar"
-      },
-      "keep": "Manter as horas",
-      "kept": "Mantidas como estão.",
-      "taken": "Salvo: agora contam {hours, number} h."
-    },
     "archived": {
       "title": "Jogos arquivados",
       "intro": "Fora de vista e fora de todas as contas, com tudo o que você marcou. Traga um de volta para pô-lo na estante como estava.",
@@ -1281,6 +1269,26 @@
     "metaTitle": "Organize seus jogos",
     "title": "Organize seus jogos",
     "intro": "Os jogos que uma sincronização trouxe para a sua estante esperam aqui até você dizer em que pé está cada um.",
+    "tabs": {
+      "label": "O que organizar",
+      "unsorted": "A definir",
+      "hours": "Horas das lojas",
+      "count": "{count, plural, one {# jogo} other {# jogos}}"
+    },
+    "storeHours": {
+      "metaTitle": "Horas das lojas",
+      "intro": "A Steam e a Nintendo contam todo o tempo em que um jogo fica aberto, jogando ou não, então um jogo esquecido aberto conta como jogado. Nestes jogos, elas contam bem mais que o tempo do IGDB. Se algum ficou aberto parado por um tempo, dá para tirar esse tempo, e a estante e os troféus contam o resto. Cada um é perguntado uma vez só.",
+      "counted": "{stores}: {hours, number} h",
+      "igdb": {
+        "completely": "IGDB: {hours, number} h para ver tudo",
+        "normally": "IGDB: {hours, number} h para zerar"
+      },
+      "keep": "Manter as horas",
+      "kept": "Mantidas como estão.",
+      "taken": "Salvo: agora contam {hours, number} h.",
+      "list": "Jogos em que as lojas contam mais que o IGDB",
+      "empty": "Nenhum jogo tem agora horas das lojas muito além do tempo do IGDB."
+    },
     "signInFirst": "Entre para organizar seus jogos.",
     "loading": "Carregando seus jogos…",
     "failed": "O Shelf não conseguiu ler seus jogos. Tente de novo.",

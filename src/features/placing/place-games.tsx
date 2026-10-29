@@ -34,6 +34,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { placeGame, placeGames, rateGame, readUnsorted, rematchGame } from './placing-client'
 
+import { OrganizeTabs } from './organize-tabs'
+
 /**
  * Placing what a sync brought in (spec 4.5), after Minimap's "Rate my
  * games": one row per unsorted game, with its hours and last play on each
@@ -687,7 +689,8 @@ export function PlaceGames() {
 
   return (
     <>
-      <p className="mt-4 max-w-2xl text-pretty text-muted">{t('intro')}</p>
+      <OrganizeTabs current="unsorted" />
+      <p className="mt-6 max-w-2xl text-pretty text-muted">{t('intro')}</p>
       <PlacingList handle={who.handle} />
     </>
   )

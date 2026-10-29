@@ -24,13 +24,13 @@ export const navItems = [
 export type NavItem = (typeof navItems)[number]
 
 /**
- * After them, among one's own shelf's links only: the page for placing the
- * games a sync brought in (spec 4.5), with how many wait.
+ * After them, among one's own shelf's links only: organizing one's games, its
+ * first tab placing the games a sync brought in (spec 4.5), with how many wait.
  */
 export const placingItem = {
   label: 'placing',
   href: '/account/unsorted',
-  pages: ['/account/unsorted'],
+  pages: ['/account/unsorted', '/account/hours'],
 } as const satisfies { label: string; href: Pathname; pages: readonly Pathname[] }
 
 /** Whether the visitor is on this destination, or on a page under it, by the page's pathname template. */

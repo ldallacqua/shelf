@@ -868,7 +868,8 @@ pagina e voltar pro organize seus jogos ai beleza".
 
 - **A page of its own**, `/account/unsorted`, for my unsorted games, reached from each
   platform's card ("240 games to place", the games that source brought in still unsorted);
-  from the header, among my own shelf's links, "Place games" ("Organizar"), with how many
+  from the header, among my own shelf's links, "Organize" ("Organizar"; "Place games" until 29
+  Oct 2026, when the page became Organize's first tab), with how many
   wait in a small accent count after it, up to "999+", and no count when none does; and from
   the page that sets a new shelf up (4.6). The count follows the library as games are placed
   or synced, on the shelf and on this page. The owner, 27 Oct 2026: "O botão Organizar os
@@ -878,6 +879,17 @@ pagina e voltar pro organize seus jogos ai beleza".
   and keep it to four characters; its words are read out, so it is never only a colored shape. Its intro says what the page is for, in one sentence,
   and nothing of how it behaves, which using it shows (the owner, 24 Oct 2026: "esse texto ta
   explicando demais [...] So explica pra que serve e ponto").
+- **Organize, in tabs.** The page's heading is "Organize your games" ("Organize seus jogos"),
+  and under it a row of tabs, each a list of my games with one thing to say of each, each a
+  page of its own so a tab is an address and works without a script: **Unsorted** ("A
+  definir"), this page, and **Store hours** ("Horas das lojas", `/account/hours`, 4.7). Each
+  says quietly how many games it holds, in muted digits, with no count when none; the
+  header's count stays the unsorted games' only, since the rest are no alarm. The header's
+  Organize is lit on every tab. The owner, 29 Oct 2026, of the store hours first put on the
+  account page: "é uma configuração de jogo, e não de conta"; the account is who I am and
+  the platforms I link, and tidying the games belongs with the games, as Apple's and
+  Google's Photos keep their duplicates under Utilities in the library itself. Games
+  completed without a rating are to be a tab here too, once built (the owner, the same day).
 - **One row per game:** cover, title and year, the platforms of its copies, hours on each
   source that feeds a copy and when I last played it there ("Not played on Steam" when it
   never was), or the hours I typed when no source reported any. Longest played first, as
@@ -967,13 +979,14 @@ menu counts as played. Where that happens it weighs on every figure made of hour
 played, the hours on a platform, the pace through the backlog. How much of a store's time was
 idle cannot be known from outside, so I say it, and only where I want to.
 
-- **Hours from your stores,** on the account page after the platforms, there only while there
-  is one. Each game whose stores report more than twice IGDB's time to see everything (or three
+- **Store hours,** Organize's second tab (4.5), `/account/hours`. Each game whose stores report more than twice IGDB's time to see everything (or three
   normal playthroughs, when IGDB has no time for everything), and ten hours past it, the most
   first: its cover and title, what the stores count ("Steam: 112 h") and IGDB's time ("IGDB:
   40 h to see everything"), **Time left idle** (as in 7.3) and **Keep the hours**. Either
   answer is kept, saying so beside the game ("Saved: 40 h count now."), and the game is not
-  offered again. A refusal says why there, and the game stays to try again.
+  offered again: it stays in view until the page is left, and the tab's count no longer has
+  it. A refusal says why there, and the game stays to try again. With none, the tab says so,
+  with the way to the shelf.
 - **Never a doubt about me.** Nothing on the shelf, a game's page or the trophies marks a
   game's hours as high, and the list says what the stores count, not that anything is wrong.
   Hours I typed are mine: never offered, never with time taken off.
@@ -1588,9 +1601,8 @@ English and Brazilian Portuguese from the first build.
 - **Sign-in** is an email address or handle, and the password. A wrong one is turned away with
   a plain message, and repeated tries are slowed down.
 - **The account page** changes the name, the handle (the old address then leads nowhere), the
-  visibility and the password; lists the games whose stores count far past IGDB's time, while
-  there are any, to take idle time out of (4.7); lists the archived games, while there are any,
-  to bring back (7.4); signs out everywhere; and deletes the account and everything on its shelf, after the
+  visibility and the password; lists the archived games, while there are any, to bring back
+  (7.4); signs out everywhere; and deletes the account and everything on its shelf, after the
   password.
 - **Every change** is checked on the server, against the session's own account. A write never
   names a library: it acts on one's own. Hiding a button is never the protection.
