@@ -404,7 +404,7 @@ explore the games behind it."
   filter that leaves nothing says "No finished game matches", with the way back to all time.
 - **The headline.** Games finished, large, and under it how many this year and the share of
   started games finished. Beside it: hours played, across the whole library (of one year: the
-  hours on its games), the average of my ratings (of every game I rated, or of the year's
+  hours on its games), said to be the time with each game open (4.7), the average of my ratings (of every game I rated, or of the year's
   games), the median hours of a finished game, and games dropped. The finished game I played
   longest and the platform I played most on are records.
 - **What the figures say** (phase 2). Under the headline, up to six sentences, each from enough
@@ -766,8 +766,8 @@ owners do not allow, beyond Valve's own sign-in button.
      calls each one, and **Ask again** brings it back for good. A mode Steam lists apart from
      its game (a multiplayer, a zombies mode) goes on that game's copy, hours and all.
    - **Steam's hours** go on the copy, in Steam's own row. A game shows the larger of the hours
-     I typed and what its sources report together, so nothing is counted twice; the editor
-     shows Steam's hours beside the copy.
+     I typed and what its sources report together, less any time I said it sat idle (4.7), so
+     nothing is counted twice; the editor shows Steam's hours beside the copy.
 3. **What it could not match** waits under "2 games need you": **Find it** (IGDB searched by
    the title, which I can change), **Not a game**, **Not mine**. Every answer is kept.
 4. **Afterwards:** **Sync now**, and once a day by itself while **Sync once a day** is on. A
@@ -958,6 +958,38 @@ a moment ahead of the browser's. A sync is never said to be in the future.
 
 - Signing up leads here, and Steam's sign-in started here comes back here.
 - Each step checks itself off as the shelf changes, a sync's progress included.
+- Both themes, both languages, a phone.
+
+### 4.7 Hours a store counted
+
+Steam and Nintendo count the whole time a game is open, played or not: a game left running at a
+menu counts as played. Where that happens it weighs on every figure made of hours: the longest
+played, the hours on a platform, the pace through the backlog. How much of a store's time was
+idle cannot be known from outside, so I say it, and only where I want to.
+
+- **Hours from your stores,** on the account page after the platforms, there only while there
+  is one. Each game whose stores report more than twice IGDB's time to see everything (or three
+  normal playthroughs, when IGDB has no time for everything), and ten hours past it, the most
+  first: its cover and title, what the stores count ("Steam: 112 h") and IGDB's time ("IGDB:
+  40 h to see everything"), **Time left idle** (as in 7.3) and **Keep the hours**. Either
+  answer is kept, saying so beside the game ("Saved: 40 h count now."), and the game is not
+  offered again. A refusal says why there, and the game stays to try again.
+- **Never a doubt about me.** Nothing on the shelf, a game's page or the trophies marks a
+  game's hours as high, and the list says what the stores count, not that anything is wrong.
+  Hours I typed are mine: never offered, never with time taken off.
+- **No margin of error is made up.** No figure says ±: a share of idle time would be a guess
+  dressed as a measure. The trophy page's hours say what they are instead: time with each game
+  open.
+
+While building it, a check in the database on the new column would have made the migration
+rebuild the entries table, which the rows that hang from it would not have survived: the store
+keeps the figure whole and not below nothing instead.
+
+**Done when**
+
+- Time taken out comes off the stores' hours on the shelf, a game's page, the trophies and the
+  API, and what the stores report later is counted on top of it.
+- A game answered is not offered again; one archived, or whose hours I typed, never is.
 - Both themes, both languages, a phone.
 
 ---
@@ -1196,6 +1228,12 @@ the versions, and archiving or removing.
 - **Hours played** takes only a number, typed with a point or a comma, or stepped an hour at a
   time with − and + beside it (ten with Shift) or the arrow keys. When a store reports hours on
   a copy, a line under it says how many, and that the larger of the two is shown.
+  - **Take out idle time,** at the end of that line, opens **Time left idle** under it, and
+    the focus goes there. Its hours are of what the stores report that the game sat open,
+    unplayed (Steam and Nintendo count the whole time a game is open, 4.7). They come off the
+    stores' hours, never off what I typed, and stay taken off as the stores report more; the
+    line then says what the stores report and what is left without the idle time. Once there
+    is any, the field shows from the start.
 - **Platforms owned:** each copy on a card of its own, with its platform, the hours a store
   reports on it, physical or digital, and a button to remove it. **Add a copy** opens a new one
   apart from them: a platform, physical or digital (one I own already cannot be picked), and
@@ -1365,8 +1403,9 @@ clicando setup setup, next, next. E sim aparecesse uma splashzinha."
   version; it downloads and installs one, saying how far it is, then opens Shelf.
 - **The installer is public,** on this repository's releases.
 - **Hours,** built after Play: the time a game started from its file is open is added to its
-  PC copy, as a store's hours are. A game started through Steam is counted by Steam and its
-  sync, never twice.
+  PC copy, as a store's hours are, but paused once no key, mouse or controller has moved for
+  five minutes, so a game left running does not count as played (4.7). A game started through
+  Steam is counted by Steam and its sync, never twice.
 
 **Done when**
 
@@ -1549,8 +1588,9 @@ English and Brazilian Portuguese from the first build.
 - **Sign-in** is an email address or handle, and the password. A wrong one is turned away with
   a plain message, and repeated tries are slowed down.
 - **The account page** changes the name, the handle (the old address then leads nowhere), the
-  visibility and the password; lists the archived games, while there are any, to bring back
-  (7.4); signs out everywhere; and deletes the account and everything on its shelf, after the
+  visibility and the password; lists the games whose stores count far past IGDB's time, while
+  there are any, to take idle time out of (4.7); lists the archived games, while there are any,
+  to bring back (7.4); signs out everywhere; and deletes the account and everything on its shelf, after the
   password.
 - **Every change** is checked on the server, against the session's own account. A write never
   names a library: it acts on one's own. Hiding a button is never the protection.

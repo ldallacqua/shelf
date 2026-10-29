@@ -162,6 +162,13 @@
       "when": 1793294389642,
       "tag": "0022_steam-artwork",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1793312770943,
+      "tag": "0023_idle-hours",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ const client = vi.hoisted(() => ({
       ...(patch.status ? { status: patch.status } : {}),
       ...(patch.completedOn ? { completedOn: patch.completedOn } : {}),
       ...(patch.private === undefined ? {} : { private: patch.private }),
+      ...(patch.idle === undefined ? {} : { idle: patch.idle }),
       wanted: leaving ? [] : (patch.wanted ?? game.wanted),
     })
     return { ok: true as const, value: { version: 2 } }
@@ -269,6 +270,44 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     await userEvent.clear(field)
     await userEvent.type(field, '2a0{Enter}')
     expect(client.update).toHaveBeenLastCalledWith('entry-hours', { minutes: 1200 })
+  })
+
+  it('takes time left idle off what the stores report, once asked for', async () => {
+    server.games.set('idle', owned('idle'))
+    editor('idle')
+    await screen.findByRole('textbox', { name: 'Hours played' })
+    expect(screen.queryByRole('textbox', { name: 'Time left idle' })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Take out idle time' }))
+    const idle = screen.getByRole('textbox', { name: 'Time left idle' })
+    expect(idle).toHaveFocus()
+    expect(screen.getByText(/never off what you typed/)).toBeInTheDocument()
+    await userEvent.type(idle, '4{Enter}')
+    expect(client.update).toHaveBeenLastCalledWith('entry-idle', { idle: 240 })
+    expect(
+      await screen.findByText(
+        /Your stores report 10 h on the copies below, 6 h without the idle time/,
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Take out idle time' })).not.toBeInTheDocument()
+  })
+
+  it('shows the idle time taken out', async () => {
+    server.games.set('taken', { ...owned('taken'), idle: 240 })
+    editor('taken')
+    expect(await screen.findByRole('textbox', { name: 'Time left idle' })).toHaveValue('4')
+    expect(screen.queryByRole('button', { name: 'Take out idle time' })).not.toBeInTheDocument()
+  })
+
+  it('offers no idle time where no store reports hours', async () => {
+    server.games.set('typed', {
+      ...owned('typed'),
+      copies: [{ id: 'ps4', platformId: 48, format: 'physical' }],
+    })
+    editor('typed')
+    await screen.findByRole('textbox', { name: 'Hours played' })
+    expect(screen.queryByRole('button', { name: 'Take out idle time' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Your stores report/)).not.toBeInTheDocument()
   })
 
   it('marks a game completed on the day a platform last saw it played, and says so', async () => {

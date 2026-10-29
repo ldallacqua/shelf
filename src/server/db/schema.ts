@@ -193,6 +193,14 @@ export const entries = sqliteTable(
     archivedAt: integer(),
     /** Only its own account sees it (spec 11.1): never in a public file or answer. */
     isPrivate: integer({ mode: 'boolean' }).notNull().default(false),
+    /**
+     * Minutes of what its stores report that I say it sat open, unplayed: they
+     * come off those hours, never off what I typed. Null until I have said;
+     * 0 when I kept them as they are. The store keeps it whole and not below
+     * nothing: a check here would rebuild the table, which its children's
+     * rows would not survive.
+     */
+    idleMinutes: integer(),
     createdAt: integer().notNull(),
     updatedAt: integer().notNull(),
   },

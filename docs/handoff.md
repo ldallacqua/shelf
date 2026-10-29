@@ -80,6 +80,13 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   and Wall, each a board of the same panels, with links to each pinned under the header. Your
   years are the timeline's rows now. The wall's lights fade out with no edge (row "Wall light,
   eased").
+- **A store's idle time can be taken out** (architecture section 25, row "Idle hours"; spec
+  4.7 and 7.3): Time left idle in the editor, and "Hours from your stores" on the account page
+  for the games whose stores report far past IGDB's time. The owner asked that it never read as
+  doubting the player: nothing marks hours as high, and typed hours are never offered. **Still
+  to do:** the backlog's hours left as a range, from IGDB's hasty to normal times (it needs the
+  hasty time in the library file), and Shelf for Windows' own counter pausing when no key,
+  mouse or controller has moved for a while, once it counts hours.
 - **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against

@@ -253,7 +253,9 @@ building settled:
   platform's card says how many of its games wait there.)
 - **Hours:** a source's minutes are a `play_time` row of that source on the copy, summed over
   the items feeding it. A game shows the larger of what I typed and what its sources report
-  together, never the sum, so a figure typed before linking is not counted twice.
+  together, never the sum, so a figure typed before linking is not counted twice. (29 Oct
+  2026: less the time I said it sat idle, `entries.idle_minutes`, since a store counts the
+  whole time a game is open; spec 4.7.)
 - **Steps.** A sync is steps of at most twenty games put on the shelf, each one request, so a
   large library never outlasts a function; the page asks for steps until none is left. A
   second daily job (`/api/cron/sync`) runs every link that asks for it, longest unsynced

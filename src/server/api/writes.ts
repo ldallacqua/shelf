@@ -221,6 +221,14 @@ export const apiGamePatch = z
     notesPublic: z.boolean().optional(),
     tags: z.array(z.string().min(1).max(40)).max(20).optional().describe('All of them: replaces'),
     hoursPlayed: z.number().min(0).max(100_000).optional(),
+    hoursIdle: z
+      .number()
+      .min(0)
+      .max(100_000)
+      .optional()
+      .describe(
+        'Of the hours its stores report, those it sat open and unplayed: they come off those hours, never off hoursPlayed. 0 keeps them as they are',
+      ),
     mainVersion: z
       .string()
       .optional()
@@ -279,6 +287,13 @@ export const apiOwnerGame = z
       .describe('Whether or not they are public: this is the owner’s view'),
     notesPublic: z.boolean(),
     hoursPlayed: z.number().min(0).describe('Hours typed in'),
+    hoursIdle: z
+      .number()
+      .min(0)
+      .optional()
+      .describe(
+        'Of the hours its stores report, those said to have sat idle, taken off them; absent until said',
+      ),
     copies: z.array(
       z.object({
         id: z.string().describe('For PATCH and DELETE /entries/{id}/copies/{copy}'),
@@ -380,6 +395,30 @@ export const apiArchivedGames = z
   })
   .meta({ id: 'ArchivedGames' })
 
+export const apiStoreHours = z
+  .object({
+    games: z.array(
+      z.object({
+        entryId: z.string(),
+        slug: z.string(),
+        title: z.string(),
+        year: z.int().optional(),
+        cover: z.string().optional().describe('An IGDB image id'),
+        colors: z.array(z.string()).optional(),
+        hash: z.string().optional(),
+        hoursReported: z.number().min(0).describe('What its stores report together'),
+        sources: z.array(z.enum(syncSources)).describe('The stores reporting them, the most first'),
+        igdb: z.object({
+          hours: z.number().min(0),
+          of: z
+            .enum(['completely', 'normally'])
+            .describe('IGDB’s time to see everything, or else for a normal playthrough'),
+        }),
+      }),
+    ),
+  })
+  .meta({ id: 'StoreHours' })
+
 export const apiPlayable = z
   .object({
     games: z.array(
@@ -450,12 +489,14 @@ export const toApiAdditions = (answer: {
 export const toApiOwnerGame = ({
   rating,
   minutes,
+  idle,
   copies,
   ...rest
 }: OwnerGame): z.input<typeof apiOwnerGame> => ({
   ...rest,
   ...(rating === undefined ? {} : { rating: rating / 10 }),
   hoursPlayed: minutes / 60,
+  ...(idle === undefined ? {} : { hoursIdle: idle / 60 }),
   copies: copies.map(({ id, platformId, format, synced }) => ({
     id,
     platform: platformId,
@@ -517,6 +558,7 @@ export const refusalMessage = (refusal: Refusal): string => MESSAGE[refusal.reas
 export const toEditPatch = ({
   tags,
   hoursPlayed,
+  hoursIdle,
   rating,
   mainVersion,
   ...mine
@@ -529,6 +571,7 @@ export const toEditPatch = ({
     ...(Object.keys(changes).length > 0 ? { mine: changes } : {}),
     ...(tags ? { tags } : {}),
     ...(hoursPlayed === undefined ? {} : { minutes: Math.round(hoursPlayed * 60) }),
+    ...(hoursIdle === undefined ? {} : { idle: Math.round(hoursIdle * 60) }),
     ...(mainVersion ? { mainVersion } : {}),
   }
 }

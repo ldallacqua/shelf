@@ -579,6 +579,7 @@
       "shareLine": "{share} dos jogos começados",
       "hours": "Horas jogadas",
       "hoursOn": "Horas neles",
+      "hoursNote": "Tempo com cada jogo aberto",
       "rating": "Nota média",
       "outOfTen": "de 10",
       "median": "Tempo mediano",
@@ -1215,6 +1216,18 @@
   "AccountPage": {
     "metaTitle": "Sua conta",
     "title": "Sua conta",
+    "hours": {
+      "title": "Horas das suas lojas",
+      "intro": "A Steam e a Nintendo contam todo o tempo em que um jogo fica aberto, jogando ou não, então um jogo esquecido aberto conta como jogado. Nestes jogos, elas contam bem mais que o tempo do IGDB. Se algum ficou aberto parado por um tempo, dá para tirar esse tempo, e a estante e os troféus contam o resto. Cada um é perguntado uma vez só.",
+      "counted": "{stores}: {hours, number} h",
+      "igdb": {
+        "completely": "IGDB: {hours, number} h para ver tudo",
+        "normally": "IGDB: {hours, number} h para zerar"
+      },
+      "keep": "Manter as horas",
+      "kept": "Mantidas como estão.",
+      "taken": "Salvo: agora contam {hours, number} h."
+    },
     "archived": {
       "title": "Jogos arquivados",
       "intro": "Fora de vista e fora de todas as contas, com tudo o que você marcou. Traga um de volta para pô-lo na estante como estava.",
@@ -1622,6 +1635,10 @@
     "hourFewer": "Uma hora a menos",
     "hourMore": "Uma hora a mais",
     "playedSynced": "Suas lojas contam {hours, number} h nas cópias abaixo. O Shelf mostra o maior dos dois.",
+    "playedSyncedIdle": "Suas lojas contam {hours, number} h nas cópias abaixo, {counted, number} h sem o tempo parado. O Shelf mostra o maior dos dois.",
+    "idleStart": "Tirar tempo parado",
+    "idle": "Tempo parado",
+    "idleHint": "A Steam e a Nintendo contam todo o tempo em que um jogo fica aberto, jogando ou não. Estas horas saem do que elas contam, nunca do que você digitou.",
     "lastPlayed": "Jogado pela última vez em {date}. Sem um dia escolhido, vale esse.",
     "privateTitle": "Privado",
     "privateHint": "Só você vê este jogo, aqui e numa estante pública.",

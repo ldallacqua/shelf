@@ -13,16 +13,18 @@ import { callApi as call } from '@/features/owner/call-api'
  */
 
 /** The API takes a rating out of ten and time in hours, as it gives them. */
-const toApi = ({ rating, minutes, ...rest }: EditPatch) => ({
+const toApi = ({ rating, minutes, idle, ...rest }: EditPatch) => ({
   ...rest,
   ...(rating === undefined ? {} : { rating: rating === null ? null : rating / 10 }),
   ...(minutes === undefined ? {} : { hoursPlayed: minutes / 60 }),
+  ...(idle === undefined ? {} : { hoursIdle: idle / 60 }),
 })
 
 /** What GET /entries/{id} answers, in the API's units. */
-type ApiOwnerGame = Omit<OwnerGame, 'rating' | 'minutes' | 'copies'> & {
+type ApiOwnerGame = Omit<OwnerGame, 'rating' | 'minutes' | 'idle' | 'copies'> & {
   rating?: number
   hoursPlayed: number
+  hoursIdle?: number
   copies: {
     id: string
     platform: number
@@ -31,10 +33,11 @@ type ApiOwnerGame = Omit<OwnerGame, 'rating' | 'minutes' | 'copies'> & {
   }[]
 }
 
-const fromApi = ({ rating, hoursPlayed, copies, ...rest }: ApiOwnerGame): OwnerGame => ({
+const fromApi = ({ rating, hoursPlayed, hoursIdle, copies, ...rest }: ApiOwnerGame): OwnerGame => ({
   ...rest,
   ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
   minutes: Math.round(hoursPlayed * 60),
+  ...(hoursIdle === undefined ? {} : { idle: Math.round(hoursIdle * 60) }),
   copies: copies.map(({ id, platform, format, synced }) => ({
     id,
     platformId: platform,

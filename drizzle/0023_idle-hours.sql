@@ -1,0 +1,1 @@
+ALTER TABLE `entries` ADD `idle_minutes` integer;

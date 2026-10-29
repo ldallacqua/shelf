@@ -42,6 +42,7 @@ import {
   apiRematch,
   apiRematched,
   apiStatusPatch,
+  apiStoreHours,
   apiUndoAdditions,
 } from './writes'
 
@@ -140,6 +141,7 @@ export const openApiDocument = () => {
     apiBroughtBack,
     apiSeparated,
     apiArchivedGames,
+    apiStoreHours,
     apiPlayable,
     apiPastedLines,
     apiLineMatch,
@@ -402,6 +404,17 @@ export const openApiDocument = () => {
           security: OWNER,
           responses: {
             200: { description: 'Archived games', ...json('ArchivedGames') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/me/hours': {
+        get: {
+          summary:
+            'The signed-in account’s games whose stores report far past IGDB’s time and that it has not looked at, the most hours first: to take time left idle out of (hoursIdle in PATCH /entries/{id}) or keep. Signed in.',
+          security: OWNER,
+          responses: {
+            200: { description: 'Games, by their stores’ hours', ...json('StoreHours') },
             ...REFUSALS,
           },
         },
