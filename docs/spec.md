@@ -485,15 +485,23 @@ explore the games behind it."
   best year and month, and the longest run of months. A month or a year leads to its games.
 - **Every chart has its table,** folded under it, and a tooltip on hover and on focus; nothing
   is said by color alone. They are drawn without a script.
+- **To share** (phase 3). A public shelf's page ends with its card: what a link to it shows
+  where it is shared, 1200 by 630. Of all time, "Ana's trophies"; of a year, its recap, "Ana's
+  2025 in games": the games finished, large, the hours, the leading genre, the achievements
+  unlocked and the games perfected, and the latest four covers. It is drawn without adult games,
+  as it is seen where no device's choice reaches. Beside it, **Share the link** (the device's
+  own sharing on a phone; elsewhere **Copy the link**, then "Link copied") and **Save the
+  card**. A year's page is titled for it in the link too ("Ana's 2025 in games"). A filtered
+  page has no card, since the card would say the whole period; a private shelf has none.
 
 Started is playing, finished or dropped; a retired game is out of it, since it had no end to
 reach (3.12). What cannot be known yet (no ratings, nothing started, no hours, one year only)
 is left out, not shown as nothing: a shelf with no achievements read has no Achievements or
 vault. Achievements are Steam's alone so far, so they are not split by platform. Not among the
-figures are replays, play sessions or how long a game took from start to
-finish: the library does not record them. Release generations are left out too, as no filter
-could lead to their games. A public wall is listed for search engines once it has a trophy; an empty
-one is not. A private shelf's wall is drawn only in its own browser (ADR 004).
+figures are replays, play sessions or how long a game took from start to finish: the library
+does not record them. Release generations are left out too, as no filter could lead to their
+games. A public wall is listed for search engines once it has a trophy; an empty one is not. A
+private shelf's wall is drawn only in its own browser (ADR 004).
 
 **In the library**, the stats line (games, finished, hours) is always visible and follows the
 current filter. Numbers count up once when first seen, and are still under reduced motion.

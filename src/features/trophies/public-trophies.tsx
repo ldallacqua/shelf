@@ -4,6 +4,7 @@ import { lazy, Suspense, type ReactNode } from 'react'
 
 import { useIsMine } from '@/features/owner/account'
 
+import type { CardOf } from './trophy-wall'
 import type { Which } from './wall-address'
 
 const OwnTrophies = lazy(() =>
@@ -19,18 +20,21 @@ const OwnTrophies = lazy(() =>
 export function PublicTrophies({
   handle,
   which,
+  card,
   children,
 }: {
   handle: string
   /** Which trophies the address asks for. */
   which: Which
+  /** The shelf's card for the page, kept when the wall is drawn again. */
+  card?: CardOf
   children: ReactNode
 }) {
   const mine = useIsMine(handle)
   if (!mine) return children
   return (
     <Suspense fallback={children}>
-      <OwnTrophies handle={handle} which={which}>
+      <OwnTrophies handle={handle} which={which} card={card}>
         {children}
       </OwnTrophies>
     </Suspense>

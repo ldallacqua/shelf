@@ -9,8 +9,11 @@ import { Cover } from '@/features/library/cover'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
 import { gameHref, trophiesHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
+import { buttonVariants } from '@/ui/button'
 
+import { Section } from './chart-parts'
 import { Dashboard, TrophyFilters } from './dashboard'
+import { ShareButton } from './share-button'
 import './trophies.css'
 
 /** How wide a trophy's cover is drawn, for the browser to choose a file by. */
@@ -133,6 +136,47 @@ function Figures({
   )
 }
 
+/** A public shelf's trophy card: its address, and what it shows in words. */
+export type CardOf = { src: string; alt: string }
+
+/**
+ * The card a link to this page shows where it is shared, of all time or a
+ * year's recap (issue 68), and the ways to share the link and keep the card.
+ */
+function Share({ card, scope }: { card: CardOf; scope?: number }) {
+  const t = useTranslations('Trophies.share')
+  return (
+    <Section title={scope === undefined ? t('title') : t('yearTitle', { year: String(scope) })}>
+      <div className="trophy-share">
+        {/* Drawn by the server as an image, for other apps: next/image would only add a request. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={card.src}
+          alt={card.alt}
+          width={1200}
+          height={630}
+          loading="lazy"
+          decoding="async"
+          className="trophy-share-card"
+        />
+        <div className="grid content-start gap-3">
+          <p className="max-w-prose text-sm text-pretty text-muted">{t('body')}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <ShareButton />
+            <a
+              href={card.src}
+              download={scope === undefined ? 'trophies.png' : `trophies-${scope}.png`}
+              className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            >
+              {t('save')}
+            </a>
+          </div>
+        </div>
+      </div>
+    </Section>
+  )
+}
+
 /** A year or a filter that leaves nothing: said, with the way back to every trophy. */
 function NoneMatch({ handle }: { handle: string }) {
   const t = useTranslations('Trophies.filters')
@@ -151,19 +195,22 @@ function NoneMatch({ handle }: { handle: string }) {
  * every finished game, face-out, each under its own light, by the year it was
  * finished. Drawn on the server for a public shelf, and in its own browser for
  * a private one. `q` is the filter the wall was worked out with, and the
- * achievements' too.
+ * achievements' too. A public shelf's page ends with its card, to share.
  */
 export function TrophyWallView({
   wall,
   achievements,
   handle,
   q,
+  card,
 }: {
   wall: TrophyWall
   /** Its games' achievements, worked out on the server (issue 68). */
   achievements?: AchievementWall
   handle: string
   q?: string
+  /** A public shelf's card for this page: none for a private one, nor for a filtered page. */
+  card?: CardOf
 }) {
   const t = useTranslations('Trophies')
   // How many trophies stand before each year's, for the first screen's covers to come first.
@@ -201,6 +248,7 @@ export function TrophyWallView({
           eager={Math.max(0, EAGER - before[index]!)}
         />
       ))}
+      {card && wall.years.length > 0 ? <Share card={card} scope={wall.stats.scope} /> : null}
     </>
   )
 }

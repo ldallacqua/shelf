@@ -947,4 +947,29 @@
       translate: 0 -0.1875rem;
     }
   }
+
+  /* The card to share, at the page's end: the image, and beside it how to share it. */
+  .trophy-share {
+    display: grid;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (min-width: 48rem) {
+    .trophy-share {
+      grid-template-columns: minmax(0, 36rem) minmax(0, 1fr);
+      align-items: start;
+      gap: 2rem;
+    }
+  }
+
+  .trophy-share-card {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1200 / 630;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    background: var(--surface);
+  }
 }

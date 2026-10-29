@@ -563,6 +563,8 @@
     "metaTitle": "Troféus",
     "shelfMetaTitle": "Troféus de {name}",
     "metaDescription": "{count, plural, one {# jogo zerado} other {# jogos zerados}} por {name}, cada um sob a própria luz, pelo ano em que foi zerado.",
+    "shelfYearMetaTitle": "O {year} de {name} em jogos",
+    "yearMetaDescription": "{count, plural, one {# jogo zerado} other {# jogos zerados}} por {name} em {year}, e o que eles somam.",
     "title": "Troféus",
     "emptyTitle": "Nenhum jogo zerado ainda.",
     "emptyBody": "Os jogos zerados ficarão aqui, cada um sob a própria luz.",
@@ -802,6 +804,29 @@
       "closeSays": "{title}: {earned} de {total} desbloqueadas, faltam {count}",
       "closeOf": "{earned} de {total}",
       "left": "faltam {count}"
+    },
+    "card": {
+      "brand": "SHELF · TROFÉUS",
+      "title": "Troféus de {name}",
+      "yearTitle": "O {year} de {name} em jogos",
+      "finished": "{count, plural, one {jogo zerado} other {jogos zerados}}",
+      "finishedIn": "{count, plural, one {jogo zerado em {year}} other {jogos zerados em {year}}}",
+      "hours": "{hours} {count, plural, one {hora} other {horas}}",
+      "genre": "Mais {genre}",
+      "unlocked": "{unlocked} {count, plural, one {conquista} other {conquistas}}",
+      "perfect": "{perfect} {count, plural, one {jogo perfeito} other {jogos perfeitos}}",
+      "alt": "Cartão de troféus de {name}: {count, plural, one {# jogo zerado} other {# jogos zerados}}",
+      "altYear": "O {year} de {name} em jogos: {count, plural, one {# jogo zerado} other {# jogos zerados}}"
+    },
+    "share": {
+      "title": "Compartilhar",
+      "yearTitle": "Compartilhar {year}",
+      "body": "Um link para esta página mostra este cartão onde for compartilhado.",
+      "share": "Compartilhar o link",
+      "copy": "Copiar o link",
+      "copied": "Link copiado",
+      "failed": "Não foi possível copiar o link",
+      "save": "Salvar o cartão"
     },
     "filters": {
       "label": "Quais troféus",

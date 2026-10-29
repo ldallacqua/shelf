@@ -63,9 +63,10 @@ The owner: "look at shelf issues and start by the highest priority items". The i
 - **#68's third phase is built** (architecture section 25, row "Trophy page, phase 3"; spec
   3.9): the achievements (unlocked, perfect games, rarity and its score, year by year, by
   genre, records and milestones) and the trophy vault (rarities that keep it, the rarest and
-  latest unlocks, perfect games and the nearly perfect). The phase's shareable statistics and
-  yearly recap, and phase 4's backlog, are still the issue's.
-- **Next:** #68's shareable statistics and yearly recap.
+  latest unlocks, perfect games and the nearly perfect), then its card to share (row "Trophy
+  card"): of all time or a year's recap, what a link to the page shows. Phase 4, the backlog,
+  is still the issue's.
+- **Next:** #68's fourth phase, the backlog.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
   `pnpm dev` or a production build sees it.

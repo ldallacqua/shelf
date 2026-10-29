@@ -279,6 +279,12 @@ provider has no words in that language they are its English ones, marked `inEngl
 private game is no game here. Not versioned: a sync changes it without changing the library,
 so the edge keeps it a minute.
 
+## `GET /libraries/{key}/trophies/card?year=&locale=`
+
+A public library's trophy card ([spec 3.9](spec.md#39-trophy-wall-and-stats)), a PNG of 1200 by
+630: what a link to its trophy page shows where it is shared. Of all time, or of `year`, its
+recap; in `locale`, `en` or `pt-BR`. Drawn without adult games. The edge keeps it an hour.
+
 ## `GET /handles/{handle}`
 
 Whether a shelf could have this handle: `{ "available": true }`, or `{ "available": false,
