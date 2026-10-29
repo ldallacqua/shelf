@@ -66,6 +66,11 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   latest unlocks, perfect games and the nearly perfect), then its card to share (row "Trophy
   card"): of all time or a year's recap, what a link to the page shows. Phase 4, the backlog,
   is still the issue's.
+- **The trophy page loads well** (architecture section 25, rows "Trophy page loads" and "Steam
+  artwork moved"): its walls are in Vercel's runtime cache (`'use cache: remote'`), where plain
+  `'use cache'` was one instance's memory and each visit worked them out again; its skeleton is
+  its first screen; achievements' artwork comes from Steam's newer image host, and migration
+  0022 moved the addresses stored before.
 - **Next:** #68's fourth phase, the backlog.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against

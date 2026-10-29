@@ -210,3 +210,49 @@ describe('titles nothing matched, now spelled more ways (0011)', () => {
     }
   })
 })
+
+describe('Steam artwork stored at the older image path (0022)', () => {
+  it('moves to the newer path, file for file, and nothing else does', async () => {
+    const before = migrationsBefore('0022_steam-artwork')
+    const db = openDatabase({ kind: 'memory' })
+    const older = 'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/220'
+    const newer = 'https://shared.akamai.steamstatic.com/community_assets/images/apps/220'
+    try {
+      await migrateDatabase(db, before)
+      await db.run(sql`insert into achievement_sets (id, provider, provider_set_id)
+        values ('steam:220', 'steam', '220')`)
+      // Each achievement: its artwork, and its artwork while locked.
+      const made: Record<string, [string | null, string | null]> = {
+        older: [`${older}/a.jpg`, `${older}/a_bw.jpg`],
+        newer: [`${newer}/b.jpg`, `${newer}/b_bw.jpg`],
+        none: [null, null],
+        elsewhere: ['https://example.com/apps/220/c.jpg', null],
+      }
+      let position = 0
+      for (const [id, [icon, locked]] of Object.entries(made)) {
+        await db.run(sql`insert into achievements (set_id, achievement_id, position, name, icon, icon_locked, first_seen_at)
+          values ('steam:220', ${id}, ${position++}, ${id}, ${icon}, ${locked}, 1)`)
+      }
+
+      await migrateDatabase(db)
+
+      const rows = await db.all<{
+        achievement_id: string
+        icon: string | null
+        icon_locked: string | null
+      }>(sql`select achievement_id, icon, icon_locked from achievements order by position`)
+      expect(rows).toEqual([
+        { achievement_id: 'older', icon: `${newer}/a.jpg`, icon_locked: `${newer}/a_bw.jpg` },
+        { achievement_id: 'newer', icon: `${newer}/b.jpg`, icon_locked: `${newer}/b_bw.jpg` },
+        { achievement_id: 'none', icon: null, icon_locked: null },
+        {
+          achievement_id: 'elsewhere',
+          icon: 'https://example.com/apps/220/c.jpg',
+          icon_locked: null,
+        },
+      ])
+    } finally {
+      rmSync(before, { recursive: true, force: true })
+    }
+  })
+})
