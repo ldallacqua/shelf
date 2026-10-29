@@ -51,9 +51,9 @@ describe('a game’s achievements from Steam', () => {
           key: '0',
           name: 'Liftoff',
           description: 'Leave the village.',
-          icon: 'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/753640/a1b2.jpg',
+          icon: 'https://shared.akamai.steamstatic.com/community_assets/images/apps/753640/a1b2.jpg',
           iconLocked:
-            'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/753640/c3d4.jpg',
+            'https://shared.akamai.steamstatic.com/community_assets/images/apps/753640/c3d4.jpg',
           hidden: false,
           rate: 80.9,
         },
@@ -72,7 +72,7 @@ describe('a game’s achievements from Steam', () => {
 
   it('keeps artwork only as an image file in the game’s own folder', () => {
     expect(steamImage('220', 'a.jpg')).toBe(
-      'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/220/a.jpg',
+      'https://shared.akamai.steamstatic.com/community_assets/images/apps/220/a.jpg',
     )
     expect(steamImage('220', '../a.jpg')).toBeUndefined()
     expect(steamImage('220', 'https://example.com/a.jpg')).toBeUndefined()

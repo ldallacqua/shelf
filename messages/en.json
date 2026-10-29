@@ -560,6 +560,7 @@
     "viewerNext": "Next screenshot"
   },
   "Trophies": {
+    "loading": "Loading the trophies…",
     "metaTitle": "Trophies",
     "shelfMetaTitle": "{name}'s trophies",
     "metaDescription": "{count, plural, one {# game} other {# games}} {name} finished, each under its own light, by the year it was finished.",

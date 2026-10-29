@@ -239,9 +239,9 @@ describe('reading achievements from Steam', () => {
       name: 'Out the Window',
       description: 'Escape the apartment block.',
       // Steam names a file in the game's folder on its image servers.
-      icon: 'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/220/hl2_out_the_window.jpg',
+      icon: 'https://shared.akamai.steamstatic.com/community_assets/images/apps/220/hl2_out_the_window.jpg',
       iconLocked:
-        'https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/220/hl2_out_the_window_bw.jpg',
+        'https://shared.akamai.steamstatic.com/community_assets/images/apps/220/hl2_out_the_window_bw.jpg',
       hidden: false,
       state: 'unlocked',
       unlockedAt: 1760086000 * 1000,

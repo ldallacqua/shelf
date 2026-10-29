@@ -135,7 +135,9 @@ export const getLibrary = async (libraryId: string): Promise<Library> => {
 /**
  * A public library's trophy wall (spec 3.9). Kept until the library changes,
  * and worked out again once a day besides, so its "this year" turns with the
- * calendar on a shelf nobody touches.
+ * calendar on a shelf nobody touches. The page asks for it at the request, so
+ * it is kept where every server instance finds it: in one instance's memory,
+ * each visit worked it out again from the whole library.
  */
 export const getTrophyWall = async (
   libraryId: string,
@@ -143,7 +145,7 @@ export const getTrophyWall = async (
   q?: string,
   by?: Measure,
 ): Promise<TrophyWall> => {
-  'use cache'
+  'use cache: remote'
   cacheTag(libraryTag(libraryId))
   cacheLife('days')
   const today = new Date().toISOString().slice(0, 10)

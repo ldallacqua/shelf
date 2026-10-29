@@ -435,9 +435,10 @@ Xbox and PlayStation tickets extend rather than repeat. What building settled:
   count, not Steam's "Perfect Games"), the latest unlocks by their real moment, and the rarest
   by Steam's rates. Nothing infers a completion, a date or a status from them, and nothing
   changes what I set.
-- **Steam's artwork** is used from Steam's image servers, as IGDB's covers are from IGDB's: the
-  pages' rules allow `cdn.akamai.steamstatic.com`, and the older hosts Steam still answers with
-  are moved to it.
+- **Steam's artwork** is used from Steam's image servers, as IGDB's covers are from IGDB's:
+  `shared.akamai.steamstatic.com/community_assets/images/apps/`, which the pages' rules allow.
+  The older `cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/` answers 404 for a
+  game out in 2026 (checked 29 Oct 2026), where the newer one has every game's.
 
 **For Xbox and PlayStation.** Each becomes a provider in `achievementProviders`
 (`domain/achievements/achievements.ts`), with an `AchievementSource` in

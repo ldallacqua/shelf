@@ -560,6 +560,7 @@
     "viewerNext": "Próxima captura"
   },
   "Trophies": {
+    "loading": "Carregando os troféus…",
     "metaTitle": "Troféus",
     "shelfMetaTitle": "Troféus de {name}",
     "metaDescription": "{count, plural, one {# jogo zerado} other {# jogos zerados}} por {name}, cada um sob a própria luz, pelo ano em que foi zerado.",

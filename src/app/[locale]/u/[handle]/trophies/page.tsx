@@ -67,7 +67,7 @@ export async function generateMetadata({
   // Asked at the request, as the page's own year is: the year turns.
   await connection()
   const which = wallAddress(query, new Date().getUTCFullYear())
-  const wall = await getTrophyWall(library.id, which.scope)
+  const wall = await getTrophyWall(library.id, which.scope, which.q, which.by)
   // What is shared is drawn without adult games, as the card is.
   const { finished } = wall.hidden ?? wall.stats
   const year = which.scope === undefined ? undefined : String(which.scope)
@@ -109,7 +109,10 @@ async function ShelfTrophies({
   searchParams,
 }: Pick<PageProps<'/[locale]/u/[handle]/trophies'>, 'params' | 'searchParams'>) {
   const { handle, locale } = await params
-  const which = wallAddress(await searchParams, new Date().getUTCFullYear())
+  const query = await searchParams
+  // Asked at the request: the year turns.
+  await connection()
+  const which = wallAddress(query, new Date().getUTCFullYear())
   const library = await findLibrary(handle)
   if (!library) return <NoShelf />
   const shelf = shelfInfoOf(library)
