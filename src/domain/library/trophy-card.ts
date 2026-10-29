@@ -25,8 +25,8 @@ export type TrophyCard = {
   covers: { title: string; cover?: string; colors?: Palette }[]
 }
 
-/** How many covers a card shows. */
-export const CARD_COVERS = 4
+/** How many covers a card shows: the most its shelf holds. */
+export const CARD_COVERS = 5
 
 /** The card of a wall worked out for all time or for one year, and its achievements. */
 export const trophyCardOf = (wall: TrophyWall, achievements: AchievementWall): TrophyCard => {

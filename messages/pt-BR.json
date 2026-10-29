@@ -829,15 +829,15 @@
       "unsorted": "{count, plural, one {Mais # jogo} other {Mais # jogos}} das sincronizações, ainda a definir"
     },
     "card": {
-      "brand": "SHELF · TROFÉUS",
+      "label": "Troféus",
       "title": "Troféus de {name}",
       "yearTitle": "O {year} de {name} em jogos",
       "finished": "{count, plural, one {jogo zerado} other {jogos zerados}}",
       "finishedIn": "{count, plural, one {jogo zerado em {year}} other {jogos zerados em {year}}}",
-      "hours": "{hours} {count, plural, one {hora} other {horas}}",
-      "genre": "Mais {genre}",
-      "unlocked": "{unlocked} {count, plural, one {conquista} other {conquistas}}",
-      "perfect": "{perfect} {count, plural, one {jogo perfeito} other {jogos perfeitos}}",
+      "hours": "{count, plural, one {hora} other {horas}}",
+      "genre": "Gênero nº 1",
+      "unlocked": "{count, plural, one {conquista} other {conquistas}}",
+      "perfect": "{count, plural, one {perfeito} other {perfeitos}}",
       "alt": "Cartão de troféus de {name}: {count, plural, one {# jogo zerado} other {# jogos zerados}}",
       "altYear": "O {year} de {name} em jogos: {count, plural, one {# jogo zerado} other {# jogos zerados}}"
     },

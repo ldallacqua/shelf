@@ -65,11 +65,14 @@ describe('a trophy card', () => {
       averageRating: 90,
       unlocked: 2,
       perfect: 1,
-      // The latest dated finishes, newest first; neither the adult one nor the undated.
-      covers: ['Bastion', 'Hades', 'Pyre', 'Transistor'].map((title) => ({
-        title,
-        cover: title.toLowerCase(),
-      })),
+      // The latest dated finishes, newest first, five at most; neither the adult one nor the undated.
+      covers: [
+        { title: 'Bastion', cover: 'bastion' },
+        { title: 'Hades', cover: 'hades' },
+        { title: 'Pyre', cover: 'pyre' },
+        { title: 'Transistor', cover: 'transistor' },
+        { title: 'Hades II', cover: 'hadesii' },
+      ],
     })
   })
 
