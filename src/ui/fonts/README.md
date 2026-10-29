@@ -51,9 +51,24 @@ font.flavor = "woff2"
 font.save("archivo-title.woff2")
 ```
 
+## The trophy card's fonts
+
+The card a shared trophy page shows (`app/api/v1/libraries/[key]/trophies/card`) is drawn by
+`next/og`, which reads TrueType but not WOFF2. So `card/` holds the same styles as TTF, cut
+from the files the build already serves, with fontTools:
+
+| File | From | How |
+| --- | --- | --- |
+| `archivo-title.ttf`, 37 KB | `archivo-title.woff2` here | Saved without WOFF2's compression |
+| `archivo-700.ttf`, 41 KB | Archivo's Latin file from Google Fonts, weight axis 100 to 900 | `instancer.instantiateVariableFont(font, {"wght": 700})` |
+| `martian-mono-500.ttf`, 24 KB | Martian Mono 500's Latin file from Google Fonts | Saved without WOFF2's compression |
+
+The route reads them once per server instance, by path from the project's folder, which
+Next.js traces into the deployed function.
+
 ## License
 
-Archivo is licensed under the SIL Open Font License 1.1, which allows modified versions to
+Archivo and Martian Mono are licensed under the SIL Open Font License 1.1, which allows modified versions to
 be redistributed under the same license. The license is in [`OFL.txt`](OFL.txt). The family
 declares no reserved font name.
 

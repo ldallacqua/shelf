@@ -498,8 +498,12 @@ explore the games behind it."
   is said by color alone. They are drawn without a script.
 - **To share** (phase 3). A public shelf's page ends with its card: what a link to it shows
   where it is shared, 1200 by 630. Of all time, "Ana's trophies"; of a year, its recap, "Ana's
-  2025 in games": the games finished, large, the hours, the leading genre, the achievements
-  unlocked and the games perfected, and the latest four covers. It is drawn without adult games,
+  2025 in games". The latest five covers stand face-out on a lit shelf, as the mark draws three
+  cases, each under a lamp of its own color as on the wall; under them the games finished,
+  large, whose they are, and on one line the hours, the achievements unlocked, the games
+  perfected and the leading genre, as many as fit beside the games finished, the genre giving
+  way first. A cover that does not come is a block of its own colors. It is in the site's own
+  faces, Archivo and Martian Mono. It is drawn without adult games,
   as it is seen where no device's choice reaches. Beside it, **Share the link** (the device's
   own sharing on a phone; elsewhere **Copy the link**, then "Link copied") and **Save the
   card**. A year's page is titled for it in the link too ("Ana's 2025 in games"). A filtered

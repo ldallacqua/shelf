@@ -829,15 +829,15 @@
       "unsorted": "{count, plural, one {# more game} other {# more games}} from syncs, not placed yet"
     },
     "card": {
-      "brand": "SHELF · TROPHIES",
+      "label": "Trophies",
       "title": "{name}'s trophies",
       "yearTitle": "{name}'s {year} in games",
       "finished": "{count, plural, one {game finished} other {games finished}}",
       "finishedIn": "{count, plural, one {game finished in {year}} other {games finished in {year}}}",
-      "hours": "{hours} {count, plural, one {hour} other {hours}}",
-      "genre": "Mostly {genre}",
-      "unlocked": "{unlocked} {count, plural, one {achievement} other {achievements}}",
-      "perfect": "{perfect} {count, plural, one {perfect game} other {perfect games}}",
+      "hours": "{count, plural, one {hour} other {hours}}",
+      "genre": "Top genre",
+      "unlocked": "{count, plural, one {achievement} other {achievements}}",
+      "perfect": "{count, plural, one {perfect} other {perfect}}",
       "alt": "{name}'s trophy card: {count, plural, one {# game} other {# games}} finished",
       "altYear": "{name}'s {year} in games: {count, plural, one {# game} other {# games}} finished"
     },
