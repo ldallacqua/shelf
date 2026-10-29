@@ -162,6 +162,15 @@ export const readMyLibrary = async (libraryId: string): Promise<Library> =>
 /** A library as its file's text: what the browser fetches once, then filters and sorts on the device. */
 export const libraryFile = (library: Library): string => JSON.stringify(encodeLibrary(library))
 
+/**
+ * Where a public library's trophy card is (issue 68): what a link to its
+ * trophy page shows where it is shared, of all time or of one year.
+ */
+export const trophyCardPath = (key: string, locale: string, year?: number): string =>
+  `/api/v1/libraries/${key}/trophies/card?locale=${encodeURIComponent(locale)}${
+    year === undefined ? '' : `&year=${year}`
+  }`
+
 /** A public library's file as text, ready to send. */
 export const getLibrarySnapshot = async (
   libraryId: string,

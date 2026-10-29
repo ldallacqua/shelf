@@ -563,6 +563,8 @@
     "metaTitle": "Trophies",
     "shelfMetaTitle": "{name}'s trophies",
     "metaDescription": "{count, plural, one {# game} other {# games}} {name} finished, each under its own light, by the year it was finished.",
+    "shelfYearMetaTitle": "{name}'s {year} in games",
+    "yearMetaDescription": "{count, plural, one {# game} other {# games}} {name} finished in {year}, and what they add up to.",
     "title": "Trophies",
     "emptyTitle": "Nothing finished yet.",
     "emptyBody": "Completed games will stand here, each under its own light.",
@@ -802,6 +804,29 @@
       "closeSays": "{title}: {earned} of {total} unlocked, {count} left",
       "closeOf": "{earned} of {total}",
       "left": "{count} left"
+    },
+    "card": {
+      "brand": "SHELF · TROPHIES",
+      "title": "{name}'s trophies",
+      "yearTitle": "{name}'s {year} in games",
+      "finished": "{count, plural, one {game finished} other {games finished}}",
+      "finishedIn": "{count, plural, one {game finished in {year}} other {games finished in {year}}}",
+      "hours": "{hours} {count, plural, one {hour} other {hours}}",
+      "genre": "Mostly {genre}",
+      "unlocked": "{unlocked} {count, plural, one {achievement} other {achievements}}",
+      "perfect": "{perfect} {count, plural, one {perfect game} other {perfect games}}",
+      "alt": "{name}'s trophy card: {count, plural, one {# game} other {# games}} finished",
+      "altYear": "{name}'s {year} in games: {count, plural, one {# game} other {# games}} finished"
+    },
+    "share": {
+      "title": "Share",
+      "yearTitle": "Share {year}",
+      "body": "A link to this page shows this card wherever it is shared.",
+      "share": "Share the link",
+      "copy": "Copy the link",
+      "copied": "Link copied",
+      "failed": "The link could not be copied",
+      "save": "Save the card"
     },
     "filters": {
       "label": "Which trophies",

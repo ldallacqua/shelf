@@ -9,7 +9,7 @@ import { loadMine } from '@/features/library/use-library'
 
 import { EmptyTrophies } from './empty-trophies'
 import { loadMyAchievements } from './my-achievements'
-import { TrophyWallView } from './trophy-wall'
+import { TrophyWallView, type CardOf } from './trophy-wall'
 import type { Which } from './wall-address'
 
 /**
@@ -21,10 +21,12 @@ import type { Which } from './wall-address'
 export function OwnTrophies({
   handle,
   which,
+  card,
   children,
 }: {
   handle: string
   which: Which
+  card?: CardOf
   children: ReactNode
 }) {
   const locale = useLocale()
@@ -52,5 +54,13 @@ export function OwnTrophies({
   if (own.wall.years.length === 0 && scope === undefined && q === undefined) {
     return <EmptyTrophies />
   }
-  return <TrophyWallView wall={own.wall} achievements={own.achievements} handle={handle} q={q} />
+  return (
+    <TrophyWallView
+      wall={own.wall}
+      achievements={own.achievements}
+      handle={handle}
+      q={q}
+      card={card}
+    />
+  )
 }
