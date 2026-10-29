@@ -1,6 +1,6 @@
 import { TrophyIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { type CSSProperties, type ReactNode, useId } from 'react'
+import type { CSSProperties } from 'react'
 
 import {
   RARITY_BELOW,
@@ -14,21 +14,41 @@ import { dateOf } from '@/features/library/format'
 import { gameHref, trophiesHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 
-import { AsTable, Columns, scopeHref, Section, withFilter } from './chart-parts'
+import {
+  AsTable,
+  Chapter,
+  Columns,
+  Fact,
+  Kpi,
+  Kpis,
+  Panel,
+  RankedHead,
+  RankedRows,
+  scopeHref,
+  withFilter,
+} from './chart-parts'
 
 /**
- * The trophy page's achievements (issue 68's third phase): how many are
- * unlocked and how rare they are, year by year, by genre, the records and
- * milestones among them; then the trophy vault, the rarest and the latest
- * unlocks, of a rarity when one is chosen, and the games perfected and nearly
- * so. From what Steam last said, and drawn without a script, as the rest of
- * the page is. Each unlock and game leads to its game's achievements.
+ * The trophy page's achievements (issue 68's third phase), in two chapters:
+ * how many are unlocked and how rare they are, year by year, by genre, the
+ * records and milestones among them; then the trophy vault, the rarest and
+ * the latest unlocks, of a rarity when one is chosen, and the games perfected
+ * and nearly so. From what Steam last said, and drawn without a script, as
+ * the rest of the page is. Each unlock and game leads to its game's
+ * achievements.
  */
 
-type Props = { stats: AchievementStats; handle: string; q?: string; by: Measure }
+type Props = {
+  stats: AchievementStats
+  handle: string
+  q?: string
+  by: Measure
+  /** Of the second set of figures on a page that draws two (`chapterId`). */
+  suffix?: string
+}
 
 /** Where the vault is, so a rarity chosen without a script lands on it. */
-const VAULT = 'trophy-vault'
+export const VAULT = 'trophy-vault'
 
 /** Under this share an unlock glows, as on a game's page and in Steam's own library. */
 const RARE = RARITY_BELOW.rare
@@ -39,6 +59,7 @@ const vaultHref = (
   stats: AchievementStats,
   q: string | undefined,
   by: Measure,
+  suffix: string,
   rarity?: Rarity,
 ) => {
   const query: Record<string, string> = {}
@@ -46,7 +67,7 @@ const vaultHref = (
   if (q?.trim()) query.q = q.trim()
   if (by !== 'finished') query.by = by
   if (rarity) query.rarity = rarity
-  return { ...trophiesHref(handle, query), hash: VAULT }
+  return { ...trophiesHref(handle, query), hash: `${VAULT}${suffix}` }
 }
 
 /** A game's page, at its achievements. */
@@ -74,32 +95,6 @@ function useLasted() {
   }
 }
 
-function Figure({ label, children, note }: { label: string; children: ReactNode; note?: string }) {
-  return (
-    <div className="trophy-figure">
-      <dt className="readout text-[0.625rem] text-muted">{label}</dt>
-      <dd className="mt-1.5">
-        {children}
-        {note ? (
-          <span className="mt-0.5 block readout text-[0.625rem] text-muted">{note}</span>
-        ) : null}
-      </dd>
-    </div>
-  )
-}
-
-function Record({ label, children, note }: { label: string; children: ReactNode; note?: string }) {
-  return (
-    <div className="trophy-record">
-      <dt className="readout text-[0.625rem] text-muted">{label}</dt>
-      <dd className="mt-1.5 min-w-0">
-        <span className="line-clamp-2 title text-lg text-balance">{children}</span>
-        {note ? <span className="readout text-[0.625rem] text-muted">{note}</span> : null}
-      </dd>
-    </div>
-  )
-}
-
 /** How many are unlocked and perfected, how rare the average one is, and the score they make. */
 function Figures({ stats }: { stats: AchievementStats }) {
   const t = useTranslations('Trophies.achievements')
@@ -108,51 +103,47 @@ function Figures({ stats }: { stats: AchievementStats }) {
   const percent = (value: number) =>
     format.number(value, { style: 'percent', maximumFractionDigits: 0 })
   const scoped = stats.scope !== undefined
+  const number = (text: string) => <span className="trophy-kpi-number">{text}</span>
+  const rest = [stats.averageRate !== undefined, stats.score > 0].filter(Boolean).length
   return (
     <>
-      <dl className="trophy-figures trophy-achievement-figures">
-        <Figure
+      <Kpis columns={2 + rest}>
+        <Kpi
           label={scoped ? t('unlockedIn', { year: String(stats.scope) }) : t('unlocked')}
+          value={number(format.number(stats.unlocked))}
           note={
             stats.available === undefined
               ? t('inGames', { count: stats.games })
               : t('ofAvailable', { percent: percent(stats.percent! / 100), count: stats.available })
           }
-        >
-          <span className="title text-4xl tabular-nums sm:text-5xl">
-            {format.number(stats.unlocked)}
-          </span>
-        </Figure>
-        <Figure
+        />
+        <Kpi
           label={scoped ? t('perfectIn', { year: String(stats.scope) }) : t('perfect')}
+          value={number(format.number(stats.perfect))}
           note={
             stats.perfectShare === undefined
               ? undefined
               : t('perfectShare', { share: percent(stats.perfectShare) })
           }
-        >
-          <span className="title text-3xl tabular-nums sm:text-4xl">
-            {format.number(stats.perfect)}
-          </span>
-        </Figure>
+        />
         {stats.averageRate === undefined ? null : (
-          <Figure label={t('average')} note={t('averageNote')}>
-            <span className="title text-3xl tabular-nums sm:text-4xl">
-              {share(stats.averageRate)}
-            </span>
-          </Figure>
+          <Kpi
+            label={t('average')}
+            value={number(share(stats.averageRate))}
+            note={t('averageNote')}
+            wide={rest === 1}
+          />
         )}
         {stats.score > 0 ? (
-          <Figure label={t('score')} note={t('scoreNote')}>
-            <span className="title text-3xl tabular-nums sm:text-4xl">
-              {format.number(stats.score)}
-            </span>
-          </Figure>
+          <Kpi
+            label={t('score')}
+            value={number(format.number(stats.score))}
+            note={t('scoreNote')}
+            wide={rest === 1}
+          />
         ) : null}
-      </dl>
-      {stats.score > 0 ? (
-        <p className="max-w-prose text-xs text-pretty text-muted">{t('scoreHow')}</p>
-      ) : null}
+      </Kpis>
+      {stats.score > 0 ? <p className="trophy-board-note">{t('scoreHow')}</p> : null}
     </>
   )
 }
@@ -186,37 +177,36 @@ function Trend({ stats, handle, q, by }: Props) {
   })
   const title = stats.scope === undefined ? t('years') : t('months')
   return (
-    <div className="min-w-0">
-      <h3 className="readout text-[0.625rem] text-muted">{title}</h3>
-      <div className="mt-3">
-        <Columns columns={columns} emphasis={false} />
+    <Panel title={title} span={8}>
+      <Columns columns={columns} emphasis={false} />
+      <div className="trophy-panel-foot">
+        <AsTable
+          caption={title}
+          head={[stats.scope === undefined ? t('year') : t('month'), t('unlockedHead')]}
+          rows={stats.trend.map((each) => [
+            each.month === undefined ? String(each.year) : monthName(each.month, 'long'),
+            format.number(each.count),
+          ])}
+        />
       </div>
-      <AsTable
-        caption={title}
-        head={[stats.scope === undefined ? t('year') : t('month'), t('unlockedHead')]}
-        rows={stats.trend.map((each) => [
-          each.month === undefined ? String(each.year) : monthName(each.month, 'long'),
-          format.number(each.count),
-        ])}
-      />
-    </div>
+    </Panel>
   )
 }
 
-/** The genres whose achievements I unlock most of, each a way to the page kept to it. */
-function Genres({ stats, handle, q, by }: Props) {
+/**
+ * The genres whose achievements I unlock most of, each a way to the page
+ * kept to it: `tall` beside the years and the records under them.
+ */
+function Genres({ stats, handle, q, by, tall }: Props & { tall: boolean }) {
   const t = useTranslations('Trophies.achievements')
   const format = useFormatter()
-  const id = useId()
   if (stats.genres.length === 0) return null
   const percent = (value: number) =>
     format.number(value, { style: 'percent', maximumFractionDigits: 0 })
   return (
-    <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
-        {t('genres')}
-      </h3>
-      <ol className="trophy-ranked">
+    <Panel title={t('genres')} span={4} rows={tall ? 2 : undefined}>
+      <RankedRows figures={2}>
+        <RankedHead figure={t('unlockedHead')} beside={t('gamesHead')} />
         {stats.genres.map((genre) => (
           <li key={genre.id}>
             <Link
@@ -230,27 +220,27 @@ function Genres({ stats, handle, q, by }: Props) {
               className="trophy-ranked-row"
               style={{ '--value': genre.share } as CSSProperties}
             >
-              <span aria-hidden="true" className="truncate text-sm font-medium">
+              <span aria-hidden="true" className="trophy-ranked-name">
                 {genre.name}
               </span>
-              <span aria-hidden="true" className="readout text-[0.6875rem] tabular-nums">
+              <span aria-hidden="true" className="trophy-ranked-figure">
                 {percent(genre.share)}
+              </span>
+              <span aria-hidden="true" className="trophy-ranked-beside">
+                {format.number(genre.games)}
               </span>
               <span aria-hidden="true" className="trophy-ranked-track">
                 <span className="trophy-ranked-bar" />
               </span>
-              <span aria-hidden="true" className="readout text-[0.5625rem] text-muted">
-                {t('genreGames', { count: genre.games })}
-              </span>
             </Link>
           </li>
         ))}
-      </ol>
-    </section>
+      </RankedRows>
+    </Panel>
   )
 }
 
-/** The records among the unlocks: the best day, the most days in a row, the quickest and slowest perfect. */
+/** The records among the unlocks, as cards: the best day, the most days in a row, the quickest and slowest perfect. */
 function Records({ stats, handle }: Props) {
   const t = useTranslations('Trophies.achievements')
   const format = useFormatter()
@@ -259,50 +249,54 @@ function Records({ stats, handle }: Props) {
   const day = (value: string) =>
     format.dateTime(dateOf(value), { dateStyle: 'medium', timeZone: 'UTC' })
   const game = (slug: string, title: string) => (
-    <Link href={achievementsOf(handle, slug)} className="underline-offset-4 hover:underline">
+    <Link href={achievementsOf(handle, slug)} className="trophy-fact-link">
       {title}
     </Link>
   )
   const shown = [
     records.bestDay ? (
-      <Record
+      <Fact
         key="best-day"
         label={t('bestDay')}
         note={t('bestDayNote', { count: records.bestDay.count, title: records.bestDay.game.title })}
       >
         {day(records.bestDay.on)}
-      </Record>
+      </Fact>
     ) : null,
     records.streak ? (
-      <Record
+      <Fact
         key="streak"
         label={t('streak')}
         note={t('span', { from: day(records.streak.from), to: day(records.streak.to) })}
       >
         {t('days', { count: records.streak.days })}
-      </Record>
+      </Fact>
     ) : null,
     records.quickest ? (
-      <Record
+      <Fact
         key="quickest"
         label={t('quickest')}
         note={t('took', { lasted: lasted(records.quickest.took), count: records.quickest.total })}
       >
         {game(records.quickest.slug, records.quickest.title)}
-      </Record>
+      </Fact>
     ) : null,
     records.slowest ? (
-      <Record
+      <Fact
         key="slowest"
         label={t('slowest')}
         note={t('took', { lasted: lasted(records.slowest.took), count: records.slowest.total })}
       >
         {game(records.slowest.slug, records.slowest.title)}
-      </Record>
+      </Fact>
     ) : null,
   ].filter((record) => record !== null)
   if (shown.length === 0) return null
-  return <dl className="trophy-records">{shown}</dl>
+  return (
+    <dl className="trophy-facts" data-span={8}>
+      {shown}
+    </dl>
+  )
 }
 
 /** The unlocks worth marking, the earliest first: the 1st, the 100th…, the first perfect game. */
@@ -310,13 +304,9 @@ function Milestones({ stats, handle }: Props) {
   const t = useTranslations('Trophies.achievements')
   const format = useFormatter()
   const share = useShare()
-  const id = useId()
   if (stats.milestones.length === 0) return null
   return (
-    <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
-        {t('milestones')}
-      </h3>
+    <Panel title={t('milestones')}>
       <ol className="trophy-achievement-milestones">
         {stats.milestones.map((milestone) => (
           <li key={milestone.kind === 'unlock' ? `unlock-${milestone.nth}` : milestone.kind}>
@@ -347,27 +337,35 @@ function Milestones({ stats, handle }: Props) {
                 {milestone.game.title}
               </Link>
             </span>
-            <span className="readout text-[0.5625rem] text-muted">
+            <span className="trophy-milestone-day">
               {format.dateTime(dateOf(milestone.on), { dateStyle: 'medium', timeZone: 'UTC' })}
             </span>
           </li>
         ))}
       </ol>
-    </section>
+    </Panel>
   )
 }
 
-/** How many are unlocked, year by year and by genre, and the records and milestones among them. */
-export function Achievements(props: Props) {
+/**
+ * The achievements' chapter: how many are unlocked, year by year and by
+ * genre, and the records and milestones among them.
+ */
+export function Achievements({ id, ...props }: Props & { id: string }) {
   const t = useTranslations('Trophies.achievements')
+  const chapters = useTranslations('Trophies.chapters')
   const format = useFormatter()
   const { stats } = props
+  const records = Object.values(stats.records).some(Boolean)
+  const trend = stats.trend.length >= 2 || stats.scope !== undefined
   return (
-    <Section
+    <Chapter
+      id={id}
       title={t('title')}
+      lede={chapters('achievements.lede')}
       aside={
         stats.readAt === undefined ? undefined : (
-          <p className="readout text-[0.625rem] text-muted">
+          <p className="trophy-chapter-aside">
             {t('from', { date: format.dateTime(new Date(stats.readAt), { dateStyle: 'medium' }) })}
           </p>
         )
@@ -375,15 +373,11 @@ export function Achievements(props: Props) {
     >
       <Figures stats={stats} />
       {/* The years with the records under them, beside the genres' longer list. */}
-      <div className="trophy-achievement-charts">
-        <div className="grid min-w-0 content-start gap-8">
-          <Trend {...props} />
-          <Records {...props} />
-        </div>
-        <Genres {...props} />
-      </div>
+      <Trend {...props} />
+      <Genres {...props} tall={trend && records} />
+      <Records {...props} />
       <Milestones {...props} />
-    </Section>
+    </Chapter>
   )
 }
 
@@ -448,14 +442,10 @@ function Unlocks({
   handle: string
 }) {
   const t = useTranslations('Trophies.vault')
-  const id = useId()
   return (
-    <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
-        {title}
-      </h3>
+    <Panel title={title} span={6}>
       {unlocks.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">{t('none')}</p>
+        <p className="text-sm text-muted">{t('none')}</p>
       ) : (
         <ol className="trophy-unlocks">
           {unlocks.map((unlock) => (
@@ -463,45 +453,51 @@ function Unlocks({
           ))}
         </ol>
       )}
-    </section>
+    </Panel>
   )
 }
 
 /** The unlocks of each rarity, the rarest first, each a way to keep the vault to it. */
-function Rarities({ stats, handle, q, by }: Props) {
+function Rarities({ stats, handle, q, by, suffix = '', wide }: Props & { wide: boolean }) {
   const t = useTranslations('Trophies.vault')
   const format = useFormatter()
   const busiest = Math.max(...stats.rarities.map((each) => each.count))
   return (
-    <div className="min-w-0">
-      <h3 className="readout text-[0.625rem] text-muted">{t('rarities')}</h3>
-      <div className="mt-3">
-        <Columns
-          emphasis={stats.rarity !== undefined}
-          columns={stats.rarities.map(({ rarity, count }) => ({
-            key: rarity,
-            label: t(`short.${rarity}`),
-            value: count,
-            says: t('raritySays', {
-              rarity: t(`names.${rarity}`),
-              range: t(`ranges.${rarity}`),
-              count,
-            }),
-            href: vaultHref(handle, stats, q, by, stats.rarity === rarity ? undefined : rarity),
-            current: stats.rarity === rarity,
-            labelled: count > 0 && count === busiest,
-          }))}
+    <Panel title={t('rarities')} caption={t('raritiesHint')} span={wide ? 12 : 7}>
+      <Columns
+        emphasis={stats.rarity !== undefined}
+        columns={stats.rarities.map(({ rarity, count }) => ({
+          key: rarity,
+          label: t(`short.${rarity}`),
+          value: count,
+          says: t('raritySays', {
+            rarity: t(`names.${rarity}`),
+            range: t(`ranges.${rarity}`),
+            count,
+          }),
+          href: vaultHref(
+            handle,
+            stats,
+            q,
+            by,
+            suffix,
+            stats.rarity === rarity ? undefined : rarity,
+          ),
+          current: stats.rarity === rarity,
+          labelled: count > 0 && count === busiest,
+        }))}
+      />
+      <div className="trophy-panel-foot">
+        <AsTable
+          caption={t('rarities')}
+          head={[t('rarity'), t('unlocksHead')]}
+          rows={stats.rarities.map(({ rarity, count }) => [
+            `${t(`names.${rarity}`)} (${t(`ranges.${rarity}`)})`,
+            format.number(count),
+          ])}
         />
       </div>
-      <AsTable
-        caption={t('rarities')}
-        head={[t('rarity'), t('unlocksHead')]}
-        rows={stats.rarities.map(({ rarity, count }) => [
-          `${t(`names.${rarity}`)} (${t(`ranges.${rarity}`)})`,
-          format.number(count),
-        ])}
-      />
-    </div>
+    </Panel>
   )
 }
 
@@ -509,13 +505,9 @@ function Rarities({ stats, handle, q, by }: Props) {
 function Perfects({ stats, handle }: Props) {
   const t = useTranslations('Trophies.vault')
   const format = useFormatter()
-  const id = useId()
   if (stats.perfects.length === 0) return null
   return (
-    <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
-        {t('perfects', { count: stats.perfect })}
-      </h3>
+    <Panel title={t('perfects', { count: stats.perfect })}>
       <ol className="trophy-perfects">
         {stats.perfects.map((game) => (
           <li key={game.slug} className="min-w-0" data-adult={game.adult ? '' : undefined}>
@@ -534,7 +526,7 @@ function Perfects({ stats, handle }: Props) {
                 {game.title}
               </span>
             </Link>
-            <p className="mt-0.5 readout text-[0.5625rem] text-muted">
+            <p className="trophy-perfect-note">
               {game.on
                 ? t('perfectedOn', {
                     count: game.total,
@@ -549,21 +541,18 @@ function Perfects({ stats, handle }: Props) {
           </li>
         ))}
       </ol>
-    </section>
+    </Panel>
   )
 }
 
 /** The games a few achievements short of perfect, the fewest left first. */
-function Close({ stats, handle }: Props) {
+function Close({ stats, handle, wide }: Props & { wide: boolean }) {
   const t = useTranslations('Trophies.vault')
-  const id = useId()
   if (stats.close.length === 0) return null
   return (
-    <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
-        {t('close')}
-      </h3>
-      <ol className="trophy-ranked">
+    <Panel title={t('close')} span={wide ? 12 : 5}>
+      <RankedRows figures={2}>
+        <RankedHead figure={t('unlocksHead')} beside={t('leftHead')} />
         {stats.close.map((game) => (
           <li key={game.slug}>
             <Link
@@ -577,62 +566,65 @@ function Close({ stats, handle }: Props) {
               className="trophy-ranked-row"
               style={{ '--value': game.earned / game.total } as CSSProperties}
             >
-              <span aria-hidden="true" className="truncate text-sm font-medium">
+              <span aria-hidden="true" className="trophy-ranked-name">
                 {game.title}
               </span>
-              <span aria-hidden="true" className="readout text-[0.6875rem] tabular-nums">
+              <span aria-hidden="true" className="trophy-ranked-figure">
                 {t('closeOf', { earned: game.earned, total: game.total })}
+              </span>
+              <span aria-hidden="true" className="trophy-ranked-beside">
+                {game.total - game.earned}
               </span>
               <span aria-hidden="true" className="trophy-ranked-track">
                 <span className="trophy-ranked-bar" />
               </span>
-              <span aria-hidden="true" className="readout text-[0.5625rem] text-muted">
-                {t('left', { count: game.total - game.earned })}
-              </span>
             </Link>
           </li>
         ))}
-      </ol>
-    </section>
+      </RankedRows>
+    </Panel>
   )
 }
 
-/** The trophy vault: the rarest and the latest unlocks, of a rarity when one is chosen, and the games perfected. */
+/**
+ * The trophy vault's chapter: the unlocks by rarity, which keep the lists to
+ * one when chosen, and beside them the games nearly perfect; the rarest and
+ * the latest unlocks; and the games perfected, face-out.
+ */
 export function Vault(props: Props) {
   const t = useTranslations('Trophies.vault')
-  const { stats, handle, q, by } = props
+  const chapters = useTranslations('Trophies.chapters')
+  const { stats, handle, q, by, suffix = '' } = props
+  const rarities = stats.rarities.some((each) => each.count > 0)
+  const close = stats.close.length > 0
   return (
-    <section id={VAULT} aria-labelledby={`${VAULT}-title`} className="trophy-section trophy-vault">
-      <div className="trophy-section-head">
-        <h2 id={`${VAULT}-title`} className="title text-xl sm:text-2xl">
-          {t('title')}
-        </h2>
-        {stats.rarity ? (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+    <Chapter
+      id={`${VAULT}${suffix}`}
+      title={t('title')}
+      lede={chapters('vault.lede')}
+      aside={
+        stats.rarity ? (
+          <p className="trophy-chapter-aside flex flex-wrap items-center gap-x-3 gap-y-1">
             {t('keptTo', {
               rarity: t(`names.${stats.rarity}`),
               range: t(`ranges.${stats.rarity}`),
             })}
             <Link
-              href={vaultHref(handle, stats, q, by)}
+              href={vaultHref(handle, stats, q, by, suffix)}
               className="trophy-chip readout text-[0.6875rem]"
               scroll={false}
             >
               {t('every')}
             </Link>
           </p>
-        ) : null}
-      </div>
-      {/* The rarities above the lists they keep, and beside them the games nearly perfect. */}
-      <div className="trophy-achievement-charts">
-        {stats.rarities.some((each) => each.count > 0) ? <Rarities {...props} /> : null}
-        <Close {...props} />
-      </div>
-      <div className="trophy-vault-lists">
-        <Unlocks title={t('rarest')} unlocks={stats.rarest} handle={handle} />
-        <Unlocks title={t('latest')} unlocks={stats.latest} handle={handle} />
-      </div>
+        ) : undefined
+      }
+    >
+      {rarities ? <Rarities {...props} wide={!close} /> : null}
+      <Close {...props} wide={!rarities} />
+      <Unlocks title={t('rarest')} unlocks={stats.rarest} handle={handle} />
+      <Unlocks title={t('latest')} unlocks={stats.latest} handle={handle} />
       <Perfects {...props} />
-    </section>
+    </Chapter>
   )
 }

@@ -13,7 +13,7 @@ vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 /**
  * The trophy page's second phase (issue 68): the ranking chosen in the
  * address, what the figures say, my ratings, the series and my years, each a
- * way to the games behind it.
+ * way to the games behind it. My years are the timeline's rows.
  */
 
 const finished = (title: string, completedOn: string, extra: Partial<LibraryGame> = {}) =>
@@ -86,9 +86,14 @@ describe('the ranking (issue 68)', () => {
 
   it('says each kind by the measure, and how many it finished beside it', () => {
     draw({ by: 'hours' })
-    const kinds = screen.getByRole('region', { name: 'What is finished' })
-    const rpg = within(kinds).getByRole('link', { name: 'RPG: 5 games finished, 50 hours on them' })
-    expect(rpg).toHaveTextContent('RPG50 h5 finished')
+    const kinds = screen.getByRole('region', { name: 'What you finish' })
+    const genres = within(kinds).getByRole('region', { name: 'Genres' })
+    const rpg = within(genres).getByRole('link', {
+      name: 'RPG: 5 games finished, 50 hours on them',
+    })
+    // Ranked by the hours, how many were finished stands beside them, under its head.
+    expect(rpg).toHaveTextContent('RPG50 h5')
+    expect(genres).toHaveTextContent('HoursFinished')
     expect(addressOf(rpg).searchParams.get('q')).toBe('status:completed genre:rpg')
     const developers = within(kinds).getByRole('region', { name: 'Developers' })
     expect(within(developers).getByRole('link')).toHaveTextContent('Supergiant')
@@ -133,23 +138,24 @@ describe('what the figures say (issue 68)', () => {
 describe('my ratings (issue 68)', () => {
   it('fall by point, each a way to the games of that rating', () => {
     draw()
-    const ratings = screen.getByRole('region', { name: 'Ratings' })
+    const ratings = screen.getByRole('region', { name: '5 games rated, by rating' })
     const eight = within(ratings).getByRole('link', { name: 'Rated 8 or 8.5: 2 games' })
     expect(addressOf(eight).searchParams.get('q')).toBe('rating:8..8.5')
   })
 
   it('stand against IGDB’s players’, and name the widest gaps', () => {
     draw()
-    const ratings = screen.getByRole('region', { name: 'Ratings' })
-    expect(ratings).toHaveTextContent("On average you rate 0.2 lower than IGDB's players.")
-    const table = within(ratings).getByRole('table', { name: "Your rating and IGDB's, by game" })
+    const versus = screen.getByRole('region', { name: "Yours against IGDB's players', 5 games" })
+    expect(versus).toHaveTextContent("On average you rate 0.2 lower than IGDB's players.")
+    const table = within(versus).getByRole('table', { name: "Your rating and IGDB's, by game" })
     expect(within(table).getByRole('row', { name: 'Hades 9.5 7' })).toBeInTheDocument()
-    expect(
-      within(ratings).getByRole('region', { name: 'Rated well above IGDB' }),
-    ).toHaveTextContent('HadesYou 9.5 · IGDB 7')
-    expect(
-      within(ratings).getByRole('region', { name: 'Rated well below IGDB' }),
-    ).toHaveTextContent('Hades IIYou 4 · IGDB 8.5')
+    const gaps = screen.getByRole('region', { name: 'Furthest from IGDB' })
+    expect(within(gaps).getByRole('region', { name: 'Rated well above IGDB' })).toHaveTextContent(
+      'HadesYou 9.5 · IGDB 7',
+    )
+    expect(within(gaps).getByRole('region', { name: 'Rated well below IGDB' })).toHaveTextContent(
+      'Hades IIYou 4 · IGDB 8.5',
+    )
   })
 })
 
@@ -175,30 +181,32 @@ describe('the series (issue 68)', () => {
   it('are not on a year’s page', () => {
     draw({ scope: 2025 })
     expect(screen.queryByRole('region', { name: 'Series' })).toBeNull()
-    expect(screen.queryByRole('region', { name: 'Your years' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Finished, year by year' })).toBeNull()
   })
 })
 
 describe('my years (issue 68)', () => {
-  it('are oldest first, each a way to its own page, with what led it and its milestones', () => {
+  it('are the latest first, each a way to its own page, with what led it and its milestones', () => {
     draw()
-    const years = within(screen.getByRole('region', { name: 'Your years' })).getAllByRole(
-      'listitem',
-    )
-    const heads = years.filter((item) => item.classList.contains('trophy-history-year'))
-    expect(heads.map((item) => item.querySelector('a')!.textContent)).toEqual([
-      '2024',
-      '2025',
+    const years = within(screen.getByRole('region', { name: 'Finished, year by year' }))
+      .getAllByRole('listitem')
+      .filter((item) => item.querySelector('a[aria-label]'))
+    expect(years.map((item) => item.querySelector('a')!.textContent)).toEqual([
       '2026',
+      '2025',
+      '2024',
     ])
-    expect(heads[0]).toHaveTextContent('1st finishZelda')
-    expect(heads[1]).toHaveTextContent('Mostly RPG')
-    expect(heads[1]!.querySelector('a')).toHaveAttribute('href', '/en/u/ana/trophies?year=2025')
+    expect(years[2]).toHaveTextContent('1st finish Zelda')
+    expect(years[1]).toHaveTextContent('Mostly RPG')
+    expect(within(years[1]!).getByRole('link', { name: '2025: 3 games finished' })).toHaveAttribute(
+      'href',
+      '/en/u/ana/trophies?year=2025',
+    )
   })
 
   it('read in Portuguese', () => {
     draw({}, 'pt-BR')
-    const years = screen.getByRole('region', { name: 'Seus anos' })
+    const years = screen.getByRole('region', { name: 'Zerados, ano a ano' })
     expect(years).toHaveTextContent('1º zerado')
     expect(screen.getByRole('list', { name: 'Ordenar por' })).toBeInTheDocument()
   })

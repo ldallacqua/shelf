@@ -1,5 +1,5 @@
 import { useFormatter, useTranslations } from 'next-intl'
-import { type CSSProperties, useId } from 'react'
+import type { CSSProperties } from 'react'
 
 import type { WaitingCount, WaitingGame } from '@/domain/library/trophy-backlog'
 import type { TrophyStats } from '@/domain/library/trophy-stats'
@@ -8,7 +8,7 @@ import { hoursOf } from '@/features/library/format'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 
-import { Section, withFilter } from './chart-parts'
+import { Chapter, Kpi, Kpis, Panel, RankedHead, RankedRows, withFilter } from './chart-parts'
 
 type Props = { stats: TrophyStats; handle: string; q?: string }
 
@@ -19,78 +19,72 @@ const WAITING = 'status:backlog,someday'
 type Said = 'left' | 'rating' | 'year'
 
 /**
- * What is still to play (issue 68's backlog): how much, how long by IGDB's
- * estimate, how soon at my own pace, the games to start with, and what is
- * waiting by genre and platform. Each figure and game is a way to the games
- * behind it in the library.
+ * What is still to play (issue 68's backlog), as the page's last chapter of
+ * figures: how much, how long by IGDB's estimate, how soon at my own pace,
+ * the games to start with, and what is waiting by genre and platform. Each
+ * figure and game is a way to the games behind it in the library.
  */
-export function Backlog({ stats, handle, q }: Props) {
+export function Backlog({ stats, handle, q, id }: Props & { id: string }) {
   const t = useTranslations('Trophies.backlog')
+  const chapters = useTranslations('Trophies.chapters')
   const format = useFormatter()
   const backlog = stats.backlog
   if (!backlog) return null
-  const figure = 'title text-3xl tabular-nums sm:text-4xl'
-  const unit = 'ml-1.5 readout text-[0.625rem] text-muted'
-  const note = 'mt-1 readout text-[0.5625rem] text-muted'
+  const figures = 1 + (backlog.timed > 0 ? 1 : 0) + (backlog.months === undefined ? 0 : 1)
   return (
-    <Section title={t('title')}>
-      <dl className="trophy-figures">
-        <div className="trophy-figure">
-          <dt className="readout text-[0.625rem] text-muted">{t('inBacklog')}</dt>
-          <dd className="mt-1.5">
+    <Chapter id={id} title={t('title')} lede={chapters('backlog.lede')}>
+      <Kpis columns={figures}>
+        <Kpi
+          label={t('inBacklog')}
+          value={
             <Link
               href={libraryHref(handle, { q: withFilter('status:backlog', q) })}
-              className={`${figure} underline-offset-4 hover:underline`}
+              className="trophy-kpi-number trophy-kpi-link"
             >
               {format.number(backlog.backlog)}
             </Link>
-            <p className={note}>{t('someday', { count: backlog.someday })}</p>
-          </dd>
-        </div>
+          }
+          note={t('someday', { count: backlog.someday })}
+          wide={figures === 1 || figures === 3}
+        />
         {backlog.timed > 0 ? (
-          <div className="trophy-figure">
-            <dt className="readout text-[0.625rem] text-muted">{t('left')}</dt>
-            <dd className="mt-1.5">
-              <span className={figure}>{format.number(hoursOf(backlog.left))}</span>
-              <span className={unit}>{t('hoursUnit', { count: hoursOf(backlog.left) })}</span>
-              <p className={note}>{t('timed', { timed: backlog.timed, count: backlog.backlog })}</p>
-            </dd>
-          </div>
+          <Kpi
+            label={t('left')}
+            value={
+              <span className="trophy-kpi-number">{format.number(hoursOf(backlog.left))}</span>
+            }
+            unit={t('hoursUnit', { count: hoursOf(backlog.left) })}
+            note={t('timed', { timed: backlog.timed, count: backlog.backlog })}
+          />
         ) : null}
         {backlog.months === undefined ? null : (
-          <div className="trophy-figure">
-            <dt className="readout text-[0.625rem] text-muted">{t('clear')}</dt>
-            <dd className="mt-1.5">
-              <span className={figure}>{format.number(backlog.months)}</span>
-              <span className={unit}>{t('monthsUnit', { count: backlog.months })}</span>
-              <p className={note}>{t('pace', { count: hoursOf(backlog.pace) })}</p>
-            </dd>
-          </div>
+          <Kpi
+            label={t('clear')}
+            value={<span className="trophy-kpi-number">{format.number(backlog.months)}</span>}
+            unit={t('monthsUnit', { count: backlog.months })}
+            note={t('pace', { count: hoursOf(backlog.pace) })}
+          />
         )}
-      </dl>
-      <div className="trophy-backlog-lists">
-        <Waiting title={t('quickest')} games={backlog.quickest} said="left" handle={handle} />
-        <Waiting title={t('bestRated')} games={backlog.bestRated} said="rating" handle={handle} />
-        <Waiting title={t('oldest')} games={backlog.oldest} said="year" handle={handle} />
-      </div>
-      <div className="trophy-kinds">
-        <Counts
-          title={t('genres')}
-          items={backlog.genres}
-          filterOf={(item) => `genre:${item.slug}`}
-          handle={handle}
-          q={q}
-        />
-        <Counts
-          title={t('platforms')}
-          items={backlog.platforms}
-          filterOf={(item) => `owned:${item.slug}`}
-          handle={handle}
-          q={q}
-        />
-      </div>
+      </Kpis>
+      <Waiting title={t('quickest')} games={backlog.quickest} said="left" handle={handle} />
+      <Waiting title={t('bestRated')} games={backlog.bestRated} said="rating" handle={handle} />
+      <Waiting title={t('oldest')} games={backlog.oldest} said="year" handle={handle} />
+      <Counts
+        title={t('genres')}
+        items={backlog.genres}
+        filterOf={(item) => `genre:${item.slug}`}
+        handle={handle}
+        q={q}
+      />
+      <Counts
+        title={t('platforms')}
+        items={backlog.platforms}
+        filterOf={(item) => `owned:${item.slug}`}
+        handle={handle}
+        q={q}
+      />
       {backlog.unsorted > 0 ? (
-        <p className="text-sm text-muted">
+        <p className="trophy-board-note">
           <Link
             href={libraryHref(handle, { q: withFilter('status:unsorted', q) })}
             className="underline underline-offset-4 hover:text-text"
@@ -99,7 +93,7 @@ export function Backlog({ stats, handle, q }: Props) {
           </Link>
         </p>
       ) : null}
-    </Section>
+    </Chapter>
   )
 }
 
@@ -117,7 +111,6 @@ function Waiting({
 }) {
   const t = useTranslations('Trophies.backlog')
   const format = useFormatter()
-  const id = useId()
   if (games.length === 0) return null
   const sayOf = (game: WaitingGame) =>
     said === 'left'
@@ -130,10 +123,7 @@ function Waiting({
           })
         : String(game.year)
   return (
-    <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
-        {title}
-      </h3>
+    <Panel title={title} span={4}>
       <ol className="trophy-waiting-list">
         {games.map((game) => (
           <li key={game.slug} className="min-w-0">
@@ -154,13 +144,13 @@ function Waiting({
               </span>
               <span aria-hidden="true" className="grid min-w-0 gap-0.5">
                 <span className="line-clamp-2 text-sm font-medium text-balance">{game.title}</span>
-                <span className="readout text-[0.5625rem] text-muted">{sayOf(game)}</span>
+                <span className="trophy-waiting-said">{sayOf(game)}</span>
               </span>
             </Link>
           </li>
         ))}
       </ol>
-    </section>
+    </Panel>
   )
 }
 
@@ -180,15 +170,12 @@ function Counts({
 }) {
   const t = useTranslations('Trophies.backlog')
   const format = useFormatter()
-  const id = useId()
   if (items.length === 0) return null
   const most = Math.max(1, ...items.map((item) => item.games))
   return (
-    <section aria-labelledby={id} className="min-w-0">
-      <h3 id={id} className="readout text-[0.625rem] text-muted">
-        {title}
-      </h3>
-      <ol className="trophy-ranked">
+    <Panel title={title} span={6}>
+      <RankedRows figures={1}>
+        <RankedHead figure={t('gamesHead')} />
         {items.map((item) => (
           <li key={item.id}>
             <Link
@@ -197,10 +184,10 @@ function Counts({
               className="trophy-ranked-row"
               style={{ '--value': item.games / most } as CSSProperties}
             >
-              <span aria-hidden="true" className="truncate text-sm font-medium">
+              <span aria-hidden="true" className="trophy-ranked-name">
                 {item.name}
               </span>
-              <span aria-hidden="true" className="readout text-[0.6875rem] tabular-nums">
+              <span aria-hidden="true" className="trophy-ranked-figure">
                 {format.number(item.games)}
               </span>
               <span aria-hidden="true" className="trophy-ranked-track">
@@ -209,7 +196,7 @@ function Counts({
             </Link>
           </li>
         ))}
-      </ol>
-    </section>
+      </RankedRows>
+    </Panel>
   )
 }

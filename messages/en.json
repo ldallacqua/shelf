@@ -583,26 +583,19 @@
       "outOfTen": "out of 10",
       "median": "Median playtime",
       "hoursUnit": "{count, plural, one {hour} other {hours}}",
-      "dropped": "Dropped",
-      "streak": "Months in a row",
-      "streakBest": "best {count}",
-      "longest": "Played longest",
-      "platform": "Played most on",
-      "hoursOf": "{count, plural, one {# hour} other {# hours}}"
+      "dropped": "Dropped"
     },
     "charts": {
       "asTable": "As a table",
       "years": "Finished, year by year",
       "yearsHint": "Choose a year to see its trophies alone",
       "yearSays": "{year}: {count, plural, =0 {nothing finished} one {# game finished} other {# games finished}}",
-      "year": "Year",
       "finished": "Games finished",
       "months": "Finished, month by month",
       "monthSays": "{month}: {count, plural, =0 {nothing finished} one {# game finished} other {# games finished}}",
       "month": "Month",
       "fewer": "Fewer",
       "more": "More",
-      "kinds": "What is finished",
       "genres": "Genres",
       "themes": "Themes",
       "platforms": "Platforms",
@@ -626,8 +619,7 @@
       "rankedNone": "Not enough is known of these games to rank them that way.",
       "ratingOf": "rated {value} on average",
       "hoursOn": "{count, plural, =0 {under an hour} one {# hour} other {# hours}} on them",
-      "hoursShort": "{count, number} h",
-      "finishedCount": "{count, plural, other {# finished}}"
+      "hoursShort": "{count, number} h"
     },
     "records": {
       "title": "Records",
@@ -644,7 +636,9 @@
       "released": "Released in {year}",
       "games": "{count, plural, one {# game} other {# games}}",
       "months": "{count, plural, one {# month} other {# months}} in a row",
-      "span": "{from} to {to}"
+      "span": "{from} to {to}",
+      "longest": "Longest finished",
+      "platform": "Played most on"
     },
     "insights": {
       "label": "What the figures say",
@@ -682,7 +676,6 @@
       "rarest": "Your rarest unlock is {name}, in {title}: only {share} of Steam players have it."
     },
     "ratings": {
-      "title": "Ratings",
       "spread": "{count, plural, one {# game rated} other {# games rated}}, by rating",
       "spreadCaption": "Games by rating",
       "spreadSays": "Rated {rating} or {half}: {count, plural, =0 {none} one {# game} other {# games}}",
@@ -699,7 +692,8 @@
       "gap": "On average you rate {gap} {direction, select, higher {higher} other {lower}} than IGDB's players.",
       "gapNone": "On average you rate as IGDB's players do.",
       "gems": "Rated well above IGDB",
-      "letdowns": "Rated well below IGDB"
+      "letdowns": "Rated well below IGDB",
+      "gaps": "Furthest from IGDB"
     },
     "series": {
       "title": "Series",
@@ -709,8 +703,6 @@
       "inLibrary": "See them in the library"
     },
     "history": {
-      "title": "Your years",
-      "finished": "{count, plural, one {# game finished} other {# games finished}}",
       "best": "Best year",
       "led": "Mostly {genre}",
       "shift": "Mostly {genre}, after {was}",
@@ -758,7 +750,8 @@
       "nth": "{nth, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} achievement",
       "firstPerfect": "First perfect game",
       "firstUltra": "First under 1%: {share}",
-      "inGame": " in "
+      "inGame": " in ",
+      "gamesHead": "Games"
     },
     "vault": {
       "title": "Trophy vault",
@@ -804,7 +797,9 @@
       "close": "Close to perfect",
       "closeSays": "{title}: {earned} of {total} unlocked, {count} left",
       "closeOf": "{earned} of {total}",
-      "left": "{count} left"
+      "left": "{count} left",
+      "leftHead": "Left",
+      "raritiesHint": "Choose one to keep the lists below to it."
     },
     "backlog": {
       "title": "Still to play",
@@ -826,7 +821,8 @@
       "genres": "Waiting, by genre",
       "platforms": "Waiting, by platform",
       "countSays": "{name}: {count, plural, one {# game waiting} other {# games waiting}}",
-      "unsorted": "{count, plural, one {# more game} other {# more games}} from syncs, not placed yet"
+      "unsorted": "{count, plural, one {# more game} other {# more games}} from syncs, not placed yet",
+      "gamesHead": "Games"
     },
     "card": {
       "label": "Trophies",
@@ -865,7 +861,42 @@
     "count": "{count, plural, one {# game} other {# games}}",
     "finishedOn": "Finished {date}",
     "hours": "{count, plural, =0 {Under an hour} one {# hour} other {# hours}}",
-    "rating": "{value} out of 10"
+    "rating": "{value} out of 10",
+    "chapters": {
+      "label": "On this page",
+      "overview": {
+        "nav": "Overview",
+        "title": "Overview"
+      },
+      "timeline": {
+        "nav": "Timeline",
+        "title": "When you finish",
+        "lede": "Every year, the latest first: its months, darker for more, how many it finished, and what led it.",
+        "ledeYear": "The year's months, each a way to its games."
+      },
+      "taste": {
+        "nav": "Taste",
+        "title": "What you finish",
+        "lede": "What the games finished are, who made them, and how you rated them."
+      },
+      "achievements": {
+        "nav": "Achievements",
+        "lede": "How many you unlocked, how rare they are, and the milestones along the way."
+      },
+      "vault": {
+        "nav": "Vault",
+        "lede": "The rarest and the latest unlocks, and the games perfected."
+      },
+      "backlog": {
+        "nav": "Backlog",
+        "lede": "What waits in the backlog and Someday, and how long it would take at your pace."
+      },
+      "wall": {
+        "nav": "Wall",
+        "title": "The wall",
+        "lede": "Every game finished, face-out, by the year it was finished."
+      }
+    }
   },
   "NotFound": {
     "metaTitle": "Page not found",
