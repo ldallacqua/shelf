@@ -24,12 +24,10 @@
   },
   "Theme": {
     "label": "Theme",
+    "tip": "Theme: light, dark or your system’s",
     "light": "Light",
     "dark": "Dark",
     "system": "System"
-  },
-  "Language": {
-    "label": "Language"
   },
   "Foundations": {
     "metaTitle": "Foundations",
@@ -1009,6 +1007,7 @@
       "or": "or",
       "remove": "Remove {condition}",
       "ignored": "Not understood, so ignored:",
+      "ignoredTip": "{reason} Remove it from the search.",
       "clear": "Clear all"
     },
     "problems": {
@@ -1166,6 +1165,7 @@
     "signIn": "Sign in",
     "createShelf": "Create your shelf",
     "menu": "{name}, your account",
+    "menuTip": "Your shelf, your account, signing out",
     "myShelf": "My shelf",
     "settings": "Account",
     "handle": {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import { useParams, useSearchParams } from 'next/navigation'
 import { Suspense, type ComponentProps } from 'react'
 
@@ -9,6 +9,7 @@ import { Link, usePathname } from '@/i18n/navigation'
 import { localeLabels, routing, type Locale, type Pathname } from '@/i18n/routing'
 import { buttonVariants } from '@/ui/button'
 import { cn } from '@/ui/cn'
+import { Tip } from '@/ui/tooltip'
 
 function otherLocale(current: Locale): Locale {
   return routing.locales.find((locale) => locale !== current) ?? routing.defaultLocale
@@ -50,24 +51,25 @@ const hrefFor = (
 }
 
 function SwitchLink({ pathname = '/', params = {}, query }: SwitchLinkProps) {
-  const t = useTranslations('Language')
   const target = otherLocale(useLocale())
   const label = localeLabels[target]
 
   return (
-    <Link
-      href={hrefFor(pathname, params, query)}
-      locale={target}
-      // Stay where the visitor is on the page.
-      scroll={false}
-      hrefLang={target}
-      lang={target}
-      title={t('label')}
-      aria-label={`${label.short}: ${label.name}`}
-      className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'font-semibold')}
-    >
-      {label.short}
-    </Link>
+    // In the language it leads to, for someone who cannot read this one.
+    <Tip label={<span lang={target}>{label.switchTo}</span>} side="bottom">
+      <Link
+        href={hrefFor(pathname, params, query)}
+        locale={target}
+        // Stay where the visitor is on the page.
+        scroll={false}
+        hrefLang={target}
+        lang={target}
+        aria-label={`${label.short}: ${label.name}`}
+        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'font-semibold')}
+      >
+        {label.short}
+      </Link>
+    </Tip>
   )
 }
 

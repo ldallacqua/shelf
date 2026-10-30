@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl'
 
 import { cn } from '@/ui/cn'
 import { WindowRestoreIcon } from '@/ui/icons'
+import { Tip } from '@/ui/tooltip'
 
 const caption =
   'grid h-full w-11.5 place-items-center text-text focus-visible:-outline-offset-2 [&_svg]:size-4'
@@ -20,44 +21,56 @@ export function WindowControls() {
 
   return (
     <div className="absolute inset-y-0 right-0 hidden frameless:flex">
-      <button
-        type="button"
-        data-window-command="minimize"
-        aria-label={t('minimize')}
-        title={t('minimize')}
-        className={cn(caption, quiet)}
+      <Tip label={t('minimize')} side="bottom">
+        <button
+          type="button"
+          data-window-command="minimize"
+          aria-label={t('minimize')}
+          className={cn(caption, quiet)}
+        >
+          <MinusIcon aria-hidden="true" strokeWidth={1.5} />
+        </button>
+      </Tip>
+      <Tip
+        label={
+          // Which one, as for its drawing: by CSS, from what `frame.ts` sets on <html>.
+          <>
+            <span className="maximized:hidden">{t('maximize')}</span>
+            <span className="hidden maximized:inline">{t('restore')}</span>
+          </>
+        }
+        side="bottom"
       >
-        <MinusIcon aria-hidden="true" strokeWidth={1.5} />
-      </button>
-      <button
-        type="button"
-        data-window-command="toggle_maximize"
-        // The label follows the window: `frame.ts` swaps these two in when it maximizes.
-        data-label-maximize={t('maximize')}
-        data-label-restore={t('restore')}
-        aria-label={t('maximize')}
-        title={t('maximize')}
-        className={cn(caption, quiet)}
-      >
-        <SquareIcon aria-hidden="true" strokeWidth={1.5} className="maximized:hidden" />
-        <WindowRestoreIcon
-          aria-hidden="true"
-          strokeWidth={1.5}
-          className="hidden maximized:block"
-        />
-      </button>
-      <button
-        type="button"
-        data-window-command="close"
-        aria-label={t('close')}
-        title={t('close')}
-        className={cn(
-          caption,
-          'hover:bg-window-close hover:text-on-window-close active:bg-window-close/90 active:text-on-window-close',
-        )}
-      >
-        <XIcon aria-hidden="true" strokeWidth={1.5} />
-      </button>
+        <button
+          type="button"
+          data-window-command="toggle_maximize"
+          // The name follows the window: `frame.ts` swaps these two in when it maximizes.
+          data-label-maximize={t('maximize')}
+          data-label-restore={t('restore')}
+          aria-label={t('maximize')}
+          className={cn(caption, quiet)}
+        >
+          <SquareIcon aria-hidden="true" strokeWidth={1.5} className="maximized:hidden" />
+          <WindowRestoreIcon
+            aria-hidden="true"
+            strokeWidth={1.5}
+            className="hidden maximized:block"
+          />
+        </button>
+      </Tip>
+      <Tip label={t('close')} side="bottom" align="end">
+        <button
+          type="button"
+          data-window-command="close"
+          aria-label={t('close')}
+          className={cn(
+            caption,
+            'hover:bg-window-close hover:text-on-window-close active:bg-window-close/90 active:text-on-window-close',
+          )}
+        >
+          <XIcon aria-hidden="true" strokeWidth={1.5} />
+        </button>
+      </Tip>
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Button } from '@/ui/button'
 import { cn } from '@/ui/cn'
 import { fieldClass } from '@/ui/field'
+import { Tip } from '@/ui/tooltip'
 
 type NumberFieldProps = {
   label: string
@@ -117,16 +118,18 @@ function NumberField({
         {label}
       </label>
       <div className="flex max-w-64 items-center gap-2">
-        <Button
-          variant="secondary"
-          size="icon"
-          aria-label={decreaseLabel}
-          aria-controls={id}
-          disabled={current === undefined || current <= min}
-          onClick={(event) => stepBy(-1, event.shiftKey)}
-        >
-          <MinusIcon aria-hidden="true" />
-        </Button>
+        <Tip label={decreaseLabel}>
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label={decreaseLabel}
+            aria-controls={id}
+            disabled={current === undefined || current <= min}
+            onClick={(event) => stepBy(-1, event.shiftKey)}
+          >
+            <MinusIcon aria-hidden="true" />
+          </Button>
+        </Tip>
         <div className="relative min-w-0 flex-1">
           <input
             id={id}
@@ -160,16 +163,18 @@ function NumberField({
             </span>
           ) : null}
         </div>
-        <Button
-          variant="secondary"
-          size="icon"
-          aria-label={increaseLabel}
-          aria-controls={id}
-          disabled={current !== undefined && current >= max}
-          onClick={(event) => stepBy(1, event.shiftKey)}
-        >
-          <PlusIcon aria-hidden="true" />
-        </Button>
+        <Tip label={increaseLabel}>
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label={increaseLabel}
+            aria-controls={id}
+            disabled={current !== undefined && current >= max}
+            onClick={(event) => stepBy(1, event.shiftKey)}
+          >
+            <PlusIcon aria-hidden="true" />
+          </Button>
+        </Tip>
       </div>
       {hint ? <p className="text-xs text-pretty text-muted">{hint}</p> : null}
     </div>

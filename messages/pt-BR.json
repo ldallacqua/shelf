@@ -24,12 +24,10 @@
   },
   "Theme": {
     "label": "Tema",
+    "tip": "Tema: claro, escuro ou o do sistema",
     "light": "Claro",
     "dark": "Escuro",
     "system": "Sistema"
-  },
-  "Language": {
-    "label": "Idioma"
   },
   "Foundations": {
     "metaTitle": "Fundamentos",
@@ -1009,6 +1007,7 @@
       "or": "ou",
       "remove": "Remover {condition}",
       "ignored": "Não entendido, ficou de fora:",
+      "ignoredTip": "{reason} Tirar da busca.",
       "clear": "Limpar tudo"
     },
     "problems": {
@@ -1166,6 +1165,7 @@
     "signIn": "Entrar",
     "createShelf": "Crie sua estante",
     "menu": "{name}, sua conta",
+    "menuTip": "Sua estante, sua conta e sair",
     "myShelf": "Minha estante",
     "settings": "Conta",
     "handle": {

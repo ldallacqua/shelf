@@ -11,6 +11,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
+import { Tip } from '@/ui/tooltip'
 
 import { parseThemeChoice, themeChoices, type ThemeChoice } from './theme'
 import { useTheme } from './use-theme'
@@ -28,14 +29,16 @@ export function ThemeSwitch() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={t('label')}>
-          {/* Which icon shows is decided in CSS from <html data-theme>, so it is
-              right on the first paint, before React knows the stored choice. */}
-          <SunIcon aria-hidden="true" className="dark:hidden" />
-          <MoonIcon aria-hidden="true" className="hidden dark:block" />
-        </Button>
-      </DropdownMenuTrigger>
+      <Tip label={t('tip')} side="bottom">
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={t('label')}>
+            {/* Which icon shows is decided in CSS from <html data-theme>, so it is
+                right on the first paint, before React knows the stored choice. */}
+            <SunIcon aria-hidden="true" className="dark:hidden" />
+            <MoonIcon aria-hidden="true" className="hidden dark:block" />
+          </Button>
+        </DropdownMenuTrigger>
+      </Tip>
       <DropdownMenuContent>
         <DropdownMenuRadioGroup
           aria-label={t('label')}

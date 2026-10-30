@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Dialog } from 'radix-ui'
 
 import type { GameVideo } from '@/domain/igdb/game'
+import { Tip } from '@/ui/tooltip'
 
 /**
  * A game's video, played over the page (spec 7.1). Its code and YouTube's
@@ -38,18 +39,22 @@ export default function VideoPlayer({
             <Dialog.Title className="min-w-0 truncate text-sm font-semibold">
               {t('videoTitle', { name, title })}
             </Dialog.Title>
-            <Dialog.Close
-              aria-label={t('viewerClose')}
-              className="inline-flex size-11 flex-none items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
-            >
-              <XIcon aria-hidden="true" className="size-5" />
-            </Dialog.Close>
+            <Tip label={t('viewerClose')}>
+              <Dialog.Close
+                aria-label={t('viewerClose')}
+                className="inline-flex size-11 flex-none items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
+              >
+                <XIcon aria-hidden="true" className="size-5" />
+              </Dialog.Close>
+            </Tip>
           </div>
           <Dialog.Description className="sr-only">{t('videoFrom')}</Dialog.Description>
           <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-6">
             {video ? (
               <iframe
                 key={video.id}
+                // A frame's title is its name for a screen reader; browsers show it as no tooltip.
+                // eslint-disable-next-line react/forbid-dom-props
                 title={t('videoTitle', { name, title })}
                 src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&playsinline=1`}
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"

@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState, type ClipboardEvent, type KeyboardE
 
 import { cn } from '@/ui/cn'
 import { fieldClass } from '@/ui/field'
+import { Tip } from '@/ui/tooltip'
 
 type TagInputProps = {
   id?: string
@@ -144,18 +145,20 @@ function TagInput({
             className="inline-flex h-7 max-w-full items-center gap-0.5 rounded-full bg-text/8 pr-0.5 pl-2.5 text-sm"
           >
             <span className="truncate">{tag}</span>
-            <button
-              type="button"
-              aria-label={labels.remove(tag)}
-              disabled={disabled}
-              onClick={(event) => {
-                event.stopPropagation()
-                remove(tag)
-              }}
-              className="inline-flex size-6 flex-none items-center justify-center rounded-full text-muted transition-colors duration-quick ease-settle hover:bg-text/10 hover:text-text"
-            >
-              <XIcon aria-hidden="true" className="size-3.5" />
-            </button>
+            <Tip label={labels.remove(tag)}>
+              <button
+                type="button"
+                aria-label={labels.remove(tag)}
+                disabled={disabled}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  remove(tag)
+                }}
+                className="inline-flex size-6 flex-none items-center justify-center rounded-full text-muted transition-colors duration-quick ease-settle hover:bg-text/10 hover:text-text"
+              >
+                <XIcon aria-hidden="true" className="size-3.5" />
+              </button>
+            </Tip>
           </span>
         ))}
         <input

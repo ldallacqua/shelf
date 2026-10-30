@@ -5,6 +5,7 @@ import { Slider } from 'radix-ui'
 import { useId } from 'react'
 
 import { cn } from '@/ui/cn'
+import { Tip } from '@/ui/tooltip'
 
 type RatingProps = {
   label: string
@@ -108,16 +109,18 @@ function Rating({
           />
         </Slider.Root>
         {rated ? (
-          <button
-            type="button"
-            aria-label={clearLabel}
-            disabled={disabled}
-            tabIndex={tabIndex}
-            onClick={onClear}
-            className="inline-flex size-8 flex-none items-center justify-center rounded-control text-muted transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text disabled:opacity-50 pointer-coarse:size-10"
-          >
-            <XIcon aria-hidden="true" className="size-4" />
-          </button>
+          <Tip label={clearLabel}>
+            <button
+              type="button"
+              aria-label={clearLabel}
+              disabled={disabled}
+              tabIndex={tabIndex}
+              onClick={onClear}
+              className="inline-flex size-8 flex-none items-center justify-center rounded-control text-muted transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text disabled:opacity-50 pointer-coarse:size-10"
+            >
+              <XIcon aria-hidden="true" className="size-4" />
+            </button>
+          </Tip>
         ) : (
           // The same room, so the slider does not change length when a rating is taken away.
           <span aria-hidden="true" className="size-8 flex-none pointer-coarse:size-10" />

@@ -65,6 +65,25 @@ export default defineConfig([
     },
   },
 
+  // A control's words on hover are a `Tip`, never the browser's own tooltip.
+  {
+    files: ['src/app/**/*.tsx', 'src/features/**/*.tsx', 'src/ui/**/*.tsx'],
+    rules: {
+      'react/forbid-dom-props': [
+        'error',
+        {
+          forbid: [
+            {
+              propName: 'title',
+              message:
+                'The browser’s tooltip shows late, only to a mouse, and cannot be styled: wrap the control in Tip (src/ui/tooltip.tsx).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Import boundaries.
   boundary(
     ['src/domain/**'],

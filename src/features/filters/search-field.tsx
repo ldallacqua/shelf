@@ -6,6 +6,7 @@ import { useRef, useState, type KeyboardEvent } from 'react'
 
 import { parseQuery } from '@/domain/query/parse'
 import { cn } from '@/ui/cn'
+import { Tip } from '@/ui/tooltip'
 
 /** Where `/` takes the keyboard (spec 3.11). */
 export const SEARCH_ID = 'library-search'
@@ -156,21 +157,23 @@ export function SearchField({ value, onChange, className }: SearchFieldProps) {
         </span>
       ) : null}
       {text !== '' ? (
-        <button
-          type="button"
-          aria-label={t('search.clear')}
-          onClick={() => {
-            change('')
-            input.current?.focus()
-          }}
-          className={cn(
-            'absolute right-1 inline-flex size-8 items-center justify-center rounded-control text-muted',
-            'transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text',
-            'pointer-coarse:size-10',
-          )}
-        >
-          <XIcon aria-hidden="true" className="size-4" />
-        </button>
+        <Tip label={t('search.clear')}>
+          <button
+            type="button"
+            aria-label={t('search.clear')}
+            onClick={() => {
+              change('')
+              input.current?.focus()
+            }}
+            className={cn(
+              'absolute right-1 inline-flex size-8 items-center justify-center rounded-control text-muted',
+              'transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text',
+              'pointer-coarse:size-10',
+            )}
+          >
+            <XIcon aria-hidden="true" className="size-4" />
+          </button>
+        </Tip>
       ) : null}
     </div>
   )

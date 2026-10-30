@@ -22,6 +22,7 @@ import { ThemeScript } from '@/features/theme/theme-script'
 import { routing } from '@/i18n/routing'
 import { siteUrl } from '@/server/site-url'
 import { fontVariables } from '@/ui/fonts'
+import { TipProvider } from '@/ui/tooltip'
 
 import '../globals.css'
 
@@ -68,24 +69,26 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
       <body>
         <ReadyMark />
         <NextIntlClientProvider>
-          <SkipLink />
-          <Header
-            // Handed to everyone, shown only once the browser knows the owner is
-            // here, and checked again on the server whoever calls them.
-            add={{
-              search: searchGamesAction,
-              grouping: groupingAction,
-              add: addGameAction,
-              undo: undoAddAction,
-            }}
-          />
-          <main id={MAIN_ID} tabIndex={-1} className="flex-1 outline-none">
-            {children}
-          </main>
-          <Footer />
-          <Notices />
-          {/* Over everything, sheets too: a link in one can lead to a page that takes a while. */}
-          <NavigationProgress />
+          <TipProvider>
+            <SkipLink />
+            <Header
+              // Handed to everyone, shown only once the browser knows the owner is
+              // here, and checked again on the server whoever calls them.
+              add={{
+                search: searchGamesAction,
+                grouping: groupingAction,
+                add: addGameAction,
+                undo: undoAddAction,
+              }}
+            />
+            <main id={MAIN_ID} tabIndex={-1} className="flex-1 outline-none">
+              {children}
+            </main>
+            <Footer />
+            <Notices />
+            {/* Over everything, sheets too: a link in one can lead to a page that takes a while. */}
+            <NavigationProgress />
+          </TipProvider>
         </NextIntlClientProvider>
       </body>
     </html>

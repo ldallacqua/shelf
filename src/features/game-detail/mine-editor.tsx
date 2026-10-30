@@ -28,6 +28,7 @@ import { Textarea } from '@/ui/field'
 import { NumberField } from '@/ui/number-field'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
+import { Tip } from '@/ui/tooltip'
 
 import { editClient as actions } from './edit-client'
 import {
@@ -737,6 +738,10 @@ function Copies({
           <ul className="grid gap-2">
             {owned.copies.map((copy) => {
               const name = labels.get(copy.platformId)?.name ?? ''
+              const removeLabel = t('removeCopy', {
+                platform: name,
+                format: library(`format.${copy.format}`),
+              })
               return (
                 <li key={copy.id} className={mineCard}>
                   <div className="flex items-start justify-between gap-3">
@@ -751,22 +756,17 @@ function Copies({
                         </span>
                       ))}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={t('removeCopy', {
-                        platform: name,
-                        format: library(`format.${copy.format}`),
-                      })}
-                      title={t('removeCopy', {
-                        platform: name,
-                        format: library(`format.${copy.format}`),
-                      })}
-                      onClick={() => onRemove(copy)}
-                      className="-mt-1 -mr-1 text-muted hover:text-text"
-                    >
-                      <Trash2Icon aria-hidden="true" />
-                    </Button>
+                    <Tip label={removeLabel}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={removeLabel}
+                        onClick={() => onRemove(copy)}
+                        className="-mt-1 -mr-1 text-muted hover:text-text"
+                      >
+                        <Trash2Icon aria-hidden="true" />
+                      </Button>
+                    </Tip>
                   </div>
                   <Segmented
                     aria-label={t('formatOf', { platform: name })}

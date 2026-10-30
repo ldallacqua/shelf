@@ -89,6 +89,8 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   backlog's hours left and months are ranges now, from IGDB's hasty to normal times (row
   "Backlog, as a range"). **Still to do:** Shelf for Windows' own counter pausing when no key,
   mouse or controller has moved for a while, once it counts hours.
+- **Tips** (architecture section 25, row "Tips"; spec 13): every control that shows only an icon
+  or a mark has Radix's tooltip, restyled (`Tip`), and lint refuses the browser's `title`.
 - **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against

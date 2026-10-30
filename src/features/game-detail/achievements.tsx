@@ -27,6 +27,7 @@ import { cn } from '@/ui/cn'
 import { Progress } from '@/ui/progress'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
+import { Tip } from '@/ui/tooltip'
 
 /**
  * A game's achievements on its page (issue 72), asked for as the page
@@ -246,23 +247,23 @@ function Icons({
         const name = concealed ? t('hiddenName') : achievement.name
         const selected = index === at
         return (
-          <li
-            key={achievement.id}
-            role="option"
-            aria-selected={selected}
-            aria-label={`${name}, ${stateOf(achievement)}`}
-            title={name}
-            tabIndex={selected ? 0 : -1}
-            data-rare={isRare(achievement) ? '' : undefined}
-            className={cn(
-              'cursor-pointer rounded-[8px] p-0.5 transition-shadow duration-quick ease-settle outline-none',
-              'focus-visible:ring-2 focus-visible:ring-focus',
-              isRare(achievement) && 'shadow-glow',
-              selected && 'ring-2 ring-text',
-            )}
-          >
-            <Artwork achievement={achievement} concealed={concealed} />
-          </li>
+          <Tip key={achievement.id} label={name}>
+            <li
+              role="option"
+              aria-selected={selected}
+              aria-label={`${name}, ${stateOf(achievement)}`}
+              tabIndex={selected ? 0 : -1}
+              data-rare={isRare(achievement) ? '' : undefined}
+              className={cn(
+                'cursor-pointer rounded-[8px] p-0.5 transition-shadow duration-quick ease-settle outline-none',
+                'focus-visible:ring-2 focus-visible:ring-focus',
+                isRare(achievement) && 'shadow-glow',
+                selected && 'ring-2 ring-text',
+              )}
+            >
+              <Artwork achievement={achievement} concealed={concealed} />
+            </li>
+          </Tip>
         )
       })}
     </ul>
@@ -371,12 +372,14 @@ function SetOf({
           {views.map((each) => {
             const Icon = viewIcons[each]
             return (
-              <SegmentedItem key={each} value={each} aria-label={t(`view.${each}`)}>
-                <Icon aria-hidden="true" />
-                <span aria-hidden="true" className="max-sm:hidden">
-                  {t(`view.${each}`)}
-                </span>
-              </SegmentedItem>
+              <Tip key={each} label={t(`view.${each}`)} className="sm:hidden">
+                <SegmentedItem value={each} aria-label={t(`view.${each}`)}>
+                  <Icon aria-hidden="true" />
+                  <span aria-hidden="true" className="max-sm:hidden">
+                    {t(`view.${each}`)}
+                  </span>
+                </SegmentedItem>
+              </Tip>
             )
           })}
         </Segmented>

@@ -4,6 +4,8 @@ import { XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
+import { Tip } from '@/ui/tooltip'
+
 /**
  * Short messages after something changed, with a way to take it back:
  * "Added Hades. Undo." One at a time, at the foot of the screen. A notice
@@ -104,14 +106,16 @@ export function Notices() {
               {action.label}
             </button>
           ))}
-          <button
-            type="button"
-            aria-label={t('dismiss')}
-            className="inline-flex size-10 flex-none items-center justify-center rounded-control text-muted hover:bg-text/8 hover:text-text pointer-coarse:size-11"
-            onClick={() => dismissNotice(notice.id)}
-          >
-            <XIcon aria-hidden="true" className="size-4" />
-          </button>
+          <Tip label={t('dismiss')}>
+            <button
+              type="button"
+              aria-label={t('dismiss')}
+              className="inline-flex size-10 flex-none items-center justify-center rounded-control text-muted hover:bg-text/8 hover:text-text pointer-coarse:size-11"
+              onClick={() => dismissNotice(notice.id)}
+            >
+              <XIcon aria-hidden="true" className="size-4" />
+            </button>
+          </Tip>
         </div>
       ) : null}
     </div>
