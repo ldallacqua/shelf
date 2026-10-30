@@ -75,7 +75,7 @@ const quietAction = 'h-auto min-h-6 px-0 text-muted hover:text-text'
 
 /** Archive and Remove at a row's end: an icon for a pointer, with words for a touch. */
 const rowAction =
-  'text-muted hover:text-text aria-disabled:opacity-50 pointer-fine:w-8 pointer-fine:px-0'
+  'h-9 text-muted hover:text-text aria-disabled:opacity-50 pointer-fine:w-9 pointer-fine:px-0'
 
 /** The game with this rating (null: none); undefined leaves it as it is. */
 const withRating = (game: UnsortedGame, score: number | null | undefined): UnsortedGame => {
@@ -206,7 +206,7 @@ function Row({
       aria-labelledby={titleId}
       onFocus={onFocus}
       data-selected={selected ? '' : undefined}
-      className="grid grid-cols-[auto_3.5rem_minmax(0,1fr)] grid-rows-[auto_1fr] items-start gap-x-3 rounded-panel border border-line bg-surface p-3 has-[:focus-visible]:border-line-strong data-[selected]:border-accent @xl:grid-cols-[auto_4rem_minmax(0,1fr)] @xl:grid-rows-[auto_auto_auto_1fr] @3xl:grid-cols-[auto_4rem_minmax(0,1fr)_auto]"
+      className="grid grid-cols-[auto_3.5rem_minmax(0,1fr)] grid-rows-[auto_1fr] items-start gap-x-3 rounded-panel border border-line bg-surface p-3 has-[:focus-visible]:border-line-strong data-[selected]:border-accent @xl:grid-cols-[auto_5rem_minmax(0,1fr)] @xl:grid-rows-[auto_auto_auto_1fr] @xl:p-4 @3xl:grid-cols-[auto_5rem_minmax(0,1fr)_auto]"
     >
       {/* The row's stop in the list: the arrows go from here to the next row's. */}
       <Checkbox
@@ -217,13 +217,13 @@ function Row({
         tabIndex={current ? 0 : -1}
         className="row-span-2 mt-0.5 @xl:row-span-4"
       />
-      <span className="row-span-2 block aspect-[3/4] w-14 overflow-hidden rounded-[4px] @xl:row-span-4 @xl:w-16">
+      <span className="row-span-2 block aspect-[3/4] w-14 overflow-hidden rounded-[4px] @xl:row-span-4 @xl:w-20">
         <Cover
           cover={game.cover}
           colors={game.colors}
           hash={game.hash}
           title={game.title}
-          sizes="72px"
+          sizes="80px"
           small
         />
       </span>
@@ -239,7 +239,8 @@ function Row({
           <span className="ml-2 readout text-[0.6875rem] font-normal text-muted">{game.year}</span>
         ) : null}
       </h3>
-      <div className="col-start-3 mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm @3xl:col-[3/span_2]">
+      {/* As tall without its link, so a status given does not move the rows below under the pointer. */}
+      <div className="col-start-3 mt-1.5 flex min-h-6 flex-wrap items-baseline gap-x-3 gap-y-1 text-sm @3xl:col-[3/span_2]">
         {shorts.length > 0 ? <p className="text-muted">{shorts.join(' · ')}</p> : null}
         <Played game={game} />
         {/* A game the sync took for the wrong one, while it still waits: given a status, it is placed. */}
@@ -262,9 +263,9 @@ function Row({
         onSave={onRate}
         tabIndex={tab}
         compact
-        className="col-span-3 mt-2 @xl:col-[3/span_1] @xl:mt-1 @3xl:col-[4/span_1] @3xl:row-start-1 @3xl:mt-0 @3xl:w-64"
+        className="col-span-3 mt-3 @xl:col-[3/span_1] @xl:mt-2 @3xl:col-[4/span_1] @3xl:row-start-1 @3xl:mt-0 @3xl:w-64"
       />
-      <div className="col-span-3 mt-2 flex flex-wrap items-end justify-between gap-x-3 gap-y-2 self-end @xl:col-[3/span_1] @xl:row-start-4 @3xl:col-[3/span_2] @3xl:mt-1">
+      <div className="col-span-3 mt-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-2 self-end @xl:col-[3/span_1] @xl:row-start-4 @3xl:col-[3/span_2]">
         <div
           role="group"
           aria-label={t('statusOf', { title: game.title })}
@@ -275,7 +276,7 @@ function Row({
               key={status}
               pressed={given === status}
               tabIndex={tab}
-              className="min-h-8 gap-1 px-2.5 text-[0.8125rem] pointer-coarse:min-h-10"
+              className="min-h-9 gap-1 px-2.5 text-[0.8125rem] pointer-coarse:min-h-10"
               onClick={() => onPlace(status)}
             >
               {/* The chip's tick takes the place of the icon, so pressing it does not widen it and wrap the row. */}
@@ -736,7 +737,7 @@ function PlacingList({ handle }: { handle: string }) {
 
   if (sorted.length === 0) {
     return (
-      <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
         <div className="grid max-w-xl content-start justify-items-start gap-4">
           <p className="text-pretty">{t('empty')}</p>
           <Button variant="primary" asChild>
@@ -751,7 +752,7 @@ function PlacingList({ handle }: { handle: string }) {
   const remaining = sorted.length - shown.length
 
   return (
-    <div className="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+    <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
       <div className="grid min-w-0 gap-4 max-lg:order-2">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="grid gap-1.5">
@@ -820,7 +821,7 @@ function PlacingList({ handle }: { handle: string }) {
         ) : null}
 
         {/* The rows lay out by the list's width: the tally beside it narrows it on a desktop. */}
-        <ul aria-label={t('list')} className="@container grid gap-2">
+        <ul aria-label={t('list')} className="@container grid gap-3">
           {shown.map((game, at) => (
             <Row
               key={game.entryId}
