@@ -95,6 +95,19 @@ beforeEach(() => {
       if (fails) return new Response(null, { status: 500 })
       return Response.json({ version: 8 })
     }
+    const [, entry] = /^\/api\/v1\/entries\/([^/]+)/.exec(path) ?? []
+    if (path.endsWith('/archived')) {
+      if (fails) return new Response(null, { status: 500 })
+      return method === 'PUT'
+        ? Response.json({ version: 8, entryId: entry, title: entry })
+        : Response.json({ version: 9, slug: entry, title: entry })
+    }
+    if (entry && method === 'DELETE') {
+      return Response.json({ version: 8, undo: `undo-${entry}`, title: entry })
+    }
+    if (path.startsWith('/api/v1/removed/') && method === 'POST') {
+      return Response.json({ version: 9, slug: path.slice('/api/v1/removed/undo-'.length) })
+    }
     return new Response(null, { status: 404 })
   })
 })
@@ -436,6 +449,83 @@ describe('PlaceGames', () => {
     expect(
       within(rowOf('Hades')).getByRole('button', { name: 'Not this game' }),
     ).toBeInTheDocument()
+  })
+
+  it('archives a game I will never play: out of the list and its counts, back on Undo', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+    await user.click(chip('Hades', 'Backlog'))
+
+    const archive = within(rowOf('Hades')).getByRole('button', { name: 'Archive' })
+    await user.hover(archive)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/with everything kept/)
+    await user.click(archive)
+    await waitFor(() => expect(titles()).toEqual(['Celeste', 'Portal']))
+    expect(sent).toContainEqual({ path: '/api/v1/entries/hades/archived', method: 'PUT' })
+    // Out of every count: it had been put in the backlog here.
+    expect(within(tally()).getByText('2 games left to place.')).toBeInTheDocument()
+    expect(within(tally()).getByText('5')).toBeInTheDocument()
+    expect(notices.at(-1)?.message).toBe('Archived Hades.')
+
+    await notices.at(-1)!.actions![0]!.run()
+    await waitFor(() => expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal']))
+    expect(sent).toContainEqual({ path: '/api/v1/entries/hades/archived', method: 'DELETE' })
+    expect(chip('Hades', 'Backlog')).toHaveAttribute('aria-pressed', 'true')
+    expect(within(tally()).getByText('6')).toBeInTheDocument()
+    expect(notices.at(-1)?.message).toBe('Hades is back on your shelf.')
+  })
+
+  it('asks before taking a game off the library, offering the archive instead', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+
+    const ask = within(rowOf('Celeste')).getByRole('button', { name: 'Remove from library' })
+    await user.click(ask)
+    expect(ask).toHaveAttribute('aria-expanded', 'true')
+    const question = within(rowOf('Celeste')).getByRole('group', { name: 'Remove from library' })
+    expect(
+      within(question).getByText(
+        'Remove Celeste from the library? Its copies, playtime and notes go with it.',
+      ),
+    ).toBeInTheDocument()
+    expect(within(question).getByRole('button', { name: 'Remove' })).toHaveFocus()
+    // Kept, the question closes and focus goes back to what asked it.
+    await user.click(within(question).getByRole('button', { name: 'Keep it' }))
+    expect(within(rowOf('Celeste')).queryByRole('group', { name: 'Remove from library' })).toBeNull()
+    expect(ask).toHaveFocus()
+    expect(sent.some((each) => each.method === 'DELETE')).toBe(false)
+  })
+
+  it('takes a game off the library, the next row under the keyboard, back on Undo', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+
+    await user.click(within(rowOf('Celeste')).getByRole('button', { name: 'Remove from library' }))
+    await user.click(within(rowOf('Celeste')).getByRole('button', { name: 'Remove' }))
+    await waitFor(() => expect(titles()).toEqual(['Hades2020', 'Portal']))
+    expect(sent).toContainEqual({ path: '/api/v1/entries/celeste', method: 'DELETE' })
+    expect(within(rowOf('Portal')).getByRole('checkbox')).toHaveFocus()
+    expect(within(tally()).getByText('2 games left to place.')).toBeInTheDocument()
+    expect(waitingChanged).toHaveBeenLastCalledWith(2)
+    expect(notices.at(-1)?.message).toBe('Removed Celeste.')
+
+    await notices.at(-1)!.actions![0]!.run()
+    await waitFor(() => expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal']))
+    expect(sent).toContainEqual({ path: '/api/v1/removed/undo-celeste', method: 'POST' })
+    expect(within(tally()).getByText('3 games left to place.')).toBeInTheDocument()
+  })
+
+  it('keeps a game in the list, saying why, when it cannot be archived', async () => {
+    fails = true
+    const user = userEvent.setup()
+    renderWithIntl(<PlaceGames />)
+    await screen.findByRole('list', { name: 'Unsorted games' })
+    await user.click(within(rowOf('Portal')).getByRole('button', { name: 'Archive' }))
+    await waitFor(() => expect(notices).toHaveLength(1))
+    expect(titles()).toEqual(['Hades2020', 'Celeste', 'Portal'])
   })
 
   it('says nothing is waiting, beside the tally', async () => {

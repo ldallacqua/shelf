@@ -91,6 +91,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   mouse or controller has moved for a while, once it counts hours.
 - **Tips** (architecture section 25, row "Tips"; spec 13): every control that shows only an icon
   or a mark has Radix's tooltip, restyled (`Tip`), and lint refuses the browser's `title`.
+- **Archive and Remove on Organize's Unsorted rows, and the archived games as Organize's third
+  tab** (architecture section 25, row "Archive from Organize"; spec 4.5, 7.4): off the account
+  page, with a search and 50 at a time for a long archive.
 - **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against

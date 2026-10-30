@@ -233,7 +233,7 @@ export const separateMine = checked(z.tuple([slug, id]), (editing, s, gameId) =>
 
 export const myArchived = checked(z.tuple([]), (editing) => editing.archived(), false)
 
-/** My games whose stores report far past IGDB's time, not yet looked at: for the account page. */
+/** My games whose stores report far past IGDB's time, not yet looked at: for Organize's hours tab. */
 export const myStoreHours = checked(z.tuple([]), (editing) => editing.storeHours(), false)
 
 /** Each of my games' entry and apps on Steam: what Ready to play in the desktop app reads (spec 7.7). */

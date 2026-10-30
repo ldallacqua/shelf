@@ -1218,11 +1218,6 @@
   "AccountPage": {
     "metaTitle": "Your account",
     "title": "Your account",
-    "archived": {
-      "title": "Archived games",
-      "intro": "Out of sight and out of every count, with everything you set. Bring one back to put it on your shelf as it was.",
-      "copies": "On {platforms}"
-    },
     "checking": "Checking who you are…",
     "signInFirst": "Sign in to see your account.",
     "signIn": "Sign in",
@@ -1275,6 +1270,7 @@
       "label": "What to organize",
       "unsorted": "Unsorted",
       "hours": "Store hours",
+      "archived": "Archived",
       "count": "{count, plural, one {# game} other {# games}}"
     },
     "storeHours": {
@@ -1290,6 +1286,15 @@
       "taken": "Saved: {hours, number} h count now.",
       "list": "Games whose stores count past IGDB’s time",
       "empty": "No game’s store hours are far past IGDB’s time now."
+    },
+    "archived": {
+      "metaTitle": "Archived games",
+      "intro": "Out of sight and out of every count, with everything you set. Bring one back to put it on your shelf as it was.",
+      "search": "Search the archive",
+      "list": "Archived games",
+      "copies": "On {platforms}",
+      "noneFound": "No archived game matches “{search}”.",
+      "empty": "Nothing is archived. Archive a game you will never play, from its row under Unsorted or from its page, and it waits here with everything you set."
     },
     "signInFirst": "Sign in to organize your games.",
     "loading": "Loading your games…",
@@ -1319,6 +1324,8 @@
     "undoneMany": "{count, plural, one {# game is as it was.} other {# games are as they were.}}",
     "notPlaced": "{title} could not be placed. Try again.",
     "notRated": "The rating for {title} was not saved. Try again.",
+    "archiveTip": "Out of sight and out of every count, with everything kept. Bring it back from Organize’s Archived tab.",
+    "removeTip": "Takes it off your library, its copies and hours too. A sync won’t bring it back.",
     "notThis": "Not this game",
     "isThis": "This one: {title} ({year})",
     "isThisUndated": "This one: {title}",

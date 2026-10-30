@@ -30,7 +30,7 @@ export type NavItem = (typeof navItems)[number]
 export const placingItem = {
   label: 'placing',
   href: '/account/unsorted',
-  pages: ['/account/unsorted', '/account/hours'],
+  pages: ['/account/unsorted', '/account/hours', '/account/archived'],
 } as const satisfies { label: string; href: Pathname; pages: readonly Pathname[] }
 
 /** Whether the visitor is on this destination, or on a page under it, by the page's pathname template. */

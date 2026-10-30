@@ -26,6 +26,7 @@ export const routing = defineRouting({
     // brought in, and the hours of games whose stores count far past IGDB's (4.7).
     '/account/unsorted': '/account/unsorted',
     '/account/hours': '/account/hours',
+    '/account/archived': '/account/archived',
     '/consent': '/consent',
     // What Shelf keeps, and how to remove it: Steam's terms ask for one (ADR 003).
     '/privacy': '/privacy',

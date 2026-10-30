@@ -85,7 +85,9 @@ language the browser asks for.
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
 | `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
 | `/en/account/start` | Setting a new shelf up, where signing up leads: the platforms to bring games in from, and the way to placing them ([section 4.6](#46-setting-a-new-shelf-up)) |
-| `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once ([section 4.5](#45-placing-what-a-sync-brought-in)) |
+| `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once, or to archive or remove; Organize's first tab ([section 4.5](#45-placing-what-a-sync-brought-in)) |
+| `/en/account/hours` | The games whose stores report far past IGDB's time, to take idle time out of; Organize's second tab ([section 4.7](#47-hours-a-store-counted)) |
+| `/en/account/archived` | One's archived games, to bring back; Organize's third tab ([section 7.4](#74-archiving-a-game)) |
 | `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it; last, whose marks Steam, Nintendo, PlayStation and Xbox are |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
 
@@ -886,7 +888,8 @@ pagina e voltar pro organize seus jogos ai beleza".
 - **Organize, in tabs.** The page's heading is "Organize your games" ("Organize seus jogos"),
   and under it a row of tabs, each a list of my games with one thing to say of each, each a
   page of its own so a tab is an address and works without a script: **Unsorted** ("A
-  definir"), this page, and **Store hours** ("Horas das lojas", `/account/hours`, 4.7). Each
+  definir"), this page, **Store hours** ("Horas das lojas", `/account/hours`, 4.7) and
+  **Archived** ("Arquivados", `/account/archived`, 7.4). Each
   says quietly how many games it holds, in muted digits, with no count when none; the
   header's count stays the unsorted games' only, since the rest are no alarm. The header's
   Organize is lit on every tab. The owner, 29 Oct 2026, of the store hours first put on the
@@ -894,6 +897,9 @@ pagina e voltar pro organize seus jogos ai beleza".
   the platforms I link, and tidying the games belongs with the games, as Apple's and
   Google's Photos keep their duplicates under Utilities in the library itself. Games
   completed without a rating are to be a tab here too, once built (the owner, the same day).
+  The archived games moved here from the account page on 29 Oct 2026, where a hundred of them
+  would have filled it: "se eu tiver uma lista de 100 jogos arquivados vão ficar todos ali
+  ocupando espaço na aba de conta?".
 - **One row per game:** cover, title and year, the platforms of its copies, hours on each
   source that feeds a copy and when I last played it there ("Not played on Steam" when it
   never was), or the hours I typed when no source reported any. Longest played first, as
@@ -917,6 +923,13 @@ pagina e voltar pro organize seus jogos ai beleza".
   copy joins (one already there on the same platform and format is fed, its hours added),
   what the other lacks of mine (a status, a rating, notes) it takes, and the row leaves the
   list. A row given a status here is placed: tapping its status again brings the choice back.
+- **Archive and Remove from library,** under each row's statuses, for a game I will never
+  play (the owner, 29 Oct 2026). Each has a tip saying where the game goes. Archive asks
+  nothing, as in the editor (7.4); Remove asks first, in the row, offering Archive instead,
+  and focus goes to its answer. Either way the row leaves the list and the game leaves the
+  tally, the keyboard goes on to the next row, and Undo puts it back where it stood, with the
+  status it had here. A game a sync brought in and I removed is not brought back by the next
+  sync (it waits on its platform's card, left out).
 - **A tally beside the list,** as Minimap's has: how many games are in each status, and how
   many are still unsorted, moving as I place them. On a phone it sits above the list, the
   statuses on one wrapping line.
@@ -926,8 +939,8 @@ pagina e voltar pro organize seus jogos ai beleza".
 - **Leaving one unsorted is fine:** it stays in the list for another day.
 - Keyboard all the way: the list is one stop (each row's checkbox), the arrows move through
   it, Home and End go to either end, Space selects, and Tab goes on into the row's link,
-  rating and statuses. A row placed from the keyboard stays, and focus with it. Both themes,
-  both languages, a phone.
+  rating, statuses, Archive and Remove. A row placed from the keyboard stays, and focus with
+  it. Both themes, both languages, a phone.
 
 **Done when**
 
@@ -936,6 +949,8 @@ pagina e voltar pro organize seus jogos ai beleza".
   it, and its own status taken back makes it unsorted.
 - A game the sync took for the wrong one becomes the right one from its row, with its copy
   and hours; when the right one is on the shelf, it takes them in, and no second box appears.
+- A game I will never play is archived or taken off the library from its row, and Undo puts
+  it back where it stood.
 - The tally always agrees with the shelf.
 
 ### 4.6 Setting a new shelf up
@@ -1280,16 +1295,20 @@ Remove from library does part of that for a game a sync brought in: it waits on 
 card, left out, and "Put back on my shelf" brings it back, but as new, without what I had
 set. For a game I added myself it does none of it: Undo lasts a day. And its name says delete.
 
-- **Archive** (Arquivar), in the editor beside Remove from library. It takes the game off my
-  shelf at once, says so, and offers Undo. It asks nothing first, since nothing is lost.
+- **Archive** (Arquivar), in the editor beside Remove from library, and on each row waiting
+  on the placing page (4.5). It takes the game off my shelf at once, says so, and offers Undo.
+  It asks nothing first, since nothing is lost.
 - **An archived game is kept whole:** status, rating, notes, tags, dates, copies and hours.
 - **It is nowhere else,** to me or anyone: not on the shelf, the wall, the list, 3D or the
   trophy wall; not in a count, a stat, a filter's values or a smart shelf; not on the placing
   page or in the search inside the library; not on the public shelf or in an API or MCP answer.
   Its address answers "not found". To look at it again, I bring it back.
-- **One place lists them:** "Archived games" on the account page, there only while one is.
-  Each row has the cover, the title and the platforms, and **Bring back** (Trazer de volta),
-  which puts the game on the shelf exactly as it was and says so.
+- **One place lists them:** Organize's **Archived** tab (`/account/archived`, 4.5), the
+  latest archived first. Each row has the cover, the title and the platforms, and **Bring
+  back** (Trazer de volta), which puts the game on the shelf exactly as it was and says so;
+  it stays in view, saying so, until the page is left. From ten games there is a search by
+  title, and the first 50 are drawn, 50 more at a time. With none, the tab says how a game
+  gets there. It was on the account page until 29 Oct 2026 (4.5, Organize, in tabs).
 - **A sync** still feeds its copies' hours, and a copy found on another platform joins it, but
   it stays archived: never back on the shelf by itself, never listed for placing.
 - **Adding it again,** by search or a pasted list, finds it archived and offers Bring back, not
@@ -1303,7 +1322,8 @@ set. For a game I added myself it does none of it: Undo lasts a day. And its nam
   it was.
 - A sync neither puts it back nor gives it a second entry, and adding it again offers Bring
   back.
-- The account page lists every archived game, and shows nothing when there is none.
+- Organize's Archived tab lists every archived game, a hundred as easily as one, and says how
+  one gets there when there is none.
 
 ### 7.5 Wishing for a game on one platform
 
@@ -1605,9 +1625,8 @@ English and Brazilian Portuguese from the first build.
 - **Sign-in** is an email address or handle, and the password. A wrong one is turned away with
   a plain message, and repeated tries are slowed down.
 - **The account page** changes the name, the handle (the old address then leads nowhere), the
-  visibility and the password; lists the archived games, while there are any, to bring back
-  (7.4); signs out everywhere; and deletes the account and everything on its shelf, after the
-  password.
+  visibility and the password; signs out everywhere; and deletes the account and everything
+  on its shelf, after the password. The archived games are Organize's (7.4).
 - **Every change** is checked on the server, against the session's own account. A write never
   names a library: it acts on one's own. Hiding a button is never the protection.
 - **IGDB search is for accounts**, each limited per hour, so no one spends the whole site's

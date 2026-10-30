@@ -4,6 +4,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 
 import { useAccount } from '@/features/owner/account'
+import { useLibraryChange } from '@/features/owner/library-change'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 
@@ -11,6 +12,7 @@ import { cn } from '@/ui/cn'
 const tabs = [
   { key: 'unsorted', href: '/account/unsorted' },
   { key: 'hours', href: '/account/hours' },
+  { key: 'archived', href: '/account/archived' },
 ] as const
 
 export type OrganizeTab = (typeof tabs)[number]['key']
@@ -24,13 +26,18 @@ const tabClass = cn(
   'aria-[current=page]:text-text aria-[current=page]:after:opacity-100',
 )
 
-/** How many games the hours tab holds, read here unless the page is that tab and reads them itself. */
-function useHoursCount(given: number | undefined, own: boolean) {
+/**
+ * How many games a tab's list holds, read here unless the page is that tab
+ * and reads them itself. Read again when the library changes from this page:
+ * a game archived from the unsorted tab joins the archived tab's count.
+ */
+function useListCount(address: string, given: number | undefined, own: boolean) {
   const [read, setRead] = useState<number>()
+  const version = useLibraryChange()?.version
   useEffect(() => {
     if (own) return
     let current = true
-    void fetch('/api/v1/me/hours', { cache: 'no-store' })
+    void fetch(address, { cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : undefined))
       .then((answer: { games: unknown[] } | undefined) => {
         if (current && answer) setRead(answer.games.length)
@@ -39,7 +46,7 @@ function useHoursCount(given: number | undefined, own: boolean) {
     return () => {
       current = false
     }
-  }, [own])
+  }, [address, own, version])
   return own ? given : read
 }
 
@@ -62,7 +69,8 @@ export function OrganizeTabs({
   const who = useAccount()
   const shown: Partial<Record<OrganizeTab, number>> = {
     unsorted: counts.unsorted ?? (who.status === 'signed-in' ? who.waiting : undefined),
-    hours: useHoursCount(counts.hours, current === 'hours'),
+    hours: useListCount('/api/v1/me/hours', counts.hours, current === 'hours'),
+    archived: useListCount('/api/v1/me/archived', counts.archived, current === 'archived'),
   }
 
   return (
