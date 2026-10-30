@@ -34,6 +34,12 @@ export type LibraryGame = {
   igdbRatingCount: number
   /** Minutes for a normal playthrough. */
   length?: number
+  /**
+   * IGDB's time for a hasty playthrough, as a percentage of `length`, when it
+   * is shorter: the low end of an estimate. A share, not minutes, as two
+   * digits in the library file where minutes would be four.
+   */
+  hastyShare?: number
   kind: Kind
   /** IGDB image id. */
   cover?: string

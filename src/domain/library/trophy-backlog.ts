@@ -6,8 +6,10 @@ import type { Day } from '@/domain/library/values'
 /**
  * What is still to play, on the trophy page (issue 68's backlog): the
  * backlog, the games I mean to play, and beside it Someday, the games I may
- * play after it. How long it is comes from IGDB's time for a normal
- * playthrough, less the hours already played: an estimate, and said as one.
+ * play after it. How long it is comes from IGDB's times, less the hours
+ * already played: an estimate, and said as one, from a hasty playthrough to
+ * a normal one, since one figure would claim a precision IGDB's players'
+ * times do not have.
  * How soon it could be cleared comes from my own hours, those of the games I
  * finished in the last twelve months. Games a sync brought in and nobody
  * placed are neither, and only counted.
@@ -54,14 +56,18 @@ export type BacklogStats = {
   unsorted: number
   /** Of the backlog, those already played a while. */
   begun: number
-  /** Minutes left across the backlog's games IGDB has a time for: its estimate. */
+  /** Minutes left across the backlog's games IGDB has a time for: its estimate, at a normal pace. */
   left: number
+  /** The same at a hasty one, where IGDB has a hasty time: the estimate's low end, at most `left`. */
+  leftHasty: number
   /** How many of the backlog's games that estimate is of. */
   timed: number
   /** Minutes played on the games finished in the twelve months to today. */
   pace: number
   /** Months to finish the backlog at that pace, rounded up: an estimate, when both are known. */
   months?: number
+  /** The same for `leftHasty`: the low end. */
+  monthsHasty?: number
   /** The backlog's games with the least left, by IGDB's time. */
   quickest: WaitingGame[]
   /** What is waiting, best rated by IGDB's players first. */
@@ -77,6 +83,13 @@ const YEAR_MS = 365 * 24 * 60 * 60 * 1000
 /** Minutes left of a game by IGDB's time: none when IGDB has none, nothing when played past it. */
 const leftOf = (game: LibraryGame): number | undefined =>
   game.length === undefined ? undefined : Math.max(0, game.length - game.minutes)
+
+/** The same by IGDB's hasty time, or its normal one where it has no hasty one. */
+const hastyLeftOf = (game: LibraryGame): number => {
+  const length = game.length ?? 0
+  const hasty = game.hastyShare ? Math.round((length * game.hastyShare) / 100) : length
+  return Math.max(0, hasty - game.minutes)
+}
 
 const ratedOf = (game: LibraryGame): number | undefined =>
   game.igdbRatingCount >= COMMUNITY_FROM ? game.igdbRating : undefined
@@ -130,6 +143,7 @@ export const backlogOf = (library: Library, today?: Day): BacklogStats | undefin
 
   const timed = backlog.filter((game) => game.length !== undefined)
   const left = timed.reduce((sum, game) => sum + leftOf(game)!, 0)
+  const leftHasty = timed.reduce((sum, game) => sum + hastyLeftOf(game), 0)
   const end = today === undefined ? undefined : Date.parse(`${today}T00:00:00Z`)
   const pace =
     end === undefined
@@ -169,9 +183,11 @@ export const backlogOf = (library: Library, today?: Day): BacklogStats | undefin
     unsorted: library.games.filter((game) => game.status === 'unsorted').length,
     begun: backlog.filter((game) => game.minutes > 0).length,
     left,
+    leftHasty,
     timed: timed.length,
     pace,
     ...(left > 0 && pace > 0 ? { months: Math.ceil((left / pace) * 12) } : {}),
+    ...(leftHasty > 0 && pace > 0 ? { monthsHasty: Math.ceil((leftHasty / pace) * 12) } : {}),
     quickest: quickest.slice(0, BACKLOG_SHOWN).map(waitingOf),
     bestRated: bestRated.slice(0, BACKLOG_SHOWN).map(waitingOf),
     oldest: oldest.slice(0, BACKLOG_SHOWN).map(waitingOf),

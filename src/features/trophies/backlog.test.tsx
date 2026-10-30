@@ -34,10 +34,20 @@ const library = testLibrary(
   },
 )
 
-const draw = (options: { scope?: number; q?: string } = {}, locale: 'en' | 'pt-BR' = 'en') => {
-  const { stats } = trophyWall(library, 2026, locale, { ...options, today: '2026-10-29' })
+const draw = (
+  options: { scope?: number; q?: string } = {},
+  locale: 'en' | 'pt-BR' = 'en',
+  shelf = library,
+) => {
+  const { stats } = trophyWall(shelf, 2026, locale, { ...options, today: '2026-10-29' })
   return renderWithIntl(<Backlog stats={stats} handle="ana" q={options.q} id="backlog" />, locale)
 }
+
+/** The same shelf, with IGDB's hasty time for Elden Ring: 45 hours of its 60. */
+const hasty = testLibrary(
+  library.games.map((game) => (game.title === 'Elden Ring' ? { ...game, hastyShare: 75 } : game)),
+  library.names,
+)
 
 const section = (name: string) => screen.getByRole('region', { name })
 
@@ -58,6 +68,17 @@ describe('the trophy page’s backlog (issue 68)', () => {
     expect(backlog).toHaveTextContent(
       'At the 54 hours of what you finished in the last twelve months',
     )
+  })
+
+  it('says the hours left and the months as ranges, from IGDB’s hasty times to its normal ones', () => {
+    draw({}, 'en', hasty)
+    const backlog = section('Still to play')
+    // Elden Ring 35 to 50, Inside 4: 39 to 54 hours, and 9 to 12 months at 54 a year.
+    expect(within(backlog).getByText('39–54')).toHaveAttribute('aria-hidden', 'true')
+    expect(within(backlog).getByText('39 to 54')).toHaveClass('sr-only')
+    expect(backlog).toHaveTextContent('From IGDB’s hasty to normal times, of 2 of 2 games')
+    expect(within(backlog).getByText('9–12')).toHaveAttribute('aria-hidden', 'true')
+    expect(within(backlog).getByText('9 to 12')).toHaveClass('sr-only')
   })
 
   it('lists the games to start with, each a way to its page', () => {
@@ -111,6 +132,14 @@ describe('the trophy page’s backlog (issue 68)', () => {
     const backlog = section('Ainda por jogar')
     expect(backlog).toHaveTextContent('Mais 1 para algum dia')
     expect(within(backlog).getByRole('link', { name: 'Inside, Faltam 4 horas' })).toBeVisible()
+  })
+
+  it('writes a range as Portuguese does', () => {
+    draw({}, 'pt-BR', hasty)
+    const backlog = section('Ainda por jogar')
+    expect(within(backlog).getByText('39–54')).toHaveAttribute('aria-hidden', 'true')
+    expect(within(backlog).getByText('39 a 54')).toHaveClass('sr-only')
+    expect(backlog).toHaveTextContent('Do tempo rápido ao normal do IGDB, de 2 de 2 jogos')
   })
 
   it('is not on a year’s page', () => {

@@ -85,9 +85,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   whose stores report far past IGDB's time (row "Organize, in tabs": the owner moved it off
   the account page, since it is about the games). Games completed without a rating are to be
   Organize's next tab, when the owner asks for it. The owner asked that it never read as
-  doubting the player: nothing marks hours as high, and typed hours are never offered. **Still
-  to do:** the backlog's hours left as a range, from IGDB's hasty to normal times (it needs the
-  hasty time in the library file), and Shelf for Windows' own counter pausing when no key,
+  doubting the player: nothing marks hours as high, and typed hours are never offered. The
+  backlog's hours left and months are ranges now, from IGDB's hasty to normal times (row
+  "Backlog, as a range"). **Still to do:** Shelf for Windows' own counter pausing when no key,
   mouse or controller has moved for a while, once it counts hours.
 - **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the

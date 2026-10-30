@@ -1,4 +1,4 @@
-import { useFormatter, useTranslations } from 'next-intl'
+import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import type { CSSProperties } from 'react'
 
 import type { WaitingCount, WaitingGame } from '@/domain/library/trophy-backlog'
@@ -28,9 +28,28 @@ export function Backlog({ stats, handle, q, id }: Props & { id: string }) {
   const t = useTranslations('Trophies.backlog')
   const chapters = useTranslations('Trophies.chapters')
   const format = useFormatter()
+  const locale = useLocale()
   const backlog = stats.backlog
   if (!backlog) return null
   const figures = 1 + (backlog.timed > 0 ? 1 : 0) + (backlog.months === undefined ? 0 : 1)
+  const hours = hoursOf(backlog.left)
+  const hastyHours = hoursOf(backlog.leftHasty)
+  const months = backlog.months ?? 0
+  const hastyMonths = backlog.monthsHasty ?? months
+  // From a hasty playthrough to a normal one: a range, wherever the two differ once rounded.
+  const ranged = hastyHours < hours
+  /** A range as the page's language writes it, and in words for a screen reader. */
+  const range = (low: number, high: number) =>
+    low < high ? (
+      <span className="trophy-kpi-number">
+        <span aria-hidden="true">{new Intl.NumberFormat(locale).formatRange(low, high)}</span>
+        <span className="sr-only">
+          {t('range', { low: format.number(low), high: format.number(high) })}
+        </span>
+      </span>
+    ) : (
+      <span className="trophy-kpi-number">{format.number(high)}</span>
+    )
   return (
     <Chapter id={id} title={t('title')} lede={chapters('backlog.lede')}>
       <Kpis columns={figures}>
@@ -45,24 +64,29 @@ export function Backlog({ stats, handle, q, id }: Props & { id: string }) {
             </Link>
           }
           note={t('someday', { count: backlog.someday })}
-          wide={figures === 1 || figures === 3}
+          wide={figures === 1 || figures === 3 || ranged}
         />
         {backlog.timed > 0 ? (
           <Kpi
             label={t('left')}
-            value={
-              <span className="trophy-kpi-number">{format.number(hoursOf(backlog.left))}</span>
+            value={range(hastyHours, hours)}
+            unit={t('hoursUnit', { count: hours })}
+            note={
+              ranged
+                ? t('timedRange', { timed: backlog.timed, count: backlog.backlog })
+                : t('timed', { timed: backlog.timed, count: backlog.backlog })
             }
-            unit={t('hoursUnit', { count: hoursOf(backlog.left) })}
-            note={t('timed', { timed: backlog.timed, count: backlog.backlog })}
+            // A range is wider than a figure: on a phone each takes the row.
+            wide={ranged}
           />
         ) : null}
         {backlog.months === undefined ? null : (
           <Kpi
             label={t('clear')}
-            value={<span className="trophy-kpi-number">{format.number(backlog.months)}</span>}
-            unit={t('monthsUnit', { count: backlog.months })}
+            value={range(hastyMonths, months)}
+            unit={t('monthsUnit', { count: months })}
             note={t('pace', { count: hoursOf(backlog.pace) })}
+            wide={ranged}
           />
         )}
       </Kpis>

@@ -62,6 +62,8 @@ type GameRow = [
   wanted?: number[],
   /** Positions in `ageWords`; with them, `wanted` is there, empty if need be. */
   ages?: number[],
+  /** IGDB's hasty time, a percentage of `length`; with it, `wanted` and `ages` are there, empty if need be. */
+  hastyShare?: number,
 ]
 
 type NamedRow = [id: number, name: string, slug: string]
@@ -158,8 +160,10 @@ const baseRow = (game: LibraryGame): GameRow => [
 const encodeGame = (game: LibraryGame): GameRow => {
   const row = baseRow(game)
   const ages = game.ages?.map((word) => ageWords.indexOf(word)).filter((at) => at >= 0)
-  if (game.wanted?.length || ages?.length) row.push(game.wanted ?? [])
-  if (ages?.length) row.push(ages)
+  const hasty = game.hastyShare
+  if (game.wanted?.length || ages?.length || hasty) row.push(game.wanted ?? [])
+  if (ages?.length || hasty) row.push(ages ?? [])
+  if (hasty) row.push(hasty)
   return row
 }
 
@@ -206,6 +210,7 @@ const decodeGame = (row: GameRow): LibraryGame => {
   if (row[28]?.length) game.wanted = row[28]
   const ages = row[29]?.flatMap((at) => ageWords[at] ?? [])
   if (ages?.length) game.ages = ages
+  if (row[30]) game.hastyShare = row[30]
   if (row[16] & PRIVATE) game.private = true
   if (row[16] & ADULT) game.adult = true
   return game

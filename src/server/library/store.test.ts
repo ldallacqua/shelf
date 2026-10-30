@@ -1154,6 +1154,19 @@ describe('time a game sat open, unplayed (ADR 003)', () => {
     expect(await readStoreHours(db, me)).toEqual([])
   })
 
+  it('gives the library IGDB’s hasty time when it is shorter than the normal one', async () => {
+    await db
+      .update(games)
+      .set({ length: { hastily: 900, normally: 1200 } })
+      .where(eq(games.id, hades))
+    expect((await readLibrary(db, me)).games[0]).toMatchObject({ length: 1200, hastyShare: 75 })
+    await db
+      .update(games)
+      .set({ length: { hastily: 1200, normally: 1200 } })
+      .where(eq(games.id, hades))
+    expect((await readLibrary(db, me)).games[0]?.hastyShare).toBeUndefined()
+  })
+
   it('offers none within twice IGDB’s time', async () => {
     await db
       .update(games)
