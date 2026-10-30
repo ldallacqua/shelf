@@ -1218,11 +1218,6 @@
   "AccountPage": {
     "metaTitle": "Sua conta",
     "title": "Sua conta",
-    "archived": {
-      "title": "Jogos arquivados",
-      "intro": "Fora de vista e fora de todas as contas, com tudo o que você marcou. Traga um de volta para pô-lo na estante como estava.",
-      "copies": "Em {platforms}"
-    },
     "checking": "Verificando quem é você…",
     "signInFirst": "Entre para ver sua conta.",
     "signIn": "Entrar",
@@ -1275,6 +1270,7 @@
       "label": "O que organizar",
       "unsorted": "A definir",
       "hours": "Horas das lojas",
+      "archived": "Arquivados",
       "count": "{count, plural, one {# jogo} other {# jogos}}"
     },
     "storeHours": {
@@ -1290,6 +1286,15 @@
       "taken": "Salvo: agora contam {hours, number} h.",
       "list": "Jogos em que as lojas contam mais que o IGDB",
       "empty": "Nenhum jogo tem agora horas das lojas muito além do tempo do IGDB."
+    },
+    "archived": {
+      "metaTitle": "Jogos arquivados",
+      "intro": "Fora de vista e fora de todas as contas, com tudo o que você marcou. Traga um de volta para pô-lo na estante como estava.",
+      "search": "Procurar nos arquivados",
+      "list": "Jogos arquivados",
+      "copies": "Em {platforms}",
+      "noneFound": "Nenhum jogo arquivado bate com “{search}”.",
+      "empty": "Nada arquivado. Arquive um jogo que você nunca vai jogar, na linha dele em A definir ou na página dele, e ele espera aqui com tudo o que você marcou."
     },
     "signInFirst": "Entre para organizar seus jogos.",
     "loading": "Carregando seus jogos…",
@@ -1319,6 +1324,8 @@
     "undoneMany": "{count, plural, one {# jogo voltou a ser como era.} other {# jogos voltaram a ser como eram.}}",
     "notPlaced": "Não deu para mudar o status de {title}. Tente de novo.",
     "notRated": "A nota de {title} não foi salva. Tente de novo.",
+    "archiveTip": "Some da estante e de todas as contas, com tudo guardado. Traga de volta na aba Arquivados, em Organizar.",
+    "removeTip": "Tira da biblioteca, com as cópias e as horas. A sincronização não o traz de volta.",
     "notThis": "Não é este jogo",
     "isThis": "Este: {title} ({year})",
     "isThisUndated": "Este: {title}",

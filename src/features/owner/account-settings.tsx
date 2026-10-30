@@ -13,7 +13,6 @@ import { Input } from '@/ui/field'
 
 import { accountChanged, forgetAccount, openAfresh, type SignedIn, useAccount } from './account'
 import { AdultGames } from './adult-games'
-import { ArchivedGames } from './archived-games'
 import { ExperimentalViews } from './experimental-views'
 import { HandleField, useHandleCheck } from './handle-field'
 import { PasswordField } from './password-field'
@@ -376,7 +375,6 @@ export function AccountSettings() {
       {/* Saved, the fields already hold what the account now is: kept, with what was said. */}
       <ShelfSettings account={account} />
       <Platforms handle={account.handle} />
-      <ArchivedGames />
       <ExperimentalViews />
       <AdultGames />
       <PasswordSettings />

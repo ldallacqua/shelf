@@ -68,6 +68,12 @@ export const emptyTally = (): Tally =>
 export const moveInTally = (tally: Tally, from: Status, to: Status, count = 1): Tally =>
   from === to ? tally : { ...tally, [from]: tally[from] - count, [to]: tally[to] + count }
 
+/** A game gone from the library's counts (archived, removed: `by` -1) or back in them (1). */
+export const countInTally = (tally: Tally, status: Status, by: 1 | -1): Tally => ({
+  ...tally,
+  [status]: tally[status] + by,
+})
+
 /** How the list is ordered: longest played first, as Minimap opens. */
 export const placingSorts = ['played', 'recent', 'title', 'added'] as const
 export type PlacingSort = (typeof placingSorts)[number]

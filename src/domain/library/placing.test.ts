@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  countInTally,
   emptyTally,
   lastPlayed,
   moveInTally,
@@ -81,6 +82,12 @@ describe('the tally', () => {
     const tally = { ...emptyTally(), unsorted: 5, backlog: 1 }
     expect(moveInTally(tally, 'unsorted', 'backlog', 2)).toMatchObject({ unsorted: 3, backlog: 3 })
     expect(moveInTally(tally, 'backlog', 'backlog')).toBe(tally)
+  })
+
+  it('counts a game out of its status when it leaves the library, and in when it comes back', () => {
+    const tally = { ...emptyTally(), unsorted: 5, backlog: 1 }
+    expect(countInTally(tally, 'unsorted', -1)).toMatchObject({ unsorted: 4, backlog: 1 })
+    expect(countInTally(tally, 'backlog', 1)).toMatchObject({ unsorted: 5, backlog: 2 })
   })
 
   it('places games in every status but the one they wait in', () => {

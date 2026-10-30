@@ -1,10 +1,12 @@
 'use client'
 
+import { ArchiveIcon, Trash2Icon } from 'lucide-react'
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
-import { Fragment, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 
 import type { PlatformLabel } from '@/domain/library/adding'
 import {
+  countInTally,
   moveInTally,
   placements,
   placingSorts,
@@ -31,10 +33,20 @@ import { Checkbox } from '@/ui/checkbox'
 import { ToggleChip } from '@/ui/chip'
 import { Progress } from '@/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
-
-import { placeGame, placeGames, rateGame, readUnsorted, rematchGame } from './placing-client'
+import { Tip } from '@/ui/tooltip'
 
 import { OrganizeTabs } from './organize-tabs'
+import {
+  archiveGame,
+  bringBackGame,
+  placeGame,
+  placeGames,
+  rateGame,
+  readUnsorted,
+  rematchGame,
+  removeGame,
+  restoreGame,
+} from './placing-client'
 
 /**
  * Placing what a sync brought in (spec 4.5), after Minimap's "Rate my
@@ -44,8 +56,9 @@ import { OrganizeTabs } from './organize-tabs'
  * a wrong status is one tap to change, and its pressed status taps it back
  * to unsorted. A game the sync took for the wrong one is searched for and
  * made the right one, its copy and hours kept. Many can be given one status
- * at once. Beside the list, how
- * many games stand in each status, moving as they are placed.
+ * at once. A game I will never play is archived or taken off the library
+ * from its row, and leaves the list, with Undo. Beside the list, how many
+ * games stand in each status, moving as they are placed.
  *
  * The list is one stop for the keyboard: Tab reaches the checkbox of the
  * row last in focus, the arrows move from row to row (Space selects), and
@@ -55,6 +68,10 @@ import { OrganizeTabs } from './organize-tabs'
 
 /** Rows drawn at first, and added each time more are asked for: a sync can bring hundreds. */
 const STEP = 50
+
+/** Archive and Remove under a row's statuses: words in the muted ink, underlined on hover. */
+const quietAction =
+  'h-auto min-h-6 px-0 text-muted decoration-transparent hover:text-text hover:decoration-current aria-disabled:opacity-50'
 
 /** The game with this rating (null: none); undefined leaves it as it is. */
 const withRating = (game: UnsortedGame, score: number | null | undefined): UnsortedGame => {
@@ -89,6 +106,14 @@ type RowProps = {
   onSelect: (selected: boolean) => void
   onPlace: (status: Status) => void
   onRate: (score: number | null) => void
+  /** Its question before it is taken off the library is open. */
+  confirming: boolean
+  /** On its way out of the list: archived or removed, a moment. */
+  leaving: boolean
+  onArchive: () => void
+  /** Opens or closes the question. */
+  onAskRemove: () => void
+  onRemove: () => void
   onFocus: () => void
   onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
   rowRef: (node: HTMLLIElement | null) => void
@@ -144,13 +169,28 @@ function Row({
   onSelect,
   onPlace,
   onRate,
+  confirming,
+  leaving,
+  onArchive,
+  onAskRemove,
+  onRemove,
   onFocus,
   onKeyDown,
   rowRef,
 }: RowProps) {
   const t = useTranslations('Placing')
+  const edit = useTranslations('Edit')
   const library = useTranslations('Library')
   const titleId = useId()
+  // Into the question as it opens, and back to the button that asked it when it closes.
+  const askRemove = useRef<HTMLButtonElement>(null)
+  const sure = useRef<HTMLButtonElement>(null)
+  const asked = useRef(false)
+  useEffect(() => {
+    if (confirming) sure.current?.focus()
+    else if (asked.current) askRemove.current?.focus()
+    asked.current = confirming
+  }, [confirming])
   // Out of the Tab order unless the keyboard is on this row.
   const tab = current ? undefined : -1
   const shorts = game.platforms.flatMap((id) => platforms.get(id)?.short ?? [])
@@ -232,6 +272,38 @@ function Row({
             </ToggleChip>
           ))}
         </div>
+        {/* For a game I will never play: out of sight with everything kept, or off the library. */}
+        <div className="flex flex-wrap gap-x-5 gap-y-1 lg:col-start-2">
+          <Tip label={t('archiveTip')} describes>
+            <Button
+              variant="link"
+              size="sm"
+              className={quietAction}
+              tabIndex={tab}
+              // Not disabled while it leaves: a button disabled under focus drops it.
+              aria-disabled={leaving || undefined}
+              onClick={leaving ? undefined : onArchive}
+            >
+              <ArchiveIcon aria-hidden="true" />
+              {edit('archive')}
+            </Button>
+          </Tip>
+          <Tip label={t('removeTip')} describes>
+            <Button
+              ref={askRemove}
+              variant="link"
+              size="sm"
+              className={quietAction}
+              tabIndex={tab}
+              aria-disabled={leaving || undefined}
+              aria-expanded={confirming}
+              onClick={leaving ? undefined : onAskRemove}
+            >
+              <Trash2Icon aria-hidden="true" />
+              {edit('remove')}
+            </Button>
+          </Tip>
+        </div>
       </div>
       {finding ? (
         <div className="col-span-3 mt-4 sm:col-span-2 sm:col-start-2">
@@ -245,6 +317,28 @@ function Row({
                 : t('isThisUndated', { title: found.title })
             }
           />
+        </div>
+      ) : null}
+      {confirming ? (
+        <div
+          role="group"
+          aria-label={edit('remove')}
+          className="col-span-3 mt-4 grid gap-3 rounded-control border border-line-strong bg-surface-raised p-3 sm:col-span-2 sm:col-start-2"
+        >
+          <p className="text-sm text-pretty">{edit('confirmRemove', { title: game.title })}</p>
+          <p className="text-sm text-pretty text-muted">{edit('orArchive')}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button ref={sure} variant="primary" size="sm" onClick={onRemove}>
+              {edit('confirm')}
+            </Button>
+            <Button size="sm" onClick={onArchive}>
+              <ArchiveIcon aria-hidden="true" />
+              {edit('archive')}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onAskRemove}>
+              {edit('keep')}
+            </Button>
+          </div>
         </div>
       ) : null}
     </li>
@@ -286,6 +380,7 @@ function TallyView({ tally }: { tally: Tally }) {
 /** The list, once the account is known: fetched, then changed here as games are placed. */
 function PlacingList({ handle }: { handle: string }) {
   const t = useTranslations('Placing')
+  const edit = useTranslations('Edit')
   const library = useTranslations('Library')
   const errors = useTranslations('Add')
   const locale = useLocale()
@@ -301,6 +396,9 @@ function PlacingList({ handle }: { handle: string }) {
   // The row whose search for the game it really is is open, and whether its answer is on its way.
   const [finding, setFinding] = useState<string>()
   const [rematching, setRematching] = useState(false)
+  // The row whose question before it leaves the library is open, and those on their way out.
+  const [confirming, setConfirming] = useState<string>()
+  const [leaving, setLeaving] = useState<ReadonlySet<string>>(new Set())
   const rows = useRef(new Map<string, HTMLLIElement>())
   // The row to move focus to once it is drawn, after an arrow.
   const focusNext = useRef<string>(undefined)
@@ -508,6 +606,94 @@ function PlacingList({ handle }: { handle: string }) {
     announceChange({ version: answer.value.version })
   }
 
+  /** In or out of the set of games on their way out of the list. */
+  const isLeaving = (entryId: string, on: boolean) =>
+    setLeaving((now) => {
+      const next = new Set(now)
+      if (on) next.add(entryId)
+      else next.delete(entryId)
+      return next
+    })
+
+  /**
+   * A game I will never play, out of the list (spec 4.5): archived, kept
+   * whole, or taken off the library. Its counts go with it. The keyboard
+   * goes on to the next row, and Undo puts the game back where it stood,
+   * with the status it had here.
+   */
+  const leave = async (game: UnsortedGame, how: 'archive' | 'remove') => {
+    const id = game.entryId
+    const status = statusOf(id)
+    // Focus is in its row: once it has gone, it moves to the row that takes its place.
+    const focused = rows.current.get(id)?.contains(document.activeElement) ?? false
+    setConfirming(undefined)
+    isLeaving(id, true)
+    const answer = how === 'archive' ? await archiveGame(id) : await removeGame(id)
+    isLeaving(id, false)
+    if (!answer.ok) {
+      notify({ message: errors(`errors.${answer.reason}`) })
+      return
+    }
+    const at = sorted.findIndex((each) => each.entryId === id)
+    const next = sorted[at + 1] ?? sorted[at - 1]
+    if (next && focused) {
+      setActive(next.entryId)
+      focusNext.current = next.entryId
+    }
+    setLoaded((now) => {
+      if (!now) return now
+      const given = new Map(now.given)
+      given.delete(id)
+      return {
+        ...now,
+        games: now.games.filter((each) => each.entryId !== id),
+        given,
+        tally: countInTally(now.tally, status, -1),
+      }
+    })
+    setSelected((now) => {
+      const kept = new Set(now)
+      kept.delete(id)
+      return kept
+    })
+    if (finding === id) setFinding(undefined)
+    announceChange({ version: answer.value.version })
+    const { title } = game
+    // Removed, it comes back by the token kept for a day; archived, by its entry.
+    const undo = 'undo' in answer.value ? answer.value.undo : undefined
+    notify({
+      message: how === 'archive' ? edit('archived', { title }) : edit('removed', { title }),
+      actions: [
+        {
+          label: errors('undo'),
+          run: async () => {
+            const back = undo === undefined ? await bringBackGame(id) : await restoreGame(undo)
+            if (!back.ok) {
+              notify({ message: errors(`errors.${back.reason}`) })
+              return
+            }
+            setLoaded((now) => {
+              if (!now || now.games.some((each) => each.entryId === id)) return now
+              const given = new Map(now.given)
+              if (status !== 'unsorted') given.set(id, status)
+              return {
+                ...now,
+                games: [...now.games, game],
+                given,
+                tally: countInTally(now.tally, status, 1),
+              }
+            })
+            announceChange({ version: back.value.version, slug: back.value.slug, title })
+            notify({
+              message:
+                how === 'archive' ? edit('broughtBack', { title }) : edit('restored', { title }),
+            })
+          },
+        },
+      ],
+    })
+  }
+
   /** The arrows, Home and End, from a row's checkbox: in its other controls, they are theirs. */
   const moveFrom = (event: KeyboardEvent<HTMLInputElement>, at: number) => {
     const to =
@@ -639,6 +825,13 @@ function PlacingList({ handle }: { handle: string }) {
               }
               onPlace={(status) => void placeOne(game, status)}
               onRate={(score) => void rate(game, score)}
+              confirming={confirming === game.entryId}
+              leaving={leaving.has(game.entryId)}
+              onArchive={() => void leave(game, 'archive')}
+              onAskRemove={() =>
+                setConfirming((now) => (now === game.entryId ? undefined : game.entryId))
+              }
+              onRemove={() => void leave(game, 'remove')}
               onFocus={() => setActive(game.entryId)}
               onKeyDown={(event) => moveFrom(event, at)}
               rowRef={(node) => {

@@ -5,8 +5,8 @@ import { myArchived } from '@/server/services/editing'
 
 /**
  * `GET /api/v1/me/archived`: the signed-in account's archived games, the
- * latest first (spec 7.4), for the account page, the one place they are
- * listed. Kept by nothing.
+ * latest first (spec 7.4), for Organize's archived tab, the one place they
+ * are listed. Kept by nothing.
  */
 export async function GET() {
   // Whose it is comes from the session: never built ahead.

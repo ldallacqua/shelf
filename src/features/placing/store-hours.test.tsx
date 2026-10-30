@@ -11,7 +11,8 @@ import { StoreHours } from './store-hours'
 /**
  * Organize's hours tab (spec 4.7): each game whose stores report far past
  * IGDB's time, its hours beside IGDB's, the time left idle to take out, or
- * the hours kept. And the tabs it shares with placing, each with its count.
+ * the hours kept. And the tabs it shares with placing and the archive, each
+ * with its count.
  */
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
@@ -22,12 +23,13 @@ vi.mock('@/features/owner/account', () => ({ useAccount: () => who }))
 const client = vi.hoisted(() => ({
   update: vi.fn(async () => ({ ok: true as const, value: { version: 7 } })),
 }))
-const change = vi.hoisted(() => ({ announceChange: vi.fn() }))
+const change = vi.hoisted(() => ({ announceChange: vi.fn(), useLibraryChange: () => undefined }))
 vi.mock('@/features/game-detail/edit-client', () => ({ editClient: client }))
 vi.mock('@/features/owner/library-change', () => change)
 
+/** Each read answered afresh: the tabs read the archive's count beside the list. */
 const answer = (games: unknown[]) =>
-  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ games }))
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({ games }))
 
 const HADES = {
   entryId: 'entry-hades',
@@ -124,6 +126,11 @@ describe('OrganizeTabs', () => {
       '/en/account/hours',
     )
     expect(fetched).toHaveBeenCalledWith('/api/v1/me/hours', { cache: 'no-store' })
+    expect(await tabs().findByRole('link', { name: 'Archived, 2 games' })).toHaveAttribute(
+      'href',
+      '/en/account/archived',
+    )
+    expect(fetched).toHaveBeenCalledWith('/api/v1/me/archived', { cache: 'no-store' })
   })
 
   it('says no count for a tab with nothing in it', async () => {
@@ -133,5 +140,6 @@ describe('OrganizeTabs', () => {
     await waitFor(() => expect(fetched).toHaveBeenCalled())
     expect(tabs().getByRole('link', { name: 'Unsorted' })).toHaveTextContent(/^Unsorted$/)
     expect(tabs().getByRole('link', { name: 'Store hours' })).toHaveTextContent(/^Store hours$/)
+    expect(tabs().getByRole('link', { name: 'Archived' })).toHaveTextContent(/^Archived$/)
   })
 })
