@@ -71,7 +71,7 @@ const STEP = 50
 
 /** Archive and Remove under a row's statuses: words in the muted ink, underlined on hover. */
 const quietAction =
-  'h-auto min-h-6 px-0 text-muted decoration-transparent hover:text-text hover:decoration-current'
+  'h-auto min-h-6 px-0 text-muted decoration-transparent hover:text-text hover:decoration-current aria-disabled:opacity-50'
 
 /** The game with this rating (null: none); undefined leaves it as it is. */
 const withRating = (game: UnsortedGame, score: number | null | undefined): UnsortedGame => {
@@ -280,8 +280,9 @@ function Row({
               size="sm"
               className={quietAction}
               tabIndex={tab}
-              disabled={leaving}
-              onClick={onArchive}
+              // Not disabled while it leaves: a button disabled under focus drops it.
+              aria-disabled={leaving || undefined}
+              onClick={leaving ? undefined : onArchive}
             >
               <ArchiveIcon aria-hidden="true" />
               {edit('archive')}
@@ -294,9 +295,9 @@ function Row({
               size="sm"
               className={quietAction}
               tabIndex={tab}
-              disabled={leaving}
+              aria-disabled={leaving || undefined}
               aria-expanded={confirming}
-              onClick={onAskRemove}
+              onClick={leaving ? undefined : onAskRemove}
             >
               <Trash2Icon aria-hidden="true" />
               {edit('remove')}
@@ -327,10 +328,10 @@ function Row({
           <p className="text-sm text-pretty">{edit('confirmRemove', { title: game.title })}</p>
           <p className="text-sm text-pretty text-muted">{edit('orArchive')}</p>
           <div className="flex flex-wrap gap-2">
-            <Button ref={sure} variant="primary" size="sm" disabled={leaving} onClick={onRemove}>
+            <Button ref={sure} variant="primary" size="sm" onClick={onRemove}>
               {edit('confirm')}
             </Button>
-            <Button size="sm" disabled={leaving} onClick={onArchive}>
+            <Button size="sm" onClick={onArchive}>
               <ArchiveIcon aria-hidden="true" />
               {edit('archive')}
             </Button>
@@ -623,6 +624,8 @@ function PlacingList({ handle }: { handle: string }) {
   const leave = async (game: UnsortedGame, how: 'archive' | 'remove') => {
     const id = game.entryId
     const status = statusOf(id)
+    // Focus is in its row: once it has gone, it moves to the row that takes its place.
+    const focused = rows.current.get(id)?.contains(document.activeElement) ?? false
     setConfirming(undefined)
     isLeaving(id, true)
     const answer = how === 'archive' ? await archiveGame(id) : await removeGame(id)
@@ -631,10 +634,9 @@ function PlacingList({ handle }: { handle: string }) {
       notify({ message: errors(`errors.${answer.reason}`) })
       return
     }
-    // Focus was in its row: it moves to the row that takes its place.
     const at = sorted.findIndex((each) => each.entryId === id)
     const next = sorted[at + 1] ?? sorted[at - 1]
-    if (next && rows.current.get(id)?.contains(document.activeElement)) {
+    if (next && focused) {
       setActive(next.entryId)
       focusNext.current = next.entryId
     }

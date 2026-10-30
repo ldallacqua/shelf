@@ -66,7 +66,8 @@ describe('Archived', () => {
   it('lists each archived game with its platforms, and brings one back', async () => {
     answer([HADES])
     renderWithIntl(<Archived />)
-    expect(await list().findByText('On Switch')).toBeInTheDocument()
+    await screen.findByRole('list', { name: 'Archived games' })
+    expect(list().getByText('On Switch')).toBeInTheDocument()
     expect(tabs().getByRole('link', { name: 'Archived, 1 game' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -83,8 +84,11 @@ describe('Archived', () => {
     renderWithIntl(<Archived />)
     const search = await screen.findByRole('searchbox', { name: 'Search the archive' })
     await userEvent.type(search, 'hadés')
-    expect(list().getAllByRole('listitem')).toHaveLength(1)
-    expect(list().getByText('Hades')).toBeInTheDocument()
+    expect(
+      list()
+        .getAllByRole('listitem')
+        .map((row) => row.textContent),
+    ).toEqual([expect.stringContaining('Hades2020')])
     await userEvent.clear(search)
     await userEvent.type(search, 'zelda')
     expect(screen.getByText('No archived game matches “zelda”.')).toBeInTheDocument()

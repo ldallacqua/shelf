@@ -493,7 +493,9 @@ describe('PlaceGames', () => {
     expect(within(question).getByRole('button', { name: 'Remove' })).toHaveFocus()
     // Kept, the question closes and focus goes back to what asked it.
     await user.click(within(question).getByRole('button', { name: 'Keep it' }))
-    expect(within(rowOf('Celeste')).queryByRole('group', { name: 'Remove from library' })).toBeNull()
+    expect(
+      within(rowOf('Celeste')).queryByRole('group', { name: 'Remove from library' }),
+    ).toBeNull()
     expect(ask).toHaveFocus()
     expect(sent.some((each) => each.method === 'DELETE')).toBe(false)
   })

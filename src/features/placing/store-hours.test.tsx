@@ -27,8 +27,9 @@ const change = vi.hoisted(() => ({ announceChange: vi.fn(), useLibraryChange: ()
 vi.mock('@/features/game-detail/edit-client', () => ({ editClient: client }))
 vi.mock('@/features/owner/library-change', () => change)
 
+/** Each read answered afresh: the tabs read the archive's count beside the list. */
 const answer = (games: unknown[]) =>
-  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ games }))
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({ games }))
 
 const HADES = {
   entryId: 'entry-hades',

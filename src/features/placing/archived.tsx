@@ -182,11 +182,14 @@ function ArchivedList({ handle }: { handle: string }) {
                   </span>
                 ) : null}
               </span>
-              <BringBack
-                entryId={game.entryId}
-                title={game.title}
-                onBack={() => setBack((now) => new Set(now).add(game.entryId))}
-              />
+              {/* On a phone, a line of its own under the title, so the title keeps its width. */}
+              <span className="max-sm:w-full max-sm:pl-13">
+                <BringBack
+                  entryId={game.entryId}
+                  title={game.title}
+                  onBack={() => setBack((now) => new Set(now).add(game.entryId))}
+                />
+              </span>
             </li>
           ))}
         </ul>
