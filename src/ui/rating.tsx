@@ -29,6 +29,12 @@ type RatingProps = {
   disabled?: boolean
   /** -1 keeps it out of the Tab order: in a list that is one stop, a row not in focus. */
   tabIndex?: number
+  /**
+   * On one line, for a list of many: the slider, its number and the button
+   * that clears it, with no marks. The number says what the slider is, and
+   * the label is for assistive technology.
+   */
+  compact?: boolean
   className?: string
 }
 
@@ -53,10 +59,91 @@ function Rating({
   format,
   disabled,
   tabIndex,
+  compact = false,
   className,
 }: RatingProps) {
   const labelId = useId()
   const rated = value !== undefined
+
+  const slider = (
+    <Slider.Root
+      data-unrated={rated ? undefined : ''}
+      min={0}
+      max={10}
+      step={0.5}
+      value={[value ?? 0]}
+      disabled={disabled}
+      onValueChange={([next]) => next !== undefined && onValueChange(next)}
+      onValueCommit={([next]) => next !== undefined && onValueCommit?.(next)}
+      className={cn(
+        'group relative flex flex-1 cursor-pointer touch-none items-center select-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
+        compact ? 'h-8 min-w-0 pointer-coarse:h-10' : 'h-10',
+      )}
+    >
+      <Slider.Track className="relative h-1.5 grow overflow-hidden rounded-full bg-line-strong">
+        <Slider.Range className="absolute h-full bg-accent group-data-[unrated]:opacity-0" />
+      </Slider.Track>
+      <Slider.Thumb
+        // Radix makes the thumb a stop of its own: only a value given replaces that.
+        {...(tabIndex === undefined ? {} : { tabIndex })}
+        aria-labelledby={labelId}
+        aria-valuetext={rated ? valueText(value) : unrated}
+        className={cn(
+          'block size-5 rounded-full border-2 border-accent bg-surface shadow-panel pointer-coarse:size-6',
+          'transition-[box-shadow,border-color] duration-quick ease-settle hover:shadow-glow',
+          'group-data-[unrated]:border-line-strong',
+        )}
+      />
+    </Slider.Root>
+  )
+  const clear = rated ? (
+    <Tip label={clearLabel}>
+      <button
+        type="button"
+        aria-label={clearLabel}
+        disabled={disabled}
+        tabIndex={tabIndex}
+        onClick={onClear}
+        className="inline-flex size-8 flex-none items-center justify-center rounded-control text-muted transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text disabled:opacity-50 pointer-coarse:size-10"
+      >
+        <XIcon aria-hidden="true" className="size-4" />
+      </button>
+    </Tip>
+  ) : (
+    // The same room, so the slider does not change length when a rating is taken away.
+    <span aria-hidden="true" className="size-8 flex-none pointer-coarse:size-10" />
+  )
+
+  if (compact) {
+    return (
+      <div
+        data-slot="rating"
+        role="group"
+        aria-labelledby={labelId}
+        className={cn('flex items-center gap-2', className)}
+      >
+        <span id={labelId} className="sr-only">
+          {label}
+        </span>
+        {slider}
+        {/* Read through the slider's own value; this is for the eye. Wide enough for either, so the slider stays put. */}
+        <span
+          aria-hidden="true"
+          className="flex w-16 flex-none items-baseline justify-end gap-0.5 whitespace-nowrap"
+        >
+          {rated ? (
+            <>
+              <span className="title text-base tabular-nums">{format(value)}</span>
+              <span className="text-xs text-muted">{outOf}</span>
+            </>
+          ) : (
+            <span className="text-sm text-muted">{unrated}</span>
+          )}
+        </span>
+        {clear}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -82,49 +169,8 @@ function Rating({
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <Slider.Root
-          data-unrated={rated ? undefined : ''}
-          min={0}
-          max={10}
-          step={0.5}
-          value={[value ?? 0]}
-          disabled={disabled}
-          onValueChange={([next]) => next !== undefined && onValueChange(next)}
-          onValueCommit={([next]) => next !== undefined && onValueCommit?.(next)}
-          className="group relative flex h-10 flex-1 cursor-pointer touch-none items-center select-none data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
-        >
-          <Slider.Track className="relative h-1.5 grow overflow-hidden rounded-full bg-line-strong">
-            <Slider.Range className="absolute h-full bg-accent group-data-[unrated]:opacity-0" />
-          </Slider.Track>
-          <Slider.Thumb
-            // Radix makes the thumb a stop of its own: only a value given replaces that.
-            {...(tabIndex === undefined ? {} : { tabIndex })}
-            aria-labelledby={labelId}
-            aria-valuetext={rated ? valueText(value) : unrated}
-            className={cn(
-              'block size-5 rounded-full border-2 border-accent bg-surface shadow-panel pointer-coarse:size-6',
-              'transition-[box-shadow,border-color] duration-quick ease-settle hover:shadow-glow',
-              'group-data-[unrated]:border-line-strong',
-            )}
-          />
-        </Slider.Root>
-        {rated ? (
-          <Tip label={clearLabel}>
-            <button
-              type="button"
-              aria-label={clearLabel}
-              disabled={disabled}
-              tabIndex={tabIndex}
-              onClick={onClear}
-              className="inline-flex size-8 flex-none items-center justify-center rounded-control text-muted transition-colors duration-quick ease-settle hover:bg-text/8 hover:text-text disabled:opacity-50 pointer-coarse:size-10"
-            >
-              <XIcon aria-hidden="true" className="size-4" />
-            </button>
-          </Tip>
-        ) : (
-          // The same room, so the slider does not change length when a rating is taken away.
-          <span aria-hidden="true" className="size-8 flex-none pointer-coarse:size-10" />
-        )}
+        {slider}
+        {clear}
       </div>
       {/* A mark at each whole number, lined up with where the thumb's middle stops. */}
       <div

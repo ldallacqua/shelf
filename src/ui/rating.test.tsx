@@ -9,10 +9,12 @@ function Mine({
   start,
   onCommit,
   tabIndex,
+  compact,
 }: {
   start?: number
   onCommit?: (value: number | undefined) => void
   tabIndex?: number
+  compact?: boolean
 }) {
   const [value, setValue] = useState(start)
   return (
@@ -31,6 +33,7 @@ function Mine({
       valueText={(rating) => `${rating} out of 10`}
       format={String}
       tabIndex={tabIndex}
+      compact={compact}
     />
   )
 }
@@ -43,6 +46,20 @@ describe('Rating', () => {
     expect(screen.getByRole('group', { name: 'My rating' })).toBeInTheDocument()
     expect(slider()).toHaveAttribute('aria-valuetext', 'Not rated')
     expect(screen.queryByRole('button', { name: 'Take the rating away' })).not.toBeInTheDocument()
+  })
+
+  it('on one line for a list of many: its name, number and clear button, without the marks', async () => {
+    const onCommit = vi.fn()
+    render(<Mine start={8.5} compact onCommit={onCommit} />)
+    expect(screen.getByRole('group', { name: 'My rating' })).toBeInTheDocument()
+    expect(slider()).toHaveAttribute('aria-valuetext', '8.5 out of 10')
+    expect(screen.getByText('8.5')).toBeInTheDocument()
+    // Beside the full one, the marks say 0, 5 and 10.
+    expect(screen.queryByText('5')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Take the rating away' }))
+    expect(onCommit).toHaveBeenCalledWith(undefined)
+    expect(screen.getByText('Not rated')).toBeInTheDocument()
+    expect(slider()).toHaveAttribute('aria-valuetext', 'Not rated')
   })
 
   it('runs from 0 to 10 in half steps', () => {

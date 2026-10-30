@@ -31,6 +31,7 @@ import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Checkbox } from '@/ui/checkbox'
 import { ToggleChip } from '@/ui/chip'
+import { cn } from '@/ui/cn'
 import { Progress } from '@/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
 import { Tip } from '@/ui/tooltip'
@@ -69,9 +70,12 @@ import {
 /** Rows drawn at first, and added each time more are asked for: a sync can bring hundreds. */
 const STEP = 50
 
-/** Archive and Remove under a row's statuses: words in the muted ink, underlined on hover. */
-const quietAction =
-  'h-auto min-h-6 px-0 text-muted decoration-transparent hover:text-text hover:decoration-current aria-disabled:opacity-50'
+/** "Not this game", in every row: a link in the muted ink, so the statuses keep the eye. */
+const quietAction = 'h-auto min-h-6 px-0 text-muted hover:text-text'
+
+/** Archive and Remove at a row's end: an icon for a pointer, with words for a touch. */
+const rowAction =
+  'text-muted hover:text-text aria-disabled:opacity-50 pointer-fine:w-8 pointer-fine:px-0'
 
 /** The game with this rating (null: none); undefined leaves it as it is. */
 const withRating = (game: UnsortedGame, score: number | null | undefined): UnsortedGame => {
@@ -129,12 +133,10 @@ function Played({ game }: { game: UnsortedGame }) {
   const hours = (minutes: number) => Math.round(minutes / 6) / 10
 
   if (game.played.length === 0) {
-    return game.minutes > 0 ? (
-      <p className="text-sm">{t('hours', { hours: hours(game.minutes) })}</p>
-    ) : null
+    return game.minutes > 0 ? <p>{t('hours', { hours: hours(game.minutes) })}</p> : null
   }
   return (
-    <ul className="grid gap-0.5 text-sm">
+    <ul className="flex flex-wrap gap-x-3 gap-y-0.5">
       {game.played.map((each) => {
         const source = sync(`source.${each.source}`)
         return (
@@ -196,12 +198,15 @@ function Row({
   const shorts = game.platforms.flatMap((id) => platforms.get(id)?.short ?? [])
 
   return (
+    // As wide as the list lets it be, a row is as tall as its cover: the title with the rating
+    // beside it, a line of what is known, and the statuses, each always in the same place, so a
+    // list of hundreds is worked with the eye and the pointer hardly moving.
     <li
       ref={rowRef}
       aria-labelledby={titleId}
       onFocus={onFocus}
       data-selected={selected ? '' : undefined}
-      className="grid grid-cols-[auto_3.5rem_minmax(0,1fr)] items-start gap-x-4 rounded-panel border border-line bg-surface p-4 has-[:focus-visible]:border-line-strong data-[selected]:border-accent sm:grid-cols-[auto_4.5rem_minmax(0,1fr)]"
+      className="grid grid-cols-[auto_3.5rem_minmax(0,1fr)] grid-rows-[auto_1fr] items-start gap-x-3 rounded-panel border border-line bg-surface p-3 has-[:focus-visible]:border-line-strong data-[selected]:border-accent @xl:grid-cols-[auto_4rem_minmax(0,1fr)] @xl:grid-rows-[auto_auto_auto_1fr] @3xl:grid-cols-[auto_4rem_minmax(0,1fr)_auto]"
     >
       {/* The row's stop in the list: the arrows go from here to the next row's. */}
       <Checkbox
@@ -210,9 +215,9 @@ function Row({
         onKeyDown={onKeyDown}
         aria-label={t('select', { title: game.title })}
         tabIndex={current ? 0 : -1}
-        className="mt-0.5"
+        className="row-span-2 mt-0.5 @xl:row-span-4"
       />
-      <span className="block aspect-[3/4] w-14 overflow-hidden rounded-[4px] sm:w-18">
+      <span className="row-span-2 block aspect-[3/4] w-14 overflow-hidden rounded-[4px] @xl:row-span-4 @xl:w-16">
         <Cover
           cover={game.cover}
           colors={game.colors}
@@ -222,29 +227,27 @@ function Row({
           small
         />
       </span>
-      <div className="grid min-w-0 content-start gap-1">
-        <h3 id={titleId} className="text-base font-semibold text-pretty">
-          <Link
-            href={gameHref(handle, game.slug)}
-            tabIndex={tab}
-            className="rounded-[2px] underline decoration-transparent decoration-1 underline-offset-4 hover:decoration-current"
-          >
-            {game.title}
-          </Link>
-          {game.year ? (
-            <span className="ml-2 readout text-[0.6875rem] font-normal text-muted">
-              {game.year}
-            </span>
-          ) : null}
-        </h3>
-        {shorts.length > 0 ? <p className="text-sm text-muted">{shorts.join(' · ')}</p> : null}
+      <h3 id={titleId} className="col-start-3 text-base font-semibold text-pretty @3xl:self-center">
+        <Link
+          href={gameHref(handle, game.slug)}
+          tabIndex={tab}
+          className="rounded-[2px] underline decoration-transparent decoration-1 underline-offset-4 hover:decoration-current"
+        >
+          {game.title}
+        </Link>
+        {game.year ? (
+          <span className="ml-2 readout text-[0.6875rem] font-normal text-muted">{game.year}</span>
+        ) : null}
+      </h3>
+      <div className="col-start-3 mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm @3xl:col-[3/span_2]">
+        {shorts.length > 0 ? <p className="text-muted">{shorts.join(' · ')}</p> : null}
         <Played game={game} />
         {/* A game the sync took for the wrong one, while it still waits: given a status, it is placed. */}
         {given ? null : (
           <Button
             variant="link"
             size="sm"
-            className="h-auto min-h-6 justify-self-start px-0"
+            className={quietAction}
             tabIndex={tab}
             aria-expanded={finding}
             onClick={onFind}
@@ -253,60 +256,75 @@ function Row({
           </Button>
         )}
       </div>
-      {/* Under the title beside the cover; on a phone, the row's whole width. */}
-      <div className="col-span-3 mt-4 grid gap-x-8 gap-y-3 sm:col-span-1 sm:col-start-3 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
-        <SavedRating score={game.rating} onSave={onRate} tabIndex={tab} />
+      {/* Beside the title in a wide list; under what is known beside the cover in a narrower one; on a phone, the row's whole width. */}
+      <SavedRating
+        score={game.rating}
+        onSave={onRate}
+        tabIndex={tab}
+        compact
+        className="col-span-3 mt-2 @xl:col-[3/span_1] @xl:mt-1 @3xl:col-[4/span_1] @3xl:row-start-1 @3xl:mt-0 @3xl:w-64"
+      />
+      <div className="col-span-3 mt-2 flex flex-wrap items-end justify-between gap-x-3 gap-y-2 self-end @xl:col-[3/span_1] @xl:row-start-4 @3xl:col-[3/span_2] @3xl:mt-1">
         <div
           role="group"
           aria-label={t('statusOf', { title: game.title })}
-          className="flex flex-wrap gap-2 lg:pt-1"
+          className="flex min-w-0 flex-[1_1_16rem] flex-wrap gap-1"
         >
           {placements.map((status) => (
             <ToggleChip
               key={status}
               pressed={given === status}
               tabIndex={tab}
+              className="min-h-8 gap-1 px-2.5 text-[0.8125rem] pointer-coarse:min-h-10"
               onClick={() => onPlace(status)}
             >
-              <StatusMark status={status} label={library(`status.${status}`)} />
+              {/* The chip's tick takes the place of the icon, so pressing it does not widen it and wrap the row. */}
+              <StatusMark
+                status={status}
+                label={library(`status.${status}`)}
+                className={cn('gap-1', given === status && '[&>svg]:hidden')}
+              />
             </ToggleChip>
           ))}
         </div>
-        {/* For a game I will never play: out of sight with everything kept, or off the library. */}
-        <div className="flex flex-wrap gap-x-5 gap-y-1 lg:col-start-2">
+        {/*
+          For a game I will never play: out of sight with everything kept, or off the library.
+          A pointer has the tips, so the icons will do; a touch has none, so it has the words.
+        */}
+        <div className="flex flex-none gap-0.5">
           <Tip label={t('archiveTip')} describes>
             <Button
-              variant="link"
+              variant="ghost"
               size="sm"
-              className={quietAction}
+              className={rowAction}
               tabIndex={tab}
               // Not disabled while it leaves: a button disabled under focus drops it.
               aria-disabled={leaving || undefined}
               onClick={leaving ? undefined : onArchive}
             >
               <ArchiveIcon aria-hidden="true" />
-              {edit('archive')}
+              <span className="pointer-fine:sr-only">{edit('archive')}</span>
             </Button>
           </Tip>
           <Tip label={t('removeTip')} describes>
             <Button
               ref={askRemove}
-              variant="link"
+              variant="ghost"
               size="sm"
-              className={quietAction}
+              className={rowAction}
               tabIndex={tab}
               aria-disabled={leaving || undefined}
               aria-expanded={confirming}
               onClick={leaving ? undefined : onAskRemove}
             >
               <Trash2Icon aria-hidden="true" />
-              {edit('remove')}
+              <span className="pointer-fine:sr-only">{edit('remove')}</span>
             </Button>
           </Tip>
         </div>
       </div>
       {finding ? (
-        <div className="col-span-3 mt-4 sm:col-span-2 sm:col-start-2">
+        <div className="col-span-3 mt-3 @xl:col-[3/span_1] @xl:row-start-5 @3xl:col-[3/span_2]">
           <FindIt
             title={game.title}
             onPick={onPick}
@@ -323,7 +341,7 @@ function Row({
         <div
           role="group"
           aria-label={edit('remove')}
-          className="col-span-3 mt-4 grid gap-3 rounded-control border border-line-strong bg-surface-raised p-3 sm:col-span-2 sm:col-start-2"
+          className="col-span-3 mt-3 grid gap-3 rounded-control border border-line-strong bg-surface-raised p-3 @xl:col-[3/span_1] @xl:row-start-6 @3xl:col-[3/span_2]"
         >
           <p className="text-sm text-pretty">{edit('confirmRemove', { title: game.title })}</p>
           <p className="text-sm text-pretty text-muted">{edit('orArchive')}</p>
@@ -801,7 +819,8 @@ function PlacingList({ handle }: { handle: string }) {
           </div>
         ) : null}
 
-        <ul aria-label={t('list')} className="grid gap-3">
+        {/* The rows lay out by the list's width: the tally beside it narrows it on a desktop. */}
+        <ul aria-label={t('list')} className="@container grid gap-2">
           {shown.map((game, at) => (
             <Row
               key={game.entryId}
