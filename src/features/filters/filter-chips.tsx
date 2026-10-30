@@ -8,6 +8,7 @@ import { chipsOf, type Chip } from '@/domain/query/panel'
 import type { Problem, QueryNode } from '@/domain/query/tree'
 import { Button } from '@/ui/button'
 import { cn } from '@/ui/cn'
+import { Tip } from '@/ui/tooltip'
 
 import { conditionLabel } from './labels'
 
@@ -71,14 +72,16 @@ export function FilterChips({
             return (
               <span key={`${group}:${chip.index}`} className={chipClass} data-slot="filter-chip">
                 <span className="truncate">{label}</span>
-                <button
-                  type="button"
-                  aria-label={t('chips.remove', { condition: label })}
-                  onClick={() => onRemove(chip)}
-                  className={removeClass}
-                >
-                  <XIcon aria-hidden="true" className="size-3.5" />
-                </button>
+                <Tip label={t('chips.remove', { condition: label })}>
+                  <button
+                    type="button"
+                    aria-label={t('chips.remove', { condition: label })}
+                    onClick={() => onRemove(chip)}
+                    className={removeClass}
+                  >
+                    <XIcon aria-hidden="true" className="size-3.5" />
+                  </button>
+                </Tip>
               </span>
             )
           })}
@@ -93,15 +96,17 @@ export function FilterChips({
         >
           <span className="sr-only">{t('chips.ignored')}</span>
           <s className="truncate">{problem.text}</s>
-          <button
-            type="button"
-            aria-label={t('chips.remove', { condition: problem.text })}
-            title={t(`problems.${problem.reason}`)}
-            onClick={() => onRemoveProblem(problem)}
-            className={removeClass}
-          >
-            <XIcon aria-hidden="true" className="size-3.5" />
-          </button>
+          {/* Why it was left out, which the chip shows only by its dashes. */}
+          <Tip label={t('chips.ignoredTip', { reason: t(`problems.${problem.reason}`) })} describes>
+            <button
+              type="button"
+              aria-label={t('chips.remove', { condition: problem.text })}
+              onClick={() => onRemoveProblem(problem)}
+              className={removeClass}
+            >
+              <XIcon aria-hidden="true" className="size-3.5" />
+            </button>
+          </Tip>
         </span>
       ))}
       <Button variant="ghost" size="sm" onClick={onClear}>

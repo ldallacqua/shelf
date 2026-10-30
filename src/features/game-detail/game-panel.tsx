@@ -13,6 +13,7 @@ import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Sheet, SheetContent, SheetTitle, sheetButton } from '@/ui/sheet'
 import { SHEET_FROM_BOTTOM } from '@/ui/sheet-from-bottom'
+import { Tip } from '@/ui/tooltip'
 
 import { keptQuery } from './back-to-library'
 import { GameDetail } from './game-detail'
@@ -232,15 +233,16 @@ export function GamePanel({
           }}
           actions={
             // The game's own page, in place of the panel: Back from it is the library again.
-            <Link
-              href={gameHref(handle, game.slug, query)}
-              replace
-              aria-label={t('fullPage')}
-              title={t('fullPage')}
-              className={sheetButton(true)}
-            >
-              <Maximize2Icon aria-hidden="true" className="size-4" />
-            </Link>
+            <Tip label={t('fullPage')}>
+              <Link
+                href={gameHref(handle, game.slug, query)}
+                replace
+                aria-label={t('fullPage')}
+                className={sheetButton(true)}
+              >
+                <Maximize2Icon aria-hidden="true" className="size-4" />
+              </Link>
+            </Tip>
           }
           onCloseAutoFocus={(event) => {
             // Focus goes back to the box that was picked up, not to the top of the page.

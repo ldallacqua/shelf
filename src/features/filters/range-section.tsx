@@ -8,6 +8,7 @@ import { isDateKey } from '@/domain/query/keys'
 import { rangeFrom, rangeInputs, type RangeCondition, type RangeKey } from '@/domain/query/panel'
 import { writeComparison } from '@/domain/query/write'
 import { cn } from '@/ui/cn'
+import { Tip } from '@/ui/tooltip'
 
 type RangeSectionProps = {
   filterKey: RangeKey
@@ -66,17 +67,19 @@ export function RangeSection({ filterKey, label, range, extent, onChange }: Rang
       {inputs.written ? (
         <p className="flex items-center gap-2 text-sm">
           <span>{t('panel.written', { text: inputs.written })}</span>
-          <button
-            type="button"
-            aria-label={t('panel.clearRange', { key: label })}
-            onClick={() => {
-              setInputs({ from: '', to: '' })
-              onChange(undefined)
-            }}
-            className="inline-flex size-7 items-center justify-center rounded-control text-muted hover:bg-text/8 pointer-coarse:size-10"
-          >
-            <XIcon aria-hidden="true" className="size-3.5" />
-          </button>
+          <Tip label={t('panel.clearRange', { key: label })}>
+            <button
+              type="button"
+              aria-label={t('panel.clearRange', { key: label })}
+              onClick={() => {
+                setInputs({ from: '', to: '' })
+                onChange(undefined)
+              }}
+              className="inline-flex size-7 items-center justify-center rounded-control text-muted hover:bg-text/8 pointer-coarse:size-10"
+            >
+              <XIcon aria-hidden="true" className="size-3.5" />
+            </button>
+          </Tip>
         </p>
       ) : null}
       <div className="grid grid-cols-2 gap-2">

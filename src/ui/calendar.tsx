@@ -4,6 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 
 import { cn } from '@/ui/cn'
+import { Tip } from '@/ui/tooltip'
 
 /** A day as the library stores one: `YYYY-MM-DD`. */
 type Day = string
@@ -128,27 +129,31 @@ function Calendar({
   return (
     <div data-slot="calendar" className={cn('grid w-max gap-2', className)}>
       <div className="flex items-center justify-between gap-2">
-        <button
-          type="button"
-          aria-label={labels.previousMonth}
-          disabled={!canGoBack}
-          onClick={() => goTo(addMonths(focused, -1), false)}
-          className={navButton}
-        >
-          <ChevronLeftIcon aria-hidden="true" className="size-4" />
-        </button>
+        <Tip label={labels.previousMonth}>
+          <button
+            type="button"
+            aria-label={labels.previousMonth}
+            disabled={!canGoBack}
+            onClick={() => goTo(addMonths(focused, -1), false)}
+            className={navButton}
+          >
+            <ChevronLeftIcon aria-hidden="true" className="size-4" />
+          </button>
+        </Tip>
         <p id={titleId} aria-live="polite" className="text-sm font-semibold first-letter:uppercase">
           {title.format(timeOf(month))}
         </p>
-        <button
-          type="button"
-          aria-label={labels.nextMonth}
-          disabled={!canGoOn}
-          onClick={() => goTo(addMonths(focused, 1), false)}
-          className={navButton}
-        >
-          <ChevronRightIcon aria-hidden="true" className="size-4" />
-        </button>
+        <Tip label={labels.nextMonth}>
+          <button
+            type="button"
+            aria-label={labels.nextMonth}
+            disabled={!canGoOn}
+            onClick={() => goTo(addMonths(focused, 1), false)}
+            className={navButton}
+          >
+            <ChevronRightIcon aria-hidden="true" className="size-4" />
+          </button>
+        </Tip>
       </div>
       <div ref={grid} role="grid" aria-labelledby={titleId} className="grid gap-0.5">
         <div role="row" className="grid grid-cols-7 gap-0.5">

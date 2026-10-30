@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
+import { Tip } from '@/ui/tooltip'
 
 type PlayProps = {
   entryId: string
@@ -177,16 +178,20 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
       {primary}
       {menu ? (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="px-2" aria-label={t('playOptions')}>
-              <EllipsisIcon aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
+          <Tip label={t('playOptions')}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="px-2" aria-label={t('playOptions')}>
+                <EllipsisIcon aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+          </Tip>
           <DropdownMenuContent align="end" className="min-w-56">
             {launcher ? (
               <>
-                <DropdownMenuLabel className="max-w-72 truncate" title={launcher.path}>
-                  {launcher.name}
+                {/* The whole path, wrapped: a menu's label takes no focus, so a tip could not show it. */}
+                <DropdownMenuLabel className="grid max-w-72 gap-0.5">
+                  <span className="truncate">{launcher.name}</span>
+                  <span className="text-xs font-normal break-all text-muted">{launcher.path}</span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={choose}>{t('changeFile')}</DropdownMenuItem>

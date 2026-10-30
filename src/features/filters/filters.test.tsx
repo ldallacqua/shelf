@@ -206,7 +206,11 @@ describe('FilterChips', () => {
     const onRemoveProblem = vi.fn()
     chipsFor('halo:3 zelda', vi.fn(), onRemoveProblem)
     const remove = screen.getByRole('button', { name: 'Remove halo:3' })
-    expect(remove).toHaveAttribute('title', 'There is no filter by that name.')
+    // Why, on hover, and read as what the button is for.
+    await userEvent.hover(remove)
+    const why = 'There is no filter by that name. Remove it from the search.'
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(why)
+    expect(remove).toHaveAccessibleDescription(why)
     await userEvent.click(remove)
     expect(onRemoveProblem).toHaveBeenCalledWith(expect.objectContaining({ text: 'halo:3' }))
   })

@@ -104,6 +104,7 @@
 
   --animate-fade-in: fade-in var(--motion-quick) var(--ease-settle);
   --animate-menu-in: menu-in var(--motion-quick) var(--ease-settle);
+  --animate-tip-in: tip-in var(--motion-quick) var(--ease-settle);
   /* A sheet slides in from the edge named by --sheet-from: the bottom on a phone, the right otherwise. */
   --animate-sheet-in: sheet-in var(--motion-base) var(--ease-settle);
   --animate-sheet-out: sheet-out var(--motion-quick) var(--ease-leave) forwards;
@@ -119,6 +120,14 @@
     from {
       opacity: 0;
       transform: translateY(-4px) scale(0.98);
+    }
+  }
+
+  /* From the control it names: the tip's origin is its side nearest it. */
+  @keyframes tip-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
     }
   }
 

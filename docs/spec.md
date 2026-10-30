@@ -1720,6 +1720,7 @@ The target is WCAG 2.2 level AA in both themes.
 | **3D** | The canvas is hidden from assistive technology. The same labeled lists exist alongside it and drive it: moving focus moves the camera. A screen-reader user gets the same shelf, in the same order, in both views. |
 | **Announcements** | Filter and sort changes announce the result: "42 games, sorted by my rating". Adding, removing and undo are announced. |
 | **Targets** | At least 24 by 24 pixels, including spines |
+| **Tips** | A control that shows only an icon or a mark (S, M, L) has a tip: its words beside it, on hover and when the keyboard reaches it, saying what it does. Never the browser's own `title`. A touch opens none, Escape hides one, and focus a sheet or a menu puts on a button shows none. A control whose words are on screen has none, unless it says why it cannot be used (3D without WebGL 2). |
 | **Contrast** | Text 4.5:1, large text and control boundaries 3:1, in both themes. Text over art sits on a scrim. |
 | **State** | Never by color alone ([3.2](#32-words-used-below)) |
 | **Motion** | Everything has a calm version ([section 14](#14-motion)). Nothing flashes more than three times a second. |

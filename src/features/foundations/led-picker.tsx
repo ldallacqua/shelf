@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl'
 
 import { Segmented, SegmentedItem } from '@/ui/segmented'
+import { Tip } from '@/ui/tooltip'
 
 import { ledColors, useLed } from './led-context'
 
@@ -14,19 +15,19 @@ export function LedPicker() {
   return (
     <Segmented aria-label={t('label')} value={led} onValueChange={setLed}>
       {ledColors.map((option) => (
-        <SegmentedItem
-          key={option.key}
-          value={option.key}
-          aria-label={t(`colors.${option.key}`)}
-          title={t(`colors.${option.key}`)}
-          className="px-0 data-[state=on]:bg-text/12"
-        >
-          <span
-            aria-hidden="true"
-            className="size-4 rounded-full shadow-[0_0_calc(var(--glow)*10px)_var(--dot)] ring-1 ring-text/20"
-            style={{ backgroundColor: option.value, ['--dot' as string]: option.value }}
-          />
-        </SegmentedItem>
+        <Tip key={option.key} label={t(`colors.${option.key}`)}>
+          <SegmentedItem
+            value={option.key}
+            aria-label={t(`colors.${option.key}`)}
+            className="px-0 data-[state=on]:bg-text/12"
+          >
+            <span
+              aria-hidden="true"
+              className="size-4 rounded-full shadow-[0_0_calc(var(--glow)*10px)_var(--dot)] ring-1 ring-text/20"
+              style={{ backgroundColor: option.value, ['--dot' as string]: option.value }}
+            />
+          </SegmentedItem>
+        </Tip>
       ))}
     </Segmented>
   )

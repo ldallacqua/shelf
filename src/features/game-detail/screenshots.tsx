@@ -7,6 +7,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent } from '
 
 import type { GameImage, GameVideo } from '@/domain/igdb/game'
 import { imageUrl, screenshotSources } from '@/domain/igdb/images'
+import { Tip } from '@/ui/tooltip'
 
 /** How far a screenshot can be zoomed. */
 const MAX_ZOOM = 4
@@ -211,12 +212,14 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
             <p className="readout text-[0.6875rem]" aria-live="polite">
               {t('viewerCount', { at: at + 1, total: shots.length })}
             </p>
-            <Dialog.Close
-              aria-label={t('viewerClose')}
-              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
-            >
-              <XIcon aria-hidden="true" className="size-5" />
-            </Dialog.Close>
+            <Tip label={t('viewerClose')}>
+              <Dialog.Close
+                aria-label={t('viewerClose')}
+                className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
+              >
+                <XIcon aria-hidden="true" className="size-5" />
+              </Dialog.Close>
+            </Tip>
           </div>
           <div
             ref={track}
@@ -253,24 +256,28 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
             ))}
           </div>
           <div className="flex flex-none items-center justify-center gap-3 px-4 py-3 pointer-coarse:hidden">
-            <button
-              type="button"
-              aria-label={t('viewerPrevious')}
-              disabled={at === 0}
-              onClick={() => go(at - 1)}
-              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
-            >
-              <ChevronLeftIcon aria-hidden="true" className="size-5" />
-            </button>
-            <button
-              type="button"
-              aria-label={t('viewerNext')}
-              disabled={at === shots.length - 1}
-              onClick={() => go(at + 1)}
-              className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
-            >
-              <ChevronRightIcon aria-hidden="true" className="size-5" />
-            </button>
+            <Tip label={t('viewerPrevious')}>
+              <button
+                type="button"
+                aria-label={t('viewerPrevious')}
+                disabled={at === 0}
+                onClick={() => go(at - 1)}
+                className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
+              >
+                <ChevronLeftIcon aria-hidden="true" className="size-5" />
+              </button>
+            </Tip>
+            <Tip label={t('viewerNext')}>
+              <button
+                type="button"
+                aria-label={t('viewerNext')}
+                disabled={at === shots.length - 1}
+                onClick={() => go(at + 1)}
+                className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
+              >
+                <ChevronRightIcon aria-hidden="true" className="size-5" />
+              </button>
+            </Tip>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

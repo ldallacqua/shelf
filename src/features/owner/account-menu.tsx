@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
+import { Tip } from '@/ui/tooltip'
 
 import { signOut, useAccount } from './account'
 
@@ -47,11 +48,13 @@ export function AccountMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={t('menu', { name: account.name })}>
-          <UserRoundIcon aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
+      <Tip label={t('menuTip')} side="bottom">
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={t('menu', { name: account.name })}>
+            <UserRoundIcon aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+      </Tip>
       <DropdownMenuContent align="end" className="min-w-56">
         <DropdownMenuLabel className="grid gap-0.5">
           <span className="truncate">{account.name}</span>

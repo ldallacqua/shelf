@@ -5,6 +5,7 @@ import { Dialog } from 'radix-ui'
 import type { ComponentProps, ReactNode } from 'react'
 
 import { cn } from '@/ui/cn'
+import { Tip } from '@/ui/tooltip'
 
 /**
  * A panel that slides in over the page: up from the bottom on a phone (and,
@@ -114,9 +115,11 @@ function SheetContent({
         bleed ? 'absolute top-3 right-3 z-10' : '-mt-1 -mr-2 ml-auto',
       )}
     >
-      <Dialog.Close aria-label={closeLabel} className={sheetButton(bleed)}>
-        <XIcon aria-hidden="true" className="size-4" />
-      </Dialog.Close>
+      <Tip label={closeLabel}>
+        <Dialog.Close aria-label={closeLabel} className={sheetButton(bleed)}>
+          <XIcon aria-hidden="true" className="size-4" />
+        </Dialog.Close>
+      </Tip>
       {actions}
     </div>
   )

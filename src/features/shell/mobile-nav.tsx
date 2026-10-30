@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
+import { Tip } from '@/ui/tooltip'
 
 import { isCurrent, navItems, placingItem } from './nav'
 import { useNavHandle, useOwnHandle, useOwnWaiting } from './nav-handle'
@@ -30,11 +31,13 @@ function Menu({ handle, pathname, className }: MenuProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={t('menu')} className={className}>
-          <MenuIcon aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
+      <Tip label={t('menu')} side="bottom">
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={t('menu')} className={className}>
+            <MenuIcon aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+      </Tip>
       <DropdownMenuContent align="end" className="min-w-48">
         {handle
           ? navItems.map((item) => (

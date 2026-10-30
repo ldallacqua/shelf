@@ -13,6 +13,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
+import { Tip } from '@/ui/tooltip'
 
 type SortControlProps = {
   sort: Sort
@@ -60,26 +61,29 @@ export function SortControl({ sort, onSort, onShuffle, open, onOpenChange }: Sor
         </DropdownMenuContent>
       </DropdownMenu>
       {sort.key === 'random' ? (
-        <Button variant="secondary" size="icon" aria-label={t('shuffle')} onClick={onShuffle}>
-          <ShuffleIcon aria-hidden="true" />
-        </Button>
+        <Tip label={t('shuffle')}>
+          <Button variant="secondary" size="icon" aria-label={t('shuffle')} onClick={onShuffle}>
+            <ShuffleIcon aria-hidden="true" />
+          </Button>
+        </Tip>
       ) : (
-        <Button
-          variant="secondary"
-          size="icon"
-          // Says which way it runs now; pressing it reverses that.
-          aria-label={t(sort.descending ? 'descending' : 'ascending', {
-            key: t(`keys.${sort.key}`),
-          })}
-          title={t('reverse')}
-          onClick={() => onSort({ ...sort, descending: !sort.descending })}
-        >
-          {sort.descending ? (
-            <ArrowDownIcon aria-hidden="true" />
-          ) : (
-            <ArrowUpIcon aria-hidden="true" />
-          )}
-        </Button>
+        // Its name says which way it runs now; its tip, that pressing it reverses that.
+        <Tip label={t('reverse')} describes>
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label={t(sort.descending ? 'descending' : 'ascending', {
+              key: t(`keys.${sort.key}`),
+            })}
+            onClick={() => onSort({ ...sort, descending: !sort.descending })}
+          >
+            {sort.descending ? (
+              <ArrowDownIcon aria-hidden="true" />
+            ) : (
+              <ArrowUpIcon aria-hidden="true" />
+            )}
+          </Button>
+        </Tip>
       )}
     </div>
   )

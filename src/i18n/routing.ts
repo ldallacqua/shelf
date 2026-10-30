@@ -38,10 +38,11 @@ export type Locale = (typeof routing.locales)[number]
 export type Pathname = keyof typeof routing.pathnames
 
 /**
- * Language names in their own language. They read the same on every page, so
- * they are not in the translation files.
+ * Language names in their own language, and the switch's tip that leads to
+ * each. They read the same on every page, so they are not in the translation
+ * files.
  */
-export const localeLabels: Record<Locale, { short: string; name: string }> = {
-  en: { short: 'EN', name: 'English' },
-  'pt-BR': { short: 'PT', name: 'Português (Brasil)' },
+export const localeLabels: Record<Locale, { short: string; name: string; switchTo: string }> = {
+  en: { short: 'EN', name: 'English', switchTo: 'Read Shelf in English' },
+  'pt-BR': { short: 'PT', name: 'Português (Brasil)', switchTo: 'Ler o Shelf em português' },
 }

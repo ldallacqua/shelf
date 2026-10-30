@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
+import { Tip } from '@/ui/tooltip'
 
 import {
   densities,
@@ -154,14 +155,16 @@ export function Toolbar({
               aria-label={t('experimental.label')}
               className="flex items-center gap-2 sm:gap-3"
             >
-              <span
-                aria-hidden="true"
-                title={t('experimental.label')}
-                className="flex items-center gap-1 readout text-[0.625rem] text-muted"
-              >
-                <FlaskConicalIcon className="size-3.5" />
-                <span className="max-lg:hidden">{t('experimental.tag')}</span>
-              </span>
+              {/* Its words for a pointer where only the flask shows; the group already says them. */}
+              <Tip label={t('experimental.label')} className="lg:hidden">
+                <span
+                  aria-hidden="true"
+                  className="flex items-center gap-1 readout text-[0.625rem] text-muted"
+                >
+                  <FlaskConicalIcon className="size-3.5" />
+                  <span className="max-lg:hidden">{t('experimental.tag')}</span>
+                </span>
+              </Tip>
               <Segmented
                 aria-label={t('dimension.label')}
                 data-preference="shelf-mode"
@@ -173,19 +176,29 @@ export function Toolbar({
                   if (!(value === '3d' && noThreeD)) onDimension(value)
                 }}
               >
-                {dimensions.map((value) => (
-                  <SegmentedItem
-                    key={value}
-                    value={value}
-                    // Unavailable, not disabled: it stays in reach of the keyboard, so its reason can be heard.
-                    aria-disabled={value === '3d' && noThreeD ? true : undefined}
-                    aria-describedby={value === '3d' && noThreeD ? reasonId : undefined}
-                    title={value === '3d' && noThreeD ? t('dimension.unsupported') : undefined}
-                    className="aria-disabled:opacity-50"
-                  >
-                    {t(`dimension.${value}`)}
-                  </SegmentedItem>
-                ))}
+                {dimensions.map((value) => {
+                  const unavailable = value === '3d' && noThreeD
+                  const item = (
+                    <SegmentedItem
+                      key={value}
+                      value={value}
+                      // Unavailable, not disabled: it stays in reach of the keyboard, so its reason can be heard.
+                      aria-disabled={unavailable ? true : undefined}
+                      aria-describedby={unavailable ? reasonId : undefined}
+                      className="aria-disabled:opacity-50"
+                    >
+                      {t(`dimension.${value}`)}
+                    </SegmentedItem>
+                  )
+                  // Why, for a pointer: a screen reader has it from the reason below.
+                  return unavailable ? (
+                    <Tip key={value} label={t('dimension.unsupported')}>
+                      {item}
+                    </Tip>
+                  ) : (
+                    item
+                  )
+                })}
               </Segmented>
               {noThreeD ? (
                 <span id={reasonId} className="sr-only">
@@ -202,10 +215,12 @@ export function Toolbar({
                 {densities.map((value) => {
                   const Icon = densityIcons[value]
                   return (
-                    <SegmentedItem key={value} value={value} aria-label={t(`density.${value}`)}>
-                      <Icon aria-hidden="true" className="sm:hidden" />
-                      <span className="max-sm:hidden">{t(`density.${value}`)}</span>
-                    </SegmentedItem>
+                    <Tip key={value} label={t(`density.${value}`)} className="sm:hidden">
+                      <SegmentedItem value={value} aria-label={t(`density.${value}`)}>
+                        <Icon aria-hidden="true" className="sm:hidden" />
+                        <span className="max-sm:hidden">{t(`density.${value}`)}</span>
+                      </SegmentedItem>
+                    </Tip>
                   )
                 })}
               </Segmented>
@@ -220,9 +235,11 @@ export function Toolbar({
               onValueChange={onWallSize}
             >
               {wallSizes.map((value) => (
-                <SegmentedItem key={value} value={value} aria-label={t(`wallSize.${value}`)}>
-                  <span aria-hidden="true">{t(`wallSize.short.${value}`)}</span>
-                </SegmentedItem>
+                <Tip key={value} label={t(`wallSize.${value}`)}>
+                  <SegmentedItem value={value} aria-label={t(`wallSize.${value}`)}>
+                    <span aria-hidden="true">{t(`wallSize.short.${value}`)}</span>
+                  </SegmentedItem>
+                </Tip>
               ))}
             </Segmented>
           ) : null}
@@ -231,10 +248,12 @@ export function Toolbar({
             {(Object.keys(viewIcons) as View[]).map((value) => {
               const Icon = viewIcons[value]
               return (
-                <SegmentedItem key={value} value={value} aria-label={t(`view.${value}`)}>
-                  <Icon aria-hidden="true" />
-                  <span className="max-md:hidden">{t(`view.${value}`)}</span>
-                </SegmentedItem>
+                <Tip key={value} label={t(`view.${value}`)} className="md:hidden">
+                  <SegmentedItem value={value} aria-label={t(`view.${value}`)}>
+                    <Icon aria-hidden="true" />
+                    <span className="max-md:hidden">{t(`view.${value}`)}</span>
+                  </SegmentedItem>
+                </Tip>
               )
             })}
           </Segmented>

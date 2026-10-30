@@ -51,10 +51,7 @@ const followMaximized = () => {
           '[data-window-command="toggle_maximize"]',
         )
         const label = button?.getAttribute(maximized ? 'data-label-restore' : 'data-label-maximize')
-        if (button && label) {
-          button.setAttribute('aria-label', label)
-          button.setAttribute('title', label)
-        }
+        if (button && label) button.setAttribute('aria-label', label)
       },
       () => {},
     )
