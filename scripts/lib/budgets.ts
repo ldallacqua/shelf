@@ -27,7 +27,11 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Placing in the header (27 Oct 2026): measured 212.2 KB, from 210.6. On every page the
   // line across the top while a link's page is on its way, and, on one's own shelf, the link to
   // placing the games that wait, with their count: the owner asked for both.
-  { path: '/en', name: 'Home', kilobytes: 213 },
+  // Tips (29 Oct 2026): measured 215.1 KB, from 211.1. Radix's tooltip, restyled (`Tip`), on
+  // the header's buttons on every page and on the page's own icon buttons: the owner asked for
+  // the component library's tips in place of the browser's. About 3.3 KB of it is Radix's own
+  // tooltip, which no smaller way of loading it saves without losing focus on the button.
+  { path: '/en', name: 'Home', kilobytes: 216 },
   // Step 3: measured 228.9 KB. The shell (191 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
@@ -63,7 +67,11 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Placing in the header (27 Oct 2026): measured 279.3 KB, from 277.8. On every page the
   // line across the top while a link's page is on its way, and, on one's own shelf, the link to
   // placing the games that wait, with their count: the owner asked for both.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 281 },
+  // Tips (29 Oct 2026): measured 284.2 KB, from 280.0. Radix's tooltip, restyled (`Tip`), on
+  // the header's buttons on every page and on the page's own icon buttons: the owner asked for
+  // the component library's tips in place of the browser's. About 3.3 KB of it is Radix's own
+  // tooltip, which no smaller way of loading it saves without losing focus on the button.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 285 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
@@ -75,7 +83,11 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Placing in the header (27 Oct 2026): measured 209.9 KB, from 208.3. On every page the
   // line across the top while a link's page is on its way, and, on one's own shelf, the link to
   // placing the games that wait, with their count: the owner asked for both.
-  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 211 },
+  // Tips (29 Oct 2026): measured 213.5 KB, from 209.5. Radix's tooltip, restyled (`Tip`), on
+  // the header's buttons on every page and on the page's own icon buttons: the owner asked for
+  // the component library's tips in place of the browser's. About 3.3 KB of it is Radix's own
+  // tooltip, which no smaller way of loading it saves without losing focus on the button.
+  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 214 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
   // screenshots and their viewer, and the way back to the library.
   // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf
@@ -89,7 +101,11 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Placing in the header (27 Oct 2026): measured 219.9 KB, from 218.3. On every page the
   // line across the top while a link's page is on its way, and, on one's own shelf, the link to
   // placing the games that wait, with their count: the owner asked for both.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 221 },
+  // Tips (29 Oct 2026): measured 223.3 KB, from 219.1. Radix's tooltip, restyled (`Tip`), on
+  // the header's buttons on every page and on the page's own icon buttons: the owner asked for
+  // the component library's tips in place of the browser's. About 3.3 KB of it is Radix's own
+  // tooltip, which no smaller way of loading it saves without losing focus on the button.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 224 },
 ]
 
 /**
