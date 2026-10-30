@@ -118,6 +118,14 @@ function Ratings() {
         onValueChange={setUnrated}
         onClear={() => setUnrated(undefined)}
       />
+      {/* On one line, for a list of many. */}
+      <Rating
+        {...props}
+        compact
+        value={rated}
+        onValueChange={setRated}
+        onClear={() => setRated(undefined)}
+      />
     </div>
   )
 }

@@ -905,6 +905,12 @@ pagina e voltar pro organize seus jogos ai beleza".
   never was), or the hours I typed when no source reported any. Longest played first, as
   Minimap opens; also by last played, by title, and by last added. The first 50 are drawn, and
   50 more at a time.
+- **A row is built for working through hundreds** (the owner, 30 Oct 2026: "tem muito espaço
+  vazio no modo desktop"). On a desktop it is about as tall as its cover: the title with my
+  rating beside it, a line with what is known and Not this game, and every status on one line,
+  each in the same place on every row, with Archive and Remove at the end. In a narrower list
+  the rating takes a line of its own and the statuses wrap; on a phone the rating and the
+  statuses take the row's whole width.
 - **On each row, my rating and a status, one tap each, saved at once,** with the controls the
   editor uses: the rating out of ten, and Playing, Backlog, Someday, Completed, Retired,
   Dropped, Wishlist as shapes and words, the one given shown pressed, with a tick. **A game given a status stays in
@@ -923,8 +929,9 @@ pagina e voltar pro organize seus jogos ai beleza".
   copy joins (one already there on the same platform and format is fed, its hours added),
   what the other lacks of mine (a status, a rating, notes) it takes, and the row leaves the
   list. A row given a status here is placed: tapping its status again brings the choice back.
-- **Archive and Remove from library,** under each row's statuses, for a game I will never
-  play (the owner, 29 Oct 2026). Each has a tip saying where the game goes. Archive asks
+- **Archive and Remove from library,** at the end of the row's statuses, for a game I will never
+  play (the owner, 29 Oct 2026). For a pointer they are icons, with a tip that names each and
+  says where the game goes; a touch has no tips, so it has their words. Archive asks
   nothing, as in the editor (7.4); Remove asks first, in the row, offering Archive instead,
   and focus goes to its answer. Either way the row leaves the list and the game leaves the
   tally, the keyboard goes on to the next row, and Undo puts it back where it stood, with the

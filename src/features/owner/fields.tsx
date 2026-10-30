@@ -29,9 +29,20 @@ type RatingFieldProps = {
   onCommit?: (value: number | undefined) => void
   disabled?: boolean
   tabIndex?: number
+  /** On one line, for a list of many. */
+  compact?: boolean
+  className?: string
 }
 
-export function RatingField({ value, onChange, onCommit, disabled, tabIndex }: RatingFieldProps) {
+export function RatingField({
+  value,
+  onChange,
+  onCommit,
+  disabled,
+  tabIndex,
+  compact,
+  className,
+}: RatingFieldProps) {
   const t = useTranslations('Fields')
   const format = useFormatter()
   const write = (rating: number) => format.number(rating, { maximumFractionDigits: 1 })
@@ -52,6 +63,8 @@ export function RatingField({ value, onChange, onCommit, disabled, tabIndex }: R
       format={write}
       disabled={disabled}
       tabIndex={tabIndex}
+      compact={compact}
+      className={className}
     />
   )
 }
@@ -67,11 +80,16 @@ export function SavedRating({
   score,
   onSave,
   tabIndex,
+  compact,
+  className,
 }: {
   /** Out of a hundred, as stored. */
   score: number | undefined
   onSave: (score: number | null) => void
   tabIndex?: number
+  /** On one line, for a list of many. */
+  compact?: boolean
+  className?: string
 }) {
   // While it moves, the field shows where it is, not what was saved.
   const [moving, setMoving] = useState<{ value: number | undefined }>()
@@ -105,6 +123,8 @@ export function SavedRating({
         timer.current = window.setTimeout(flush, RATING_REST_MS)
       }}
       tabIndex={tabIndex}
+      compact={compact}
+      className={className}
     />
   )
 }
