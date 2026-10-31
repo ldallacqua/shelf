@@ -1439,6 +1439,15 @@ clicando setup setup, next, next. E sim aparecesse uma splashzinha."
 - **The file's name** is in a menu beside Play (Formas de jogar), with **Change the file**,
   **Show in folder** and **Forget the file**; for a game played through Steam, the menu offers
   **Choose a file instead**. A file no longer there says so and offers to choose it again.
+- **Play turns to Stop while the game runs** (issue 102, built 31 Oct 2026), in the app only, and
+  whoever started it, when the app can show which program is the game
+  ([ADR 005, section 11](adr/005-desktop-app.md#11-whether-a-game-is-running-and-stopping-it)).
+  Play says **Starting…** (Abrindo…) until the game shows, or for a minute. **Stop** (Parar) asks
+  the game to close, and says **Stopping…** (Parando…) until it has gone; closing the game any
+  other way brings Play back. A game that doesn't answer offers **Force stop** (Forçar parada),
+  after a question that says what is not saved is lost. When something may be running that the
+  app can't tell or can't touch, the button says **Running** (Em execução) or **Open** (Aberto)
+  with why, and offers no Stop. A browser shows none of this.
 - **The files chosen stay on this computer.** Shelf's server never sees them, and another
   computer keeps its own.
 - **Its own title bar.** The app's window has no Windows bar: Shelf's header is the bar, with

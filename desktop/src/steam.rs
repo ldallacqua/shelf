@@ -117,6 +117,49 @@ fn installed_in(library: &Path, app: &str) -> bool {
     )
 }
 
+/// The folder an app is installed in, by its manifest: its library's `steamapps/common/` and
+/// the `installdir` Steam writes there. Only a plain name is taken: a manifest is a file on
+/// the disk, and what runs inside this folder may be closed as this game.
+pub fn install_folder(steam: &Path, app: &str) -> Option<PathBuf> {
+    if !crate::ids::steam_app(app) {
+        return None;
+    }
+    libraries(steam).into_iter().find_map(|library| {
+        let manifest = library
+            .join("steamapps")
+            .join(format!("appmanifest_{app}.acf"));
+        let text = fs::read_to_string(manifest).ok()?;
+        let Some(Value::Block(state)) = parse(&text).remove("appstate") else {
+            return None;
+        };
+        let Some(Value::Text(folder)) = state.get("installdir") else {
+            return None;
+        };
+        let plain = !folder.is_empty()
+            && !folder.contains(['\\', '/', ':'])
+            && !folder.chars().all(|c| c == '.');
+        plain.then(|| library.join("steamapps").join("common").join(folder))
+    })
+}
+
+/// Whether Steam says an app is running: its own mark, in this Windows account's registry.
+/// Not documented by Valve, read on 31 Oct 2026 with a game open, and never enough for a Stop.
+#[cfg(windows)]
+pub fn says_running(app: &str) -> bool {
+    if !crate::ids::steam_app(app) {
+        return false;
+    }
+    winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER)
+        .open_subkey(format!("Software\\Valve\\Steam\\Apps\\{app}"))
+        .and_then(|key| key.get_value::<u32, _>("Running"))
+        .is_ok_and(|running| running == 1)
+}
+
+#[cfg(not(windows))]
+pub fn says_running(_app: &str) -> bool {
+    false
+}
+
 /// Of `apps`, the ones installed in any of Steam's libraries, in their order.
 pub fn installed(steam: &Path, apps: &[String]) -> Vec<String> {
     let libraries = libraries(steam);
@@ -276,6 +319,42 @@ mod tests {
         let steam = Steam::new("ids");
         steam.manifest("steam", "219990", INSTALLED);
         assert!(installed(&steam.steam(), &["../219990".into(), "219990.acf".into()]).is_empty());
+    }
+
+    #[test]
+    fn finds_the_folder_an_app_is_installed_in_whichever_library_holds_it() {
+        let steam = Steam::new("folder");
+        steam.folders();
+        steam.manifest("games", "292030", INSTALLED);
+        assert_eq!(
+            install_folder(&steam.steam(), "292030"),
+            Some(
+                steam
+                    .root
+                    .join("games")
+                    .join("steamapps")
+                    .join("common")
+                    .join("A game")
+            )
+        );
+        assert_eq!(install_folder(&steam.steam(), "72850"), None);
+        assert_eq!(install_folder(&steam.steam(), "../292030"), None);
+    }
+
+    #[test]
+    fn a_manifest_cannot_name_a_folder_outside_steam_s_games() {
+        let steam = Steam::new("escape");
+        for (app, folder) in [
+            ("1", "..\\\\.."),
+            ("2", "C:\\\\Windows"),
+            ("3", ".."),
+            ("4", ""),
+            ("5", "a/b"),
+        ] {
+            let text = format!("\"AppState\" {{ \"installdir\" \"{folder}\" }}");
+            steam.manifest("steam", app, &text);
+            assert_eq!(install_folder(&steam.steam(), app), None, "{folder}");
+        }
     }
 
     #[test]

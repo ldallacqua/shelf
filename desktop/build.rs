@@ -12,6 +12,9 @@ fn main() {
             "play",
             "steam_installed",
             "playable",
+            "game_state",
+            "stop_game",
+            "force_stop_game",
         ]),
     ))
     .expect("tauri-build failed");

@@ -1,14 +1,15 @@
 'use client'
 
-import { EllipsisIcon, PlayIcon } from 'lucide-react'
+import { EllipsisIcon, PlayIcon, SquareIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { SteamApps } from '@/domain/library/editing'
 import { steamInstallLink, steamPlayLink } from '@/domain/sync/steam'
 import { desktop, inDesktopApp, refusalOf, type Launcher } from '@/features/desktop/bridge'
 import { notify } from '@/features/shell/notices'
 import { Button } from '@/ui/button'
+import { Confirm } from '@/ui/confirm'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +20,14 @@ import {
 } from '@/ui/dropdown-menu'
 import { Tip } from '@/ui/tooltip'
 
+import { useGameState } from './use-game-state'
+
+/**
+ * A button that can't be pressed now, and says why. Not `disabled`, which would throw keyboard
+ * focus off the page the moment Play turns to Starting, and hide it from a tip.
+ */
+const waiting = 'cursor-default opacity-60 hover:shadow-none motion-safe:active:translate-y-0'
+
 type PlayProps = {
   entryId: string
   title: string
@@ -27,9 +36,10 @@ type PlayProps = {
 
 /**
  * Play, on my own game (spec 7.7). In Shelf for Windows it starts the game:
- * from the file chosen for it, or through Steam. In a browser, which cannot
- * start a file, it is what a browser can do: open Steam on a game the Steam
- * sync found I own, and not on a phone.
+ * from the file chosen for it, or through Steam, and turns to Stop while the
+ * app can show the game is running. In a browser, which cannot start a file
+ * nor see what is running, it is what a browser can do: open Steam on a game
+ * the Steam sync found I own, and not on a phone.
  */
 export function Play(props: PlayProps) {
   // Known only once the page runs: the server draws every page as a browser's.
@@ -57,10 +67,39 @@ function PlayOnSteam({ steam }: { steam?: SteamApps }) {
 /** What this computer has for the game: its file, and its Steam apps installed here. */
 type Here = { launcher: Launcher | null; installed: readonly string[] }
 
+const noApps: readonly string[] = []
+
 function PlayInApp({ entryId, title, steam }: PlayProps) {
   const t = useTranslations('Edit')
   const [here, setHere] = useState<Here>()
   const [busy, setBusy] = useState(false)
+  const [forcing, setForcing] = useState(false)
+  const installedApps = here?.installed ?? noApps
+  const { state, check, sentGameToSteam } = useGameState(
+    entryId,
+    installedApps,
+    here?.launcher?.path,
+    here !== undefined,
+  )
+  const view = typeof state === 'object' ? state : undefined
+
+  // Said aloud when it changes by itself, as it does when the game is closed from the game.
+  const [spoken, setSpoken] = useState('')
+  const [heard, setHeard] = useState(view?.state)
+  if (heard !== view?.state) {
+    setHeard(view?.state)
+    if (view?.state === 'running') setSpoken(t('gameRunning', { title }))
+    else if (view?.state === 'stopped' && heard !== undefined && heard !== 'starting')
+      setSpoken(t('gameClosed', { title }))
+  }
+  const unresponsive = view?.unresponsive === true
+  const wasUnresponsive = useRef(false)
+  useEffect(() => {
+    if (unresponsive && !wasUnresponsive.current) {
+      notify({ message: t('stopNoAnswer', { title }) })
+    }
+    wasUnresponsive.current = unresponsive
+  }, [unresponsive, t, title])
 
   // The record is read again after every change; what this computer has is asked once a game.
   const known = steam?.known.join(' ') ?? ''
@@ -78,7 +117,8 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     }
   }, [entryId, known])
 
-  if (!here) return null
+  // Nothing until both are known, so Play never shows for a moment on a game that is running.
+  if (!here || state === undefined) return null
   const { launcher, installed } = here
 
   const failed = (error: unknown, name = launcher?.name ?? title) => {
@@ -115,10 +155,37 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     run(async () => {
       try {
         await desktop.play(entryId)
-        notify({ message: t('starting', { title }) })
+        // An app that can't tell has no Starting to show: it says so once.
+        if (state === 'unavailable') notify({ message: t('starting', { title }) })
+        check()
       } catch (error) {
         failed(error)
       }
+    })
+
+  const stopFailed = (error: unknown) =>
+    notify({
+      message: refusalOf(error) === 'refused' ? t('stopRefused', { title }) : t('playFailed'),
+    })
+
+  const stop = () =>
+    run(async () => {
+      try {
+        await desktop.stopGame(entryId, installed)
+      } catch (error) {
+        stopFailed(error)
+      }
+      check()
+    })
+
+  const forceStop = () =>
+    run(async () => {
+      try {
+        await desktop.forceStopGame(entryId, installed)
+      } catch (error) {
+        stopFailed(error)
+      }
+      check()
     })
 
   const forget = () =>
@@ -140,7 +207,49 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const installLink = steam?.owned ? steamInstallLink(steam.owned) : undefined
 
   let primary
-  if (launcher?.exists) {
+  if (view?.state === 'starting') {
+    primary = (
+      <Button variant="primary" size="sm" aria-disabled="true" className={waiting}>
+        <PlayIcon aria-hidden="true" />
+        {t('gameStarting')}
+      </Button>
+    )
+  } else if (view?.state === 'running' || (view?.state === 'stopping' && view.unresponsive)) {
+    primary = (
+      <>
+        {view.state === 'stopping' ? (
+          <Button variant="secondary" size="sm" onClick={() => setForcing(true)}>
+            {t('gameForceStop')}
+          </Button>
+        ) : null}
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={busy ? undefined : stop}
+          aria-disabled={busy || undefined}
+          className={busy ? waiting : undefined}
+        >
+          <SquareIcon aria-hidden="true" />
+          {t('gameStop')}
+        </Button>
+      </>
+    )
+  } else if (view?.state === 'stopping') {
+    primary = (
+      <Button variant="primary" size="sm" aria-disabled="true" className={waiting}>
+        <SquareIcon aria-hidden="true" />
+        {t('gameStopping')}
+      </Button>
+    )
+  } else if (view?.state === 'unverified') {
+    primary = (
+      <Tip describes label={t(`gameUnverified.${view.why ?? 'denied'}`)}>
+        <Button variant="secondary" size="sm" aria-disabled="true" className={waiting}>
+          {t(view.why === 'open' ? 'gameOpen' : 'gameRunningShort')}
+        </Button>
+      </Tip>
+    )
+  } else if (launcher?.exists) {
     primary = (
       <Button variant="primary" size="sm" onClick={play} disabled={busy}>
         <PlayIcon aria-hidden="true" />
@@ -150,7 +259,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   } else if (!launcher && playLink) {
     primary = (
       <Button asChild variant="primary" size="sm">
-        <a href={playLink}>
+        <a href={playLink} onClick={state === 'unavailable' ? undefined : sentGameToSteam}>
           <PlayIcon aria-hidden="true" />
           {t('play')}
         </a>
@@ -175,7 +284,19 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const menu = launcher || playLink || installLink
   return (
     <div className="flex items-center gap-1" data-play="">
+      <span role="status" className="sr-only">
+        {spoken}
+      </span>
       {primary}
+      <Confirm
+        open={forcing}
+        onOpenChange={setForcing}
+        title={t('forceTitle', { title })}
+        description={t('forceBody')}
+        confirm={t('gameForceStop')}
+        cancel={t('forceCancel')}
+        onConfirm={forceStop}
+      />
       {menu ? (
         <DropdownMenu>
           <Tip label={t('playOptions')}>
