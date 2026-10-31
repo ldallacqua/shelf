@@ -99,7 +99,7 @@ source_items   source, store_id            (together unique)
 
 This replaces ADR 001's sketch of `copy_links`: an item can be decided before it has a copy, or
 decided as "not a game" and never have one. Playtime from a source is a `play_time` row with
-that source and that copy, so it never overwrites what I typed.
+that source and that copy, kept apart from what Shelf for Windows counted.
 
 ### 4. Per source
 
@@ -252,10 +252,10 @@ building settled:
   Placing them, with a rating, is a page of its own, `/account/unsorted` (spec 4.5): each
   platform's card says how many of its games wait there.)
 - **Hours:** a source's minutes are a `play_time` row of that source on the copy, summed over
-  the items feeding it. A game shows the larger of what I typed and what its sources report
-  together, never the sum, so a figure typed before linking is not counted twice. (29 Oct
-  2026: less the time I said it sat idle, `entries.idle_minutes`, since a store counts the
-  whole time a game is open; spec 4.7.)
+  the items feeding it. (29 Oct 2026: less the time I said it sat idle, `entries.idle_minutes`,
+  since a store counts the whole time a game is open; spec 4.7. 31 Oct 2026: hours are no longer
+  typed. On a PC a game shows the larger of what Shelf for Windows counted and what Steam
+  reports, as they count the same play; a console's hours add to that. ADR 005, section 12.)
 - **Steps.** A sync is steps of at most twenty games put on the shelf, each one request, so a
   large library never outlasts a function; the page asks for steps until none is left. A
   second daily job (`/api/cron/sync`) runs every link that asks for it, longest unsynced

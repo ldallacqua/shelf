@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, ne, sql, type SQLWrapper } from 'drizzle-orm'
 
 import {
   achievementProviders,
@@ -16,7 +16,13 @@ import type {
   StoreHoursGame,
 } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
-import { pastIgdb, playedMinutes } from '@/domain/library/hours'
+import {
+  isPcSource,
+  pastIgdb,
+  playedMinutes,
+  trackedMinutes,
+  type GameTime,
+} from '@/domain/library/hours'
 import {
   emptyTally,
   type Placing,
@@ -46,6 +52,7 @@ import {
   games,
   libraries,
   platforms,
+  playSessions,
   playTime,
   sourceItems,
   tags,
@@ -80,6 +87,7 @@ export const readLibrary = async (
     versionRows,
     copyRows,
     timeRows,
+    trackedRows,
     tagRows,
     entryTagRows,
     vocabRows,
@@ -129,17 +137,18 @@ export const readLibrary = async (
       .from(copies)
       .where(sql`${copies.entryId} in ${own}`)
       .orderBy(copies.createdAt, sql`rowid`),
-    // What I typed and what its sources report together, apart: a game's
-    // hours are made of both (`playedMinutes`).
+    // What its sources report, by source: a game's hours are made of them and of what the app
+    // counted (`playedMinutes`). Hours once typed by hand stay in their rows, and count for nothing.
     db
       .select({
         entryId: playTime.entryId,
-        typed: sql<number>`coalesce(sum(case when ${playTime.source} = 'manual' then ${playTime.minutes} end), 0)`,
-        reported: sql<number>`coalesce(sum(case when ${playTime.source} != 'manual' then ${playTime.minutes} end), 0)`,
+        source: playTime.source,
+        minutes: sql<number>`sum(${playTime.minutes})`,
       })
       .from(playTime)
-      .where(sql`${playTime.entryId} in ${own}`)
-      .groupBy(playTime.entryId),
+      .where(and(sql`${playTime.entryId} in ${own}`, ne(playTime.source, 'manual')))
+      .groupBy(playTime.entryId, playTime.source),
+    trackedSeconds(db, own),
     db.select().from(tags).where(eq(tags.userId, libraryId)).orderBy(tags.name),
     db
       .select()
@@ -170,13 +179,11 @@ export const readLibrary = async (
     else copiesByEntry.set(row.entryId, [row])
   }
 
-  const timeByEntry = new Map(timeRows.map((row) => [row.entryId, row]))
-  /** A game's hours: the larger of what I typed and what its sources report, less what sat idle (ADR 003). */
+  const timeByEntry = gameTimes(timeRows, trackedRows)
+  /** A game's hours (ADR 003). */
   const minutesOf = (entry: (typeof entryRows)[number]) => {
     const time = timeByEntry.get(entry.id)
-    return time
-      ? playedMinutes(Number(time.typed) || 0, Number(time.reported) || 0, entry.idleMinutes ?? 0)
-      : 0
+    return time ? playedMinutes(time, entry.idleMinutes ?? 0) : 0
   }
 
   const tagPosition = new Map(tagRows.map((tag, index) => [tag.id, index]))
@@ -453,7 +460,7 @@ export const readOwnerGame = async (
   libraryId: string,
   entryId: string,
 ): Promise<OwnerGame | undefined> => {
-  const [entryRows, versionRows, copyRows, timeRows, tagRows, steamRows, playedRows] =
+  const [entryRows, versionRows, copyRows, timeRows, trackedRows, tagRows, steamRows, playedRows] =
     await Promise.all([
       db
         .select()
@@ -488,6 +495,7 @@ export const readOwnerGame = async (
         .select({ source: playTime.source, copyId: playTime.copyId, minutes: playTime.minutes })
         .from(playTime)
         .where(eq(playTime.entryId, entryId)),
+      trackedSeconds(db, [entryId]),
       db
         .select({ name: tags.name })
         .from(entryTags)
@@ -538,9 +546,7 @@ export const readOwnerGame = async (
     wanted: entry.status === 'wishlist' ? (entry.wanted ?? []) : [],
     private: entry.isPrivate,
     notesPublic: entry.notesPublic,
-    minutes: timeRows
-      .filter((row) => row.source === 'manual')
-      .reduce((sum, row) => sum + row.minutes, 0),
+    tracked: trackedMinutes(Number(trackedRows[0]?.seconds) || 0),
     ...(entry.idleMinutes === null ? {} : { idle: entry.idleMinutes }),
     copies: copyRows.map((copy) => {
       const synced = timeRows.flatMap((row) =>
@@ -595,6 +601,50 @@ export const readOwnerGame = async (
   ])
   if (steam) owned.steam = steam
   return owned
+}
+
+/** What Shelf for Windows counted, by game, in seconds, of a list of entries or a query for them. */
+const trackedSeconds = (db: Executor, ids: SQLWrapper | string[]) =>
+  db
+    .select({
+      entryId: playSessions.entryId,
+      seconds: sql<number>`sum(${playSessions.seconds})`,
+    })
+    .from(playSessions)
+    .where(inArray(playSessions.entryId, ids as string[]))
+    .groupBy(playSessions.entryId)
+
+/** A game's time, from what its sources report and what the app counted. */
+const timeFrom = (
+  reported: readonly { source: SyncSource; minutes: number }[],
+  tracked: number,
+): GameTime => {
+  const time: GameTime = { tracked, pc: 0, console: 0 }
+  for (const { source, minutes } of reported) {
+    if (isPcSource(source)) time.pc += minutes
+    else time.console += minutes
+  }
+  return time
+}
+
+/** Every game's time, from rows of what its sources report and of what the app counted. */
+const gameTimes = (
+  reported: readonly { entryId: string; source: string; minutes: number }[],
+  tracked: readonly { entryId: string; seconds: number }[],
+) => {
+  const bySource = new Map<string, { source: SyncSource; minutes: number }[]>()
+  for (const { entryId, source, minutes } of reported) {
+    const list = bySource.get(entryId) ?? []
+    list.push({ source: source as SyncSource, minutes: Number(minutes) || 0 })
+    bySource.set(entryId, list)
+  }
+  const seconds = new Map(tracked.map((row) => [row.entryId, Number(row.seconds) || 0]))
+  return new Map(
+    [...new Set([...bySource.keys(), ...seconds.keys()])].map((entryId) => [
+      entryId,
+      timeFrom(bySource.get(entryId) ?? [], trackedMinutes(seconds.get(entryId) ?? 0)),
+    ]),
+  )
 }
 
 /**
@@ -717,69 +767,78 @@ export const readStanding = async (db: Db, libraryId: string): Promise<Standing>
 
 export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> => {
   const waiting = sql`(select ${entries.id} from ${entries} where ${entries.userId} = ${libraryId} and ${entries.status} = 'unsorted')`
-  const [versionRow, statusRows, entryRows, copyRows, timeRows, playedRows, platformRows] =
-    await db.batch([
-      db
-        .select({ version: libraries.version })
-        .from(libraries)
-        .where(eq(libraries.userId, libraryId))
-        .limit(1),
-      statusCounts(db, libraryId),
-      db
-        .select({
-          entryId: entries.id,
-          rating: entries.rating,
-          addedAt: entries.addedAt,
-          displayCopyId: entries.displayCopyId,
-          idleMinutes: entries.idleMinutes,
-          slug: games.slug,
-          title: games.title,
-          year: games.year,
-          cover: games.cover,
-          colors: games.colors,
-          thumbhash: games.thumbhash,
-          themes: games.themes,
-          adultsOnly: games.adultsOnly,
-        })
-        .from(entries)
-        .innerJoin(
-          entryVersions,
-          and(eq(entryVersions.entryId, entries.id), eq(entryVersions.relation, 'primary')),
-        )
-        .innerJoin(games, eq(games.id, entryVersions.gameId))
-        .where(
-          and(
-            eq(entries.userId, libraryId),
-            eq(entries.status, 'unsorted'),
-            isNull(entries.archivedAt),
-          ),
+  const [
+    versionRow,
+    statusRows,
+    entryRows,
+    copyRows,
+    timeRows,
+    trackedRows,
+    playedRows,
+    platformRows,
+  ] = await db.batch([
+    db
+      .select({ version: libraries.version })
+      .from(libraries)
+      .where(eq(libraries.userId, libraryId))
+      .limit(1),
+    statusCounts(db, libraryId),
+    db
+      .select({
+        entryId: entries.id,
+        rating: entries.rating,
+        addedAt: entries.addedAt,
+        displayCopyId: entries.displayCopyId,
+        idleMinutes: entries.idleMinutes,
+        slug: games.slug,
+        title: games.title,
+        year: games.year,
+        cover: games.cover,
+        colors: games.colors,
+        thumbhash: games.thumbhash,
+        themes: games.themes,
+        adultsOnly: games.adultsOnly,
+      })
+      .from(entries)
+      .innerJoin(
+        entryVersions,
+        and(eq(entryVersions.entryId, entries.id), eq(entryVersions.relation, 'primary')),
+      )
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(
+        and(
+          eq(entries.userId, libraryId),
+          eq(entries.status, 'unsorted'),
+          isNull(entries.archivedAt),
         ),
-      db
-        .select({ id: copies.id, entryId: copies.entryId, platformId: copies.platformId })
-        .from(copies)
-        .where(sql`${copies.entryId} in ${waiting}`)
-        .orderBy(copies.createdAt, sql`rowid`),
-      db
-        .select({
-          entryId: playTime.entryId,
-          source: playTime.source,
-          minutes: sql<number>`sum(${playTime.minutes})`,
-        })
-        .from(playTime)
-        .where(sql`${playTime.entryId} in ${waiting}`)
-        .groupBy(playTime.entryId, playTime.source),
-      db
-        .select({
-          entryId: copies.entryId,
-          source: sourceItems.source,
-          last: sql<number | null>`max(${sourceItems.lastPlayedAt})`,
-        })
-        .from(sourceItems)
-        .innerJoin(copies, eq(copies.id, sourceItems.copyId))
-        .where(and(eq(sourceItems.userId, libraryId), sql`${copies.entryId} in ${waiting}`))
-        .groupBy(copies.entryId, sourceItems.source),
-      db.select().from(platforms),
-    ])
+      ),
+    db
+      .select({ id: copies.id, entryId: copies.entryId, platformId: copies.platformId })
+      .from(copies)
+      .where(sql`${copies.entryId} in ${waiting}`)
+      .orderBy(copies.createdAt, sql`rowid`),
+    db
+      .select({
+        entryId: playTime.entryId,
+        source: playTime.source,
+        minutes: sql<number>`sum(${playTime.minutes})`,
+      })
+      .from(playTime)
+      .where(sql`${playTime.entryId} in ${waiting}`)
+      .groupBy(playTime.entryId, playTime.source),
+    trackedSeconds(db, waiting),
+    db
+      .select({
+        entryId: copies.entryId,
+        source: sourceItems.source,
+        last: sql<number | null>`max(${sourceItems.lastPlayedAt})`,
+      })
+      .from(sourceItems)
+      .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+      .where(and(eq(sourceItems.userId, libraryId), sql`${copies.entryId} in ${waiting}`))
+      .groupBy(copies.entryId, sourceItems.source),
+    db.select().from(platforms),
+  ])
 
   const tally = tallyOf(statusRows)
 
@@ -801,12 +860,14 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
     bySource.set(source, found)
     return found
   }
-  const manual = new Map<string, number>()
   for (const row of timeRows) {
-    const minutes = Number(row.minutes) || 0
-    if (row.source === 'manual') manual.set(row.entryId, minutes)
-    else playedOn(row.entryId, row.source).minutes += minutes
+    if (row.source !== 'manual') {
+      playedOn(row.entryId, row.source).minutes += Number(row.minutes) || 0
+    }
   }
+  const trackedOf = new Map(
+    trackedRows.map((row) => [row.entryId, trackedMinutes(Number(row.seconds) || 0)]),
+  )
   // Every source that feeds a copy says so, played there or not.
   for (const row of playedRows) {
     const played = playedOn(row.entryId, row.source)
@@ -815,14 +876,16 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
 
   const unsorted = entryRows.map((row): UnsortedGame => {
     const played = [...(playedOf.get(row.entryId)?.values() ?? [])]
-    const reported = played.reduce((sum, each) => sum + each.minutes, 0)
     const game: UnsortedGame = {
       entryId: row.entryId,
       slug: row.slug,
       title: row.title,
       addedOn: dayOf(row.addedAt),
-      // The shelf's rule: the larger of what I typed and what the sources report, less what sat idle.
-      minutes: playedMinutes(manual.get(row.entryId) ?? 0, reported, row.idleMinutes ?? 0),
+      // The shelf's rule (ADR 003).
+      minutes: playedMinutes(
+        timeFrom(played, trackedOf.get(row.entryId) ?? 0),
+        row.idleMinutes ?? 0,
+      ),
       platforms: [...new Set(platformsOf.get(row.entryId) ?? [])],
       played: played.sort((a, b) => b.minutes - a.minutes),
     }
@@ -920,8 +983,7 @@ export const readArchived = async (db: Executor, libraryId: string): Promise<Arc
 
 /**
  * My games whose stores report far past IGDB's time, and that I have said
- * nothing about yet: the most hours first. Only games whose hours are the
- * stores' (what I typed is less), and none archived.
+ * nothing about yet: the most hours first, and none archived.
  */
 export const readStoreHours = async (
   db: Executor,
@@ -964,14 +1026,10 @@ export const readStoreHours = async (
       sql`${playTime.entryId} in (select ${entries.id} from ${entries} where ${entries.userId} = ${libraryId})`,
     )
     .groupBy(playTime.entryId, playTime.source)
-  const typed = new Map<string, number>()
   const stores = new Map<string, Map<SyncSource, number>>()
   for (const row of time) {
     const minutes = Number(row.minutes) || 0
-    if (row.source === 'manual') {
-      typed.set(row.entryId, minutes)
-      continue
-    }
+    if (row.source === 'manual') continue
     const bySource = stores.get(row.entryId) ?? new Map<SyncSource, number>()
     bySource.set(row.source, minutes)
     stores.set(row.entryId, bySource)
@@ -981,7 +1039,6 @@ export const readStoreHours = async (
       const bySource = stores.get(row.entryId)
       if (!bySource) return []
       const reported = [...bySource.values()].reduce((sum, minutes) => sum + minutes, 0)
-      if (reported <= (typed.get(row.entryId) ?? 0)) return []
       const igdb = pastIgdb(reported, row.length ?? undefined)
       if (!igdb) return []
       const game: StoreHoursGame = {

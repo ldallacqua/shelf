@@ -54,8 +54,8 @@ function Ghost({
  * mirrored part for part, with the same classes; what decides its height is
  * known from the library file: the status, whether there is a completion
  * date, the copies, whether a copy could still be added, and the tags. Not
- * known there, and so drawn only by the editor: the line under the hours when
- * a store reports some, the time left idle under it once there is any, and
+ * known there, and so drawn only by the editor: the lines under the hours saying
+ * where they come from, the time left idle under them once there is any, and
  * the versions.
  */
 export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkeletonProps) {
@@ -74,7 +74,6 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
   const wishlist = game.status === 'wishlist'
   const label = 'text-sm font-medium'
   const field = 'block h-10 rounded-control pointer-coarse:h-11'
-  const square = 'block size-10 flex-none rounded-control pointer-coarse:size-11'
 
   return (
     <section className="game-section" data-mine-skeleton="">
@@ -119,11 +118,12 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
 
           <div className="grid gap-1.5">
             <span className={label}>{t('played')}</span>
-            <div className="flex max-w-64 items-center gap-2">
-              <Ghost index={7} className={square} />
-              <Ghost index={7} className={cn(field, 'min-w-0 flex-1')} />
-              <Ghost index={7} className={square} />
-            </div>
+            <Ghost index={7} className={cn(field, 'w-24')} />
+            <span className="text-xs">
+              <Ghost index={7} className="rounded-[2px]">
+                {t('playedHow')}
+              </Ghost>
+            </span>
           </div>
 
           {game.status === 'completed' || game.completedOn ? (

@@ -147,11 +147,9 @@ address opens in the default browser. Of the other schemes, only `steam://rungam
 
 ### 7. Hours, for the games started from a file
 
-Built after Play. The app watches the game it started (its process, and the one it hands over
-to, when a launcher starts the game and closes), keeps each session on this computer, and gives
-them to the page, which sends them to Shelf when it is open. The server adds them to the
-entry's PC copy as a store's hours are added. A game started through Steam is not counted: Steam
-counts it, and the sync brings it in.
+Replaced by section 12 (31 Oct 2026): the app counts every PC game it can name, Steam's too,
+and hours are never typed. Written first as: the app watches only the game it started, and a
+game started through Steam is Steam's to count.
 
 ### 8. The window is Shelf's own
 
@@ -272,6 +270,59 @@ injected into a game, and nothing of its memory read.
 
 Hours (section 7) can use the same evidence when they are built; nothing here counts time, so
 nothing is counted twice and Steam's hours are untouched.
+
+### 12. Counting play
+
+The owner, 31 Oct 2026: take typing hours away, and show what the app counted by itself, only
+active time, games on a console keeping their platform's hours. So:
+
+- **What counts.** A stretch counts while a game's program holds the foreground window (a game
+  behind another window is not being played) and input keeps arriving. The foreground window's
+  program is the only one looked at, so nothing is read of anything else, and no process list is
+  taken while nothing is being counted. It is a game by the evidence of section 11: its file is
+  the one chosen for an entry, it descends from what Play started, or it runs from where Steam
+  installed an app. A launcher alone is not a game.
+- **Time away.** After **5 minutes** (`AWAY_AFTER_MINUTES`, `AWAY_AFTER` in `tracker.rs`) with
+  no input, the whole stretch since the last input is dropped, not just what came after the five
+  minutes: walking away for an hour costs no hours. The owner asked for about 1 minute and to
+  check it. A minute would throw away play: cutscenes, reading, thinking, loading, holding a
+  throttle. ActivityWatch waits 3 minutes and a launcher built the same way 5. A cutscene past
+  5 minutes is lost, which the page says; Steam's own count keeps it.
+- **Input.** `GetLastInputInfo` for keys and the mouse. It does not see controllers: Valve says
+  so of Steam Input, and it is why every tracker that only asks it stops counting pad play. So
+  controllers are read too: XInput, and Raw Input for the others (usage pages for joystick,
+  gamepad and multi-axis, with `RIDEV_INPUTSINK`, on a message-only window). Only whether
+  something changed is kept. A stick has to move an eighth of its range, as they drift; motion
+  sensors are not looked at. **A controller whose report Windows can't parse counts as input**:
+  a game wrongly counted as played is a smaller error than a game played and never counted.
+- **No hooks, no injection.** Nothing touches a game's process. Anti-cheat has nothing to object to.
+- **Where it runs.** On a thread of the app, not in a page, so it counts with no window open. Closing
+  the window leaves the app in the tray, and the window's web view is destroyed, so it costs
+  little. The app starts with Windows, in the tray (`--background`), so a game opened from Steam
+  counts without opening Shelf first; the tray's menu turns that off. A development build never
+  writes to the registry.
+- **Sessions.** A game's stretch of play is one session with a random id, written to
+  `play-sessions.json` every 30 seconds, so a crash or a power cut loses 30 seconds at most. Time a
+  sleeping computer spent is never counted: a gap between two looks longer than 15 seconds adds
+  nothing. A session ends when the programs seen of it have all ended.
+- **Reaching the server.** The page, only inside the app, asks for what is finished and sends it to
+  `POST /api/v1/me/play/sessions` once a minute and when the window opens, then tells the app what
+  was kept. Sent again it is the same session, the larger number winning. A Steam session names its
+  app and the server finds the game; one on no shelf stays on the computer, for when it is added,
+  up to 90 days.
+- **Which number shows.** `playedMinutes`: on a PC the larger of the app's and Steam's, since they
+  count the same play; a console's add to that. Hours typed before this stay in `play_time`,
+  counting for nothing, so taking the decision back loses nothing.
+- **What it can't do.** A game played with the app closed by hand is not counted. Two games in
+  front in turn are two sessions; a game in a window with something else in front is not counted
+  even if played with a controller.
+
+Researched on 31 Oct 2026: [Hydra's process watcher](https://github.com/hydralauncher/hydra/blob/main/src/main/services/process-watcher.ts)
+counts every moment a game's process exists, foreground or not; [a launcher](https://github.com/trendlinepros-afk/zirtola-launcher/pull/2)
+requires the foreground and input in the last 5 minutes, and says that part was never run on
+real Windows; [ActivityWatch](https://github.com/ActivityWatch/aw-watcher-afk) calls 3 minutes
+away; [Valve](https://steamcommunity.com/groups/SteamClientBeta/discussions/3/3887226156980206582)
+says Steam Input produces nothing `GetLastInputInfo` reads.
 
 ## Consequences
 

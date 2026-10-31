@@ -33,6 +33,8 @@ export type SourceFacts = {
   plays?: Readonly<Partial<Record<number, readonly number[]>>>
   /** The format a copy takes when the source is sure of it. */
   format?: Format
+  /** Its games run on a computer, where Shelf for Windows counts the same play (`playedMinutes`). */
+  pc?: true
   /** Built and switched on. The others are listed so the data has room for them. */
   ready: boolean
 }
@@ -54,6 +56,7 @@ export const SOURCES: Record<SyncSource, SourceFacts> = {
     platformId: PC,
     platforms: [PC, MAC, LINUX],
     format: 'digital',
+    pc: true,
     ready: true,
   },
   playstation: {

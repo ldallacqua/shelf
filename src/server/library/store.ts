@@ -41,6 +41,7 @@ import {
   games,
   libraries,
   platforms,
+  playSessions,
   playTime,
   removedEntries,
   shelves,
@@ -233,8 +234,6 @@ export type NewEntry = {
   addedAt?: number
   completedOn?: Day
   copies?: readonly NewCopy[]
-  /** Minutes I typed in. */
-  minutes?: number
   tags?: readonly string[]
 }
 
@@ -253,7 +252,6 @@ const checkMine = (input: {
   status?: Status
   rating?: number | null
   completedOn?: Day | null
-  minutes?: number
   idle?: number
   wanted?: readonly number[] | null
 }) => {
@@ -270,9 +268,6 @@ const checkMine = (input: {
   }
   if (input.completedOn !== undefined && input.completedOn !== null && !isDay(input.completedOn)) {
     throw invalid('The completion date must be a calendar day')
-  }
-  if (input.minutes !== undefined && (!Number.isInteger(input.minutes) || input.minutes < 0)) {
-    throw invalid('Playtime is a whole number of minutes')
   }
   if (input.idle !== undefined && (!Number.isInteger(input.idle) || input.idle < 0)) {
     throw invalid('Idle time is a whole number of minutes')
@@ -338,25 +333,6 @@ const insertCopy = async (tx: Executor, entryId: string, copy: NewCopy, now: num
     createdAt: now,
   })
   return id
-}
-
-const writeManualMinutes = async (tx: Executor, entryId: string, minutes: number, now: number) => {
-  // Manual time is one row per entry: the row with no copy and the source "manual".
-  await tx
-    .delete(playTime)
-    .where(
-      and(eq(playTime.entryId, entryId), eq(playTime.source, 'manual'), isNull(playTime.copyId)),
-    )
-  if (minutes > 0) {
-    await tx.insert(playTime).values({
-      id: randomUUID(),
-      entryId,
-      copyId: null,
-      source: 'manual',
-      minutes,
-      updatedAt: now,
-    })
-  }
 }
 
 const cleanTagNames = (names: readonly string[]): { name: string; slug: string }[] => {
@@ -435,7 +411,6 @@ const insertEntry = async (
     .insert(entryVersions)
     .values({ entryId: id, gameId: input.primaryGameId, userId: libraryId, relation: 'primary' })
   for (const copy of input.copies ?? []) await insertCopy(tx, id, copy, now)
-  if (input.minutes) await writeManualMinutes(tx, id, input.minutes, now)
   if (input.tags?.length) await writeTags(tx, libraryId, id, input.tags)
   return id
 }
@@ -896,11 +871,10 @@ export const patchEntry = (
   libraryId: string,
   entryId: string,
   /** `idle`: minutes of what its stores report that sat idle, taken off them (0 keeps them whole). */
-  patch: { mine?: EntryPatch; tags?: readonly string[]; minutes?: number; idle?: number },
+  patch: { mine?: EntryPatch; tags?: readonly string[]; idle?: number },
   now = Date.now(),
 ) => {
   if (patch.mine) checkMine(patch.mine)
-  if (patch.minutes !== undefined) checkMine({ minutes: patch.minutes })
   if (patch.idle !== undefined) checkMine({ idle: patch.idle })
   return db.transaction(async (tx) => {
     await requireEntry(tx, libraryId, entryId)
@@ -919,7 +893,6 @@ export const patchEntry = (
       if (undated(patch.mine)) await dateFinishes(tx, libraryId, [entryId])
     }
     if (patch.tags) await writeTags(tx, libraryId, entryId, patch.tags)
-    if (patch.minutes !== undefined) await writeManualMinutes(tx, entryId, patch.minutes, now)
     await tx
       .update(entries)
       .set({ updatedAt: now, ...(patch.idle === undefined ? {} : { idleMinutes: patch.idle }) })
@@ -1301,6 +1274,10 @@ export const rematchEntry = (
       if (mine && !kept) {
         await tx.update(playTime).set({ entryId: target.id }).where(eq(playTime.id, mine.id))
       }
+      await tx
+        .update(playSessions)
+        .set({ entryId: target.id })
+        .where(eq(playSessions.entryId, entryId))
       const worn = await tx
         .select({ tagId: entryTags.tagId })
         .from(entryTags)
@@ -1365,22 +1342,49 @@ export const removeCopy = (db: Db, libraryId: string, copyId: string, now = Date
     await bumpVersion(tx, libraryId)
   })
 
-/** Sets the minutes I typed in. Time from a future sync lives in its own rows. */
-export const setManualMinutes = (
-  db: Db,
-  libraryId: string,
-  entryId: string,
-  minutes: number,
-  now = Date.now(),
-) => {
-  checkMine({ minutes })
-  return db.transaction(async (tx) => {
-    await requireEntry(tx, libraryId, entryId)
-    await writeManualMinutes(tx, entryId, minutes, now)
-    await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
-    await bumpVersion(tx, libraryId)
-  })
+/** A session as Shelf for Windows sends it, once its game is known. */
+export type PlaySession = {
+  id: string
+  entryId: string
+  startedAt: number
+  endedAt: number
+  seconds: number
 }
+
+/**
+ * Keeps what Shelf for Windows counted (ADR 005, section 12), and answers with the ids it kept. A
+ * session sent again changes nothing but what it has grown by, as the app sends again whatever
+ * it never heard back about. A game not in this library is left out, and the app holds on to it.
+ */
+export const recordPlaySessions = (db: Db, libraryId: string, sessions: readonly PlaySession[]) =>
+  db.transaction(async (tx) => {
+    if (sessions.length === 0) return []
+    const named = [...new Set(sessions.map((session) => session.entryId))]
+    const mine = new Set(
+      (
+        await tx
+          .select({ id: entries.id })
+          .from(entries)
+          .where(and(eq(entries.userId, libraryId), inArray(entries.id, named)))
+      ).map((row) => row.id),
+    )
+    const kept = sessions.filter((session) => mine.has(session.entryId))
+    if (kept.length === 0) return []
+    await tx
+      .insert(playSessions)
+      .values([...kept])
+      .onConflictDoUpdate({
+        target: playSessions.id,
+        set: {
+          seconds: sql`max(${playSessions.seconds}, excluded.seconds)`,
+          endedAt: sql`max(${playSessions.endedAt}, excluded.ended_at)`,
+        },
+        // An id another library's session has is not this one's to change.
+        where: sql`${playSessions.entryId} = excluded.entry_id`,
+      })
+    await bumpVersion(tx, libraryId)
+    return kept.map((session) => session.id)
+  })
 
 export const setTags = (
   db: Db,
@@ -1413,6 +1417,7 @@ const deleteEntry = async (tx: Executor, libraryId: string, entryId: string) => 
     owned.map((copy) => copy.id),
   )
   await tx.delete(playTime).where(eq(playTime.entryId, entryId))
+  await tx.delete(playSessions).where(eq(playSessions.entryId, entryId))
   await tx.delete(copies).where(eq(copies.entryId, entryId))
   await tx.delete(entryTags).where(eq(entryTags.entryId, entryId))
   await tx.delete(entryVersions).where(eq(entryVersions.entryId, entryId))
@@ -1479,6 +1484,8 @@ type EntrySnapshot = {
   games: (typeof games.$inferSelect)[]
   copies: (typeof copies.$inferSelect)[]
   playTime: (typeof playTime.$inferSelect)[]
+  /** What the app counted of it. Absent in what was removed before it counted. */
+  playSessions?: (typeof playSessions.$inferSelect)[]
   tags: string[]
   /** The sync's items that fed its copies, put back with them. Absent in what was removed before sync. */
   sourceItems?: { id: string; copyId: string }[]
@@ -1502,6 +1509,7 @@ export const removeEntryForUndo = (db: Db, libraryId: string, entryId: string, n
       games: ids.length > 0 ? await tx.select().from(games).where(inArray(games.id, ids)) : [],
       copies: await tx.select().from(copies).where(eq(copies.entryId, entryId)),
       playTime: await tx.select().from(playTime).where(eq(playTime.entryId, entryId)),
+      playSessions: await tx.select().from(playSessions).where(eq(playSessions.entryId, entryId)),
       tags: (
         await tx
           .select({ name: tags.name })
@@ -1582,6 +1590,9 @@ export const restoreEntry = (db: Db, libraryId: string, removedId: string) =>
         )
       }
       if (snapshot.playTime.length > 0) await tx.insert(playTime).values(snapshot.playTime)
+      if (snapshot.playSessions?.length) {
+        await tx.insert(playSessions).values(snapshot.playSessions)
+      }
       // The items still remembered go back to feeding their copies.
       for (const item of snapshot.sourceItems ?? []) {
         await tx

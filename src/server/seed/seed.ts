@@ -18,6 +18,7 @@ import {
   games,
   libraries,
   platforms,
+  playSessions,
   playTime,
   removedEntries,
   shelves,
@@ -99,6 +100,7 @@ export const clearLibrary = async (db: Db) => {
   // Children first, so it works whether or not the engine enforces foreign keys.
   for (const table of [
     removedEntries,
+    playSessions,
     playTime,
     copies,
     entryTags,
@@ -228,7 +230,7 @@ export const seedLibrary = async (
   const entryRows: Rows<typeof entries> = []
   const versionRows: Rows<typeof entryVersions> = []
   const copyRows: Rows<typeof copies> = []
-  const timeRows: Rows<typeof playTime> = []
+  const sessionRows: Rows<typeof playSessions> = []
   const tagRows = new Map<string, Rows<typeof tags>[number]>()
   const entryTagRows: Rows<typeof entryTags> = []
 
@@ -270,13 +272,13 @@ export const seedLibrary = async (
       })
     }
     if (entry.minutes > 0) {
-      timeRows.push({
-        id: stableId('time', entry.igdbId),
+      // As Shelf for Windows would have counted them, in one sitting.
+      sessionRows.push({
+        id: stableId('session', entry.igdbId),
         entryId,
-        copyId: null,
-        source: 'manual',
-        minutes: entry.minutes,
-        updatedAt: entry.addedAt,
+        startedAt: entry.addedAt,
+        endedAt: entry.addedAt + entry.minutes * 60_000,
+        seconds: entry.minutes * 60,
       })
     }
     for (const name of entry.tags) {
@@ -292,7 +294,7 @@ export const seedLibrary = async (
   await insertAll(db, entries, entryRows, 500)
   await insertAll(db, entryVersions, versionRows, 1000)
   await insertAll(db, copies, copyRows, 500)
-  await insertAll(db, playTime, timeRows, 500)
+  await insertAll(db, playSessions, sessionRows, 500)
   await insertAll(db, tags, [...tagRows.values()], 500)
   await insertAll(db, entryTags, entryTagRows, 1000)
   // Every set starts with the starter shelves, as a new library does.

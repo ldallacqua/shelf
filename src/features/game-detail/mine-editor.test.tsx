@@ -79,7 +79,7 @@ const wished = (slug: string, wanted: number[]): OwnerGame => ({
   wanted,
   private: false,
   notesPublic: false,
-  minutes: 0,
+  tracked: 0,
   copies: [],
   tags: [],
   versions: [],
@@ -231,7 +231,7 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
   const owned = (slug: string): OwnerGame => ({
     ...wished(slug, []),
     status: 'backlog',
-    minutes: 90,
+    tracked: 90,
     copies: [
       {
         id: 'ps4',
@@ -261,34 +261,48 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     await waitFor(() => expect(copies.getAllByRole('listitem')).toHaveLength(2))
   })
 
-  it('takes hours as a number, and says what the stores report beside them', async () => {
+  it('says the hours counted and where they come from, with nothing to type', async () => {
     server.games.set('hours', owned('hours'))
     editor('hours')
-    const field = await screen.findByRole('textbox', { name: 'Hours played' })
-    expect(field).toHaveValue('1.5')
-    expect(screen.getByText(/Your stores report 10 h/)).toBeInTheDocument()
-    await userEvent.clear(field)
-    await userEvent.type(field, '2a0{Enter}')
-    expect(client.update).toHaveBeenLastCalledWith('entry-hours', { minutes: 1200 })
+    expect(await screen.findByText('10 h')).toBeInTheDocument()
+    expect(screen.getByText('Shelf for Windows: 1.5 h')).toBeInTheDocument()
+    expect(screen.getAllByText('Steam: 10 h')).not.toHaveLength(0)
+    expect(screen.getByText(/the larger of the two counts/)).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Hours played' })).not.toBeInTheDocument()
+  })
+
+  it('explains what counts, and that time away does not', async () => {
+    server.games.set('how', owned('how'))
+    editor('how')
+    await userEvent.click(await screen.findByText('How hours are counted'))
+    expect(screen.getByText(/After 5 minutes with no key, mouse or controller/)).toBeVisible()
+    expect(screen.getByText(/also called AFK/)).toBeVisible()
+  })
+
+  it('says so when nothing has counted a game', async () => {
+    server.games.set('none', {
+      ...owned('none'),
+      tracked: 0,
+      copies: [{ id: 'ps4', platformId: 48, format: 'physical' }],
+    })
+    editor('none')
+    expect(await screen.findByText('None counted yet')).toBeInTheDocument()
+    expect(screen.queryByText(/Shelf for Windows:/)).not.toBeInTheDocument()
   })
 
   it('takes time left idle off what the stores report, once asked for', async () => {
     server.games.set('idle', owned('idle'))
     editor('idle')
-    await screen.findByRole('textbox', { name: 'Hours played' })
+    await screen.findByText('How hours are counted')
     expect(screen.queryByRole('textbox', { name: 'Time left idle' })).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Take out idle time' }))
     const idle = screen.getByRole('textbox', { name: 'Time left idle' })
     expect(idle).toHaveFocus()
-    expect(screen.getByText(/never off what you typed/)).toBeInTheDocument()
+    expect(screen.getByText(/never off what Shelf for Windows counted/)).toBeInTheDocument()
     await userEvent.type(idle, '4{Enter}')
     expect(client.update).toHaveBeenLastCalledWith('entry-idle', { idle: 240 })
-    expect(
-      await screen.findByText(
-        /Your stores report 10 h on the copies below, 6 h without the idle time/,
-      ),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/4 h of the stores’ time taken out as idle/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Take out idle time' })).not.toBeInTheDocument()
   })
 
@@ -300,14 +314,13 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
   })
 
   it('offers no idle time where no store reports hours', async () => {
-    server.games.set('typed', {
-      ...owned('typed'),
+    server.games.set('console', {
+      ...owned('console'),
       copies: [{ id: 'ps4', platformId: 48, format: 'physical' }],
     })
-    editor('typed')
-    await screen.findByRole('textbox', { name: 'Hours played' })
+    editor('console')
+    await screen.findByText('How hours are counted')
     expect(screen.queryByRole('button', { name: 'Take out idle time' })).not.toBeInTheDocument()
-    expect(screen.queryByText(/Your stores report/)).not.toBeInTheDocument()
   })
 
   it('marks a game completed on the day a platform last saw it played, and says so', async () => {
