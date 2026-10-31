@@ -84,6 +84,31 @@ export default defineConfig([
     },
   },
 
+  // What is on its way is drawn as ghosts, never said in words or spun (spec 3.10). The words are
+  // for assistive technology alone: `Loading`'s label, or a child of an element that is `sr-only`.
+  {
+    files: ['src/app/**/*.tsx', 'src/features/**/*.tsx', 'src/ui/**/*.tsx'],
+    ignores: ['**/*.stories.tsx', '**/*.test.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...[
+          'JSXExpressionContainer > CallExpression',
+          'JSXExpressionContainer > ConditionalExpression > CallExpression',
+        ].map((said) => ({
+          selector: `JSXElement:not(:has(JSXAttribute[name.name='className'][value.value=/sr-only/])) > ${said}[arguments.0.value=/(^|\\.)(loading|checking|searching)/i]`,
+          message:
+            'Nothing says it is loading in words: draw ghosts in the shape of what is coming, inside Loading (src/ui/ghost.tsx).',
+        })),
+        {
+          selector: 'Literal[value=/animate-spin/]',
+          message:
+            'A spinner says nothing of what is coming: draw ghosts in its shape, inside Loading (src/ui/ghost.tsx).',
+        },
+      ],
+    },
+  },
+
   // Import boundaries.
   boundary(
     ['src/domain/**'],

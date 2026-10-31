@@ -2,8 +2,9 @@ import { useTranslations } from 'next-intl'
 
 import { FilterGhosts } from '@/features/filters/filter-ghosts'
 import { cn } from '@/ui/cn'
+import { ghostOrder } from '@/ui/ghost'
 
-import { GhostShelves, ghostOrder } from './ghosts'
+import { GhostShelves } from './ghosts'
 
 /** A control's place: a button's height, or a group of buttons'. */
 const BUTTON = 'h-10 rounded-control pointer-coarse:h-11'

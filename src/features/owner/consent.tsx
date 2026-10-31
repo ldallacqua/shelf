@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/ui/button'
+import { Ghost, GhostText, Loading } from '@/ui/ghost'
 
 import { callApi } from './call-api'
 import { useAccount } from './account'
@@ -21,6 +22,29 @@ const hostOf = (clientId: string): string | undefined => {
   }
 }
 
+/** The question on its way: who asks, for what, and the two answers. */
+export function ConsentGhosts() {
+  const t = useTranslations('Consent')
+  return (
+    <Loading label={t('checking')} className="mt-6 grid max-w-xl gap-6">
+      <span className="text-lg">
+        <GhostText className="w-4/5" />
+      </span>
+      <span className="grid gap-2">
+        <GhostText order={1} className="w-3/5" />
+        <GhostText order={2} className="w-2/3" />
+      </span>
+      <span className="text-sm">
+        <GhostText order={3} className="w-48" />
+      </span>
+      <span className="flex flex-wrap gap-3">
+        <Ghost order={4} className="h-10 w-28 rounded-control pointer-coarse:h-11" />
+        <Ghost order={4} className="h-10 w-28 rounded-control pointer-coarse:h-11" />
+      </span>
+    </Loading>
+  )
+}
+
 /**
  * Letting an assistant in (architecture, section 16). Better Auth sends me
  * here, signed in, with the assistant's request in the address. Yes or no
@@ -29,8 +53,9 @@ const hostOf = (clientId: string): string | undefined => {
 export function Consent() {
   const t = useTranslations('Consent')
   const params = useSearchParams()
-  const account = useAccount()
-  const [client, setClient] = useState<Client>()
+  const account = useAccount('checking')
+  // Its name, once asked for; null: not known, and its address will do.
+  const [client, setClient] = useState<Client | null>()
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 
@@ -45,7 +70,7 @@ export function Consent() {
       'GET',
       `/api/auth/oauth2/public-client?client_id=${encodeURIComponent(clientId)}`,
     ).then((answer) => {
-      if (current && answer.ok) setClient(answer.value)
+      if (current) setClient(answer.ok ? answer.value : null)
     })
     return () => {
       current = false
@@ -53,9 +78,10 @@ export function Consent() {
   }, [signed, clientId, account.status])
 
   if (!signed) return <p className="mt-6 max-w-xl text-pretty">{t('nothingAsked')}</p>
-  if (account.status === 'checking') return <p className="mt-6 text-muted">{t('checking')}</p>
-  if (account.status !== 'signed-in')
+  if (account.status === 'visitor') {
     return <p className="mt-6 max-w-xl text-pretty">{t('signInFirst')}</p>
+  }
+  if (account.status === 'checking' || client === undefined) return <ConsentGhosts />
 
   const name = client?.client_name ?? hostOf(clientId) ?? clientId
   const from = hostOf(clientId)

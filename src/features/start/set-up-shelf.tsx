@@ -8,12 +8,14 @@ import type { Standing } from '@/domain/library/placing'
 import { libraryHref } from '@/features/library/shelf-address'
 import { useAccount } from '@/features/owner/account'
 import { readTally } from '@/features/placing/placing-client'
-import { PlatformCards } from '@/features/platforms/platforms'
+import { PlatformCardGhosts, PlatformCards } from '@/features/platforms/platforms'
 import type { PlatformRow } from '@/features/platforms/sync-client'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { cn } from '@/ui/cn'
 import { Progress } from '@/ui/progress'
+import { Loading } from '@/ui/ghost'
+import { Ghosts } from '@/ui/ghosts'
 
 const LINK = 'rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2'
 
@@ -52,6 +54,28 @@ function Step({
         {children}
       </div>
     </li>
+  )
+}
+
+/** The two steps with their words, and ghosts for what is read from the shelf. */
+function StepsGhosts() {
+  const t = useTranslations('Start')
+  const account = useTranslations('AccountPage')
+  return (
+    <Loading label={account('checking')}>
+      <ol className="mt-8 grid gap-5">
+        <Step number={1} title={t('bring.title')} done={false}>
+          <p className="max-w-2xl text-pretty text-muted">{t('bring.body')}</p>
+          <div className="grid gap-5">
+            <PlatformCardGhosts />
+          </div>
+        </Step>
+        <Step number={2} title={t('place.title')} done={false}>
+          <p className="max-w-2xl text-pretty text-muted">{t('place.body')}</p>
+          <Ghosts lines={2} className="max-w-md" />
+        </Step>
+      </ol>
+    </Loading>
   )
 }
 
@@ -123,7 +147,11 @@ function Steps({ handle }: { handle: string }) {
 
         <Step number={2} title={t('place.title')} done={placed}>
           <p className="max-w-2xl text-pretty text-muted">{t('place.body')}</p>
-          {total === undefined ? null : total === 0 ? (
+          {total === undefined ? (
+            trouble ? null : (
+              <Ghosts lines={2} className="max-w-md" />
+            )
+          ) : total === 0 ? (
             <p className="text-sm text-muted">{t('place.nothingYet')}</p>
           ) : unsorted > 0 ? (
             <div className="grid max-w-md gap-3">
@@ -168,10 +196,9 @@ export function SetUpShelf() {
   const t = useTranslations('Start')
   const account = useTranslations('AccountPage')
   const locale = useLocale()
-  const who = useAccount()
+  const who = useAccount('checking')
 
-  if (who.status === 'checking') return <p className="mt-6 text-muted">{account('checking')}</p>
-  if (who.status !== 'signed-in') {
+  if (who.status === 'visitor') {
     return (
       <div className="mt-6 max-w-xl">
         <p className="text-pretty">{t('signInFirst')}</p>
@@ -189,7 +216,7 @@ export function SetUpShelf() {
   return (
     <>
       <p className="mt-4 max-w-2xl text-lg text-pretty text-muted">{t('intro')}</p>
-      <Steps handle={who.handle} />
+      {who.status === 'checking' ? <StepsGhosts /> : <Steps handle={who.handle} />}
     </>
   )
 }

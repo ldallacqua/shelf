@@ -29,7 +29,7 @@ const INSIGHTS = 6
 export function TrophiesSkeleton() {
   const t = useTranslations('Trophies')
   // Each ghost's turn in the wave that runs down the page, as the library's ghosts take theirs
-  // (`ghostOrder`, not imported: its module brings the cases' shapes into this page's script).
+  // (`ghostOrder`, not imported: this page has no other use for its module).
   let turn = 0
   const ghost = (className: string, key?: number) => (
     <span key={key} className={cn('ghost', className)} style={{ '--i': turn++ } as CSSProperties} />

@@ -182,3 +182,14 @@ describe('SetUpShelf', () => {
     expect(await screen.findByText('All 3 of your games have a status.')).toBeInTheDocument()
   })
 })
+
+describe('SetUpShelf, on its way', () => {
+  it('draws both steps with their words while it asks whose account this is, and reads nothing yet', () => {
+    who = { status: 'checking' }
+    const { container } = renderWithIntl(<SetUpShelf />)
+    expect(screen.getByRole('status')).toHaveTextContent('Checking who you are…')
+    expect(screen.getByText('Bring your games in')).toBeInTheDocument()
+    expect(container.querySelectorAll('.ghost').length).toBeGreaterThan(0)
+    expect(sent).toEqual([])
+  })
+})

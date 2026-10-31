@@ -13,11 +13,12 @@ import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
 import { FoldBody, FoldToggle } from './fold-toggle'
 import { platformFor } from './game-box'
-import { GhostHeading, ghostOrder } from './ghosts'
+import { GhostHeading } from './ghosts'
 import type { WallSize } from './preferences'
 import { StatusMark } from './status-mark'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
+import { ghostOrder } from '@/ui/ghost'
 
 /**
  * What the browser is told about a cover's width on the wall, by size: a

@@ -18,11 +18,23 @@ const linkClass = cn(
   'aria-[current=page]:text-text aria-[current=page]:after:opacity-100',
 )
 
+/** The links, by the width of their words: plain ghosts, as `Ghost` would put its module in every page's script. */
+const GHOST_LINKS = ['w-15', 'w-12', 'w-16']
+
 function NavList({ handle, pathname }: { handle?: string; pathname?: string }) {
   const t = useTranslations('Shell')
   const waiting = useOwnWaiting(handle)
 
-  if (!handle) return null
+  if (!handle) {
+    // Signed in on this browser, while it gets ready to ask who: the links' places.
+    return (
+      <div className="hidden h-full items-center gap-7 px-3 hinted:flex">
+        {GHOST_LINKS.map((width) => (
+          <span key={width} className={cn('ghost h-3', width)} />
+        ))}
+      </div>
+    )
+  }
   return (
     <ul className="flex h-full items-stretch gap-1">
       {navItems.map((item) => (
@@ -64,7 +76,7 @@ function NavListForAccount() {
  * The header's links into a shelf, with the current page marked by a lit
  * line; on one's own, a link on to placing the games that wait for a status,
  * counting them. Until the address is known, the links to one's own shelf
- * show, with none marked.
+ * show, with none marked, and until the account is known, their ghosts.
  */
 export function NavLinks() {
   return (

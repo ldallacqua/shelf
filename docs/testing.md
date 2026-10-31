@@ -58,7 +58,9 @@ To see the page before the rest of the library arrives, hold the library file wi
 arrives" test does. Meanwhile the places still to fill hold ghosts (`[data-ghost]`), which
 assistive technology does not see. The part of the page built ahead of time, before the first
 boxes, is checked by serving it alone, with script off: `layout.spec.ts` cuts the page where
-the streamed part begins. `LibrarySkeleton` also has component tests and a story.
+the streamed part begins. `LibrarySkeleton` also has component tests and a story. Elsewhere, a test
+holds the read open and looks for `.ghost` and the `status` role: Organize's tabs, the account and
+the platforms' cards each do.
 
 ## Filters and smart shelves in browser tests
 

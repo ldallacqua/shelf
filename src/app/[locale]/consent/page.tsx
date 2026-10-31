@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 
-import { Consent } from '@/features/owner/consent'
+import { Consent, ConsentGhosts } from '@/features/owner/consent'
 import { Page } from '@/features/shell/page'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,7 +17,7 @@ export default async function ConsentPage() {
     <Page className="pb-16">
       <h1 className="pt-10 title text-3xl sm:pt-14 sm:text-5xl">{t('title')}</h1>
       {/* What the assistant asks for is in the address. */}
-      <Suspense fallback={<p className="mt-6 text-muted">{t('checking')}</p>}>
+      <Suspense fallback={<ConsentGhosts />}>
         <Consent />
       </Suspense>
     </Page>

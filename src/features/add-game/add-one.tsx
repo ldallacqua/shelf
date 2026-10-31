@@ -25,6 +25,7 @@ import { ChoiceChip, ToggleChip } from '@/ui/chip'
 import { cn } from '@/ui/cn'
 import { Input } from '@/ui/field'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
+import { Ghost, GhostText } from '@/ui/ghost'
 
 import type { AddActions } from './actions'
 import { BringBack } from './bring-back'
@@ -45,6 +46,9 @@ type AddOneProps = {
   /** A result already on the shelf was picked: its page opens instead. */
   onOpenOwned: () => void
 }
+
+/** Results on their way before any have come, in their shape. */
+const GHOST_RESULTS = 4
 
 /** One game (spec 4.1): type, read the results, choose, fill three things, add. */
 export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
@@ -168,16 +172,20 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
   }
 
   const optionId = (index: number) => `${listId}-${index}`
+  const first =
+    text.trim().length >= MIN_SEARCH && search.state === 'searching' && results.length === 0
   const status =
-    text.trim().length < MIN_SEARCH
-      ? t('typeMore')
-      : search.state === 'searching' && results.length === 0
-        ? t('searching')
-        : search.state === 'ready' && results.length === 0
-          ? t('noResults', { text: search.text })
-          : search.state === 'ready'
-            ? t('resultCount', { count: results.length })
-            : ''
+    text.trim().length < MIN_SEARCH ? (
+      t('typeMore')
+    ) : first ? (
+      <span className="sr-only">{t('searching')}</span>
+    ) : search.state === 'ready' && results.length === 0 ? (
+      t('noResults', { text: search.text })
+    ) : search.state === 'ready' ? (
+      t('resultCount', { count: results.length })
+    ) : (
+      ''
+    )
 
   return (
     <div className="grid gap-3">
@@ -213,6 +221,21 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
           <Button variant="secondary" onClick={() => setAttempt((count) => count + 1)}>
             {t('tryAgain')}
           </Button>
+        </div>
+      ) : null}
+      {first ? (
+        <div aria-hidden="true" className="grid gap-1">
+          {Array.from({ length: GHOST_RESULTS }, (_, row) => (
+            <div key={row} className="flex items-center gap-3 p-2">
+              <Ghost order={row} className="aspect-[3/4] w-10 flex-none rounded-[3px]" />
+              <span className="grid min-w-0 flex-1 gap-0.5">
+                <GhostText order={row} className="w-1/2" />
+                <span className="text-xs">
+                  <GhostText order={row} className="w-1/3" />
+                </span>
+              </span>
+            </div>
+          ))}
         </div>
       ) : null}
       <ul

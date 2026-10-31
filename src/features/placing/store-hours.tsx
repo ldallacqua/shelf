@@ -13,6 +13,7 @@ import { useAccount } from '@/features/owner/account'
 import { announceChange } from '@/features/owner/library-change'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { Ghost, GhostText, Loading } from '@/ui/ghost'
 import { NumberField } from '@/ui/number-field'
 
 import { OrganizeTabs } from './organize-tabs'
@@ -27,6 +28,9 @@ type ApiStoreHours = {
 
 /** What was said of a game here: time taken out, or its hours kept. */
 type Said = { idle: number } | 'kept'
+
+/** Rows of ghosts while the list is read: few games are offered at a time. */
+const GHOST_ROWS = 4
 
 /** Whole hours: beside IGDB's estimate, a tenth would be a precision neither has. */
 const wholeHours = (minutes: number) => Math.round(minutes / 60)
@@ -43,10 +47,9 @@ export function StoreHours() {
   const t = useTranslations('Placing')
   const account = useTranslations('AccountPage')
   const locale = useLocale()
-  const who = useAccount()
+  const who = useAccount('checking')
 
-  if (who.status === 'checking') return <p className="mt-6 text-muted">{account('checking')}</p>
-  if (who.status !== 'signed-in') {
+  if (who.status === 'visitor') {
     return (
       <div className="mt-6 max-w-xl">
         <p className="text-pretty">{t('signInFirst')}</p>
@@ -60,7 +63,47 @@ export function StoreHours() {
       </div>
     )
   }
+  if (who.status === 'checking') {
+    return (
+      <>
+        <OrganizeTabs current="hours" />
+        <HoursGhosts />
+      </>
+    )
+  }
   return <HoursList handle={who.handle} />
+}
+
+/** The list on its way, under the words that say what it is. */
+function HoursGhosts() {
+  const t = useTranslations('Placing')
+  return (
+    <>
+      <p className="mt-6 max-w-2xl text-pretty text-muted">{t('storeHours.intro')}</p>
+      <Loading label={t('loading')} className="mt-6 grid max-w-xl gap-6">
+        {Array.from({ length: GHOST_ROWS }, (_, row) => (
+          <div key={row} className="grid gap-3">
+            <div className="flex items-center gap-3">
+              <Ghost order={row} className="aspect-[3/4] w-10 flex-none rounded-[3px]" />
+              <span className="grid min-w-0 flex-1 gap-0.5">
+                <GhostText order={row} className="w-1/2" />
+                <span className="text-sm">
+                  <GhostText order={row} className="w-4/5" />
+                </span>
+              </span>
+            </div>
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-2 pl-13">
+              <span className="grid gap-1.5 text-sm">
+                <GhostText order={row} className="w-28" />
+                <Ghost order={row} className="h-10 w-44 rounded-control pointer-coarse:h-11" />
+              </span>
+              <Ghost order={row} className="h-10 w-32 rounded-control pointer-coarse:h-11" />
+            </div>
+          </div>
+        ))}
+      </Loading>
+    </>
+  )
 }
 
 /** The list, once the account is known: read, then answered here a game at a time. */
@@ -106,7 +149,7 @@ function HoursList({ handle }: { handle: string }) {
   const tabs = (
     <OrganizeTabs
       current="hours"
-      {...(waiting === undefined ? {} : { counts: { hours: waiting } })}
+      {...(games === undefined ? {} : { counts: { hours: waiting ?? 0 } })}
     />
   )
 
@@ -114,7 +157,7 @@ function HoursList({ handle }: { handle: string }) {
     return (
       <>
         {tabs}
-        <p className="mt-6 text-muted">{placing('loading')}</p>
+        <HoursGhosts />
       </>
     )
   }

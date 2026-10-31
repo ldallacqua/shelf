@@ -143,3 +143,28 @@ describe('OrganizeTabs', () => {
     expect(tabs().getByRole('link', { name: 'Archived' })).toHaveTextContent(/^Archived$/)
   })
 })
+
+describe('StoreHours, on its way', () => {
+  it('draws its rows’ shape while it asks whose account this is, and reads nothing yet', () => {
+    who = { status: 'checking' }
+    const fetching = vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise(() => {}))
+    const { container } = renderWithIntl(<StoreHours />)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading your games…')
+    expect(container.querySelector('[aria-busy="true"] .ghost')).toBeInTheDocument()
+    expect(fetching).not.toHaveBeenCalled()
+  })
+
+  it('draws ghosts while the list is read, and none after a read that failed', async () => {
+    let answerList!: (response: Response) => void
+    vi.spyOn(globalThis, 'fetch').mockImplementation((input) =>
+      String(input) === '/api/v1/me/hours'
+        ? new Promise((resolve) => (answerList = resolve))
+        : Promise.resolve(new Response(null, { status: 500 })),
+    )
+    const { container } = renderWithIntl(<StoreHours />)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading your games…')
+    answerList(new Response(null, { status: 500 }))
+    await screen.findByRole('alert')
+    await waitFor(() => expect(container.querySelector('.ghost')).not.toBeInTheDocument())
+  })
+})

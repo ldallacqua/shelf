@@ -19,6 +19,7 @@ import { ReadyMark } from '@/features/shell/ready-mark'
 import { MAIN_ID, SkipLink } from '@/features/shell/skip-link'
 import { ZodScript } from '@/features/shell/zod-script'
 import { ThemeScript } from '@/features/theme/theme-script'
+import { AccountHintScript } from '@/features/owner/account-hint'
 import { routing } from '@/i18n/routing'
 import { siteUrl } from '@/server/site-url'
 import { fontVariables } from '@/ui/fonts'
@@ -62,6 +63,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
     <html lang={locale} className={fontVariables} suppressHydrationWarning>
       <head>
         <ThemeScript />
+        <AccountHintScript />
         <PreferenceScript />
         <WindowScript />
         <ZodScript />

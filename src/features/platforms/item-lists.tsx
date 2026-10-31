@@ -12,6 +12,7 @@ import { SOURCES } from '@/domain/sync/sources'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { CartridgeIcon } from '@/ui/icons'
+import { Ghost, GhostText, Loading } from '@/ui/ghost'
 
 import { FindIt, Thumb } from './find-it'
 import { answerItem, confirmMany, readItems, type ItemAnswer } from './sync-client'
@@ -56,6 +57,9 @@ const COUNT_OF: Record<ItemList, keyof ItemCounts> = {
   hidden: 'hidden',
   'not-seen': 'notSeen',
 }
+
+/** Rows of ghosts while a list is read, once it is opened. */
+const GHOST_ROWS = 3
 
 /** Its hours there, or that it was never played there. */
 function Hours({ item, source }: { item: ItemView; source: SyncSource }) {
@@ -412,8 +416,21 @@ function List({
           <AllAtOnce source={source} items={items} busy={busy} onSteps={onSteps} />
         ) : null}
         {trouble ? <p role="alert">{t('failed')}</p> : null}
-        {items === undefined && !trouble ? (
-          <p className="mt-3 text-sm text-muted">{t('loading')}</p>
+        {open && items === undefined && !trouble ? (
+          <Loading label={t('loading')} className="mt-2 grid">
+            {Array.from({ length: GHOST_ROWS }, (_, row) => (
+              <div
+                key={row}
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line py-3 text-sm first-of-type:border-t-0"
+              >
+                <span className="grid min-w-40 flex-1">
+                  <GhostText order={row} className="w-1/2" />
+                  <GhostText order={row} className="w-1/3" />
+                </span>
+                <Ghost order={row} className="h-8 w-40 rounded-control pointer-coarse:h-10" />
+              </div>
+            ))}
+          </Loading>
         ) : null}
         {items && found.length > 0 && unfound.length > 0 ? (
           <>

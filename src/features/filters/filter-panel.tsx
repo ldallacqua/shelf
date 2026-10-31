@@ -25,6 +25,8 @@ import { Button } from '@/ui/button'
 import { cn } from '@/ui/cn'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
 import { Sheet, SheetContent } from '@/ui/sheet'
+import { GhostText, Loading } from '@/ui/ghost'
+import { Ghosts } from '@/ui/ghosts'
 
 import { comparisonLabel, isIgdbName, keyLabel, valueLabel } from './labels'
 import { FilterGhosts } from './filter-ghosts'
@@ -210,10 +212,20 @@ export function FilterPanel({
   }
 
   const body = (key: FilterKey, label: string, at: LibraryIndex | undefined) => {
-    if (!at) return <p className="text-sm text-muted">{t('panel.loading')}</p>
+    if (!at) {
+      return (
+        <Loading label={t('panel.loading')}>
+          <Ghosts lines={3} />
+        </Loading>
+      )
+    }
     if (isListKey(key)) {
       if (key === 'keyword' && !at.keywords) {
-        return <p className="text-sm text-muted">{t('panel.loadingKeywords')}</p>
+        return (
+          <Loading label={t('panel.loadingKeywords')}>
+            <Ghosts lines={3} />
+          </Loading>
+        )
       }
       return (
         <ListSection
@@ -314,7 +326,14 @@ export function FilterPanel({
   )
 
   const results =
-    matching === undefined ? t('panel.loading') : t('panel.results', { count: matching })
+    matching === undefined ? (
+      <>
+        <span className="sr-only">{t('panel.loading')}</span>
+        <GhostText className="w-28" />
+      </>
+    ) : (
+      t('panel.results', { count: matching })
+    )
   const clear = (
     <Button variant="secondary" size="sm" onClick={onClear} disabled={!tree}>
       {t('chips.clear')}

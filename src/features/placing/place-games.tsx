@@ -32,6 +32,7 @@ import { Button } from '@/ui/button'
 import { Checkbox } from '@/ui/checkbox'
 import { ToggleChip } from '@/ui/chip'
 import { cn } from '@/ui/cn'
+import { Ghost, GhostText, Loading } from '@/ui/ghost'
 import { Progress } from '@/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
 import { Tip } from '@/ui/tooltip'
@@ -76,6 +77,32 @@ const quietAction = 'h-auto min-h-6 px-0 text-muted hover:text-text'
 /** Archive and Remove at a row's end: an icon for a pointer, with words for a touch. */
 const rowAction =
   'h-9 text-muted hover:text-text aria-disabled:opacity-50 pointer-fine:w-9 pointer-fine:px-0'
+
+/** Rows of ghosts while the list is read: more than a large screen shows. */
+const GHOST_ROWS = 7
+
+/** The statuses, in Portuguese, the wider language, so their ghosts wrap where they will. */
+const STATUS_GHOSTS = ['w-22', 'w-19', 'w-24', 'w-20', 'w-27', 'w-28', 'w-33']
+
+/** The page beside the tally: the list on the left, or under it on a narrower window. */
+const PAGE = 'mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]'
+
+/** The rows, laid out by their own width (see `Row`), and the room between them. */
+const ROWS = '@container grid gap-3'
+
+/** The places in a row, shared with its ghost, so the list arrives where its ghosts stood. */
+const ROW = {
+  row: 'grid grid-cols-[auto_3.5rem_minmax(0,1fr)] grid-rows-[auto_1fr] items-start gap-x-3 rounded-panel border border-line bg-surface p-3 @xl:grid-cols-[auto_5rem_minmax(0,1fr)] @xl:grid-rows-[auto_auto_auto_1fr] @xl:p-4 @3xl:grid-cols-[auto_5rem_minmax(0,1fr)_auto]',
+  checkbox: 'row-span-2 mt-0.5 @xl:row-span-4',
+  cover: 'row-span-2 block aspect-[3/4] w-14 rounded-[4px] @xl:row-span-4 @xl:w-20',
+  title: 'col-start-3 text-base font-semibold @3xl:self-center',
+  known: 'col-start-3 mt-1.5 flex min-h-6 flex-wrap gap-x-3 gap-y-1 text-sm @3xl:col-[3/span_2]',
+  rating:
+    'col-span-3 mt-3 @xl:col-[3/span_1] @xl:mt-2 @3xl:col-[4/span_1] @3xl:row-start-1 @3xl:mt-0 @3xl:w-64',
+  foot: 'col-span-3 mt-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-2 self-end @xl:col-[3/span_1] @xl:row-start-4 @3xl:col-[3/span_2]',
+  statuses: 'flex min-w-0 flex-[1_1_16rem] flex-wrap gap-1',
+  actions: 'flex flex-none gap-0.5',
+}
 
 /** The game with this rating (null: none); undefined leaves it as it is. */
 const withRating = (game: UnsortedGame, score: number | null | undefined): UnsortedGame => {
@@ -206,7 +233,10 @@ function Row({
       aria-labelledby={titleId}
       onFocus={onFocus}
       data-selected={selected ? '' : undefined}
-      className="grid grid-cols-[auto_3.5rem_minmax(0,1fr)] grid-rows-[auto_1fr] items-start gap-x-3 rounded-panel border border-line bg-surface p-3 has-[:focus-visible]:border-line-strong data-[selected]:border-accent @xl:grid-cols-[auto_5rem_minmax(0,1fr)] @xl:grid-rows-[auto_auto_auto_1fr] @xl:p-4 @3xl:grid-cols-[auto_5rem_minmax(0,1fr)_auto]"
+      className={cn(
+        ROW.row,
+        'has-[:focus-visible]:border-line-strong data-[selected]:border-accent',
+      )}
     >
       {/* The row's stop in the list: the arrows go from here to the next row's. */}
       <Checkbox
@@ -215,9 +245,9 @@ function Row({
         onKeyDown={onKeyDown}
         aria-label={t('select', { title: game.title })}
         tabIndex={current ? 0 : -1}
-        className="row-span-2 mt-0.5 @xl:row-span-4"
+        className={ROW.checkbox}
       />
-      <span className="row-span-2 block aspect-[3/4] w-14 overflow-hidden rounded-[4px] @xl:row-span-4 @xl:w-20">
+      <span className={cn(ROW.cover, 'overflow-hidden')}>
         <Cover
           cover={game.cover}
           colors={game.colors}
@@ -227,7 +257,7 @@ function Row({
           small
         />
       </span>
-      <h3 id={titleId} className="col-start-3 text-base font-semibold text-pretty @3xl:self-center">
+      <h3 id={titleId} className={cn(ROW.title, 'text-pretty')}>
         <Link
           href={gameHref(handle, game.slug)}
           tabIndex={tab}
@@ -240,7 +270,7 @@ function Row({
         ) : null}
       </h3>
       {/* As tall without its link, so a status given does not move the rows below under the pointer. */}
-      <div className="col-start-3 mt-1.5 flex min-h-6 flex-wrap items-baseline gap-x-3 gap-y-1 text-sm @3xl:col-[3/span_2]">
+      <div className={cn(ROW.known, 'items-baseline')}>
         {shorts.length > 0 ? <p className="text-muted">{shorts.join(' · ')}</p> : null}
         <Played game={game} />
         {/* A game the sync took for the wrong one, while it still waits: given a status, it is placed. */}
@@ -263,13 +293,13 @@ function Row({
         onSave={onRate}
         tabIndex={tab}
         compact
-        className="col-span-3 mt-3 @xl:col-[3/span_1] @xl:mt-2 @3xl:col-[4/span_1] @3xl:row-start-1 @3xl:mt-0 @3xl:w-64"
+        className={ROW.rating}
       />
-      <div className="col-span-3 mt-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-2 self-end @xl:col-[3/span_1] @xl:row-start-4 @3xl:col-[3/span_2]">
+      <div className={ROW.foot}>
         <div
           role="group"
           aria-label={t('statusOf', { title: game.title })}
-          className="flex min-w-0 flex-[1_1_16rem] flex-wrap gap-1"
+          className={ROW.statuses}
         >
           {placements.map((status) => (
             <ToggleChip
@@ -292,7 +322,7 @@ function Row({
           For a game I will never play: out of sight with everything kept, or off the library.
           A pointer has the tips, so the icons will do; a touch has none, so it has the words.
         */}
-        <div className="flex flex-none gap-0.5">
+        <div className={ROW.actions}>
           <Tip label={t('archiveTip')} describes>
             <Button
               variant="ghost"
@@ -364,13 +394,79 @@ function Row({
   )
 }
 
-/** How many games stand in each status, and how many still wait. */
-function TallyView({ tally }: { tally: Tally }) {
+/** A row on its way, in its places: the checkbox, the cover, the lines and the statuses. */
+function GhostRow({ order }: { order: number }) {
+  return (
+    <div className={ROW.row}>
+      <Ghost order={order} className={cn('size-5 rounded-[5px]', ROW.checkbox)} />
+      <Ghost order={order} className={ROW.cover} />
+      <span className={ROW.title}>
+        <GhostText order={order} className="w-3/5" />
+      </span>
+      <span className={cn(ROW.known, 'items-center')}>
+        <GhostText order={order} className="w-16" />
+        <GhostText order={order} className="w-44" />
+        <GhostText order={order} className="w-24" />
+      </span>
+      <Ghost order={order} className={cn('h-8 pointer-coarse:h-10', ROW.rating)} />
+      <span className={ROW.foot}>
+        <span className={ROW.statuses}>
+          {STATUS_GHOSTS.map((width) => (
+            <Ghost
+              key={width}
+              order={order}
+              className={cn('h-9 rounded-full pointer-coarse:h-10', width)}
+            />
+          ))}
+        </span>
+        <span className={ROW.actions}>
+          <Ghost order={order} className="h-9 w-25 rounded-control pointer-fine:w-9" />
+          <Ghost order={order} className="h-9 w-40 rounded-control pointer-fine:w-9" />
+        </span>
+      </span>
+    </div>
+  )
+}
+
+/**
+ * The list on its way, as it will stand: the sort and what it can select, the
+ * rows, and the tally with its words and without its figures.
+ */
+function PlacingGhosts() {
+  const t = useTranslations('Placing')
+  return (
+    <Loading label={t('loading')} className={PAGE}>
+      <div className="grid min-w-0 gap-4 max-lg:order-2">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">{t('sort')}</span>
+            <Ghost className="h-10 w-56 rounded-control pointer-coarse:h-11" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Ghost className="h-10 w-80 max-w-full rounded-control pointer-coarse:h-11" />
+            <Ghost className="h-10 w-52 rounded-control pointer-coarse:h-11" />
+          </div>
+        </div>
+        <div className={ROWS}>
+          {Array.from({ length: GHOST_ROWS }, (_, row) => (
+            <GhostRow key={row} order={row} />
+          ))}
+        </div>
+      </div>
+      <div className="max-lg:order-1 lg:sticky lg:top-20">
+        <TallyView />
+      </div>
+    </Loading>
+  )
+}
+
+/** How many games stand in each status, and how many still wait; until they are known, ghosts. */
+function TallyView({ tally }: { tally?: Tally }) {
   const t = useTranslations('Placing')
   const library = useTranslations('Library')
   const format = useFormatter()
   const id = useId()
-  const total = Object.values(tally).reduce((sum, count) => sum + count, 0)
+  const total = tally ? Object.values(tally).reduce((sum, count) => sum + count, 0) : 0
   return (
     <aside
       aria-labelledby={id}
@@ -379,8 +475,24 @@ function TallyView({ tally }: { tally: Tally }) {
       <h2 id={id} className="readout text-[0.6875rem] text-muted">
         {t('tally')}
       </h2>
-      <p className="title text-lg text-pretty lg:text-xl">{t('left', { count: tally.unsorted })}</p>
-      <Progress value={total - tally.unsorted} max={total} aria-label={t('placedShare')} />
+      <p className="title text-lg text-pretty lg:text-xl">
+        {tally ? (
+          t('left', { count: tally.unsorted })
+        ) : (
+          <>
+            <GhostText className="w-4/5" />
+            {/* Its words take two lines in the tally's column, and one above the list. */}
+            <span className="max-lg:hidden">
+              <GhostText className="w-1/2" />
+            </span>
+          </>
+        )}
+      </p>
+      {tally ? (
+        <Progress value={total - tally.unsorted} max={total} aria-label={t('placedShare')} />
+      ) : (
+        <Ghost className="h-1.5 rounded-full" />
+      )}
       {/* A line that wraps above the list on a phone; a column beside it on a desktop. */}
       <dl className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-4 lg:gap-y-2">
         {placements.map((status) => (
@@ -388,7 +500,9 @@ function TallyView({ tally }: { tally: Tally }) {
             <dt>
               <StatusMark status={status} label={library(`status.${status}`)} />
             </dt>
-            <dd className="tabular-nums lg:text-right">{format.number(tally[status])}</dd>
+            <dd className="tabular-nums lg:text-right">
+              {tally ? format.number(tally[status]) : <GhostText className="w-5 lg:ml-auto" />}
+            </dd>
           </div>
         ))}
       </dl>
@@ -476,7 +590,7 @@ function PlacingList({ handle }: { handle: string }) {
       </div>
     )
   }
-  if (!loaded) return <p className="mt-6 text-muted">{t('loading')}</p>
+  if (!loaded) return <PlacingGhosts />
 
   const shown = sorted.slice(0, limit)
   const current =
@@ -737,7 +851,7 @@ function PlacingList({ handle }: { handle: string }) {
 
   if (sorted.length === 0) {
     return (
-      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div className={PAGE}>
         <div className="grid max-w-xl content-start justify-items-start gap-4">
           <p className="text-pretty">{t('empty')}</p>
           <Button variant="primary" asChild>
@@ -752,7 +866,7 @@ function PlacingList({ handle }: { handle: string }) {
   const remaining = sorted.length - shown.length
 
   return (
-    <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+    <div className={PAGE}>
       <div className="grid min-w-0 gap-4 max-lg:order-2">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="grid gap-1.5">
@@ -821,7 +935,7 @@ function PlacingList({ handle }: { handle: string }) {
         ) : null}
 
         {/* The rows lay out by the list's width: the tally beside it narrows it on a desktop. */}
-        <ul aria-label={t('list')} className="@container grid gap-3">
+        <ul aria-label={t('list')} className={ROWS}>
           {shown.map((game, at) => (
             <Row
               key={game.entryId}
@@ -882,10 +996,9 @@ export function PlaceGames() {
   const t = useTranslations('Placing')
   const account = useTranslations('AccountPage')
   const locale = useLocale()
-  const who = useAccount()
+  const who = useAccount('checking')
 
-  if (who.status === 'checking') return <p className="mt-6 text-muted">{account('checking')}</p>
-  if (who.status !== 'signed-in') {
+  if (who.status === 'visitor') {
     return (
       <div className="mt-6 max-w-xl">
         <p className="text-pretty">{t('signInFirst')}</p>
@@ -904,7 +1017,7 @@ export function PlaceGames() {
     <>
       <OrganizeTabs current="unsorted" />
       <p className="mt-6 max-w-2xl text-pretty text-muted">{t('intro')}</p>
-      <PlacingList handle={who.handle} />
+      {who.status === 'checking' ? <PlacingGhosts /> : <PlacingList handle={who.handle} />}
     </>
   )
 }

@@ -1,11 +1,12 @@
 'use client'
 
-import { CheckIcon, LoaderCircleIcon } from 'lucide-react'
+import { CheckIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useId, useState } from 'react'
 
 import { HANDLE_MAX, handleProblem, type HandleProblem } from '@/domain/accounts/handle'
 import { Input } from '@/ui/field'
+import { Ghost } from '@/ui/ghost'
 
 /** A short pause after typing before the server is asked. */
 const PAUSE_MS = 300
@@ -132,11 +133,8 @@ function HandleSaid({ status }: { status: HandleStatus }) {
     case 'checking':
       return (
         <>
-          <LoaderCircleIcon
-            aria-hidden="true"
-            className="size-4 text-muted motion-safe:animate-spin"
-          />
-          <span className="text-muted">{t('checking')}</span>
+          <span className="sr-only">{t('checking')}</span>
+          <Ghost className="h-3 w-40" />
         </>
       )
     case 'available':

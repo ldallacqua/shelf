@@ -15,14 +15,20 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
 import { Tip } from '@/ui/tooltip'
+import { cn } from '@/ui/cn'
 
 import { signOut, useAccount } from './account'
+
+/** The menu's button's place, as a ghost: plain, as `Ghost` would put its module in every page's script. */
+const GHOST = 'ghost size-10 flex-none rounded-control pointer-coarse:size-11'
 
 /**
  * The header's right end (ADR 004). Signed in: a menu with one's own shelf,
  * the account page and the way out. A visitor: the ways in, which fold into
  * the phone's menu on a narrow screen. While the browser is asking who is
- * signed in, an empty place the size of the button, so nothing moves.
+ * signed in, a ghost the size of the button, so nothing moves. Built ahead
+ * for a visitor, it swaps the ways in for that ghost before the first paint
+ * where the browser has signed in.
  */
 export function AccountMenu() {
   const t = useTranslations('Account')
@@ -31,18 +37,21 @@ export function AccountMenu() {
   const router = useRouter()
 
   if (account.status === 'checking') {
-    return <span aria-hidden="true" className="size-10 flex-none pointer-coarse:size-11" />
+    return <span className={GHOST} />
   }
   if (account.status === 'visitor') {
     return (
-      <div className="ml-1 hidden items-center gap-1 sm:flex">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/sign-in">{t('signIn')}</Link>
-        </Button>
-        <Button variant="primary" size="sm" asChild>
-          <Link href="/sign-up">{t('createShelf')}</Link>
-        </Button>
-      </div>
+      <>
+        <span className={cn(GHOST, 'hidden hinted:block')} />
+        <div className="ml-1 hidden items-center gap-1 sm:flex hinted:hidden">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/sign-in">{t('signIn')}</Link>
+          </Button>
+          <Button variant="primary" size="sm" asChild>
+            <Link href="/sign-up">{t('createShelf')}</Link>
+          </Button>
+        </div>
+      </>
     )
   }
 

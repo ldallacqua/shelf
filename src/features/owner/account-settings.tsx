@@ -6,10 +6,12 @@ import { type ReactNode, useState } from 'react'
 
 import { NAME_MAX, PASSWORD_MAX, PASSWORD_MIN } from '@/domain/accounts/account'
 import { libraryHref } from '@/features/library/shelf-address'
-import { Platforms } from '@/features/platforms/platforms'
+import { PlatformCardGhosts, Platforms } from '@/features/platforms/platforms'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
+import { Ghost, GhostText, Loading } from '@/ui/ghost'
+import { Ghosts } from '@/ui/ghosts'
 
 import { accountChanged, forgetAccount, openAfresh, type SignedIn, useAccount } from './account'
 import { AdultGames } from './adult-games'
@@ -331,6 +333,32 @@ function DeleteAccount() {
   )
 }
 
+/** The account on its way: its first screen, the shelf's fields and the platforms' cards. */
+function AccountGhosts() {
+  const t = useTranslations('AccountPage')
+  const sync = useTranslations('Sync')
+  return (
+    <Loading label={t('checking')} className="mt-6 grid gap-10">
+      <Ghosts lines={2} className="max-w-xl" />
+      <Section title={t('shelf')}>
+        <div className="grid max-w-md gap-5">
+          {[0, 1].map((field) => (
+            <span key={field} className="grid gap-1.5 text-sm">
+              <GhostText order={field} className="w-24" />
+              <Ghost order={field} className="h-10 rounded-control pointer-coarse:h-11" />
+            </span>
+          ))}
+          <Ghost order={2} className="h-10 w-28 rounded-control pointer-coarse:h-11" />
+        </div>
+      </Section>
+      <Section title={sync('title')}>
+        <Ghosts lines={2} className="max-w-xl" />
+        <PlatformCardGhosts />
+      </Section>
+    </Loading>
+  )
+}
+
 /**
  * One's account (ADR 004): what the shelf is called and where, who may see
  * it, the views this device offers and whether it hides adult games, the
@@ -340,9 +368,9 @@ function DeleteAccount() {
 export function AccountSettings() {
   const t = useTranslations('AccountPage')
   const locale = useLocale()
-  const account = useAccount()
+  const account = useAccount('checking')
 
-  if (account.status === 'checking') return <p className="mt-6 text-muted">{t('checking')}</p>
+  if (account.status === 'checking') return <AccountGhosts />
   if (account.status !== 'signed-in') {
     return (
       <div className="mt-6 max-w-xl">

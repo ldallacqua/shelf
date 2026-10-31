@@ -478,3 +478,19 @@ describe('Nintendo', () => {
     })
   })
 })
+
+describe('Platforms, on their way', () => {
+  it('draws the cards’ shape while they are read, then the cards', async () => {
+    let answer!: (response: Response) => void
+    vi.mocked(fetch).mockImplementation(() => new Promise((resolve) => (answer = resolve)))
+    const { container } = renderWithIntl(<Platforms handle="ana" />)
+    const status = screen.getByRole('status')
+    expect(status).toHaveTextContent('Loading…')
+    expect(status).toHaveClass('sr-only')
+    expect(container.querySelector('[aria-busy="true"] .ghost')).toBeInTheDocument()
+
+    answer(Response.json(rows(null)))
+    await screen.findByRole('heading', { name: 'Steam' })
+    expect(container.querySelector('.ghost')).not.toBeInTheDocument()
+  })
+})

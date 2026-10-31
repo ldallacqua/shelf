@@ -13,6 +13,8 @@ import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Switch } from '@/ui/checkbox'
 import { Progress } from '@/ui/progress'
+import { Ghost, GhostText, Loading } from '@/ui/ghost'
+import { Ghosts } from '@/ui/ghosts'
 
 import { ItemLists } from './item-lists'
 import { NintendoSignIn } from './nintendo-sign-in'
@@ -445,6 +447,22 @@ function PlatformCard({
   )
 }
 
+/** The cards while the browser reads which there are: one each for Steam and Nintendo. */
+const CARD_GHOSTS = ['w-24', 'w-28']
+
+/** Every platform's card on its way, each in the shape of one not yet linked. */
+export function PlatformCardGhosts() {
+  return CARD_GHOSTS.map((width, card) => (
+    <div key={width} className="grid gap-4 rounded-panel border border-line bg-surface p-5">
+      <span className="title text-lg">
+        <GhostText order={card} className={width} />
+      </span>
+      <Ghosts lines={2} className="max-w-xl" />
+      <Ghost order={card} className="h-[2.1875rem] w-45 rounded-[3px]" />
+    </div>
+  ))
+}
+
 /**
  * Each store or console a shelf can be synced from, as cards (ADR 003): the
  * account page's, and the first step of setting a new shelf up. Only the
@@ -494,7 +512,11 @@ export function PlatformCards({
   return (
     <>
       {trouble ? <p role="alert">{t('failed')}</p> : null}
-      {rows === undefined && !trouble ? <p className="text-sm text-muted">{t('loading')}</p> : null}
+      {rows === undefined && !trouble ? (
+        <Loading label={t('loading')} className="contents">
+          <PlatformCardGhosts />
+        </Loading>
+      ) : null}
       {rows
         ?.filter((row) => row.ready)
         .map((row) => (

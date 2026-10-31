@@ -37,6 +37,8 @@ const listeners = new Set<() => void>()
 
 const set = (next: AccountState) => {
   state = next
+  // Nobody after all: the header stops holding an account's place (`hinted:`).
+  if (next.status === 'visitor') delete document.documentElement.dataset.hinted
   for (const listener of listeners) listener()
 }
 
@@ -93,9 +95,12 @@ const subscribe = (listener: () => void) => {
   }
 }
 
-/** A visitor while the page is drawn on the server and until the browser knows better. */
-export const useAccount = (): AccountState =>
-  useSyncExternalStore(subscribe, current, () => VISITOR)
+/**
+ * A visitor while the page is drawn on the server and until the browser knows better. A page only
+ * for an account asks with `checking`: built ahead as its ghosts, it tells nobody signed in to sign in.
+ */
+export const useAccount = (ahead: 'visitor' | 'checking' = 'visitor'): AccountState =>
+  useSyncExternalStore(subscribe, current, () => (ahead === 'checking' ? CHECKING : VISITOR))
 
 /** Whether the shelf with this handle is the signed-in account's own: where edit controls go. */
 export const useIsMine = (handle: string | undefined): boolean => {
