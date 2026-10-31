@@ -369,6 +369,8 @@ Issue 102; what counts as evidence, and the limits, are ADR 005, section 11.
       these commands keeps Play as it was: the site is updated before an app is.
 - [x] Tests: every rule of evidence without a process; closing, ending, a reused id and a process
       with no window on `examples/stand_in.rs`; the button with the bridge faked.
+- [x] `pnpm desktop:check` plays a stand-in through a script in the real app: Play to Stop, Stop,
+      ended from outside, and Force stop behind its question.
 - [ ] By hand, on a game from a file and a Steam game: Play to Stop, Stop, closing it from the
       game, starting it outside Shelf, and Windows waking up. No test may do this: no script
       starts a real game or opens Steam.

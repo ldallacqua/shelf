@@ -9,9 +9,11 @@
  * design), then the library's views again with the window maximized, where a
  * screen 1536 pixels wide or more puts the filters beside the library. Then Play: a file is chosen (a development build takes it from
  * `SHELF_PICK`, since no script can answer Windows' picker) and started,
- * and must start in its own folder. The file is a batch file that only
- * writes that folder down; no game is started, and Steam's link is read,
- * never followed. Fails if a page reads differently, if the bridge does not
+ * and must start in its own folder. The file is a batch file that writes
+ * that folder down and starts the tests' stand-in for a game
+ * (`desktop/examples/stand_in.rs`), which Play must turn to Stop for, and back
+ * again when it closes: asked, forced, or ended from outside. No game is
+ * started, and Steam's link is read, never followed. Fails if a page reads differently, if the bridge does not
  * answer Shelf's page, if the header is not the window's bar (ADR 005,
  * section 8), if linking Steam (the test double) does not come back to the
  * app, if Play does not start the file where it should, if Ready to play
@@ -23,7 +25,7 @@
  * production: it signs in with the test doubles' made-up password.
  */
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -82,18 +84,34 @@ if (
 }
 
 console.log('Building the app (debug)…')
-const built = spawnSync('cargo', ['build', '--manifest-path', 'desktop/Cargo.toml'], {
-  stdio: 'inherit',
-  env: rustEnv(),
-})
+const built = spawnSync(
+  'cargo',
+  ['build', '--manifest-path', 'desktop/Cargo.toml', '--bins', '--example', 'stand_in'],
+  { stdio: 'inherit', env: rustEnv() },
+)
 if (built.status !== 0) process.exit(built.status ?? 1)
 
 // A web view profile of its own, so each run starts signed out, and the installed app's is untouched.
 const profile = mkdtempSync(join(tmpdir(), 'shelf-desktop-check-'))
-// A stand-in for a game's file: a batch file that writes down the folder it was started in.
+// A stand-in for a game's file: a batch file that writes down the folder it was started in, and
+// starts a stand-in for the game, which leaves the script behind as a launcher would. A name no
+// other program has, so ending it from outside can't end anything else.
+const STAND_IN = 'shelf-desktop-check-stand-in.exe'
 const game = mkdtempSync(join(tmpdir(), 'shelf-desktop-game-'))
 const started = join(game, 'started.txt')
-writeFileSync(join(game, 'start.bat'), '@echo off\r\necho %CD%> "%~dp0started.txt"\r\n')
+const stubborn = join(game, 'stubborn.txt')
+copyFileSync(resolve('desktop/target/debug/examples/stand_in.exe'), join(game, STAND_IN))
+writeFileSync(
+  join(game, 'start.bat'),
+  [
+    '@echo off',
+    'echo %CD%> "%~dp0started.txt"',
+    `if exist "%~dp0stubborn.txt" (start "" "%~dp0${STAND_IN}" --ignore-close) else (start "" "%~dp0${STAND_IN}")`,
+    '',
+  ].join('\r\n'),
+)
+/** Ends the stand-in from outside, as closing a game any other way would. */
+const endStandIn = () => spawnSync('taskkill', ['/F', '/IM', STAND_IN], { stdio: 'ignore' })
 const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
   env: {
     ...process.env,
@@ -260,6 +278,38 @@ try {
   if (folder.toLowerCase() === game.toLowerCase()) pass(`started the file, in its own folder`)
   else fail(`started the file in ${folder}, not in its own folder, ${game}`)
 
+  console.log('\nPlay turns to Stop')
+  const button = (name: string) => shelf.getByRole('button', { name, exact: true })
+  await button('Stop').waitFor({ timeout: 15_000 })
+  pass('Stop shows once the game runs, the script that started it having left')
+  await shot('stop')
+  await button('Stop').click()
+  await button('Play').waitFor({ timeout: 15_000 })
+  pass('Stop asked it to close, and Play came back once it had gone')
+
+  await button('Play').click()
+  await button('Stop').waitFor({ timeout: 15_000 })
+  endStandIn()
+  await button('Play').waitFor({ timeout: 15_000 })
+  pass('closing it from outside brings Play back')
+
+  writeFileSync(stubborn, '')
+  await button('Play').click()
+  await button('Stop').waitFor({ timeout: 15_000 })
+  await button('Stop').click()
+  await button('Stopping…').waitFor({ timeout: 5_000 })
+  await button('Force stop').waitFor({ timeout: 30_000 })
+  pass('a game that doesn’t answer stays Stopping…, then offers Force stop')
+  await shot('force-stop')
+  await button('Force stop').click()
+  const question = shelf.getByRole('alertdialog')
+  await question.waitFor({ timeout: 5_000 })
+  await shot('force-stop-question')
+  await question.getByRole('button', { name: 'Force stop', exact: true }).click()
+  await button('Play').waitFor({ timeout: 15_000 })
+  pass('Force stop, once answered, ends it, and Play comes back')
+  rmSync(stubborn)
+
   console.log('\nReady to play')
   // Bloodborne has a file now. What else is ready comes from this computer's own Steam, read,
   // never opened: the count is checked against the whole shelf, not against a number.
@@ -362,7 +412,8 @@ try {
   await plain?.close()
   // The app and the web view's own processes, which hold its profile until they end.
   if (app.pid) spawnSync('taskkill', ['/pid', String(app.pid), '/t', '/f'], { stdio: 'ignore' })
-  rmSync(game, { recursive: true, force: true })
+  endStandIn()
+  rmSync(game, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
   try {
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
   } catch {
@@ -404,7 +455,8 @@ async function askEveryTime(page: Page) {
 
 /**
  * A page's words once it has settled (every ghost gone, nothing left to
- * fetch), without Play, which the app and a browser draw differently.
+ * fetch), without Play and what a device's abilities decide (`data-device`: WebView2 can share
+ * a link, and a plain Chromium here can't), which the app and a browser draw differently.
  */
 async function readPage(page: Page, path: string) {
   await page.goto(`${BASE_URL}${path}`, { waitUntil: 'networkidle' })
@@ -412,7 +464,7 @@ async function readPage(page: Page, path: string) {
   return page.evaluate(() => {
     const main = document.querySelector('main') ?? document.body
     const words = main.cloneNode(true) as HTMLElement
-    for (const play of words.querySelectorAll('[data-play]')) play.remove()
+    for (const differs of words.querySelectorAll('[data-play], [data-device]')) differs.remove()
     // A detached copy has no layout, so its text is read as written, then spaced as one line.
     return (words.textContent ?? '').replace(/\s+/g, ' ').trim()
   })
