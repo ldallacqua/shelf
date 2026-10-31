@@ -575,7 +575,8 @@ export function GameDetail({
       <article className="game" data-layout="page">
         {hero}
         {game.adult ? <AdultNotice /> : null}
-        <div className="mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-10">
+        {/* Positioned to paint over the hero, which would cut off the glow of a button near it. */}
+        <div className="relative mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-10">
           <div className="grid min-w-0 content-start gap-10">
             {about}
             {shots}
@@ -591,8 +592,11 @@ export function GameDetail({
   return (
     <article className="game @container" data-layout="panel">
       {hero}
-      {/* One column, or the page's two where the panel stands centered and is as wide (spec 7.2). */}
-      <div className="grid gap-7 px-5 pt-5 pb-6 @5xl:grid-cols-[minmax(0,1fr)_22rem] @5xl:gap-x-12 @5xl:px-10 @5xl:pt-6 @5xl:pb-10">
+      {/*
+        One column, or the page's two where the panel stands centered and is as wide (spec 7.2).
+        Positioned to paint over the hero, which would cut off the glow of a button near it.
+      */}
+      <div className="relative grid gap-7 px-5 pt-5 pb-6 @5xl:grid-cols-[minmax(0,1fr)_22rem] @5xl:gap-x-12 @5xl:px-10 @5xl:pt-6 @5xl:pb-10">
         <div className="min-w-0 @5xl:col-start-2 @5xl:row-start-1">{mine}</div>
         <div className="grid min-w-0 content-start gap-7 @5xl:row-start-1 @5xl:gap-10">
           {failed ? (
