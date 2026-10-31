@@ -14,6 +14,7 @@ import { messages, renderWithIntl } from '@/test/render'
 import { GameDetail } from './game-detail'
 import { gameSlugIn, historyMoved, leaveGame, replaceGame, showGame } from './game-address'
 import { GamePanel } from './game-panel'
+import { GAME_CENTERED } from './hero'
 import { morph } from './morph'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
@@ -405,7 +406,7 @@ describe('GamePanel', () => {
 
   const open = (
     entry: ShelfItem,
-    handlers: { onPrevious?: () => void; onNext?: () => void } = {},
+    handlers: { onPrevious?: () => void; onNext?: () => void; pulled?: boolean } = {},
   ) =>
     renderWithIntl(
       <ShelfProvider shelf={SHELF}>
@@ -513,6 +514,42 @@ describe('GamePanel', () => {
     open(item({ slug: 'sekiro' }))
     expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+  })
+
+  describe('on a very wide window (spec 7.2)', () => {
+    it('stands centered by style alone, and asks for art and a cover the size it draws them', async () => {
+      open(item({ slug: 'bloodborne' }))
+      const panel = screen.getByRole('dialog')
+      expect(panel).toHaveClass('game-centered:w-[80rem]')
+      expect(panel.querySelector('[data-hero-cover] img')).toHaveAttribute(
+        'sizes',
+        `${GAME_CENTERED} 224px, 128px`,
+      )
+      await waitFor(() =>
+        expect(panel.querySelector('.game-backdrop img')).toHaveAttribute(
+          'sizes',
+          `${GAME_CENTERED} 80rem, 320px`,
+        ),
+      )
+    })
+
+    it('stays at the side beside the 3D shelf, with art for that width', async () => {
+      open(item({ slug: 'bloodborne' }), { pulled: true })
+      const panel = screen.getByRole('dialog')
+      expect(panel.className).not.toContain('game-centered:')
+      await waitFor(() =>
+        expect(panel.querySelector('.game-backdrop img')).toHaveAttribute('sizes', '320px'),
+      )
+    })
+
+    it('has one query for the styles and the files they ask for', async () => {
+      const { readFileSync } = await import('node:fs')
+      const css = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
+      expect(css('../../app/globals.css')).toContain(
+        `@custom-variant game-centered (@media ${GAME_CENTERED});`,
+      )
+      expect(css('./game-detail.css')).toContain(`@media ${GAME_CENTERED} {`)
+    })
   })
 
   describe('on a phone, at two heights (spec 3.4)', () => {

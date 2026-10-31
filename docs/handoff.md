@@ -97,6 +97,10 @@ The owner: "look at shelf issues and start by the highest priority items". The i
 - **Skeletons everywhere** (architecture section 25, row "Skeletons everywhere"; spec 3.10): no page
   says "Loading" in words any more, lint refuses it, and pages only for an account are built ahead
   as their ghosts rather than as a prompt to sign in.
+- **#64, a game centered on a very wide window,** is built (architecture section 25, row "A game,
+  centered on a very wide window"; spec 7.2). Its browser tests, in `e2e/game.spec.ts`, have not
+  been run. A DevTools sidebar docked in the window can take it below 2400px, and the side panel
+  is then what should show.
 - **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against

@@ -63,6 +63,13 @@
     padding-inline: 1.25rem;
     padding-top: 4rem;
     padding-bottom: 0.25rem;
+
+    /* Asked of the panel, not the window: beside the 3D shelf it stays narrow on any screen. */
+    @container (width >= 64rem) {
+      padding-inline: 2.5rem;
+      padding-top: 2.5rem;
+      padding-bottom: 2rem;
+    }
   }
 
   .game-hero[data-layout='page'] .game-hero-inner {
@@ -85,6 +92,12 @@
     box-shadow:
       0 0 0 1px rgb(0 0 0 / 0.25),
       0 18px 36px -12px rgb(0 0 0 / calc(var(--shadow-depth) + 0.25));
+  }
+
+  .game-hero[data-layout='panel'] .game-cover {
+    @container (width >= 64rem) {
+      width: 14rem;
+    }
   }
 
   .game-hero[data-layout='page'] .game-cover {
@@ -557,7 +570,7 @@
   animation: none !important;
 }
 
-/* From the bottom on a phone or a tablet held upright, from the right otherwise: as the sheet itself moves. */
+/* From the bottom on a phone or a tablet held upright, from the right otherwise, and fading up in the middle of a very wide window: as the sheet itself moves. */
 @keyframes game-panel-in {
   from {
     translate: 0 100%;
@@ -580,6 +593,23 @@
   @keyframes game-panel-out {
     to {
       translate: 100% 0;
+    }
+  }
+}
+
+/* The query is GAME_CENTERED. The 3D shelf has no cover to carry, so it never gets here. */
+@media (width >= 150rem) and (height >= 45rem) {
+  @keyframes game-panel-in {
+    from {
+      translate: 0 1.5rem;
+      opacity: 0;
+    }
+  }
+
+  @keyframes game-panel-out {
+    to {
+      translate: 0 1.5rem;
+      opacity: 0;
     }
   }
 }

@@ -15,7 +15,7 @@ import { cn } from '@/ui/cn'
 import { Ghosts } from '@/ui/ghosts'
 
 import { AchievementsLater } from './achievements-later'
-import { HERO_COVER } from './hero'
+import { GAME_CENTERED, HERO_COVER } from './hero'
 import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
 import { AdultNotice } from './adult-notice'
@@ -202,7 +202,7 @@ export function GameDetail({
   const Heading = page ? 'h1' : 'h2'
   const level = page ? 'h2' : 'h3'
   const Minor = page ? 'h3' : 'h4'
-  const titleSize = page ? 'text-3xl sm:text-5xl lg:text-6xl' : 'text-2xl'
+  const titleSize = page ? 'text-3xl sm:text-5xl lg:text-6xl' : 'text-2xl @5xl:text-5xl'
 
   const hero = (
     <header className="game-hero" data-layout={layout}>
@@ -219,7 +219,14 @@ export function GameDetail({
             alt=""
             {...backdropSources(backdrop.id)}
             // A phone takes the smaller file: dimmed as it is, its 569 pixels pass for more.
-            sizes={page ? '(min-width: 40rem) 100vw, 320px' : '320px'}
+            // Without a cover the panel is beside the 3D shelf, narrow on any screen.
+            sizes={
+              page
+                ? '(min-width: 40rem) 100vw, 320px'
+                : cover
+                  ? `${GAME_CENTERED} 80rem, 320px`
+                  : '320px'
+            }
             fetchPriority={page ? 'high' : undefined}
             decoding="async"
           />
@@ -244,7 +251,11 @@ export function GameDetail({
                 colors={game.colors}
                 hash={game.hash}
                 title={game.title}
-                sizes={page ? '(min-width: 64rem) 256px, (min-width: 40rem) 224px, 160px' : '128px'}
+                sizes={
+                  page
+                    ? '(min-width: 64rem) 256px, (min-width: 40rem) 224px, 160px'
+                    : `${GAME_CENTERED} 224px, 128px`
+                }
                 eager={page}
                 placeholder={placeholder}
               />
@@ -578,31 +589,34 @@ export function GameDetail({
   }
 
   return (
-    <article className="game" data-layout="panel">
+    <article className="game @container" data-layout="panel">
       {hero}
-      <div className="grid gap-7 px-5 pt-5 pb-6">
-        {mine}
-        {failed ? (
-          <p role="alert" className="text-sm text-muted">
-            {t.rich('factsFailed', {
-              page: (chunks) => (
-                <Link
-                  href={gameHref(handle, game.slug)}
-                  className="text-accent underline underline-offset-4"
-                >
-                  {chunks}
-                </Link>
-              ),
-            })}
-          </p>
-        ) : (
-          <>
-            {about}
-            {shots}
-            {achievements}
-            {details}
-          </>
-        )}
+      {/* One column, or the page's two where the panel stands centered and is as wide (spec 7.2). */}
+      <div className="grid gap-7 px-5 pt-5 pb-6 @5xl:grid-cols-[minmax(0,1fr)_22rem] @5xl:gap-x-12 @5xl:px-10 @5xl:pt-6 @5xl:pb-10">
+        <div className="min-w-0 @5xl:col-start-2 @5xl:row-start-1">{mine}</div>
+        <div className="grid min-w-0 content-start gap-7 @5xl:row-start-1 @5xl:gap-10">
+          {failed ? (
+            <p role="alert" className="text-sm text-muted">
+              {t.rich('factsFailed', {
+                page: (chunks) => (
+                  <Link
+                    href={gameHref(handle, game.slug)}
+                    className="text-accent underline underline-offset-4"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
+          ) : (
+            <>
+              {about}
+              {shots}
+              {achievements}
+              {details}
+            </>
+          )}
+        </div>
       </div>
     </article>
   )

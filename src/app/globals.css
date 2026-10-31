@@ -56,6 +56,8 @@
 }
 /* Where the library's filters stand in a column beside it: FILTERS_BESIDE in features/filters/beside.ts. */
 @custom-variant filters-beside (@media (width >= 96rem));
+/* Where a game opened over the shelf stands in the middle of the window: GAME_CENTERED in features/game-detail/hero.ts. */
+@custom-variant game-centered (@media (width >= 150rem) and (height >= 45rem));
 
 @theme inline {
   --color-wall: var(--wall);
@@ -107,7 +109,7 @@
   --animate-fade-in: fade-in var(--motion-quick) var(--ease-settle);
   --animate-menu-in: menu-in var(--motion-quick) var(--ease-settle);
   --animate-tip-in: tip-in var(--motion-quick) var(--ease-settle);
-  /* A sheet slides in from the edge named by --sheet-from: the bottom on a phone, the right otherwise. */
+  /* A sheet slides in from the edge named by --sheet-from: the bottom on a phone, the right otherwise. One that does not stand at an edge also fades, by --sheet-fade. */
   --animate-sheet-in: sheet-in var(--motion-base) var(--ease-settle);
   --animate-sheet-out: sheet-out var(--motion-quick) var(--ease-leave) forwards;
   --animate-sheet-fade-out: sheet-fade-out var(--motion-quick) var(--ease-leave) forwards;
@@ -136,12 +138,14 @@
   @keyframes sheet-in {
     from {
       translate: var(--sheet-from, 0 100%);
+      opacity: var(--sheet-fade, 1);
     }
   }
 
   @keyframes sheet-out {
     to {
       translate: var(--sheet-from, 0 100%);
+      opacity: var(--sheet-fade, 1);
     }
   }
 
