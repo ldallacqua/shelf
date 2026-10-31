@@ -42,7 +42,8 @@ export function ShareButton() {
 
   return (
     <>
-      <Button variant="secondary" size="sm" onClick={share}>
+      {/* Its words depend on the device: `pnpm desktop:check` reads pages without them. */}
+      <Button variant="secondary" size="sm" onClick={share} data-device="">
         {canShare ? t('share') : t('copy')}
       </Button>
       <span role="status" className="readout text-[0.625rem] text-muted">
