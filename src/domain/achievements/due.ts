@@ -6,20 +6,25 @@ import type { ProgressProblem } from '@/domain/achievements/achievements'
  * change seldom, so they are read again after a month, or as soon as the
  * provider counts another number of them; progress changes only when the
  * game is played, so it is read again after a play, and after a week
- * besides, for unlocks the provider learned late. A read that failed waits
+ * besides, for unlocks the provider learned late. A game with none is only
+ * counted again, which costs next to nothing, since a game read around its
+ * release may have none yet and every one later. A read that failed waits
  * an hour, so a sync that goes on step after step does not ask again and
  * again.
  */
 
-const DAY = 24 * 60 * 60 * 1000
+const HOUR = 60 * 60 * 1000
+const DAY = 24 * HOUR
 
 export const READ_AGAIN = {
   /** A set's definitions and their unlock rates, read again this long after. */
   definitions: 30 * DAY,
   /** An account's progress through a set not played since. */
   progress: 7 * DAY,
+  /** A game with none, counted again: under a day, so each daily sync does, whatever its hour. */
+  none: 12 * HOUR,
   /** Anything whose last read failed. */
-  failed: 60 * 60 * 1000,
+  failed: HOUR,
 } as const
 
 /** A set as the sync knows it, shared by every account. */
@@ -54,10 +59,15 @@ export type KnownApp = {
   progress?: KnownProgress
 }
 
-export type DueWork = { definitions: boolean; progress: boolean }
+export type DueWork = {
+  definitions: boolean
+  progress: boolean
+  /** A game with none: whether the provider counts some now. */
+  recount: boolean
+}
 
-const waited = (triedAt: number | null, now: number) =>
-  triedAt === null || now - triedAt >= READ_AGAIN.failed
+const waited = (triedAt: number | null, now: number, wait: number = READ_AGAIN.failed) =>
+  triedAt === null || now - triedAt >= wait
 
 /** What is due to be read for one game, for the account at the provider now linked. */
 export const dueWork = (app: KnownApp, externalId: string, now: number): DueWork => {
@@ -78,10 +88,11 @@ export const dueWork = (app: KnownApp, externalId: string, now: number): DueWork
     now - readAt > READ_AGAIN.progress
   const progressDue =
     has && stale && (!theirs || theirs.problem === null || waited(theirs.triedAt, now))
-  return { definitions, progress: progressDue }
+  const recount = set?.count === 0 && waited(set.triedAt, now, READ_AGAIN.none)
+  return { definitions, progress: progressDue, recount }
 }
 
-export const isDue = (work: DueWork): boolean => work.definitions || work.progress
+export const isDue = (work: DueWork): boolean => work.definitions || work.progress || work.recount
 
 /**
  * The order games are read in: the latest played first, so a large library

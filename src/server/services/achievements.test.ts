@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { READ_AGAIN } from '@/domain/achievements/due'
 import { progressOf } from '@/domain/achievements/progress'
 import { achievementStatsOf } from '@/domain/library/trophy-achievements'
 import type { Db } from '@/server/db/client'
@@ -499,6 +500,61 @@ describe('reading achievements from Steam', () => {
       percent: 57,
       complete: false,
     })
+  })
+
+  it('finds achievements Steam publishes for a game read with none, without waiting a month', async () => {
+    const me = await synced()
+    await readAll(me)
+    const portal = await slugOfApp(me, 'Portal')
+    const set = async () => (await achievements(me).game(portal, 'en', { mine: true }))!.sets[0]!
+    expect(await set()).toMatchObject({ state: 'none' })
+
+    // Out now, with its achievements: read before its release, it had none.
+    steamState.achievements = { '52003': fixture['220']! }
+    steamState.asked.length = 0
+    expect((await readAll(me, NOW + HOUR))[0]).toMatchObject({ read: 0, remaining: 0 })
+    expect(steamState.asked).toEqual([])
+
+    const later = NOW + READ_AGAIN.none
+    const steps = await readAll(me, later)
+    expect(steps[0]).toMatchObject({ read: 1, remaining: 0 })
+    expect(progressOf(await set())).toMatchObject({ earned: 4, total: 6 })
+    expect(await set()).toMatchObject({ state: 'ready', readAt: later })
+    expect(await achievements(me).step('steam', later)).toMatchObject({ read: 0, remaining: 0 })
+  })
+
+  it('only counts a game with none again while it has none, and that reads nothing new', async () => {
+    const me = await synced()
+    await readAll(me)
+    const sets = () => db.select().from(achievementSets).where(eq(achievementSets.count, 0))
+    const before = await sets()
+    expect(before.length).toBeGreaterThan(0)
+
+    steamState.asked.length = 0
+    const later = NOW + READ_AGAIN.none
+    expect(await readAll(me, later)).toHaveLength(1)
+    expect((await readAll(me, later))[0]).toMatchObject({ read: 0, remaining: 0, problem: null })
+    expect(steamState.asked.every((path) => path.includes('GetTopAchievementsForGames'))).toBe(true)
+    // Asked again only later, and it still says when the definitions were read.
+    expect(await sets()).toEqual(before.map((set) => ({ ...set, triedAt: later })))
+  })
+
+  it('counts a game with none again though Steam leaves its total out, as it does of most', async () => {
+    const me = await synced()
+    await readAll(me)
+    network.use(
+      http.get(TOTALS, ({ request }) => {
+        const games = [...new URL(request.url).searchParams]
+          .filter(([name]) => name.startsWith('appids['))
+          .map(([, id]) => ({ appid: Number(id) }))
+        return HttpResponse.json({ response: { games } })
+      }),
+    )
+    steamState.asked.length = 0
+    const steps = await readAll(me, NOW + READ_AGAIN.none)
+    expect(steps).toHaveLength(1)
+    expect(steps[0]).toMatchObject({ read: 0, remaining: 0, problem: null })
+    expect(steamState.asked).toEqual([])
   })
 
   it('takes out an achievement Steam takes out, with my unlock of it', async () => {

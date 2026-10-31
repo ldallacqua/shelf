@@ -40,6 +40,7 @@ import {
   definedIds,
   fillDescriptions,
   knownOf,
+  noteCounted,
   noteDefinitionsFailed,
   noteProgressFailed,
   progressUnchanged,
@@ -104,7 +105,8 @@ export type AchievementsDeps = {
   stepMs?: number
 }
 
-type Outcome = 'read' | 'none' | 'private' | 'unreachable'
+/** `counted`: a game with none was counted again, and nothing is new. */
+type Outcome = 'read' | 'none' | 'counted' | 'private' | 'unreachable'
 
 /**
  * What the provider's count said of a step's next games: their totals; none
@@ -187,7 +189,11 @@ const forLibrary = (
     } else if ((work.definitions || recount) && !(await define()) && count === null) {
       return 'unreachable'
     }
-    if (count === 0) return 'none'
+    if (count === 0) {
+      if (!work.recount || work.definitions || recount) return 'none'
+      await noteCounted(db, provider, app.storeId, now)
+      return 'counted'
+    }
     if (!work.progress && !changed) return 'read'
 
     // What the provider's count tells without asking for the unlocks one by one.
@@ -329,7 +335,7 @@ const forLibrary = (
         for (const outcome of outcomes) {
           if (outcome === 'read' || outcome === 'none') read += 1
           else if (outcome === 'private') problem = 'private'
-          else problem ??= 'unreachable'
+          else if (outcome === 'unreachable') problem ??= 'unreachable'
         }
       }
     }

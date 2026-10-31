@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { dueWork, readOrder, READ_AGAIN, type KnownApp, type KnownSet } from './due'
+import { dueWork, isDue, readOrder, READ_AGAIN, type KnownApp, type KnownSet } from './due'
 
 const NOW = 1_800_000_000_000
 const ME = '76561190000000001'
@@ -28,6 +28,7 @@ describe('what is due', () => {
     expect(dueWork({ lastPlayedAt: null }, ME, NOW)).toEqual({
       definitions: true,
       progress: true,
+      recount: false,
     })
   })
 
@@ -35,6 +36,7 @@ describe('what is due', () => {
     expect(dueWork({ lastPlayedAt: 500, set: set(), progress: read() }, ME, NOW)).toEqual({
       definitions: false,
       progress: false,
+      recount: false,
     })
   })
 
@@ -61,7 +63,23 @@ describe('what is due', () => {
     expect(dueWork({ lastPlayedAt: null, set: set({ count: 0 }) }, ME, NOW)).toEqual({
       definitions: false,
       progress: false,
+      recount: false,
     })
+  })
+
+  it('counts a game with none again sooner than a month: it may have some since', () => {
+    const none = set({ count: 0, triedAt: NOW - READ_AGAIN.none })
+    const app = { lastPlayedAt: null, set: none }
+    expect(dueWork(app, ME, NOW)).toEqual({ definitions: false, progress: false, recount: true })
+    expect(isDue(dueWork(app, ME, NOW))).toBe(true)
+    expect(dueWork(app, ME, NOW - 1).recount).toBe(false)
+  })
+
+  it('counts again only a game with none', () => {
+    const old = set({ triedAt: NOW - READ_AGAIN.none })
+    expect(dueWork({ lastPlayedAt: 500, set: old, progress: read() }, ME, NOW).recount).toBe(false)
+    const unread = set({ count: null, definedAt: null, triedAt: NOW - READ_AGAIN.none })
+    expect(dueWork({ lastPlayedAt: null, set: unread }, ME, NOW).recount).toBe(false)
   })
 
   it('waits an hour after a failure, or after the account was private', () => {

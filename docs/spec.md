@@ -788,7 +788,8 @@ owners do not allow, beyond Valve's own sign-in button.
    read yet or new unlocks; a large library takes a minute or two the first time, and moments
    after. The card then says "Achievements read for 480 of 480 games". A game's achievements
    are read again after it is played, and after a week; Steam's definitions after a month, or
-   as soon as Steam counts another number of them. Each game's page shows them (section 7.8).
+   as soon as Steam counts another number of them. A game with none is counted again at each
+   daily sync, as it may have some after its release. Each game's page shows them (section 7.8).
 
 | Problem | Behavior |
 | --- | --- |
