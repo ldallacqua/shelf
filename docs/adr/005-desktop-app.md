@@ -1,7 +1,8 @@
 # ADR 005: Shelf for Windows, a desktop app that plays the games
 
 - **Status:** accepted, 25 Oct 2026; amended the same day with the window's own title bar,
-  Ready to play, updates and the installer in one step (sections 8 to 10)
+  Ready to play, updates and the installer in one step (sections 8 to 10), and on 31 Oct 2026
+  with whether a game is running (section 11)
 - **Date:** 25 Oct 2026
 - **Decides:** how Shelf becomes an app on the owner's computer that starts their games, as
   Hydra does, while the site stays what it is
@@ -95,6 +96,9 @@ a command line. What the app may do is the list below, nothing more:
 | `play` | Starts an entry from the file chosen for it |
 | `steam_installed` | Of the Steam app ids a page names, the ones Steam has installed on this computer |
 | `playable` | What is ready to play on this computer: the entries whose chosen file is still there, and every Steam app installed. It takes nothing |
+| `game_state` | Whether a game is running (section 11), for an entry and its Steam apps installed here |
+| `stop_game` | Asks that game to close, whichever processes are identified as it now |
+| `force_stop_game` | Ends those processes at once. The page has asked the person first |
 
 - **Only Shelf's origin may call them.** Tauri allows a remote page no command unless a
   capability names its address (`remote.urls`); Shelf's capability names the one address the
@@ -194,6 +198,80 @@ it, with its pages taken out. It asks nothing. While it installs (for this Windo
 before) it shows one small window like the splash, with Shelf's mark and a bar; it closes Shelf
 if it is open, adds the Start menu and desktop shortcuts, and opens Shelf. An update runs the
 same installer. Uninstalling is from Windows' settings, as before.
+
+### 11. Whether a game is running, and stopping it
+
+Issue 102 asks that Play turn to Stop while a game runs, as Steam's does, and be right about it.
+Checked on the owner's Windows 11 on 31 Oct 2026, read only, with a Steam game open: Steam's own
+mark and three processes in the game's install folder agreed, every one of 265 processes could
+be read without administrator, and the list took 37 ms through .NET, less directly.
+
+**What counts as evidence that a process is the game.** Only these, and never a process's name
+or a window's title:
+
+| Evidence | Comes from |
+| --- | --- |
+| Its file is the file chosen, or what a chosen `.lnk` points at (`shortcut.rs`) | The process's whole path |
+| It runs from inside the folder Steam installed the app in, read from its manifest | The process's whole path, and `appmanifest_{id}.acf`'s `installdir` |
+| It descends from what Play started, and stands in the game's folder or the one above it | Windows' answer to Play, and each process's parent |
+| It appeared, while the game was starting, in the folder of the file chosen | The moment it started, and its whole path |
+
+The last is for a launcher that asks something else to start the game and leaves. It holds only
+for the minute after Play, and never in a folder many programs share (a disk's top, Program
+Files, the home folder, Steam's list of games), since `D:\Games\` holds other games too.
+
+**What is never the game,** whatever else is said of it: anything in Windows' folder (a script's
+`cmd.exe`, a crash's reporter), anything of Steam's own outside its `steamapps`, Steam's
+`_CommonRedist` installers, and a program whose file says it only starts others (`launcher` in
+its name, or a store's own). That last reads a name, as a reason to offer less and never more.
+Those are left out of Stop too, so stopping a game leaves its launcher and Steam alone.
+
+**A process is its id and the moment it started.** Windows gives an id out again, so a parent is
+only a parent if it started first, and every action re-identifies the game, opens each process,
+checks its start on that handle, and acts while holding it: that id cannot change hands meanwhile.
+A page names an entry and Steam apps, and the app works out the rest; no command takes an id or
+a path, and an app it can name has to have a manifest on this computer.
+
+**What is not known is said.** A game has five states: `stopped`, `starting`, `running`,
+`stopping`, and `unverified`, which has no Stop and says why:
+
+- `steam`: Steam says it is running (`Software\Valve\Steam\Apps\{id}\Running`, not documented by
+  Valve, and it can stay set after Steam crashes), and no process shows it. Never enough for a Stop.
+- `denied`: Windows would not say what a process with the game's file's name is, or would not
+  list processes at all.
+- `open`: what Play started is still open a minute on, and nothing shows it is the game: a
+  launcher waiting, a script.
+
+**Stopping.** Stop posts `WM_CLOSE` to the game's visible windows, as their close button does.
+Valve documents no command that stops a game, so a Steam game is asked the same way, and Steam
+sees it close. Only the game gone says it stopped, whatever was asked.
+After 20 seconds, or at once for a game with no window to ask, Force stop is offered, behind a
+question that says what is lost (`TerminateProcess`). Windows refusing either (a game running
+as administrator, asked by an app that is not; a protected process) is said, and the game stays
+as it is.
+
+**Cost.** The page asks every 5 seconds while Play shows, each second while starting or
+stopping, and never while the window is hidden; coming back, it looks at once, which is also
+what covers Windows waking up. The app looks each second for the minute after Play, then every 5
+seconds while something Play started runs, and not at all otherwise. Each look lists the
+processes once and asks each for its path and start, the least Windows offers: nothing is
+injected into a game, and nothing of its memory read.
+
+**Known limits.**
+
+- A launcher not called one that stays open by itself reads as the game: its file is the one
+  chosen. Pointing Shelf at the game's own file avoids it.
+- A game started by a launcher that has left, in another folder, or started outside Shelf, or
+  already running when Shelf started, is known only if its file is the one chosen: nothing else
+  ties it to the game. After Shelf restarts it reads `stopped`, and Play stays what it does
+  anyway. A game whose launcher runs the whole time is unaffected, and a Steam game always is.
+- A Steam game whose program runs outside its install folder reads `steam`, with no Stop.
+- Every instance of a game's file is the game: Stop closes them all.
+- A game that answers `WM_CLOSE` with a question ("Quit without saving?") waits for it, as with
+  its own close button, until Force stop is offered.
+
+Hours (section 7) can use the same evidence when they are built; nothing here counts time, so
+nothing is counted twice and Steam's hours are untouched.
 
 ## Consequences
 

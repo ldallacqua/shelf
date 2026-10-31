@@ -1,6 +1,6 @@
 [package]
 name = "shelf-desktop"
-version = "0.2.0"
+version = "0.3.0"
 description = "Shelf for Windows: the shelf in a window of its own, and Play"
 edition = "2024"
 rust-version = "1.90"
@@ -27,7 +27,14 @@ tokio = { version = "1", features = ["time"] }
 url = "2"
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_System_Diagnostics_ToolHelp",
+  "Win32_System_Registry",
+  "Win32_System_Threading",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
 winreg = "0.56"
 
 [profile.release]

@@ -39,6 +39,9 @@ steps it is built in.
 6. **Ready to play,** among your shelf's controls, leaves only the games you can start on this
    computer: a file chosen and still there, or a Steam app installed. It stays on until you
    press it again.
+7. **While a game runs, Play is Stop,** however it was started, when the app can tell which
+   program is the game. Stop asks it to close; a game that doesn't answer offers Force stop, with
+   a warning. A launcher waiting, or a game Windows won't let the app check, says so instead.
 
 What the app keeps on this computer is only the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`. Uninstalling leaves that file; delete the
@@ -93,11 +96,16 @@ desktop/
     launchers.rs         The files chosen, kept in launchers.json
     launch.rs            Starting a file as Explorer does, or Steam
     steam.rs             Steam's folders: which apps are installed, asked or all
-  tests/fixtures/        Steam's files as Steam writes them, for the tests
+    shortcut.rs          What a chosen .lnk or .url points at
+    processes.rs         What Windows says is running, and asking it to close or ending it
+    running.rs           Which of that is a game, and the game's state (unit-tested, no process)
+  examples/stand_in.rs   A stand-in for a game, for the tests, that takes no focus
+  tests/fixtures/        Steam's files as Steam writes them, and a shortcut, for the tests
 src/features/desktop/    The site's side: Tauri's global (tauri.ts), the commands that answer
                          with data (bridge.ts), and the window's bar (window-script.tsx,
                          window-controls.tsx, and frame.ts, fetched only in the app)
 src/features/game-detail/play.tsx   Play, under Mine
+src/features/game-detail/use-game-state.ts   Asks whether the game is running, and when
 src/features/library/use-ready.ts   Ready to play: which of my games this computer can start
 ```
 
@@ -347,6 +355,26 @@ memory of its window.
 **Done when** an hour played from a file shows as an hour on the PC copy, once, and an hour on
 Steam is still counted once.
 
+### Step 8: Play turns to Stop
+
+Issue 102; what counts as evidence, and the limits, are ADR 005, section 11.
+
+**Built 31 Oct 2026.**
+
+- [x] `running.rs` decides from what is read; `processes.rs` reads it and acts; `shortcut.rs` reads
+      `.lnk` and `.url` files. `play` starts with `ShellExecuteExW` to learn the process it
+      started, and starts nothing for a game starting or running.
+- [x] `game_state`, `stop_game`, `force_stop_game`, each taking an entry and Steam apps.
+- [x] Play's states (`play.tsx`, `use-game-state.ts`), and `Confirm` in `src/ui`. An app older than
+      these commands keeps Play as it was: the site is updated before an app is.
+- [x] Tests: every rule of evidence without a process; closing, ending, a reused id and a process
+      with no window on `examples/stand_in.rs`; the button with the bridge faked.
+- [ ] By hand, on a game from a file and a Steam game: Play to Stop, Stop, closing it from the
+      game, starting it outside Shelf, and Windows waking up. No test may do this: no script
+      starts a real game or opens Steam.
+
+**Done when** the owner has seen those on an installed version.
+
 ### Later
 
 - **Offline:** the games set up on this computer, with their covers, playable without the
@@ -384,6 +412,10 @@ Steam is still counted once.
 | An update never arrives | The app looks at `latest.json` on this repository's latest release, for five seconds at each start: if GitHub is slow it goes on to Shelf and tries the next time. A release whose signature is not made with the key in `.env.local` is refused by every installed app |
 | The key in `.env.local` is lost | Installed apps cannot be updated any more: make a new key, put its public half in `tauri.conf.json`, and install that version by hand once |
 | Play says the file is gone | The game moved or was uninstalled: Choose the file again |
+| Play shows while the game is open | Nothing ties what is running to the game: its launcher left, and the game is in another folder. Choose the game's own file instead of its launcher |
+| Stop shows while only the launcher is open | A launcher whose file doesn't say it is one reads as the game. Choose the game's own file |
+| "Running", with no Stop | Steam says the game is running but no program from its folder is, or Windows won't let the app check it. Close it from the game. If nothing is open, Steam's mark is stale: restart Steam |
+| Stop says Windows did not let it | The game runs as administrator, or is protected. Close it from the game |
 | A game opens and closes at once | It needs another folder or arguments: point at its launcher, or at a shortcut (`.lnk`) that has them |
 | Steam opens on the game's page, not the game | Steam does that for a game with several ways to start: pick one there once |
 | The app opens blank | WebView2 is missing or broken: Windows Update, or Microsoft's WebView2 installer |

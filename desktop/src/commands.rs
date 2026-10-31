@@ -3,16 +3,21 @@
 //! done, or nothing, and never a path: a path comes only from the file
 //! picker, which the person sees and answers.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 
 use serde::Serialize;
-use tauri::{AppHandle, State, WebviewWindow};
+use tauri::{AppHandle, Manager, State, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
 use crate::ids;
 use crate::launch::{self, Failure};
 use crate::launchers::{Launcher, Launchers};
+use crate::processes::{self, Closing};
+use crate::running::{self, GameView, Games, Launch, Rules, SteamGame, Target};
+use crate::shortcut::{self, Pointed};
 use crate::steam;
 
 /// Why a command did nothing, in a word a page has a sentence for.
@@ -91,6 +96,7 @@ pub async fn choose_launcher(
     title: String,
     files: String,
     launchers: State<'_, Launchers>,
+    games: State<'_, Games>,
 ) -> Result<Option<LauncherView>, Refusal> {
     entry_id(&entry)?;
     let picked = pick(&window, short(&title), short(&files)).await?;
@@ -100,6 +106,7 @@ pub async fn choose_launcher(
     let launcher = launchers
         .set(&entry, path, now())
         .map_err(|_| Refusal::Failed)?;
+    games.forget(&entry);
     Ok(Some(view(&launcher)))
 }
 
@@ -128,8 +135,13 @@ async fn pick(
 
 /// Forgets a game's file on this computer.
 #[tauri::command]
-pub fn forget_launcher(entry: String, launchers: State<'_, Launchers>) -> Result<(), Refusal> {
+pub fn forget_launcher(
+    entry: String,
+    launchers: State<'_, Launchers>,
+    games: State<'_, Games>,
+) -> Result<(), Refusal> {
     entry_id(&entry)?;
+    games.forget(&entry);
     launchers.forget(&entry).map_err(|_| Refusal::Failed)
 }
 
@@ -150,16 +162,193 @@ pub fn show_launcher(
         .map_err(|_| Refusal::Refused)
 }
 
-/// Starts a game from the file chosen for it. A game played through Steam is
-/// not started here: its page links to Steam, which the window hands over.
+/// Starts a game from the file chosen for it, unless it is starting or running
+/// already. A game played through Steam is not started here: its page links to
+/// Steam, which the window hands over.
 #[tauri::command]
-pub fn play(entry: String, launchers: State<'_, Launchers>) -> Result<(), Refusal> {
+pub fn play(
+    app: AppHandle,
+    entry: String,
+    launchers: State<'_, Launchers>,
+    games: State<'_, Games>,
+    following: State<'_, Following>,
+) -> Result<(), Refusal> {
     entry_id(&entry)?;
     let launcher = launchers.get(&entry).ok_or(Refusal::Unset)?;
-    launch::start(&launcher.path).map_err(|failure| match failure {
+    let at = now();
+    if games.is_starting(&entry, at) {
+        return Ok(());
+    }
+    let rules = rules_here();
+    let target = target_of(Some(&launcher.path), &[]);
+    if let Some(running) = processes::snapshot()
+        && !games
+            .seen(&entry, &target, &running, &rules)
+            .confirmed
+            .is_empty()
+    {
+        return Ok(());
+    }
+    let root = launch::start(&launcher.path).map_err(|failure| match failure {
         Failure::Missing => Refusal::Missing,
         Failure::Refused => Refusal::Refused,
+    })?;
+    // Where the game is expected: where the shortcut points, or beside the file itself.
+    let file = match shortcut::pointed_at(&launcher.path) {
+        Pointed::Program(program) => program,
+        _ => launcher.path.clone(),
+    };
+    games.launched(
+        &entry,
+        Launch::new(
+            root,
+            processes::now_as_windows_counts(at),
+            at,
+            &running::key(&file),
+            &rules,
+        ),
+    );
+    follow(app, &following);
+    Ok(())
+}
+
+/// Whether the thread following what Play started is running: one, however many games.
+#[derive(Default)]
+pub struct Following(AtomicBool);
+
+/// A launcher can start the game and be gone between two looks, so what Play started is looked
+/// at each second while it starts, and then, for a game that hands over to another later,
+/// every few seconds for as long as any of it runs. The thread ends with the last of it.
+fn follow(app: AppHandle, following: &Following) {
+    if following.0.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    std::thread::spawn(move || {
+        let rules = rules_here();
+        loop {
+            let (any, starting) = match processes::snapshot() {
+                Some(running) => app.state::<Games>().follow(&running, &rules, now()),
+                None => (true, true),
+            };
+            if !any {
+                app.state::<Following>().0.store(false, Ordering::SeqCst);
+                return;
+            }
+            std::thread::sleep(Duration::from_secs(if starting { 1 } else { 5 }));
+        }
+    });
+}
+
+fn rules_here() -> Rules {
+    Rules::here(steam::folder().as_deref())
+}
+
+/// What a game is on this computer, from its file and the Steam apps a page names. Whatever the
+/// page says, it can name only an app with a manifest here, whose folder Steam's files give.
+fn target_of(file: Option<&Path>, apps: &[String]) -> Target {
+    let mut target = Target::default();
+    let mut apps: Vec<String> = apps
+        .iter()
+        .filter(|app| ids::steam_app(app))
+        .take(50)
+        .cloned()
+        .collect();
+    match file.map(shortcut::pointed_at) {
+        Some(Pointed::Program(program)) => target.file = Some(running::key(&program)),
+        Some(Pointed::Steam(app)) if !apps.contains(&app) => apps.push(app),
+        _ => {}
+    }
+    if apps.is_empty() {
+        return target;
+    }
+    let Some(folder) = steam::folder() else {
+        return target;
+    };
+    target.steam = apps
+        .iter()
+        .filter_map(|app| {
+            let installed = steam::install_folder(&folder, app)?;
+            Some(SteamGame {
+                folder: Some(running::key(&installed)),
+                running: steam::says_running(app),
+            })
+        })
+        .collect();
+    target
+}
+
+/// A game's state on this computer. A page names the game: an entry, and its Steam apps
+/// installed here. Which processes are the game is worked out here, and never told.
+#[tauri::command]
+pub async fn game_state(
+    app: AppHandle,
+    entry: String,
+    apps: Vec<String>,
+) -> Result<GameView, Refusal> {
+    entry_id(&entry)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = app.state::<Launchers>().get(&entry).map(|kept| kept.path);
+        let rules = rules_here();
+        let target = target_of(file.as_deref(), &apps);
+        let running = processes::snapshot();
+        app.state::<Games>()
+            .view(&entry, &target, running.as_deref(), &rules, now())
     })
+    .await
+    .map_err(|_| Refusal::Failed)
+}
+
+/// The processes that are this game right now, whatever was seen before.
+fn confirmed(app: &AppHandle, entry: &str, apps: &[String]) -> Vec<processes::Identity> {
+    let file = app.state::<Launchers>().get(entry).map(|kept| kept.path);
+    let rules = rules_here();
+    let target = target_of(file.as_deref(), apps);
+    processes::snapshot().map_or_else(Vec::new, |running| {
+        app.state::<Games>()
+            .seen(entry, &target, &running, &rules)
+            .confirmed
+    })
+}
+
+/// Asks a game to close, as its own window's close button does. It has stopped once it is gone:
+/// a page reads that from `game_state`. Refused when Windows won't let it be asked.
+#[tauri::command]
+pub async fn stop_game(app: AppHandle, entry: String, apps: Vec<String>) -> Result<(), Refusal> {
+    entry_id(&entry)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let ids = confirmed(&app, &entry, &apps);
+        if ids.is_empty() {
+            return Ok(());
+        }
+        let games = app.state::<Games>();
+        match processes::close(&ids) {
+            Closing::Asked => games.stop_asked(&entry, now(), false),
+            Closing::NoWindow => games.stop_asked(&entry, now(), true),
+            Closing::Denied => {
+                games.stop_failed(&entry);
+                return Err(Refusal::Refused);
+            }
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|_| Refusal::Failed)?
+}
+
+/// Ends a game at once, what it has not saved lost: the page has asked the person first. Each
+/// process is identified again here, and checked once more on the handle that ends it.
+#[tauri::command]
+pub async fn force_stop_game(
+    app: AppHandle,
+    entry: String,
+    apps: Vec<String>,
+) -> Result<(), Refusal> {
+    entry_id(&entry)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        processes::terminate(&confirmed(&app, &entry, &apps)).map_err(|_| Refusal::Refused)
+    })
+    .await
+    .map_err(|_| Refusal::Failed)?
 }
 
 /// Of the Steam apps a page names (fifty at most), the ones Steam has

@@ -6,6 +6,9 @@ mod ids;
 mod launch;
 mod launchers;
 mod navigation;
+mod processes;
+mod running;
+mod shortcut;
 mod steam;
 
 use std::net::{TcpStream, ToSocketAddrs};
@@ -305,6 +308,9 @@ pub fn run() {
             commands::play,
             commands::steam_installed,
             commands::playable,
+            commands::game_state,
+            commands::stop_game,
+            commands::force_stop_game,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -322,6 +328,9 @@ pub fn run() {
                     .permission("allow-play")
                     .permission("allow-steam-installed")
                     .permission("allow-playable")
+                    .permission("allow-game-state")
+                    .permission("allow-stop-game")
+                    .permission("allow-force-stop-game")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")
@@ -336,6 +345,8 @@ pub fn run() {
                 None => app.path().app_data_dir()?,
             };
             app.manage(Launchers::open(&folder));
+            app.manage(running::Games::default());
+            app.manage(commands::Following::default());
 
             // The splash first: it asks `start`, which opens Shelf when it is time.
             let mut splash =
