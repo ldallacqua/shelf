@@ -772,8 +772,8 @@ owners do not allow, beyond Valve's own sign-in button.
      matched: demos, playtests, software, videos and soundtracks. "Left out" says what Steam
      calls each one, and **Ask again** brings it back for good. A mode Steam lists apart from
      its game (a multiplayer, a zombies mode) goes on that game's copy, hours and all.
-   - **Steam's hours** go on the copy, in Steam's own row. A game shows the larger of the hours
-     I typed and what its sources report together, less any time I said it sat idle (4.7), so
+   - **Steam's hours** go on the copy, in Steam's own row. A game shows the larger of what
+     Shelf for Windows counted and Steam's hours, less any time I said it sat idle (4.7), so
      nothing is counted twice; the editor shows Steam's hours beside the copy.
 3. **What it could not match** waits under "2 games need you": **Find it** (IGDB searched by
    the title, which I can change), **Not a game**, **Not mine**. Every answer is kept.
@@ -1017,10 +1017,10 @@ idle cannot be known from outside, so I say it, and only where I want to.
   with the way to the shelf.
 - **Never a doubt about me.** Nothing on the shelf, a game's page or the trophies marks a
   game's hours as high, and the list says what the stores count, not that anything is wrong.
-  Hours I typed are mine: never offered, never with time taken off.
+  What Shelf for Windows counted has no time away in it: never offered, never with time taken off.
 - **No margin of error is made up.** No figure says ±: a share of idle time would be a guess
-  dressed as a measure. The trophy page's hours say what they are instead: time with each game
-  open.
+  dressed as a measure. The trophy page's hours say what they are instead: what Shelf for Windows
+  and the platforms count.
 
 While building it, a check in the database on the new column would have made the migration
 rebuild the entries table, which the rows that hang from it would not have survived: the store
@@ -1272,13 +1272,18 @@ the versions, and archiving or removing.
     A completed game left with no date, or whose date I take away, takes its last play's; a
     sync dates those a platform has only now seen played. Once set the day stays: a later play
     moves nothing, and a day I chose is never replaced.
-- **Hours played** takes only a number, typed with a point or a comma, or stepped an hour at a
-  time with − and + beside it (ten with Shift) or the arrow keys. When a store reports hours on
-  a copy, a line under it says how many, and that the larger of the two is shown.
+- **Hours played** can't be typed (the owner, 31 Oct 2026). It says the game's hours, and under
+  them where they come from: Shelf for Windows, and each store that reports some. Where Shelf for
+  Windows and Steam both have hours, a line says they count the same play and the larger counts.
+  **How hours are counted** opens what time away is: after 5 minutes with no key, mouse or
+  controller, that stretch doesn't count, and a long cutscene can fall into it.
+  - **What Shelf for Windows counts** (ADR 005, section 12): a PC game while it is in front and in
+    use, however it was opened, for as long as the app runs, which it does in the tray from when
+    Windows starts unless I turn that off. Consoles keep their platform's hours.
   - **Take out idle time,** at the end of that line, opens **Time left idle** under it, and
     the focus goes there. Its hours are of what the stores report that the game sat open,
     unplayed (Steam and Nintendo count the whole time a game is open, 4.7). They come off the
-    stores' hours, never off what I typed, and stay taken off as the stores report more; the
+    stores' hours, never off what Shelf for Windows counted, and stay taken off as the stores report more; the
     line then says what the stores report and what is left without the idle time. Once there
     is any, the field shows from the start.
 - **Platforms owned:** each copy on a card of its own, with its platform, the hours a store

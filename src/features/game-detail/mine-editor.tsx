@@ -12,7 +12,14 @@ import type {
   OwnedVersion,
   OwnerGame,
 } from '@/domain/library/editing'
-import { formats, statuses, type Format, type Status } from '@/domain/library/values'
+import { AWAY_AFTER_MINUTES, isPcSource, playedMinutes } from '@/domain/library/hours'
+import {
+  formats,
+  statuses,
+  type Format,
+  type Status,
+  type SyncSource,
+} from '@/domain/library/values'
 import { Cover } from '@/features/library/cover'
 import { useShelf } from '@/features/library/shelf'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
@@ -48,9 +55,6 @@ import { Play } from './play'
  */
 const records = new Map<string, OwnerGame>()
 
-/** As many hours as the API takes: a million minutes. */
-const MAX_HOURS = 16_666
-
 type MineEditorProps = {
   slug: string
   level: 'h2' | 'h3'
@@ -79,6 +83,7 @@ export function MineEditor({
   const game = useTranslations('Game')
   const library = useTranslations('Library')
   const errors = useTranslations('Add')
+  const sync = useTranslations('Sync')
   const router = useRouter()
   const locale = useLocale()
   const { handle } = useShelf()
@@ -186,12 +191,20 @@ export function MineEditor({
   const labels = new Map(owned.platforms.map((platform) => [platform.id, platform]))
   const hoursText = (hours: number) =>
     new Intl.NumberFormat(locale, { maximumFractionDigits: 1, useGrouping: false }).format(hours)
-  // What the stores report on its copies, said under the hours I type.
-  const synced = owned.copies
-    .flatMap((copy) => copy.synced ?? [])
-    .reduce((sum, each) => sum + each.minutes, 0)
-  // Of that, what I said sat idle: it comes off the stores' hours, never off mine.
+  // What the stores report on its copies, source by source.
+  const reports = new Map<SyncSource, number>()
+  for (const { source, minutes } of owned.copies.flatMap((copy) => copy.synced ?? [])) {
+    reports.set(source, (reports.get(source) ?? 0) + minutes)
+  }
+  const synced = [...reports.values()].reduce((sum, minutes) => sum + minutes, 0)
+  const time = { tracked: owned.tracked, pc: 0, console: 0 }
+  for (const [source, minutes] of reports) {
+    if (isPcSource(source)) time.pc += minutes
+    else time.console += minutes
+  }
+  // Of that, what I said sat idle: it comes off the stores' hours, never off what the app counted.
   const idle = owned.idle ?? 0
+  const played = playedMinutes(time, idle)
   const tenths = (minutes: number) => Math.round(minutes / 6) / 10
 
   /** Out of sight, kept whole (spec 7.4): nothing is lost, so nothing is asked first. */
@@ -331,44 +344,44 @@ export function MineEditor({
             }
           />
 
-          <NumberField
-            label={t('played')}
-            value={owned.minutes > 0 ? owned.minutes / 60 : undefined}
-            decimals={1}
-            max={MAX_HOURS}
-            unit="h"
-            format={hoursText}
-            decreaseLabel={t('hourFewer')}
-            increaseLabel={t('hourMore')}
-            hint={
-              synced > 0 ? (
-                <>
-                  {idle > 0
-                    ? t('playedSyncedIdle', {
-                        hours: tenths(synced),
-                        counted: tenths(Math.max(0, synced - idle)),
-                      })
-                    : t('playedSynced', { hours: tenths(synced) })}
-                  {idle > 0 || idling ? null : (
-                    <>
-                      {' '}
-                      <button
-                        type="button"
-                        onClick={() => setIdling(true)}
-                        className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
-                      >
-                        {t('idleStart')}
-                      </button>
-                    </>
-                  )}
-                </>
-              ) : undefined
-            }
-            onCommit={(hours) => {
-              const minutes = Math.round((hours ?? 0) * 60)
-              void update({ minutes }, { minutes })
-            }}
-          />
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">{t('played')}</span>
+            <p className="flex h-10 items-center text-xl font-semibold tabular-nums pointer-coarse:h-11">
+              {played > 0 ? t('playedHours', { hours: tenths(played) }) : t('playedNone')}
+            </p>
+            {owned.tracked > 0 || synced > 0 ? (
+              <ul className="grid gap-0.5 text-xs text-muted">
+                {owned.tracked > 0 ? (
+                  <li>{t('playedTracked', { hours: tenths(owned.tracked) })}</li>
+                ) : null}
+                {[...reports].map(([source, minutes]) => (
+                  <li key={source}>
+                    {t('syncedHours', {
+                      source: sync(`source.${source}`),
+                      hours: tenths(minutes),
+                    })}
+                  </li>
+                ))}
+                {idle > 0 ? <li>{t('playedIdle', { hours: tenths(idle) })}</li> : null}
+                {owned.tracked > 0 && time.pc > 0 ? <li>{t('playedSamePlay')}</li> : null}
+              </ul>
+            ) : null}
+            {synced > 0 && idle === 0 && !idling ? (
+              <button
+                type="button"
+                onClick={() => setIdling(true)}
+                className="w-fit rounded-[2px] text-xs text-text underline decoration-1 underline-offset-4 hover:decoration-2"
+              >
+                {t('idleStart')}
+              </button>
+            ) : null}
+            <details className="text-xs text-muted">
+              <summary className="w-fit cursor-pointer rounded-[2px] underline decoration-1 underline-offset-4 hover:decoration-2">
+                {t('playedHow')}
+              </summary>
+              <p className="mt-1.5">{t('playedHowBody', { minutes: AWAY_AFTER_MINUTES })}</p>
+            </details>
+          </div>
 
           {synced > 0 && (idle > 0 || idling) ? (
             <div ref={idleField}>

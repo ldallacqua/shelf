@@ -169,6 +169,13 @@
       "when": 1793312770943,
       "tag": "0023_idle-hours",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1793489426706,
+      "tag": "0024_play-sessions",
+      "breakpoints": true
     }
   ]
 }

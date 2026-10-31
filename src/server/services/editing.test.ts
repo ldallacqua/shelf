@@ -71,11 +71,11 @@ describe('changing a game', () => {
     expect((await editing.read(SLUG)).copies.some((copy) => copy.id === added.id)).toBe(false)
   })
 
-  it('sets tags and the minutes I played, in one step', async () => {
-    await editing.patch(SLUG, { tags: ['Couch', 'Nineties'], minutes: 600 })
+  it('sets tags and the time left idle, in one step', async () => {
+    await editing.patch(SLUG, { tags: ['Couch', 'Nineties'], idle: 600 })
     const game = await editing.read(SLUG)
     expect(game.tags).toEqual(['Couch', 'Nineties'])
-    expect(game.minutes).toBe(600)
+    expect(game.idle).toBe(600)
   })
 })
 

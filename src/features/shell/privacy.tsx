@@ -11,6 +11,7 @@ const SECTIONS = [
   'signIn',
   'steam',
   'nintendo',
+  'desktop',
   'where',
   'delete',
   'trademarks',

@@ -121,13 +121,12 @@ export const createEditing = (db: Db, libraryId: string) => {
   return {
     read,
     entryIdFor,
-    /** Several changes at once: what is mine, tags, minutes, idle time, and which version names it. */
+    /** Several changes at once: what is mine, tags, idle time, and which version names it. */
     patch: async (
       idOrSlug: string,
       patch: {
         mine?: MinePatch
         tags?: string[]
-        minutes?: number
         idle?: number
         mainVersion?: string
       },
@@ -135,7 +134,7 @@ export const createEditing = (db: Db, libraryId: string) => {
       const entryId = await entryIdFor(idOrSlug)
       if (patch.mainVersion) await setPrimary(db, libraryId, entryId, patch.mainVersion)
       const { mainVersion: _, ...rest } = patch
-      if (rest.mine || rest.tags || rest.minutes !== undefined || rest.idle !== undefined)
+      if (rest.mine || rest.tags || rest.idle !== undefined)
         await patchEntry(db, libraryId, entryId, rest)
       return changed()
     },
@@ -196,7 +195,6 @@ export const patchMine = checked(
     z.object({
       mine: minePatch.optional(),
       tags: tagList.optional(),
-      minutes: minutes.optional(),
       idle: minutes.optional(),
       mainVersion: id.optional(),
     }),

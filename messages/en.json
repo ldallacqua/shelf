@@ -281,6 +281,10 @@
         "q": "Can it bring in the games I already own?",
         "a": "From Steam and Nintendo, yes: link them right after signing up, or later on your account page. Every game you own on Steam comes onto your shelf with its hours and achievements; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them, give each a status, and put right one taken for the wrong game. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
       },
+      "hours": {
+        "q": "How does Shelf count my hours?",
+        "a": "You can’t type them in: they come from where you played. Steam and Nintendo report theirs, and PlayStation and Xbox will once they are linked. On a PC, Shelf for Windows counts a game while it is in front of you and you are using it, whether you opened it from Shelf or from Steam. After 5 minutes with no key, mouse or controller touched, that stretch doesn’t count: that is time away, or AFK. When Steam and Shelf count the same play, the larger of the two shows, never both added together."
+      },
       "who": {
         "q": "Who can see my shelf?",
         "a": "You choose when you sign up, and can change it any time on your account page. A public shelf is for anyone, and search engines can list it; a private one is for you alone. Notes stay private unless you mark them public, game by game, and any one game can be marked private, so only you see it."
@@ -577,7 +581,7 @@
       "shareLine": "{share} of the games started",
       "hours": "Hours played",
       "hoursOn": "Hours on them",
-      "hoursNote": "Time with each game open",
+      "hoursNote": "What Shelf for Windows and your platforms count",
       "rating": "Average rating",
       "outOfTen": "out of 10",
       "median": "Median playtime",
@@ -1511,6 +1515,10 @@
         "title": "Nintendo",
         "body": "If you link Nintendo, Shelf keeps your Nintendo Account’s id and nickname, the games your Nintendo play history lists, with the hours played and when each was last played, and the sign-in Nintendo gives Shelf to read them. That sign-in is kept sealed: what is in the database alone cannot be used. Nintendo’s page names it “Nintendo Store”, as Shelf reads the history that app shows. Shelf reads the history when you link Nintendo or press Sync now, and once a day while daily sync is on. Your Nintendo password never reaches Shelf. Disconnecting Nintendo deletes the sign-in and what Nintendo listed; the games it put on your shelf stay, as your own."
       },
+      "desktop": {
+        "title": "Shelf for Windows",
+        "body": "To count your hours on a PC, the app looks at which program is in front of you, and at whether a key, the mouse or a controller was touched, never at what was pressed. On your computer it keeps which game each stretch of play was, when it started and ended, and for how long you played. To Shelf it sends only that, and only for games on your shelf. No other program’s name leaves your computer, and neither does the file chosen for a game. Removing a game deletes what was counted of it."
+      },
       "where": {
         "title": "Where it is kept",
         "body": "In a database in São Paulo, Brazil (Turso), reached by Shelf’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there. Pressing one of a game's videos plays it in YouTube's player (youtube-nocookie.com), which then sees your visit as YouTube's own pages would; nothing goes to YouTube before you press one."
@@ -1667,13 +1675,18 @@
     "forceBody": "Shelf will end the game at once, without letting it save. Anything not saved will be lost.",
     "forceCancel": "Keep it open",
     "played": "Hours played",
+    "playedHours": "{hours, number} h",
+    "playedNone": "None counted yet",
+    "playedTracked": "Shelf for Windows: {hours, number} h",
+    "playedIdle": "{hours, number} h of the stores’ time taken out as idle",
+    "playedSamePlay": "Steam counts the same play, so the larger of the two counts.",
+    "playedHow": "How hours are counted",
+    "playedHowBody": "On a PC, Shelf for Windows counts a game while it is on screen in front of you and you are using it, however you opened it, as long as the app is running. After {minutes} minutes with no key, mouse or controller touched, that stretch doesn’t count: it is time away, also called AFK (away from keyboard). A long cutscene can fall into it too. Console hours, and Steam’s own, come from each platform as it reports them, and those do include time away. Hours can’t be typed in.",
     "hourFewer": "One hour fewer",
     "hourMore": "One hour more",
-    "playedSynced": "Your stores report {hours, number} h on the copies below. Shelf shows the larger of the two.",
-    "playedSyncedIdle": "Your stores report {hours, number} h on the copies below, {counted, number} h without the idle time. Shelf shows the larger of the two.",
     "idleStart": "Take out idle time",
     "idle": "Time left idle",
-    "idleHint": "Steam and Nintendo count the whole time a game is open, played or not. These hours come off what they report, never off what you typed.",
+    "idleHint": "Steam and Nintendo count the whole time a game is open, played or not. These hours come off what they report, never off what Shelf for Windows counted.",
     "lastPlayed": "Last played {date}. With no day chosen, that one counts.",
     "privateTitle": "Private",
     "privateHint": "Only you see this game, here and on a public shelf.",

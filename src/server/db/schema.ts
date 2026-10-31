@@ -308,6 +308,28 @@ export const playTime = sqliteTable(
   ],
 )
 
+/**
+ * What Shelf for Windows counted of a game, one row per time it was open (ADR 005, section 12).
+ * The id is the app's, so the same session sent twice is one session.
+ */
+export const playSessions = sqliteTable(
+  'play_sessions',
+  {
+    id: text().primaryKey(),
+    entryId: text()
+      .notNull()
+      .references(() => entries.id, { onDelete: 'cascade' }),
+    startedAt: integer().notNull(),
+    endedAt: integer().notNull(),
+    /** Played, not merely open: in front, and with something touched (`domain/library/hours.ts`). */
+    seconds: integer().notNull(),
+  },
+  (table) => [
+    index('play_sessions_entry').on(table.entryId),
+    check('play_sessions_seconds', sql`${table.seconds} >= 0`),
+  ],
+)
+
 /** A library's own words for its games. Two libraries may each have a "replay someday". */
 export const tags = sqliteTable(
   'tags',

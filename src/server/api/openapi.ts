@@ -42,6 +42,8 @@ import {
   apiRematch,
   apiRematched,
   apiStatusPatch,
+  apiPlaySessions,
+  apiPlaySessionsKept,
   apiStoreHours,
   apiUndoAdditions,
 } from './writes'
@@ -141,6 +143,8 @@ export const openApiDocument = () => {
     apiBroughtBack,
     apiSeparated,
     apiArchivedGames,
+    apiPlaySessions,
+    apiPlaySessionsKept,
     apiStoreHours,
     apiPlayable,
     apiPastedLines,
@@ -415,6 +419,18 @@ export const openApiDocument = () => {
           security: OWNER,
           responses: {
             200: { description: 'Games, by their stores’ hours', ...json('StoreHours') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/me/play/sessions': {
+        post: {
+          summary:
+            'Keeps what Shelf for Windows counted of the games it saw played. A session sent again is the same session. Signed in.',
+          security: OWNER,
+          requestBody: { required: true, ...json('PlaySessions') },
+          responses: {
+            200: { description: 'Which were kept', ...json('PlaySessionsKept') },
             ...REFUSALS,
           },
         },

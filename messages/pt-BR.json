@@ -281,6 +281,10 @@
         "q": "Dá para trazer os jogos que eu já tenho?",
         "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas e as conquistas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um, e corrigir um jogo reconhecido errado. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
       },
+      "hours": {
+        "q": "Como o Shelf conta minhas horas?",
+        "a": "Não dá para digitar: elas vêm de onde você jogou. A Steam e a Nintendo informam as delas, e o PlayStation e o Xbox vão informar assim que puderem ser vinculados. No PC, o Shelf para Windows conta um jogo enquanto ele está na sua frente e você está usando, tenha aberto pelo Shelf ou pela Steam. Depois de 5 minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, ou AFK. Quando a Steam e o Shelf contam a mesma jogatina, aparece o maior dos dois, nunca os dois somados."
+      },
       "who": {
         "q": "Quem pode ver a minha estante?",
         "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As notas continuam privadas a menos que você as marque como públicas, jogo por jogo, e qualquer jogo pode ser marcado como privado, para que só você o veja."
@@ -577,7 +581,7 @@
       "shareLine": "{share} dos jogos começados",
       "hours": "Horas jogadas",
       "hoursOn": "Horas neles",
-      "hoursNote": "Tempo com cada jogo aberto",
+      "hoursNote": "O que o Shelf para Windows e suas plataformas contam",
       "rating": "Nota média",
       "outOfTen": "de 10",
       "median": "Tempo mediano",
@@ -1511,6 +1515,10 @@
         "title": "Nintendo",
         "body": "Se você conectar a Nintendo, o Shelf guarda o id e o apelido da sua Conta Nintendo, os jogos que o seu histórico de jogo da Nintendo lista, com as horas jogadas e quando cada um foi jogado pela última vez, e o acesso que a Nintendo dá ao Shelf para lê-los. Esse acesso fica selado: o que está no banco de dados, sozinho, não serve para nada. A página da Nintendo o chama de “Nintendo Store”, porque o Shelf lê o histórico que esse app mostra. O Shelf lê o histórico quando você conecta a Nintendo ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Nintendo nunca chega ao Shelf. Desconectar a Nintendo apaga o acesso e o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
       },
+      "desktop": {
+        "title": "Shelf para Windows",
+        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou. Para o Shelf ele envia só isso, e só de jogos que estão na sua estante. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
+      },
       "where": {
         "title": "Onde fica guardado",
         "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Shelf, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá. Ao apertar um vídeo de um jogo, ele toca no player do YouTube (youtube-nocookie.com), que então vê a sua visita como as páginas do próprio YouTube veriam; nada vai para o YouTube antes de você apertar."
@@ -1667,13 +1675,18 @@
     "forceBody": "O Shelf vai encerrar o jogo na hora, sem deixar ele salvar. O que não estiver salvo será perdido.",
     "forceCancel": "Deixar aberto",
     "played": "Horas jogadas",
+    "playedHours": "{hours, number} h",
+    "playedNone": "Nenhuma contada ainda",
+    "playedTracked": "Shelf para Windows: {hours, number} h",
+    "playedIdle": "{hours, number} h do tempo das lojas retiradas como tempo parado",
+    "playedSamePlay": "A Steam conta a mesma jogatina, então vale o maior dos dois.",
+    "playedHow": "Como as horas são contadas",
+    "playedHowBody": "No PC, o Shelf para Windows conta um jogo enquanto ele está na sua frente na tela e você está usando, não importa como você abriu, desde que o app esteja rodando. Depois de {minutes} minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, também chamado de AFK (longe do teclado). Uma cena longa sem controle também pode cair nisso. As horas de console, e as da própria Steam, vêm de cada plataforma como ela informa, e essas incluem o tempo ausente. Não dá para digitar horas.",
     "hourFewer": "Uma hora a menos",
     "hourMore": "Uma hora a mais",
-    "playedSynced": "Suas lojas contam {hours, number} h nas cópias abaixo. O Shelf mostra o maior dos dois.",
-    "playedSyncedIdle": "Suas lojas contam {hours, number} h nas cópias abaixo, {counted, number} h sem o tempo parado. O Shelf mostra o maior dos dois.",
     "idleStart": "Tirar tempo parado",
     "idle": "Tempo parado",
-    "idleHint": "A Steam e a Nintendo contam todo o tempo em que um jogo fica aberto, jogando ou não. Estas horas saem do que elas contam, nunca do que você digitou.",
+    "idleHint": "A Steam e a Nintendo contam todo o tempo em que um jogo fica aberto, jogando ou não. Estas horas saem do que elas contam, nunca do que o Shelf para Windows contou.",
     "lastPlayed": "Jogado pela última vez em {date}. Sem um dia escolhido, vale esse.",
     "privateTitle": "Privado",
     "privateHint": "Só você vê este jogo, aqui e numa estante pública.",

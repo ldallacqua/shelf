@@ -220,14 +220,13 @@ export const apiGamePatch = z
     notes: z.string().max(MAX_NOTES).nullable().optional(),
     notesPublic: z.boolean().optional(),
     tags: z.array(z.string().min(1).max(40)).max(20).optional().describe('All of them: replaces'),
-    hoursPlayed: z.number().min(0).max(100_000).optional(),
     hoursIdle: z
       .number()
       .min(0)
       .max(100_000)
       .optional()
       .describe(
-        'Of the hours its stores report, those it sat open and unplayed: they come off those hours, never off hoursPlayed. 0 keeps them as they are',
+        'Of the hours its stores report, those it sat open and unplayed: they come off those hours. 0 keeps them as they are',
       ),
     mainVersion: z
       .string()
@@ -286,7 +285,10 @@ export const apiOwnerGame = z
       .optional()
       .describe('Whether or not they are public: this is the owner’s view'),
     notesPublic: z.boolean(),
-    hoursPlayed: z.number().min(0).describe('Hours typed in'),
+    hoursTracked: z
+      .number()
+      .min(0)
+      .describe('Hours Shelf for Windows counted, with no time away in them'),
     hoursIdle: z
       .number()
       .min(0)
@@ -395,6 +397,41 @@ export const apiArchivedGames = z
   })
   .meta({ id: 'ArchivedGames' })
 
+const SEVEN_DAYS = 7 * 24 * 60 * 60
+
+/** What Shelf for Windows sends of what it counted (ADR 005, section 12): up to 200 at once. */
+export const apiPlaySessions = z
+  .object({
+    sessions: z
+      .array(
+        z.object({
+          id: z.uuid().describe('The app’s own: the same session sent again is the same session'),
+          game: z
+            .union([
+              z.object({ entry: z.string().min(1).max(100) }),
+              z.object({ steam: z.string().regex(/^[0-9]{1,10}$/) }),
+            ])
+            .describe('The entry whose file it is, or the Steam app it was'),
+          startedAt: z.number().int().min(0).describe('Milliseconds since 1970'),
+          endedAt: z.number().int().min(0).describe('Milliseconds since 1970'),
+          seconds: z.number().int().min(0).max(SEVEN_DAYS).describe('Played, not merely open'),
+        }),
+      )
+      .max(200),
+  })
+  .meta({ id: 'PlaySessions' })
+
+export const apiPlaySessionsKept = z
+  .object({
+    kept: z
+      .array(z.string())
+      .describe(
+        'The sessions kept. The rest are of games not on this shelf: send them again later',
+      ),
+    version: z.number().int(),
+  })
+  .meta({ id: 'PlaySessionsKept' })
+
 export const apiStoreHours = z
   .object({
     games: z.array(
@@ -488,14 +525,14 @@ export const toApiAdditions = (answer: {
 /** The owner's view of a game, in the API's units: a rating out of ten, time in hours. */
 export const toApiOwnerGame = ({
   rating,
-  minutes,
+  tracked,
   idle,
   copies,
   ...rest
 }: OwnerGame): z.input<typeof apiOwnerGame> => ({
   ...rest,
   ...(rating === undefined ? {} : { rating: rating / 10 }),
-  hoursPlayed: minutes / 60,
+  hoursTracked: tracked / 60,
   ...(idle === undefined ? {} : { hoursIdle: idle / 60 }),
   copies: copies.map(({ id, platformId, format, synced }) => ({
     id,
@@ -557,7 +594,6 @@ export const refusalMessage = (refusal: Refusal): string => MESSAGE[refusal.reas
 /** A patch in the API's shape, as the editing service takes it: a rating out of 100, time in minutes. */
 export const toEditPatch = ({
   tags,
-  hoursPlayed,
   hoursIdle,
   rating,
   mainVersion,
@@ -570,7 +606,6 @@ export const toEditPatch = ({
   return {
     ...(Object.keys(changes).length > 0 ? { mine: changes } : {}),
     ...(tags ? { tags } : {}),
-    ...(hoursPlayed === undefined ? {} : { minutes: Math.round(hoursPlayed * 60) }),
     ...(hoursIdle === undefined ? {} : { idle: Math.round(hoursIdle * 60) }),
     ...(mainVersion ? { mainVersion } : {}),
   }

@@ -12,6 +12,7 @@ import {
   entryTags,
   entryVersions,
   games,
+  playSessions,
   playTime,
   sourceItems,
   tags,
@@ -43,7 +44,7 @@ import {
   savePlatforms,
   separateVersion,
   patchEntry,
-  setManualMinutes,
+  recordPlaySessions,
   setPrimary,
   setArchived,
   setStatuses,
@@ -121,7 +122,6 @@ describe('createEntry', () => {
       rating: 90,
       completedOn: '2024-05-01',
       copies: [{ platformId: PC, format: 'digital' }],
-      minutes: 6000,
       tags: ['Comfort Game', 'comfort game', '  replay   someday '],
     })
     const library = await readLibrary(db, me)
@@ -131,7 +131,6 @@ describe('createEntry', () => {
       status: 'completed',
       rating: 90,
       completedOn: '2024-05-01',
-      minutes: 6000,
       copies: [{ platform: PC, format: 'digital' }],
     })
     expect(library.names.tag).toEqual([
@@ -170,7 +169,6 @@ describe('createEntry', () => {
     ['a rating above 100', { rating: 101 }],
     ['a rating that is not whole', { rating: 7.5 }],
     ['a completion date that is not a day', { completedOn: '2024-13-40' }],
-    ['negative playtime', { minutes: -5 }],
   ])('refuses %s', async (_what, bad) => {
     const input = { primaryGameId: skyrim, status: 'backlog', ...bad } as never
     expect(() => createEntry(db, me, input)).toThrow(LibraryError)
@@ -339,12 +337,42 @@ describe('changing an entry', () => {
     expect((await readLibrary(db, me)).games[0]?.hasNotes).toBe(true)
   })
 
-  it('replaces manual playtime rather than adding to it', async () => {
-    await setManualMinutes(db, me, entry, 120)
-    await setManualMinutes(db, me, entry, 300)
-    expect((await readLibrary(db, me)).games[0]?.minutes).toBe(300)
-    await setManualMinutes(db, me, entry, 0)
-    expect(await count(playTime)).toBe(0)
+  const session = (id: string, seconds: number, entryId = entry) => ({
+    id,
+    entryId,
+    startedAt: 1_000,
+    endedAt: 1_000 + seconds * 2_000,
+    seconds,
+  })
+
+  it('adds up what the app counted, each session once however often it is sent', async () => {
+    await recordPlaySessions(db, me, [session('a', 90), session('b', 90)])
+    await recordPlaySessions(db, me, [session('a', 90)])
+    expect((await readLibrary(db, me)).games[0]?.minutes).toBe(3)
+    await recordPlaySessions(db, me, [session('a', 150)])
+    expect((await readLibrary(db, me)).games[0]?.minutes).toBe(4)
+    await recordPlaySessions(db, me, [session('a', 60)])
+    expect((await readLibrary(db, me)).games[0]?.minutes).toBe(4)
+  })
+
+  it('keeps no session of a game not in this library, and says which it kept', async () => {
+    expect(await recordPlaySessions(db, me, [session('a', 60), session('b', 60, 'nope')])).toEqual([
+      'a',
+    ])
+    expect(await count(playSessions)).toBe(1)
+  })
+
+  it('counts hours once typed by hand for nothing, and keeps them', async () => {
+    await db.insert(playTime).values({
+      id: 'typed',
+      entryId: entry,
+      copyId: null,
+      source: 'manual',
+      minutes: 600,
+      updatedAt: 1,
+    })
+    expect((await readLibrary(db, me)).games[0]?.minutes).toBe(0)
+    expect(await count(playTime)).toBe(1)
   })
 
   it('replaces tags, and forgets a tag nothing wears', async () => {
@@ -382,7 +410,6 @@ describe('each library is its own (ADR 004)', () => {
       () => updateEntry(db, me, theirs, { status: 'dropped' }),
       () => addCopy(db, me, theirs, { platformId: SWITCH, format: 'physical' }),
       () => removeCopy(db, me, copy?.id ?? ''),
-      () => setManualMinutes(db, me, theirs, 60),
       () => setTags(db, me, theirs, ['mine now']),
       () => addVersion(db, me, theirs, skyrimSwitch, 'port'),
       () => setPrimary(db, me, theirs, hades),
@@ -557,7 +584,6 @@ describe('separating a version (spec 7.6)', () => {
       notes: 'Both of them.',
       copies: [{ platformId: PC, format: 'digital' }],
       tags: ['souls'],
-      minutes: 60,
       addedAt: 1000,
     })
     await addVersion(db, me, entry, scholar, 'expanded')
@@ -575,7 +601,6 @@ describe('separating a version (spec 7.6)', () => {
       rating: 90,
       notes: 'Both of them.',
       tags: ['souls'],
-      minutes: 60,
       versions: [expect.objectContaining({ gameId: ds2, relation: 'primary' })],
       copies: [
         expect.objectContaining({
@@ -590,7 +615,7 @@ describe('separating a version (spec 7.6)', () => {
       title: 'Dark Souls II: Scholar of the First Sin',
       status: 'unsorted',
       tags: [],
-      minutes: 0,
+      tracked: 0,
       versions: [expect.objectContaining({ gameId: scholar, relation: 'primary' })],
       copies: [
         expect.objectContaining({
@@ -677,7 +702,6 @@ describe('removeEntry', () => {
       primaryGameId: skyrim,
       status: 'completed',
       copies: [{ platformId: PC, format: 'digital' }],
-      minutes: 100,
       tags: ['short'],
     })
     await addVersion(db, me, entry, skyrimSwitch, 'port')
@@ -774,7 +798,9 @@ describe('the library version', () => {
 
     const copy = await addCopy(db, me, entry, { platformId: PC, format: 'digital' })
     await updateEntry(db, me, entry, { status: 'playing' })
-    await setManualMinutes(db, me, entry, 30)
+    await recordPlaySessions(db, me, [
+      { id: 'a', entryId: entry, startedAt: 1, endedAt: 2, seconds: 60 },
+    ])
     await setTags(db, me, entry, ['short'])
     await removeCopy(db, me, copy)
     await removeEntry(db, me, entry)
@@ -1113,8 +1139,10 @@ describe('time a game sat open, unplayed (ADR 003)', () => {
     expect(await minutes()).toBe(0)
   })
 
-  it('never comes off what I typed', async () => {
-    await setManualMinutes(db, me, entry, 3000)
+  it('never comes off what the app counted', async () => {
+    await recordPlaySessions(db, me, [
+      { id: 'a', entryId: entry, startedAt: 1, endedAt: 2, seconds: 3000 * 60 },
+    ])
     await patchEntry(db, me, entry, { idle: 4320 })
     expect(await minutes()).toBe(3000)
   })
@@ -1145,12 +1173,9 @@ describe('time a game sat open, unplayed (ADR 003)', () => {
     expect(await minutes()).toBe(STEAM)
   })
 
-  it('offers none whose hours are what I typed, none archived and none of another library', async () => {
+  it('offers none archived and none of another library', async () => {
     expect(await readStoreHours(db, other)).toEqual([])
     await setArchived(db, me, entry, true)
-    expect(await readStoreHours(db, me)).toEqual([])
-    await setArchived(db, me, entry, false)
-    await setManualMinutes(db, me, entry, 7000)
     expect(await readStoreHours(db, me)).toEqual([])
   })
 

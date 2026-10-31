@@ -11,6 +11,7 @@ import {
   readVersion,
   removeEntry,
   removeEntryForUndo,
+  recordPlaySessions,
   restoreEntry,
   setArchived,
 } from '@/server/library/store'
@@ -290,7 +291,7 @@ describe('a later sync', () => {
     expect(witcher.copyId).toBeTruthy()
   })
 
-  it('shows the larger of my hours and Steam’s, never the two added together', async () => {
+  it('shows the larger of the app’s hours and Steam’s, never the two added together', async () => {
     const me = await linked()
     await syncAll(me)
     const halfLife = await itemNamed(me, 'Half-Life 2')
@@ -299,14 +300,13 @@ describe('a later sync', () => {
       (await readLibrary(db, me)).games.find((game) => game.slug === 'half-life-2')?.minutes
     expect(await shown()).toBe(halfLife.minutes)
 
-    const typed = (minutes: number) =>
-      db
-        .insert(playTime)
-        .values({ id: 'typed', entryId, copyId: null, source: 'manual', minutes, updatedAt: NOW })
-        .onConflictDoUpdate({ target: playTime.id, set: { minutes } })
-    await typed(halfLife.minutes - 30)
+    const counted = (minutes: number) =>
+      recordPlaySessions(db, me, [
+        { id: 'a', entryId, startedAt: NOW, endedAt: NOW + 1, seconds: minutes * 60 },
+      ])
+    await counted(halfLife.minutes - 30)
     expect(await shown()).toBe(halfLife.minutes)
-    await typed(halfLife.minutes + 600)
+    await counted(halfLife.minutes + 600)
     expect(await shown()).toBe(halfLife.minutes + 600)
   })
 

@@ -58,8 +58,8 @@ export type OwnerGame = {
   lastPlayedOn?: Day
   notes?: string
   notesPublic: boolean
-  /** Minutes I typed in. */
-  minutes: number
+  /** Minutes Shelf for Windows counted of it, with no time away in them. */
+  tracked: number
   /**
    * Minutes of what its stores report that I said sat idle, taken off them.
    * Absent until I have said; 0 when I kept them as they are.
@@ -164,7 +164,6 @@ export type Separated = Restored & { title: string }
 /** Changes the editor sends at once: what is mine, and the rest of a game's patch. */
 export type EditPatch = MinePatch & {
   tags?: string[]
-  minutes?: number
   /** Minutes of what the stores report that sat idle. */
   idle?: number
   mainVersion?: string
