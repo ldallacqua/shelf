@@ -73,7 +73,6 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const t = useTranslations('Edit')
   const [here, setHere] = useState<Here>()
   const [busy, setBusy] = useState(false)
-  const [forcing, setForcing] = useState(false)
   const installedApps = here?.installed ?? noApps
   const { state, check, sentGameToSteam } = useGameState(
     entryId,
@@ -218,9 +217,18 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     primary = (
       <>
         {view.state === 'stopping' ? (
-          <Button variant="secondary" size="sm" onClick={() => setForcing(true)}>
-            {t('gameForceStop')}
-          </Button>
+          // Inside what it asks about: a game that closes by itself takes the question with it.
+          <Confirm
+            title={t('forceTitle', { title })}
+            description={t('forceBody')}
+            confirm={t('gameForceStop')}
+            cancel={t('forceCancel')}
+            onConfirm={forceStop}
+          >
+            <Button variant="secondary" size="sm">
+              {t('gameForceStop')}
+            </Button>
+          </Confirm>
         ) : null}
         <Button
           variant="primary"
@@ -288,15 +296,6 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
         {spoken}
       </span>
       {primary}
-      <Confirm
-        open={forcing}
-        onOpenChange={setForcing}
-        title={t('forceTitle', { title })}
-        description={t('forceBody')}
-        confirm={t('gameForceStop')}
-        cancel={t('forceCancel')}
-        onConfirm={forceStop}
-      />
       {menu ? (
         <DropdownMenu>
           <Tip label={t('playOptions')}>

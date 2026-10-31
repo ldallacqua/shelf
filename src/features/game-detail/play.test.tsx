@@ -294,12 +294,27 @@ describe('Whether the game is running, in Shelf for Windows (issue 102)', () => 
     expect(within(question).getByRole('button', { name: 'Keep it open' })).toHaveFocus()
     await userEvent.keyboard('{Escape}')
     expect(invoke).not.toHaveBeenCalledWith('force_stop_game', expect.anything())
+    // Back on the control that asked, so the keyboard keeps its place.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Force stop' })).toHaveFocus())
 
     await userEvent.click(screen.getByRole('button', { name: 'Force stop' }))
     await userEvent.click(
       within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Force stop' }),
     )
     expect(invoke).toHaveBeenCalledWith('force_stop_game', { entry: 'entry-1', apps: [] })
+  })
+
+  it('takes the question away when the game closes by itself meanwhile', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.game = hanging
+    play()
+    await userEvent.click(await screen.findByRole('button', { name: 'Force stop' }))
+    await screen.findByRole('alertdialog')
+    computer.game = stopped
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument(), {
+      timeout: 4_000,
+    })
+    expect(invoke).not.toHaveBeenCalledWith('force_stop_game', expect.anything())
   })
 
   it('stays as it is and says so when even Force stop is refused', async () => {
