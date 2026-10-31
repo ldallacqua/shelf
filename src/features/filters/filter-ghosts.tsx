@@ -1,5 +1,5 @@
-import { ghostOrder } from '@/features/library/ghosts'
 import { cn } from '@/ui/cn'
+import { ghostOrder } from '@/ui/ghost'
 
 /** The first sections, by the width of their names. */
 const ROWS = ['w-12', 'w-24', 'w-16', 'w-14', 'w-12', 'w-14', 'w-12', 'w-18', 'w-14', 'w-10']

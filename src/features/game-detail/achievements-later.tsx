@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 
-import { Ghosts } from './ghosts'
+import { Ghosts } from '@/ui/ghosts'
 
 /**
  * A game's achievements (issue 72), their code fetched only for a game that

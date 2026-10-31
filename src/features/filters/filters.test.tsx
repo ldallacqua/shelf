@@ -453,3 +453,37 @@ describe('useFiltersBeside', () => {
     expect(result.current).toBe(true)
   })
 })
+
+describe('Filters, on their way', () => {
+  it('holds each count’s place in the status row until they are known', () => {
+    const waiting = renderWithIntl(<StatusRow value={undefined} onChange={() => {}} />)
+    expect(waiting.container.querySelector('.ghost')).toBeInTheDocument()
+    waiting.unmount()
+    const known = renderWithIntl(
+      <StatusRow value={undefined} counts={{ playing: 6, backlog: 0 }} onChange={() => {}} />,
+    )
+    expect(known.container.querySelector('.ghost')).not.toBeInTheDocument()
+  })
+
+  it('draws ghosts for the count and an open section until the library is read', () => {
+    renderWithIntl(
+      <FilterPanel
+        open
+        onOpenChange={() => {}}
+        beside
+        tree={undefined}
+        index={undefined}
+        matching={undefined}
+        onChange={() => {}}
+        onClear={() => {}}
+        onWantKeywords={() => {}}
+      />,
+    )
+    const column = screen.getByRole('complementary', { name: 'Filters' })
+    // Said only to a screen reader.
+    for (const said of within(column).getAllByText('Loading the library…')) {
+      expect(said).toHaveClass('sr-only')
+    }
+    expect(column.querySelector('.ghost')).toBeInTheDocument()
+  })
+})

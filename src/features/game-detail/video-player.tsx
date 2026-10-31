@@ -3,8 +3,10 @@
 import { XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Dialog } from 'radix-ui'
+import { useState } from 'react'
 
 import type { GameVideo } from '@/domain/igdb/game'
+import { Ghost } from '@/ui/ghost'
 import { Tip } from '@/ui/tooltip'
 
 /**
@@ -24,6 +26,8 @@ export default function VideoPlayer({
 }) {
   const t = useTranslations('Game')
   const name = video?.name ?? t('video')
+  // YouTube's player takes a moment of its own to arrive: a ghost holds its place until it does.
+  const [arrived, setArrived] = useState(false)
   return (
     <Dialog.Root open={video !== undefined} onOpenChange={(next) => !next && onClose()}>
       <Dialog.Portal>
@@ -51,17 +55,23 @@ export default function VideoPlayer({
           <Dialog.Description className="sr-only">{t('videoFrom')}</Dialog.Description>
           <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-6">
             {video ? (
-              <iframe
-                key={video.id}
-                // A frame's title is its name for a screen reader; browsers show it as no tooltip.
-                // eslint-disable-next-line react/forbid-dom-props
-                title={t('videoTitle', { name, title })}
-                src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&playsinline=1`}
-                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-                className="aspect-video max-h-full w-full max-w-6xl rounded-case bg-cinema"
-              />
+              <div className="relative aspect-video max-h-full w-full max-w-6xl">
+                {arrived ? null : (
+                  <Ghost className="absolute inset-0 rounded-case bg-on-cinema/10" />
+                )}
+                <iframe
+                  key={video.id}
+                  // A frame's title is its name for a screen reader; browsers show it as no tooltip.
+                  // eslint-disable-next-line react/forbid-dom-props
+                  title={t('videoTitle', { name, title })}
+                  src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&playsinline=1`}
+                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  onLoad={() => setArrived(true)}
+                  className="absolute inset-0 size-full rounded-case"
+                />
+              </div>
             ) : null}
           </div>
         </Dialog.Content>

@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/ui/select'
+import { GhostText, Loading } from '@/ui/ghost'
 
 import { BringBack } from './bring-back'
 import { addGames, matchLines, type NewGame } from './list-client'
@@ -680,7 +681,13 @@ function ListRow({
 
       {row.line.candidates.length === 0 ? (
         <div className="grid gap-2 sm:pl-[4.75rem]">
-          <p className="text-sm">{t('list.notFound')}</p>
+          {row.searching ? (
+            <Loading label={t('searching')} className="text-sm">
+              <GhostText className="w-48" />
+            </Loading>
+          ) : (
+            <p className="text-sm">{t('list.notFound')}</p>
+          )}
           <div className="flex flex-wrap items-end gap-2">
             <label className="grid min-w-0 flex-1 gap-1 text-sm">
               {t('list.retitle')}
@@ -701,7 +708,7 @@ function ListRow({
               disabled={disabled || row.searching}
               onClick={onSearchAgain}
             >
-              {row.searching ? t('searching') : t('list.searchAgain')}
+              {t('list.searchAgain')}
             </Button>
           </div>
         </div>

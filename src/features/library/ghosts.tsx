@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 
 import { cn } from '@/ui/cn'
 import { caseShapes } from '@/ui/game-case'
+import { ghostOrder } from '@/ui/ghost'
 
 /**
  * Places for games on their way, in each view's own shapes: cases on the
@@ -22,9 +23,6 @@ const WIDEST_ROW = 15
 
 /** The case the loading shelf is drawn with: the one a box with no platform known gets. */
 const PLAIN = caseShapes.keepCase
-
-/** A ghost's turn in the wave that runs along the row. */
-export const ghostOrder = (index: number) => ({ '--i': index }) as CSSProperties
 
 /** A case-shaped place on a shelf, at the shelf's own size. */
 export function GhostCase({ index }: { index: number }) {

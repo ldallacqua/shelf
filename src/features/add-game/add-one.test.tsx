@@ -116,3 +116,16 @@ describe('AddOne, finding a game I archived (spec 7.4)', () => {
     expect(added).toEqual([])
   })
 })
+
+describe('AddOne, while it searches (spec 4.1)', () => {
+  it('draws results’ ghosts, not the word, before any have come', async () => {
+    const held: AddActions = { ...actions([]), search: () => new Promise(() => {}) }
+    const { container } = renderWithIntl(
+      <AddOne actions={held} onAdded={vi.fn()} onOpenOwned={vi.fn()} />,
+    )
+    expect(container.querySelector('.ghost')).not.toBeInTheDocument()
+    await userEvent.type(screen.getByRole('combobox', { name: 'Search IGDB' }), 'tsukihime')
+    expect(await screen.findByText('Searching…')).toHaveClass('sr-only')
+    expect(container.querySelector('.ghost')).toBeInTheDocument()
+  })
+})

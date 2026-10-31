@@ -553,3 +553,36 @@ describe('PlaceGames', () => {
     expect(sent).toEqual([])
   })
 })
+
+describe('PlaceGames, on its way', () => {
+  it('draws the list’s shape while it asks whose account this is, and reads nothing yet', () => {
+    who = { status: 'checking' }
+    const { container } = renderWithIntl(<PlaceGames />)
+    const status = screen.getByRole('status')
+    expect(status).toHaveTextContent('Loading your games…')
+    expect(status).toHaveClass('sr-only')
+    expect(container.querySelectorAll('.ghost').length).toBeGreaterThan(0)
+    // Only what is unknown is a ghost: the tabs and the words around them are there.
+    expect(screen.getByRole('navigation', { name: 'What to organize' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Unsorted' })).toBeInTheDocument()
+    expect(sent).toEqual([])
+  })
+
+  it('draws ghosts while the list is read, then the rows in their place', async () => {
+    let answer!: (response: Response) => void
+    vi.mocked(fetch).mockImplementation((input) =>
+      String(input) === '/api/v1/me/unsorted'
+        ? new Promise((resolve) => (answer = resolve))
+        : Promise.resolve(Response.json({ games: [] })),
+    )
+    const { container } = renderWithIntl(<PlaceGames />)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading your games…')
+    expect(container.querySelector('[aria-busy="true"] .ghost')).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'Games to place' })).not.toBeInTheDocument()
+
+    answer(Response.json(PLACING))
+    await screen.findByRole('heading', { name: /Celeste/ })
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+})

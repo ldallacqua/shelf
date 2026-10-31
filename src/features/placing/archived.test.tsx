@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -132,5 +132,39 @@ describe('Archived', () => {
       'href',
       '/en/sign-in?from=%2Fen%2Faccount%2Farchived',
     )
+  })
+})
+
+describe('Archived, on its way', () => {
+  it('draws its rows’ shape while it asks whose account this is, and reads nothing yet', () => {
+    who = { status: 'checking' }
+    const fetching = vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise(() => {}))
+    const { container } = renderWithIntl(<Archived />)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading your games…')
+    expect(container.querySelector('[aria-busy="true"] .ghost')).toBeInTheDocument()
+    expect(tabs().getByRole('link', { name: 'Archived' })).toHaveAttribute('aria-current', 'page')
+    expect(fetching).not.toHaveBeenCalled()
+  })
+
+  it('holds each count’s place with a ghost while it is read', () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() => new Promise(() => {}))
+    renderWithIntl(<Archived />)
+    expect(
+      tabs().getByRole('link', { name: 'Archived' }).querySelector('.ghost'),
+    ).toBeInTheDocument()
+    expect(
+      tabs().getByRole('link', { name: 'Store hours' }).querySelector('.ghost'),
+    ).toBeInTheDocument()
+    // How many wait is known with the account.
+    expect(tabs().getByRole('link', { name: 'Unsorted' }).querySelector('.ghost')).toBeNull()
+  })
+
+  it('leaves no ghost behind a read that failed', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response(null, { status: 500 }),
+    )
+    const { container } = renderWithIntl(<Archived />)
+    await screen.findByRole('alert')
+    await waitFor(() => expect(container.querySelector('.ghost')).not.toBeInTheDocument())
   })
 })

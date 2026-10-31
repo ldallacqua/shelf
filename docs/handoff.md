@@ -94,6 +94,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
 - **Archive and Remove on Organize's Unsorted rows, and the archived games as Organize's third
   tab** (architecture section 25, row "Archive from Organize"; spec 4.5, 7.4): off the account
   page, with a search and 50 at a time for a long archive.
+- **Skeletons everywhere** (architecture section 25, row "Skeletons everywhere"; spec 3.10): no page
+  says "Loading" in words any more, lint refuses it, and pages only for an account are built ahead
+  as their ghosts rather than as a prompt to sign in.
 - **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against

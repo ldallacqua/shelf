@@ -249,6 +249,21 @@ straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in
 button (architecture, section 11). Name them in words. An icon beside words is `aria-hidden`.
 
+**Loading.** Everywhere something loads, the page draws a skeleton, and never says "Loading" in
+words or spins (spec 3.10; lint refuses both). Ghosts come from `src/ui/ghost.tsx`: `Loading` wraps
+them and gives the words to assistive technology alone, `Ghost` takes the size and shape of what
+replaces it, and `GhostText` a line of the type around it; `Ghosts`, in `ghosts.tsx`, is a paragraph.
+What every page draws, such as the header, uses the `.ghost` class on a plain element, to keep the
+module out of every page's script. Words that do not
+depend on the answer (a heading, a label, an intro) are drawn for real around the ghosts, so only
+what is unknown changes. Share the layout's classes between a thing and its ghost, so the content
+arrives where its ghosts stood; a ghost must not outlive a failed read. A page only for an account
+asks `useAccount('checking')`, so it is built ahead as its ghosts and tells nobody signed in to
+sign in, and a public page's header answers the `hinted:` variant, on where the browser has signed
+in. Two things are not a load and keep their words: a button saying what it is doing because
+I pressed it (Saving…, Signing in…), and the count of a long job (Adding 3 of 40…). Nothing is
+drawn for what may never come, as the owner's Add button is to a visitor.
+
 **Comments** say why, in plain words. They do not restate the code.
 
 ## Done means

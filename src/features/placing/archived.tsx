@@ -12,6 +12,7 @@ import { useAccount } from '@/features/owner/account'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
+import { Ghost, GhostText, Loading } from '@/ui/ghost'
 
 import { OrganizeTabs } from './organize-tabs'
 
@@ -20,6 +21,9 @@ const STEP = 50
 
 /** From how many games a search is worth its room. */
 const SEARCH_FROM = 10
+
+/** Rows of ghosts while the list is read. */
+const GHOST_ROWS = 6
 
 /**
  * Organize's archived tab (spec 7.4), the one place archived games are
@@ -31,10 +35,9 @@ export function Archived() {
   const t = useTranslations('Placing')
   const account = useTranslations('AccountPage')
   const locale = useLocale()
-  const who = useAccount()
+  const who = useAccount('checking')
 
-  if (who.status === 'checking') return <p className="mt-6 text-muted">{account('checking')}</p>
-  if (who.status !== 'signed-in') {
+  if (who.status === 'visitor') {
     return (
       <div className="mt-6 max-w-xl">
         <p className="text-pretty">{t('signInFirst')}</p>
@@ -48,7 +51,41 @@ export function Archived() {
       </div>
     )
   }
+  if (who.status === 'checking') {
+    return (
+      <>
+        <OrganizeTabs current="archived" />
+        <ArchivedGhosts />
+      </>
+    )
+  }
   return <ArchivedList handle={who.handle} />
+}
+
+/** The list on its way, under the words that say what it is. */
+function ArchivedGhosts() {
+  const t = useTranslations('Placing')
+  return (
+    <>
+      <p className="mt-6 max-w-2xl text-pretty text-muted">{t('archived.intro')}</p>
+      <Loading label={t('loading')} className="mt-6 grid max-w-2xl gap-3">
+        {Array.from({ length: GHOST_ROWS }, (_, row) => (
+          <div key={row} className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Ghost order={row} className="aspect-[3/4] w-10 flex-none rounded-[3px]" />
+            <span className="grid min-w-0 flex-1 gap-0.5">
+              <GhostText order={row} className="w-1/2" />
+              <span className="text-sm">
+                <GhostText order={row} className="w-1/3" />
+              </span>
+            </span>
+            <span className="max-sm:w-full max-sm:pl-13">
+              <Ghost order={row} className="h-8 w-34 rounded-control pointer-coarse:h-10" />
+            </span>
+          </div>
+        ))}
+      </Loading>
+    </>
+  )
 }
 
 /** The list, once the account is known: read, then brought back from here a game at a time. */
@@ -83,7 +120,9 @@ function ArchivedList({ handle }: { handle: string }) {
   const tabs = (
     <OrganizeTabs
       current="archived"
-      {...(Array.isArray(games) ? { counts: { archived: games.length - back.size } } : {})}
+      {...(games === undefined
+        ? {}
+        : { counts: { archived: games === 'failed' ? 0 : games.length - back.size } })}
     />
   )
 
@@ -91,7 +130,7 @@ function ArchivedList({ handle }: { handle: string }) {
     return (
       <>
         {tabs}
-        <p className="mt-6 text-muted">{placing('loading')}</p>
+        <ArchivedGhosts />
       </>
     )
   }

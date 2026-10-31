@@ -14,10 +14,11 @@ import { describeBox, shelfName } from './describe'
 import { FoldBody, FoldToggle } from './fold-toggle'
 import { dateOf, hoursOf, outOfTen } from './format'
 import { platformFor } from './game-box'
-import { GhostHeading, ghostOrder } from './ghosts'
+import { GhostHeading } from './ghosts'
 import { StatusMark } from './status-mark'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
+import { ghostOrder } from '@/ui/ghost'
 
 /** Rows drawn before the layout is measured, over all the tables: two screens of them. */
 const FIRST_ROWS = 30

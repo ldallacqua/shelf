@@ -287,6 +287,18 @@ function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
 
 const VideoPlayer = lazy(() => import('./video-player'))
 
+/** The player's own place over the page, for the moment before its dialog says what it is. */
+function VideoGhost() {
+  return (
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-cinema/92 px-4 pb-6"
+    >
+      <span className="ghost aspect-video w-full max-w-6xl rounded-case bg-on-cinema/10" />
+    </div>
+  )
+}
+
 /**
  * A game's videos and screenshots, in one strip that scrolls sideways
  * (spec 7.1): videos first, each on one of the game's own pictures with a
@@ -430,7 +442,7 @@ export function Screenshots({
         onClose={() => setOpen(undefined)}
       />
       {playing ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={<VideoGhost />}>
           <VideoPlayer video={playing} title={title} onClose={() => setPlaying(undefined)} />
         </Suspense>
       ) : null}

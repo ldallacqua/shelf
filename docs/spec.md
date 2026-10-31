@@ -543,6 +543,7 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | Situation | What appears |
 | --- | --- |
 | Loading | The wall and ledges first, then boxes arriving in a short stagger. Blurred color placeholders stand in for covers. |
+| Loading, anywhere | A skeleton, always: ghosts in the size and shape of what is coming, in the place it will stand, around whatever words are already known. No page says "Loading" in words or shows a spinner; a screen reader alone is told. A button says what it is doing once pressed (Saving…), and a long job counts its way (Adding 3 of 40…): neither is something loading. |
 | Empty library, signed in | An illustration of an empty lit ledge, Add your first game, and Bring your games from a platform, which leads to the page that sets a new shelf up ([section 4.6](#46-setting-a-new-shelf-up)) |
 | Empty library, visitor | The same ledge and one line saying the shelf is being stocked |
 | No results | "No games match these filters", the active filters as removable chips, and Clear all |
@@ -1746,6 +1747,7 @@ The target is WCAG 2.2 level AA in both themes.
 | **3D** | The canvas is hidden from assistive technology. The same labeled lists exist alongside it and drive it: moving focus moves the camera. A screen-reader user gets the same shelf, in the same order, in both views. |
 | **Announcements** | Filter and sort changes announce the result: "42 games, sorted by my rating". Adding, removing and undo are announced. |
 | **Targets** | At least 24 by 24 pixels, including spines |
+| **Ghosts** | Where something is on its way, a quiet bar or block in its size and shape, pulsing in a wave down the page, and still under reduced motion. Never words saying it loads, and never a spinner ([section 3.10](#310-empty-loading-and-failure)). |
 | **Tips** | A control that shows only an icon or a mark (S, M, L) has a tip: its words beside it, on hover and when the keyboard reaches it, saying what it does. Never the browser's own `title`. A touch opens none, Escape hides one, and focus a sheet or a menu puts on a button shows none. A control whose words are on screen has none, unless it says why it cannot be used (3D without WebGL 2). |
 | **Contrast** | Text 4.5:1, large text and control boundaries 3:1, in both themes. Text over art sits on a scrim. |
 | **State** | Never by color alone ([3.2](#32-words-used-below)) |

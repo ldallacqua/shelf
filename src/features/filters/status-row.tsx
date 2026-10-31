@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react'
 import { occasionalStatuses, statuses, type Status } from '@/domain/library/values'
 import { cn } from '@/ui/cn'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
+import { Ghost } from '@/ui/ghost'
 
 type StatusRowProps = {
   /** The one status the filter is set to; `all` for none; undefined when it says something else. */
@@ -83,7 +84,9 @@ export function StatusRow({ value, counts, onShelf, onChange }: StatusRowProps) 
             className="shrink-0 gap-2"
           >
             <span aria-hidden="true">{library(`status.${status}`)}</span>
-            {count === undefined ? null : (
+            {counts === undefined ? (
+              <Ghost className="h-2.5 w-4" />
+            ) : count === undefined ? null : (
               <span aria-hidden="true" className="readout text-[0.625rem]">
                 {format.number(count)}
               </span>

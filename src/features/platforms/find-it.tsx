@@ -7,6 +7,7 @@ import { useEffect, useId, useState } from 'react'
 import { strippedTitle } from '@/domain/sync/titles'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
+import { Ghost, GhostText, Loading } from '@/ui/ghost'
 
 import { searchIgdb, type Found } from './sync-client'
 
@@ -26,6 +27,9 @@ export function Thumb({ cover }: { cover: string | null }) {
     <span aria-hidden="true" className="h-12 w-9 flex-none rounded-[3px] bg-line" />
   )
 }
+
+/** Results on their way, one fewer than IGDB usually finds, in their shape. */
+const GHOST_RESULTS = 3
 
 /**
  * Finding which game something is: IGDB searched by its title, which I can
@@ -96,12 +100,30 @@ export function FindIt({
         />
         <Button type="submit" variant="secondary" disabled={searching || busy}>
           <SearchIcon aria-hidden="true" />
-          {searching ? t('searching') : t('search')}
+          {t('search')}
         </Button>
       </form>
       {trouble ? <p role="alert">{t('failed')}</p> : null}
-      {found && found.length === 0 ? <p className="text-sm text-muted">{t('noResults')}</p> : null}
-      {found && found.length > 0 ? (
+      {searching ? (
+        <Loading label={t('searching')} className="grid gap-2">
+          {Array.from({ length: GHOST_RESULTS }, (_, row) => (
+            <div key={row} className="flex items-center gap-3">
+              <Ghost order={row} className="h-12 w-9 flex-none rounded-[3px]" />
+              <span className="min-w-0 flex-1 text-sm">
+                <GhostText order={row} className="w-1/2" />
+              </span>
+              <Ghost
+                order={row}
+                className="h-8 w-14 flex-none rounded-control pointer-coarse:h-10"
+              />
+            </div>
+          ))}
+        </Loading>
+      ) : null}
+      {!searching && found && found.length === 0 ? (
+        <p className="text-sm text-muted">{t('noResults')}</p>
+      ) : null}
+      {!searching && found && found.length > 0 ? (
         <ul className="grid gap-2" aria-live="polite">
           {found.map((each) => (
             <li key={each.igdbId} className="flex items-center gap-3">

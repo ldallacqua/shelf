@@ -34,6 +34,8 @@
 @custom-variant frameless (&:where([data-window='frameless'], [data-window='frameless'] *));
 /* That window, maximized (features/desktop/frame.ts). */
 @custom-variant maximized (&:where([data-maximized], [data-maximized] *));
+/* A browser that has signed in, before it asks who (features/owner/account-hint.tsx). It outweighs `sm:` on purpose. */
+@custom-variant hinted (html[data-hinted] &);
 /* A window too small for the 3D shelf: TOO_SMALL_FOR_3D in features/library/preferences.ts. */
 @custom-variant too-small-for-3d {
   /* The shorthand form would split this list at its comma. */
