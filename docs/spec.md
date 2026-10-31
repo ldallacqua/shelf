@@ -1244,6 +1244,12 @@ are marked as English, so a screen reader pronounces them correctly.
 - **From the wall or list**, the thumbnail grows into the hero.
 - **Opened from the library**, detail sits over the shelf: a panel on desktop and tablet, a
   sheet on a phone. Back closes it and the shelf is where I left it.
+  - **On a very wide window** (from 2400px wide and 720px tall), a panel at the window's edge is
+    too far to read without turning my head. There the game's page stands in a frame up to
+    1280px wide, centered over the dimmed shelf: the hero, then the main column, and Mine at
+    352px on the right. It fades up instead of sliding in. Its height stays put, so stepping
+    through games moves nothing, and resizing past the line keeps the game and what I was typing.
+    In 3D it stays a panel, for the pulled box to stand beside. The full page is still a click away.
 - **Opened directly**, it is a full page with a link back to the library.
 - **Next and previous** follow the library's current order: arrow keys on desktop, a sideways
   swipe on a phone.
@@ -1697,7 +1703,7 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 | Main controls | Bar at the bottom | Row under the header | Row under the header |
 | Filters | Bottom sheet | Side panel | Side panel; from 1536px, a column beside the library |
 | Sort and group | Bottom sheet | Menus | Menus |
-| Detail | Bottom sheet, two heights | Side panel; sheet in portrait | Side panel |
+| Detail | Bottom sheet, two heights | Side panel; sheet in portrait | Side panel; from 2400px wide, centered in two columns (7.2) |
 | Add | Full-screen sheet | Dialog | Dialog |
 | List columns | Four | Six | All |
 
@@ -1792,7 +1798,7 @@ Only position, scale, rotation and opacity are animated.
 | Camera travel | Eased glide | Jumps to the destination |
 | Depth on scroll | Layers shift | None |
 | Stat numbers | Count up | Final value shown |
-| Sheets and panels | Slide in | Fade in |
+| Sheets and panels | Slide in; a game's centered frame rises and fades in | Fade in |
 
 Reduced motion follows the system setting. Smooth scrolling is never applied to touch or under
 reduced motion.

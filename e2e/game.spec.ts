@@ -344,8 +344,41 @@ test.describe('a game opened from the library', () => {
     expect((await transitions(page)).count).toBe(before)
   })
 
+  test('on a very wide window it stands centered, and resizing past the line loses nothing', async ({
+    page,
+    size,
+  }) => {
+    test.skip(size === 'phone', 'the window is set by the test, and a phone is never this wide')
+    await page.setViewportSize({ width: 2560, height: 1440 })
+    await openLibrary(page)
+    await firstGame(page, 'shelf').click()
+    await expect(panel(page)).toBeVisible()
+    await expect
+      .poll(() => panel(page).boundingBox())
+      .toEqual({ x: 640, y: 160, width: 1280, height: 1120 })
+    const title = await panel(page).getByRole('heading', { level: 2 }).textContent()
+
+    await page.setViewportSize({ width: 2399, height: 1440 })
+    await expect.poll(async () => (await panel(page).boundingBox())?.width).toBe(416)
+    await expect(panel(page).getByRole('heading', { level: 2 })).toHaveText(title!)
+    await expect(panel(page)).toHaveCount(1)
+  })
+
   test.describe('in 3D', () => {
     test.use({ dimension: '3d' })
+
+    test('stays at the side on a very wide window', async ({ page, size }) => {
+      test.skip(size === 'phone', 'a phone is never offered 3D')
+      await page.setViewportSize({ width: 2560, height: 1440 })
+      await openLibrary(page)
+      test.skip((await shelfSettled(page)) !== '3d', 'this browser could not draw the 3D shelf')
+      await page.locator('[data-box]').first().focus()
+      await page.keyboard.press('Enter')
+      await expect(panel(page)).toBeVisible()
+      await expect
+        .poll(() => panel(page).boundingBox())
+        .toEqual({ x: 2144, y: 0, width: 416, height: 1440 })
+    })
 
     test('the box pulled from the wall is its cover', async ({ page, size }) => {
       test.skip(size === 'phone', 'a phone is never offered 3D')

@@ -168,7 +168,10 @@ are fetched, so a change never takes them back to ghosts. While the editor is on
 the shelf's own account, `mine-skeleton.tsx` holds its place in the editor's exact shape: change
 `mine-editor.tsx` and change the skeleton with it (a test in `e2e/game.spec.ts` fails when
 they differ). The cover grows from the box through `morph.ts`,
-which names the two ends for that one view transition only. A private note never leaves the
+which names the two ends for that one view transition only. Past `GAME_CENTERED`, on a very wide
+window, the panel stands centered with the page's two columns. That is style alone (the
+`game-centered` variant, and a container query inside it), so resizing past the line moves the same
+elements and loses nothing; keep it out of React. A private note never leaves the
 server except to its own account, in `GET /api/v1/entries/{id}`, which the editor reads.
 
 **Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
