@@ -516,6 +516,12 @@ describe('GamePanel', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
   })
 
+  it('asks for 32rem on a large window, in a form that beats the sheet’s own width', () => {
+    open(item({ slug: 'bloodborne' }))
+    // jsdom applies no styles, so `e2e/game.spec.ts` measures the result.
+    expect(screen.getByRole('dialog')).toHaveClass('sheet-side:lg:w-[32rem]')
+  })
+
   describe('on a very wide window (spec 7.2)', () => {
     it('stands centered by style alone, and asks for art and a cover the size it draws them', async () => {
       open(item({ slug: 'bloodborne' }))

@@ -101,6 +101,9 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   centered on a very wide window"; spec 7.2). Its browser tests, in `e2e/game.spec.ts`, have not
   been run. A DevTools sidebar docked in the window can take it below 2400px, and the side panel
   is then what should show.
+- **The game's side panel is 32rem from 1024px wide** (architecture section 25, row "The side
+  panel, 32rem"). It had been 26rem by mistake. The reference pictures `library-game-*.png` show an
+  open panel, so they need taking again when the browser tests return.
 - **Next:** what the owner asks for after #68.
 - **Checking the library in this app's browser pane does not work while the pane is hidden:** the
   streamed library is never revealed and the skeleton stays. A headless Chromium script against
