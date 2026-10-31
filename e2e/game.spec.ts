@@ -359,7 +359,7 @@ test.describe('a game opened from the library', () => {
     const title = await panel(page).getByRole('heading', { level: 2 }).textContent()
 
     await page.setViewportSize({ width: 2399, height: 1440 })
-    await expect.poll(async () => (await panel(page).boundingBox())?.width).toBe(416)
+    await expect.poll(async () => (await panel(page).boundingBox())?.width).toBe(512)
     await expect(panel(page).getByRole('heading', { level: 2 })).toHaveText(title!)
     await expect(panel(page)).toHaveCount(1)
   })
@@ -377,7 +377,7 @@ test.describe('a game opened from the library', () => {
       await expect(panel(page)).toBeVisible()
       await expect
         .poll(() => panel(page).boundingBox())
-        .toEqual({ x: 2144, y: 0, width: 416, height: 1440 })
+        .toEqual({ x: 2048, y: 0, width: 512, height: 1440 })
     })
 
     test('the box pulled from the wall is its cover', async ({ page, size }) => {

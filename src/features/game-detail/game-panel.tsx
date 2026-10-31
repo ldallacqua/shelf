@@ -215,7 +215,8 @@ export function GamePanel({
           closeLabel={t('close')}
           scrim={!pulled}
           className={cn(
-            'lg:w-[32rem] sheet-bottom:h-[92dvh] sheet-bottom:max-h-[92dvh]',
+            // Stacked because `lg:` alone loses: custom variants come after breakpoints in the CSS.
+            'sheet-bottom:h-[92dvh] sheet-bottom:max-h-[92dvh] sheet-side:lg:w-[32rem]',
             !pulled && CENTERED,
           )}
           upright
