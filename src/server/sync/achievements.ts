@@ -271,6 +271,21 @@ export const noteDefinitionsFailed = (
     .onConflictDoUpdate({ target: achievementSets.id, set: { triedAt: now, failed: true } })
 
 /**
+ * The provider was asked about a game with none and counts none still, or
+ * did not say: counted again after a while. Nothing else about it changes.
+ */
+export const noteCounted = (
+  db: Db,
+  provider: AchievementProvider,
+  providerSetId: string,
+  now: number,
+) =>
+  db
+    .update(achievementSets)
+    .set({ triedAt: now })
+    .where(eq(achievementSets.id, setIdOf(provider, providerSetId)))
+
+/**
  * Descriptions the provider gave with an account's progress, for any
  * achievement its definitions gave none. One that already has a
  * description keeps it.

@@ -418,6 +418,12 @@ Xbox and PlayStation tickets extend rather than repeat. What building settled:
   Shelf's clock), once its set changed, and after a week. A failure waits an hour, and the
   other games' answers stay. Each account may ask for 240 steps an hour on its asking: an
   hour of Steam's time.
+- **A game with none is counted again.** A game read around its release can have none yet, and
+  every one the next day (issue 113): the count only reached games otherwise due, and a game
+  with none is due only after 30 days, so it said "no achievements" for a month. Now it is due
+  after 12 hours for the count alone, a hundred games a question. Steam leaves `total_achievements`
+  out for most games without any, so only a count above zero leads to asking about the game;
+  either way nothing else changes, and its definitions keep their month.
 - **A read replaces the last.** The unlocks are Steam's latest answer, whole, so reading twice
   counts nothing twice, and an achievement Steam takes out goes with its unlocks. One added
   after the account's last read is `unknown` until the next: no percentage and no 100% until

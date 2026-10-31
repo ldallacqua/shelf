@@ -85,7 +85,7 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
   const answersFor = (app: string): AchievementAnswers | undefined => {
     const given = fixture[app]
     const instead = state.achievements?.[app]
-    return given && instead ? { ...given, ...instead } : given
+    return instead ? ({ ...given, ...instead } as AchievementAnswers) : given
   }
   /** As Steam answers a profile whose game details are not public, and a game without stats. */
   const notPublic = { playerstats: { error: 'Profile is not public', success: false } }
