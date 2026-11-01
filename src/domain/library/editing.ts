@@ -30,6 +30,8 @@ export type OwnedCopy = {
   stores?: StoreName[]
   /** Hours a sync reports on this copy, by source (ADR 003). */
   synced?: { source: SyncSource; minutes: number }[]
+  /** The linked accounts that list it: it stays while they do (spec 7.3). */
+  readFrom?: SyncSource[]
 }
 
 export type OwnedVersion = {

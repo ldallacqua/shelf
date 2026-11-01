@@ -36,6 +36,7 @@ import {
 import { MAX_QUERY_LENGTH } from '@/domain/library/view'
 import type { Platform } from '@/domain/platforms/platforms'
 import type { Db, Executor } from '@/server/db/client'
+import { accountsReading, storesOf } from '@/server/library/read-from'
 import {
   copies,
   entries,
@@ -947,8 +948,7 @@ const placeAndFeed = (
         )
         .limit(1)
       if (!copy) throw invalid('A synced game needs a copy on its platform')
-      // The store listed it, so that is where it is from. Said once, as it comes onto the copy: a
-      // later sync does not put back a store I took off.
+      // The store listed it, so that is where it is from, and stays so (`setCopyStores`).
       const store = storeOfSource(feed.source)
       if (store && takesStore(feed.platformId, feed.format)) {
         await tx
@@ -1614,6 +1614,9 @@ export const addCopy = (
 export const removeCopy = (db: Db, libraryId: string, copyId: string, now = Date.now()) =>
   db.transaction(async (tx) => {
     const copy = await requireCopy(tx, libraryId, copyId)
+    if ((await accountsReading(tx, libraryId, [copyId])).has(copyId)) {
+      throw new LibraryError('conflict', 'A linked account lists this copy: it stays while it does')
+    }
     await letGoOfCopies(tx, [copyId])
     await tx.delete(playTime).where(eq(playTime.copyId, copyId))
     await tx.delete(copies).where(eq(copies.id, copyId))
@@ -1916,10 +1919,22 @@ export const setCopyFormat = (
   return withConflict('That platform and format are already on this game', () =>
     db.transaction(async (tx) => {
       const copy = await requireCopy(tx, libraryId, copyId)
-      // A disc is from no store, and the copy is someone's disc now.
+      // A disc is from no store, and the copy is someone's disc now. A download again, it is from
+      // the store that lists it.
+      const [row] = await tx
+        .select({ platformId: copies.platformId, stores: copies.stores })
+        .from(copies)
+        .where(eq(copies.id, copyId))
+      const reading = await accountsReading(tx, libraryId, [copyId])
       await tx
         .update(copies)
-        .set({ format, ...(format === 'digital' ? {} : { stores: [] }) })
+        .set({
+          format,
+          stores:
+            row && takesStore(row.platformId, format)
+              ? cleanStores([...row.stores, ...storesOf(reading.get(copyId))])
+              : [],
+        })
         .where(eq(copies.id, copyId))
       await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, copy.entryId))
       await bumpVersion(tx, libraryId)
@@ -1944,9 +1959,11 @@ export const setCopyStores = (
     if (!copy || !takesStore(copy.platformId, copy.format)) {
       throw invalid('Only a download on a PC comes from a store')
     }
+    // What a linked account lists stays, whatever the form sent.
+    const reading = await accountsReading(tx, libraryId, [copyId])
     await tx
       .update(copies)
-      .set({ stores: cleanStores(stores) })
+      .set({ stores: cleanStores([...stores, ...storesOf(reading.get(copyId))]) })
       .where(eq(copies.id, copyId))
     await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
     await bumpVersion(tx, libraryId)

@@ -1737,6 +1737,7 @@
     "addThisCopy": "Add",
     "cancel": "Cancel",
     "syncedHours": "{source}: {hours, number} h",
+    "fromAccount": "From your {source} account: {hours, number} h",
     "notesPublic": "Visitors can read these notes",
     "versions": "Versions",
     "relations": {

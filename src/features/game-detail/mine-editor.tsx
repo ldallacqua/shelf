@@ -1,6 +1,6 @@
 'use client'
 
-import { ArchiveIcon, PlusIcon, SplitIcon, StarIcon, Trash2Icon } from 'lucide-react'
+import { ArchiveIcon, LockIcon, PlusIcon, SplitIcon, StarIcon, Trash2Icon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from 'react'
 
@@ -13,6 +13,7 @@ import type {
   OwnerGame,
 } from '@/domain/library/editing'
 import { AWAY_AFTER_MINUTES, isPcSource, playedMinutes } from '@/domain/library/hours'
+import { storeOfSource } from '@/domain/library/store-choices'
 import { isPcPlatform, takesStore, type StoreName } from '@/domain/library/stores'
 import {
   formats,
@@ -771,7 +772,7 @@ function SavedField({
  * removed there, and apart from them, behind a button of its own, a new copy
  * put together.
  */
-function Copies({
+export function Copies({
   owned,
   labels,
   platforms,
@@ -829,31 +830,50 @@ function Copies({
                 platform: name,
                 format: library(`format.${copy.format}`),
               })
+              const readFrom = copy.readFrom ?? []
               return (
                 <li key={copy.id} className={mineCard}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="grid min-w-0 gap-0.5 pt-1">
                       <span className="text-sm font-semibold">{name}</span>
-                      {copy.synced?.map((each) => (
-                        <span key={each.source} className="text-xs text-muted">
-                          {t('syncedHours', {
-                            source: sync(`source.${each.source}`),
-                            hours: Math.round(each.minutes / 6) / 10,
+                      {readFrom.map((source) => (
+                        <span key={source} className="flex items-center gap-1 text-xs text-muted">
+                          <LockIcon aria-hidden="true" className="size-3 flex-none" />
+                          {t('fromAccount', {
+                            source: sync(`source.${source}`),
+                            hours:
+                              Math.round(
+                                (copy.synced?.find((each) => each.source === source)?.minutes ??
+                                  0) / 6,
+                              ) / 10,
                           })}
                         </span>
                       ))}
+                      {copy.synced
+                        ?.filter((each) => !readFrom.includes(each.source))
+                        .map((each) => (
+                          <span key={each.source} className="text-xs text-muted">
+                            {t('syncedHours', {
+                              source: sync(`source.${each.source}`),
+                              hours: Math.round(each.minutes / 6) / 10,
+                            })}
+                          </span>
+                        ))}
                     </div>
-                    <Tip label={removeLabel}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={removeLabel}
-                        onClick={() => onRemove(copy)}
-                        className="-mt-1 -mr-1 text-muted hover:text-text"
-                      >
-                        <Trash2Icon aria-hidden="true" />
-                      </Button>
-                    </Tip>
+                    {/* A copy an account lists is that account's to say: only mine are mine to remove. */}
+                    {readFrom.length === 0 ? (
+                      <Tip label={removeLabel}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={removeLabel}
+                          onClick={() => onRemove(copy)}
+                          className="-mt-1 -mr-1 text-muted hover:text-text"
+                        >
+                          <Trash2Icon aria-hidden="true" />
+                        </Button>
+                      </Tip>
+                    ) : null}
                   </div>
                   <Segmented
                     aria-label={t('formatOf', { platform: name })}
@@ -871,6 +891,7 @@ function Copies({
                     <StoresField
                       soldOn={owned.soldOn}
                       value={copy.stores ?? []}
+                      fixed={readFrom.flatMap((source) => storeOfSource(source) ?? [])}
                       onChange={(next) => onStores(copy, next)}
                     />
                   ) : null}
