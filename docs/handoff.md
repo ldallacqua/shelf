@@ -91,7 +91,8 @@ The owner: "look at shelf issues and start by the highest priority items". The i
   section 12; the owner, 31 Oct 2026). Hours typed before stay in `play_time` as source `manual`,
   counting for nothing: nothing was deleted, so a game whose only hours were typed shows none until
   a platform or the app counts it. Steam's Time left idle stays: it corrects a store's count, and
-  the owner asked for it on 29 Oct.
+  the owner asked for it on 29 Oct. **Still unchecked:** a real controller, and a real game from
+  Steam with the window closed (`docs/desktop.md`, step 7): no script may do those.
 - **Tips** (architecture section 25, row "Tips"; spec 13): every control that shows only an icon
   or a mark has Radix's tooltip, restyled (`Tip`), and lint refuses the browser's `title`.
 - **Archive and Remove on Organize's Unsorted rows, and the archived games as Organize's third

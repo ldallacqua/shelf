@@ -52,20 +52,20 @@ mod windows {
     use std::path::PathBuf;
 
     use windows_sys::Win32::Foundation::{
-        CloseHandle, FILETIME, HANDLE, HWND, INVALID_HANDLE_VALUE, LPARAM,
+        CloseHandle, FILETIME, HANDLE, HWND, INVALID_HANDLE_VALUE, LPARAM, STILL_ACTIVE,
     };
     use windows_sys::Win32::System::Diagnostics::ToolHelp::{
         CreateToolhelp32Snapshot, PROCESSENTRY32W, Process32FirstW, Process32NextW,
         TH32CS_SNAPPROCESS,
     };
     use windows_sys::Win32::System::Threading::{
-        GetProcessId, GetProcessTimes, OpenProcess, PROCESS_NAME_WIN32,
+        GetExitCodeProcess, GetProcessId, GetProcessTimes, OpenProcess, PROCESS_NAME_WIN32,
         PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE, QueryFullProcessImageNameW,
         TerminateProcess,
     };
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        EnumWindows, GW_OWNER, GetWindow, GetWindowThreadProcessId, IsWindowVisible, PostMessageW,
-        WM_CLOSE,
+        EnumWindows, GW_OWNER, GetForegroundWindow, GetWindow, GetWindowThreadProcessId,
+        IsWindowVisible, PostMessageW, WM_CLOSE,
     };
     use windows_sys::core::BOOL;
 
@@ -173,6 +173,37 @@ mod windows {
         Some(found)
     }
 
+    /// The program in front: what owns the window with the keyboard, and where its file is.
+    pub fn front() -> Option<(Identity, PathBuf)> {
+        // SAFETY: takes nothing, and answers a window or null.
+        let window = unsafe { GetForegroundWindow() };
+        if window.is_null() {
+            return None;
+        }
+        let mut pid = 0;
+        // SAFETY: `pid` is of this frame; a window gone meanwhile answers 0.
+        unsafe { GetWindowThreadProcessId(window, &mut pid) };
+        let process = Held::open(pid, PROCESS_QUERY_LIMITED_INFORMATION)?;
+        Some((
+            Identity {
+                pid,
+                started: process.started()?,
+            },
+            process.image()?,
+        ))
+    }
+
+    /// Whether a process is still running. Held open meanwhile, so its id can't change hands.
+    pub fn alive(id: &Identity) -> bool {
+        Held::open(id.pid, PROCESS_QUERY_LIMITED_INFORMATION).is_some_and(|process| {
+            let mut code = 0;
+            // SAFETY: `code` is of this frame, and the handle is open. A process that has ended
+            // can still be opened while anything holds a handle to it.
+            let read = unsafe { GetExitCodeProcess(process.0, &mut code) };
+            process.started() == Some(id.started) && read != 0 && code == STILL_ACTIVE as u32
+        })
+    }
+
     /// The processes still the ones named, held open so their ids cannot change hands meanwhile.
     fn holding(ids: &[Identity]) -> (Vec<Held>, HashSet<u32>) {
         let mut held = Vec::new();
@@ -275,11 +306,21 @@ mod windows {
 }
 
 #[cfg(windows)]
-pub use windows::{close, identity_of, snapshot, terminate};
+pub use windows::{alive, close, front, identity_of, snapshot, terminate};
 
 #[cfg(not(windows))]
 pub fn snapshot() -> Option<Vec<Process>> {
     None
+}
+
+#[cfg(not(windows))]
+pub fn front() -> Option<(Identity, PathBuf)> {
+    None
+}
+
+#[cfg(not(windows))]
+pub fn alive(_id: &Identity) -> bool {
+    false
 }
 
 #[cfg(not(windows))]
@@ -305,6 +346,21 @@ mod tests {
     use super::*;
 
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+    #[test]
+    fn a_process_is_alive_only_as_itself() {
+        let me = snapshot()
+            .unwrap()
+            .into_iter()
+            .find(|process| process.id.pid == std::process::id())
+            .unwrap()
+            .id;
+        assert!(alive(&me));
+        assert!(!alive(&Identity {
+            started: me.started + 1,
+            ..me
+        }));
+    }
 
     struct Folder(PathBuf);
 

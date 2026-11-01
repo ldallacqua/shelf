@@ -100,13 +100,14 @@ const STAND_IN = 'shelf-desktop-check-stand-in.exe'
 const game = mkdtempSync(join(tmpdir(), 'shelf-desktop-game-'))
 const started = join(game, 'started.txt')
 const stubborn = join(game, 'stubborn.txt')
+const played = join(game, 'played.txt')
 copyFileSync(resolve('desktop/target/debug/examples/stand_in.exe'), join(game, STAND_IN))
 writeFileSync(
   join(game, 'start.bat'),
   [
     '@echo off',
     'echo %CD%> "%~dp0started.txt"',
-    `if exist "%~dp0stubborn.txt" (start "" "%~dp0${STAND_IN}" --ignore-close) else (start "" "%~dp0${STAND_IN}")`,
+    `if exist "%~dp0played.txt" (start "" "%~dp0${STAND_IN}" --played) else if exist "%~dp0stubborn.txt" (start "" "%~dp0${STAND_IN}" --ignore-close) else (start "" "%~dp0${STAND_IN}")`,
     '',
   ].join('\r\n'),
 )
@@ -118,6 +119,7 @@ const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
     SHELF_URL: BASE_URL,
     SHELF_DATA_DIR: profile,
     SHELF_PICK: join(game, 'start.bat'),
+    SHELF_REOPEN_AFTER: '5',
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}`,
   },
   stdio: 'inherit',
@@ -310,6 +312,39 @@ try {
   pass('Force stop, once answered, ends it, and Play comes back')
   rmSync(stubborn)
 
+  console.log('\nCounting what is played')
+  // The stand-in takes the focus for a few seconds here, and touches a key nothing uses.
+  const unsent = () =>
+    shelf.evaluate(async () => {
+      const tauri = (
+        window as unknown as {
+          __TAURI__: { core: { invoke: (command: string) => Promise<unknown> } }
+        }
+      ).__TAURI__
+      return (await tauri.core.invoke('play_sessions')) as { game: object; seconds: number }[]
+    })
+  writeFileSync(played, '')
+  await button('Play').click()
+  await button('Stop').waitFor({ timeout: 15_000 })
+  await new Promise((done) => setTimeout(done, 20_000))
+  await button('Stop').click()
+  await button('Play').waitFor({ timeout: 15_000 })
+  rmSync(played)
+  let session: { game: object; seconds: number } | undefined
+  // Once the game has ended it is finished, unless the page has sent it already.
+  await until('the page sending what was counted', 90, async () => {
+    const sessions = await unsent()
+    session ??= sessions[0]
+    await shelf.evaluate(() => window.dispatchEvent(new Event('focus')))
+    return session !== undefined && sessions.length === 0
+  }).catch(async () => {
+    const left = await unsent().catch(() => [])
+    fail(`what was counted did not reach Shelf: ${JSON.stringify({ session, left })}`)
+  })
+  if (session && 'entry' in session.game && session.seconds > 0)
+    pass(`counted ${session.seconds} s of the game in front, and Shelf kept it`)
+  else fail(`counted ${JSON.stringify(session)}`)
+
   console.log('\nReady to play')
   // Bloodborne has a file now. What else is ready comes from this computer's own Steam, read,
   // never opened: the count is checked against the whole shelf, not against a number.
@@ -406,6 +441,22 @@ try {
   console.log('\nThe console')
   if (errors.length === 0) pass('no error')
   else for (const error of errors) fail(error)
+
+  console.log('\nClosing the window')
+  await inEnglish()
+  await control('Close').click()
+  await until('the window closing', 15, async () => shelf.isClosed())
+  if (app.exitCode === null) pass('the app goes on, in the tray')
+  else fail(`the app ended with ${app.exitCode}`)
+  await until('the window opening again', 60, async () => {
+    const again = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`)
+    const page = again
+      .contexts()
+      .flatMap((context) => context.pages())
+      .find((each) => each.url().startsWith(BASE_URL))
+    return page !== undefined && (await page.locator('header').count()) > 0
+  })
+  pass('opens again from the tray, through the splash')
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error))
 } finally {

@@ -42,7 +42,7 @@ pub fn key(path: &Path) -> String {
     text.trim_end_matches('\\').to_string()
 }
 
-fn inside(file: &str, folder: &str) -> bool {
+pub fn inside(file: &str, folder: &str) -> bool {
     file.strip_prefix(folder)
         .is_some_and(|rest| rest.starts_with('\\'))
 }
@@ -110,7 +110,7 @@ impl Rules {
     }
 
     /// A process's file could be a game's: not Windows', not Steam's, not one that starts others.
-    fn could_be_game(&self, file: &str) -> bool {
+    pub fn could_be_game(&self, file: &str) -> bool {
         self.is_program(file) && !starts_others(file)
     }
 
@@ -218,8 +218,8 @@ impl Launch {
     }
 
     /// Whether this process is the game by what started it: of the family, and in its folders.
-    fn claims(&self, process: &Process, image: &str) -> bool {
-        self.family.contains(&process.id)
+    fn claims(&self, id: Identity, image: &str) -> bool {
+        self.family.contains(&id)
             && [&self.folder, &self.above]
                 .into_iter()
                 .flatten()
@@ -265,7 +265,7 @@ pub fn identify(
                 inside(&image, folder) && !image.contains("\\_commonredist\\")
             })
         });
-        let started = launch.is_some_and(|launch| launch.claims(process, &image));
+        let started = launch.is_some_and(|launch| launch.claims(process.id, &image));
         if is_file || on_steam || started {
             seen.confirmed.push(process.id);
         }
@@ -380,6 +380,16 @@ impl Games {
             !launches.is_empty(),
             launches.values().any(|launch| launch.starting(now)),
         )
+    }
+
+    /// The game a process is by what Play started, if any (`watch.rs`).
+    pub fn entry_of(&self, id: Identity, image: &str) -> Option<String> {
+        self.launches
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|(_, launch)| launch.claims(id, image))
+            .map(|(entry, _)| entry.clone())
     }
 
     /// What is seen of a game now.

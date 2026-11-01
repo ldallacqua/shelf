@@ -339,21 +339,28 @@ include whether it had Windows' bar (0.1.0 remembered yes, and would have put it
 development build with a profile of its own no longer reads or writes the installed app's
 memory of its window.
 
-### Step 7: Hours for the games started from a file
+### Step 7: Hours for every PC game
 
-- [ ] The app watches what it started (`sysinfo`, every 15 seconds): the process it started,
-      or, once that ends within a minute, a process running from the same folder. A session
-      ends when none is left.
-- [ ] Sessions are kept on this computer until the page takes them (`sessions`, then
-      `sessions_sent`), so a session played offline is not lost.
-- [ ] The server: a new source of hours, `desktop`, on the entry's PC copy (made if there is
-      none), added as a store's hours are; never for a game started through Steam. Its API and
-      migration are designed in that step's pull request, and the spec says it first.
-- [ ] Closing the window while a game runs keeps the app in the notification area until the
-      game ends.
+Replaced on 31 Oct 2026 by what the owner asked for: what it counts, and why, is ADR 005,
+section 12.
 
-**Done when** an hour played from a file shows as an hour on the PC copy, once, and an hour on
-Steam is still counted once.
+**Built 31 Oct 2026.**
+
+- [x] `tracker.rs` decides from what it is told, and keeps sessions in `play-sessions.json`;
+      `watch.rs` looks at the program in front every 5 seconds; `pads.rs` hears controllers while
+      a game is in front; `tray.rs` and `autostart.rs` keep it counting with no window.
+- [x] The server: `play_sessions`, `POST /api/v1/me/play/sessions`, and the page's
+      `send-played.ts`. Sent twice is one session. An app older than these commands sends nothing.
+- [x] Hours can't be typed, and the game's page says what time away is.
+- [x] Tests: every rule of time away with no clock and no game; the page with the bridge faked; the
+      server on a real database.
+- [x] `pnpm desktop:check` has a stand-in take the focus and touch a key nothing uses, and sees
+      its seconds counted and sent.
+- [ ] By hand, on an installed version: a game opened from Steam with the window closed; a game
+      played on a controller, with no key touched, going on counting; leaving it for over 5
+      minutes, and that stretch not counting; turning off Start with Windows.
+
+**Done when** the owner has seen those on an installed version.
 
 ### Step 8: Play turns to Stop
 
@@ -420,5 +427,7 @@ Issue 102; what counts as evidence, and the limits, are ADR 005, section 11.
 | Stop says Windows did not let it | The game runs as administrator, or is protected. Close it from the game |
 | A game opens and closes at once | It needs another folder or arguments: point at its launcher, or at a shortcut (`.lnk`) that has them |
 | Steam opens on the game's page, not the game | Steam does that for a game with several ways to start: pick one there once |
+| A game's hours don't grow | Shelf for Windows wasn't running (look in the tray), the game wasn't in front, or a session is still open: hours arrive when the game closes |
+| Hours stop on a controller | Time away is decided from what Windows shows of the controller: with HidHide or similar hiding it, only keys and the mouse count |
 | The app opens blank | WebView2 is missing or broken: Windows Update, or Microsoft's WebView2 installer |
 | `cargo` not found, though Rust is installed | A stray `"` in Windows' PATH (the owner's has one after `C:\Program Files\dotnet`) hides every folder after it from cmd and from Rust. The `desktop:` scripts tidy PATH for what they start; remove the quote in Windows' environment variables to fix it everywhere |

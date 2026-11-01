@@ -4,8 +4,9 @@
 //! that window is asked to close.
 //!
 //! `--ignore-close` keeps it open when asked, as a game that hangs does;
-//! `--no-window` gives it none to ask. It ends itself after a minute whatever
-//! happens, so a test that fails leaves nothing behind.
+//! `--no-window` gives it none to ask; `--played` takes the focus after all, and touches F24, a
+//! key nothing uses, each second, as a game in front with someone playing it would be seen. It
+//! ends itself after a minute whatever happens, so a test that fails leaves nothing behind.
 
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
@@ -14,10 +15,13 @@ mod stand_in {
     use std::time::Duration;
 
     use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+        INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, SendInput, VK_F24, VK_MENU,
+    };
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         CreateWindowExW, DefWindowProcW, DispatchMessageW, GetMessageW, MSG, PostQuitMessage,
-        RegisterClassW, WM_CLOSE, WNDCLASSW, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_POPUP,
-        WS_VISIBLE,
+        RegisterClassW, SetForegroundWindow, WM_CLOSE, WNDCLASSW, WS_EX_NOACTIVATE,
+        WS_EX_TOOLWINDOW, WS_POPUP, WS_VISIBLE,
     };
 
     static mut IGNORE_CLOSE: bool = false;
@@ -38,6 +42,24 @@ mod stand_in {
         }
         // SAFETY: passes on what Windows handed this function.
         unsafe { DefWindowProcW(window, message, wide, long) }
+    }
+
+    fn press(key: u16) {
+        let event = |flags| INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: key,
+                    wScan: 0,
+                    dwFlags: flags,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        };
+        let both = [event(0), event(KEYEVENTF_KEYUP)];
+        // SAFETY: the list says its own length and each entry's size.
+        unsafe { SendInput(2, both.as_ptr(), size_of::<INPUT>() as i32) };
     }
 
     pub fn main() {
@@ -64,8 +86,13 @@ mod stand_in {
         // SAFETY: `class` and `name` outlive the calls; the window's position is off every screen.
         unsafe {
             RegisterClassW(&class);
-            CreateWindowExW(
-                WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW,
+            let played = has("--played");
+            let window = CreateWindowExW(
+                if played {
+                    WS_EX_TOOLWINDOW
+                } else {
+                    WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
+                },
                 name.as_ptr(),
                 name.as_ptr(),
                 WS_POPUP | WS_VISIBLE,
@@ -78,6 +105,17 @@ mod stand_in {
                 std::ptr::null_mut(),
                 std::ptr::null(),
             );
+            if played {
+                // Windows lets a program take the focus once it has seen it press a key.
+                press(VK_MENU);
+                SetForegroundWindow(window);
+                std::thread::spawn(|| {
+                    loop {
+                        press(VK_F24);
+                        std::thread::sleep(Duration::from_secs(1));
+                    }
+                });
+            }
         }
         // SAFETY: as for `class`.
         let mut message: MSG = unsafe { std::mem::zeroed() };
