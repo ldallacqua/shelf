@@ -2,6 +2,8 @@ import { z } from 'zod'
 
 import type { FamilyLink } from '@/domain/igdb/game'
 import type { SearchResult } from '@/domain/igdb/search'
+import { storeList } from '@/domain/library/store-list'
+import type { StoreName } from '@/domain/library/stores'
 import { formats, statuses, type Format, type Relation } from '@/domain/library/values'
 
 /**
@@ -49,7 +51,7 @@ export type SearchAnswer = {
  * into a related one already on the shelf. `ask` when the default needs my
  * yes (a remaster, an expanded game, a remake).
  */
-export type Grouping =
+export type Grouping = (
   | { action: 'new' }
   | { action: 'already'; entry: OnShelf }
   | {
@@ -59,6 +61,10 @@ export type Grouping =
       because: FamilyLink
       ask: boolean
     }
+) & {
+  /** The stores it is sold on, asked with the rest: what the form offers first. */
+  soldOn?: StoreName[]
+}
 
 export const MIN_SEARCH = 2
 export const MAX_SEARCH = 100
@@ -69,7 +75,13 @@ export const addInput = z.object({
   igdbId: z.number().int().positive(),
   status: z.enum(statuses),
   copies: z
-    .array(z.object({ platformId: z.number().int().positive(), format: z.enum(formats) }))
+    .array(
+      z.object({
+        platformId: z.number().int().positive(),
+        format: z.enum(formats),
+        stores: storeList.optional(),
+      }),
+    )
     .max(30),
   /** 0 to 100; the form asks out of ten. */
   rating: z.number().int().min(0).max(100).optional(),
@@ -77,6 +89,8 @@ export const addInput = z.object({
   completedOn: z.iso.date().optional(),
   /** On the wishlist, the platforms I want it on (spec 7.5). */
   wanted: z.array(z.number().int().positive()).max(20).optional(),
+  /** Of those, on a PC, which store I would buy it from. */
+  wantedStores: storeList.optional(),
   /** My answer to the proposal: fold it in, or keep it apart. Absent: the default. */
   grouping: z.enum(['join', 'separate']).optional(),
 })

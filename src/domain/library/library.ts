@@ -1,4 +1,5 @@
 import type { Palette } from '@/domain/color/palette'
+import type { StoreName } from '@/domain/library/stores'
 import type { Day, Format, Kind, Status } from '@/domain/library/values'
 import type { CaseShape, Family, Plastic } from '@/domain/platforms/platforms'
 
@@ -14,6 +15,8 @@ export type LibraryCopy = {
   format: Format
   /** Set when this copy is a version with its own cover (a port, a special edition). */
   cover?: string
+  /** Where a download on a PC is from. Absent when nobody has said. */
+  stores?: StoreName[]
 }
 
 export type LibraryGame = {
@@ -67,6 +70,8 @@ export type LibraryGame = {
   tags: number[]
   /** On the wishlist, the platforms I want it on, the first standing for its case (spec 7.5). */
   wanted?: number[]
+  /** Of those, on a PC, which store I would buy it from. */
+  wantedStores?: StoreName[]
   /** Only its own account sees it (spec 11.1); in its own browser's file only. */
   private?: true
   /** IGDB's theme Erotic, or the ESRB's Adults Only: hidden while a device asks (spec 3.13). */

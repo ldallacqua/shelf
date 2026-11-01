@@ -74,12 +74,18 @@ export const apiGame = z
           platform: z.string().describe('The key `owned:` takes, such as ps5'),
           name: z.string(),
           format: z.enum(['physical', 'digital']),
+          stores: z
+            .array(z.string())
+            .describe('Where a download on a PC is from, as `store:` takes them'),
         }),
       )
       .describe('Copies: one per platform and format'),
     wanted: z
       .array(z.string())
       .describe('On the wishlist, the platforms it is wanted on, as `wanted:` takes them'),
+    wantedStores: z
+      .array(z.string())
+      .describe('Of those, on a PC, the stores it would be bought from, as `store:` takes them'),
     platforms: z.array(z.string()).describe('Every platform it was released on, as filter keys'),
     genres: z.array(z.string()).describe('As `genre:` takes them'),
     themes: z.array(z.string()),
@@ -126,6 +132,9 @@ export const apiGamePage = apiGame
       .describe('Hours, from IGDB: rushing, a normal playthrough, and everything'),
     igdbRatingCount: z.int().describe('How many ratings IGDB’s rests on'),
     igdbUrl: z.url().nullable(),
+    stores: z
+      .array(z.object({ store: z.string().describe('As `store:` takes it'), url: z.url() }))
+      .describe('Where it is sold, one link to a store'),
     notes: z
       .string()
       .nullable()
@@ -247,9 +256,19 @@ const toApiGame = (library: Library, game: LibraryGame): z.infer<typeof apiGame>
     featured: game.featured,
     owned: game.copies.flatMap((copy) => {
       const platform = platforms.get(copy.platform)
-      return platform ? [{ platform: platform.key, name: platform.name, format: copy.format }] : []
+      return platform
+        ? [
+            {
+              platform: platform.key,
+              name: platform.name,
+              format: copy.format,
+              stores: copy.stores ?? [],
+            },
+          ]
+        : []
     }),
     wanted: (game.wanted ?? []).flatMap((id) => platforms.get(id)?.key ?? []),
+    wantedStores: game.wantedStores ?? [],
     platforms: game.platforms.flatMap((id) => platforms.get(id)?.key ?? []),
     genres: named('genre', game.genres),
     themes: named('theme', game.themes),
@@ -297,6 +316,7 @@ export const answerGame = (library: Library, page: GamePage): z.infer<typeof api
       : null,
     igdbRatingCount: game.igdbRatingCount,
     igdbUrl: facts.igdbUrl ?? null,
+    stores: facts.stores ?? [],
     notes: facts.notes ?? null,
     // A device's "Hide adult games" takes a game for adults' art off a page; here nothing could.
     backdrop:

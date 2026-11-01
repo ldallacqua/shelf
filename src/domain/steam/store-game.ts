@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { dayFromSeconds, EROTIC, type GameData, type GameImage } from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
+import { steamStoreLink } from '@/domain/library/store-links'
 import type { Day } from '@/domain/library/values'
 import { isSteamImage } from '@/domain/igdb/images'
 
@@ -367,6 +368,7 @@ export const toSteamGame = (item: StoreGame, title?: string): SteamGameData => {
       ...(year ? { year } : {}),
     })),
     storeIds: [{ source: 'steam', uid: appId }],
+    storeLinks: [steamStoreLink(appId)],
     ages: [],
     adultsOnly,
     ...(releasedOn ? { releasedOn } : {}),

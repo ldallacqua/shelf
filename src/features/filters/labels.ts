@@ -45,6 +45,8 @@ export const valueLabel = (
       return library(`status.${word as 'playing'}`)
     case 'format':
       return library(`format.${word as 'physical'}`)
+    case 'store':
+      return library(`store.${word as 'steam'}`)
     case 'kind':
       return t(`values.kind.${word as 'main'}`)
     case 'has':

@@ -43,6 +43,7 @@ const MINE: readonly FilterKey[] = [
   'owned',
   'wanted',
   'format',
+  'store',
   'copies',
   'rating',
   'hours',

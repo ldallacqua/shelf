@@ -1,5 +1,6 @@
 import { families } from '@/domain/platforms/platforms'
 import { ageWords } from '@/domain/library/ages'
+import { storeNames } from '@/domain/library/stores'
 import { formats, kinds, statuses } from '@/domain/library/values'
 
 /**
@@ -20,6 +21,7 @@ export const listKeys = [
   'owned',
   'wanted',
   'format',
+  'store',
   'tag',
   'has',
   'is',
@@ -63,6 +65,7 @@ export const mineKeys: readonly FilterKey[] = [
   'owned',
   'wanted',
   'format',
+  'store',
   'copies',
   'rating',
   'hours',
@@ -90,6 +93,7 @@ export const closedValues: Partial<Record<ListKey, readonly string[]>> = {
   has: hasValues,
   is: isValues,
   age: ageWords,
+  store: storeNames,
 }
 
 /** Platform families, which `owned:`, `wanted:` and `platform:` take as well as a platform's own key. */

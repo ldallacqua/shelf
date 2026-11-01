@@ -242,3 +242,57 @@ describe('AddOne, from a Steam link (ADR 006)', () => {
     expect(await screen.findByText(/is not a game/)).toBeInTheDocument()
   })
 })
+
+describe('AddOne, on a PC (spec 7.9)', () => {
+  const PC = { id: 6, key: 'pc', name: 'PC', short: 'PC' }
+  const onPc = (added: AddInput[]): AddActions => {
+    const base = actions(added)
+    return {
+      ...base,
+      search: async () => {
+        const answer = await base.search('x')
+        if (!answer.ok) return answer
+        return {
+          ok: true,
+          value: {
+            ...answer.value,
+            results: answer.value.results.map((each) => ({ ...each, platforms: [6, 48] })),
+            platforms: [PC, PS4],
+          },
+        }
+      },
+      grouping: async () => ({ ok: true, value: { action: 'new', soldOn: ['steam', 'gog'] } }),
+    }
+  }
+  const open = async (added: AddInput[]) => {
+    renderWithIntl(<AddOne actions={onPc(added)} onAdded={vi.fn()} onOpenOwned={vi.fn()} />)
+    await userEvent.type(screen.getByRole('combobox', { name: 'Search IGDB' }), 'tsukihime')
+    await userEvent.click(await screen.findByRole('option', { name: /Tsukihime/ }))
+  }
+
+  it('takes a PC copy for a download, and asks which store it is from', async () => {
+    const added: AddInput[] = []
+    await open(added)
+    expect(screen.queryByRole('group', { name: 'Which store?' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'PC' }))
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'GOG' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(added[0]?.copies).toEqual([{ platformId: 6, format: 'digital', stores: ['gog'] }])
+  })
+
+  it('asks of nothing but a PC', async () => {
+    await open([])
+    await userEvent.click(screen.getByRole('button', { name: 'PlayStation 4' }))
+    expect(screen.queryByRole('group', { name: 'Which store?' })).toBeNull()
+  })
+
+  it('asks which store I would buy from, on the wishlist', async () => {
+    const added: AddInput[] = []
+    await open(added)
+    await userEvent.click(screen.getByRole('radio', { name: 'Wishlist' }))
+    await userEvent.click(screen.getByRole('button', { name: 'PC' }))
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Steam' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(added[0]).toMatchObject({ wanted: [6], wantedStores: ['steam'], copies: [] })
+  })
+})

@@ -14,12 +14,14 @@ import {
   type Refusal,
   type SearchAnswer,
 } from '@/domain/library/adding'
+import { isPcPlatform, takesStore, type StoreName } from '@/domain/library/stores'
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
 import { steamAppIdIn } from '@/domain/steam/store-game'
 import { Cover } from '@/features/library/cover'
 import { gameHref } from '@/features/library/shelf-address'
 import { signedInAccount } from '@/features/owner/account'
 import { DayField, RatingField, TagsField, today } from '@/features/owner/fields'
+import { StoresField } from '@/features/owner/stores-field'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Radio } from '@/ui/checkbox'
@@ -346,9 +348,12 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
   const library = useTranslations('Library')
   const formId = useId()
   const [status, setStatus] = useState<Status>('backlog')
-  const [owned, setOwned] = useState<{ platformId: number; format: Format }[]>([])
+  const [owned, setOwned] = useState<
+    { platformId: number; format: Format; stores?: StoreName[] }[]
+  >([])
   // On the wishlist, where I want it instead (spec 7.5).
   const [wanted, setWanted] = useState<number[]>([])
+  const [wantedStores, setWantedStores] = useState<StoreName[]>([])
   // Out of ten, as the field shows it; none until it is moved.
   const [rating, setRating] = useState<number>()
   const [tags, setTags] = useState<string[]>([])
@@ -388,12 +393,23 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
   const related =
     grouping?.action === 'join' || grouping?.action === 'separate' ? grouping : undefined
   const joins = related ? (together ?? related.action === 'join') : false
+  // Asked with the grouping. Until it answers, the field offers what nearly every PC game is on.
+  const soldOn = steam ? (['steam'] as const) : grouping?.soldOn
 
   const toggle = (platformId: number) =>
     setOwned((list) =>
       list.some((copy) => copy.platformId === platformId)
         ? list.filter((copy) => copy.platformId !== platformId)
-        : [...list, { platformId, format: answer.habits.formats[platformId] ?? 'physical' }],
+        : [
+            ...list,
+            {
+              platformId,
+              format:
+                answer.habits.formats[platformId] ??
+                // Nearly every PC game is a download, and only a download has a store to ask about.
+                (isPcPlatform(platformId) ? 'digital' : 'physical'),
+            },
+          ],
     )
 
   const submit = (again: boolean) => {
@@ -403,6 +419,9 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
         status,
         copies: status === 'wishlist' ? [] : owned,
         ...(status === 'wishlist' && wanted.length > 0 ? { wanted } : {}),
+        ...(status === 'wishlist' && wanted.some(isPcPlatform) && wantedStores.length > 0
+          ? { wantedStores }
+          : {}),
         // Stored out of a hundred.
         ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
         ...(tags.length > 0 ? { tags } : {}),
@@ -551,6 +570,11 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
               )
             })}
           </div>
+          {wanted.some(isPcPlatform) ? (
+            <div className="mt-1">
+              <StoresField soldOn={soldOn} value={wantedStores} onChange={setWantedStores} />
+            </div>
+          ) : null}
           <p className="text-xs text-muted">{t('wishlistNone')}</p>
         </fieldset>
       ) : (
@@ -574,28 +598,40 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
                 const platform = labels.get(copy.platformId)
                 if (!platform) return null
                 return (
-                  <li
-                    key={copy.platformId}
-                    className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm"
-                  >
-                    <span className="text-muted">{platform.name}</span>
-                    <Segmented
-                      aria-label={t('formatFor', { platform: platform.name })}
-                      value={copy.format}
-                      onValueChange={(format: Format) =>
-                        setOwned((list) =>
-                          list.map((each) =>
-                            each.platformId === copy.platformId ? { ...each, format } : each,
-                          ),
-                        )
-                      }
-                    >
-                      {formats.map((format) => (
-                        <SegmentedItem key={format} value={format}>
-                          {library(`format.${format}`)}
-                        </SegmentedItem>
-                      ))}
-                    </Segmented>
+                  <li key={copy.platformId} className="grid gap-3 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                      <span className="text-muted">{platform.name}</span>
+                      <Segmented
+                        aria-label={t('formatFor', { platform: platform.name })}
+                        value={copy.format}
+                        onValueChange={(format: Format) =>
+                          setOwned((list) =>
+                            list.map((each) =>
+                              each.platformId === copy.platformId ? { ...each, format } : each,
+                            ),
+                          )
+                        }
+                      >
+                        {formats.map((format) => (
+                          <SegmentedItem key={format} value={format}>
+                            {library(`format.${format}`)}
+                          </SegmentedItem>
+                        ))}
+                      </Segmented>
+                    </div>
+                    {takesStore(copy.platformId, copy.format) ? (
+                      <StoresField
+                        soldOn={soldOn}
+                        value={copy.stores ?? []}
+                        onChange={(stores) =>
+                          setOwned((list) =>
+                            list.map((each) =>
+                              each.platformId === copy.platformId ? { ...each, stores } : each,
+                            ),
+                          )
+                        }
+                      />
+                    ) : null}
                   </li>
                 )
               })}

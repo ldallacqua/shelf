@@ -10,6 +10,7 @@ import {
   SnapshotFormatError,
   type SnapshotFile,
 } from '@/domain/library/snapshot'
+import { testGame, testLibrary } from '@/domain/library/testing'
 import { statuses } from '@/domain/library/values'
 
 const full: LibraryGame = {
@@ -219,5 +220,37 @@ describe('days as numbers', () => {
   it('counts whole days since 1970', () => {
     expect(dayToNumber('1970-01-02')).toBe(1)
     expect(dayToNumber('1969-12-31')).toBe(-1)
+  })
+})
+
+describe('stores in the library file', () => {
+  const round = (game: LibraryGame) =>
+    decodeLibrary(JSON.parse(JSON.stringify(encodeLibrary(testLibrary([game]))))).games[0]!
+
+  it('keeps which store a copy is from, with or without a cover of its own', () => {
+    const game = testGame('A', {
+      copies: [
+        { platform: 6, format: 'digital', stores: ['steam', 'gog'] },
+        { platform: 14, format: 'digital', cover: 'co1', stores: ['battlenet'] },
+        { platform: 130, format: 'physical' },
+      ],
+    })
+    expect(round(game).copies).toEqual(game.copies)
+  })
+
+  it('keeps which store I would buy it from, whatever else the row has', () => {
+    const game = testGame('A', { status: 'wishlist', wanted: [6], wantedStores: ['epic'] })
+    const back = round(game)
+    expect(back.wanted).toEqual([6])
+    expect(back.wantedStores).toEqual(['epic'])
+    expect(back.hastyShare).toBeUndefined()
+  })
+
+  it('writes nothing for a game with no store', () => {
+    const file = encodeLibrary(
+      testLibrary([testGame('A', { copies: [{ platform: 6, format: 'digital' }] })]),
+    )
+    expect(file.games[0]).toHaveLength(28)
+    expect(file.games[0]![17]).toEqual([[6, 1]])
   })
 })

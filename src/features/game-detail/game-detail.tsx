@@ -5,6 +5,7 @@ import type { Palette } from '@/domain/color/palette'
 import { backdropSources } from '@/domain/igdb/images'
 import { filterFor, namesOf, type GameFacts } from '@/domain/library/game-page'
 import type { LibraryGame, LibraryPlatform, LibraryTag, Named } from '@/domain/library/library'
+import type { StoreName } from '@/domain/library/stores'
 import type { ListKey } from '@/domain/query/keys'
 import { Cover } from '@/features/library/cover'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
@@ -20,6 +21,7 @@ import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
 import { AdultNotice } from './adult-notice'
 import { Screenshots } from './screenshots'
+import { Stores } from './stores'
 
 import './game-detail.css'
 
@@ -297,6 +299,13 @@ export function GameDetail({
   })
   // On the wishlist, where I want it (spec 7.5).
   const wanted = (game.wanted ?? []).flatMap((id) => platforms.get(id) ?? [])
+  const storePill = (store: StoreName) => (
+    <li key={store}>
+      <FilterLink handle={handle} filter={`store:${store}`}>
+        {library(`store.${store}`)}
+      </FilterLink>
+    </li>
+  )
 
   const readOnlyMine = (
     <Section title={t('mine')} level={level} className={page ? 'game-mine' : undefined}>
@@ -328,6 +337,7 @@ export function GameDetail({
                   </FilterLink>
                 </li>
               ))}
+              {[...new Set(owned.flatMap(({ copy }) => copy.stores ?? []))].map(storePill)}
             </ul>
           ) : (
             <span className="text-muted">{library('shelf.notOwned')}</span>
@@ -343,6 +353,7 @@ export function GameDetail({
                   </FilterLink>
                 </li>
               ))}
+              {(game.wantedStores ?? []).map(storePill)}
             </ul>
           </Row>
         ) : null}
@@ -390,6 +401,20 @@ export function GameDetail({
     </OwnerMine>
   ) : (
     readOnlyMine
+  )
+
+  const side = (
+    <div className="grid min-w-0 content-start gap-7 lg:gap-8">
+      {failed ? null : (
+        <Stores
+          game={game}
+          links={facts ? (facts.stores ?? []) : undefined}
+          platforms={platforms}
+          level={level}
+        />
+      )}
+      {mine}
+    </div>
   )
 
   const about =
@@ -583,7 +608,7 @@ export function GameDetail({
             {achievements}
             {details}
           </div>
-          <aside className="row-start-1 lg:col-start-2">{mine}</aside>
+          <aside className="row-start-1 lg:col-start-2">{side}</aside>
         </div>
       </article>
     )
@@ -597,7 +622,7 @@ export function GameDetail({
         Positioned to paint over the hero, which would cut off the glow of a button near it.
       */}
       <div className="relative grid gap-7 px-5 pt-5 pb-6 @5xl:grid-cols-[minmax(0,1fr)_22rem] @5xl:gap-x-12 @5xl:px-10 @5xl:pt-6 @5xl:pb-10">
-        <div className="min-w-0 @5xl:col-start-2 @5xl:row-start-1">{mine}</div>
+        <div className="min-w-0 @5xl:col-start-2 @5xl:row-start-1">{side}</div>
         <div className="grid min-w-0 content-start gap-7 @5xl:row-start-1 @5xl:gap-10">
           {failed ? (
             <p role="alert" className="text-sm text-muted">

@@ -489,3 +489,26 @@ describe('counts beside every value (spec 5.4)', () => {
     ])
   })
 })
+
+describe('store:', () => {
+  const library = testLibrary([
+    testGame('On Steam', { copies: [{ platform: 6, format: 'digital', stores: ['steam'] }] }),
+    testGame('On both', { copies: [{ platform: 6, format: 'digital', stores: ['steam', 'gog'] }] }),
+    testGame('Wanted from GOG', { status: 'wishlist', wanted: [6], wantedStores: ['gog'] }),
+    testGame('Nowhere named', { copies: [{ platform: 6, format: 'digital' }] }),
+  ])
+  const stored = buildIndex(library)
+  const titles = (text: string) => {
+    const parsed = parseQuery(text)
+    expect(parsed.problems, text).toEqual([])
+    return gamesIn(stored, evaluate(stored, parsed.tree)).map((game) => game.title)
+  }
+
+  it('finds where I have a game', () => {
+    expect(titles('store:steam')).toEqual(['On Steam', 'On both'])
+  })
+
+  it('finds what I would buy from a store too: a sale there finds it', () => {
+    expect(titles('store:gog')).toEqual(['On both', 'Wanted from GOG'])
+  })
+})

@@ -13,6 +13,7 @@ import type {
   OwnerGame,
 } from '@/domain/library/editing'
 import { AWAY_AFTER_MINUTES, isPcSource, playedMinutes } from '@/domain/library/hours'
+import { isPcPlatform, takesStore, type StoreName } from '@/domain/library/stores'
 import {
   formats,
   statuses,
@@ -25,6 +26,7 @@ import { useShelf } from '@/features/library/shelf'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { DayField, SavedRating, TagsField, today } from '@/features/owner/fields'
 import { announceChange } from '@/features/owner/library-change'
+import { StoresField } from '@/features/owner/stores-field'
 import { notify } from '@/features/shell/notices'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -99,6 +101,7 @@ export function MineEditor({
   const [separating, setSeparating] = useState<string>()
   // The platform I wanted it on, once it has left the wishlist: its first copy starts there.
   const [wasWanted, setWasWanted] = useState<number>()
+  const [wasWantedStores, setWasWantedStores] = useState<StoreName[]>()
   // Asked for, the field for time left idle shows before it holds any.
   const [idling, setIdling] = useState(false)
   const idleField = useRef<HTMLDivElement>(null)
@@ -204,10 +207,20 @@ export function MineEditor({
       status === 'completed' && !owned.completedOn ? (owned.lastPlayedOn ?? today()) : undefined
     // Off the wishlist, what I wanted is let go (spec 7.5); the copy to add starts on it.
     const leaving = owned.status === 'wishlist' && status !== 'wishlist'
-    if (leaving && owned.wanted[0] !== undefined) setWasWanted(owned.wanted[0])
+    if (leaving && owned.wanted[0] !== undefined) {
+      // A PC first, if a store on it is what I wanted: the copy starts there, from that store.
+      const stores = owned.wantedStores ?? []
+      const onPc = stores.length > 0 ? owned.wanted.find(isPcPlatform) : undefined
+      setWasWanted(onPc ?? owned.wanted[0])
+      if (onPc !== undefined) setWasWantedStores(stores)
+    }
     void update(
       { status, ...(completedOn ? { completedOn } : {}) },
-      { status, ...(completedOn ? { completedOn } : {}), ...(leaving ? { wanted: [] } : {}) },
+      {
+        status,
+        ...(completedOn ? { completedOn } : {}),
+        ...(leaving ? { wanted: [], wantedStores: [] } : {}),
+      },
     ).then((saved) => {
       if (saved && leaving) void askSteam(owned.entryId)
     })
@@ -466,13 +479,22 @@ export function MineEditor({
                     const wanted = event.target.checked
                       ? [...owned.wanted, platform.id]
                       : owned.wanted.filter((each) => each !== platform.id)
-                    void update({ wanted }, { wanted })
+                    // Off a PC, its stores go with it: the server does the same.
+                    const stores = wanted.some(isPcPlatform) ? {} : { wantedStores: [] }
+                    void update({ wanted }, { wanted, ...stores })
                   }}
                 >
                   {platform.name}
                 </ChoiceChip>
               ))}
             </div>
+            {owned.wanted.some(isPcPlatform) ? (
+              <StoresField
+                soldOn={owned.soldOn}
+                value={owned.wantedStores ?? []}
+                onChange={(wantedStores) => void update({ wantedStores }, { wantedStores })}
+              />
+            ) : null}
           </fieldset>
         ) : null}
 
@@ -483,15 +505,29 @@ export function MineEditor({
             labels={labels}
             platforms={owned.platforms}
             preset={wasWanted}
+            presetStores={wasWantedStores}
             onFormat={(copy, format) =>
               save(
                 {
                   ...owned,
                   copies: owned.copies.map((each) =>
-                    each.id === copy.id ? { ...each, format } : each,
+                    each.id === copy.id
+                      ? { ...each, format, ...(format === 'digital' ? {} : { stores: [] }) }
+                      : each,
                   ),
                 },
                 () => actions.setFormat(owned.entryId, copy.id, format),
+              )
+            }
+            onStores={(copy, stores) =>
+              save(
+                {
+                  ...owned,
+                  copies: owned.copies.map((each) =>
+                    each.id === copy.id ? { ...each, stores } : each,
+                  ),
+                },
+                () => actions.setStores(owned.entryId, copy.id, stores),
               )
             }
             onRemove={(copy) =>
@@ -499,16 +535,21 @@ export function MineEditor({
                 actions.removeCopy(owned.entryId, copy.id),
               )
             }
-            onAdd={(platformId, format) =>
+            onAdd={(platformId, format, stores) =>
               save(
                 {
                   ...owned,
                   copies: [
                     ...owned.copies,
-                    { id: `new-${platformId}-${format}`, platformId, format },
+                    { id: `new-${platformId}-${format}`, platformId, format, stores },
                   ],
                 },
-                () => actions.addCopy(owned.entryId, { platformId, format }),
+                () =>
+                  actions.addCopy(owned.entryId, {
+                    platformId,
+                    format,
+                    ...(stores.length > 0 ? { stores } : {}),
+                  }),
               )
             }
           />
@@ -735,7 +776,9 @@ function Copies({
   labels,
   platforms,
   preset,
+  presetStores,
   onFormat,
+  onStores,
   onRemove,
   onAdd,
 }: {
@@ -744,9 +787,12 @@ function Copies({
   platforms: readonly PlatformLabel[]
   /** The platform to start on: the one I wanted it on, once it has left the wishlist. */
   preset?: number
+  /** And the stores I would have bought it from. */
+  presetStores?: readonly StoreName[]
   onFormat: (copy: OwnedCopy, format: Format) => void
+  onStores: (copy: OwnedCopy, stores: StoreName[]) => void
   onRemove: (copy: OwnedCopy) => void
-  onAdd: (platformId: number, format: Format) => void
+  onAdd: (platformId: number, format: Format, stores: StoreName[]) => void
 }) {
   const t = useTranslations('Edit')
   const game = useTranslations('Game')
@@ -763,8 +809,11 @@ function Copies({
   const chosen =
     platform ?? (open.some((each) => each.id === preset) ? preset : undefined) ?? open[0]?.id
   const free = formats.filter((each) => !have.has(`${chosen}:${each}`))
-  const [picked, setPicked] = useState<Format>('physical')
-  const format = free.includes(picked) ? picked : (free[0] ?? picked)
+  // Nearly every PC game is a download, and only a download has a store to ask about.
+  const [picked, setPicked] = useState<Format>()
+  const usual = picked ?? (chosen !== undefined && isPcPlatform(chosen) ? 'digital' : 'physical')
+  const format = free.includes(usual) ? usual : (free[0] ?? usual)
+  const [stores, setStores] = useState<StoreName[]>(() => [...(presetStores ?? [])])
 
   return (
     <fieldset className={mineGroupRuled}>
@@ -818,6 +867,13 @@ function Copies({
                       </SegmentedItem>
                     ))}
                   </Segmented>
+                  {takesStore(copy.platformId, copy.format) ? (
+                    <StoresField
+                      soldOn={owned.soldOn}
+                      value={copy.stores ?? []}
+                      onChange={(next) => onStores(copy, next)}
+                    />
+                  ) : null}
                 </li>
               )
             })}
@@ -865,14 +921,18 @@ function Copies({
                   ))}
                 </Segmented>
               </div>
+              {takesStore(chosen, format) ? (
+                <StoresField soldOn={owned.soldOn} value={stores} onChange={setStores} />
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
                   variant="primary"
                   disabled={!free.includes(format)}
                   onClick={() => {
-                    onAdd(chosen, format)
+                    onAdd(chosen, format, takesStore(chosen, format) ? stores : [])
                     setAdding(false)
                     setPlatform(undefined)
+                    setStores([])
                   }}
                 >
                   <PlusIcon aria-hidden="true" />

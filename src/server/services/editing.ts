@@ -18,6 +18,8 @@ import {
   type Separated,
   type StoreHoursGame,
 } from '@/domain/library/editing'
+import { storeList } from '@/domain/library/store-list'
+import type { StoreName } from '@/domain/library/stores'
 import { formats, type Format } from '@/domain/library/values'
 import { database, type Db } from '@/server/db/client'
 import { copies, entryVersions, games, removedEntries } from '@/server/db/schema'
@@ -34,6 +36,7 @@ import {
   separateVersion,
   setArchived,
   setCopyFormat,
+  setCopyStores,
   setPrimary,
 } from '@/server/library/store'
 import { forAccount } from '@/server/services/for-account'
@@ -146,6 +149,10 @@ export const createEditing = (db: Db, libraryId: string) => {
       await setCopyFormat(db, libraryId, await copyOf(await entryIdFor(idOrSlug), copyId), format)
       return changed()
     },
+    setStores: async (idOrSlug: string, copyId: string, stores: readonly StoreName[]) => {
+      await setCopyStores(db, libraryId, await copyOf(await entryIdFor(idOrSlug), copyId), stores)
+      return changed()
+    },
     removeCopy: async (idOrSlug: string, copyId: string) => {
       await removeCopy(db, libraryId, await copyOf(await entryIdFor(idOrSlug), copyId))
       return changed()
@@ -209,6 +216,10 @@ export const addMyCopy = checked(z.tuple([slug, newCopy]), (editing, s, copy) =>
 export const setMyCopyFormat = checked(
   z.tuple([slug, id, z.enum(formats)]),
   (editing, s, copy, format) => editing.setFormat(s, copy, format),
+)
+
+export const setMyCopyStores = checked(z.tuple([slug, id, storeList]), (editing, s, copy, stores) =>
+  editing.setStores(s, copy, stores),
 )
 
 export const removeMyCopy = checked(z.tuple([slug, id]), (editing, s, copy) =>

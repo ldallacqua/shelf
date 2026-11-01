@@ -1,6 +1,7 @@
 'use client'
 
 import type { EditActions, EditPatch, OwnerGame } from '@/domain/library/editing'
+import type { StoreName } from '@/domain/library/stores'
 import type { Format, SyncSource } from '@/domain/library/values'
 import { callApi as call } from '@/features/owner/call-api'
 
@@ -28,6 +29,7 @@ type ApiOwnerGame = Omit<OwnerGame, 'rating' | 'tracked' | 'idle' | 'copies'> & 
     id: string
     platform: number
     format: Format
+    stores?: StoreName[]
     synced?: { source: SyncSource; hours: number }[]
   }[]
 }
@@ -43,10 +45,11 @@ const fromApi = ({
   ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
   tracked: Math.round(hoursTracked * 60),
   ...(hoursIdle === undefined ? {} : { idle: Math.round(hoursIdle * 60) }),
-  copies: copies.map(({ id, platform, format, synced }) => ({
+  copies: copies.map(({ id, platform, format, stores, synced }) => ({
     id,
     platformId: platform,
     format,
+    ...(stores ? { stores } : {}),
     ...(synced
       ? {
           synced: synced.map(({ source, hours }) => ({
@@ -67,9 +70,15 @@ export const editClient: EditActions = {
   },
   update: (entryId, patch) => call('PATCH', entry(entryId), toApi(patch)),
   addCopy: (entryId, copy) =>
-    call('POST', `${entry(entryId)}/copies`, { platform: copy.platformId, format: copy.format }),
+    call('POST', `${entry(entryId)}/copies`, {
+      platform: copy.platformId,
+      format: copy.format,
+      ...(copy.stores ? { stores: copy.stores } : {}),
+    }),
   setFormat: (entryId, copyId, format) =>
     call('PATCH', `${entry(entryId)}/copies/${encodeURIComponent(copyId)}`, { format }),
+  setStores: (entryId, copyId, stores) =>
+    call('PATCH', `${entry(entryId)}/copies/${encodeURIComponent(copyId)}`, { stores }),
   removeCopy: (entryId, copyId) =>
     call('DELETE', `${entry(entryId)}/copies/${encodeURIComponent(copyId)}`),
   remove: (entryId) => call('DELETE', entry(entryId)),

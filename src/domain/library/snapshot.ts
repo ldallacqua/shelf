@@ -9,6 +9,7 @@ import {
   type LibraryPlatform,
   type Named,
 } from '@/domain/library/library'
+import { storeNames, type StoreName } from '@/domain/library/stores'
 import { formats, kinds, statusCodes, type Day } from '@/domain/library/values'
 import type { GameKeywords } from '@/domain/query/evaluate'
 import { caseShapes, families, plastics } from '@/domain/platforms/platforms'
@@ -27,7 +28,8 @@ import { caseShapes, families, plastics } from '@/domain/platforms/platforms'
 /** Raised whenever the row layout changes, so an old cached file is never misread. */
 export const SNAPSHOT_FORMAT = 1
 
-type CopyRow = [platform: number, format: number, cover?: string]
+// A store is its position in `storeNames`; with stores, `cover` is there, empty if need be.
+type CopyRow = [platform: number, format: number, cover?: string, stores?: number[]]
 
 type GameRow = [
   slug: string,
@@ -64,6 +66,8 @@ type GameRow = [
   ages?: number[],
   /** IGDB's hasty time, a percentage of `length`; with it, `wanted` and `ages` are there, empty if need be. */
   hastyShare?: number,
+  /** Positions in `storeNames`; with them, the three before are there, empty if need be. */
+  wantedStores?: number[],
 ]
 
 type NamedRow = [id: number, name: string, slug: string]
@@ -119,6 +123,12 @@ const unpackColors = (packed: string): Palette | undefined => {
 
 const position = <T>(list: readonly T[], value: T): number => Math.max(0, list.indexOf(value))
 
+const packStores = (stores: readonly StoreName[]): number[] =>
+  stores.map((store) => storeNames.indexOf(store)).filter((at) => at >= 0)
+
+const unpackStores = (positions: readonly number[]): StoreName[] =>
+  positions.flatMap((at) => storeNames[at] ?? [])
+
 const baseRow = (game: LibraryGame): GameRow => [
   game.slug,
   game.title,
@@ -142,7 +152,8 @@ const baseRow = (game: LibraryGame): GameRow => [
     (game.adult ? ADULT : 0),
   game.copies.map((copy): CopyRow => {
     const row: CopyRow = [copy.platform, position(formats, copy.format)]
-    if (copy.cover) row.push(copy.cover)
+    if (copy.cover || copy.stores?.length) row.push(copy.cover ?? '')
+    if (copy.stores?.length) row.push(packStores(copy.stores))
     return row
   }),
   game.genres,
@@ -161,9 +172,11 @@ const encodeGame = (game: LibraryGame): GameRow => {
   const row = baseRow(game)
   const ages = game.ages?.map((word) => ageWords.indexOf(word)).filter((at) => at >= 0)
   const hasty = game.hastyShare
-  if (game.wanted?.length || ages?.length || hasty) row.push(game.wanted ?? [])
-  if (ages?.length || hasty) row.push(ages ?? [])
-  if (hasty) row.push(hasty)
+  const stores = game.wantedStores?.length ? packStores(game.wantedStores) : undefined
+  if (game.wanted?.length || ages?.length || hasty || stores) row.push(game.wanted ?? [])
+  if (ages?.length || hasty || stores) row.push(ages ?? [])
+  if (hasty || stores) row.push(hasty ?? 0)
+  if (stores) row.push(stores)
   return row
 }
 
@@ -181,6 +194,7 @@ const decodeGame = (row: GameRow): LibraryGame => {
     copies: row[17].map((copy) => {
       const decoded: LibraryCopy = { platform: copy[0], format: formats[copy[1]] ?? 'physical' }
       if (copy[2]) decoded.cover = copy[2]
+      if (copy[3]?.length) decoded.stores = unpackStores(copy[3])
       return decoded
     }),
     genres: row[18],
@@ -211,6 +225,7 @@ const decodeGame = (row: GameRow): LibraryGame => {
   const ages = row[29]?.flatMap((at) => ageWords[at] ?? [])
   if (ages?.length) game.ages = ages
   if (row[30]) game.hastyShare = row[30]
+  if (row[31]?.length) game.wantedStores = unpackStores(row[31])
   if (row[16] & PRIVATE) game.private = true
   if (row[16] & ADULT) game.adult = true
   return game

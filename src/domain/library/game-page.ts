@@ -7,6 +7,7 @@ import type {
   LibraryTag,
   Named,
 } from '@/domain/library/library'
+import { storeNames, type StoreLink, type StoreName } from '@/domain/library/stores'
 import { filterWord, type ListKey } from '@/domain/query/keys'
 
 /**
@@ -36,6 +37,8 @@ export type GameFacts = {
   /** Hours to beat, three ways, in minutes. */
   length?: Length
   igdbUrl?: string
+  /** Where it is sold, across every version, one link to a store. Absent when none is known. */
+  stores?: StoreLink[]
   /** Mine, when I have made them public for this game. Private notes are never here. */
   notes?: string
   /** The providers with achievements for it, which its page asks for as it opens (issue 72). */
@@ -63,6 +66,7 @@ export type GameExtras = {
   releases: Release[][]
   length?: Length
   igdbUrl?: string
+  storeLinks?: StoreLink[]
   notes?: string
   notesPublic: boolean
   achievements?: AchievementProvider[]
@@ -113,6 +117,59 @@ export const backdropOf = (
   }
 }
 
+/** On the wishlist, or not owned at all: where it is sold is what I came for. */
+export const isBuying = (game: Pick<LibraryGame, 'status' | 'copies'>): boolean =>
+  game.status === 'wishlist' || game.copies.length === 0
+
+/** One store on a game's page: its link, if it has one, and what it is to me. */
+export type StoreRow = { store: StoreName; url?: string; mine?: 'have' | 'want' }
+
+/** How many stores a game I don't have shows before the rest is asked for. */
+const STORES_SHOWN = 4
+
+// The store of a console's games, for one I have a copy on or want it on.
+const STORE_OF_FAMILY: Partial<Record<string, StoreName>> = {
+  playstation: 'playstation',
+  xbox: 'microsoft',
+  nintendo: 'nintendo',
+}
+
+/**
+ * A game's stores as its page lists them, and how many stand out of the fold
+ * (spec 7.9), as Letterboxd's "Where to watch" has my own services first. Mine
+ * come first, and the store of a console I have it on or want it on. Buying it,
+ * the first few show, enough to compare. Having it, only what is mine: the rest
+ * stays folded so the page is about my copy.
+ */
+export const storeRows = (
+  game: Pick<LibraryGame, 'status' | 'copies' | 'wanted' | 'wantedStores'>,
+  links: readonly StoreLink[],
+  platforms: ReadonlyMap<number, { family: string }>,
+): { rows: StoreRow[]; shown: number } => {
+  const have = new Set(game.copies.flatMap((copy) => copy.stores ?? []))
+  const want = new Set(game.wantedStores)
+  const near = new Set(
+    [...game.copies.map((copy) => copy.platform), ...(game.wanted ?? [])].flatMap(
+      (id) => STORE_OF_FAMILY[platforms.get(id)?.family ?? ''] ?? [],
+    ),
+  )
+  const urls = new Map(links.map((link) => [link.store, link.url]))
+  const listed = storeNames.filter((store) => urls.has(store) || have.has(store) || want.has(store))
+  const rank = (store: StoreName) =>
+    have.has(store) || want.has(store) ? 0 : near.has(store) ? 1 : 2
+  const rows = listed
+    .map((store): StoreRow => {
+      const url = urls.get(store)
+      const mine = have.has(store) ? 'have' : want.has(store) ? 'want' : undefined
+      return { store, ...(url ? { url } : {}), ...(mine ? { mine } : {}) }
+    })
+    .sort((a, b) => rank(a.store) - rank(b.store))
+  const close = rows.filter((row) => rank(row.store) < 2).length
+  const shown = isBuying(game) ? Math.max(close, STORES_SHOWN) : close
+  // Hiding one is no shorter than showing it.
+  return { rows, shown: rows.length - shown <= 1 ? rows.length : shown }
+}
+
 /** A game's page from the library it stands in and what the database adds. */
 export const buildGamePage = (
   library: Library,
@@ -150,6 +207,7 @@ export const buildGamePage = (
   if (backdrop) facts.backdrop = backdrop
   if (extras.length) facts.length = extras.length
   if (extras.igdbUrl) facts.igdbUrl = extras.igdbUrl
+  if (extras.storeLinks?.length) facts.stores = extras.storeLinks
   // A visitor never sees a private note: it does not leave the server.
   if (extras.notes && extras.notesPublic) facts.notes = extras.notes
   if (extras.achievements) facts.achievements = extras.achievements

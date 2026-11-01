@@ -27,6 +27,7 @@ const client = vi.hoisted(() => ({
       ...(patch.private === undefined ? {} : { private: patch.private }),
       ...(patch.idle === undefined ? {} : { idle: patch.idle }),
       wanted: leaving ? [] : (patch.wanted ?? game.wanted),
+      wantedStores: leaving ? [] : (patch.wantedStores ?? game.wantedStores ?? []),
     })
     return { ok: true as const, value: { version: 2 } }
   }),
@@ -40,7 +41,15 @@ const client = vi.hoisted(() => ({
       return { ok: true as const, value: { version: 5 } }
     },
   ),
-  setFormat: vi.fn(),
+  setFormat: vi.fn(async (entryId: string, copyId: string, format: 'physical' | 'digital') => {
+    const [slug, game] = [...server.games].find(([, each]) => each.entryId === entryId)!
+    server.games.set(slug, {
+      ...game,
+      copies: game.copies.map((copy) => (copy.id === copyId ? { ...copy, format } : copy)),
+    })
+    return { ok: true as const, value: { version: 8 } }
+  }),
+  setStores: vi.fn(async () => ({ ok: true as const, value: { version: 7 } })),
   removeCopy: vi.fn(),
   remove: vi.fn(),
   restore: vi.fn(),
@@ -421,5 +430,100 @@ describe('MineEditor, Play in a browser (spec 7.7)', () => {
     editor('none')
     await waitFor(() => expect(screen.getAllByRole('group', { name: 'Status' })).toHaveLength(2))
     expect(screen.queryByRole('link', { name: 'Play on Steam' })).not.toBeInTheDocument()
+  })
+})
+
+describe('MineEditor, where a PC game is from (spec 7.9)', () => {
+  const PC = { id: 6, key: 'pc', name: 'PC', short: 'PC' }
+  const ownedOnPc = (
+    slug: string,
+    format: 'digital' | 'physical',
+    stores?: ('steam' | 'gog')[],
+  ) => {
+    const game: OwnerGame = {
+      ...wished(slug, []),
+      status: 'backlog',
+      platforms: [PC, PS4],
+      soldOn: ['steam', 'epic', 'playstation'],
+      copies: [{ id: 'copy-pc', platformId: 6, format, ...(stores ? { stores } : {}) }],
+    }
+    server.games.set(slug, game)
+    return game
+  }
+  const fields = () => screen.queryAllByRole('group', { name: 'Which store?' })
+
+  it('asks which store a download on a PC is from, offering what it is sold on', async () => {
+    ownedOnPc('download', 'digital', ['gog'])
+    editor('download')
+    const [field] = await screen.findAllByRole('group', { name: 'Which store?' })
+    const names = within(field!)
+      .getAllByRole('checkbox')
+      .map((box) => box.parentElement?.textContent)
+    // Sold on Steam and Epic, and mine on GOG; not PlayStation, which is no PC store.
+    expect(names).toEqual(['Steam', 'GOG', 'Epic Games'])
+    expect(within(field!).getByRole('checkbox', { name: 'GOG' })).toBeChecked()
+    await userEvent.click(within(field!).getByRole('checkbox', { name: 'Steam' }))
+    await waitFor(() =>
+      expect(client.setStores).toHaveBeenCalledWith('entry-download', 'copy-pc', ['steam', 'gog']),
+    )
+  })
+
+  it('shows the rest when asked, and hands them the focus', async () => {
+    ownedOnPc('more', 'digital')
+    editor('more')
+    await userEvent.click(await screen.findByRole('button', { name: 'Another store' }))
+    expect(screen.getByRole('checkbox', { name: 'Battle.net' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Another store' })).toBeNull()
+    expect(screen.getByRole('checkbox', { name: 'GOG' })).toHaveFocus()
+  })
+
+  it('does not ask of a disc, and stops asking when a download becomes one', async () => {
+    ownedOnPc('disc', 'physical')
+    editor('disc')
+    await screen.findByRole('radio', { name: 'Backlog' })
+    expect(fields()).toEqual([])
+    await userEvent.click(screen.getByRole('radio', { name: 'Digital' }))
+    expect(await screen.findByRole('group', { name: 'Which store?' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('radio', { name: 'Physical' }))
+    await waitFor(() => expect(fields()).toEqual([]))
+  })
+
+  it('asks which store I would buy from, only while I want it on a PC', async () => {
+    server.games.set('wish', {
+      ...wished('wish', [48]),
+      platforms: [PC, PS4],
+      soldOn: ['steam', 'gog'],
+    })
+    editor('wish')
+    await screen.findByRole('checkbox', { name: 'PC' })
+    expect(fields()).toEqual([])
+    await userEvent.click(screen.getByRole('checkbox', { name: 'PC' }))
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'GOG' }))
+    await waitFor(() =>
+      expect(client.update).toHaveBeenCalledWith('entry-wish', { wantedStores: ['gog'] }),
+    )
+    await userEvent.click(screen.getByRole('checkbox', { name: 'PC' }))
+    await waitFor(() => expect(fields()).toEqual([]))
+  })
+
+  it('starts the first copy as a download from the store I wanted, off the wishlist', async () => {
+    server.games.set('bought', {
+      ...wished('bought', [48, 6]),
+      platforms: [PC, PS4],
+      soldOn: ['steam', 'gog'],
+      wantedStores: ['gog'],
+    })
+    editor('bought')
+    await userEvent.click(await screen.findByRole('radio', { name: 'Backlog' }))
+    const card = await screen.findByRole('group', { name: 'New copy' })
+    expect(within(card).getByRole('checkbox', { name: 'GOG' })).toBeChecked()
+    await userEvent.click(within(card).getByRole('button', { name: 'Add' }))
+    await waitFor(() =>
+      expect(client.addCopy).toHaveBeenCalledWith('entry-bought', {
+        platformId: 6,
+        format: 'digital',
+        stores: ['gog'],
+      }),
+    )
   })
 })

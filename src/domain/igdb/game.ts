@@ -1,5 +1,7 @@
 import type { IgdbGame, IgdbLineage, IgdbTimeToBeat } from '@/domain/igdb/schema'
 import { ADULTS_ONLY, ageWordsOf } from '@/domain/library/ages'
+import { chooseStoreLinks, steamStoreLink } from '@/domain/library/store-links'
+import type { StoreLink, StoreName } from '@/domain/library/stores'
 import { dayOf, type Day, type Format, type Kind } from '@/domain/library/values'
 
 /**
@@ -91,6 +93,8 @@ export type GameData = {
   videos: GameVideo[]
   releases: Release[]
   storeIds: StoreId[]
+  /** Where it is sold, one link to a store. */
+  storeLinks: StoreLink[]
   /** The record this one points up to, and how. Absent for a game that stands alone. */
   parent?: LineageStep
   igdbUrl?: string
@@ -158,6 +162,62 @@ const STORE_BY_SOURCE: Record<number, StoreSource> = {
   26: 'epic',
   36: 'playstation',
 }
+
+/**
+ * Which of IGDB's `external_game_sources` are stores with a page to buy from,
+ * read from the live API on 1 Nov 2026. Left out: what is no store (YouTube,
+ * Twitch, GiantBomb), what has closed (Kartridge, Utomik, the old Xbox
+ * marketplace), and Amazon's cloud (Luna), whose page only plays it.
+ */
+const LINK_BY_SOURCE: Record<number, StoreName> = {
+  1: 'steam',
+  5: 'gog',
+  11: 'microsoft',
+  13: 'apple',
+  15: 'google-play',
+  20: 'amazon',
+  26: 'epic',
+  28: 'meta',
+  30: 'itch',
+  36: 'playstation',
+  54: 'microsoft',
+  55: 'gamejolt',
+}
+
+// IGDB's `website_types` that are stores, read from the live API on 1 Nov 2026.
+const LINK_BY_WEBSITE: Record<number, StoreName> = {
+  10: 'apple',
+  11: 'apple',
+  12: 'google-play',
+  13: 'steam',
+  15: 'itch',
+  16: 'epic',
+  17: 'gog',
+  22: 'microsoft',
+  23: 'playstation',
+  24: 'nintendo',
+  25: 'meta',
+  26: 'gamejolt',
+}
+
+/**
+ * IGDB keeps a game's stores in two lists, each missing some of the other's: an
+ * Epic page may be under its websites alone. People chose the websites, so
+ * they come first. A Steam app with no address has the one every app has.
+ */
+const storeLinksOf = (record: IgdbGame): StoreLink[] =>
+  chooseStoreLinks([
+    ...record.websites.flatMap((site): StoreLink[] => {
+      const store = LINK_BY_WEBSITE[site.type ?? -1]
+      return store ? [{ store, url: site.url }] : []
+    }),
+    ...record.external_games.flatMap((external): StoreLink[] => {
+      const store = LINK_BY_SOURCE[external.external_game_source ?? -1]
+      if (!store) return []
+      if (external.url) return [{ store, url: external.url }]
+      return store === 'steam' && external.uid ? [steamStoreLink(external.uid)] : []
+    }),
+  ])
 
 /** IGDB's number for one of our stores, for asking it which game carries a store's id. */
 export const igdbSourceOf = (store: StoreSource): number =>
@@ -306,6 +366,7 @@ export const toGameData = (record: IgdbGame, time?: IgdbTimeToBeat): GameData =>
       })),
     releases: [...releases.values()],
     storeIds: [...storeIds.values()],
+    storeLinks: storeLinksOf(record),
     ages,
     adultsOnly: ages.includes(ADULTS_ONLY),
   }

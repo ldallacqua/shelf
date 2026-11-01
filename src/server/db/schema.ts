@@ -55,6 +55,7 @@ import {
   type StoreKind,
 } from '@/domain/sync/items'
 import { linkProblems, type LinkProblem } from '@/domain/sync/link'
+import type { StoreLink, StoreName } from '@/domain/library/stores'
 import { evidences, type Evidence } from '@/domain/sync/sources'
 import {
   caseShapes,
@@ -139,6 +140,8 @@ export const games = sqliteTable(
       .$type<StoreId[]>()
       .notNull()
       .default(sql`'[]'`),
+    /** Where it is sold, one link to a store. Null for a record stored before they were asked for. */
+    storeLinks: text({ mode: 'json' }).$type<StoreLink[]>(),
     /** The chain of records above this one in its family, nearest first. */
     lineage: text({ mode: 'json' })
       .$type<LineageStep[]>()
@@ -195,6 +198,8 @@ export const entries = sqliteTable(
     completedOn: text().$type<Day>(),
     /** IGDB platform ids I want it on, while it is on the wishlist (spec 7.5). Null otherwise. */
     wanted: text({ mode: 'json' }).$type<number[]>(),
+    /** Of those, on a PC, which store I would buy it from. Null otherwise. */
+    wantedStores: text({ mode: 'json' }).$type<StoreName[]>(),
     /** When I archived it (spec 7.4): off the shelf and out of every answer, kept whole. */
     archivedAt: integer(),
     /** Only its own account sees it (spec 11.1): never in a public file or answer. */
@@ -279,6 +284,11 @@ export const copies = sqliteTable(
       .notNull()
       .references(() => platforms.igdbId),
     format: text().$type<Format>().notNull(),
+    /** Where a download on a PC is from: Steam, GOG. One copy, since it is the same game on one shelf. */
+    stores: text({ mode: 'json' })
+      .$type<StoreName[]>()
+      .notNull()
+      .default(sql`'[]'`),
     /** The exact version this copy is, when it is not the primary. */
     gameId: text().references(() => games.id, { onDelete: 'set null' }),
     acquiredOn: text().$type<Day>(),

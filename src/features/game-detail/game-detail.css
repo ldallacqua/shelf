@@ -161,6 +161,87 @@
     }
   }
 
+  /*
+   * Where to get the game: one card of lines, each a store, as Letterboxd lists where to watch a
+   * film. My own stands out as a chosen chip does: the accent's tint, and a tick with words.
+   */
+  .game-stores {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    background: var(--surface-raised);
+    overflow: hidden;
+
+    & li + li,
+    & > details,
+    & details > ul {
+      border-top: 1px solid var(--line);
+    }
+
+    /* The fold takes the look of its lines, in place of the words' "Read more". */
+    & > details {
+      gap: 0;
+
+      & > summary {
+        width: 100%;
+        min-height: 2.5rem;
+        justify-content: space-between;
+        padding-inline: 0.875rem;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--muted);
+        outline-offset: -2px;
+
+        &:hover {
+          background-color: color-mix(in srgb, var(--text) 6%, transparent);
+          color: var(--text);
+          text-decoration: none;
+        }
+      }
+    }
+
+    & > ul + details:not([open]) {
+      border-top: 1px solid var(--line);
+    }
+  }
+
+  .game-store {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.625rem;
+    padding-inline: 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    outline-offset: -2px;
+    transition: background-color var(--motion-quick) var(--ease-settle);
+
+    @media (pointer: coarse) {
+      min-height: 2.75rem;
+    }
+
+    &:is(a):hover {
+      background-color: color-mix(in srgb, var(--text) 6%, transparent);
+    }
+
+    &[data-mine] {
+      background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+      font-weight: 600;
+    }
+
+    &[data-mine]:is(a):hover {
+      background-color: color-mix(in srgb, var(--accent) 20%, transparent);
+    }
+  }
+
+  .game-store-mine {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
   .game-prose {
     display: grid;
     gap: 0.875rem;

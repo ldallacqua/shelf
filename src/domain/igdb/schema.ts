@@ -50,7 +50,11 @@ const externalGame = z.object({
   external_game_source: id.optional(),
   platform: id.optional(),
   game_release_format: id.optional(),
+  url: z.string().optional(),
 })
+
+/** A link on the record: `type` says what it is, a store among them. */
+const website = z.object({ url: z.string(), type: id.optional() })
 
 export const igdbGameSchema = z.object({
   id,
@@ -87,6 +91,7 @@ export const igdbGameSchema = z.object({
   expanded_games: ids,
   release_dates: z.array(releaseDate).default([]),
   external_games: z.array(externalGame).default([]),
+  websites: z.array(website).default([]),
   age_ratings: z.array(ageRating).default([]),
   updated_at: z.number().optional(),
   url: z.string().optional(),
@@ -146,6 +151,9 @@ export const igdbGameFields = [
   'external_games.external_game_source',
   'external_games.platform',
   'external_games.game_release_format',
+  'external_games.url',
+  'websites.url',
+  'websites.type',
   'updated_at',
   'url',
   'age_ratings.organization',

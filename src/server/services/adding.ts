@@ -3,7 +3,7 @@ import 'server-only'
 import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
-import type { LineageStep } from '@/domain/igdb/game'
+import { toGameData, type LineageStep } from '@/domain/igdb/game'
 import type { IgdbSearchHit } from '@/domain/igdb/schema'
 import { foldSearchHits, type SearchResult } from '@/domain/igdb/search'
 import {
@@ -240,13 +240,15 @@ const forLibrary = (libraryId: string, { db, api, records }: LibraryDeps) => {
 
   /** Where a game would go: what the form says before Add (spec 4.1, the "related" line). */
   const grouping = async (igdbId: number): Promise<Grouping> => {
-    const { proposal, index } = await place(igdbId)
+    const { record, proposal, index } = await place(igdbId)
     const entryOf = (entryId: string): OnShelf =>
       index.entries.get(entryId) ?? { slug: '', title: '' }
-    if (proposal.action === 'new') return { action: 'new' }
+    const soldOn = toGameData(record).storeLinks.map((link) => link.store)
+    if (proposal.action === 'new') return { action: 'new', soldOn }
     if (proposal.action === 'already')
-      return { action: 'already', entry: entryOf(proposal.entryId) }
+      return { action: 'already', entry: entryOf(proposal.entryId), soldOn }
     return {
+      soldOn,
       action: proposal.action,
       entry: { ...entryOf(proposal.entryId), platforms: await ownedPlatforms(proposal.entryId) },
       relation: proposal.relation,
@@ -275,6 +277,7 @@ const forLibrary = (libraryId: string, { db, api, records }: LibraryDeps) => {
     const wanted = input.copies.map((copy) => ({
       platformId: copy.platformId,
       format: copy.format,
+      ...(copy.stores ? { stores: copy.stores } : {}),
     }))
     let placement: Placement
     if (proposal.action === 'already') {
@@ -306,6 +309,7 @@ const forLibrary = (libraryId: string, { db, api, records }: LibraryDeps) => {
           status: input.status,
           copies: wanted,
           ...(input.status === 'wishlist' && input.wanted?.length ? { wanted: input.wanted } : {}),
+          ...(input.wantedStores ? { wantedStores: input.wantedStores } : {}),
           ...(input.rating === undefined ? {} : { rating: input.rating }),
           ...(input.tags ? { tags: input.tags } : {}),
           ...(input.completedOn ? { completedOn: input.completedOn } : {}),

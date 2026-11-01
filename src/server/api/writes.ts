@@ -21,6 +21,7 @@ import {
 } from '@/domain/library/bulk'
 import { MAX_NOTES, type OwnerGame } from '@/domain/library/editing'
 import { MAX_PLACED } from '@/domain/library/placing'
+import { storeList } from '@/domain/library/store-list'
 import { formats, kinds, relations, statuses, syncSources } from '@/domain/library/values'
 import { failure } from '@/server/api/respond'
 import type { Done } from '@/server/services/for-account'
@@ -123,12 +124,23 @@ export const apiListMatch = z
   })
   .meta({ id: 'ListMatch' })
 
+const STORES_OF_COPY =
+  'Where a download on a PC is from, as `store:` takes them; left out of any other copy'
+const WANTED_STORES =
+  'On the wishlist, of what it is wanted on, the stores it would be bought from on a PC'
+
 export const apiNewGame = z
   .object({
     igdbId: z.int().positive(),
     status: z.enum(statuses).default('backlog'),
     copies: z
-      .array(z.object({ platform: platformId, format: z.enum(formats) }))
+      .array(
+        z.object({
+          platform: platformId,
+          format: z.enum(formats),
+          stores: storeList.optional().describe(STORES_OF_COPY),
+        }),
+      )
       .max(30)
       .default([]),
     rating: z.number().min(0).max(10).optional().describe('Out of ten, in half steps'),
@@ -139,6 +151,7 @@ export const apiNewGame = z
       .max(20)
       .optional()
       .describe('For a wishlist game, the platforms it is wanted on, by IGDB id'),
+    wantedStores: storeList.optional().describe(WANTED_STORES),
     grouping: z
       .enum(['join', 'separate'])
       .optional()
@@ -205,6 +218,7 @@ export const apiGamePatch = z
       .describe(
         'On the wishlist, the platforms it is wanted on, by IGDB id; kept only while it is on the wishlist',
       ),
+    wantedStores: storeList.nullable().optional().describe(WANTED_STORES),
     private: z
       .boolean()
       .optional()
@@ -273,6 +287,8 @@ export const apiOwnerGame = z
     wanted: z
       .array(platformId)
       .describe('On the wishlist, the platforms it is wanted on, by IGDB id; empty otherwise'),
+    wantedStores: storeList.optional().describe(WANTED_STORES),
+    soldOn: storeList.optional().describe('The stores it is sold on, across its versions'),
     private: z.boolean().describe('Only its owner sees it'),
     rating: z.number().min(0).max(10).optional().describe('Out of ten'),
     completedOn: z.iso.date().optional(),
@@ -301,6 +317,7 @@ export const apiOwnerGame = z
         id: z.string().describe('For PATCH and DELETE /entries/{id}/copies/{copy}'),
         platform: platformId,
         format: z.enum(formats),
+        stores: storeList.optional().describe(STORES_OF_COPY),
         synced: z
           .array(z.object({ source: z.enum(syncSources), hours: z.number().min(0) }))
           .optional()
@@ -341,10 +358,20 @@ export const apiOwnerGame = z
   .meta({ id: 'OwnerGame' })
 
 export const apiNewCopy = z
-  .object({ platform: platformId, format: z.enum(formats) })
+  .object({
+    platform: platformId,
+    format: z.enum(formats),
+    stores: storeList.optional().describe(STORES_OF_COPY),
+  })
   .meta({ id: 'NewCopy' })
 
-export const apiCopyPatch = z.object({ format: z.enum(formats) }).meta({ id: 'CopyPatch' })
+export const apiCopyPatch = z
+  .object({
+    format: z.enum(formats).optional(),
+    stores: storeList.optional().describe(STORES_OF_COPY),
+  })
+  .refine((patch) => patch.format !== undefined || patch.stores !== undefined)
+  .meta({ id: 'CopyPatch' })
 
 export const apiRestored = z.object({ version: z.int(), slug: z.string() }).meta({ id: 'Restored' })
 
@@ -506,7 +533,11 @@ export const toApiMatch = (answer: MatchAnswer): z.input<typeof apiListMatch> =>
 /** A new game in the API's shape, as the services take it: copies by platform id, a rating out of 100. */
 export const toAddInput = ({ copies, rating, ...rest }: z.output<typeof apiNewGame>): AddInput => ({
   ...rest,
-  copies: copies.map((copy) => ({ platformId: copy.platform, format: copy.format })),
+  copies: copies.map((copy) => ({
+    platformId: copy.platform,
+    format: copy.format,
+    ...(copy.stores ? { stores: copy.stores } : {}),
+  })),
   ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
 })
 
@@ -534,10 +565,11 @@ export const toApiOwnerGame = ({
   ...(rating === undefined ? {} : { rating: rating / 10 }),
   hoursTracked: tracked / 60,
   ...(idle === undefined ? {} : { hoursIdle: idle / 60 }),
-  copies: copies.map(({ id, platformId, format, synced }) => ({
+  copies: copies.map(({ id, platformId, format, stores, synced }) => ({
     id,
     platform: platformId,
     format,
+    ...(stores ? { stores } : {}),
     ...(synced
       ? { synced: synced.map(({ source, minutes }) => ({ source, hours: minutes / 60 })) }
       : {}),

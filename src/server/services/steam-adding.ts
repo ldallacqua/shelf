@@ -170,7 +170,11 @@ const forLibrary = (
     input: AddSteamInput,
     gameId: string | undefined,
   ): Promise<{ placement: Placement; shelved?: OnShelf }> => {
-    const wanted = input.copies.map(({ platformId, format }) => ({ platformId, format }))
+    const wanted = input.copies.map(({ platformId, format, stores }) => ({
+      platformId,
+      format,
+      ...(stores ? { stores } : {}),
+    }))
     const shelved = gameId ? await entryOf(gameId) : undefined
     if (shelved) {
       // Mine already: what is new is only the copies I did not have.
@@ -195,6 +199,7 @@ const forLibrary = (
           status: input.status,
           copies: wanted,
           ...(input.status === 'wishlist' && input.wanted?.length ? { wanted: input.wanted } : {}),
+          ...(input.wantedStores ? { wantedStores: input.wantedStores } : {}),
           ...(input.rating === undefined ? {} : { rating: input.rating }),
           ...(input.tags ? { tags: input.tags } : {}),
           ...(input.completedOn ? { completedOn: input.completedOn } : {}),
