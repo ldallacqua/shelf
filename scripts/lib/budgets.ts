@@ -71,7 +71,9 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // the header's buttons on every page and on the page's own icon buttons: the owner asked for
   // the component library's tips in place of the browser's. About 3.3 KB of it is Radix's own
   // tooltip, which no smaller way of loading it saves without losing focus on the button.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 285 },
+  // Counted hours (31 Oct 2026): measured 285.0 KB, just past 285. Nothing of counting is on this
+  // page: its modules load inside the app alone. What grew is the list of what can be fetched.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 285.5 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).

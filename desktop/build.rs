@@ -15,6 +15,8 @@ fn main() {
             "game_state",
             "stop_game",
             "force_stop_game",
+            "play_sessions",
+            "play_sessions_kept",
         ]),
     ))
     .expect("tauri-build failed");

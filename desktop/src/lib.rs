@@ -1,15 +1,20 @@
 //! Shelf for Windows (ADR 005): the hosted Shelf in a window of its own, and
 //! the few commands its pages may ask of this computer.
 
+mod autostart;
 mod commands;
 mod ids;
 mod launch;
 mod launchers;
 mod navigation;
+mod pads;
 mod processes;
 mod running;
 mod shortcut;
 mod steam;
+mod tracker;
+mod tray;
+mod watch;
 
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
@@ -18,12 +23,15 @@ use std::time::Duration;
 use serde::Serialize;
 use tauri::ipc::{CapabilityBuilder, Channel};
 use tauri::webview::{NewWindowResponse, PageLoadEvent};
-use tauri::{AppHandle, Manager, State, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{
+    AppHandle, Manager, RunEvent, State, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_window_state::{StateFlags, WindowExt};
 
 use launchers::Launchers;
 use navigation::Decision;
+use tracker::Tracker;
 
 /// The Shelf a release build opens.
 const PRODUCTION: &str = "https://shelf-ldallacqua.vercel.app";
@@ -205,6 +213,44 @@ async fn update(app: &AppHandle, steps: &Channel<Step>) {
     }
 }
 
+/// The splash, which asks `start`, which opens Shelf when it is time.
+fn open_splash(app: &AppHandle, shelf: Url) -> tauri::Result<()> {
+    let mut splash = WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("index.html".into()))
+        .title("Shelf")
+        .inner_size(320.0, 360.0)
+        .resizable(false)
+        .maximizable(false)
+        .decorations(false)
+        .center()
+        .on_navigation(move |url| navigation::decide(url, &shelf) == Decision::Stay);
+    if let Some(dir) = data_dir() {
+        splash = splash.data_directory(dir);
+    }
+    splash.build()?;
+    Ok(())
+}
+
+/// Brings Shelf forward, or opens it again after its window was closed to the tray. On a thread of
+/// its own: Windows' web view can't be made while the thread that serves it waits for the result.
+pub(crate) fn show_shelf(app: &AppHandle) {
+    let window = app
+        .get_webview_window("main")
+        .or_else(|| app.get_webview_window("splash"));
+    if let Some(window) = window {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+        return;
+    }
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let shelf = app.state::<Shelf>().0.clone();
+        if let Err(error) = open_splash(&app, shelf) {
+            eprintln!("could not open Shelf: {error}");
+        }
+    });
+}
+
 /// The main window, on Shelf, unseen until its page is there.
 fn open_main(app: &AppHandle, shelf: Url) -> tauri::Result<()> {
     if let Some(main) = app.get_webview_window("main") {
@@ -272,13 +318,9 @@ pub fn run() {
     // build, which would otherwise close itself and bring forward the
     // installed app, when it is open.
     #[cfg(not(debug_assertions))]
-    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
-        let window = app
-            .get_webview_window("main")
-            .or_else(|| app.get_webview_window("splash"));
-        if let Some(window) = window {
-            let _ = window.unminimize();
-            let _ = window.set_focus();
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _| {
+        if !args.iter().any(|arg| arg == autostart::BACKGROUND) {
+            show_shelf(app);
         }
     }));
     // Where the window was is the installed app's to keep: a development build with a profile
@@ -311,6 +353,8 @@ pub fn run() {
             commands::game_state,
             commands::stop_game,
             commands::force_stop_game,
+            commands::play_sessions,
+            commands::play_sessions_kept,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -331,6 +375,8 @@ pub fn run() {
                     .permission("allow-game-state")
                     .permission("allow-stop-game")
                     .permission("allow-force-stop-game")
+                    .permission("allow-play-sessions")
+                    .permission("allow-play-sessions-kept")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")
@@ -347,23 +393,43 @@ pub fn run() {
             app.manage(Launchers::open(&folder));
             app.manage(running::Games::default());
             app.manage(commands::Following::default());
+            app.manage(Tracker::open(&folder, commands::now()));
 
-            // The splash first: it asks `start`, which opens Shelf when it is time.
-            let mut splash =
-                WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("index.html".into()))
-                    .title("Shelf")
-                    .inner_size(320.0, 360.0)
-                    .resizable(false)
-                    .maximizable(false)
-                    .decorations(false)
-                    .center()
-                    .on_navigation(move |url| navigation::decide(url, &shelf) == Decision::Stay);
-            if let Some(dir) = data_dir() {
-                splash = splash.data_directory(dir);
+            autostart::first_start(&folder);
+            tray::add(app.handle())?;
+            watch::start(app.handle().clone());
+
+            // Started by Windows it stays in the tray, counting. Otherwise, the splash first.
+            let background = std::env::args().any(|arg| arg == autostart::BACKGROUND);
+            if !background {
+                open_splash(app.handle(), shelf)?;
             }
-            splash.build()?;
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("Shelf for Windows could not start");
+        .build(tauri::generate_context!())
+        .expect("Shelf for Windows could not start")
+        .run(|app, event| match event {
+            // The last window closed: it goes on in the tray. Only Quit gives a code.
+            RunEvent::ExitRequested {
+                code: None, api, ..
+            } => {
+                api.prevent_exit();
+                // No script can press the tray: `pnpm desktop:check` has it reopen by itself.
+                #[cfg(debug_assertions)]
+                if let Ok(seconds) = std::env::var("SHELF_REOPEN_AFTER") {
+                    let app = app.clone();
+                    std::thread::spawn(move || {
+                        let seconds = seconds.parse().unwrap_or(1);
+                        std::thread::sleep(Duration::from_secs(seconds));
+                        show_shelf(&app);
+                    });
+                }
+            }
+            RunEvent::Exit => {
+                if let Err(error) = app.state::<Tracker>().flush() {
+                    eprintln!("could not keep the hours counted: {error}");
+                }
+            }
+            _ => {}
+        });
 }

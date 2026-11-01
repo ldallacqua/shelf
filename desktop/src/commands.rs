@@ -19,6 +19,7 @@ use crate::processes::{self, Closing};
 use crate::running::{self, GameView, Games, Launch, Rules, SteamGame, Target};
 use crate::shortcut::{self, Pointed};
 use crate::steam;
+use crate::tracker::{Session, Tracker};
 
 /// Why a command did nothing, in a word a page has a sentence for.
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -70,7 +71,7 @@ fn short(text: &str) -> String {
 }
 
 /// The milliseconds since 1970, to say when a file was chosen.
-fn now() -> u64 {
+pub(crate) fn now() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |since| since.as_millis() as u64)
@@ -388,6 +389,21 @@ pub async fn playable(launchers: State<'_, Launchers>) -> Result<Playable, Refus
     })
     .await
     .map_err(|_| Refusal::Failed)
+}
+
+/// What has been counted and has ended, for the page to send to Shelf (ADR 005, section 12).
+#[tauri::command]
+pub fn play_sessions(tracker: State<'_, Tracker>) -> Vec<Session> {
+    tracker.finished()
+}
+
+/// What Shelf has said it keeps, let go of here.
+#[tauri::command]
+pub fn play_sessions_kept(ids: Vec<String>, tracker: State<'_, Tracker>) -> Result<(), Refusal> {
+    if ids.len() > 200 {
+        return Err(Refusal::Invalid);
+    }
+    tracker.kept(&ids).map_err(|_| Refusal::Failed)
 }
 
 #[cfg(test)]

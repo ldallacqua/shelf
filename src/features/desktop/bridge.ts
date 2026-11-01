@@ -30,6 +30,14 @@ const gameViewSchema = z.object({
  */
 export type GameView = z.infer<typeof gameViewSchema>
 
+const playSessionSchema = z.object({
+  id: z.string(),
+  game: z.union([z.object({ entry: z.string() }), z.object({ steam: z.string() })]),
+  startedAt: z.number(),
+  endedAt: z.number(),
+  seconds: z.number(),
+})
+
 export const desktop = {
   /** The file chosen for a game on this computer, or null. */
   launcher: async (entry: string): Promise<Launcher | null> =>
@@ -67,5 +75,11 @@ export const desktop = {
   /** Ends a game at once, what it has not saved lost. Only after the person has said so. */
   forceStopGame: async (entry: string, apps: readonly string[]): Promise<void> => {
     await call('force_stop_game', { entry, apps })
+  },
+  /** What the app has counted and has ended, for Shelf (ADR 005, section 12). */
+  playSessions: async () => z.array(playSessionSchema).parse(await call('play_sessions')),
+  /** What Shelf has said it keeps, for the app to let go of. */
+  playSessionsKept: async (ids: readonly string[]): Promise<void> => {
+    await call('play_sessions_kept', { ids })
   },
 }

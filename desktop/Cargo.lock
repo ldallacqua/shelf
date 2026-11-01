@@ -3363,7 +3363,7 @@ dependencies = [
 
 [[package]]
 name = "shelf-desktop"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -3376,6 +3376,7 @@ dependencies = [
  "tauri-plugin-window-state",
  "tokio",
  "url",
+ "uuid",
  "windows-sys 0.61.2",
  "winreg",
 ]
