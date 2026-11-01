@@ -7,7 +7,7 @@ import { games, vocab } from '@/server/db/schema'
 import { createIgdbApi } from '@/server/igdb/api'
 import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
 import { readLibrary } from '@/server/library/read'
-import { removeEntryForUndo, restoreEntry } from '@/server/library/store'
+import { readVersion, removeEntryForUndo, restoreEntry } from '@/server/library/store'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { MOCK_STEAM } from '@/server/mocks/owner'
 import { createSteamHandlers, newSteamMockState, type SteamMockState } from '@/server/mocks/steam'
@@ -162,11 +162,13 @@ describe('adding from a Steam link', () => {
     expect(publisher!.id).toBeGreaterThanOrEqual(1_000_000_000)
   })
 
-  it('hides a game for adults with the switch, and keeps only its cover', async () => {
+  it('hides a game for adults with the switch, marks its screenshots, and has no backdrop', async () => {
     await forAccount(mine).add({ appId: ADULT, status: 'wishlist', copies: [] })
     const stored = await row(ADULT)
     expect(stored?.cover).toBeTruthy()
-    expect(stored?.screenshots).toEqual([])
+    expect(stored?.screenshots).toEqual([
+      expect.objectContaining({ id: 'steam/apps/2000002/ss_3d4e5f.jpg', mature: true }),
+    ])
     expect(stored?.artworks).toEqual([])
     const library = await readLibrary(db, mine)
     expect(library.games.find((each) => each.slug.endsWith(ADULT))?.adult).toBe(true)
@@ -201,6 +203,35 @@ describe('adding from a Steam link', () => {
       copies: [{ platformId: PC, format: 'digital' }],
     })
     expect(again.undo).toMatchObject({ newEntry: false, copyIds: [] })
+  })
+
+  it('brings a game up to date when its link is pasted again, and tells its shelves', async () => {
+    await forAccount(mine).add({ appId: ADULT, title: 'As Set', status: 'wishlist', copies: [] })
+    await db
+      .update(games)
+      .set({ screenshots: [], summary: 'Old.' })
+      .where(eq(games.steamAppId, ADULT))
+    await forAccount(theirs).add({ appId: ADULT, status: 'backlog', copies: [] })
+    const [before, theirsBefore] = [await readVersion(db, mine), await readVersion(db, theirs)]
+    const touched: string[] = []
+
+    await forAccount(theirs).read(ADULT, touched)
+
+    const stored = await row(ADULT)
+    expect(stored?.screenshots).toHaveLength(1)
+    expect(stored).toMatchObject({ title: 'As Set', summary: 'Made up too.' })
+    expect(touched.sort()).toEqual([mine, theirs].sort())
+    expect(await readVersion(db, mine)).toBe(before + 1)
+    expect(await readVersion(db, theirs)).toBe(theirsBefore + 1)
+  })
+
+  it('tells nobody when the page has not changed', async () => {
+    await forAccount(mine).add({ appId: GAME, status: 'wishlist', copies: [] })
+    const before = await readVersion(db, mine)
+    const touched: string[] = []
+    await forAccount(mine).read(GAME, touched)
+    expect(touched).toEqual([])
+    expect(await readVersion(db, mine)).toBe(before)
   })
 
   it('refuses what is no game, what Steam lacks, and what IGDB has', async () => {

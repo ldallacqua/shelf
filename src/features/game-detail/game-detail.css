@@ -343,6 +343,44 @@
     }
   }
 
+  /*
+   * A screenshot Steam keeps for adults: blurred past reading, in this rule and not by a script,
+   * so it is never seen sharp while the page starts. Scaled so no sharp edge shows at the rim.
+   */
+  .shot-thumb[data-adult='hidden'] img,
+  .shot-thumb[data-adult='hidden']:hover img {
+    filter: blur(1.25rem) saturate(0.8);
+    scale: 1.2;
+  }
+
+  .shot-adult {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 999px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    /* Over a picture, the same in either theme, as a video's name is. */
+    color: #fff;
+    background: rgb(0 0 0 / 0.7);
+  }
+
+  .shot-thumb[data-adult='hidden'] .shot-adult {
+    inset: 0;
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .shot-thumb[data-adult='shown'] .shot-adult {
+    top: 0.375rem;
+    right: 0.375rem;
+  }
+
   /* A video: a picture of the game, dimmed, with a play button and what the video is. */
   .media-video {
     & img {

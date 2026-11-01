@@ -753,15 +753,21 @@ isso." And: "eu não queria ter que colocar todas as informações do jogo na m�
   says so.
 - **From Steam:** the title, the cover, the day it came out, what it runs on, its developers and
   publishers, its short description, and its tags and categories as Shelf's genres, themes, modes and
-  perspectives. Screenshots only where Steam shows them to anyone, and its library art as a
-  backdrop. **Not from Steam:** a rating, a length, a franchise, videos. They stay empty.
-- **A game Steam marks for adults** counts as adult (3.13), so "Hide adult games" hides it, and keeps
-  only its cover. The form says so.
+  perspectives. Its screenshots, and its library art as a backdrop. **Not from Steam:** a rating, a length, a franchise, videos. They stay empty.
+- **A game Steam marks for adults** counts as adult (3.13), so "Hide adult games" hides it, and has
+  no backdrop. The form says so.
+- **A screenshot Steam keeps for adults,** on any game, is blurred under an eye and "+18", after the
+  ones for anyone. Pressing one shows that game's, each still marked "+18", and opens nothing;
+  the viewer holds none of them until then. They are in no public API answer, a link's preview or a
+  backdrop. The owner, 1 Nov 2026: "pode trazer as imagens adultas tbm. So borra elas ou coloca um aviso do
+  olhinho que são +18".
+- **A sync finds these games** by their Steam app (4.4), on any shelf linked to Steam: my copy, my hours,
+  achievements. A wishlist game keeps its status, as any does (7.5).
+- **Pasting a link again** brings the game up to date with its Steam page, all but its title.
 - A game a moderator added is in the **catalog every shelf shares**: it is one row, under the title
   first given. A later moderator adding it takes that title.
 
-Not yet: anyone but a moderator finding these games in the search; a sync recognizing one; refreshing
-one from Steam.
+Not yet: anyone but a moderator finding these games in the search; refreshing one from Steam by itself.
 
 ### 4.3 When IGDB misbehaves
 

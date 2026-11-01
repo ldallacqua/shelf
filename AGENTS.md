@@ -256,7 +256,10 @@ number leaves the pasted text (`steamAppIdIn`): the address is never fetched. Ev
 from Steam on the server, by `src/domain/steam/store-game.ts` and `steam.storeGame`, and stored as a
 `games` row with no `igdb_id`, a `steam_app_id`, and images whose id is their path on Steam's servers,
 which `imageUrl` reads like any other. Services that only a moderator may reach go through
-`forModerator`. A game IGDB has is never added this way: the link sends it to the search.
+`forModerator`. A game IGDB has is never added this way: the link sends it to the search. A sync
+recognizes these games by their app, before IGDB's rungs (`recognize`). An image marked `mature` is
+drawn blurred (`screenshots.tsx`) and goes nowhere that could not blur it: filter it out of anything new
+that reads a game's screenshots.
 
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in

@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { and, eq, sql } from 'drizzle-orm'
+import { revalidateTag } from 'next/cache'
 
 import {
   addSteamInput,
@@ -32,11 +33,13 @@ import {
   findSteamGame,
   LibraryError,
   readVersion,
+  refreshSteamGame,
   type Placement,
 } from '@/server/library/store'
 import { spend } from '@/server/services/fair-use'
 import { forModerator } from '@/server/services/for-account'
 import { createRecords } from '@/server/services/igdb-records'
+import { libraryTag } from '@/server/services/tags'
 import { steam, type Steam } from '@/server/sync/steam'
 
 /**
@@ -110,7 +113,8 @@ const forLibrary = (
   const onIgdb = async (appId: string): Promise<string | undefined> =>
     (await api.byStoreIds('steam', [appId])).get(appId)?.[0]?.name
 
-  const read = async (link: string): Promise<SteamLinkAnswer> => {
+  /** `touched` is given the libraries whose shelves the read changed. */
+  const read = async (link: string, touched: string[] = []): Promise<SteamLinkAnswer> => {
     const item = await store.storeGame(link)
     if (!item) return { kind: 'not-found' }
     if (!isStoreGame(item)) return { kind: 'not-a-game', title: item.name ?? '' }
@@ -119,6 +123,19 @@ const forLibrary = (
 
     const data = toSteamGame(item)
     const [held, all, mine] = await Promise.all([findSteamGame(db, link), allPlatforms(), habits()])
+    if (held) {
+      // Pasting a game already added also brings it up to date with its page.
+      const art =
+        data.cover && data.cover.id !== held.cover?.id ? await readArt(data.cover.id) : undefined
+      touched.push(
+        ...(await refreshSteamGame(db, {
+          data,
+          ...(art ? { art } : {}),
+          names: wordsOf(data),
+          platforms: data.platforms.flatMap((id) => all.get(id) ?? []),
+        })),
+      )
+    }
     const shelved = held ? await entryOf(held.id) : undefined
     const candidate: Candidate = {
       // Nothing asks IGDB about a result from Steam: `steam` says which it is.
@@ -248,7 +265,10 @@ export const readSteamLink = (appId: unknown) => {
   if (!parsed.success) return refused()
   return forModerator(async (account) => {
     await spend(account, 'search')
-    return steamAdding(account).read(parsed.data)
+    const touched: string[] = []
+    const answer = await steamAdding(account).read(parsed.data, touched)
+    for (const library of touched) revalidateTag(libraryTag(library), { expire: 0 })
+    return answer
   })
 }
 

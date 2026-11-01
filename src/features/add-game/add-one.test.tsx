@@ -210,7 +210,7 @@ describe('AddOne, from a Steam link (ADR 006)', () => {
   it('says what becomes of a game for adults', async () => {
     await paste(reading(game({ steam: { appId: '2000001', adult: true, known: false } })))
     await userEvent.click(await screen.findByRole('option', { name: /AGame/ }))
-    expect(screen.getByText(/keeps only its cover/)).toBeInTheDocument()
+    expect(screen.getByText(/blurred until someone presses/)).toBeInTheDocument()
   })
 
   it('tells anyone else only a moderator can', async () => {

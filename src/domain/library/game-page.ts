@@ -97,13 +97,13 @@ export const firstReleases = (versions: readonly (readonly Release[])[]): Releas
   )
 }
 
-/** Key art, then any other art, then a screenshot: what stands dimmed behind the cover. */
+/** Key art, then any other art, then a screenshot for anyone: what stands dimmed behind the cover. */
 export const backdropOf = (
   artworks: readonly GameArtwork[],
   screenshots: readonly GameImage[],
 ): GameImage | undefined => {
   const art = artworks.find((each) => each.type === 'key') ?? artworks[0]
-  const image = art ?? screenshots[0]
+  const image = art ?? screenshots.find((shot) => !shot.mature)
   return image ? { id: image.id, width: image.width, height: image.height } : undefined
 }
 
@@ -209,7 +209,10 @@ export const videoGameData = (
   if (game.releasedOn) data.datePublished = game.releasedOn
   const images = [
     ...(game.cover ? [image.cover(game.cover)] : []),
-    ...facts.screenshots.slice(0, 3).map((shot) => image.screenshot(shot.id)),
+    ...facts.screenshots
+      .filter((shot) => !shot.mature)
+      .slice(0, 3)
+      .map((shot) => image.screenshot(shot.id)),
   ]
   if (images.length > 0) data.image = images
   if (game.developers.length > 0) data.author = companies(game.developers)

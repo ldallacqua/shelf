@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeftIcon, ChevronRightIcon, XIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, EyeIcon, XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Dialog } from 'radix-ui'
 import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent } from 'react'
@@ -317,6 +317,11 @@ export function Screenshots({
   const t = useTranslations('Game')
   const [open, setOpen] = useState<number>()
   const [playing, setPlaying] = useState<GameVideo>()
+  // Asked once a game, and of this game only: the panel steps from game to game with this kept.
+  const [shownFor, setShownFor] = useState<string>()
+  const adultShown = shownFor === title
+  // The viewer holds only what I have let be seen, so a swipe can't arrive at the rest.
+  const seen = adultShown ? shots : shots.filter((shot) => !shot.mature)
   const strip = useRef<HTMLUListElement>(null)
   const [edges, setEdges] = useState({ before: false, after: false })
 
@@ -399,30 +404,40 @@ export function Screenshots({
               </li>
             )
           })}
-          {shots.map((shot, index) => (
-            <li key={shot.id}>
-              <button
-                type="button"
-                className="shot-thumb"
-                aria-label={t('screenshotOpen', {
-                  at: videos.length + index + 1,
-                  total,
-                  title,
-                })}
-                onClick={() => setOpen(index)}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  alt=""
-                  {...screenshotSources(shot.id)}
-                  sizes="(min-width: 40rem) 224px, 176px"
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                />
-              </button>
-            </li>
-          ))}
+          {shots.map((shot, index) => {
+            const hidden = shot.mature && !adultShown
+            const place = { at: videos.length + index + 1, total, title }
+            return (
+              <li key={shot.id}>
+                <button
+                  type="button"
+                  className="shot-thumb"
+                  data-adult={shot.mature ? (hidden ? 'hidden' : 'shown') : undefined}
+                  aria-label={t(hidden ? 'screenshotAdult' : 'screenshotOpen', place)}
+                  onClick={() => {
+                    if (hidden) setShownFor(title)
+                    else setOpen(seen.indexOf(shot))
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    alt=""
+                    {...screenshotSources(shot.id)}
+                    sizes="(min-width: 40rem) 224px, 176px"
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                  />
+                  {shot.mature ? (
+                    <span className="shot-adult" aria-hidden="true">
+                      {hidden ? <EyeIcon className="size-4" /> : null}
+                      {t('adultMark')}
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            )
+          })}
         </ul>
         <button
           type="button"
@@ -435,12 +450,7 @@ export function Screenshots({
           <ChevronRightIcon aria-hidden="true" className="size-5" />
         </button>
       </div>
-      <ScreenshotViewer
-        shots={shots}
-        title={title}
-        open={open}
-        onClose={() => setOpen(undefined)}
-      />
+      <ScreenshotViewer shots={seen} title={title} open={open} onClose={() => setOpen(undefined)} />
       {playing ? (
         <Suspense fallback={<VideoGhost />}>
           <VideoPlayer video={playing} title={title} onClose={() => setPlaying(undefined)} />

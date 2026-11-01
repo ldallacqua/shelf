@@ -118,6 +118,23 @@ describe('GET /games/{slug}', () => {
     expect(answer.timesToBeat?.normally).toBeGreaterThan(0)
     expect(answer.screenshots[0]).toMatch(/^https:\/\/images\.igdb\.com\/.+t_screenshot_huge/)
   })
+
+  it('gives no one a screenshot Steam keeps for adults: nothing here could blur it', async () => {
+    const library = await readLibrary(db, sample)
+    const game = library.games.find((each) => each.slug === 'bloodborne')!
+    const extras = (await readGameExtras(db, sample, 'bloodborne'))!
+    const page = buildGamePage(library, game, {
+      ...extras,
+      screenshots: [
+        { id: 'steam/apps/2000002/ss_aa.jpg', width: 1920, height: 1080, mature: true },
+        { id: 'steam/apps/2000002/ss_bb.jpg', width: 1920, height: 1080 },
+      ],
+    })
+    const answer = answerGame(library, page)
+    expect(answer.screenshots).toHaveLength(1)
+    expect(answer.screenshots[0]).toContain('ss_bb')
+    expect(answer.backdrop).not.toContain('ss_aa')
+  })
 })
 
 describe('the OpenAPI document', () => {

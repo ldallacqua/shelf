@@ -42,26 +42,44 @@ nothing per game. Backloggd, which also reads IGDB, [has the same gap](https://b
    the site's policy already allowed them for achievements. Valve grants no licence for this that I could
    find; nor does its [subscriber agreement](https://store.steampowered.com/subscriber_agreement/)
    mention it. Worth a lawyer's reading before Shelf is more than a proof of concept.
-8. **A game for adults keeps only its cover.** Descriptor 3 (adult only sexual content) or 4 (frequent
-   nudity or sexual content) gives it IGDB's theme Erotic, so spec 3.13's switch hides it; 3 also counts as
-   Adults Only. [Valve holds every capsule to PG-13](https://partner.steamgames.com/doc/store/assets/rules)
-   and says nothing of other art, so no backdrop. On every game, only `all_ages_screenshots` are read.
-   Shelf's pages are public, and [Vercel's policy](https://vercel.com/legal/acceptable-use-policy)
-   bars "offensive, obscene, graphic or violent" content; nothing of these games is hosted here but words.
-   Valve documents no descriptor: their meaning was read from the store's answers for games whose content
-   is known, and from [what others have found](https://fredericksen.substack.com/p/steam-video-game-ratings-and-mature).
+8. **Screenshots for adults are blurred, behind an eye.** Descriptor 3 (adult only sexual content) or 4
+   (frequent nudity or sexual content) gives a game IGDB's theme Erotic, so spec 3.13's switch hides it; 3
+   also counts as Adults Only. Steam lists a game's screenshots for anyone apart from those it keeps for
+   adults, and the second kind are stored marked `mature`, on any game. First this took only the first kind.
+   The owner, the same day, of a game left with none: "pode trazer as imagens adultas tbm. So borra elas ou
+   coloca um aviso do olhinho que são +18". So a page draws them blurred, by a CSS rule and not a script, so
+   none is seen sharp while it starts, under an eye and "+18"; pressing one shows that game's. Until then the
+   viewer does not hold them, so a swipe can't arrive at one. **Nothing else takes them:** not the public API
+   nor an assistant, which could blur nothing; not a link's preview or structured data; not a backdrop. A
+   game for adults still has no art behind its cover, because
+   [Valve holds capsules to PG-13](https://partner.steamgames.com/doc/store/assets/rules) and says nothing of
+   the rest. Shelf's pages are public, and [Vercel's policy](https://vercel.com/legal/acceptable-use-policy)
+   bars "offensive, obscene, graphic or violent" content: the files stay on Steam's servers, and only their
+   paths are here. A visitor's browser does fetch the blurred file from Steam; anyone reading the page's
+   source could open it. Valve documents no descriptor: their meaning was read from the store's answers for
+   games whose content is known, and from
+   [what others have found](https://fredericksen.substack.com/p/steam-video-game-ratings-and-mature).
 9. **Companies by name.** Steam gives names, IGDB ids. A name IGDB has already given, by its slug, takes
    that id, so a filter finds both; another takes an id from a billion up, past any of IGDB's.
 10. **A release's day in Seattle's time.** Steam's number, read as UTC, was a day late on four of ten games
     checked; read in Pacific time it matched the store's page on all ten.
 
+11. **A sync recognizes these games by their app,** before IGDB's rungs, so a title can't take one for
+    another game. A game on my shelf gets the copy and the hours, and keeps what I set, a wishlist status
+    too, as a game from IGDB does (spec 7.5); otherwise it starts as any game a sync adds. A game a moderator
+    adds after the source listed it is found at the next sync, on every shelf linked to Steam. That is what
+    gives one achievements: they are read for what a sync put on a copy.
+12. **Pasting a game's link again brings it up to date with its page,** all but its title, address and
+    companies, for a moderator, and raises the version of every shelf that has it.
+
 ## Consequences
 
-- A game's data can age: nothing refreshes it yet. Steam may also move an image, whose path carries a hash.
+- A game's data can age: nothing refreshes it by itself yet. Steam may also move an image, whose path carries
+  a hash. Until then a moderator pastes the link again.
 - A game kept only by being on shelves: removed from the last one, its row goes, as an IGDB record's does,
   and with it the title a moderator gave it. Undo brings it back.
 - Rating, length, franchise and videos stay empty. Steam's reviews are not IGDB's rating and are not shown
   as if they were; its trailers are not on YouTube, the only videos a page plays.
-- Built in three steps. This one: the flag, adding from a link, and the game's page. Next: anyone finding
-  these games in the search, and a sync recognizing one. Then: refreshing them, and checking Play, the
-  hours and achievements on them.
+- Built in steps. First: the flag, adding from a link, and the game's page. Second: a sync recognizing one,
+  and screenshots for adults. Next: anyone finding these games in the search. Then: refreshing them by
+  themselves, and checking Play and the hours on them.

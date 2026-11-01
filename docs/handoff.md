@@ -6,9 +6,9 @@ step 3. This note is what the next session needs and cannot get from the code. R
 
 ## Games from Steam (1 Nov 2026)
 
-A moderator adds a game IGDB does not have from its Steam link: [ADR 006](adr/006-games-from-steam.md),
-in three steps, of which the first is built. Next: anyone finding these games in the search, and a sync
-recognizing one. Then: refreshing them from Steam, and checking Play, the hours and achievements on them.
+A moderator adds a game IGDB does not have from its Steam link: [ADR 006](adr/006-games-from-steam.md).
+Built: adding, a sync recognizing one, and screenshots for adults, blurred. Next: anyone finding these games
+in the search. Then: refreshing them by themselves, and checking Play and the hours on them.
 
 ## Now: the owner's issues, highest priority first (27 Oct 2026)
 

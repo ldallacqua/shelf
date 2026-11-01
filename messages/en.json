@@ -554,6 +554,8 @@
     "factsFailed": "The rest of this game's page did not load. <page>Open its own page</page>.",
     "screenshotOpen": "Screenshot {at} of {total} from {title}: open it full screen",
     "screenshotAlt": "Screenshot {at} of {total} from {title}",
+    "screenshotAdult": "Screenshot {at} of {total} from {title}, for adults, blurred: show this game's screenshots for adults",
+    "adultMark": "+18",
     "viewerTitle": "Screenshots from {title}",
     "viewerHelp": "The left and right arrows, or a swipe, go to the next. Pinch, or double-tap, to zoom.",
     "viewerCount": "{at} of {total}",
@@ -1550,7 +1552,7 @@
       "title": "Title on every shelf",
       "shared": "IGDB does not have this game. Adding it puts it in the catalog every shelf shares, read from its Steam page.",
       "known": "A moderator already added this game from Steam.",
-      "adult": "Steam marks it as adult: “Hide adult games” hides it, and it keeps only its cover.",
+      "adult": "Steam marks it as adult: “Hide adult games” hides it. Screenshots Steam keeps for adults are blurred until someone presses them.",
       "notFound": "Steam has no store page for that link.",
       "notAGame": "That Steam page is not a game: a soundtrack, a DLC, a demo or software."
     },

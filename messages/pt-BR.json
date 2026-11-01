@@ -554,6 +554,8 @@
     "factsFailed": "O resto da página deste jogo não carregou. <page>Abrir a página dele</page>.",
     "screenshotOpen": "Captura {at} de {total} de {title}: abrir em tela cheia",
     "screenshotAlt": "Captura {at} de {total} de {title}",
+    "screenshotAdult": "Captura {at} de {total} de {title}, para adultos, borrada: mostrar as capturas para adultos deste jogo",
+    "adultMark": "+18",
     "viewerTitle": "Capturas de tela de {title}",
     "viewerHelp": "As setas para a esquerda e para a direita, ou um deslizar, vão à próxima. Faça pinça, ou toque duas vezes, para ampliar.",
     "viewerCount": "{at} de {total}",
@@ -1549,7 +1551,7 @@
       "title": "Título em todas as estantes",
       "shared": "O IGDB não tem este jogo. Adicionar coloca ele no catálogo que todas as estantes compartilham, com os dados da página dele na Steam.",
       "known": "Um moderador já adicionou este jogo pela Steam.",
-      "adult": "A Steam marca este jogo como adulto: “Esconder jogos adultos” esconde ele, e ele fica só com a capa.",
+      "adult": "A Steam marca este jogo como adulto: “Esconder jogos adultos” esconde ele. As capturas que a Steam reserva para adultos ficam borradas até alguém clicar nelas.",
       "notFound": "A Steam não tem página de loja para esse link.",
       "notAGame": "Essa página da Steam não é um jogo: é trilha sonora, DLC, demo ou programa."
     },

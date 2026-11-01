@@ -98,6 +98,9 @@ describe('backdropOf', () => {
     expect(backdropOf([art, key], [shot])).toEqual({ id: 'ar2', width: 1920, height: 1080 })
     expect(backdropOf([art], [shot])).toEqual({ id: 'ar1', width: 1920, height: 1080 })
     expect(backdropOf([], [shot])).toEqual(shot)
+    // A screenshot Steam keeps for adults never stands behind a cover (ADR 006).
+    expect(backdropOf([], [{ ...shot, mature: true }])).toBeUndefined()
+    expect(backdropOf([], [{ ...shot, id: 'ss0', mature: true }, shot])).toEqual(shot)
     expect(backdropOf([], [])).toBeUndefined()
   })
 })
@@ -184,5 +187,26 @@ describe('videoGameData', () => {
     const text = JSON.stringify(data)
     expect(text).not.toContain('For anyone.')
     expect(text).not.toContain('rating')
+  })
+
+  it('leaves out a screenshot Steam keeps for adults (ADR 006)', () => {
+    const page = buildGamePage(
+      library,
+      game,
+      extras({
+        screenshots: [
+          { id: 'sc0', width: 1920, height: 1080, mature: true },
+          { id: 'sc1', width: 1920, height: 1080 },
+        ],
+      }),
+    )
+    const data = videoGameData(page, 'https://shelf.test/en/u/sample/game/bloodborne', {
+      cover: (id) => `cover:${id}`,
+      screenshot: (id) => `shot:${id}`,
+    })
+    expect(data.image).toEqual(['cover:cob99l', 'shot:sc1'])
+    // The page itself still has it, marked, to blur.
+    expect(page.facts.screenshots[0]).toMatchObject({ id: 'sc0', mature: true })
+    expect(page.facts.backdrop?.id).toBe('sc1')
   })
 })
