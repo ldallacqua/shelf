@@ -47,13 +47,13 @@ export function Cover({
   small,
   placeholder,
 }: CoverProps) {
-  // The page as the server built it shows its covers plainly, over a wash of
-  // their colors. A cover that joins a live page (a row scrolled into view)
-  // fades in over a blur of itself. Decided once, when the cover joins the
-  // page, and never revisited: a cover that was there when the page went live
-  // is not drawn again, and its blur, which nobody would see, is not worked out.
+  // The page as the server built it has its covers over a wash of their colors.
+  // A cover that joins a live page (a row scrolled into view) is over a blur of
+  // itself. Decided once, when the cover joins the page, and never revisited: a
+  // cover that was there when the page went live is not drawn again, and its
+  // blur, which nobody would see, is not worked out. Either way it fades in as
+  // it arrives, as every image does (`image-script.tsx`).
   const [joined] = useState(pageIsLive)
-  const fades = joined && !eager
   // The blur is worked out when the browser is idle, and only while the
   // image is still on its way.
   const [preview, setPreview] = useState(() => (joined && hash ? previewIfReady(hash) : undefined))
@@ -91,18 +91,8 @@ export function Cover({
           fetchPriority={eager ? 'high' : undefined}
           decoding="async"
           draggable={false}
-          data-pending={fades ? '' : undefined}
-          ref={(element) => {
-            image.current = element
-            // Already in the browser's cache: there is nothing to wait for.
-            if (element?.complete && element.naturalWidth > 0) {
-              element.removeAttribute('data-pending')
-            }
-          }}
-          onLoad={(event) => {
-            event.currentTarget.removeAttribute('data-pending')
-            forget.current?.()
-          }}
+          ref={image}
+          onLoad={() => forget.current?.()}
           onError={(event) => {
             // Leave the wash and say the title in type instead.
             const image = event.currentTarget
