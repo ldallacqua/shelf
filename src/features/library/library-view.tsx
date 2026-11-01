@@ -148,8 +148,10 @@ const coverOf = (root: HTMLElement | null, key: string): HTMLElement | undefined
   return thumb ?? (target.firstElementChild as HTMLElement | null) ?? undefined
 }
 
-const heroCover = () => document.querySelector<HTMLElement>(`[${HERO_COVER}]`)
 const gamePanel = () => document.querySelector<HTMLElement>('[data-slot="sheet"][data-game]')
+// In the panel, by name: a game's page visited and left stays in the document, hidden, for Back to
+// be quick, with a hero cover of its own, and a transition can't land on what isn't drawn.
+const heroCover = () => gamePanel()?.querySelector<HTMLElement>(`[${HERO_COVER}]`)
 
 type GamePanelComponent = typeof GamePanelType
 
