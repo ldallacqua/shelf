@@ -156,6 +156,7 @@ describe('the OpenAPI document', () => {
       '/entries/{id}/copies',
       '/entries/{id}/copies/{copy}',
       '/entries/{id}/archived',
+      '/entries/{id}/sync',
       '/entries/{id}/versions/{version}/separate',
       '/me/archived',
       '/me/hours',

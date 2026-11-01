@@ -162,13 +162,16 @@ describe('a game for adults (spec 3.13)', () => {
     expect(toSteamGame(item({ content_descriptorids: [4] })).adultsOnly).toBe(false)
   })
 
-  it('keeps only its cover: no backdrop', () => {
+  it('keeps its library art, marked, for its page and nowhere else', () => {
     const data = toSteamGame(item({ content_descriptorids: [4] }))
     expect(data.cover).toBeDefined()
-    expect(data.artworks).toEqual([])
+    expect(data.artworks).toEqual([
+      expect.objectContaining({ type: 'key', width: 1920, mature: true }),
+    ])
     expect(toSteamGame(item()).artworks).toEqual([
       expect.objectContaining({ type: 'key', width: 1920 }),
     ])
+    expect(toSteamGame(item()).artworks[0]).not.toHaveProperty('mature')
   })
 
   it('marks the screenshots Steam keeps for adults, after those for anyone', () => {

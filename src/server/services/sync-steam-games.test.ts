@@ -6,7 +6,7 @@ import type { Db } from '@/server/db/client'
 import { copies, entries, entryVersions, games, playTime, sourceItems } from '@/server/db/schema'
 import { createIgdbApi } from '@/server/igdb/api'
 import { createIgdbClient, memoryTokenStore } from '@/server/igdb/client'
-import { readGameExtras } from '@/server/library/read'
+import { readGameExtras, readOwnerPlay } from '@/server/library/read'
 import { addFromSteam, removeEntry, type Placement } from '@/server/library/store'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { MOCK_STEAM } from '@/server/mocks/owner'
@@ -100,6 +100,15 @@ const syncAll = async (library: string) => {
   let step = await sync.step('steam', { read: true }, NOW)
   for (let i = 0; i < 20 && step.remaining > 0; i += 1) step = await sync.step('steam', {}, NOW)
 }
+
+const syncing = (library: string) =>
+  createSync({
+    db,
+    igdb: api,
+    readArt: async () => undefined,
+    steam: createSteam({ key: () => MOCK_STEAM.key }),
+    nintendo: createNintendo(),
+  })(library)
 
 const itemOf = async (library: string, app = APP) => {
   const [item] = await db
@@ -222,5 +231,63 @@ describe('a sync, on a game a moderator added from Steam', () => {
     await syncAll(mine)
     const extras = await readGameExtras(db, mine, `as-a-moderator-wrote-it-steam-${APP}`)
     expect(extras?.releases).toEqual([[{ platform: PC }]])
+  })
+})
+
+describe('a game synced by itself (the owner, 1 Nov 2026)', () => {
+  it('gives a wishlist game I just bought its copy and hours, reading nothing else', async () => {
+    const { entryId } = await inCatalog(mine, made(), PLAYED)
+    await syncing(mine).games('steam', [PLAYED], undefined, NOW)
+    const owned = await db.select().from(copies).where(eq(copies.entryId, entryId))
+    expect(owned).toEqual([expect.objectContaining({ platformId: PC, format: 'digital' })])
+    const [entry] = await db.select().from(entries).where(eq(entries.id, entryId))
+    expect(entry?.status).toBe('wishlist')
+    const hours = await db.select().from(playTime).where(eq(playTime.entryId, entryId))
+    expect(hours[0]?.minutes).toBeGreaterThan(0)
+    expect(await db.select().from(sourceItems).where(eq(sourceItems.userId, mine))).toEqual([
+      expect.objectContaining({ storeId: PLAYED, copyId: owned[0]!.id }),
+    ])
+    expect((await shelvedApps(db, mine, 'steam')).map((app) => app.storeId)).toEqual([PLAYED])
+  })
+
+  it('finds a game of IGDB’s too, and adds it to no other', async () => {
+    await syncing(mine).games('steam', ['292030'], undefined, NOW)
+    expect((await itemOf(mine, '292030')).copyId).not.toBeNull()
+    expect(await db.select().from(sourceItems).where(eq(sourceItems.userId, mine))).toHaveLength(1)
+    expect(await db.select().from(sourceItems).where(eq(sourceItems.userId, theirs))).toEqual([])
+  })
+
+  it('changes nothing for a game Steam does not list for me', async () => {
+    const { entryId } = await inCatalog(mine, made(), '999999')
+    await syncing(mine).games('steam', ['999999'], undefined, NOW)
+    expect(await db.select().from(copies).where(eq(copies.entryId, entryId))).toEqual([])
+    expect(await db.select().from(sourceItems).where(eq(sourceItems.userId, mine))).toEqual([])
+  })
+
+  it('says nothing about when the source was read', async () => {
+    await inCatalog(mine, made(), PLAYED)
+    await syncing(mine).games('steam', [PLAYED], undefined, NOW)
+    const link = await syncing(mine).linkOf('steam')
+    expect(link).toMatchObject({ readAt: null, syncedAt: null })
+  })
+
+  it('leaves alone a game I took off my shelf', async () => {
+    const { entryId } = await inCatalog(mine, made(), PLAYED)
+    await syncing(mine).games('steam', [PLAYED], undefined, NOW)
+    await removeEntry(db, mine, entryId)
+    await syncing(mine).games('steam', [PLAYED], undefined, NOW)
+    expect(await itemOf(mine, PLAYED)).toMatchObject({ decision: 'removed', copyId: null })
+  })
+
+  it('does nothing for a shelf not linked to Steam', async () => {
+    const other = await createTestAccount(db, 'unlinked')
+    await syncing(other).games('steam', [PLAYED], undefined, NOW)
+    expect(await db.select().from(sourceItems).where(eq(sourceItems.userId, other))).toEqual([])
+  })
+
+  it('finds the game a wishlist entry names on Steam', async () => {
+    const { entryId } = await inCatalog(mine, made(), PLAYED)
+    const play = await readOwnerPlay(db, mine)
+    expect(play.find((each) => each.entryId === entryId)?.steam).toEqual([PLAYED])
   })
 })

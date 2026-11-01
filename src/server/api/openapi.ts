@@ -393,6 +393,15 @@ export const openApiDocument = () => {
           },
         },
       },
+      '/entries/{id}/sync': {
+        post: {
+          summary:
+            'Bring one game up to date from Steam, with its achievements, the rest of the library left unread. A game Steam does not list for the account changes nothing. Signed in.',
+          security: OWNER,
+          parameters: [ENTRY],
+          responses: { 200: { description: 'Asked', ...json('Changed') }, ...REFUSALS },
+        },
+      },
       '/entries/{id}/versions/{version}/separate': {
         post: {
           summary:

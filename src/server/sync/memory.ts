@@ -215,6 +215,18 @@ export const saveResolutions = async (
   if (first) await db.batch([first, ...rest])
 }
 
+/** The items of these apps. */
+export const itemsOfApps = (
+  db: Executor,
+  userId: string,
+  source: SyncSource,
+  storeIds: readonly string[],
+) =>
+  db
+    .select({ id: sourceItems.id })
+    .from(sourceItems)
+    .where(and(ofSource(userId, source), inArray(sourceItems.storeId, [...storeIds])))
+
 /** Every item's store id and title: where a mode the store names no game for looks for it. */
 export const listedTitles = (db: Executor, userId: string, source: SyncSource) =>
   db

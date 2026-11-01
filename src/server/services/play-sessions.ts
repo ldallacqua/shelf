@@ -3,6 +3,7 @@ import { database } from '@/server/db/client'
 import { readOwnerPlay } from '@/server/library/read'
 import { readVersion, recordPlaySessions, type PlaySession } from '@/server/library/store'
 import { forAccount } from '@/server/services/for-account'
+import { syncGames } from '@/server/services/sync'
 
 /** A session as the app has it: of a game's file, by its entry, or of a Steam app it saw. */
 export type SentSession = Omit<PlaySession, 'entryId'> & {
@@ -36,10 +37,24 @@ export const placeAndKeep = async (db: Db, libraryId: string, sessions: readonly
   return recordPlaySessions(db, libraryId, placed)
 }
 
-/** For the route: on the signed-in account's library. */
+/** The Steam apps of the sessions kept: a game not on the shelf is held, and waits for a sync. */
+export const appsPlayed = (sessions: readonly SentSession[], kept: readonly string[]): string[] => {
+  const ids = new Set(kept)
+  return [
+    ...new Set(
+      sessions.flatMap(({ id, game }) => ('steam' in game && ids.has(id) ? [game.steam] : [])),
+    ),
+  ]
+}
+
+/**
+ * For the route: on the signed-in account's library. A game just closed is synced by itself, its
+ * achievements with it (the owner, 1 Nov 2026), before the answer, so its new version has them.
+ */
 export const keepPlaySessions = (sessions: readonly SentSession[]) =>
   forAccount(async (account) => {
     const db = database()
     const kept = await placeAndKeep(db, account.id, sessions)
+    await syncGames(account, appsPlayed(sessions, kept))
     return { kept, version: await readVersion(db, account.id) }
   }, true)

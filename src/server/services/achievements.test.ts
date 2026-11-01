@@ -34,6 +34,8 @@ import { createSteam, STEAM_API } from '@/server/sync/steam'
 import { createTestAccount, createTestDatabase } from '@/test/database'
 import { network } from '@/test/network'
 
+import { shelvedApps } from '@/server/sync/achievements'
+
 import { createAchievements } from './achievements'
 import { createSync } from './sync'
 
@@ -713,5 +715,40 @@ describe('a library’s achievements on its trophy page (issue 68)', () => {
       ['HADES2_FIRST_NIGHT', 88.2],
       ['HL2_TRUSTY_TOOL', 91.3],
     ])
+  })
+})
+
+describe('a game read now, by itself (the owner, 1 Nov 2026)', () => {
+  const HALF_LIFE = '220'
+
+  it('reads one game new to the shelf, and asks about no other', async () => {
+    const id = await synced()
+    steamState.asked.length = 0
+    expect(await achievements(id).readNow('steam', [HALF_LIFE], NOW)).toBe(1)
+    const read = (await shelvedApps(db, id, 'steam')).filter((app) => app.progress?.readAt)
+    expect(read.map((app) => app.storeId)).toEqual([HALF_LIFE])
+  })
+
+  it('reads a game just played though nothing says it is due', async () => {
+    const id = await synced()
+    await readAll(id)
+    const unlocked = steamState.achievements ?? {}
+    steamState.achievements = {
+      ...unlocked,
+      [HALF_LIFE]: { player: { playerstats: { achievements: [] } } },
+    }
+    const before = (await shelvedApps(db, id, 'steam')).find((app) => app.storeId === HALF_LIFE)
+    expect(before?.unlocked).toBeGreaterThan(0)
+    expect(await achievements(id).readNow('steam', [HALF_LIFE], NOW + 1000)).toBe(1)
+    const after = (await shelvedApps(db, id, 'steam')).find((app) => app.storeId === HALF_LIFE)
+    expect(after?.unlocked).toBe(0)
+    expect(after?.progress?.readAt).toBe(NOW + 1000)
+  })
+
+  it('has nothing to read of a game not on the shelf, or for a shelf not linked', async () => {
+    const id = await synced()
+    expect(await achievements(id).readNow('steam', ['999999'], NOW)).toBe(0)
+    const other = await createTestAccount(db, 'unlinked')
+    expect(await achievements(other).readNow('steam', [HALF_LIFE], NOW)).toBe(0)
   })
 })

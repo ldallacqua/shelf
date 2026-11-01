@@ -7,7 +7,7 @@ import { readLibrary, readOwnerGame } from '@/server/library/read'
 import { findEntryIdBySlug, removeEntryForUndo, restoreEntry } from '@/server/library/store'
 import { createTestDatabase, sampleLibraryId } from '@/test/database'
 
-import { placeAndKeep } from './play-sessions'
+import { appsPlayed, placeAndKeep } from './play-sessions'
 
 /**
  * What Shelf for Windows counted (ADR 005, section 12): the app knows a Steam game only by its
@@ -85,5 +85,25 @@ describe('what Shelf for Windows counted', () => {
     const undo = await removeEntryForUndo(db, sample, entryId)
     await restoreEntry(db, sample, undo)
     expect(await tracked()).toBe(before)
+  })
+})
+
+describe('the games a session has synced by themselves', () => {
+  it('are the Steam apps of what was kept, each once', () => {
+    const sessions = [
+      sent('a', { steam: APP }),
+      sent('b', { steam: APP }),
+      sent('c', { steam: '7' }),
+    ]
+    expect(appsPlayed(sessions, ['a', 'b', 'c'])).toEqual([APP, '7'])
+  })
+
+  it('leave out a game not on the shelf, which the app sends again every minute', async () => {
+    const sessions = [sent('a', { steam: '999' }), sent('b', { steam: APP })]
+    expect(appsPlayed(sessions, await placeAndKeep(db, sample, sessions))).toEqual([APP])
+  })
+
+  it('leave out a game’s file, which Steam knows nothing of', () => {
+    expect(appsPlayed([sent('a', { entry: entryId })], ['a'])).toEqual([])
   })
 })

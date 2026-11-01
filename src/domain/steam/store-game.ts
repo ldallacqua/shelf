@@ -350,14 +350,15 @@ export const toSteamGame = (item: StoreGame, title?: string): SteamGameData => {
     publisherNames: [...new Set(publisherNames)],
     companies: [],
     // What Steam shows to anyone first; then what it keeps for adults, marked, to be drawn blurred.
-    // A game for adults has no backdrop: Valve's rules hold only its cover to PG-13.
     screenshots: [
       ...shotsOf(item.screenshots?.all_ages_screenshots),
       ...shotsOf(item.screenshots?.mature_content_screenshots, true),
     ].slice(0, MAX_SCREENSHOTS),
+    // Valve's rules hold only a cover to PG-13, so a game for adults has this marked: on its page
+    // and nowhere a page's rules don't reach.
     artworks:
-      hero && !adult && isSteamImage(hero)
-        ? [{ id: hero, width: 1920, height: 620, type: 'key' }]
+      hero && isSteamImage(hero)
+        ? [{ id: hero, width: 1920, height: 620, type: 'key', ...(adult ? { mature: true } : {}) }]
         : [],
     videos: [],
     releases: on.map((platform) => ({

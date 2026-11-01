@@ -13,8 +13,9 @@ export type GameImage = {
   width: number
   height: number
   /**
-   * Steam keeps it for adults (ADR 006). It is drawn blurred until pressed, and never leaves
-   * through a public answer, a link's preview or a backdrop.
+   * Steam keeps it for adults, or it is the library art of a game for adults (ADR 006). It never
+   * leaves through a public answer or a link's preview. A screenshot is drawn blurred until
+   * pressed, and is no backdrop; library art is the backdrop, dimmed, as on any game.
    */
   mature?: true
 }

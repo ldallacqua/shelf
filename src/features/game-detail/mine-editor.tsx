@@ -135,9 +135,27 @@ export function MineEditor({
   if (!owned) return fallback
 
   /**
+   * After a change: the page fetches the library's new version, and the
+   * record is read again for any new ids.
+   */
+  const changed = async (version: number, next: OwnerGame) => {
+    // The new file, and nothing else: an edit moves neither the view behind the game nor
+    // the game in front of it, as landing on a game just added would.
+    announceChange({ version })
+    // Over the shelf, the new library file is enough. A page of its own is
+    // drawn on the server, so it is asked for again.
+    if (refresh) startDrawing(() => router.refresh())
+    const fresh = await actions.read(slug).catch(() => undefined)
+    if (fresh?.ok && shown.current === next) {
+      shown.current = fresh.value
+      records.set(slug, fresh.value)
+      setOwned(fresh.value)
+    }
+  }
+
+  /**
    * Shows `next` at once and saves it. On a refusal the field goes back and
-   * the reason is said. On success the page fetches the library's new
-   * version, and the record is read again for any new ids.
+   * the reason is said. Says whether it was saved.
    */
   const save = async (next: OwnerGame, write: () => Promise<Answer<Changed>>) => {
     const before = shown.current
@@ -152,20 +170,25 @@ export function MineEditor({
         shown.current = before
         if (before) setOwned(before)
         setProblem(errors(`errors.${result.reason}`))
-        return
+        return false
       }
-      // The new file, and nothing else: an edit moves neither the view behind the game nor
-      // the game in front of it, as landing on a game just added would.
-      announceChange({ version: result.value.version })
-      // Over the shelf, the new library file is enough. A page of its own is
-      // drawn on the server, so it is asked for again.
-      if (refresh) startDrawing(() => router.refresh())
-      const fresh = await actions.read(slug).catch(() => undefined)
-      if (fresh?.ok && shown.current === next) {
-        shown.current = fresh.value
-        records.set(slug, fresh.value)
-        setOwned(fresh.value)
-      }
+      await changed(result.value.version, next)
+      return true
+    } finally {
+      setSaving((count) => count - 1)
+    }
+  }
+
+  /**
+   * Off the wishlist, I may have just bought it: Steam is asked about this game now, so its copy,
+   * hours and achievements don't wait for a sync. Nothing here is mine to see fail: what I chose
+   * is saved, and a sync still finds it.
+   */
+  const askSteam = async (entryId: string) => {
+    setSaving((count) => count + 1)
+    try {
+      const result = await actions.sync(entryId).catch(() => undefined)
+      if (result?.ok && shown.current) await changed(result.value.version, shown.current)
     } finally {
       setSaving((count) => count - 1)
     }
@@ -185,7 +208,9 @@ export function MineEditor({
     void update(
       { status, ...(completedOn ? { completedOn } : {}) },
       { status, ...(completedOn ? { completedOn } : {}), ...(leaving ? { wanted: [] } : {}) },
-    )
+    ).then((saved) => {
+      if (saved && leaving) void askSteam(owned.entryId)
+    })
   }
 
   const labels = new Map(owned.platforms.map((platform) => [platform.id, platform]))

@@ -107,6 +107,17 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
       const { refused, address } = keyed(request)
       if (refused) return refused
       const id = address.searchParams.get('steamid')
+      const only = [...address.searchParams]
+        .filter(([name]) => /^appids_filter\[\d+\]$/.test(name))
+        .map(([, app]) => Number(app))
+      if (id === MOCK_STEAM.steamId && only.length > 0) {
+        const { games } = (owned as { response: { games: { appid: number }[] } }).response
+        const those = games.filter((game) => only.includes(game.appid))
+        // As Steam answers: no list at all when the account owns none of them.
+        return HttpResponse.json({
+          response: { game_count: those.length, ...(those.length > 0 ? { games: those } : {}) },
+        })
+      }
       if (id === MOCK_STEAM.steamId) return HttpResponse.json(owned)
       if (id === MOCK_STEAM.privateSteamId) return HttpResponse.json({ response: {} })
       return HttpResponse.json({ response: {} })

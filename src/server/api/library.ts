@@ -298,7 +298,11 @@ export const answerGame = (library: Library, page: GamePage): z.infer<typeof api
     igdbRatingCount: game.igdbRatingCount,
     igdbUrl: facts.igdbUrl ?? null,
     notes: facts.notes ?? null,
-    backdrop: facts.backdrop ? imageUrl(facts.backdrop.id, 'screenshot_huge') : null,
+    // A device's "Hide adult games" takes a game for adults' art off a page; here nothing could.
+    backdrop:
+      facts.backdrop && !facts.backdrop.mature
+        ? imageUrl(facts.backdrop.id, 'screenshot_huge')
+        : null,
     // A screenshot Steam keeps for adults is drawn blurred on a page; here nothing could blur it.
     screenshots: facts.screenshots
       .filter((shot) => !shot.mature)

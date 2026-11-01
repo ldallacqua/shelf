@@ -181,4 +181,6 @@ export type EditActions = {
   archive: (entryId: string) => Promise<Answer<Archived>>
   bringBack: (entryId: string) => Promise<Answer<BroughtBack>>
   separate: (entryId: string, gameId: string) => Promise<Answer<Separated>>
+  /** Asks Steam about this game alone: it may have just been bought. */
+  sync: (entryId: string) => Promise<Answer<Changed>>
 }
