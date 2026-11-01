@@ -96,6 +96,19 @@ Lint enforces these imports, and that three.js is imported only inside
 
 ## How things are done here
 
+**A change anyone can see.** Anything with a visual effect gets a design pass before its code,
+however small: a new element, a moved one, a new state, an animation. The owner's rule, 1 Nov 2026.
+
+1. **Research it.** Open how good products do the same thing in a browser (text searches say little
+   about layout), and read UI/UX guidance on the question at hand. Note what could not be looked at.
+2. **Check it with a skill.** Use the design skills the session has: the Design plugin's
+   `design-critique`, `accessibility-review` and `ux-copy`, and `frontend-design`. With none
+   installed, say so in the pull request rather than skip the thinking they stand for.
+3. **Build it from what is here.** `src/ui` and the tokens first, and a place chosen on purpose: it
+   has to make sense where it stands, not just be on the page.
+4. **Give it a story.** Every new element has its component in Storybook, with each of its states.
+5. **Say why.** The spec's section and the pull request say what it was based on.
+
 **Text.** Every word a visitor reads comes from `messages/`. English is the source; add the
 key to both files or `pnpm i18n:check` fails. A literal string inside a component is a lint
 error. Filter keys stay English in both languages.
@@ -296,6 +309,8 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 - No error in the browser console.
 - Both themes and both languages were looked at, at phone and desktop width.
 - New behavior has a test. A bug fix has a test that failed before it.
+- A visual change had its design pass, and a new element has its story in Storybook (see
+  [A change anyone can see](#how-things-are-done-here)).
 - The landing page shows the feature, and still tells the truth about the ones it changed.
 - Reference screenshots are updated if the look changed on purpose
   ([how](docs/testing.md#reference-screenshots)).
