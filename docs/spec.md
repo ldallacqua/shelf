@@ -736,6 +736,33 @@ seconds to about a minute within IGDB's limit of four requests per second.
 - A pasted list of 50 known titles produces a review table with every line matched or marked.
 - Undo removes the game and everything added with it.
 
+### 4.2a A game IGDB does not have
+
+**Built 1 Nov 2026** ([ADR 006](adr/006-games-from-steam.md)). The owner: "quero colocar um game na
+minha wishlist [...] Mas o igdb removeu esse jogo por causa dos termos. Então devemos deixar as
+pessoas adicionarem ao nosso banco de dados. Claro que a gente não quer que todo mundo possa fazer
+isso." And: "eu não queria ter que colocar todas as informações do jogo na mão."
+
+- A **moderator** pastes the game's Steam link in the field of 4.1. It is read from Steam and shown
+  as one result, "from Steam", and chosen as any other: status, platforms, the optional rest. The
+  form also asks the **title on every shelf**, Steam's to begin with, because Steam's own name is
+  not always how a game is written.
+- Anyone else who pastes one is told only a moderator can. Nothing on the page says who is one.
+- A link to a **game IGDB has** searches for it instead, so no game stands twice in the catalog.
+- A page that is **not a game** (a soundtrack, a DLC, a demo, software), or that Steam does not show,
+  says so.
+- **From Steam:** the title, the cover, the day it came out, what it runs on, its developers and
+  publishers, its short description, and its tags and categories as Shelf's genres, themes, modes and
+  perspectives. Screenshots only where Steam shows them to anyone, and its library art as a
+  backdrop. **Not from Steam:** a rating, a length, a franchise, videos. They stay empty.
+- **A game Steam marks for adults** counts as adult (3.13), so "Hide adult games" hides it, and keeps
+  only its cover. The form says so.
+- A game a moderator added is in the **catalog every shelf shares**: it is one row, under the title
+  first given. A later moderator adding it takes that title.
+
+Not yet: anyone but a moderator finding these games in the search; a sync recognizing one; refreshing
+one from Steam.
+
 ### 4.3 When IGDB misbehaves
 
 | Problem | Behavior |

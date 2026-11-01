@@ -4,6 +4,12 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Games from Steam (1 Nov 2026)
+
+A moderator adds a game IGDB does not have from its Steam link: [ADR 006](adr/006-games-from-steam.md),
+in three steps, of which the first is built. Next: anyone finding these games in the search, and a sync
+recognizing one. Then: refreshing them from Steam, and checking Play, the hours and achievements on them.
+
 ## Now: the owner's issues, highest priority first (27 Oct 2026)
 
 The owner: "look at shelf issues and start by the highest priority items". The issues are

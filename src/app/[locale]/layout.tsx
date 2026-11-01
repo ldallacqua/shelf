@@ -6,7 +6,9 @@ import { notFound } from 'next/navigation'
 import {
   addGameAction,
   groupingAction,
+  addSteamGameAction,
   searchGamesAction,
+  steamLinkAction,
   undoAddAction,
 } from '@/app/actions/games'
 import { WindowScript } from '@/features/desktop/window-script'
@@ -81,6 +83,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
                 grouping: groupingAction,
                 add: addGameAction,
                 undo: undoAddAction,
+                steamLink: steamLinkAction,
+                addSteam: addSteamGameAction,
               }}
             />
             <main id={MAIN_ID} tabIndex={-1} className="flex-1 outline-none">

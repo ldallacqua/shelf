@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { AddInput } from '@/domain/library/adding'
+import type { AddInput, AddSteamInput, Candidate } from '@/domain/library/adding'
 import { renderWithIntl } from '@/test/render'
 
 import type { AddActions } from './actions'
@@ -64,6 +64,8 @@ const actions = (added: AddInput[], archived?: string): AddActions => ({
     return { ok: false, reason: 'failed' }
   },
   undo: async () => ({ ok: true, value: 1 }),
+  steamLink: async () => ({ ok: false, reason: 'not-allowed' }),
+  addSteam: async () => ({ ok: false, reason: 'not-allowed' }),
 })
 
 const choose = async (added: AddInput[]) => {
@@ -127,5 +129,116 @@ describe('AddOne, while it searches (spec 4.1)', () => {
     await userEvent.type(screen.getByRole('combobox', { name: 'Search IGDB' }), 'tsukihime')
     expect(await screen.findByText('Searching…')).toHaveClass('sr-only')
     expect(container.querySelector('.ghost')).toBeInTheDocument()
+  })
+})
+
+describe('AddOne, from a Steam link (ADR 006)', () => {
+  const LINK = 'https://store.steampowered.com/app/2000001/A_Game/?curator_clanid=1'
+  const PC = { id: 6, key: 'pc', name: 'PC', short: 'PC' }
+  const game = (over: Partial<Candidate> = {}): Candidate => ({
+    igdbId: 0,
+    slug: '',
+    title: 'AGame',
+    year: 2024,
+    kind: 'main',
+    platforms: [6],
+    alsoOn: [],
+    ports: [],
+    steam: { appId: '2000001', adult: false, known: false },
+    ...over,
+  })
+  const reading = (candidate: Candidate, added: AddSteamInput[] = []): AddActions => ({
+    ...actions([]),
+    search: () => {
+      throw new Error('A Steam link was searched for on IGDB')
+    },
+    steamLink: async () => ({
+      ok: true,
+      value: {
+        kind: 'game',
+        answer: {
+          results: [candidate],
+          platforms: [PC],
+          habits: { order: [], formats: {} },
+        },
+      },
+    }),
+    addSteam: async (input) => {
+      added.push(input)
+      return { ok: false, reason: 'failed' }
+    },
+  })
+  const paste = async (given: AddActions) => {
+    renderWithIntl(<AddOne actions={given} onAdded={vi.fn()} onOpenOwned={vi.fn()} />)
+    const field = screen.getByRole('combobox', { name: 'Search IGDB' })
+    await userEvent.click(field)
+    await userEvent.paste(LINK)
+    return field
+  }
+
+  it('shows the game as a result, and sends the app with the title as I wrote it', async () => {
+    const added: AddSteamInput[] = []
+    await paste(reading(game(), added))
+    const result = await screen.findByRole('option', { name: /AGame/ })
+    expect(result).toHaveTextContent('from Steam')
+    await userEvent.click(result)
+    const title = screen.getByRole('textbox', { name: 'Title on every shelf' })
+    await userEvent.clear(title)
+    await userEvent.type(title, 'A Game')
+    await userEvent.click(screen.getByRole('radio', { name: 'Wishlist' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(added).toEqual([
+      expect.objectContaining({
+        appId: '2000001',
+        title: 'A Game',
+        status: 'wishlist',
+        copies: [],
+      }),
+    ])
+  })
+
+  it('offers no title for a game a moderator already added, and sends none', async () => {
+    const added: AddSteamInput[] = []
+    await paste(reading(game({ steam: { appId: '2000001', adult: false, known: true } }), added))
+    await userEvent.click(await screen.findByRole('option', { name: /AGame/ }))
+    expect(screen.queryByRole('textbox', { name: 'Title on every shelf' })).not.toBeInTheDocument()
+    expect(screen.getByText(/already added/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(added[0]).not.toHaveProperty('title')
+  })
+
+  it('says what becomes of a game for adults', async () => {
+    await paste(reading(game({ steam: { appId: '2000001', adult: true, known: false } })))
+    await userEvent.click(await screen.findByRole('option', { name: /AGame/ }))
+    expect(screen.getByText(/keeps only its cover/)).toBeInTheDocument()
+  })
+
+  it('tells anyone else only a moderator can', async () => {
+    await paste({
+      ...actions([]),
+      search: () => {
+        throw new Error('A Steam link was searched for on IGDB')
+      },
+    })
+    expect(await screen.findByRole('alert')).toHaveTextContent('Only a moderator')
+  })
+
+  it('searches for a game IGDB has instead', async () => {
+    const search = vi.fn(actions([]).search)
+    await paste({
+      ...actions([]),
+      search,
+      steamLink: async () => ({ ok: true, value: { kind: 'igdb', title: 'Tsukihime' } }),
+    })
+    expect(await screen.findByRole('option', { name: /Tsukihime/ })).toBeInTheDocument()
+    expect(search).toHaveBeenCalledWith('Tsukihime')
+  })
+
+  it('says a page that is no game is not one', async () => {
+    await paste({
+      ...actions([]),
+      steamLink: async () => ({ ok: true, value: { kind: 'not-a-game', title: 'A Soundtrack' } }),
+    })
+    expect(await screen.findByText(/is not a game/)).toBeInTheDocument()
   })
 })

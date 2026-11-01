@@ -13,7 +13,19 @@ import { formats, statuses, type Format, type Relation } from '@/domain/library/
 /** A game I have already. Archived (spec 7.4), its entry, to bring it back rather than add it again. */
 export type OnShelf = { slug: string; title: string; archived?: string }
 
-export type Candidate = SearchResult & { onShelf?: OnShelf }
+export type Candidate = SearchResult & {
+  onShelf?: OnShelf
+  /** Read from Steam, because IGDB does not have it (ADR 006). Its `igdbId` means nothing. */
+  steam?: SteamOrigin
+}
+
+export type SteamOrigin = {
+  appId: string
+  /** Steam marks it as adult: "Hide adult games" takes it, and it keeps only its cover. */
+  adult: boolean
+  /** A moderator added it already: its title is theirs, and every shelf shares it. */
+  known: boolean
+}
 
 /** A platform's names, for the chips and the results. */
 export type PlatformLabel = { id: number; key: string; name: string; short: string }
@@ -71,6 +83,28 @@ export const addInput = z.object({
 
 export type AddInput = z.infer<typeof addInput>
 
+export const MAX_STEAM_TITLE = 200
+
+/** A game to add from Steam's store (ADR 006): the rest is read from Steam again, on the server. */
+export const addSteamInput = addInput.omit({ igdbId: true, grouping: true }).extend({
+  appId: z.string().regex(/^[1-9]\d{0,9}$/),
+  /** What the moderator calls it, where Steam's own name is not how it is written. */
+  title: z.string().trim().min(1).max(MAX_STEAM_TITLE).optional(),
+})
+
+export type AddSteamInput = z.infer<typeof addSteamInput>
+
+/**
+ * What a pasted Steam link is (ADR 006): a game to add, shown as a result like
+ * any other; or why not. IGDB having it means searching is the way, so a game
+ * never stands twice in the catalog.
+ */
+export type SteamLinkAnswer =
+  | { kind: 'game'; answer: SearchAnswer }
+  | { kind: 'igdb'; title: string }
+  | { kind: 'not-a-game'; title: string }
+  | { kind: 'not-found' }
+
 /** Platforms a game can be owned on, my most-used first, then in shelf order. */
 export const orderByHabit = (platformIds: readonly number[], habits: Habits): number[] => {
   const rank = new Map(habits.order.map((id, index) => [id, index]))
@@ -117,6 +151,8 @@ export const refusalReasons = [
   'not-kept',
   'igdb',
   'too-many',
+  'not-allowed',
+  'steam',
   'failed',
 ] as const
 

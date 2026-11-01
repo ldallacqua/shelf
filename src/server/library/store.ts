@@ -2,11 +2,12 @@ import 'server-only'
 
 import { randomBytes, randomUUID } from 'node:crypto'
 
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
 
 import type { Palette } from '@/domain/color/palette'
 import type { Company, GameData, LineageStep } from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
+import type { SteamGameData } from '@/domain/steam/store-game'
 import type { Added } from '@/domain/library/adding'
 import type { LinkedMember } from '@/domain/library/family'
 import {
@@ -109,7 +110,11 @@ export const readVersion = async (db: Executor, libraryId: string): Promise<numb
 }
 
 /** The columns of a `games` row that come from IGDB. */
-export const gameColumns = (data: GameData, lineage: readonly LineageStep[], now: number) => ({
+export const gameColumns = (
+  data: Omit<GameData, 'igdbId'> & { igdbId: number | null },
+  lineage: readonly LineageStep[],
+  now: number,
+) => ({
   igdbId: data.igdbId,
   slug: data.slug,
   title: data.title,
@@ -475,9 +480,16 @@ const placeRecord = async (
   record: RecordToStore,
   placement: Placement,
   now: number,
-): Promise<Added> => {
-  const gameId = await storeRecord(tx, record, now)
+): Promise<Added> => placeGame(tx, libraryId, await storeRecord(tx, record, now), placement, now)
 
+/** A game already stored, placed in the library. */
+const placeGame = async (
+  tx: Executor,
+  libraryId: string,
+  gameId: string,
+  placement: Placement,
+  now: number,
+): Promise<Added> => {
   if (placement.kind === 'entry') {
     const entryId = await insertEntry(
       tx,
@@ -524,6 +536,121 @@ export const addFromIgdb = (
   return withConflict('That game is already in the library', () =>
     db.transaction(async (tx) => {
       const added = await placeRecord(tx, libraryId, record, placement, now)
+      await bumpVersion(tx, libraryId)
+      return added
+    }),
+  )
+}
+
+/** Everything about a game read from Steam that adding it stores (ADR 006). */
+export type SteamRecordToStore = {
+  data: SteamGameData
+  art?: CoverArt
+  names: readonly { kind: Exclude<VocabKind, 'company'>; items: readonly IgdbNamed[] }[]
+  platforms: readonly Platform[]
+}
+
+/** Companies only Steam names take ids from here up, past any IGDB gives for a long time yet. */
+const FIRST_LOCAL_COMPANY = 1_000_000_000
+
+/**
+ * The ids of companies Steam gave only as names: IGDB's when it names one the
+ * same, or new ones, kept beside IGDB's so a filter finds both.
+ */
+const companyIds = async (tx: Executor, names: readonly string[]): Promise<Map<string, number>> => {
+  const slugs = new Map(names.map((name) => [name, toSlug(name) || name.toLowerCase()]))
+  if (slugs.size === 0) return new Map()
+  const known = await tx
+    .select({ id: vocab.id, slug: vocab.slug })
+    .from(vocab)
+    .where(and(eq(vocab.kind, 'company'), inArray(vocab.slug, [...new Set(slugs.values())])))
+  const bySlug = new Map(known.map((row) => [row.slug, row.id]))
+  const [top] = await tx
+    .select({ id: sql<number | null>`max(${vocab.id})` })
+    .from(vocab)
+    .where(and(eq(vocab.kind, 'company'), gte(vocab.id, FIRST_LOCAL_COMPANY)))
+  let next = (top?.id ?? FIRST_LOCAL_COMPANY - 1) + 1
+  const ids = new Map<string, number>()
+  for (const [name, slug] of slugs) {
+    let id = bySlug.get(slug)
+    if (id === undefined) {
+      id = next++
+      bySlug.set(slug, id)
+      await saveCompanies(tx, [{ id, name, slug }])
+    }
+    ids.set(name, id)
+  }
+  return ids
+}
+
+/**
+ * Stores a game read from Steam, unless a moderator already has: every shelf
+ * shares that row, and its title stays as they set it. Its address carries its
+ * app, so no game IGDB may list one day can ever want the same one.
+ */
+const storeSteamRecord = async (
+  tx: Executor,
+  { data, art, names, platforms: on }: SteamRecordToStore,
+  now: number,
+): Promise<string> => {
+  const [held] = await tx
+    .select({ id: games.id })
+    .from(games)
+    .where(eq(games.steamAppId, data.steamAppId))
+    .limit(1)
+  await savePlatforms(tx, on)
+  if (held) return held.id
+  for (const { kind, items } of names) await saveVocab(tx, kind, items)
+  const { steamAppId, developerNames, publisherNames, ...rest } = data
+  const companies = await companyIds(tx, [...new Set([...developerNames, ...publisherNames])])
+  const idsOf = (list: readonly string[]) => list.flatMap((name) => companies.get(name) ?? [])
+  const slug = [toSlug(data.title), 'steam', steamAppId].filter(Boolean).join('-')
+  const id = randomUUID()
+  await tx.insert(games).values({
+    id,
+    steamAppId,
+    ...gameColumns(
+      {
+        ...rest,
+        igdbId: null,
+        slug,
+        developers: idsOf(developerNames),
+        publishers: idsOf(publisherNames),
+      },
+      [],
+      now,
+    ),
+    ...(art ? { colors: art.colors, thumbhash: art.thumbhash } : {}),
+  })
+  return id
+}
+
+/** The game read from Steam this app is, if a moderator has added it. */
+export const findSteamGame = async (
+  db: Executor,
+  appId: string,
+): Promise<{ id: string; title: string } | undefined> => {
+  const [row] = await db
+    .select({ id: games.id, title: games.title })
+    .from(games)
+    .where(eq(games.steamAppId, appId))
+    .limit(1)
+  return row
+}
+
+/** Stores a game read from Steam and adds it to the library, in one transaction (ADR 006). */
+export const addFromSteam = (
+  db: Db,
+  libraryId: string,
+  record: SteamRecordToStore,
+  placement: Placement,
+  now = Date.now(),
+): Promise<Added> => {
+  if (placement.kind === 'entry') checkMine(placement.entry)
+  return withConflict('That game is already in the library', () =>
+    db.transaction(async (tx) => {
+      const gameId = await storeSteamRecord(tx, record, now)
+      const added = await placeGame(tx, libraryId, gameId, placement, now)
       await bumpVersion(tx, libraryId)
       return added
     }),
@@ -1566,7 +1693,13 @@ export const restoreEntry = (db: Db, libraryId: string, removedId: string) =>
         const [stored] = await tx
           .select({ id: games.id })
           .from(games)
-          .where(game.igdbId === null ? eq(games.id, game.id) : eq(games.igdbId, game.igdbId))
+          .where(
+            game.igdbId !== null
+              ? eq(games.igdbId, game.igdbId)
+              : game.steamAppId !== null
+                ? eq(games.steamAppId, game.steamAppId)
+                : eq(games.id, game.id),
+          )
           .limit(1)
         gameIds.set(game.id, stored?.id ?? game.id)
       }

@@ -1544,6 +1544,15 @@
     "typeMore": "Digite duas letras ou mais.",
     "searching": "Buscando…",
     "resultCount": "{count, plural, one {# jogo encontrado. Setas e Enter escolhem.} other {# jogos encontrados. Setas e Enter escolhem.}}",
+    "steam": {
+      "source": "da Steam",
+      "title": "Título em todas as estantes",
+      "shared": "O IGDB não tem este jogo. Adicionar coloca ele no catálogo que todas as estantes compartilham, com os dados da página dele na Steam.",
+      "known": "Um moderador já adicionou este jogo pela Steam.",
+      "adult": "A Steam marca este jogo como adulto: “Esconder jogos adultos” esconde ele, e ele fica só com a capa.",
+      "notFound": "A Steam não tem página de loja para esse link.",
+      "notAGame": "Essa página da Steam não é um jogo: é trilha sonora, DLC, demo ou programa."
+    },
     "noResults": "Nada no IGDB corresponde a “{text}”.",
     "results": "Jogos no IGDB",
     "unavailable": "A busca de jogos não está disponível agora. A biblioteca continua funcionando.",
@@ -1589,6 +1598,8 @@
       "not-kept": "Este servidor não guarda nada do que recebe, então nada foi salvo.",
       "igdb": "O IGDB não respondeu. Tente de novo.",
       "too-many": "Você já fez muito disso nesta hora. Espere um pouco e tente de novo.",
+      "not-allowed": "Só um moderador pode adicionar um jogo por um link da Steam.",
+      "steam": "A Steam não respondeu. Tente de novo.",
       "failed": "Não deu certo. Tente de novo."
     },
     "first": "Adicione seu primeiro jogo",

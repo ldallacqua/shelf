@@ -552,6 +552,8 @@ const STATUS: Record<Refusal['reason'], number> = {
   'not-kept': 503,
   igdb: 502,
   'too-many': 429,
+  'not-allowed': 403,
+  steam: 502,
   failed: 500,
 }
 
@@ -564,6 +566,8 @@ const MESSAGE: Record<Refusal['reason'], string> = {
   'not-kept': 'This deployment keeps nothing it is given, so nothing was saved.',
   igdb: 'IGDB did not answer. Try again.',
   'too-many': 'Every account shares one IGDB allowance, and this one has used its hour. Try later.',
+  'not-allowed': 'Only a moderator may do that.',
+  steam: 'Steam did not answer. Try again.',
   failed: 'That did not work. Try again.',
 }
 

@@ -88,8 +88,13 @@ export const games = sqliteTable(
   'games',
   {
     id: text().primaryKey(),
-    /** Null for a game typed in by hand, which IGDB does not know. */
+    /** Null for a game IGDB does not have, read from Steam's store page instead (`steamAppId`). */
     igdbId: integer(),
+    /**
+     * The Steam app a moderator added this game from, because IGDB does not have it (ADR 006).
+     * Null for every game IGDB has, whatever stores its record lists.
+     */
+    steamAppId: text(),
     slug: text().notNull(),
     title: text().notNull(),
     kind: text().$type<Kind>().notNull(),
@@ -158,6 +163,7 @@ export const games = sqliteTable(
   },
   (table) => [
     uniqueIndex('games_igdb_id').on(table.igdbId),
+    uniqueIndex('games_steam_app').on(table.steamAppId),
     uniqueIndex('games_slug').on(table.slug),
     index('games_checked_at').on(table.checkedAt),
     check('games_kind', sql`${table.kind} in (${oneOf(kinds)})`),
@@ -709,6 +715,11 @@ export const users = sqliteTable('users', {
    * owner's own account, at the owner's word; nobody can set it from the site.
    */
   refreshAll: integer({ mode: 'boolean' }).notNull().default(false),
+  /**
+   * May add a game IGDB does not have, from its Steam page, to the catalog every shelf shares
+   * (ADR 006). Set by `pnpm account:moderator`; nobody can set it from the site.
+   */
+  moderator: integer({ mode: 'boolean' }).notNull().default(false),
 })
 
 export const sessions = sqliteTable(

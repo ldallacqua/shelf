@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import { useEffect, useId, useRef, useState, useTransition, type KeyboardEvent } from 'react'
 
 import {
+  MAX_STEAM_TITLE,
   MIN_SEARCH,
   orderByHabit,
   type AddedGame,
@@ -14,6 +15,7 @@ import {
   type SearchAnswer,
 } from '@/domain/library/adding'
 import { formats, statuses, type Format, type Status } from '@/domain/library/values'
+import { steamAppIdIn } from '@/domain/steam/store-game'
 import { Cover } from '@/features/library/cover'
 import { gameHref } from '@/features/library/shelf-address'
 import { signedInAccount } from '@/features/owner/account'
@@ -38,6 +40,8 @@ type Search =
   | { state: 'searching'; text: string; answer?: SearchAnswer }
   | { state: 'ready'; text: string; answer: SearchAnswer }
   | { state: 'failed'; text: string; reason: Refusal['reason'] }
+  /** A Steam link that is no game to add. */
+  | { state: 'steam'; text: string; said: 'not-found' | 'not-a-game' }
 
 type AddOneProps = {
   actions: AddActions
@@ -76,6 +80,21 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
         text: wanted,
         ...('answer' in was && was.answer ? { answer: was.answer } : {}),
       }))
+      // A Steam link is read from Steam, for a moderator (ADR 006), and never searched for.
+      const appId = steamAppIdIn(wanted)
+      if (appId) {
+        const read = await actions.steamLink(appId)
+        if (ask !== asked.current) return
+        setActive(0)
+        if (!read.ok) setSearch({ state: 'failed', text: wanted, reason: read.reason })
+        else if (read.value.kind === 'game') {
+          setSearch({ state: 'ready', text: wanted, answer: read.value.answer })
+        } else if (read.value.kind === 'igdb') {
+          // IGDB has it: searching for it, as for any game, is how it is added.
+          setText(read.value.title)
+        } else setSearch({ state: 'steam', text: wanted, said: read.value.kind })
+        return
+      }
       const result = await actions.search(wanted)
       if (ask !== asked.current) return
       setActive(0)
@@ -149,7 +168,7 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
   if (chosen && answer) {
     return (
       <AddForm
-        key={chosen.igdbId}
+        key={chosen.steam?.appId ?? chosen.igdbId}
         candidate={chosen}
         answer={answer}
         labels={labels}
@@ -179,6 +198,8 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
       t('typeMore')
     ) : first ? (
       <span className="sr-only">{t('searching')}</span>
+    ) : search.state === 'steam' ? (
+      t(search.said === 'not-found' ? 'steam.notFound' : 'steam.notAGame')
     ) : search.state === 'ready' && results.length === 0 ? (
       t('noResults', { text: search.text })
     ) : search.state === 'ready' ? (
@@ -271,6 +292,7 @@ export function AddOne({ actions, onAdded, onOpenOwned }: AddOneProps) {
                 {candidate.alsoOn.length > 0
                   ? ` · ${t('alsoOn', { platforms: names(candidate.alsoOn, labels) })}`
                   : ''}
+                {candidate.steam ? ` · ${t('steam.source')}` : ''}
               </span>
             </span>
             {candidate.kind !== 'main' ? (
@@ -332,6 +354,9 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
   const [tags, setTags] = useState<string[]>([])
   const [completedOn, setCompletedOn] = useState<string | undefined>(today)
   const [grouping, setGrouping] = useState<Grouping>()
+  const steam = candidate.steam
+  // What a game from Steam is called on every shelf, until a moderator has said.
+  const [title, setTitle] = useState(candidate.title)
   const [together, setTogether] = useState<boolean>()
   const [problem, setProblem] = useState<string>()
   const [pending, startTransition] = useTransition()
@@ -347,6 +372,8 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
 
   // Whether it belongs with a game already on the shelf (ADR 001), asked as soon as it is chosen.
   useEffect(() => {
+    // A game from Steam has no family on IGDB to belong to.
+    if (steam) return
     let current = true
     void actions.grouping(candidate.igdbId).then((result) => {
       if (!current || !result.ok) return
@@ -355,7 +382,7 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
     return () => {
       current = false
     }
-  }, [actions, candidate.igdbId])
+  }, [actions, candidate.igdbId, steam])
 
   const platforms = orderByHabit([...candidate.platforms, ...candidate.alsoOn], answer.habits)
   const related =
@@ -372,8 +399,7 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
   const submit = (again: boolean) => {
     startTransition(async () => {
       setProblem(undefined)
-      const result = await actions.add({
-        igdbId: candidate.igdbId,
+      const mine = {
         status,
         copies: status === 'wishlist' ? [] : owned,
         ...(status === 'wishlist' && wanted.length > 0 ? { wanted } : {}),
@@ -381,8 +407,18 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
         ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
         ...(tags.length > 0 ? { tags } : {}),
         ...(status === 'completed' && completedOn ? { completedOn } : {}),
-        ...(related ? { grouping: joins ? ('join' as const) : ('separate' as const) } : {}),
-      })
+      }
+      const result = steam
+        ? await actions.addSteam({
+            appId: steam.appId,
+            ...mine,
+            ...(steam.known ? {} : { title: title.trim() }),
+          })
+        : await actions.add({
+            igdbId: candidate.igdbId,
+            ...mine,
+            ...(related ? { grouping: joins ? ('join' as const) : ('separate' as const) } : {}),
+          })
       if (result.ok) onAdded(result.value, again)
       else setProblem(t(`errors.${result.reason}`))
     })
@@ -431,6 +467,25 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
           {t('change')}
         </Button>
       </div>
+
+      {steam ? (
+        <div className="grid gap-2 text-sm">
+          {steam.known ? null : (
+            <label className="grid gap-1.5 font-medium">
+              {t('steam.title')}
+              <Input
+                required
+                maxLength={MAX_STEAM_TITLE}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className="font-normal"
+              />
+            </label>
+          )}
+          <p className="text-muted">{t(steam.known ? 'steam.known' : 'steam.shared')}</p>
+          {steam.adult ? <p className="text-muted">{t('steam.adult')}</p> : null}
+        </div>
+      ) : null}
 
       {related ? (
         <fieldset className="grid gap-2 rounded-control border border-line-strong p-3 text-sm">

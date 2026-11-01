@@ -1,16 +1,25 @@
 import 'server-only'
 
 import type { Answer, Refusal } from '@/domain/library/adding'
-import { NotSignedInError, requireAccount, type Account } from '@/server/auth/account'
+import {
+  isModerator,
+  NotModeratorError,
+  NotSignedInError,
+  requireAccount,
+  type Account,
+} from '@/server/auth/account'
 import { databaseIsDurable } from '@/server/db/client'
 import { IgdbError } from '@/server/igdb/client'
 import { LibraryError } from '@/server/library/store'
 import { TooManyError } from '@/server/services/fair-use'
+import { SourceError } from '@/server/sync/source-error'
 
 /** Why something failed, in words the interface has a sentence for. */
 export const refusalFor = (error: unknown): Refusal => {
   if (error instanceof NotSignedInError) return { ok: false, reason: 'not-signed-in' }
+  if (error instanceof NotModeratorError) return { ok: false, reason: 'not-allowed' }
   if (error instanceof TooManyError) return { ok: false, reason: 'too-many' }
+  if (error instanceof SourceError) return { ok: false, reason: 'steam' }
   if (error instanceof IgdbError) return { ok: false, reason: 'igdb' }
   if (error instanceof LibraryError) {
     return { ok: false, reason: error.code === 'invalid' ? 'invalid' : error.code }
@@ -45,3 +54,16 @@ export const forAccount = async <T>(
     return refusalFor(error)
   }
 }
+
+/**
+ * The same for what only a moderator may do (ADR 006). Asked of the database
+ * every time, on the server: nothing a browser sends or remembers says so.
+ */
+export const forModerator = <T>(
+  run: (account: Account) => Promise<T>,
+  writes = false,
+): Promise<Done<T>> =>
+  forAccount(async (account) => {
+    if (!(await isModerator(account.id))) throw new NotModeratorError()
+    return run(account)
+  }, writes)
