@@ -4,6 +4,7 @@ import { updateTag } from 'next/cache'
 
 import { addMyGame, groupingFor, searchToAdd, undoMyAdd } from '@/server/services/adding'
 import { libraryTag } from '@/server/services/library'
+import { addSteamGame, readSteamLink } from '@/server/services/steam-adding'
 
 /**
  * Adding games, for the interface, each to the signed-in account's own
@@ -22,6 +23,16 @@ export async function groupingAction(igdbId: unknown) {
 export async function addGameAction(input: unknown) {
   const result = await addMyGame(input)
   // The account sees the game at once, on this page and the next.
+  if (result.ok) updateTag(libraryTag(result.libraryId))
+  return result
+}
+
+export async function steamLinkAction(appId: unknown) {
+  return readSteamLink(appId)
+}
+
+export async function addSteamGameAction(input: unknown) {
+  const result = await addSteamGame(input)
   if (result.ok) updateTag(libraryTag(result.libraryId))
   return result
 }

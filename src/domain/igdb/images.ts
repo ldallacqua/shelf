@@ -2,6 +2,7 @@
  * Addresses on IGDB's image servers. Images are used straight from there:
  * the servers resize, send WebP, allow cross-origin use and cache for a year.
  * They answer AVIF with an error, so WebP is the only format asked for.
+ * `imageUrl` also takes the id of an image on Steam's servers.
  */
 
 /** IGDB's size names and what each returns, in pixels. Covers keep their shape. */
@@ -24,7 +25,44 @@ export const IMAGE_HOST = 'https://images.igdb.com'
 /** Image ids are IGDB's own short tokens. Anything else is refused, so an id can never smuggle a path. */
 const IMAGE_ID = /^[a-z0-9_]+$/i
 
+/**
+ * A game IGDB does not have keeps its images on Steam's servers (ADR 006), and
+ * an image id is then the file's path there. They resize nothing, so each size
+ * is the nearest file there is: a cover in two, when `@2x` says the second
+ * exists, a screenshot in two, anything else as it is.
+ */
+export const STEAM_IMAGES = 'https://shared.akamai.steamstatic.com/store_item_assets'
+const STEAM_IMAGE =
+  /^steam\/apps\/\d+\/(?:[0-9a-f]+\/)?[\w-]+(?:\.[\w-]+)*\.(?:jpg|jpeg|png)(?:@2x)?$/i
+const DOUBLE = '@2x'
+const SCREENSHOT = /\/ss_[^/]+\.jpg$/i
+/** The widest a single file of a cover is, and of a smaller screenshot. */
+const STEAM_COVER_WIDTH = 300
+const STEAM_SHOT_WIDTH = 600
+
+export const isSteamImage = (imageId: string): boolean => STEAM_IMAGE.test(imageId)
+
+/** The id for a cover's file, and for its file at twice the size when that is beside it. */
+export const steamCoverId = (path: string, double?: string): string | undefined => {
+  if (!isSteamImage(path)) return undefined
+  const doubled = path.replace(/(\.\w+)$/, '_2x$1')
+  return double === doubled && isSteamImage(double) ? `${path}${DOUBLE}` : path
+}
+
+const steamImageUrl = (imageId: string, size: ImageSize): string => {
+  const doubled = imageId.endsWith(DOUBLE)
+  const path = doubled ? imageId.slice(0, -DOUBLE.length) : imageId
+  const { width } = imageSizes[size]
+  if (SCREENSHOT.test(path)) {
+    const file = width <= STEAM_SHOT_WIDTH ? '.600x338.jpg' : '.1920x1080.jpg'
+    return `${STEAM_IMAGES}/${path.replace(/\.jpg$/i, file)}`
+  }
+  const large = doubled && width > STEAM_COVER_WIDTH
+  return `${STEAM_IMAGES}/${large ? path.replace(/(\.\w+)$/, '_2x$1') : path}`
+}
+
 export const imageUrl = (imageId: string, size: ImageSize): string => {
+  if (isSteamImage(imageId)) return steamImageUrl(imageId, size)
   if (!IMAGE_ID.test(imageId)) throw new Error('Not an IGDB image id')
   return `${IMAGE_HOST}/igdb/image/upload/t_${size}/${imageId}.webp`
 }

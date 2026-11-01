@@ -1545,6 +1545,15 @@
     "searching": "Searching…",
     "resultCount": "{count, plural, one {# game found. Arrow keys and Enter choose.} other {# games found. Arrow keys and Enter choose.}}",
     "noResults": "Nothing on IGDB matches “{text}”.",
+    "steam": {
+      "source": "from Steam",
+      "title": "Title on every shelf",
+      "shared": "IGDB does not have this game. Adding it puts it in the catalog every shelf shares, read from its Steam page.",
+      "known": "A moderator already added this game from Steam.",
+      "adult": "Steam marks it as adult: “Hide adult games” hides it, and it keeps only its cover.",
+      "notFound": "Steam has no store page for that link.",
+      "notAGame": "That Steam page is not a game: a soundtrack, a DLC, a demo or software."
+    },
     "results": "Games on IGDB",
     "unavailable": "Game search is unavailable right now. The library itself works as before.",
     "tryAgain": "Try again",
@@ -1589,6 +1598,8 @@
       "not-kept": "This server keeps nothing it is given, so nothing was saved.",
       "igdb": "IGDB did not answer. Try again.",
       "too-many": "You have done a lot of that this hour. Wait a while, then try again.",
+      "not-allowed": "Only a moderator can add a game from a Steam link.",
+      "steam": "Steam did not answer. Try again.",
       "failed": "That did not work. Try again."
     },
     "first": "Add your first game",

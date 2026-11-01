@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-import { IMAGE_HOST } from '@/domain/igdb/images'
+import { IMAGE_HOST, STEAM_IMAGES } from '@/domain/igdb/images'
 import { IGDB_API, TWITCH_TOKEN_URL } from '@/server/igdb/client'
 import { parseMultiQuery, parseQuery, QueryError, runQuery } from '@/server/mocks/apicalypse'
 import type { Fixtures } from '@/server/seed/fixtures'
@@ -135,15 +135,17 @@ export const createHandlers = (fixtures: Fixtures, state: MockState = newMockSta
 
     // A cover, when a game is added and its colors are read: a flat color
     // made from its id. The repository holds no cover art.
-    http.get(`${IMAGE_HOST}/*`, ({ request }) => {
-      const id = new URL(request.url).pathname.split('/').pop() ?? ''
-      let hue = 0
-      for (const char of id) hue = (hue * 31 + char.charCodeAt(0)) % 360
-      return new HttpResponse(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="128"><rect width="90" height="128" fill="hsl(${hue} 55% 38%)"/><rect width="90" height="44" fill="hsl(${(hue + 40) % 360} 60% 55%)"/></svg>`,
-        { headers: { 'Content-Type': 'image/svg+xml' } },
-      )
-    }),
+    ...[IMAGE_HOST, STEAM_IMAGES].map((host) =>
+      http.get(`${host}/*`, ({ request }) => {
+        const id = new URL(request.url).pathname.split('/').pop() ?? ''
+        let hue = 0
+        for (const char of id) hue = (hue * 31 + char.charCodeAt(0)) % 360
+        return new HttpResponse(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="128"><rect width="90" height="128" fill="hsl(${hue} 55% 38%)"/><rect width="90" height="44" fill="hsl(${(hue + 40) % 360} 60% 55%)"/></svg>`,
+          { headers: { 'Content-Type': 'image/svg+xml' } },
+        )
+      }),
+    ),
 
     // The test assistant's Client ID Metadata Document.
     http.get(MOCK_ASSISTANT.clientId, () =>

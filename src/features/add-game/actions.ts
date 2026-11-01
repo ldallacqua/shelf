@@ -1,4 +1,12 @@
-import type { AddedGame, AddInput, Answer, Grouping, SearchAnswer } from '@/domain/library/adding'
+import type {
+  AddedGame,
+  AddInput,
+  AddSteamInput,
+  Answer,
+  Grouping,
+  SearchAnswer,
+  SteamLinkAnswer,
+} from '@/domain/library/adding'
 
 /**
  * The server's ways to add games, handed down from the layout. Each checks
@@ -9,4 +17,7 @@ export type AddActions = {
   grouping: (igdbId: number) => Promise<Answer<Grouping>>
   add: (input: AddInput) => Promise<Answer<AddedGame>>
   undo: (added: AddedGame['undo']) => Promise<Answer<number>>
+  /** What a pasted Steam link is. Only a moderator gets an answer (ADR 006). */
+  steamLink: (appId: string) => Promise<Answer<SteamLinkAnswer>>
+  addSteam: (input: AddSteamInput) => Promise<Answer<AddedGame>>
 }

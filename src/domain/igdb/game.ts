@@ -171,7 +171,7 @@ const BACKDROP_TYPES = new Set([1, 2, 3, 4])
 const EARLIEST = Date.UTC(1950, 0, 1) / 1000
 const LATEST = Date.UTC(2100, 0, 1) / 1000
 
-const dayFromSeconds = (seconds: number | undefined): Day | undefined =>
+export const dayFromSeconds = (seconds: number | undefined): Day | undefined =>
   seconds !== undefined && seconds >= EARLIEST && seconds < LATEST
     ? dayOf(seconds * 1000)
     : undefined

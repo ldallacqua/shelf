@@ -20,8 +20,9 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 2. **No secret leaves `.env.local`.** Never print one, commit one, or paste one into a
    message. `.env.example` holds names only. Production values are pasted into Vercel by the
    owner.
-3. **Never generate game cover art.** Covers and screenshots come from IGDB. A placeholder is
-   a blur of color, never a drawing of a cover. Prompts for every generated image go in
+3. **Never generate game cover art.** Covers and screenshots come from IGDB, or from Steam's
+   store for a game IGDB does not have ([ADR 006](docs/adr/006-games-from-steam.md)). A placeholder
+   is a blur of color, never a drawing of a cover. Prompts for every generated image go in
    [`design/assets/PROMPTS.md`](design/assets/PROMPTS.md).
 4. **It must read as games, not books.** Covers face out. No serif type. See
    [ADR 002](docs/adr/002-visual-direction.md) for what went wrong the first time.
@@ -31,30 +32,31 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 
 ## Commands
 
-| Command                          | Does                                                                                                                  |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                       | The app at http://localhost:3300                                                                                      |
-| `pnpm build` then `pnpm start`   | A production build, same port                                                                                         |
-| `pnpm check`                     | Format, lint, types, translations, unit and component tests                                                           |
-| `pnpm verify`                    | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before merging.           |
-| `pnpm test`                      | Unit and component tests (Vitest)                                                                                     |
-| `pnpm e2e`                       | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine.       |
-| `pnpm serve:test`                | The build as the browser tests use it: test doubles on, serving a migrated copy of the database (`.data/e2e.db`)      |
-| `pnpm perf:js`                   | Each page's first-load JavaScript against its budget. Needs a running server.                                         |
-| `pnpm perf:lighthouse`           | Lighthouse, mobile profile. Needs a running server.                                                                   |
-| `pnpm perf:3d`                   | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.           |
-| `pnpm storybook`                 | The component workshop at http://localhost:6300                                                                       |
-| `pnpm i18n:check`                | Fails if the two languages disagree                                                                                   |
-| `pnpm seed [set]`                | Migrates `.data/shelf.db` and fills the sample shelf, `/u/sample`: `default` (230 games), `empty` or `stress` (1,280) |
-| `pnpm account:password <handle>` | A new random password for that account, printed once, every session ended. No email resets yet                        |
-| `pnpm db:generate`               | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`                    |
-| `pnpm db:migrate`                | Applies migrations without touching the data                                                                          |
-| `pnpm fixtures:fetch`            | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff           |
-| `pnpm desktop:dev`               | Shelf for Windows against the local server ([the desktop guide](docs/desktop.md)). Needs Rust                         |
-| `pnpm desktop:build`             | The desktop app's installer, which opens production                                                                   |
-| `pnpm desktop:test`              | The desktop app's Rust tests                                                                                          |
-| `pnpm desktop:release`           | Publishes the desktop app's version in `tauri.conf.json` as a release, signed; from a clean `main` only               |
-| `pnpm desktop:check`             | The desktop app against `pnpm serve:test`, its pages read beside a plain Chromium's. Needs a running server           |
+| Command                                 | Does                                                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm dev`                              | The app at http://localhost:3300                                                                                                           |
+| `pnpm build` then `pnpm start`          | A production build, same port                                                                                                              |
+| `pnpm check`                            | Format, lint, types, translations, unit and component tests                                                                                |
+| `pnpm verify`                           | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before merging.                                |
+| `pnpm test`                             | Unit and component tests (Vitest)                                                                                                          |
+| `pnpm e2e`                              | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine.                            |
+| `pnpm serve:test`                       | The build as the browser tests use it: test doubles on, serving a migrated copy of the database (`.data/e2e.db`)                           |
+| `pnpm perf:js`                          | Each page's first-load JavaScript against its budget. Needs a running server.                                                              |
+| `pnpm perf:lighthouse`                  | Lighthouse, mobile profile. Needs a running server.                                                                                        |
+| `pnpm perf:3d`                          | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.                                |
+| `pnpm storybook`                        | The component workshop at http://localhost:6300                                                                                            |
+| `pnpm i18n:check`                       | Fails if the two languages disagree                                                                                                        |
+| `pnpm seed [set]`                       | Migrates `.data/shelf.db` and fills the sample shelf, `/u/sample`: `default` (230 games), `empty` or `stress` (1,280)                      |
+| `pnpm account:password <handle>`        | A new random password for that account, printed once, every session ended. No email resets yet                                             |
+| `pnpm account:moderator <handle> [off]` | Lets that account add a game IGDB does not have, from its Steam link, to the catalog every shelf shares (ADR 006). Nothing on the site can |
+| `pnpm db:generate`                      | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`                                         |
+| `pnpm db:migrate`                       | Applies migrations without touching the data                                                                                               |
+| `pnpm fixtures:fetch`                   | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff                                |
+| `pnpm desktop:dev`                      | Shelf for Windows against the local server ([the desktop guide](docs/desktop.md)). Needs Rust                                              |
+| `pnpm desktop:build`                    | The desktop app's installer, which opens production                                                                                        |
+| `pnpm desktop:test`                     | The desktop app's Rust tests                                                                                                               |
+| `pnpm desktop:release`                  | Publishes the desktop app's version in `tauri.conf.json` as a release, signed; from a clean `main` only                                    |
+| `pnpm desktop:check`                    | The desktop app against `pnpm serve:test`, its pages read beside a plain Chromium's. Needs a running server                                |
 
 Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**
 (Actions minutes are limited). **Run every test once, before merging a pull request**, not
@@ -247,6 +249,14 @@ test doubles on, "Sign in through Steam" comes straight back with the made-up ac
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used
 straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
+
+**A game IGDB does not have.** A moderator (`users.moderator`, set only by `pnpm account:moderator`)
+pastes its Steam link in Add a game ([ADR 006](docs/adr/006-games-from-steam.md)). Only the app's
+number leaves the pasted text (`steamAppIdIn`): the address is never fetched. Everything else is read
+from Steam on the server, by `src/domain/steam/store-game.ts` and `steam.storeGame`, and stored as a
+`games` row with no `igdb_id`, a `steam_app_id`, and images whose id is their path on Steam's servers,
+which `imageUrl` reads like any other. Services that only a moderator may reach go through
+`forModerator`. A game IGDB has is never added this way: the link sends it to the search.
 
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in

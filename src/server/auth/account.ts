@@ -113,3 +113,21 @@ export const requireAccount = async (from?: Headers): Promise<Account> => {
   if (!account) throw new NotSignedInError()
   return account
 }
+
+/** Thrown when an account asks for what only a moderator may do. */
+export class NotModeratorError extends Error {
+  constructor() {
+    super('Only a moderator may do that')
+    this.name = 'NotModeratorError'
+  }
+}
+
+/** Whether an account may add to the catalog every shelf shares (ADR 006). */
+export const isModerator = async (accountId: string): Promise<boolean> => {
+  const [row] = await database()
+    .select({ moderator: users.moderator })
+    .from(users)
+    .where(eq(users.id, accountId))
+    .limit(1)
+  return row?.moderator === true
+}

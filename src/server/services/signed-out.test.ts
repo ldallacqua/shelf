@@ -12,6 +12,7 @@ import {
   undoManyOfMine,
   undoMyAdd,
 } from '@/server/services/adding'
+import { addSteamGame, readSteamLink } from '@/server/services/steam-adding'
 import {
   addMyCopy,
   archiveMine,
@@ -84,6 +85,11 @@ const requests: [string, () => Promise<{ ok: boolean; reason?: string }>][] = [
   ['search IGDB', () => searchToAdd('hades')],
   ['ask where a game goes', () => groupingFor(231)],
   ['add a game', () => addMyGame({ igdbId: 231, status: 'backlog', copies: [] })],
+  ['read a Steam link', () => readSteamLink('2000001')],
+  [
+    'add a game from Steam',
+    () => addSteamGame({ appId: '2000001', status: 'backlog', copies: [] }),
+  ],
   ['say which game one of its games is', () => rematchMine('bloodborne', { igdbId: 231 })],
   [
     'undo an add',

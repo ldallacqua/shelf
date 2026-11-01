@@ -27,6 +27,12 @@ import {
   steamStoreItemsSchema,
   storeItemsQuestion,
 } from '@/domain/sync/steam'
+import {
+  onTheStore,
+  storeGameQuestion,
+  storeGameSchema,
+  type StoreGame,
+} from '@/domain/steam/store-game'
 import { steamKey } from '@/server/env'
 import { SourceError } from '@/server/sync/source-error'
 
@@ -41,6 +47,9 @@ import { SourceError } from '@/server/sync/source-error'
  */
 
 export const STEAM_API = 'https://api.steampowered.com'
+
+/** Where a game's page is looked for: the two markets Shelf is written for. */
+const STORE_COUNTRIES = ['US', 'BR']
 
 /** Apps asked of the store in one request: the question travels in the address. */
 const APPS_PER_REQUEST = 100
@@ -255,6 +264,26 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
   }
 
   /**
+   * A game's page on the store, in the first of these countries that shows
+   * it: the store keeps some games from some countries. Nothing when none does.
+   */
+  const storeGame = async (appId: string): Promise<StoreGame | undefined> => {
+    for (const country of STORE_COUNTRIES) {
+      const parsed = storeGameSchema.safeParse(
+        await ask('/IStoreBrowseService/GetItems/v1/', {
+          input_json: storeGameQuestion(appId, country),
+        }),
+      )
+      if (!parsed.success) {
+        throw new SourceError('unreachable', 'Steam described a game in a new shape.')
+      }
+      const item = parsed.data.response.store_items[0]
+      if (onTheStore(item)) return item
+    }
+    return undefined
+  }
+
+  /**
    * The account a "Sign in through Steam" answer is for, once Steam has said
    * it sent that answer; undefined for anything else. Steam answers each
    * answer's question once, so an answer cannot be used twice.
@@ -284,6 +313,7 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
     ownedGames,
     playerName,
     appKinds,
+    storeGame,
     verifySignIn,
     gameAchievements,
     achievementTotals,
