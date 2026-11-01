@@ -338,7 +338,13 @@ pub fn run() {
     };
     builder
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_opener::init())
+        // Not its script for links, which would take every link to a new tab before the window's
+        // own rules heard of it (`on_new_window`), and ask for a permission no page here has.
+        .plugin(
+            tauri_plugin_opener::Builder::new()
+                .open_js_links_on_click(false)
+                .build(),
+        )
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             desktop_info,

@@ -201,6 +201,31 @@ try {
   await control('Maximize').waitFor({ timeout: 5_000 })
   pass('maximizes and restores from its header')
 
+  // A link to a new tab goes through the window's own rules (`on_new_window`, then the browser).
+  // Nothing of the page may take it first, as the opener plugin's script did, asking for a
+  // permission no page here has, so that a store's link did nothing. Stopped here, after the
+  // page's own listeners: this checks the click and opens nothing.
+  const taken = await shelf.evaluate((href) => {
+    const link = document.createElement('a')
+    link.href = href
+    link.target = '_blank'
+    document.body.append(link)
+    let prevented = true
+    window.addEventListener(
+      'click',
+      (event) => {
+        prevented = event.defaultPrevented
+        event.preventDefault()
+      },
+      { once: true },
+    )
+    link.click()
+    link.remove()
+    return prevented
+  }, `${BASE_URL}/en`)
+  if (taken) fail('something in the page took a link to a new tab before the window could')
+  else pass('leaves a link to a new tab to the window’s rules')
+
   const size = await shelf.evaluate(() => ({
     width: window.innerWidth,
     height: window.innerHeight,
