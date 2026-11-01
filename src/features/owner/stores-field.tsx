@@ -4,7 +4,8 @@ import { PlusIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 
-import { cleanStores, pcStores, storeChoices, type StoreName } from '@/domain/library/stores'
+import { cleanStores, pcStores, storeChoices } from '@/domain/library/store-choices'
+import type { StoreName } from '@/domain/library/stores'
 import { ChoiceChip, ToggleChip } from '@/ui/chip'
 
 /**

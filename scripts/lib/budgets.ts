@@ -73,7 +73,9 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // tooltip, which no smaller way of loading it saves without losing focus on the button.
   // Counted hours (31 Oct 2026): measured 285.0 KB, just past 285. Nothing of counting is on this
   // page: its modules load inside the app alone. What grew is the list of what can be fetched.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 285.5 },
+  // Stores (1 Nov 2026): measured 285.5 KB, just past it. The card on a game's panel and the
+  // `store:` filter. Choosing links, and the forms' field, were moved off this page first.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 286 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).

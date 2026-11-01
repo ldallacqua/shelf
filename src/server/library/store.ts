@@ -17,13 +17,8 @@ import {
   STARTER_SHELVES,
   type SmartShelf,
 } from '@/domain/library/shelves'
-import {
-  cleanStores,
-  isPcPlatform,
-  storeOfSource,
-  takesStore,
-  type StoreName,
-} from '@/domain/library/stores'
+import { cleanStores, storeOfSource } from '@/domain/library/store-choices'
+import { isPcPlatform, takesStore, type StoreName } from '@/domain/library/stores'
 import {
   dayOf,
   isDay,
