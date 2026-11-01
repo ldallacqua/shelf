@@ -21,7 +21,7 @@ import {
 } from '@/domain/library/bulk'
 import { MAX_NOTES, type OwnerGame } from '@/domain/library/editing'
 import { MAX_PLACED } from '@/domain/library/placing'
-import { storeList } from '@/domain/library/stores'
+import { storeList } from '@/domain/library/store-list'
 import { formats, kinds, relations, statuses, syncSources } from '@/domain/library/values'
 import { failure } from '@/server/api/respond'
 import type { Done } from '@/server/services/for-account'

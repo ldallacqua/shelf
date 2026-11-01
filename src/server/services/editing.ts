@@ -18,7 +18,8 @@ import {
   type Separated,
   type StoreHoursGame,
 } from '@/domain/library/editing'
-import { storeList, type StoreName } from '@/domain/library/stores'
+import { storeList } from '@/domain/library/store-list'
+import type { StoreName } from '@/domain/library/stores'
 import { formats, type Format } from '@/domain/library/values'
 import { database, type Db } from '@/server/db/client'
 import { copies, entryVersions, games, removedEntries } from '@/server/db/schema'

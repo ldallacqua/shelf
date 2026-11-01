@@ -1,5 +1,3 @@
-import { z } from 'zod'
-
 import type { Format } from '@/domain/library/values'
 
 /**
@@ -29,8 +27,6 @@ export const storeNames = [
 export type StoreName = (typeof storeNames)[number]
 
 export type StoreLink = { store: StoreName; url: string }
-
-export const storeList = z.array(z.enum(storeNames)).max(storeNames.length)
 
 /**
  * What I can say a PC game is from. The last three have no link: IGDB lists no

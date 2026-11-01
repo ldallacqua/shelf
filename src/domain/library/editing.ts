@@ -3,7 +3,8 @@ import { z } from 'zod'
 import type { Palette } from '@/domain/color/palette'
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
 import type { IgdbTime } from '@/domain/library/hours'
-import { storeList, type StoreName } from '@/domain/library/stores'
+import { storeList } from '@/domain/library/store-list'
+import type { StoreName } from '@/domain/library/stores'
 import {
   formats,
   statuses,

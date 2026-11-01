@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 import type { FamilyLink } from '@/domain/igdb/game'
 import type { SearchResult } from '@/domain/igdb/search'
-import { storeList, type StoreName } from '@/domain/library/stores'
+import { storeList } from '@/domain/library/store-list'
+import type { StoreName } from '@/domain/library/stores'
 import { formats, statuses, type Format, type Relation } from '@/domain/library/values'
 
 /**
