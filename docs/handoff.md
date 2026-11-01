@@ -4,6 +4,22 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Links in the app, images, the cover's flight, fixed copies (1 Nov 2026)
+
+- **Every `target="_blank"` link did nothing in Shelf for Windows**, not only the stores': the opener
+  plugin's own script took the click and asked for a permission no page has. `open_js_links_on_click(false)`
+  hands them to `on_new_window`. It only reaches the owner in a desktop release (0.5.0), which needs
+  the owner's OK. `pnpm desktop:check` now fails if anything takes such a click first.
+- **Every image fades in** by one script in `<head>` and one rule in `globals.css`, whichever component
+  drew it, so a new `<img>` needs nothing. Held at 0.01 and not 0, for Largest Contentful Paint. Off
+  under `pnpm dev`, where React would report the mark as a mismatch: look at it on `serve:test`.
+- **`cacheComponents` keeps a page left behind in the document, hidden.** A `document.querySelector`
+  can find what isn't drawn, which is what stopped the cover's flight after a visit to the full page.
+- **A copy a linked account lists is fixed** (spec 7.3): `read-from.ts`. "Lists" means linked, and seen
+  at the account's last read.
+- **A visual change has a design pass and a story** (`AGENTS.md`). The Design and frontend-design
+  plugins were offered to the owner, 1 Nov; check they are on before counting on them.
+
 ## Stores on a game's page (1 Nov 2026)
 
 Spec 7.9: where a game is sold, with links, and which store a PC download is from. Links come from

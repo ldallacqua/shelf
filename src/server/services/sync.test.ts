@@ -12,14 +12,17 @@ import {
   removeEntry,
   removeEntryForUndo,
   recordPlaySessions,
+  removeCopy,
   restoreEntry,
   setArchived,
+  setCopyFormat,
+  setCopyStores,
 } from '@/server/library/store'
 import { createHandlers, MOCK_CLIENT_ID, MOCK_CLIENT_SECRET } from '@/server/mocks/handlers'
 import { MOCK_STEAM } from '@/server/mocks/owner'
 import { createSteamHandlers, newSteamMockState } from '@/server/mocks/steam'
 import { loadFixtures } from '@/server/seed/fixtures'
-import { readLink, saveLink } from '@/server/sync/memory'
+import { forgetLink, readLink, saveLink } from '@/server/sync/memory'
 import { createNintendo } from '@/server/sync/nintendo'
 import { createSteam, STEAM_API } from '@/server/sync/steam'
 import { createTestAccount, createTestDatabase, sampleLibraryId } from '@/test/database'
@@ -267,17 +270,48 @@ describe('where a synced game is from', () => {
     expect(mine.every((copy) => copy.stores.includes('steam'))).toBe(true)
   })
 
-  it('does not put back a store I took off', async () => {
+  it('keeps the store a linked account lists on the copy, whatever I say (spec 7.3)', async () => {
     const me = await linked()
     await syncAll(me)
     const [first] = await copiesOf(me)
+    await setCopyStores(db, me, first!.id, ['gog'])
+    const said = (await copiesOf(me)).find((copy) => copy.id === first!.id)
+    expect(said?.stores).toEqual(['steam', 'gog'])
+  })
+
+  it('puts it back when a disc becomes a download again', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const [first] = await copiesOf(me)
+    await setCopyFormat(db, me, first!.id, 'physical')
+    expect((await copiesOf(me)).find((copy) => copy.id === first!.id)?.stores).toEqual([])
+    await setCopyFormat(db, me, first!.id, 'digital')
+    expect((await copiesOf(me)).find((copy) => copy.id === first!.id)?.stores).toEqual(['steam'])
+  })
+
+  it('does not let a copy a linked account lists be removed', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const [first] = await copiesOf(me)
+    await expect(removeCopy(db, me, first!.id)).rejects.toMatchObject({ code: 'conflict' })
+    expect((await copiesOf(me)).map((copy) => copy.id)).toContain(first!.id)
+  })
+
+  it('lets it go once the account no longer lists it, or is unlinked', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const [gone, unlinked] = await copiesOf(me)
+    // Read again since, and this one not among what it listed.
     await db
-      .update(copies)
-      .set({ stores: ['gog'] })
-      .where(eq(copies.id, first!.id))
-    await syncAll(me, NOW + 86_400_000)
-    const after = (await copiesOf(me)).find((copy) => copy.id === first!.id)
-    expect(after?.stores).toEqual(['gog'])
+      .update(sourceItems)
+      .set({ lastSeenAt: NOW - 1 })
+      .where(eq(sourceItems.copyId, gone!.id))
+    await removeCopy(db, me, gone!.id)
+    expect((await copiesOf(me)).map((copy) => copy.id)).not.toContain(gone!.id)
+
+    await forgetLink(db, me, 'steam')
+    await removeCopy(db, me, unlinked!.id)
+    expect((await copiesOf(me)).map((copy) => copy.id)).not.toContain(unlinked!.id)
   })
 })
 

@@ -299,6 +299,42 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     ],
   })
 
+  it('fixes a copy a linked account lists: no way to remove it, nor its store', async () => {
+    server.games.set('read', {
+      ...owned('read'),
+      soldOn: ['steam', 'gog'],
+      copies: [
+        {
+          id: 'pc',
+          platformId: 6,
+          format: 'digital',
+          stores: ['steam'],
+          synced: [{ source: 'steam', minutes: 600 }],
+          readFrom: ['steam'],
+        },
+      ],
+    })
+    editor('read')
+    const copies = within(await screen.findByRole('group', { name: 'Owned on' }))
+    expect(copies.getByRole('listitem')).toHaveTextContent('From your Steam account: 10 h')
+    expect(copies.queryByRole('button', { name: /^Remove the/ })).not.toBeInTheDocument()
+    const steam = copies.getByRole('checkbox', { name: 'Steam' })
+    expect(steam).toBeChecked()
+    expect(steam).toBeDisabled()
+    expect(copies.getByRole('checkbox', { name: 'GOG' })).toBeEnabled()
+  })
+
+  it('leaves a copy I added to me: it can be removed', async () => {
+    server.games.set('mine', {
+      ...owned('mine'),
+      copies: [{ id: 'pc', platformId: 6, format: 'digital', stores: ['gog'] }],
+    })
+    editor('mine')
+    const copies = within(await screen.findByRole('group', { name: 'Owned on' }))
+    expect(copies.getByRole('button', { name: /^Remove the/ })).toBeInTheDocument()
+    expect(copies.getByRole('checkbox', { name: 'GOG' })).toBeEnabled()
+  })
+
   it('shows each copy on its own card, and puts a new one together apart from them', async () => {
     server.games.set('pair', owned('pair'))
     editor('pair')

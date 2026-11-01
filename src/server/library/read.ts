@@ -17,6 +17,7 @@ import type {
 } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
 import { linksOfRecord, mergeStoreLinks, steamStoreLink } from '@/domain/library/store-links'
+import { accountsReading } from '@/server/library/read-from'
 import {
   isPcSource,
   pastIgdb,
@@ -564,6 +565,11 @@ export const readOwnerGame = async (
       ? await db.select().from(platforms).where(inArray(platforms.igdbId, platformIds))
       : []
 
+  const reading = await accountsReading(
+    db,
+    libraryId,
+    copyRows.map((copy) => copy.id),
+  )
   const owned: OwnerGame = {
     entryId,
     slug: primary.slug,
@@ -582,7 +588,12 @@ export const readOwnerGame = async (
           ? [{ source: row.source as SyncSource, minutes: row.minutes }]
           : [],
       )
-      return synced.length > 0 ? { ...copy, synced } : copy
+      const readFrom = reading.get(copy.id)
+      return {
+        ...copy,
+        ...(synced.length > 0 ? { synced } : {}),
+        ...(readFrom ? { readFrom } : {}),
+      }
     }),
     tags: tagRows.map((tag) => tag.name),
     versions: [primary, ...versionRows.filter((row) => row !== primary)].map((row) => ({

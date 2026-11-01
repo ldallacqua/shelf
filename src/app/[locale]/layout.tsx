@@ -12,6 +12,7 @@ import {
   undoAddAction,
 } from '@/app/actions/games'
 import { WindowScript } from '@/features/desktop/window-script'
+import { ImageScript } from '@/features/shell/image-script'
 import { PreferenceScript } from '@/features/library/preference-script'
 import { Footer } from '@/features/shell/footer'
 import { Header } from '@/features/shell/header'
@@ -68,6 +69,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
         <AccountHintScript />
         <PreferenceScript />
         <WindowScript />
+        <ImageScript />
         <ZodScript />
       </head>
       <body>

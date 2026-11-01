@@ -31,6 +31,7 @@ type ApiOwnerGame = Omit<OwnerGame, 'rating' | 'tracked' | 'idle' | 'copies'> & 
     format: Format
     stores?: StoreName[]
     synced?: { source: SyncSource; hours: number }[]
+    readFrom?: SyncSource[]
   }[]
 }
 
@@ -45,7 +46,7 @@ const fromApi = ({
   ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
   tracked: Math.round(hoursTracked * 60),
   ...(hoursIdle === undefined ? {} : { idle: Math.round(hoursIdle * 60) }),
-  copies: copies.map(({ id, platform, format, stores, synced }) => ({
+  copies: copies.map(({ id, platform, format, stores, synced, readFrom }) => ({
     id,
     platformId: platform,
     format,
@@ -58,6 +59,7 @@ const fromApi = ({
           })),
         }
       : {}),
+    ...(readFrom ? { readFrom } : {}),
   })),
 })
 

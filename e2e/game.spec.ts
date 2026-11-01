@@ -294,6 +294,34 @@ test.describe('a game opened from the library', () => {
     await expect(page).toHaveURL(/\/en\/u\/sample\?q=bloodborne$/)
   })
 
+  test('its cover still lands in the panel after a visit to the full page', async ({ page }) => {
+    await countTransitions(page)
+    await openLibrary(page, '/en/u/sample?q=bloodborne')
+    await firstGame(page, 'shelf').click()
+    await panel(page).getByRole('link', { name: 'Open the full page' }).click()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bloodborne')
+    await page.goBack()
+    await expect(page).toHaveURL(/\/en\/u\/sample\?q=bloodborne$/)
+    // The page is still in the document, hidden, with a hero cover that is never drawn.
+    await page.evaluate(() => {
+      const start = document.startViewTransition.bind(document)
+      document.startViewTransition = (update) =>
+        start(async () => {
+          await (update as () => Promise<void> | void)()
+          const named = [...document.querySelectorAll<HTMLElement>('[data-hero-cover]')].filter(
+            (cover) => cover.style.viewTransitionName === 'game-cover',
+          )
+          ;(window as unknown as { landed: boolean }).landed =
+            named.length === 1 && named[0]!.getClientRects().length > 0
+        })
+    })
+    await firstGame(page, 'shelf').click()
+    await expect(panel(page)).toBeVisible()
+    await expect
+      .poll(() => page.evaluate(() => (window as unknown as { landed?: boolean }).landed))
+      .toBe(true)
+  })
+
   test('its cover grows out of its box, and simply appears under reduced motion', async ({
     page,
   }) => {

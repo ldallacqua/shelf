@@ -351,6 +351,28 @@ html:has(.library:not([style*='display: none'] .library)) .site-search {
 }
 
 /*
+ * Every image fades in as it arrives (`image-script.tsx`): only opacity moves, which the graphics
+ * card does alone, and it fades to whatever opacity the image's own rules give it. Held back at
+ * 0.01 and not 0: Chrome does not count an image at 0 as painted, so Largest Contentful Paint
+ * would wait out the fade. With reduced motion an image is simply there.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-images] img:not([data-loaded]) {
+    opacity: 0.01;
+  }
+
+  :root[data-images] img[data-loaded=''] {
+    animation: image-in var(--motion-base) var(--ease-settle);
+  }
+}
+
+@keyframes image-in {
+  from {
+    opacity: 0.01;
+  }
+}
+
+/*
  * In Shelf for Windows' window without a bar, Windows' scrollbar would run the window's whole
  * height, beside the close button. Shelf draws its own below the header (features/desktop/frame.ts).
  */

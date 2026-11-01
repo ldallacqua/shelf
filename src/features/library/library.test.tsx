@@ -718,7 +718,6 @@ describe('a cover, by when it joined the page', () => {
   it('came with the page: shown plainly, with no blur worked out', () => {
     expect(pageIsLive()).toBe(false)
     renderWithIntl(<Cover {...cover} hash="AAAA" />)
-    expect(screen.getByRole('img', { name: 'Hades' })).not.toHaveAttribute('data-pending')
     expect(thumbHashToDataURL).not.toHaveBeenCalled()
   })
 
@@ -737,11 +736,10 @@ describe('a cover, by when it joined the page', () => {
     await userEvent.click(screen.getByRole('button'))
     const image = screen.getByRole('img', { name: 'Hades' })
     expect(image).toHaveAttribute('sizes', '122px')
-    expect(image).not.toHaveAttribute('data-pending')
     expect(thumbHashToDataURL).not.toHaveBeenCalled()
   })
 
-  it('joined a live page: fades in at once, and its blur is worked out later, once', async () => {
+  it('joined a live page: its blur is worked out later, once', async () => {
     markPageLive()
     renderWithIntl(
       <>
@@ -749,7 +747,6 @@ describe('a cover, by when it joined the page', () => {
         <Cover {...cover} hash="CCCC" title="Hades again" />
       </>,
     )
-    expect(screen.getByRole('img', { name: 'Hades' })).toHaveAttribute('data-pending')
     // Not while drawing: that is what kept a slow phone from answering.
     expect(thumbHashToDataURL).not.toHaveBeenCalled()
     await waitFor(() => expect(thumbHashToDataURL).toHaveBeenCalledTimes(1))
@@ -761,11 +758,5 @@ describe('a cover, by when it joined the page', () => {
     fireEvent.load(screen.getByRole('img', { name: 'Hades' }))
     await new Promise((resolve) => setTimeout(resolve, 80))
     expect(thumbHashToDataURL).not.toHaveBeenCalled()
-  })
-
-  it('one of the first covers on a live page does not wait to be shown', () => {
-    markPageLive()
-    renderWithIntl(<Cover {...cover} hash="DDDD" eager />)
-    expect(screen.getByRole('img', { name: 'Hades' })).not.toHaveAttribute('data-pending')
   })
 })

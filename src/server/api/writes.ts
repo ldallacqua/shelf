@@ -322,6 +322,12 @@ export const apiOwnerGame = z
           .array(z.object({ source: z.enum(syncSources), hours: z.number().min(0) }))
           .optional()
           .describe('Hours a sync reports on this copy, by source'),
+        readFrom: z
+          .array(z.enum(syncSources))
+          .optional()
+          .describe(
+            'Linked accounts that list this copy. While they do it cannot be removed (DELETE answers 409), and their store cannot be taken off it',
+          ),
       }),
     ),
     tags: z.array(z.string()),
@@ -565,7 +571,7 @@ export const toApiOwnerGame = ({
   ...(rating === undefined ? {} : { rating: rating / 10 }),
   hoursTracked: tracked / 60,
   ...(idle === undefined ? {} : { hoursIdle: idle / 60 }),
-  copies: copies.map(({ id, platformId, format, stores, synced }) => ({
+  copies: copies.map(({ id, platformId, format, stores, synced, readFrom }) => ({
     id,
     platform: platformId,
     format,
@@ -573,6 +579,7 @@ export const toApiOwnerGame = ({
     ...(synced
       ? { synced: synced.map(({ source, minutes }) => ({ source, hours: minutes / 60 })) }
       : {}),
+    ...(readFrom ? { readFrom } : {}),
   })),
 })
 

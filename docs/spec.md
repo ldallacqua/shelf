@@ -1343,6 +1343,14 @@ the versions, and archiving or removing.
   reports on it, physical or digital, and a button to remove it. **Add a copy** opens a new one
   apart from them: a platform, physical or digital (one I own already cannot be picked), and
   Add.
+- **A copy a linked account lists is fixed.** The owner, 1 Nov 2026: "se a gente importou que o cara
+  tem o game na steam [...] o icone de lixo so deve funcionar se ele manualmente foi la e adicinou".
+  It has no button to remove it, and says where it is from beside a lock: **From your Steam account:
+  145.9 h**. The server refuses too. The words stand in the card and not in a tooltip, since a
+  control that is gone needs its reason in plain sight, and a phone has no hover. It lasts while the
+  account does list it: unlink the account, or lose the game from it, and the copy is like any other.
+  Physical or digital stays mine to say, since a boxed PC game can be activated on Steam. Taking the
+  whole game off the shelf is still possible, with the question it asks (Remove from library).
 - **Versions:** each on a card with its cover, what it is (main version, edition, port), its
   year and platforms; the others offer Make main and Separate (7.6).
 - **Notes** are private unless I mark them public for that game.
@@ -1627,7 +1635,8 @@ onde veio o game é importante".
   **Another store** for the rest, which IGDB does not know. Only PC downloads for now: a disc, or a
   console, has no such field, and switching a copy to physical lets its stores go.
 - **A sync says it itself:** a copy a sync brings from Steam is marked Steam as it comes on, and
-  the same for copies already there when this was built. A store I take off stays off.
+  the same for copies already there when this was built. While the account lists it, that chip is
+  ticked with a lock and cannot be unticked (7.3).
 - **Leaving the wishlist** starts the first copy on the PC, from the store I wanted, as a download.
 - **Records stored before this** have only their Steam link until the daily refresh stores them again.
 
@@ -1901,6 +1910,7 @@ Only position, scale, rotation and opacity are animated.
 | Depth on scroll | Layers shift | None |
 | Stat numbers | Count up | Final value shown |
 | Sheets and panels | Slide in; a game's centered frame rises and fades in | Fade in |
+| Images, as they arrive | Fade in, every one of them, over what stood in their place. One the browser already has is simply there | Simply there |
 
 Reduced motion follows the system setting. Smooth scrolling is never applied to touch or under
 reduced motion.

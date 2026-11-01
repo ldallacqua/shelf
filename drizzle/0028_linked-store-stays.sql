@@ -1,0 +1,2 @@
+-- A store a linked account lists now stays on the copy (spec 7.3): those taken off it since 0027 go back.
+UPDATE `copies` SET `stores` = json_insert(`stores`, '$[#]', 'steam') WHERE `format` = 'digital' AND `platform_id` IN (6, 14, 3) AND `id` IN (SELECT `copy_id` FROM `source_items` WHERE `source` = 'steam' AND `copy_id` IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM json_each(`copies`.`stores`) WHERE `value` = 'steam');
