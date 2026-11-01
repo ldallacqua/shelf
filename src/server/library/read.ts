@@ -16,7 +16,7 @@ import type {
   StoreHoursGame,
 } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
-import { linksOfRecord, mergeStoreLinks, steamStoreLink } from '@/domain/library/stores'
+import { linksOfRecord, mergeStoreLinks, steamStoreLink } from '@/domain/library/store-links'
 import {
   isPcSource,
   pastIgdb,

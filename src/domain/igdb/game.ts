@@ -1,11 +1,7 @@
 import type { IgdbGame, IgdbLineage, IgdbTimeToBeat } from '@/domain/igdb/schema'
 import { ADULTS_ONLY, ageWordsOf } from '@/domain/library/ages'
-import {
-  chooseStoreLinks,
-  steamStoreLink,
-  type StoreLink,
-  type StoreName,
-} from '@/domain/library/stores'
+import { chooseStoreLinks, steamStoreLink } from '@/domain/library/store-links'
+import type { StoreLink, StoreName } from '@/domain/library/stores'
 import { dayOf, type Day, type Format, type Kind } from '@/domain/library/values'
 
 /**

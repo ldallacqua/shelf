@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  chooseStoreLinks,
-  cleanStores,
-  linksOfRecord,
-  mergeStoreLinks,
-  storeChoices,
-  takesStore,
-} from './stores'
+import { chooseStoreLinks, linksOfRecord, mergeStoreLinks } from './store-links'
+import { cleanStores, storeChoices, takesStore } from './stores'
 
 describe('chooseStoreLinks', () => {
   it('keeps one link to each store, in our order, the best address first', () => {
