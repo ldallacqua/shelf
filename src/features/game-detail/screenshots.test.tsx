@@ -67,13 +67,15 @@ describe('Screenshots, with some for adults', () => {
       return (
         <>
           <Screenshots shots={SHOTS} title={title} />
-          <span onClick={() => setTitle('Another Game')}>next game</span>
+          <button type="button" onClick={() => setTitle('Another Game')}>
+            next game
+          </button>
         </>
       )
     }
     renderWithIntl(<Stepping />)
     await userEvent.click(screen.getByRole('button', { name: /Screenshot 2 of 3 .*blurred/ }))
-    await userEvent.click(screen.getByText('next game'))
+    await userEvent.click(screen.getByRole('button', { name: 'next game' }))
     expect(thumbs()).toEqual([null, 'hidden', 'hidden'])
   })
 
