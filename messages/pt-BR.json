@@ -1453,12 +1453,12 @@
       "not-seen": "{count, plural, one {# não está mais na {source}} other {# não estão mais na {source}}}"
     },
     "help": {
-      "needs-you": "O Shelf não teve certeza de quais jogos são estes. Encontre cada um, ou diga o que é, e o Shelf se lembra.",
+      "needs-you": "O Shelf não teve certeza de quais jogos são estes. Encontre cada um, ou remova da lista, e o Shelf se lembra.",
       "hidden": "O Shelf deixa estes fora da sua estante, diga a {source} o que disser. Demos, playtests e programas vêm para cá sozinhos.",
       "not-seen": "Continuam na sua estante. A {source} parou de listá-los."
     },
     "unfound": "{count, plural, one {O Shelf não achou este jogo} other {O Shelf não achou estes # jogos}}",
-    "unfoundHelp": "Encontre cada um, ou diga que não é um jogo ou que não é seu.",
+    "unfoundHelp": "Encontre cada um, ou remova da lista.",
     "alsoListed": "A {source} também lista como {titles}.",
     "loading": "Carregando…",
     "hours": "{hours, number} h na {source}",
@@ -1471,13 +1471,12 @@
     "pickNamed": "Adicionar {title} ({year})",
     "pickUndated": "Adicionar {title}",
     "noResults": "Nada no IGDB com esse nome. Tente outro.",
-    "notAGame": "Não é um jogo",
-    "notMine": "Não é meu",
+    "removeFromList": "Remover da lista",
     "askAgain": "Perguntar de novo",
     "putBack": "Pôr de volta na estante",
     "why": {
-      "not_a_game": "Não é um jogo",
-      "not_mine": "Não é meu",
+      "not_a_game": "Você removeu da lista",
+      "not_mine": "Você removeu da lista",
       "removed": "Tirado da sua estante"
     },
     "kind": {

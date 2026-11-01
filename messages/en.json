@@ -1453,12 +1453,12 @@
       "not-seen": "{count, plural, other {# no longer on {source}}}"
     },
     "help": {
-      "needs-you": "Shelf could not be sure which games these are. Find each one, or say what it is, and Shelf remembers.",
+      "needs-you": "Shelf could not be sure which games these are. Find each one, or remove it from the list, and Shelf remembers.",
       "hidden": "Shelf leaves these off your shelf, whatever {source} says. Demos, playtests and software come here by themselves.",
       "not-seen": "Still on your shelf. {source} stopped listing them."
     },
     "unfound": "{count, plural, one {Shelf could not find this game} other {Shelf could not find these # games}}",
-    "unfoundHelp": "Find each one, or say it is not a game or not yours.",
+    "unfoundHelp": "Find each one, or remove it from the list.",
     "alsoListed": "{source} also lists it as {titles}.",
     "loading": "Loading…",
     "hours": "{hours, number} h on {source}",
@@ -1471,13 +1471,12 @@
     "pickNamed": "Add {title} ({year})",
     "pickUndated": "Add {title}",
     "noResults": "Nothing on IGDB by that name. Try another.",
-    "notAGame": "Not a game",
-    "notMine": "Not mine",
+    "removeFromList": "Remove from list",
     "askAgain": "Ask again",
     "putBack": "Put back on my shelf",
     "why": {
-      "not_a_game": "Not a game",
-      "not_mine": "Not mine",
+      "not_a_game": "You removed it from the list",
+      "not_mine": "You removed it from the list",
       "removed": "Taken off your shelf"
     },
     "kind": {

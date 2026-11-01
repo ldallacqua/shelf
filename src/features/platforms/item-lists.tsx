@@ -220,7 +220,7 @@ function Row({
               disabled={still}
               onClick={() => void answer({ kind: 'dismiss', as: 'not_mine' })}
             >
-              {t('notMine')}
+              {t('removeFromList')}
             </Button>
           </span>
         ) : list === 'needs-you' ? (
@@ -240,18 +240,9 @@ function Row({
               variant="ghost"
               aria-describedby={titleId}
               disabled={still}
-              onClick={() => void answer({ kind: 'dismiss', as: 'not_a_game' })}
-            >
-              {t('notAGame')}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-describedby={titleId}
-              disabled={still}
               onClick={() => void answer({ kind: 'dismiss', as: 'not_mine' })}
             >
-              {t('notMine')}
+              {t('removeFromList')}
             </Button>
           </span>
         ) : list === 'hidden' ? (

@@ -360,6 +360,24 @@ describe('Nintendo', () => {
     expect(screen.getAllByRole('button', { name: 'Find it' })).toHaveLength(1)
   })
 
+  it('takes a game off the list with one button, whatever it turned out to be', async () => {
+    platforms = rows(null, NINTENDO)
+    renderWithIntl(<Platforms handle="ana" />)
+    await userEvent.click(await screen.findByText('3 games need you'))
+    await screen.findByRole('heading', { name: 'Shelf could not find this game' })
+    expect(screen.queryByRole('button', { name: 'Not a game' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Not mine' })).toBeNull()
+    const remove = screen.getAllByRole('button', { name: 'Remove from list' })
+    expect(remove).toHaveLength(3)
+    await userEvent.click(remove.at(-1)!)
+    await waitFor(() =>
+      expect(sent.find((each) => each.path.includes('/items/'))?.body).toEqual({
+        kind: 'dismiss',
+        as: 'not_mine',
+      }),
+    )
+  })
+
   it('pictures each answer beside its word, which alone names the button', async () => {
     platforms = rows(null, NINTENDO)
     renderWithIntl(<Platforms handle="ana" />)
