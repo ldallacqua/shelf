@@ -18,6 +18,13 @@ import {
   type SmartShelf,
 } from '@/domain/library/shelves'
 import {
+  cleanStores,
+  isPcPlatform,
+  storeOfSource,
+  takesStore,
+  type StoreName,
+} from '@/domain/library/stores'
+import {
   dayOf,
   isDay,
   isFormat,
@@ -143,6 +150,7 @@ export const gameColumns = (
   videos: data.videos,
   releases: data.releases,
   storeIds: data.storeIds,
+  storeLinks: data.storeLinks,
   lineage: [...lineage],
   igdbUrl: data.igdbUrl ?? null,
   igdbUpdatedAt: data.igdbUpdatedAt ?? null,
@@ -220,6 +228,8 @@ export const savePlatforms = async (tx: Executor, list: readonly Platform[]) => 
 export type NewCopy = {
   platformId: number
   format: Format
+  /** Where it is from: kept only for what `takesStore` says has one. */
+  stores?: readonly StoreName[]
   /** Our id of the exact version this copy is, when it is not the primary. */
   gameId?: string
   acquiredOn?: Day
@@ -231,6 +241,8 @@ export type NewEntry = {
   status: Status
   /** The platforms I want it on, kept only on the wishlist (spec 7.5). */
   wanted?: readonly number[]
+  /** Of those, on a PC, which store I would buy it from. */
+  wantedStores?: readonly StoreName[]
   /** Only its own account sees it (spec 11.1). */
   private?: boolean
   rating?: number
@@ -335,11 +347,22 @@ const insertCopy = async (tx: Executor, entryId: string, copy: NewCopy, now: num
     entryId,
     platformId: copy.platformId,
     format: copy.format,
+    stores: takesStore(copy.platformId, copy.format) ? cleanStores(copy.stores) : [],
     gameId: copy.gameId ?? null,
     acquiredOn: copy.acquiredOn ?? null,
     createdAt: now,
   })
   return id
+}
+
+/** Which store I would buy it from: only while I want it, and want it on a PC. */
+const wantedStoresOf = (
+  status: Status,
+  wanted: readonly number[] | null | undefined,
+  stores: readonly StoreName[] | null | undefined,
+): StoreName[] | null => {
+  const kept = cleanStores(stores)
+  return status === 'wishlist' && wanted?.some(isPcPlatform) && kept.length > 0 ? kept : null
 }
 
 const cleanTagNames = (names: readonly string[]): { name: string; slug: string }[] => {
@@ -412,6 +435,7 @@ const insertEntry = async (
     addedAt: input.addedAt ?? now,
     completedOn: input.completedOn ?? null,
     wanted: input.status === 'wishlist' && input.wanted?.length ? [...new Set(input.wanted)] : null,
+    wantedStores: wantedStoresOf(input.status, input.wanted, input.wantedStores),
     createdAt: now,
     updatedAt: now,
   })
@@ -917,7 +941,7 @@ const placeAndFeed = (
     db.transaction(async (tx) => {
       const added = await place(tx)
       const [copy] = await tx
-        .select({ id: copies.id })
+        .select({ id: copies.id, stores: copies.stores })
         .from(copies)
         .where(
           and(
@@ -928,6 +952,15 @@ const placeAndFeed = (
         )
         .limit(1)
       if (!copy) throw invalid('A synced game needs a copy on its platform')
+      // The store listed it, so that is where it is from. Said once, as it comes onto the copy: a
+      // later sync does not put back a store I took off.
+      const store = storeOfSource(feed.source)
+      if (store && takesStore(feed.platformId, feed.format)) {
+        await tx
+          .update(copies)
+          .set({ stores: cleanStores([...copy.stores, store]) })
+          .where(eq(copies.id, copy.id))
+      }
       await tx
         .update(sourceItems)
         .set({ copyId: copy.id, ...feed.items })
@@ -1040,6 +1073,7 @@ export type EntryPatch = {
   private?: boolean
   /** The platforms I want it on; kept only while it is on the wishlist. */
   wanted?: readonly number[] | null
+  wantedStores?: readonly StoreName[] | null
   rating?: number | null
   notes?: string | null
   notesPublic?: boolean
@@ -1053,10 +1087,23 @@ export type EntryPatch = {
  * What I wanted is let go once a game leaves the wishlist (spec 7.5): its
  * first copy starts on that platform in the editor, which has it in hand.
  */
-const letGo = (patch: Pick<EntryPatch, 'status' | 'wanted'>): { wanted?: number[] | null } => {
-  if (patch.status !== undefined && patch.status !== 'wishlist') return { wanted: null }
-  if (patch.wanted === undefined) return {}
-  return { wanted: patch.wanted?.length ? [...new Set(patch.wanted)] : null }
+const letGo = (
+  patch: Pick<EntryPatch, 'status' | 'wanted' | 'wantedStores'>,
+): { wanted?: number[] | null; wantedStores?: StoreName[] | null } => {
+  if (patch.status !== undefined && patch.status !== 'wishlist') {
+    return { wanted: null, wantedStores: null }
+  }
+  return {
+    ...(patch.wanted === undefined
+      ? {}
+      : { wanted: patch.wanted?.length ? [...new Set(patch.wanted)] : null }),
+    // No longer wanted on a PC, no store is wanted either.
+    ...(patch.wanted !== undefined && !patch.wanted?.some(isPcPlatform)
+      ? { wantedStores: null }
+      : patch.wantedStores === undefined
+        ? {}
+        : { wantedStores: patch.wantedStores?.length ? cleanStores(patch.wantedStores) : null }),
+  }
 }
 
 /** Whether a change may leave a completed game without its finish date: one for `dateFinishes`. */
@@ -1082,7 +1129,7 @@ export const updateEntry = (
       if (!copy) throw invalid('That copy belongs to another game')
     }
     const notes = patch.notes === undefined ? undefined : patch.notes?.trim() || null
-    const { wanted: _, private: hidden, ...rest } = patch
+    const { wanted: _, wantedStores: __, private: hidden, ...rest } = patch
     await tx
       .update(entries)
       .set({
@@ -1117,7 +1164,7 @@ export const patchEntry = (
     await requireEntry(tx, libraryId, entryId)
     if (patch.mine && Object.keys(patch.mine).length > 0) {
       const notes = patch.mine.notes === undefined ? undefined : patch.mine.notes?.trim() || null
-      const { wanted: _, private: hidden, ...rest } = patch.mine
+      const { wanted: _, wantedStores: __, private: hidden, ...rest } = patch.mine
       await tx
         .update(entries)
         .set({
@@ -1474,6 +1521,10 @@ export const rematchEntry = (
           (each) => each.platformId === copy.platformId && each.format === copy.format,
         )
         if (same) {
+          await tx
+            .update(copies)
+            .set({ stores: cleanStores([...same.stores, ...copy.stores]) })
+            .where(eq(copies.id, same.id))
           await tx
             .update(sourceItems)
             .set({ copyId: same.id })
@@ -1870,12 +1921,41 @@ export const setCopyFormat = (
   return withConflict('That platform and format are already on this game', () =>
     db.transaction(async (tx) => {
       const copy = await requireCopy(tx, libraryId, copyId)
-      await tx.update(copies).set({ format }).where(eq(copies.id, copyId))
+      // A disc is from no store, and the copy is someone's disc now.
+      await tx
+        .update(copies)
+        .set({ format, ...(format === 'digital' ? {} : { stores: [] }) })
+        .where(eq(copies.id, copyId))
       await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, copy.entryId))
       await bumpVersion(tx, libraryId)
     }),
   )
 }
+
+/** Says which stores a download on a PC is from. */
+export const setCopyStores = (
+  db: Db,
+  libraryId: string,
+  copyId: string,
+  stores: readonly StoreName[],
+  now = Date.now(),
+) =>
+  db.transaction(async (tx) => {
+    const { entryId } = await requireCopy(tx, libraryId, copyId)
+    const [copy] = await tx
+      .select({ platformId: copies.platformId, format: copies.format })
+      .from(copies)
+      .where(eq(copies.id, copyId))
+    if (!copy || !takesStore(copy.platformId, copy.format)) {
+      throw invalid('Only a download on a PC comes from a store')
+    }
+    await tx
+      .update(copies)
+      .set({ stores: cleanStores(stores) })
+      .where(eq(copies.id, copyId))
+    await tx.update(entries).set({ updatedAt: now }).where(eq(entries.id, entryId))
+    await bumpVersion(tx, libraryId)
+  })
 
 /**
  * Every IGDB record linked to an entry of this library, with its family

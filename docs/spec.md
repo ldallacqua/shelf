@@ -1119,6 +1119,7 @@ keeps the figure whole and not below nothing instead.
 | Platform owned | `owned` | List. Also accepts a family: `playstation`, `xbox`, `nintendo`, `pc`. |
 | Wanted on | `wanted` | List: the platforms a wishlist game is wanted on (7.5). Families too. |
 | Format | `format` | `physical`, `digital` |
+| Store | `store` | Where a download on a PC is from, or would be bought from: `steam`, `gog`, `epic`, `microsoft`, `itch`, `ea`, `ubisoft`, `battlenet`. |
 | Number of platforms owned | `copies` | Range |
 | Completion date | `completed` | Date range |
 | Date added | `added` | Date range |
@@ -1277,6 +1278,7 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | --- | --- |
 | **Hero** | The cover, large, over the game's key art dimmed behind it. No key art: a screenshot. No screenshot: the cover's own colors. |
 | **Heading** | Title, year, developer |
+| **Stores** | Where it is sold, with a link to its page there (section 7.9) |
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
 | **About** | IGDB's summary and storyline, in their paragraphs. A long one shows about a screen's worth, and the rest behind **Read more**, opened in place |
 | **Videos and screenshots** | One strip, videos first: each video on one of the game's own pictures with a play button and what it is ("Launch Trailer"), then the screenshots. No scrollbar: an edge with more past it fades, and on a pointer that can hover an arrow there moves the strip. A screenshot opens a full-screen viewer (arrow keys, swipe, pinch to zoom); a video plays over the page, from YouTube, which nothing reaches before it is pressed |
@@ -1596,6 +1598,38 @@ finished a game.
 - A hidden achievement's details stay hidden until it is unlocked or I ask.
 - Private, not read, none and failed are each said, never shown as none unlocked.
 - Both languages, both themes, a phone and the keyboard work.
+
+### 7.9 Stores
+
+**Built 1 Nov 2026.** The owner, of a game on the wishlist: "dar o link pro jogo na plataforma em
+algum lugar. Ai quando eu quiser comprar por exemplo não tenho que ficar caçando o link do jogo",
+and of a game on PC: "eu posso ter o game na steam, na gog, na epic por exemplo. Então dizer da
+onde veio o game é importante".
+
+- **Where it stands:** a card of its own at the head of the column Mine is in, on the page and in
+  the panel, a line to a store, as Letterboxd lists where to watch a film under its poster. Backloggd,
+  IGDB and HowLongToBeat, looked at the same day, leave them out or deep in the page, which is what
+  the owner did not want to hunt through. Called **Where to buy** on the wishlist and on a game with
+  no copy, **Stores** otherwise.
+- **The links** are every store IGDB lists, read from both of its lists (`external_games` and
+  `websites`), each store once, its best address, with the language taken out where the store then
+  answers in the visitor's own. A game from Steam (ADR 006) has Steam's. A store's name is in words,
+  never its logo. Each opens in a new tab, says so to assistive technology, and shows lucide's arrow.
+  A link is kept only on that store's own servers: IGDB is written by its community, and a link
+  never goes anywhere but where it says.
+- **What shows:** mine first, tinted and ticked as a chosen chip is, with the words **I have it
+  here** or **I want it here**; then the store of a console I have it on or want it on. Where to buy
+  shows at least four, and Stores only those, since the page is then about my copy. The rest is
+  behind a fold that needs no script. A store with no link (Battle.net) still shows if it is mine.
+- **Saying where it is from:** a download on a PC has **Which store?** on its card; on the wishlist,
+  with a PC chosen under Want it on, it is the store I would buy it from. Any number of them, since
+  I can have a game on two: it stays one copy, on one box. First what the game is sold on, then
+  **Another store** for the rest, which IGDB does not know. Only PC downloads for now: a disc, or a
+  console, has no such field, and switching a copy to physical lets its stores go.
+- **A sync says it itself:** a copy a sync brings from Steam is marked Steam as it comes on, and
+  the same for copies already there when this was built. A store I take off stays off.
+- **Leaving the wishlist** starts the first copy on the PC, from the store I wanted, as a download.
+- **Records stored before this** have only their Steam link until the daily refresh stores them again.
 
 ## 8. Data model
 

@@ -1,7 +1,10 @@
 import { apiChanged, apiCopyPatch, bodyOf, refused, written } from '@/server/api/writes'
-import { removeMyCopy, setMyCopyFormat } from '@/server/services/editing'
+import { removeMyCopy, setMyCopyFormat, setMyCopyStores } from '@/server/services/editing'
 
-/** One copy of a game: switched between physical and digital, or removed. The owner only. */
+/**
+ * One copy of a game: switched between physical and digital, said where it is
+ * from, or removed. The owner only.
+ */
 
 export async function PATCH(
   request: Request,
@@ -10,7 +13,12 @@ export async function PATCH(
   const { id, copy } = await context.params
   const parsed = apiCopyPatch.safeParse(await bodyOf(request))
   if (!parsed.success) return refused({ ok: false, reason: 'invalid' })
-  return written(apiChanged, await setMyCopyFormat(id, copy, parsed.data.format))
+  const { format, stores } = parsed.data
+  if (format !== undefined) {
+    const changed = await setMyCopyFormat(id, copy, format)
+    if (!changed.ok || stores === undefined) return written(apiChanged, changed)
+  }
+  return written(apiChanged, await setMyCopyStores(id, copy, stores ?? []))
 }
 
 export async function DELETE(

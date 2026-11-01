@@ -263,6 +263,11 @@ drawn blurred (`screenshots.tsx`), a game for adults' art marked so stands dimme
 neither goes anywhere a page's rules don't reach: filter them out of anything new
 that reads a game's screenshots.
 
+**Stores.** `src/domain/library/stores.ts` knows them: the links on a game's page (`games.store_links`,
+read from IGDB by `toGameData`, only ever to the store's own servers) and where a download on a PC is
+from (`copies.stores`, `entries.wanted_stores`). A store's position in `storeNames` is in the library
+file, so a new one goes at the end. Spec 7.9.
+
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in
 button (architecture, section 11). Name them in words. An icon beside words is `aria-hidden`.

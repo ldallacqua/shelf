@@ -16,6 +16,7 @@ import type {
   StoreHoursGame,
 } from '@/domain/library/editing'
 import type { GameExtras } from '@/domain/library/game-page'
+import { linksOfRecord, mergeStoreLinks, steamStoreLink } from '@/domain/library/stores'
 import {
   isPcSource,
   pastIgdb,
@@ -229,6 +230,7 @@ export const readLibrary = async (
       const result: LibraryCopy = { platform: copy.platformId, format: copy.format }
       const version = copy.gameId ? gameById.get(copy.gameId) : undefined
       if (version?.cover && version.cover.id !== primary.cover?.id) result.cover = version.cover.id
+      if (copy.stores.length > 0) result.stores = copy.stores
       return result
     })
 
@@ -257,6 +259,9 @@ export const readLibrary = async (
     if (entry.rating !== null) game.rating = entry.rating
     if (entry.completedOn) game.completedOn = entry.completedOn
     if (entry.status === 'wishlist' && entry.wanted?.length) game.wanted = entry.wanted
+    if (entry.status === 'wishlist' && entry.wantedStores?.length) {
+      game.wantedStores = entry.wantedStores
+    }
     if (entry.isPrivate) game.private = true
     if (primary.adultsOnly || primary.themes.includes(EROTIC)) game.adult = true
     if (primary.ages?.length) game.ages = primary.ages
@@ -357,7 +362,7 @@ export const readGameExtras = async (
     .where(and(eq(games.slug, slug), eq(entryVersions.userId, libraryId)))
   if (!primary || primary.relation !== 'primary') return undefined
 
-  const [entryRows, versionRows, fromProviders, keptProgress] = await Promise.all([
+  const [entryRows, versionRows, fromProviders, keptProgress, steamRows] = await Promise.all([
     db
       .select({ notes: entries.notes, notesPublic: entries.notesPublic })
       .from(entries)
@@ -374,6 +379,8 @@ export const readGameExtras = async (
         releases: games.releases,
         length: games.length,
         igdbUrl: games.igdbUrl,
+        storeIds: games.storeIds,
+        storeLinks: games.storeLinks,
       })
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
@@ -395,6 +402,14 @@ export const readGameExtras = async (
       .from(achievementProgress)
       .innerJoin(copies, eq(copies.id, achievementProgress.copyId))
       .where(eq(copies.entryId, primary.entryId)),
+    // The app Steam listed it under, whatever IGDB lists: its page is the one I bought.
+    db
+      .select({ storeId: sourceItems.storeId })
+      .from(sourceItems)
+      .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+      .where(and(eq(copies.entryId, primary.entryId), eq(sourceItems.source, 'steam')))
+      .orderBy(desc(sourceItems.minutes))
+      .limit(1),
   ])
   const entry = entryRows[0]
   const main = versionRows.find((row) => row.relation === 'primary')
@@ -419,6 +434,11 @@ export const readGameExtras = async (
   if (main.storyline) extras.storyline = main.storyline
   if (main.length) extras.length = main.length
   if (main.igdbUrl) extras.igdbUrl = main.igdbUrl
+  const app = steamRows[0]?.storeId
+  extras.storeLinks = mergeStoreLinks([
+    app ? [steamStoreLink(app)] : [],
+    ...[main, ...versionRows.filter((row) => row !== main)].map(linksOfRecord),
+  ])
   if (entry.notes) extras.notes = entry.notes
   if (providers.size > 0) extras.achievements = [...providers]
   return extras
@@ -473,6 +493,7 @@ export const readOwnerGame = async (
           gameId: games.id,
           igdbId: games.igdbId,
           storeIds: games.storeIds,
+          storeLinks: games.storeLinks,
           slug: games.slug,
           title: games.title,
           relation: entryVersions.relation,
@@ -487,7 +508,12 @@ export const readOwnerGame = async (
         .innerJoin(games, eq(games.id, entryVersions.gameId))
         .where(eq(entryVersions.entryId, entryId)),
       db
-        .select({ id: copies.id, platformId: copies.platformId, format: copies.format })
+        .select({
+          id: copies.id,
+          platformId: copies.platformId,
+          format: copies.format,
+          stores: copies.stores,
+        })
         .from(copies)
         .where(eq(copies.entryId, entryId))
         .orderBy(copies.createdAt, sql`rowid`),
@@ -544,6 +570,8 @@ export const readOwnerGame = async (
     title: primary.title,
     status: entry.status,
     wanted: entry.status === 'wishlist' ? (entry.wanted ?? []) : [],
+    wantedStores: entry.status === 'wishlist' ? (entry.wantedStores ?? []) : [],
+    soldOn: mergeStoreLinks(versionRows.map(linksOfRecord)).map((link) => link.store),
     private: entry.isPrivate,
     notesPublic: entry.notesPublic,
     tracked: trackedMinutes(Number(trackedRows[0]?.seconds) || 0),

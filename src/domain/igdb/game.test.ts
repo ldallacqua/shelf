@@ -253,3 +253,52 @@ describe('length', () => {
     expect(lengthMinutes(undefined)).toBeUndefined()
   })
 })
+
+describe('where a game is sold', () => {
+  const links = (extra: Record<string, unknown>) =>
+    toGameData(igdbGameSchema.parse({ id: 1, name: 'A', slug: 'a', ...extra })).storeLinks
+
+  it('reads stores from both of IGDB’s lists, each missing some of the other’s', () => {
+    expect(
+      links({
+        websites: [
+          { type: 16, url: 'https://www.epicgames.com/store/en-US/product/a/home' },
+          { type: 1, url: 'https://a.example' },
+          { type: 24, url: 'https://www.nintendo.com/us/store/products/a/' },
+        ],
+        external_games: [
+          { external_game_source: 1, uid: '10', url: 'https://store.steampowered.com/app/10' },
+          { external_game_source: 5, uid: '20', url: 'https://www.gog.com/en/game/a' },
+          { external_game_source: 3, uid: '30', url: 'https://www.giantbomb.com/games/3030-30/' },
+          { external_game_source: 14, uid: '40', url: 'https://www.twitch.tv/directory/game/a' },
+        ],
+      }),
+    ).toEqual([
+      { store: 'steam', url: 'https://store.steampowered.com/app/10' },
+      { store: 'gog', url: 'https://www.gog.com/game/a' },
+      { store: 'epic', url: 'https://www.epicgames.com/store/product/a/home' },
+      { store: 'nintendo', url: 'https://www.nintendo.com/us/store/products/a/' },
+    ])
+  })
+
+  it('takes the website people chose over a list’s other edition', () => {
+    expect(
+      links({
+        websites: [{ type: 17, url: 'https://www.gog.com/game/a' }],
+        external_games: [
+          { external_game_source: 5, uid: '2', url: 'https://www.gog.com/en/game/a_game' },
+        ],
+      }),
+    ).toEqual([{ store: 'gog', url: 'https://www.gog.com/game/a' }])
+  })
+
+  it('gives a Steam app with no address the one every app has', () => {
+    expect(links({ external_games: [{ external_game_source: 1, uid: '620' }] })).toEqual([
+      { store: 'steam', url: 'https://store.steampowered.com/app/620' },
+    ])
+  })
+
+  it('has none when IGDB lists none', () => {
+    expect(links({})).toEqual([])
+  })
+})

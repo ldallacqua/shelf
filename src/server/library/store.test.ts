@@ -43,6 +43,8 @@ import {
   saveGame,
   savePlatforms,
   separateVersion,
+  setCopyFormat,
+  setCopyStores,
   patchEntry,
   recordPlaySessions,
   setPrimary,
@@ -1205,5 +1207,161 @@ describe('time a game sat open, unplayed (ADR 003)', () => {
     const undo = await removeEntryForUndo(db, me, entry)
     const back = await restoreEntry(db, me, undo)
     expect((await readOwnerGame(db, me, back))?.idle).toBe(4320)
+  })
+})
+
+describe('where a copy is from', () => {
+  const copyOf = async (entryId: string) => {
+    const [copy] = await db.select().from(copies).where(eq(copies.entryId, entryId))
+    return copy!
+  }
+
+  it('keeps a store on a download on a PC, in our order and each once', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'backlog',
+      copies: [{ platformId: PC, format: 'digital', stores: ['gog', 'steam', 'gog'] }],
+    })
+    expect((await copyOf(entry)).stores).toEqual(['steam', 'gog'])
+  })
+
+  it('names no store on a disc, nor on a console', async () => {
+    const disc = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'backlog',
+      copies: [{ platformId: PC, format: 'physical', stores: ['steam'] }],
+    })
+    expect((await copyOf(disc)).stores).toEqual([])
+    const consoleCopy = await createEntry(db, me, {
+      primaryGameId: skyrim,
+      status: 'backlog',
+      copies: [{ platformId: SWITCH, format: 'digital', stores: ['steam'] }],
+    })
+    expect((await copyOf(consoleCopy)).stores).toEqual([])
+  })
+
+  it('is said on the copy, and goes when it becomes a disc', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'backlog',
+      copies: [{ platformId: PC, format: 'digital' }],
+    })
+    const { id } = await copyOf(entry)
+    const before = await readVersion(db, me)
+    await setCopyStores(db, me, id, ['epic'])
+    expect((await copyOf(entry)).stores).toEqual(['epic'])
+    expect(await readVersion(db, me)).toBeGreaterThan(before)
+    await setCopyFormat(db, me, id, 'physical')
+    expect((await copyOf(entry)).stores).toEqual([])
+  })
+
+  it('refuses a store on a copy that has none, and on another library’s copy', async () => {
+    const disc = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'backlog',
+      copies: [{ platformId: PC, format: 'physical' }],
+    })
+    const { id } = await copyOf(disc)
+    await expect(setCopyStores(db, me, id, ['steam'])).rejects.toBeInstanceOf(LibraryError)
+    await expect(setCopyStores(db, other, id, ['steam'])).rejects.toThrow(/not found|copy/i)
+  })
+
+  it('reaches the library file and the editor', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'backlog',
+      copies: [{ platformId: PC, format: 'digital', stores: ['steam'] }],
+    })
+    const library = await readLibrary(db, me)
+    expect(library.games[0]?.copies[0]?.stores).toEqual(['steam'])
+    const owner = await readOwnerGame(db, me, entry)
+    expect(owner?.copies[0]?.stores).toEqual(['steam'])
+  })
+
+  it('comes back with an Undo of a removal', async () => {
+    const entry = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'backlog',
+      copies: [{ platformId: PC, format: 'digital', stores: ['gog'] }],
+    })
+    const undo = await removeEntryForUndo(db, me, entry)
+    const back = await restoreEntry(db, me, undo)
+    expect((await copyOf(back)).stores).toEqual(['gog'])
+  })
+})
+
+describe('the store I would buy it from', () => {
+  const wish = () =>
+    createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'wishlist',
+      wanted: [PC],
+      wantedStores: ['gog'],
+    })
+  const entryRow = async (id: string) => {
+    const [row] = await db.select().from(entries).where(eq(entries.id, id))
+    return row!
+  }
+
+  it('is kept while I want it on a PC', async () => {
+    expect((await entryRow(await wish())).wantedStores).toEqual(['gog'])
+  })
+
+  it('is not kept for a game not on the wishlist, or not wanted on a PC', async () => {
+    const owned = await createEntry(db, me, {
+      primaryGameId: hades,
+      status: 'backlog',
+      wanted: [PC],
+      wantedStores: ['gog'],
+    })
+    expect((await entryRow(owned)).wantedStores).toBeNull()
+    const onSwitch = await createEntry(db, me, {
+      primaryGameId: skyrimSwitch,
+      status: 'wishlist',
+      wanted: [SWITCH],
+      wantedStores: ['gog'],
+    })
+    expect((await entryRow(onSwitch)).wantedStores).toBeNull()
+  })
+
+  it('changes, and goes with the PC, and when it leaves the wishlist', async () => {
+    const id = await wish()
+    await patchEntry(db, me, id, { mine: { wantedStores: ['steam', 'epic'] } })
+    expect((await entryRow(id)).wantedStores).toEqual(['steam', 'epic'])
+    await patchEntry(db, me, id, { mine: { wanted: [SWITCH] } })
+    expect((await entryRow(id)).wantedStores).toBeNull()
+
+    const again = await createEntry(db, me, {
+      primaryGameId: skyrim,
+      status: 'wishlist',
+      wanted: [PC],
+      wantedStores: ['gog'],
+    })
+    await updateEntry(db, me, again, { status: 'backlog' })
+    const row = await entryRow(again)
+    expect(row.wanted).toBeNull()
+    expect(row.wantedStores).toBeNull()
+  })
+})
+
+describe('where a game is sold, as the editor offers it', () => {
+  it('reads each version’s links, and a Steam app for a record not yet refreshed', async () => {
+    const entry = await createEntry(db, me, { primaryGameId: hades, status: 'backlog' })
+    await db
+      .update(games)
+      .set({
+        storeLinks: [
+          { store: 'gog', url: 'https://www.gog.com/game/hades' },
+          { store: 'playstation', url: 'https://store.playstation.com/concept/1' },
+        ],
+      })
+      .where(eq(games.id, hades))
+    expect((await readOwnerGame(db, me, entry))?.soldOn).toEqual(['gog', 'playstation'])
+
+    await db
+      .update(games)
+      .set({ storeLinks: null, storeIds: [{ source: 'steam', uid: '1145360' }] })
+      .where(eq(games.id, hades))
+    expect((await readOwnerGame(db, me, entry))?.soldOn).toEqual(['steam'])
   })
 })

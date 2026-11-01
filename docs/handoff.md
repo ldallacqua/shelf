@@ -4,6 +4,14 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Stores on a game's page (1 Nov 2026)
+
+Spec 7.9: where a game is sold, with links, and which store a PC download is from. Links come from
+IGDB's two lists, kept only on the store's own servers. A record stored before this has only its Steam
+link until the daily refresh stores it again (`store_links` null), and copies a sync already fed were
+marked Steam by the migration. The owner's shelf shows the marks once a refresh or an edit gives it a
+new library version. IGDB's own links can be old (one Nintendo page answered 404 when checked by hand).
+
 ## Games from Steam (1 Nov 2026)
 
 A moderator adds a game IGDB does not have from its Steam link: [ADR 006](adr/006-games-from-steam.md).

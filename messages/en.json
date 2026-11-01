@@ -188,7 +188,7 @@
     "copies": {
       "eyebrow": "Copies",
       "title": "One game. Every copy.",
-      "body": "On disc years ago, again in a sale, once more for the Switch? It stands on your shelf once, with every copy you own in the case it came in.",
+      "body": "On disc years ago, again in a sale, once more for the Switch? It stands on your shelf once, with every copy you own in the case it came in. On a PC, it says which store yours is from, and every game's page links to the stores that sell it.",
       "yours": "Your copies",
       "onShelf": "On your shelf",
       "physical": "Physical",
@@ -399,6 +399,23 @@
     "format": {
       "physical": "Physical",
       "digital": "Digital"
+    },
+    "store": {
+      "steam": "Steam",
+      "gog": "GOG",
+      "epic": "Epic Games",
+      "microsoft": "Microsoft Store",
+      "itch": "itch.io",
+      "ea": "EA app",
+      "ubisoft": "Ubisoft Connect",
+      "battlenet": "Battle.net",
+      "playstation": "PlayStation Store",
+      "nintendo": "Nintendo eShop",
+      "meta": "Meta Quest",
+      "apple": "App Store",
+      "google-play": "Google Play",
+      "gamejolt": "Game Jolt",
+      "amazon": "Amazon"
     },
     "shelf": {
       "tabs": "Shelves",
@@ -931,6 +948,7 @@
       "owned": "Platform owned",
       "wanted": "Wanted on",
       "format": "Format",
+      "store": "Store",
       "copies": "Platforms owned",
       "rating": "My rating",
       "hours": "Playtime",
@@ -1649,6 +1667,18 @@
       "failedRows": "{count, plural, one {# game could not be added. It is still here, with why.} other {# games could not be added. They are still here, with why.}}",
       "undone": "{count, plural, one {Took # game back off the shelf.} other {Took # games back off the shelf.}}"
     }
+  },
+  "Stores": {
+    "title": "Stores",
+    "whereToBuy": "Where to buy",
+    "have": "I have it here",
+    "want": "I want it here",
+    "more": "{count, plural, one {# more store} other {# more stores}}",
+    "all": "{count, plural, one {See # store} other {See # stores}}",
+    "fewer": "Fewer stores",
+    "newTab": "(opens in a new tab)",
+    "which": "Which store?",
+    "other": "Another store"
   },
   "Edit": {
     "saving": "Saving…",

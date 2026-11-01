@@ -188,7 +188,7 @@
     "copies": {
       "eyebrow": "Cópias",
       "title": "Um jogo. Todas as cópias.",
-      "body": "Em disco anos atrás, de novo numa promoção, mais uma vez para o Switch? Ele fica uma vez só na sua estante, com cada cópia que você tem na caixa em que veio.",
+      "body": "Em disco anos atrás, de novo numa promoção, mais uma vez para o Switch? Ele fica uma vez só na sua estante, com cada cópia que você tem na caixa em que veio. No PC, ele diz de qual loja é a sua, e a página de cada jogo leva às lojas que o vendem.",
       "yours": "Suas cópias",
       "onShelf": "Na sua estante",
       "physical": "Físico",
@@ -399,6 +399,23 @@
     "format": {
       "physical": "Físico",
       "digital": "Digital"
+    },
+    "store": {
+      "steam": "Steam",
+      "gog": "GOG",
+      "epic": "Epic Games",
+      "microsoft": "Microsoft Store",
+      "itch": "itch.io",
+      "ea": "EA app",
+      "ubisoft": "Ubisoft Connect",
+      "battlenet": "Battle.net",
+      "playstation": "PlayStation Store",
+      "nintendo": "Nintendo eShop",
+      "meta": "Meta Quest",
+      "apple": "App Store",
+      "google-play": "Google Play",
+      "gamejolt": "Game Jolt",
+      "amazon": "Amazon"
     },
     "shelf": {
       "tabs": "Prateleiras",
@@ -931,6 +948,7 @@
       "owned": "Plataforma que tenho",
       "wanted": "Quero em",
       "format": "Formato",
+      "store": "Loja",
       "copies": "Plataformas que tenho",
       "rating": "Minha nota",
       "hours": "Tempo jogado",
@@ -1649,6 +1667,18 @@
       "failedRows": "{count, plural, one {# jogo não pôde ser adicionado. Ele continua aqui, com o motivo.} other {# jogos não puderam ser adicionados. Eles continuam aqui, com o motivo.}}",
       "undone": "{count, plural, one {# jogo saiu da estante de novo.} other {# jogos saíram da estante de novo.}}"
     }
+  },
+  "Stores": {
+    "title": "Lojas",
+    "whereToBuy": "Onde comprar",
+    "have": "Tenho aqui",
+    "want": "Quero aqui",
+    "more": "{count, plural, one {Mais # loja} other {Mais # lojas}}",
+    "all": "{count, plural, one {Ver # loja} other {Ver # lojas}}",
+    "fewer": "Menos lojas",
+    "newTab": "(abre em uma nova aba)",
+    "which": "Em qual loja?",
+    "other": "Outra loja"
   },
   "Edit": {
     "saving": "Salvando…",

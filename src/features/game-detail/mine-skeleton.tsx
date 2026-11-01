@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl'
 import type { CSSProperties, ReactNode } from 'react'
 
 import type { LibraryGame, LibraryPlatform, LibraryTag } from '@/domain/library/library'
+import { isPcPlatform, takesStore } from '@/domain/library/stores'
 import { formats, statuses } from '@/domain/library/values'
 import { cn } from '@/ui/cn'
 import { Textarea } from '@/ui/field'
@@ -53,7 +54,8 @@ function Ghost({
  * below moves when the editor arrives. The editor (`mine-editor.tsx`) is
  * mirrored part for part, with the same classes; what decides its height is
  * known from the library file: the status, whether there is a completion
- * date, the copies, whether a copy could still be added, and the tags. Not
+ * date, the copies, whether a copy could still be added, and the tags. A row of
+ * stores may wrap where its ghost does not, as the editor knows which they are. Not
  * known there, and so drawn only by the editor: the lines under the hours saying
  * where they come from, the time left idle under them once there is any, and
  * the versions.
@@ -61,6 +63,7 @@ function Ghost({
 export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkeletonProps) {
   const t = useTranslations('Edit')
   const words = useTranslations('Game')
+  const stores = useTranslations('Stores')
   const fields = useTranslations('Fields')
   const library = useTranslations('Library')
 
@@ -74,6 +77,13 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
   const wishlist = game.status === 'wishlist'
   const label = 'text-sm font-medium'
   const field = 'block h-10 rounded-control pointer-coarse:h-11'
+  // The stores' chips, on the one line they nearly always take: which ones waits for the editor.
+  const storesGhost = (index: number) => (
+    <div className="grid gap-2">
+      <span className="mb-2 text-sm font-medium">{stores('which')}</span>
+      <Ghost index={index} className="block h-10 rounded-full pointer-coarse:h-11" />
+    </div>
+  )
 
   return (
     <section className="game-section" data-mine-skeleton="">
@@ -155,6 +165,7 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
                 )
               })}
             </div>
+            {game.wanted?.some(isPcPlatform) ? storesGhost(11) : null}
           </fieldset>
         ) : null}
 
@@ -180,6 +191,7 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
                       >
                         <span className="h-9 pointer-coarse:h-10" />
                       </Ghost>
+                      {takesStore(copy.platform, copy.format) ? storesGhost(10 + index) : null}
                     </li>
                   ))}
                 </ul>

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { Palette } from '@/domain/color/palette'
 import type { Answer, PlatformLabel } from '@/domain/library/adding'
 import type { IgdbTime } from '@/domain/library/hours'
+import { storeList, type StoreName } from '@/domain/library/stores'
 import {
   formats,
   statuses,
@@ -24,6 +25,8 @@ export type OwnedCopy = {
   id: string
   platformId: number
   format: Format
+  /** Where a download on a PC is from. */
+  stores?: StoreName[]
   /** Hours a sync reports on this copy, by source (ADR 003). */
   synced?: { source: SyncSource; minutes: number }[]
 }
@@ -50,6 +53,10 @@ export type OwnerGame = {
   status: Status
   /** On the wishlist, the platforms I want it on (spec 7.5); empty otherwise. */
   wanted: number[]
+  /** Of those, on a PC, which store I would buy it from. */
+  wantedStores?: StoreName[]
+  /** The stores it is sold on, across its versions: what to offer first. */
+  soldOn?: StoreName[]
   /** Only I see it (spec 11.1). */
   private: boolean
   rating?: number
@@ -130,6 +137,8 @@ export const minePatch = z.object({
   status: z.enum(statuses).optional(),
   /** Kept only while the game is on the wishlist; leaving it lets them go. */
   wanted: z.array(z.number().int().positive()).max(20).nullable().optional(),
+  /** Of those, on a PC, which store I would buy it from. */
+  wantedStores: storeList.nullable().optional(),
   rating: z.number().int().min(0).max(100).nullable().optional(),
   completedOn: z.iso.date().nullable().optional(),
   notes: z.string().max(MAX_NOTES).nullable().optional(),
@@ -143,6 +152,7 @@ export type MinePatch = z.infer<typeof minePatch>
 export const newCopy = z.object({
   platformId: z.number().int().positive(),
   format: z.enum(formats),
+  stores: storeList.optional(),
 })
 
 /** After a change: the library's new version, which the page fetches. */
@@ -175,6 +185,11 @@ export type EditActions = {
   update: (entryId: string, patch: EditPatch) => Promise<Answer<Changed>>
   addCopy: (entryId: string, copy: z.infer<typeof newCopy>) => Promise<Answer<Changed>>
   setFormat: (entryId: string, copyId: string, format: Format) => Promise<Answer<Changed>>
+  setStores: (
+    entryId: string,
+    copyId: string,
+    stores: readonly StoreName[],
+  ) => Promise<Answer<Changed>>
   removeCopy: (entryId: string, copyId: string) => Promise<Answer<Changed>>
   remove: (entryId: string) => Promise<Answer<Removed>>
   restore: (undo: string) => Promise<Answer<Restored>>

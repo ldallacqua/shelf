@@ -65,6 +65,7 @@ export const createRefresh = (deps: RecordsDeps) => {
       adultsOnly: games.adultsOnly,
       ages: games.ages,
       videos: games.videos,
+      storeLinks: games.storeLinks,
     }
     // The games of the accounts that have all of theirs asked about each day.
     const everyDay = db
@@ -100,10 +101,11 @@ export const createRefresh = (deps: RecordsDeps) => {
         (data.igdbUpdatedAt ?? null) !== stored.updatedAt ||
         !same(data.length, stored.length) ||
         // Stored before its age ratings were asked for (spec 3.13), each board's rating
-        // (spec 5.1), or its videos (spec 7.1): stored again, once.
+        // (spec 5.1), its videos (spec 7.1) or its stores (spec 7.9): stored again, once.
         stored.adultsOnly === null ||
         stored.ages === null ||
-        stored.videos === null
+        stored.videos === null ||
+        stored.storeLinks === null
       )
     })
 

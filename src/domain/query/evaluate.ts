@@ -89,6 +89,7 @@ const listOf = (): Record<ListKey, Map<string, IndexValue>> => ({
   owned: new Map(),
   wanted: new Map(),
   format: new Map(),
+  store: new Map(),
   tag: new Map(),
   has: new Map(),
   is: new Map(),
@@ -208,6 +209,7 @@ export const buildIndex = (library: Library): LibraryIndex => {
       copies.game[copyAt] = at
       copies.of.set(copy, copyAt)
       add(lists.format, copy.format, copy.format, size, at)
+      for (const store of copy.stores ?? []) add(lists.store, store, store, size, at)
       addCopy(copies.lists.format, copy.format, copyCount, copyAt)
       const platform = platforms.get(copy.platform)
       if (platform) {
@@ -239,6 +241,8 @@ export const buildIndex = (library: Library): LibraryIndex => {
       }
     }
     for (const word of game.ages ?? []) add(lists.age, word, ageLabel(word), size, at)
+    // Where I have it, or would buy it: on a wishlist, a sale on a store finds what I want from it.
+    for (const store of game.wantedStores ?? []) add(lists.store, store, store, size, at)
     for (const [key, ids] of [
       ['developer', game.developers],
       ['publisher', game.publishers],

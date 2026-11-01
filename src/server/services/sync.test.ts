@@ -99,6 +99,7 @@ const copiesOf = (libraryId: string) =>
       entryId: copies.entryId,
       platformId: copies.platformId,
       format: copies.format,
+      stores: copies.stores,
     })
     .from(copies)
     .innerJoin(entries, eq(entries.id, copies.entryId))
@@ -254,6 +255,29 @@ describe('a first sync from Steam', () => {
     await sync(me).step('steam', { read: true }, NOW)
     await sync(me).step('steam', { read: true }, NOW + 10_000)
     expect(steamState.asked.filter((path) => path.includes('GetOwnedGames'))).toHaveLength(1)
+  })
+})
+
+describe('where a synced game is from', () => {
+  it('says Steam on every copy Steam listed', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const mine = await copiesOf(me)
+    expect(mine.length).toBeGreaterThan(0)
+    expect(mine.every((copy) => copy.stores.includes('steam'))).toBe(true)
+  })
+
+  it('does not put back a store I took off', async () => {
+    const me = await linked()
+    await syncAll(me)
+    const [first] = await copiesOf(me)
+    await db
+      .update(copies)
+      .set({ stores: ['gog'] })
+      .where(eq(copies.id, first!.id))
+    await syncAll(me, NOW + 86_400_000)
+    const after = (await copiesOf(me)).find((copy) => copy.id === first!.id)
+    expect(after?.stores).toEqual(['gog'])
   })
 })
 

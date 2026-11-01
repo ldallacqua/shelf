@@ -8,7 +8,11 @@ export async function POST(request: Request, context: RouteContext<'/api/v1/entr
   if (!parsed.success) return refused({ ok: false, reason: 'invalid' })
   return written(
     apiChanged,
-    await addMyCopy(id, { platformId: parsed.data.platform, format: parsed.data.format }),
+    await addMyCopy(id, {
+      platformId: parsed.data.platform,
+      format: parsed.data.format,
+      ...(parsed.data.stores ? { stores: parsed.data.stores } : {}),
+    }),
     201,
   )
 }

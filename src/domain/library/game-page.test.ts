@@ -6,8 +6,10 @@ import {
   filterFor,
   firstReleases,
   namesOf,
+  storeRows,
   videoGameData,
   type GameExtras,
+  type StoreRow,
 } from './game-page'
 import { testGame, testLibrary, testPlatform } from './testing'
 
@@ -213,5 +215,81 @@ describe('videoGameData', () => {
     // The page itself still has it, marked, to blur.
     expect(page.facts.screenshots[0]).toMatchObject({ id: 'sc0', mature: true })
     expect(page.facts.backdrop?.id).toBe('sc1')
+  })
+})
+
+describe('storeRows', () => {
+  const links = (
+    ['steam', 'gog', 'epic', 'microsoft', 'playstation', 'nintendo', 'amazon'] as const
+  ).map((store) => ({ store, url: `https://${store}.example/game` }))
+  const platforms = new Map([
+    [6, { family: 'pc' }],
+    [167, { family: 'playstation' }],
+    [130, { family: 'nintendo' }],
+  ])
+  const order = (rows: readonly StoreRow[]) => rows.map((row) => row.store)
+
+  it('shows the first few of a game I don’t have: I may be about to buy it', () => {
+    const { rows, shown } = storeRows(testGame('A'), links, platforms)
+    expect(order(rows).slice(0, shown)).toEqual(['steam', 'gog', 'epic', 'microsoft'])
+    expect(rows).toHaveLength(7)
+  })
+
+  it('puts the store I want it from first, saying so', () => {
+    const game = testGame('A', { status: 'wishlist', wanted: [6], wantedStores: ['gog'] })
+    const { rows, shown } = storeRows(game, links, platforms)
+    expect(rows[0]).toEqual({ store: 'gog', url: 'https://gog.example/game', mine: 'want' })
+    expect(shown).toBe(4)
+  })
+
+  it('still shows a few on the wishlist when I already have a copy elsewhere', () => {
+    const game = testGame('A', {
+      status: 'wishlist',
+      copies: [{ platform: 130, format: 'physical' }],
+    })
+    expect(storeRows(game, links, platforms).shown).toBe(4)
+  })
+
+  it('folds the rest away on a game I have: only what is mine stands out', () => {
+    const game = testGame('A', {
+      status: 'playing',
+      copies: [{ platform: 6, format: 'digital', stores: ['epic'] }],
+    })
+    const { rows, shown } = storeRows(game, links, platforms)
+    expect(shown).toBe(1)
+    expect(rows[0]).toMatchObject({ store: 'epic', mine: 'have' })
+  })
+
+  it('brings up the store of a console I have it on, or want it on', () => {
+    const game = testGame('A', { status: 'wishlist', wanted: [167] })
+    expect(order(storeRows(game, links, platforms).rows)[0]).toBe('playstation')
+    const onSwitch = testGame('A', {
+      status: 'completed',
+      copies: [{ platform: 130, format: 'physical' }],
+    })
+    const { rows, shown } = storeRows(onSwitch, links, platforms)
+    expect(order(rows)[0]).toBe('nintendo')
+    expect(shown).toBe(1)
+  })
+
+  it('folds everything on a copy with no store to name', () => {
+    const game = testGame('A', { copies: [{ platform: 6, format: 'digital' }] })
+    expect(storeRows(game, links, platforms).shown).toBe(0)
+  })
+
+  it('still lists a store IGDB has no page on, when it is where I keep it', () => {
+    const game = testGame('A', {
+      copies: [{ platform: 6, format: 'digital', stores: ['battlenet'] }],
+    })
+    expect(storeRows(game, [], platforms).rows).toEqual([{ store: 'battlenet', mine: 'have' }])
+  })
+
+  it('does not hide one store: folding it is no shorter', () => {
+    const { rows, shown } = storeRows(testGame('A'), links.slice(0, 5), platforms)
+    expect(shown).toBe(rows.length)
+  })
+
+  it('has nothing to say of a game with no store at all', () => {
+    expect(storeRows(testGame('A'), [], platforms).rows).toEqual([])
   })
 })
