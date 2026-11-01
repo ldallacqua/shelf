@@ -32,33 +32,19 @@ const IMAGE_ID = /^[a-z0-9_]+$/i
  * exists, a screenshot in two, anything else as it is.
  */
 export const STEAM_IMAGES = 'https://shared.akamai.steamstatic.com/store_item_assets'
-const STEAM_IMAGE =
-  /^steam\/apps\/\d+\/(?:[0-9a-f]+\/)?[\w-]+(?:\.[\w-]+)*\.(?:jpg|jpeg|png)(?:@2x)?$/i
-const DOUBLE = '@2x'
-const SCREENSHOT = /\/ss_[^/]+\.jpg$/i
-/** The widest a single file of a cover is, and of a smaller screenshot. */
-const STEAM_COVER_WIDTH = 300
-const STEAM_SHOT_WIDTH = 600
+const STEAM_IMAGE = /^steam\/apps\/\d+(\/\w[\w.-]*)+\.(jpe?g|png)(@2x)?$/i
 
 export const isSteamImage = (imageId: string): boolean => STEAM_IMAGE.test(imageId)
 
-/** The id for a cover's file, and for its file at twice the size when that is beside it. */
-export const steamCoverId = (path: string, double?: string): string | undefined => {
-  if (!isSteamImage(path)) return undefined
-  const doubled = path.replace(/(\.\w+)$/, '_2x$1')
-  return double === doubled && isSteamImage(double) ? `${path}${DOUBLE}` : path
-}
-
 const steamImageUrl = (imageId: string, size: ImageSize): string => {
-  const doubled = imageId.endsWith(DOUBLE)
-  const path = doubled ? imageId.slice(0, -DOUBLE.length) : imageId
+  const path = imageId.replace('@2x', '')
   const { width } = imageSizes[size]
-  if (SCREENSHOT.test(path)) {
-    const file = width <= STEAM_SHOT_WIDTH ? '.600x338.jpg' : '.1920x1080.jpg'
-    return `${STEAM_IMAGES}/${path.replace(/\.jpg$/i, file)}`
-  }
-  const large = doubled && width > STEAM_COVER_WIDTH
-  return `${STEAM_IMAGES}/${large ? path.replace(/(\.\w+)$/, '_2x$1') : path}`
+  const file = /\/ss_[^/]+$/.test(path)
+    ? path.replace(/\.jpg$/i, width > 600 ? '.1920x1080.jpg' : '.600x338.jpg')
+    : path !== imageId && width > 300
+      ? path.replace(/(\.\w+)$/, '_2x$1')
+      : path
+  return `${STEAM_IMAGES}/${file}`
 }
 
 export const imageUrl = (imageId: string, size: ImageSize): string => {

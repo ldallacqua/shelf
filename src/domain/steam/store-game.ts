@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { dayFromSeconds, EROTIC, type GameData, type GameImage } from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
 import type { Day } from '@/domain/library/values'
-import { isSteamImage, steamCoverId } from '@/domain/igdb/images'
+import { isSteamImage } from '@/domain/igdb/images'
 
 /**
  * A game IGDB does not have, read from Steam's store (ADR 006): the only
@@ -280,14 +280,15 @@ const mapped = (ids: readonly number[], table: Record<number, number>): number[]
 const assetPath = (format: string, file: string): string =>
   format.split('?')[0]!.replace('${FILENAME}', file)
 
+/** `@2x` on the id says the file at twice the size is beside it, where it is named as expected. */
 const coverOf = (assets: StoreGame['assets']): GameImage | undefined => {
   if (!assets?.library_capsule) return undefined
   const path = assetPath(assets.asset_url_format, assets.library_capsule)
-  const double = assets.library_capsule_2x
-    ? assetPath(assets.asset_url_format, assets.library_capsule_2x)
-    : undefined
-  const id = steamCoverId(path, double)
-  return id ? { id, width: 300, height: 450 } : undefined
+  if (!isSteamImage(path)) return undefined
+  const double =
+    assets.library_capsule_2x && assetPath(assets.asset_url_format, assets.library_capsule_2x)
+  const id = double === path.replace(/(\.\w+)$/, '_2x$1') ? `${path}@2x` : path
+  return { id, width: 300, height: 450 }
 }
 
 /** What Shelf stores of a game from Steam: as of IGDB's, its companies still only names. */

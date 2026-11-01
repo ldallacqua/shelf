@@ -89,7 +89,9 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // the header's buttons on every page and on the page's own icon buttons: the owner asked for
   // the component library's tips in place of the browser's. About 3.3 KB of it is Radix's own
   // tooltip, which no smaller way of loading it saves without losing focus on the button.
-  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 214 },
+  // Games from Steam (1 Nov 2026): measured 214.0 KB, a few bytes over. On every page the two
+  // ways to add one, handed to the header, and `imageUrl` reading a Steam image's path (ADR 006).
+  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 214.5 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
   // screenshots and their viewer, and the way back to the library.
   // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf
