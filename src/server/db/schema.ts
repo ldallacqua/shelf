@@ -499,6 +499,8 @@ export const sourceItems = sqliteTable(
     resolvedBy: text().$type<Resolution>(),
     /** When the title rung last found nothing for it, so a daily sync does not ask IGDB again every day. */
     titleTriedAt: integer(),
+    /** When its store page was last read for a game IGDB has none of (ADR 006), and gave no game. */
+    storeTriedAt: integer(),
     decision: text().$type<Decision>().notNull().default('pending'),
     /** A played game's answer: how I own it. */
     format: text().$type<ItemFormat>(),

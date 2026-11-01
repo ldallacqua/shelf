@@ -250,15 +250,17 @@ test doubles on, "Sign in through Steam" comes straight back with the made-up ac
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used
 straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
 
-**A game IGDB does not have.** A moderator (`users.moderator`, set only by `pnpm account:moderator`)
+**A game IGDB does not have.** A sync reads one Steam lists for an account from its store, by itself
+(ADR 006, decision 13). For any other, a moderator (`users.moderator`, set only by `pnpm account:moderator`)
 pastes its Steam link in Add a game ([ADR 006](docs/adr/006-games-from-steam.md)). Only the app's
 number leaves the pasted text (`steamAppIdIn`): the address is never fetched. Everything else is read
 from Steam on the server, by `src/domain/steam/store-game.ts` and `steam.storeGame`, and stored as a
 `games` row with no `igdb_id`, a `steam_app_id`, and images whose id is their path on Steam's servers,
 which `imageUrl` reads like any other. Services that only a moderator may reach go through
 `forModerator`. A game IGDB has is never added this way: the link sends it to the search. A sync
-recognizes these games by their app, before IGDB's rungs (`recognize`). An image marked `mature` is
-drawn blurred (`screenshots.tsx`) and goes nowhere that could not blur it: filter it out of anything new
+recognizes these games by their app, before IGDB's rungs (`recognize`). A screenshot marked `mature` is
+drawn blurred (`screenshots.tsx`), a game for adults' art marked so stands dimmed behind its cover, and
+neither goes anywhere a page's rules don't reach: filter them out of anything new
 that reads a game's screenshots.
 
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a

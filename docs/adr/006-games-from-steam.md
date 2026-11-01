@@ -2,7 +2,8 @@
 
 - **Status:** accepted, 1 Nov 2026
 - **Date:** 1 Nov 2026
-- **Decides:** how a game IGDB does not have gets onto a shelf, who may do it, and what is kept of it
+- **Decides:** how a game IGDB does not have gets onto a shelf, who may do it, and what is kept of it.
+  Amended the same day by decision 13: a sync reads such a game for itself
 
 ## Context
 
@@ -76,11 +77,25 @@ nothing per game. Backloggd, which also reads IGDB, [has the same gap](https://b
     and says little of it), so a game just closed, or just off the wishlist, is synced by itself (spec 4.4).
 12. **Pasting a game's link again brings it up to date with its page,** all but its title, address and
     companies, for a moderator, and raises the version of every shelf that has it.
+13. **A sync reads a game from Steam by itself.** The owner, the same day, of the list of games a sync
+    could not match: "se o jogo ja veio da steam, ja tem id tudo. Da pra vc pegar os dados da steam e adicionar
+    o game você mesmo? [...] nem moderador nem usuário precisa fazer nada". What the moderator guarded against
+    is anyone putting anything in the catalog every shelf shares. Here Steam vouches that the account owns
+    the app, through a sign-in nobody can make up, and its store that the app is a game. So when IGDB's
+    rungs find nothing for an app, its store page is read, and it is stored as in decision 4 and placed as in
+    decision 11. One row for an app, however many lists have it: a later list takes that row and its title.
+    A moderator is still what adds a game **nobody's list vouches for**, as for a wishlist. An app with no
+    store page, or that is not a game, still waits for an answer, and its page is read again after a week.
+    **An adult game comes in private** (spec 11.1): nobody chose to show it, and the moment "Not mine" gave
+    to keep it off a public shelf is gone. The owner can turn that off game by game.
 
 ## Consequences
 
 - A game's data can age: nothing refreshes it by itself yet. Steam may also move an image, whose path carries
   a hash. Until then a moderator pastes the link again.
+- A game IGDB has under a name no rung takes (no looser matching, on purpose) now comes in from Steam rather
+  than asking. It stands apart from IGDB's record of it, so a copy on another console makes a second game. That
+  is the price of nobody being asked.
 - A game kept only by being on shelves: removed from the last one, its row goes, as an IGDB record's does,
   and with it the title a moderator gave it. Undo brings it back.
 - Rating, length, franchise and videos stay empty. Steam's reviews are not IGDB's rating and are not shown

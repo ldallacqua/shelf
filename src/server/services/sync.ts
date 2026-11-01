@@ -4,10 +4,12 @@ import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 
+import { EROTIC } from '@/domain/igdb/game'
 import { foldSearchHits } from '@/domain/igdb/search'
 import type { Refusal } from '@/domain/library/adding'
 import { proposeGrouping } from '@/domain/library/family'
 import { isFormat, type Format, type SyncSource } from '@/domain/library/values'
+import { isStoreGame, toSteamGame, wordsOf, type StoreGame } from '@/domain/steam/store-game'
 import {
   firstStatus,
   isOwnedFormat,
@@ -41,6 +43,7 @@ import {
   LibraryError,
   readLinkedMembers,
   readVersion,
+  storeFromSteam,
   type Placement,
 } from '@/server/library/store'
 import { spend, TooManyError } from '@/server/services/fair-use'
@@ -55,6 +58,7 @@ import {
   listedTitles,
   listItems,
   noteRead,
+  noteStoreTried,
   noteSynced,
   readItem,
   readLink,
@@ -99,6 +103,8 @@ type Adapter = {
   list: (account: SourceAccount) => Promise<Reported[] | undefined>
   /** Only these of what it lists for the account; one it does not list is left out. */
   some?: (externalId: string, storeIds: readonly string[]) => Promise<Reported[] | undefined>
+  /** The store's pages of these, for a game IGDB has none of; one it has none of is left out. */
+  pages?: (storeIds: readonly string[]) => Promise<Map<string, StoreGame>>
   /** The account's name there, for the page. */
   name?: (externalId: string) => Promise<string | undefined>
   /** What its store says each item is; one it could not ask about is left out. */
@@ -115,6 +121,8 @@ const TITLES_PER_STEP = 60
 const KINDS_PER_STEP = 2_000
 /** A title IGDB did not know is asked about again after this long: IGDB grows. */
 const TITLE_AGAIN_MS = 7 * 24 * 60 * 60 * 1000
+/** A store that did not answer is asked about those items again after this long, not at each step. */
+const STORE_DOWN_MS = 60 * 60 * 1000
 /** "Sync now" twice inside this reads the source once. */
 const READ_AGAIN_MS = 60 * 1000
 
@@ -127,6 +135,7 @@ export const createSync = (deps: SyncDeps) => {
     steam: {
       list: ({ externalId }) => deps.steam.ownedGames(externalId),
       some: (externalId, storeIds) => deps.steam.ownedGames(externalId, storeIds),
+      pages: (storeIds) => deps.steam.storeGames(storeIds),
       name: (id) => deps.steam.playerName(id),
       kinds: (items) => deps.steam.appKinds(items),
     },
@@ -139,7 +148,13 @@ export const createSync = (deps: SyncDeps) => {
     },
   }
   return (libraryId: string) =>
-    forLibrary(libraryId, { db: deps.db, api: deps.igdb, records, adapters })
+    forLibrary(libraryId, {
+      db: deps.db,
+      api: deps.igdb,
+      records,
+      adapters,
+      readArt: deps.readArt,
+    })
 }
 
 type LibraryDeps = {
@@ -147,12 +162,13 @@ type LibraryDeps = {
   api: IgdbApi
   records: Records
   adapters: Partial<Record<SyncSource, Adapter>>
+  readArt: RecordsDeps['readArt']
 }
 
 /** Asked before games are put on the shelf, with how many; throws to refuse. */
 export type Allowance = (games: number) => Promise<void>
 
-const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDeps) => {
+const forLibrary = (libraryId: string, { db, api, records, adapters, readArt }: LibraryDeps) => {
   const linkOf = async (source: SyncSource): Promise<Link> => {
     const link = await readLink(db, libraryId, source)
     if (!link) throw new LibraryError('not-found', `This shelf is not linked to ${source}`)
@@ -329,7 +345,13 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     )
     if (items.length === 0) return 0
     const held = await db
-      .select({ id: games.id, appId: games.steamAppId, platforms: games.platforms })
+      .select({
+        id: games.id,
+        appId: games.steamAppId,
+        platforms: games.platforms,
+        themes: games.themes,
+        adultsOnly: games.adultsOnly,
+      })
       .from(games)
       .where(isNotNull(games.steamAppId))
     const byApp = new Map(held.map((game) => [game.appId, game]))
@@ -359,6 +381,8 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
                 now,
               ),
               copies: [copy],
+              // Nobody chose to show it: a sync does not tell a public shelf what adult games I own.
+              ...(game.themes.includes(EROTIC) || game.adultsOnly ? { private: true } : {}),
             },
           }
       await addStoredFromSource(
@@ -378,6 +402,76 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
       added += 1
     }
     return added
+  }
+
+  /**
+   * The ladder's last rung (ADR 006): what IGDB's rungs found nothing for, read from the store that
+   * listed it. The owner, 1 Nov 2026: "se o jogo ja veio da steam, ja tem id tudo [...] nem moderador
+   * nem usuário precisa fazer nada". The source vouches that the account owns the app, and the store
+   * that it is a game, so nobody has to; one the store shows no game for still waits for me, and is
+   * read again after a while. One row for an app, however many shelves list it: `recognize` then
+   * places it as any other. Returns how many are left to read. A store that is down costs one wait
+   * a sync, not one a step: they are all read again in a while.
+   */
+  const fromStore = async (
+    source: SyncSource,
+    now: number,
+    allow?: Allowance,
+    only?: ReadonlySet<string>,
+  ): Promise<number> => {
+    const pages = adapters[source]?.pages
+    if (!pages) return 0
+    const due = (await unmatched(db, libraryId, source, 10_000)).filter(
+      (item) =>
+        (!only || only.has(item.id)) &&
+        item.kind !== 'part' &&
+        item.titleTriedAt !== null &&
+        (item.storeTriedAt === null || now - item.storeTriedAt > TITLE_AGAIN_MS),
+    )
+    const batch = due.slice(0, ADD_PER_STEP)
+    if (batch.length === 0) return 0
+    const found = await pages(batch.map((item) => item.storeId)).catch((error: unknown) => {
+      if (error instanceof SourceError) return undefined
+      throw error
+    })
+    if (!found) {
+      await noteStoreTried(
+        db,
+        due.map((item) => item.id),
+        now - TITLE_AGAIN_MS + STORE_DOWN_MS,
+      )
+      return 0
+    }
+    const wanted = batch.flatMap((item) => {
+      const page = found.get(item.storeId)
+      if (!page || !isStoreGame(page)) return []
+      const data = toSteamGame(page)
+      const placed = copyPlatform(source, item.platformId, data.platforms) !== undefined
+      return data.title && placed ? [data] : []
+    })
+    if (wanted.length > 0) await allow?.(wanted.length)
+    const all = await records.allPlatforms()
+    await Promise.all(
+      wanted.map(async (data) => {
+        const art = data.cover ? await readArt(data.cover.id) : undefined
+        await storeFromSteam(
+          db,
+          {
+            data,
+            ...(art ? { art } : {}),
+            names: wordsOf(data),
+            platforms: data.platforms.flatMap((id) => all.get(id) ?? []),
+          },
+          now,
+        )
+      }),
+    )
+    await noteStoreTried(
+      db,
+      batch.map((item) => item.id),
+      now,
+    )
+    return due.length - batch.length
   }
 
   /** Whether the entry already has a copy on that platform, in that format. */
@@ -502,10 +596,12 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     }
     const recognized = await recognize(source, now)
     const titlesLeft = await resolve(source, fresh, now)
+    const pagesLeft = await fromStore(source, now, allow)
+    const fromSteam = await recognize(source, now)
     const { added: fromIgdb, remaining } = await addSome(source, ADD_PER_STEP, now, allow)
-    const added = recognized + fromIgdb
+    const added = recognized + fromSteam + fromIgdb
     await feedCopies(db, libraryId, source, now)
-    const left = titlesLeft + remaining
+    const left = titlesLeft + pagesLeft + remaining
     if (left === 0 && link.problem === null && link.readAt !== null) {
       await noteSynced(db, libraryId, source, now)
     }
@@ -544,6 +640,8 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     const only = new Set(items.map((item) => item.id))
     await recognize(source, now, only)
     await resolve(source, true, now, only)
+    await fromStore(source, now, allow, only)
+    await recognize(source, now, only)
     await addSome(source, ADD_PER_STEP, now, allow, only)
     await feedCopies(db, libraryId, source, now)
   }

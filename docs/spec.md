@@ -743,6 +743,10 @@ minha wishlist [...] Mas o igdb removeu esse jogo por causa dos termos. Então d
 pessoas adicionarem ao nosso banco de dados. Claro que a gente não quer que todo mundo possa fazer
 isso." And: "eu não queria ter que colocar todas as informações do jogo na mão."
 
+- **A game a sync finds on Steam** that IGDB has nothing for needs nobody: it is read from Steam and
+  goes on the shelf by itself (4.4). The owner, 1 Nov 2026: "nem moderador nem usuário precisa fazer
+  nada." **An adult one comes in private** (11.1), for me to show if I want. A game nobody's list has,
+  as for a wishlist, is a moderator's:
 - A **moderator** pastes the game's Steam link in the field of 4.1. It is read from Steam and shown
   as one result, "from Steam", and chosen as any other: status, platforms, the optional rest. The
   form also asks the **title on every shelf**, Steam's to begin with, because Steam's own name is
@@ -810,8 +814,10 @@ owners do not allow, beyond Valve's own sign-in button.
    - **Steam's hours** go on the copy, in Steam's own row. A game shows the larger of what
      Shelf for Windows counted and Steam's hours, less any time I said it sat idle (4.7), so
      nothing is counted twice; the editor shows Steam's hours beside the copy.
-3. **What it could not match** waits under "2 games need you": **Find it** (IGDB searched by
-   the title, which I can change), **Not a game**, **Not mine**. Every answer is kept.
+3. **What IGDB has nothing for** is read from Steam's store and put on the shelf as a game of
+   its own (4.2a), once a game is all Steam says it is. **What is left** (no store page, not a
+   game) waits under "2 games need you": **Find it** (IGDB searched by the title, which I can
+   change), **Not a game**, **Not mine**. Every answer is kept.
 4. **Afterwards:** **Sync now**, and once a day by itself while **Sync once a day** is on. A
    game I take off my shelf stays off. A game Steam stops listing stays on the shelf, under
    "No longer on Steam", for me to decide. **Disconnect** forgets what Steam listed and my
