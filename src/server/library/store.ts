@@ -231,6 +231,8 @@ export type NewEntry = {
   status: Status
   /** The platforms I want it on, kept only on the wishlist (spec 7.5). */
   wanted?: readonly number[]
+  /** Only its own account sees it (spec 11.1). */
+  private?: boolean
   rating?: number
   notes?: string
   notesPublic?: boolean
@@ -402,6 +404,7 @@ const insertEntry = async (
     id,
     userId: libraryId,
     status: input.status,
+    isPrivate: input.private ?? false,
     rating: input.rating ?? null,
     notes: input.notes?.trim() || null,
     notesPublic: input.notesPublic ?? false,
@@ -625,7 +628,21 @@ const storeSteamRecord = async (
   return id
 }
 
-/** The game read from Steam this app is, if a moderator has added it. */
+/**
+ * Stores a game read from Steam for a sync to place (ADR 006). Another sync storing it just now is
+ * no trouble: there is one row for an app, and that is the one.
+ */
+export const storeFromSteam = async (db: Db, record: SteamRecordToStore, now = Date.now()) => {
+  try {
+    await withConflict('That app is stored already', () =>
+      db.transaction((tx) => storeSteamRecord(tx, record, now)),
+    )
+  } catch (error) {
+    if (!(error instanceof LibraryError && error.code === 'conflict')) throw error
+  }
+}
+
+/** The game read from Steam this app is, if it was added. */
 export const findSteamGame = async (
   db: Executor,
   appId: string,

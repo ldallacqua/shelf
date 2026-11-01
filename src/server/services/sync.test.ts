@@ -479,8 +479,9 @@ describe('what Steam’s store says each game is', () => {
     const me = await linked()
     const step = await syncAll(me)
     expect(step.link.counts['on-shelf']).toBe(BY_STORE_ID + 1)
-    // Once for the sync, on the step that read the list: not again at every step after it.
-    expect(asked).toBe(1)
+    // Once for what each game is, on the step that read the list, and once for the pages of those
+    // IGDB has none of: not again at every step after them.
+    expect(asked).toBe(2)
     expect(await itemNamed(me, 'Wallpaper Engine')).toMatchObject({
       kind: null,
       decision: 'pending',

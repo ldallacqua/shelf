@@ -34,10 +34,10 @@ export const steamAppIdIn = (text: string): string | undefined => {
 
 export const steamAppId = z.string().regex(/^[1-9]\d{0,9}$/)
 
-/** Everything a game's page takes, asked of the store in the language and country given. */
-export const storeGameQuestion = (appId: string, country: string): string =>
+/** Everything these games' pages take, asked of the store in the language and country given. */
+export const storeGameQuestion = (appIds: readonly string[], country: string): string =>
   JSON.stringify({
-    ids: [{ appid: Number(appId) }],
+    ids: appIds.map((appId) => ({ appid: Number(appId) })),
     context: { language: 'english', country_code: country },
     data_request: {
       include_assets: true,

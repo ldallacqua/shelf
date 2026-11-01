@@ -227,6 +227,13 @@ export const itemsOfApps = (
     .from(sourceItems)
     .where(and(ofSource(userId, source), inArray(sourceItems.storeId, [...storeIds])))
 
+/** Items whose store page was read just now for a game IGDB has none of. */
+export const noteStoreTried = (db: Db, ids: readonly string[], now = Date.now()) =>
+  db
+    .update(sourceItems)
+    .set({ storeTriedAt: now })
+    .where(inArray(sourceItems.id, [...ids]))
+
 /** Every item's store id and title: where a mode the store names no game for looks for it. */
 export const listedTitles = (db: Executor, userId: string, source: SyncSource) =>
   db

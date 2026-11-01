@@ -270,24 +270,36 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
   }
 
   /**
-   * A game's page on the store, in the first of these countries that shows
-   * it: the store keeps some games from some countries. Nothing when none does.
+   * Games' pages on the store, a hundred to a request, each in the first of
+   * these countries that shows it: the store keeps some games from some
+   * countries. One no country shows is left out.
    */
-  const storeGame = async (appId: string): Promise<StoreGame | undefined> => {
-    for (const country of STORE_COUNTRIES) {
-      const parsed = storeGameSchema.safeParse(
-        await ask('/IStoreBrowseService/GetItems/v1/', {
-          input_json: storeGameQuestion(appId, country),
-        }),
-      )
-      if (!parsed.success) {
-        throw new SourceError('unreachable', 'Steam described a game in a new shape.')
+  const storeGames = async (appIds: readonly string[]): Promise<Map<string, StoreGame>> => {
+    const found = new Map<string, StoreGame>()
+    for (let at = 0; at < appIds.length; at += APPS_PER_REQUEST) {
+      let left = appIds.slice(at, at + APPS_PER_REQUEST)
+      for (const country of STORE_COUNTRIES) {
+        if (left.length === 0) break
+        const parsed = storeGameSchema.safeParse(
+          await ask('/IStoreBrowseService/GetItems/v1/', {
+            input_json: storeGameQuestion(left, country),
+          }),
+        )
+        if (!parsed.success) {
+          throw new SourceError('unreachable', 'Steam described a game in a new shape.')
+        }
+        for (const item of parsed.data.response.store_items) {
+          if (onTheStore(item)) found.set(String(item.id), item)
+        }
+        left = left.filter((id) => !found.has(id))
       }
-      const item = parsed.data.response.store_items[0]
-      if (onTheStore(item)) return item
     }
-    return undefined
+    return found
   }
+
+  /** One game's page on the store. Nothing when no country shows it. */
+  const storeGame = async (appId: string): Promise<StoreGame | undefined> =>
+    (await storeGames([appId])).get(appId)
 
   /**
    * The account a "Sign in through Steam" answer is for, once Steam has said
@@ -320,6 +332,7 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
     playerName,
     appKinds,
     storeGame,
+    storeGames,
     verifySignIn,
     gameAchievements,
     achievementTotals,

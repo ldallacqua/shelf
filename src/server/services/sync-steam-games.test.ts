@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm'
+import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { toSteamGame, wordsOf, type StoreGame } from '@/domain/steam/store-game'
@@ -13,9 +14,9 @@ import { MOCK_STEAM } from '@/server/mocks/owner'
 import { createSteamHandlers, newSteamMockState } from '@/server/mocks/steam'
 import { loadFixtures } from '@/server/seed/fixtures'
 import { shelvedApps } from '@/server/sync/achievements'
-import { saveLink } from '@/server/sync/memory'
+import { recordReport, saveLink } from '@/server/sync/memory'
 import { createNintendo } from '@/server/sync/nintendo'
-import { createSteam } from '@/server/sync/steam'
+import { createSteam, STEAM_API } from '@/server/sync/steam'
 import { createTestAccount, createTestDatabase } from '@/test/database'
 import { network } from '@/test/network'
 
@@ -109,6 +110,12 @@ const syncing = (library: string) =>
     steam: createSteam({ key: () => MOCK_STEAM.key }),
     nintendo: createNintendo(),
   })(library)
+
+/** The source's list remembered, and nothing done about it: for an answer given first. */
+const saveItemsOnly = async (library: string) => {
+  const listed = await createSteam({ key: () => MOCK_STEAM.key }).ownedGames(MOCK_STEAM.steamId)
+  await recordReport(db, library, 'steam', 'owned', listed!, NOW)
+}
 
 const itemOf = async (library: string, app = APP) => {
   const [item] = await db
@@ -289,5 +296,153 @@ describe('a game synced by itself (the owner, 1 Nov 2026)', () => {
     const { entryId } = await inCatalog(mine, made(), PLAYED)
     const play = await readOwnerPlay(db, mine)
     expect(play.find((each) => each.entryId === entryId)?.steam).toEqual([PLAYED])
+  })
+})
+
+describe('a game IGDB does not have, that Steam lists for me (the owner, 1 Nov 2026)', () => {
+  /** In `fixtures/steam/store-items.json`, on no IGDB. */
+  const GAME = 2000001
+  const ADULT = 2000002
+  const SOUNDTRACK = 2000003
+  const NO_PAGE = 2000009
+
+  const owning = (...apps: { appid: number; name: string; playtime_forever?: number }[]) =>
+    network.use(
+      http.get(`${STEAM_API}/IPlayerService/GetOwnedGames/v1/`, () =>
+        HttpResponse.json({
+          response: {
+            game_count: apps.length,
+            games: apps.map((app) => ({ playtime_forever: 0, ...app })),
+          },
+        }),
+      ),
+    )
+
+  const gameOfApp = async (app: number) =>
+    (
+      await db
+        .select()
+        .from(games)
+        .where(eq(games.steamAppId, String(app)))
+    )[0]
+
+  const entryOfApp = async (library: string, app: number) => {
+    const { copyId } = await itemOf(library, String(app))
+    const [copy] = await db.select().from(copies).where(eq(copies.id, copyId!))
+    return (await db.select().from(entries).where(eq(entries.id, copy!.entryId)))[0]!
+  }
+
+  it('reads it from Steam, and puts it on my shelf with my hours, with nobody asked', async () => {
+    owning({ appid: GAME, name: 'A Made-up Steam Game', playtime_forever: 120 })
+    await syncAll(mine)
+    const game = await gameOfApp(GAME)
+    expect(game).toMatchObject({ title: 'A Made-up Steam Game', igdbId: null })
+    expect(await itemOf(mine, String(GAME))).toMatchObject({
+      decision: 'copy',
+      resolvedBy: 'store_id',
+      igdbId: null,
+    })
+    const entry = await entryOfApp(mine, GAME)
+    expect(entry).toMatchObject({ status: 'unsorted', isPrivate: false })
+    const hours = await db.select().from(playTime).where(eq(playTime.entryId, entry.id))
+    expect(hours[0]?.minutes).toBe(120)
+  })
+
+  it('has one row for an app, whoever else’s list has it', async () => {
+    owning({ appid: GAME, name: 'A Made-up Steam Game' })
+    await syncAll(mine)
+    const first = await gameOfApp(GAME)
+    await syncAll(theirs)
+    expect(
+      await db
+        .select()
+        .from(games)
+        .where(eq(games.steamAppId, String(GAME))),
+    ).toEqual([expect.objectContaining({ id: first!.id })])
+    const [version] = await db
+      .select()
+      .from(entryVersions)
+      .where(and(eq(entryVersions.userId, theirs), eq(entryVersions.gameId, first!.id)))
+    expect(version).toBeDefined()
+    expect((await itemOf(theirs, String(GAME))).copyId).not.toBeNull()
+  })
+
+  it('takes the title a moderator gave a game, for a later list that has it', async () => {
+    await inCatalog(theirs, made(), String(GAME))
+    owning({ appid: GAME, name: 'A Made-up Steam Game' })
+    await syncAll(mine)
+    expect((await gameOfApp(GAME))?.title).toBe('As a Moderator Wrote It')
+    expect((await itemOf(mine, String(GAME))).copyId).not.toBeNull()
+  })
+
+  it('keeps an adult game off my public shelf until I say', async () => {
+    owning({ appid: ADULT, name: 'A Made-up Game for Adults' })
+    await syncAll(mine)
+    expect(await entryOfApp(mine, ADULT)).toMatchObject({ status: 'unsorted', isPrivate: true })
+  })
+
+  it('leaves what is no game, or has no page, for me, and asks of a page again only after a week', async () => {
+    owning(
+      { appid: SOUNDTRACK, name: 'A Made-up Soundtrack' },
+      { appid: NO_PAGE, name: 'A Game Taken Off the Store' },
+    )
+    await syncAll(mine)
+    for (const app of [SOUNDTRACK, NO_PAGE]) {
+      expect(await gameOfApp(app)).toBeUndefined()
+      expect(await itemOf(mine, String(app))).toMatchObject({
+        copyId: null,
+        decision: expect.stringMatching(/pending|not_a_game/),
+      })
+    }
+    expect((await itemOf(mine, String(NO_PAGE))).storeTriedAt).toBe(NOW)
+    const sync = syncing(mine)
+    await sync.step('steam', {}, NOW + 86_400_000)
+    expect((await itemOf(mine, String(NO_PAGE))).storeTriedAt).toBe(NOW)
+    await sync.step('steam', {}, NOW + 8 * 86_400_000)
+    expect((await itemOf(mine, String(NO_PAGE))).storeTriedAt).toBe(NOW + 8 * 86_400_000)
+  })
+
+  it('never adds what I said is not mine', async () => {
+    owning({ appid: GAME, name: 'A Made-up Steam Game' })
+    await saveItemsOnly(mine)
+    await db
+      .update(sourceItems)
+      .set({ decision: 'not_mine' })
+      .where(and(eq(sourceItems.userId, mine), eq(sourceItems.storeId, String(GAME))))
+    await syncAll(mine)
+    expect(await gameOfApp(GAME)).toBeUndefined()
+  })
+
+  it('tries again later when the store is down, and the sync goes on', async () => {
+    owning({ appid: GAME, name: 'A Made-up Steam Game' })
+    network.use(
+      http.get(
+        `${STEAM_API}/IStoreBrowseService/GetItems/v1/`,
+        () => new HttpResponse(null, { status: 503 }),
+      ),
+    )
+    await syncAll(mine)
+    expect(await gameOfApp(GAME)).toBeUndefined()
+    expect((await itemOf(mine, String(GAME))).copyId).toBeNull()
+    network.resetHandlers()
+    network.use(...createHandlers(loadFixtures()), ...createSteamHandlers(newSteamMockState()))
+    owning({ appid: GAME, name: 'A Made-up Steam Game' })
+    await syncing(mine).step('steam', {}, NOW + 2 * 60 * 60 * 1000)
+    expect((await itemOf(mine, String(GAME))).copyId).not.toBeNull()
+  })
+
+  it('stands by a game IGDB has, by its store id, over the store', async () => {
+    await syncAll(mine)
+    const [game] = await db
+      .select()
+      .from(games)
+      .where(eq(games.igdbId, (await itemOf(mine, PLAYED)).igdbId!))
+    expect(game?.steamAppId).toBeNull()
+  })
+
+  it('gives a game synced by itself the same way', async () => {
+    owning({ appid: GAME, name: 'A Made-up Steam Game', playtime_forever: 5 })
+    await syncing(mine).games('steam', [String(GAME)], undefined, NOW)
+    expect((await itemOf(mine, String(GAME))).copyId).not.toBeNull()
   })
 })

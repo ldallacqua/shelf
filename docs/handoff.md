@@ -10,6 +10,9 @@ A moderator adds a game IGDB does not have from its Steam link: [ADR 006](adr/00
 Built: adding, a sync recognizing one, and screenshots for adults, blurred. Next: anyone finding these games
 in the search. Then: refreshing them by themselves, and checking Play and the hours on them.
 
+A sync also reads from Steam what IGDB has nothing for, with nobody asked; an adult one comes in private
+(ADR 006, decision 13). A moderator is for games nobody's list has.
+
 Any game on Steam is now also synced by itself, when it closes in the desktop app or leaves the wishlist
 (spec 4.4, step 6). A game not on the shelf still waits for a sync, and with the window closed to the tray the
 app has no page to send through, so it waits for the window.
