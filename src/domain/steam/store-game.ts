@@ -8,8 +8,8 @@ import { isSteamImage } from '@/domain/igdb/images'
 /**
  * A game IGDB does not have, read from Steam's store (ADR 006): the only
  * place that knows the store's fields for a game's page. `IStoreBrowseService/GetItems`
- * answers everything in one request, and tells screenshots that are safe for
- * anyone from those it keeps for adults.
+ * answers everything in one request, and tells screenshots for anyone from
+ * those it keeps for adults.
  */
 
 /** What a moderator pastes: a store page, its community hub, or Steam's short address. */
@@ -91,6 +91,7 @@ export const storeGameSchema = z.object({
           screenshots: z
             .object({
               all_ages_screenshots: z.array(z.object({ filename: z.string() })).default([]),
+              mature_content_screenshots: z.array(z.object({ filename: z.string() })).default([]),
             })
             .optional(),
         }),
@@ -301,7 +302,13 @@ export type SteamGameData = Omit<
   publisherNames: string[]
 }
 
-const MAX_SCREENSHOTS = 12
+const MAX_SCREENSHOTS = 24
+
+const shotsOf = (shots: readonly { filename: string }[] = [], mature?: true): GameImage[] =>
+  shots
+    .map((shot) => shot.filename.split('?')[0]!)
+    .filter(isSteamImage)
+    .map((id) => ({ id, width: 1920, height: 1080, ...(mature ? { mature } : {}) }))
 
 /** Turns a store page into Shelf's own shape. `title` is the moderator's, over Steam's. */
 export const toSteamGame = (item: StoreGame, title?: string): SteamGameData => {
@@ -342,13 +349,12 @@ export const toSteamGame = (item: StoreGame, title?: string): SteamGameData => {
     developerNames: [...new Set(developerNames)],
     publisherNames: [...new Set(publisherNames)],
     companies: [],
-    // Only what Steam shows to anyone. A game for adults keeps its cover, which Valve's rules
-    // hold to PG-13 for every game, and nothing else: they say nothing of its other art.
-    screenshots: (item.screenshots?.all_ages_screenshots ?? [])
-      .map((shot) => shot.filename.split('?')[0]!)
-      .filter(isSteamImage)
-      .slice(0, MAX_SCREENSHOTS)
-      .map((id) => ({ id, width: 1920, height: 1080 })),
+    // What Steam shows to anyone first; then what it keeps for adults, marked, to be drawn blurred.
+    // A game for adults has no backdrop: Valve's rules hold only its cover to PG-13.
+    screenshots: [
+      ...shotsOf(item.screenshots?.all_ages_screenshots),
+      ...shotsOf(item.screenshots?.mature_content_screenshots, true),
+    ].slice(0, MAX_SCREENSHOTS),
     artworks:
       hero && !adult && isSteamImage(hero)
         ? [{ id: hero, width: 1920, height: 620, type: 'key' }]

@@ -109,7 +109,9 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // the header's buttons on every page and on the page's own icon buttons: the owner asked for
   // the component library's tips in place of the browser's. About 3.3 KB of it is Radix's own
   // tooltip, which no smaller way of loading it saves without losing focus on the button.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 224 },
+  // Games from Steam (1 Nov 2026): measured 224.1 KB, from 223.9. The eye and the keeping of
+  // screenshots for adults out of the viewer, which the page draws from the server (ADR 006).
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 224.5 },
 ]
 
 /**

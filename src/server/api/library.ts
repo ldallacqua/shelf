@@ -299,7 +299,10 @@ export const answerGame = (library: Library, page: GamePage): z.infer<typeof api
     igdbUrl: facts.igdbUrl ?? null,
     notes: facts.notes ?? null,
     backdrop: facts.backdrop ? imageUrl(facts.backdrop.id, 'screenshot_huge') : null,
-    screenshots: facts.screenshots.map((shot) => imageUrl(shot.id, 'screenshot_huge')),
+    // A screenshot Steam keeps for adults is drawn blurred on a page; here nothing could blur it.
+    screenshots: facts.screenshots
+      .filter((shot) => !shot.mature)
+      .map((shot) => imageUrl(shot.id, 'screenshot_huge')),
     videos: (facts.videos ?? []).map((video) => ({
       url: `https://www.youtube.com/watch?v=${video.id}`,
       ...(video.name ? { name: video.name } : {}),

@@ -28,7 +28,10 @@ const item = (over: Partial<StoreGame> = {}): StoreGame => ({
     library_hero: 'def456/library_hero.jpg',
   },
   platforms: { windows: true },
-  screenshots: { all_ages_screenshots: [{ filename: 'steam/apps/2000001/ss_ab12.jpg?t=1' }] },
+  screenshots: {
+    all_ages_screenshots: [{ filename: 'steam/apps/2000001/ss_ab12.jpg?t=1' }],
+    mature_content_screenshots: [],
+  },
   ...over,
 })
 
@@ -168,16 +171,21 @@ describe('a game for adults (spec 3.13)', () => {
     ])
   })
 
-  it('never takes screenshots Steam keeps for adults, on any game', () => {
-    const answer = {
-      ...item(),
-      screenshots: { all_ages_screenshots: [] },
-      // The store's field for them, which `storeGameSchema` does not read.
-      mature_content_screenshots: [{ filename: 'steam/apps/2000001/ss_cd34.jpg' }],
-    } as StoreGame
-    expect(toSteamGame(answer).screenshots).toEqual([])
-    expect(toSteamGame(item()).screenshots.map((shot) => shot.id)).toEqual([
-      'steam/apps/2000001/ss_ab12.jpg',
+  it('marks the screenshots Steam keeps for adults, after those for anyone', () => {
+    const data = toSteamGame(
+      item({
+        screenshots: {
+          all_ages_screenshots: [{ filename: 'steam/apps/2000001/ss_ab12.jpg?t=1' }],
+          mature_content_screenshots: [
+            { filename: 'steam/apps/2000001/ss_cd34.jpg?t=1' },
+            { filename: '../not-a-store-file.jpg' },
+          ],
+        },
+      }),
+    )
+    expect(data.screenshots).toEqual([
+      { id: 'steam/apps/2000001/ss_ab12.jpg', width: 1920, height: 1080 },
+      { id: 'steam/apps/2000001/ss_cd34.jpg', width: 1920, height: 1080, mature: true },
     ])
   })
 })

@@ -8,7 +8,16 @@ import { dayOf, type Day, type Format, type Kind } from '@/domain/library/values
  * `GameData`.
  */
 
-export type GameImage = { id: string; width: number; height: number }
+export type GameImage = {
+  id: string
+  width: number
+  height: number
+  /**
+   * Steam keeps it for adults (ADR 006). It is drawn blurred until pressed, and never leaves
+   * through a public answer, a link's preview or a backdrop.
+   */
+  mature?: true
+}
 
 export type GameArtwork = GameImage & {
   /** `key` is key art without a logo: the best backdrop. */

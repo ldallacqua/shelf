@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { foldSearchHits } from '@/domain/igdb/search'
@@ -33,6 +33,7 @@ import type { IgdbApi } from '@/server/igdb/api'
 import { readCoverArt } from '@/server/igdb/cover-art'
 import {
   addFromSource,
+  addStoredFromSource,
   feedCopies,
   LibraryError,
   readLinkedMembers,
@@ -292,6 +293,71 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     return left.filter(due).length
   }
 
+  /**
+   * The ladder's first look, at what no rung of IGDB's can find: a game in the catalog because a
+   * moderator read it from Steam (ADR 006), recognized by its app. On my shelf it gets the copy
+   * and keeps everything I set, a wishlist status too, as a game from IGDB does; if not, it starts
+   * as any game a sync adds. An item I answered is left as I answered it, which is `unmatched`'s
+   * own rule. Before the other rungs, so a title can't take it for another game.
+   */
+  const recognize = async (source: SyncSource, now: number): Promise<number> => {
+    const facts = SOURCES[source]
+    if (facts.store !== 'steam' || !facts.format) return 0
+    const format = facts.format
+    const items = await unmatched(db, libraryId, source, 10_000)
+    if (items.length === 0) return 0
+    const held = await db
+      .select({ id: games.id, appId: games.steamAppId, platforms: games.platforms })
+      .from(games)
+      .where(isNotNull(games.steamAppId))
+    const byApp = new Map(held.map((game) => [game.appId, game]))
+    let added = 0
+    for (const item of items) {
+      const game = byApp.get(item.storeId)
+      if (!game) continue
+      const platformId = copyPlatform(source, item.platformId, game.platforms)
+      if (platformId === undefined) continue
+      const [mine] = await db
+        .select({ entryId: entryVersions.entryId })
+        .from(entryVersions)
+        .where(and(eq(entryVersions.gameId, game.id), eq(entryVersions.userId, libraryId)))
+        .limit(1)
+      const copy = { platformId, format }
+      const placement: Placement = mine
+        ? {
+            kind: 'join',
+            entryId: mine.entryId,
+            copies: (await hasCopy(mine.entryId, platformId, format)) ? [] : [copy],
+          }
+        : {
+            kind: 'entry',
+            entry: {
+              status: firstStatus(
+                item.lastPlayedAt ? { lastPlayedAt: item.lastPlayedAt } : {},
+                now,
+              ),
+              copies: [copy],
+            },
+          }
+      await addStoredFromSource(
+        db,
+        libraryId,
+        game.id,
+        placement,
+        {
+          source,
+          itemIds: [item.id],
+          platformId,
+          format,
+          items: { decision: 'copy', resolvedBy: 'store_id' },
+        },
+        now,
+      )
+      added += 1
+    }
+    return added
+  }
+
   /** Whether the entry already has a copy on that platform, in that format. */
   const hasCopy = async (entryId: string, platformId: number, format: string) =>
     (
@@ -412,8 +478,10 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
       // down then costs one wait a sync, not one a step.
       await classify(source, now)
     }
+    const recognized = await recognize(source, now)
     const titlesLeft = await resolve(source, fresh, now)
-    const { added, remaining } = await addSome(source, ADD_PER_STEP, now, allow)
+    const { added: fromIgdb, remaining } = await addSome(source, ADD_PER_STEP, now, allow)
+    const added = recognized + fromIgdb
     await feedCopies(db, libraryId, source, now)
     const left = titlesLeft + remaining
     if (left === 0 && link.problem === null && link.readAt !== null) {

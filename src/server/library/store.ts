@@ -5,7 +5,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
 
 import type { Palette } from '@/domain/color/palette'
-import type { Company, GameData, LineageStep } from '@/domain/igdb/game'
+import type { Company, GameData, GameImage, LineageStep } from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
 import type { SteamGameData } from '@/domain/steam/store-game'
 import type { Added } from '@/domain/library/adding'
@@ -629,14 +629,67 @@ const storeSteamRecord = async (
 export const findSteamGame = async (
   db: Executor,
   appId: string,
-): Promise<{ id: string; title: string } | undefined> => {
+): Promise<{ id: string; title: string; cover: GameImage | null } | undefined> => {
   const [row] = await db
-    .select({ id: games.id, title: games.title })
+    .select({ id: games.id, title: games.title, cover: games.cover })
     .from(games)
     .where(eq(games.steamAppId, appId))
     .limit(1)
   return row
 }
+
+/**
+ * Brings a game from Steam up to date with its page, all but the title and address a moderator
+ * gave it and the companies. Every shelf that has it is told, by a new version. The libraries told;
+ * none when nothing had changed.
+ */
+export const refreshSteamGame = (
+  db: Db,
+  { data, art, names, platforms: on }: SteamRecordToStore,
+  now = Date.now(),
+): Promise<string[]> =>
+  db.transaction(async (tx) => {
+    const [held] = await tx.select().from(games).where(eq(games.steamAppId, data.steamAppId))
+    if (!held) return []
+    const facts = {
+      releasedOn: data.releasedOn ?? null,
+      year: data.year ?? null,
+      cover: data.cover ?? null,
+      summary: data.summary ?? null,
+      genres: data.genres,
+      themes: data.themes,
+      modes: data.modes,
+      perspectives: data.perspectives,
+      platforms: data.platforms,
+      screenshots: data.screenshots,
+      artworks: data.artworks,
+      releases: data.releases,
+      adultsOnly: data.adultsOnly,
+    }
+    const before = Object.fromEntries(
+      Object.keys(facts).map((key) => [key, held[key as keyof typeof facts]]),
+    )
+    const changed = JSON.stringify(before) !== JSON.stringify(facts)
+    await tx.update(games).set({ checkedAt: now }).where(eq(games.id, held.id))
+    if (!changed) return []
+    await savePlatforms(tx, on)
+    for (const { kind, items } of names) await saveVocab(tx, kind, items)
+    await tx
+      .update(games)
+      .set({
+        ...facts,
+        fetchedAt: now,
+        ...(art ? { colors: art.colors, thumbhash: art.thumbhash } : {}),
+      })
+      .where(eq(games.id, held.id))
+    const holders = await tx
+      .selectDistinct({ userId: entryVersions.userId })
+      .from(entryVersions)
+      .where(eq(entryVersions.gameId, held.id))
+    const libraries = holders.flatMap((row) => (row.userId ? [row.userId] : []))
+    for (const library of libraries) await bumpVersion(tx, library)
+    return libraries
+  })
 
 /** Stores a game read from Steam and adds it to the library, in one transaction (ADR 006). */
 export const addFromSteam = (
@@ -746,6 +799,8 @@ export type FromSource = {
   /** Where its copy is: the copy is made unless the entry has one there already. */
   platformId: number
   format: Format
+  /** What else its items now say: how a game from the catalog was recognized. */
+  items?: { decision: 'copy'; resolvedBy: 'store_id' }
 }
 
 /**
@@ -801,11 +856,49 @@ export const addFromSource = (
   placement: Placement,
   feed: FromSource,
   now = Date.now(),
+): Promise<Added> =>
+  placeAndFeed(
+    db,
+    libraryId,
+    (tx) => placeRecord(tx, libraryId, record, placement, now),
+    placement,
+    feed,
+    now,
+  )
+
+/**
+ * The same for a game already in the catalog, read from Steam (ADR 006): the sync recognized it
+ * by its app, so nothing is asked of IGDB and nothing about the game changes.
+ */
+export const addStoredFromSource = (
+  db: Db,
+  libraryId: string,
+  gameId: string,
+  placement: Placement,
+  feed: FromSource,
+  now = Date.now(),
+): Promise<Added> =>
+  placeAndFeed(
+    db,
+    libraryId,
+    (tx) => placeGame(tx, libraryId, gameId, placement, now),
+    placement,
+    feed,
+    now,
+  )
+
+const placeAndFeed = (
+  db: Db,
+  libraryId: string,
+  place: (tx: Executor) => Promise<Added>,
+  placement: Placement,
+  feed: FromSource,
+  now: number,
 ): Promise<Added> => {
   if (placement.kind === 'entry') checkMine(placement.entry)
   return withConflict('That game is already in the library', () =>
     db.transaction(async (tx) => {
-      const added = await placeRecord(tx, libraryId, record, placement, now)
+      const added = await place(tx)
       const [copy] = await tx
         .select({ id: copies.id })
         .from(copies)
@@ -820,7 +913,7 @@ export const addFromSource = (
       if (!copy) throw invalid('A synced game needs a copy on its platform')
       await tx
         .update(sourceItems)
-        .set({ copyId: copy.id })
+        .set({ copyId: copy.id, ...feed.items })
         .where(and(eq(sourceItems.userId, libraryId), inArray(sourceItems.id, [...feed.itemIds])))
       await writeSourceMinutes(
         tx,
