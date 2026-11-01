@@ -14,6 +14,8 @@ const COMMANDS = new Set(['minimize', 'toggle_maximize', 'close'])
 export const startWindowFrame = (): (() => void) => {
   const header = document.querySelector<HTMLElement>('header[data-title-bar]')
   const stops = [followMaximized(), pageScrollbar()]
+  // Here because only the app fetches this module, so a visitor's page pays nothing for it.
+  void import('./send-played').then(({ startSendingPlayed }) => stops.push(startSendingPlayed()))
   if (header) {
     // Tauri's own script reads this: "deep" lets any part of the header that is not a link, a
     // button or a field move the window, and a double click maximize it.

@@ -313,7 +313,8 @@ try {
   rmSync(stubborn)
 
   console.log('\nCounting what is played')
-  // The stand-in takes the focus for a few seconds here, and touches a key nothing uses.
+  // The stand-in takes the focus for a few seconds here, and touches a key nothing uses. The page
+  // may send what was counted the moment it has ended, so it is read on its way to Shelf.
   const unsent = () =>
     shelf.evaluate(async () => {
       const tauri = (
@@ -321,8 +322,16 @@ try {
           __TAURI__: { core: { invoke: (command: string) => Promise<unknown> } }
         }
       ).__TAURI__
-      return (await tauri.core.invoke('play_sessions')) as { game: object; seconds: number }[]
+      return (await tauri.core.invoke('play_sessions')) as unknown[]
     })
+  type Sent = { sessions: { id: string; game: object; seconds: number }[] }
+  let sent: Sent | undefined
+  let kept: string[] = []
+  shelf.on('response', (response) => {
+    if (!response.url().endsWith('/api/v1/me/play/sessions')) return
+    sent = response.request().postDataJSON() as Sent
+    void response.json().then((answer: { kept: string[] }) => (kept = answer.kept))
+  })
   writeFileSync(played, '')
   await button('Play').click()
   await button('Stop').waitFor({ timeout: 15_000 })
@@ -330,20 +339,14 @@ try {
   await button('Stop').click()
   await button('Play').waitFor({ timeout: 15_000 })
   rmSync(played)
-  let session: { game: object; seconds: number } | undefined
-  // Once the game has ended it is finished, unless the page has sent it already.
   await until('the page sending what was counted', 90, async () => {
-    const sessions = await unsent()
-    session ??= sessions[0]
     await shelf.evaluate(() => window.dispatchEvent(new Event('focus')))
-    return session !== undefined && sessions.length === 0
-  }).catch(async () => {
-    const left = await unsent().catch(() => [])
-    fail(`what was counted did not reach Shelf: ${JSON.stringify({ session, left })}`)
-  })
-  if (session && 'entry' in session.game && session.seconds > 0)
+    return kept.length > 0 && (await unsent()).length === 0
+  }).catch(() => fail(`what was counted did not reach Shelf: ${JSON.stringify(sent)}`))
+  const session = sent?.sessions[0]
+  if (session && 'entry' in session.game && session.seconds > 0 && kept.includes(session.id))
     pass(`counted ${session.seconds} s of the game in front, and Shelf kept it`)
-  else fail(`counted ${JSON.stringify(session)}`)
+  else fail(`counted ${JSON.stringify(sent)}, and Shelf kept ${JSON.stringify(kept)}`)
 
   console.log('\nReady to play')
   // Bloodborne has a file now. What else is ready comes from this computer's own Steam, read,
