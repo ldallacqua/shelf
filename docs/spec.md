@@ -817,7 +817,10 @@ owners do not allow, beyond Valve's own sign-in button.
 3. **What IGDB has nothing for** is read from Steam's store and put on the shelf as a game of
    its own (4.2a), once a game is all Steam says it is. **What is left** (no store page, not a
    game) waits under "2 games need you": **Find it** (IGDB searched by the title, which I can
-   change), **Not a game**, **Not mine**. Every answer is kept.
+   change), or **Remove from list**. Every answer is kept, so a sync does not ask again, and
+   none was ever on my shelf; "Ask again", under what was left out, undoes it. It began as Not a
+   game and Not mine, which did the same. The owner, 1 Nov 2026, of a game's test servers: "acho que
+   deveria ter um botão pra deletar [...] Ou se um desses botões ja faz isso renomear eles".
 4. **Afterwards:** **Sync now**, and once a day by itself while **Sync once a day** is on. A
    game I take off my shelf stays off. A game Steam stops listing stays on the shelf, under
    "No longer on Steam", for me to decide. **Disconnect** forgets what Steam listed and my
@@ -877,11 +880,11 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
    so nothing goes on the shelf by itself: every game is matched by title on the consoles that
    play it, and waits under "9 games need you" with the game Shelf took it for, its cover and
    year. **Cartridge** or **Download**, each with its picture, puts it on the shelf; **Not
-   this game** opens Find it; **Not mine**. One line answers every match at once: "All 7
+   this game** opens Find it; **Remove from list**. One line answers every match at once: "All 7
    games Shelf found are: **Cartridges** / **Downloads**". A game I find becomes the match,
    and waits the same way.
    The matched games come first; those Shelf could not find follow, under "Shelf could not
-   find these 2 games", each with Find it, Not a game and Not mine. The card says "9 games
+   find these 2 games", each with Find it and Remove from list. The card says "9 games
    wait for your answer", never "up to date" while any do.
    - A game Nintendo lists under two names (Warframe for Nintendo Switch, and Warframe) is
      one row: "Nintendo also lists it as Warframe.", the hours of both, one answer for both,
