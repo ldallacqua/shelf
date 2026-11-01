@@ -60,6 +60,7 @@ const client = vi.hoisted(() => ({
       value: { version: 4, slug: 'scholar', title: 'Dark Souls II: Scholar of the First Sin' },
     }
   }),
+  sync: vi.fn(async () => ({ ok: true as const, value: { version: 6 } })),
 }))
 const notices = vi.hoisted(() => ({ notify: vi.fn() }))
 vi.mock('@/features/shell/notices', () => notices)
@@ -91,6 +92,53 @@ const editor = (slug: string) =>
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+describe('MineEditor, leaving the wishlist (spec 7.5)', () => {
+  const owned = (slug: string): OwnerGame => ({ ...wished(slug, []), status: 'backlog' })
+
+  it('asks Steam about the game once its new status is saved', async () => {
+    server.games.set('bought', wished('bought', []))
+    editor('bought')
+    await userEvent.click(await screen.findByRole('radio', { name: 'Backlog' }))
+    await waitFor(() => expect(client.sync).toHaveBeenCalledWith('entry-bought'))
+    expect(client.update.mock.invocationCallOrder[0]).toBeLessThan(
+      client.sync.mock.invocationCallOrder[0]!,
+    )
+  })
+
+  it('shows what Steam found', async () => {
+    server.games.set('bought', wished('bought', []))
+    client.sync.mockImplementationOnce(async () => {
+      server.games.set('bought', {
+        ...server.games.get('bought')!,
+        copies: [{ id: 'from-steam', platformId: PS4.id, format: 'digital' }],
+      })
+      return { ok: true as const, value: { version: 6 } }
+    })
+    editor('bought')
+    await userEvent.click(await screen.findByRole('radio', { name: 'Backlog' }))
+    await waitFor(() => expect(client.read).toHaveBeenCalledTimes(3))
+    expect(await screen.findByText('PlayStation 4')).toBeInTheDocument()
+  })
+
+  it('says nothing when Steam could not be asked: what I chose is saved', async () => {
+    server.games.set('offline', wished('offline', []))
+    client.sync.mockRejectedValueOnce(new Error('The network went'))
+    editor('offline')
+    await userEvent.click(await screen.findByRole('radio', { name: 'Backlog' }))
+    await waitFor(() => expect(client.sync).toHaveBeenCalled())
+    expect(screen.getByRole('radio', { name: 'Backlog' })).toBeChecked()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('does not ask for a change between statuses I own', async () => {
+    server.games.set('kept', owned('kept'))
+    editor('kept')
+    await userEvent.click(await screen.findByRole('radio', { name: 'Completed' }))
+    await waitFor(() => expect(client.update).toHaveBeenCalled())
+    expect(client.sync).not.toHaveBeenCalled()
+  })
 })
 
 describe('MineEditor, on the wishlist (spec 7.5)', () => {

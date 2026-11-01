@@ -102,6 +102,11 @@ describe('backdropOf', () => {
     expect(backdropOf([], [{ ...shot, mature: true }])).toBeUndefined()
     expect(backdropOf([], [{ ...shot, id: 'ss0', mature: true }, shot])).toEqual(shot)
     expect(backdropOf([], [])).toBeUndefined()
+    // A game for adults' art stands behind its cover, still marked, for what must not take it.
+    expect(backdropOf([{ ...key, mature: true }], [shot])).toMatchObject({
+      id: 'ar2',
+      mature: true,
+    })
   })
 })
 

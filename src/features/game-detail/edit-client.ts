@@ -78,4 +78,5 @@ export const editClient: EditActions = {
   bringBack: (entryId) => call('DELETE', `${entry(entryId)}/archived`),
   separate: (entryId, gameId) =>
     call('POST', `${entry(entryId)}/versions/${encodeURIComponent(gameId)}/separate`),
+  sync: (entryId) => call('POST', `${entry(entryId)}/sync`),
 }

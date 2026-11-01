@@ -51,9 +51,12 @@ nothing per game. Backloggd, which also reads IGDB, [has the same gap](https://b
    none is seen sharp while it starts, under an eye and "+18"; pressing one shows that game's. Until then the
    viewer does not hold them, so a swipe can't arrive at one. **Nothing else takes them:** not the public API
    nor an assistant, which could blur nothing; not a link's preview or structured data; not a backdrop. A
-   game for adults still has no art behind its cover, because
+   game for adults did at first have no art behind its cover, because
    [Valve holds capsules to PG-13](https://partner.steamgames.com/doc/store/assets/rules) and says nothing of
-   the rest. Shelf's pages are public, and [Vercel's policy](https://vercel.com/legal/acceptable-use-policy)
+   the rest. The owner, the same day: "notei que ta faltando banner nos 2 jogos [...] seria legal por." So its
+   library art is its backdrop, dimmed and unblurred, as on any game, and marked `mature`, which keeps it
+   from the public API; a link's preview takes only a cover. It may show what a cover may not, and a
+   visitor sees it without pressing anything; "Hide adult games" takes it off a device. Shelf's pages are public, and [Vercel's policy](https://vercel.com/legal/acceptable-use-policy)
    bars "offensive, obscene, graphic or violent" content: the files stay on Steam's servers, and only their
    paths are here. A visitor's browser does fetch the blurred file from Steam; anyone reading the page's
    source could open it. Valve documents no descriptor: their meaning was read from the store's answers for
@@ -68,7 +71,9 @@ nothing per game. Backloggd, which also reads IGDB, [has the same gap](https://b
     another game. A game on my shelf gets the copy and the hours, and keeps what I set, a wishlist status
     too, as a game from IGDB does (spec 7.5); otherwise it starts as any game a sync adds. A game a moderator
     adds after the source listed it is found at the next sync, on every shelf linked to Steam. That is what
-    gives one achievements: they are read for what a sync put on a copy.
+    gives one achievements: they are read for what a sync put on a copy. `GetOwnedGames` also answers for
+    only the apps it is asked about (`appids_filter`, read from what it answers: Valve lists the parameter
+    and says little of it), so a game just closed, or just off the wishlist, is synced by itself (spec 4.4).
 12. **Pasting a game's link again brings it up to date with its page,** all but its title, address and
     companies, for a moderator, and raises the version of every shelf that has it.
 

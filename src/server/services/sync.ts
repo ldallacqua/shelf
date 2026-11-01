@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
+import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 
 import { foldSearchHits } from '@/domain/igdb/search'
@@ -30,7 +31,9 @@ import { database, type Db } from '@/server/db/client'
 import { copies, entryVersions, games } from '@/server/db/schema'
 import { igdb } from '@/server/igdb'
 import type { IgdbApi } from '@/server/igdb/api'
+import { IgdbError } from '@/server/igdb/client'
 import { readCoverArt } from '@/server/igdb/cover-art'
+import { readOwnerPlay } from '@/server/library/read'
 import {
   addFromSource,
   addStoredFromSource,
@@ -40,7 +43,7 @@ import {
   readVersion,
   type Placement,
 } from '@/server/library/store'
-import { spend } from '@/server/services/fair-use'
+import { spend, TooManyError } from '@/server/services/fair-use'
 import { forAccount } from '@/server/services/for-account'
 import { createRecords, type Records, type RecordsDeps } from '@/server/services/igdb-records'
 import {
@@ -48,6 +51,7 @@ import {
   decideItem,
   dueLinks,
   forgetLink,
+  itemsOfApps,
   listedTitles,
   listItems,
   noteRead,
@@ -72,6 +76,7 @@ import {
 import { nintendo, type Nintendo } from '@/server/sync/nintendo'
 import { isAchievementProvider } from '@/domain/achievements/achievements'
 import { achievementsFor } from '@/server/services/achievements'
+import { achievementsTag } from '@/server/services/tags'
 import { open, seal } from '@/server/sync/sealed'
 import { SourceError } from '@/server/sync/source-error'
 import { steam, type Steam } from '@/server/sync/steam'
@@ -92,6 +97,8 @@ type SourceAccount = { externalId: string; secret?: string }
 type Adapter = {
   /** Everything it lists for the account there; undefined when the account hides it. */
   list: (account: SourceAccount) => Promise<Reported[] | undefined>
+  /** Only these of what it lists for the account; one it does not list is left out. */
+  some?: (externalId: string, storeIds: readonly string[]) => Promise<Reported[] | undefined>
   /** The account's name there, for the page. */
   name?: (externalId: string) => Promise<string | undefined>
   /** What its store says each item is; one it could not ask about is left out. */
@@ -119,6 +126,7 @@ export const createSync = (deps: SyncDeps) => {
   const adapters: Partial<Record<SyncSource, Adapter>> = {
     steam: {
       list: ({ externalId }) => deps.steam.ownedGames(externalId),
+      some: (externalId, storeIds) => deps.steam.ownedGames(externalId, storeIds),
       name: (id) => deps.steam.playerName(id),
       kinds: (items) => deps.steam.appKinds(items),
     },
@@ -216,15 +224,23 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
    * was just read, as IGDB adds them; titles for the next few not asked about
    * this week. A matched game the source owns becomes a copy; a played one
    * waits for my answer. Returns how many titles are left to ask about.
+   * `only`: these items, and no other.
    */
-  const resolve = async (source: SyncSource, allStoreIds: boolean, now: number) => {
+  const resolve = async (
+    source: SyncSource,
+    allStoreIds: boolean,
+    now: number,
+    only?: ReadonlySet<string>,
+  ) => {
     const facts = SOURCES[source]
     const decision = facts.evidence === 'owned' ? 'copy' : 'pending'
     const resolved: Resolved[] = []
     const take = (item: Item, igdbId: number, by: Resolved['by']) =>
       resolved.push({ id: item.id, igdbId, by, decision })
 
-    let left = await unmatched(db, libraryId, source, 10_000)
+    let left = (await unmatched(db, libraryId, source, 10_000)).filter(
+      (item) => !only || only.has(item.id),
+    )
     const due = (item: Item) =>
       item.titleTriedAt === null || now - item.titleTriedAt > TITLE_AGAIN_MS
     const batch = left.filter(due).slice(0, TITLES_PER_STEP)
@@ -300,11 +316,17 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
    * as any game a sync adds. An item I answered is left as I answered it, which is `unmatched`'s
    * own rule. Before the other rungs, so a title can't take it for another game.
    */
-  const recognize = async (source: SyncSource, now: number): Promise<number> => {
+  const recognize = async (
+    source: SyncSource,
+    now: number,
+    only?: ReadonlySet<string>,
+  ): Promise<number> => {
     const facts = SOURCES[source]
     if (facts.store !== 'steam' || !facts.format) return 0
     const format = facts.format
-    const items = await unmatched(db, libraryId, source, 10_000)
+    const items = (await unmatched(db, libraryId, source, 10_000)).filter(
+      (item) => !only || only.has(item.id),
+    )
     if (items.length === 0) return 0
     const held = await db
       .select({ id: games.id, appId: games.steamAppId, platforms: games.platforms })
@@ -387,12 +409,12 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
     limit: number,
     now: number,
     allow?: Allowance,
-    only?: string,
+    only?: ReadonlySet<string>,
   ) => {
     const facts = SOURCES[source]
     const groups = new Map<number, Item[]>()
     for (const item of await waitingToAdd(db, libraryId, source)) {
-      if (only && item.id !== only) continue
+      if (only && !only.has(item.id)) continue
       groups.set(item.igdbId!, [...(groups.get(item.igdbId!) ?? []), item])
     }
     const chosen = [...groups].slice(0, limit)
@@ -493,6 +515,37 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
       remaining: left,
       version: await readVersion(db, libraryId),
     }
+  }
+
+  /**
+   * A few games asked about by themselves, the whole list left unread (the owner, 1 Nov 2026: "So
+   * aquele jogo [...] Não precisa syncar tudo"). What the source says of them goes as in a step; an
+   * app it does not list for me changes nothing, and nothing says the source was read just now.
+   */
+  const someGames = async (
+    source: SyncSource,
+    storeIds: readonly string[],
+    allow?: Allowance,
+    now = Date.now(),
+  ) => {
+    const link = await readLink(db, libraryId, source)
+    const some = adapters[source]?.some
+    if (!link || !some || storeIds.length === 0) return
+    const listed = await some(link.externalId, storeIds)
+    if (!listed || listed.length === 0) return
+    await recordReport(db, libraryId, source, SOURCES[source].evidence, listed, now)
+    await classify(source, now)
+    const items = await itemsOfApps(
+      db,
+      libraryId,
+      source,
+      listed.map((item) => item.storeId),
+    )
+    const only = new Set(items.map((item) => item.id))
+    await recognize(source, now, only)
+    await resolve(source, true, now, only)
+    await addSome(source, ADD_PER_STEP, now, allow, only)
+    await feedCopies(db, libraryId, source, now)
   }
 
   /** The game on my shelf a copy is part of, for the lists. */
@@ -609,7 +662,7 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
         now,
       )
     }
-    await addSome(item.source, 1, now, allow, item.id)
+    await addSome(item.source, 1, now, allow, new Set([item.id]))
     const after = (await readItem(db, libraryId, item.id))!
     const shelved = after.copyId ? (await shelvedAs([after.copyId])).get(after.copyId) : undefined
     return { item: toView(after, shelved), version: await readVersion(db, libraryId) }
@@ -636,7 +689,7 @@ const forLibrary = (libraryId: string, { db, api, records, adapters }: LibraryDe
   const links = async () =>
     Promise.all((await readLinks(db, libraryId)).map((link) => viewOf(db, link)))
 
-  return { step, list, answer, confirmMany, links, linkOf }
+  return { step, games: someGames, list, answer, confirmMany, links, linkOf }
 }
 
 export type Answer =
@@ -711,6 +764,48 @@ export const syncMine = (source: unknown, body: unknown) => {
   return forAccount(async (account) => {
     if (parsed.data.read) await spend(account, 'read')
     return syncFor(account.id).step(which, { read: parsed.data.read, allow: allowance(account) })
+  }, true)
+}
+
+/** What a game synced by itself may run into. Whatever it rides on stands, and a sync catches up. */
+const quietly = async (run: () => Promise<unknown>) => {
+  try {
+    await run()
+  } catch (error) {
+    const expected =
+      error instanceof SourceError || error instanceof IgdbError || error instanceof TooManyError
+    if (!expected) console.error('A game synced by itself failed', error)
+  }
+}
+
+/**
+ * A few of the account's Steam apps brought up to date by themselves, and their achievements read
+ * now, for what just changed them: a game played, or one I say I got. Never fails.
+ */
+export const syncGames = async (account: Account, apps: readonly string[]) => {
+  if (apps.length === 0 || !(await readLink(database(), account.id, 'steam'))) return
+  await quietly(async () => {
+    await spend(account, 'achievements')
+    await syncFor(account.id).games('steam', apps, allowance(account))
+  })
+  await quietly(async () => {
+    const read = await achievementsFor(account.id).readNow('steam', apps)
+    if (read > 0) revalidateTag(achievementsTag(account.id), { expire: 0 })
+  })
+}
+
+/**
+ * One game of mine synced by itself, by its entry: a game off the wishlist that I may have just
+ * bought (spec 7.5). A game that is not on Steam, or a shelf not linked to it, changes nothing.
+ */
+export const syncMyGame = (entryId: unknown) => {
+  const parsed = z.string().min(1).max(100).safeParse(entryId)
+  if (!parsed.success) return invalid()
+  return forAccount(async (account) => {
+    const db = database()
+    const game = (await readOwnerPlay(db, account.id)).find((each) => each.entryId === parsed.data)
+    if (game) await syncGames(account, game.steam)
+    return { version: await readVersion(db, account.id) }
   }, true)
 }
 

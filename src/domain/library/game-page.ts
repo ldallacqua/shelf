@@ -104,7 +104,13 @@ export const backdropOf = (
 ): GameImage | undefined => {
   const art = artworks.find((each) => each.type === 'key') ?? artworks[0]
   const image = art ?? screenshots.find((shot) => !shot.mature)
-  return image ? { id: image.id, width: image.width, height: image.height } : undefined
+  if (!image) return undefined
+  return {
+    id: image.id,
+    width: image.width,
+    height: image.height,
+    ...(image.mature ? { mature: image.mature } : {}),
+  }
 }
 
 /** A game's page from the library it stands in and what the database adds. */

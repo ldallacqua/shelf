@@ -21,7 +21,7 @@ export type Candidate = SearchResult & {
 
 export type SteamOrigin = {
   appId: string
-  /** Steam marks it as adult: "Hide adult games" takes it, and it has no backdrop. */
+  /** Steam marks it as adult: "Hide adult games" takes it. */
   adult: boolean
   /** A moderator added it already: its title is theirs, and every shelf shares it. */
   known: boolean

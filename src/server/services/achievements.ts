@@ -135,7 +135,8 @@ const forLibrary = (
 ) => {
   /**
    * One game's achievements, read as far as they are due, with what the
-   * provider's count said of the step's games.
+   * provider's count said of the step's games. `played`: the account's
+   * progress is due whatever the last read says, as the game was just played.
    */
   const readApp = async (
     provider: AchievementProvider,
@@ -143,6 +144,7 @@ const forLibrary = (
     externalId: string,
     now: number,
     counted: Counted,
+    played = false,
   ): Promise<Outcome> => {
     const source = sources[provider]
     const setId = setIdOf(provider, app.storeId)
@@ -194,7 +196,7 @@ const forLibrary = (
       await noteCounted(db, provider, app.storeId, now)
       return 'counted'
     }
-    if (!work.progress && !changed) return 'read'
+    if (!work.progress && !changed && !played) return 'read'
 
     // What the provider's count tells without asking for the unlocks one by one.
     const theirs = app.progress?.externalId === externalId ? app.progress : undefined
@@ -287,6 +289,52 @@ const forLibrary = (
   const dueOf = (apps: readonly App[], externalId: string, now: number) =>
     apps.filter((app) => isDue(dueWork(knownOf(app), externalId, now)))
 
+  /** What the provider counts of these games, in one question. */
+  const countOf = (provider: AchievementProvider, externalId: string, apps: readonly App[]) =>
+    sources[provider]
+      .totals(
+        externalId,
+        apps.map((app) => app.storeId),
+      )
+      .then(
+        (totals): Counted => totals ?? 'blank',
+        (error: unknown): Counted => {
+          if (error instanceof SourceError) return 'failed'
+          throw error
+        },
+      )
+
+  /**
+   * These games read now, whether due or not, as far as a step's time goes: one just played, or
+   * just found to be mine. One that is not on the shelf has nothing to read. Returns how many were
+   * read; what time left waits for a sync, which finds them played.
+   */
+  const readNow = async (
+    provider: AchievementProvider,
+    storeIds: readonly string[],
+    now = Date.now(),
+  ): Promise<number> => {
+    const link = await readLink(db, libraryId, provider)
+    if (!link) return 0
+    const asked = new Set(storeIds)
+    const apps = (await shelvedApps(db, libraryId, provider))
+      .filter((app) => asked.has(app.storeId))
+      .slice(0, TOTALS_PER_REQUEST)
+    if (apps.length === 0) return 0
+    const counted = await countOf(provider, link.externalId, apps)
+    const ends = Date.now() + stepMs
+    let read = 0
+    for (let at = 0; at < apps.length && (at === 0 || Date.now() < ends); at += AT_ONCE) {
+      const outcomes = await Promise.all(
+        apps
+          .slice(at, at + AT_ONCE)
+          .map((app) => readApp(provider, app, link.externalId, now, counted, true)),
+      )
+      read += outcomes.filter((outcome) => outcome === 'read' || outcome === 'none').length
+    }
+    return read
+  }
+
   /**
    * One step: the games due, the latest played first, until the step's time
    * is spent; at least a few, however slow the provider is. Their totals are
@@ -299,7 +347,6 @@ const forLibrary = (
     provider: AchievementProvider,
     now = Date.now(),
   ): Promise<AchievementStep> => {
-    const source = sources[provider]
     const link = await readLink(db, libraryId, provider)
     if (!link) throw new LibraryError('not-found', `This shelf is not linked to ${provider}`)
     const due = dueOf(await shelvedApps(db, libraryId, provider), link.externalId, now).sort(
@@ -312,18 +359,7 @@ const forLibrary = (
     const goOn = () => problem !== 'private' && (!started || Date.now() < ends)
     reading: for (let from = 0; from < due.length && goOn(); from += TOTALS_PER_REQUEST) {
       const batch = due.slice(from, from + TOTALS_PER_REQUEST)
-      const counted: Counted = await source
-        .totals(
-          link.externalId,
-          batch.map((app) => app.storeId),
-        )
-        .then(
-          (totals) => totals ?? 'blank',
-          (error: unknown) => {
-            if (error instanceof SourceError) return 'failed'
-            throw error
-          },
-        )
+      const counted = await countOf(provider, link.externalId, batch)
       for (let at = 0; at < batch.length; at += AT_ONCE) {
         if (!goOn()) break reading
         started = true
@@ -422,7 +458,7 @@ const forLibrary = (
     return gamesWith.flatMap((each) => unlocksOf(each) ?? [])
   }
 
-  return { step, game, unlocks }
+  return { step, readNow, game, unlocks }
 }
 
 /* For routes: this server's database and Steam. */

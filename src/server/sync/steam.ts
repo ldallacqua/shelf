@@ -208,15 +208,21 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
 
   /**
    * Every game the account owns, free games it has played among them, with
-   * its minutes. Undefined when its game details are not public.
+   * its minutes, or only those of `apps`: an app it does not own is left out.
+   * Undefined when its game details are not public.
    */
-  const ownedGames = async (steamId: string): Promise<Reported[] | undefined> => {
+  const ownedGames = async (
+    steamId: string,
+    apps: readonly string[] = [],
+  ): Promise<Reported[] | undefined> => {
+    const params: Record<string, string> = {
+      steamid: steamId,
+      include_appinfo: 'true',
+      include_played_free_games: 'true',
+    }
+    apps.forEach((id, at) => (params[`appids_filter[${at}]`] = id))
     const parsed = steamOwnedGamesSchema.safeParse(
-      await ask('/IPlayerService/GetOwnedGames/v1/', {
-        steamid: steamId,
-        include_appinfo: 'true',
-        include_played_free_games: 'true',
-      }),
+      await ask('/IPlayerService/GetOwnedGames/v1/', params),
     )
     if (!parsed.success) throw new SourceError('unreachable', 'Steam listed games in a new shape.')
     return reportedFromSteam(parsed.data)

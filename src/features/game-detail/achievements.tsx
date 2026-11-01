@@ -511,7 +511,8 @@ export function Achievements({
         if (!controller.signal.aborted) setLoaded({ address, status: 'failed' })
       })
     return () => controller.abort()
-  }, [address, attempt, files.kind, waiting])
+    // `providers` is new with each new version of the game's facts: a game just closed has new unlocks.
+  }, [address, attempt, files.kind, waiting, providers])
 
   const current = loaded?.address === address ? loaded : undefined
   if (!current) return <div aria-busy="true">{loading}</div>

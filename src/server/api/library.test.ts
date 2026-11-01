@@ -135,6 +135,26 @@ describe('GET /games/{slug}', () => {
     expect(answer.screenshots[0]).toContain('ss_bb')
     expect(answer.backdrop).not.toContain('ss_aa')
   })
+
+  it('gives no one a game for adults’ art: a device’s switch could not take it off', async () => {
+    const library = await readLibrary(db, sample)
+    const game = library.games.find((each) => each.slug === 'bloodborne')!
+    const extras = (await readGameExtras(db, sample, 'bloodborne'))!
+    const page = buildGamePage(library, game, {
+      ...extras,
+      artworks: [
+        {
+          id: 'steam/apps/2000002/hero/library_hero.jpg',
+          width: 1920,
+          height: 620,
+          type: 'key',
+          mature: true,
+        },
+      ],
+    })
+    expect(page.facts.backdrop?.id).toContain('library_hero')
+    expect(answerGame(library, page).backdrop).toBeNull()
+  })
 })
 
 describe('the OpenAPI document', () => {
@@ -156,6 +176,7 @@ describe('the OpenAPI document', () => {
       '/entries/{id}/copies',
       '/entries/{id}/copies/{copy}',
       '/entries/{id}/archived',
+      '/entries/{id}/sync',
       '/entries/{id}/versions/{version}/separate',
       '/me/archived',
       '/me/hours',

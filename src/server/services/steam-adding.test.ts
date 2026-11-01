@@ -162,14 +162,14 @@ describe('adding from a Steam link', () => {
     expect(publisher!.id).toBeGreaterThanOrEqual(1_000_000_000)
   })
 
-  it('hides a game for adults with the switch, marks its screenshots, and has no backdrop', async () => {
+  it('hides a game for adults with the switch, and marks its screenshots and its art', async () => {
     await forAccount(mine).add({ appId: ADULT, status: 'wishlist', copies: [] })
     const stored = await row(ADULT)
     expect(stored?.cover).toBeTruthy()
     expect(stored?.screenshots).toEqual([
       expect.objectContaining({ id: 'steam/apps/2000002/ss_3d4e5f.jpg', mature: true }),
     ])
-    expect(stored?.artworks).toEqual([])
+    expect(stored?.artworks).toEqual([expect.objectContaining({ type: 'key', mature: true })])
     const library = await readLibrary(db, mine)
     expect(library.games.find((each) => each.slug.endsWith(ADULT))?.adult).toBe(true)
   })

@@ -754,12 +754,14 @@ isso." And: "eu não queria ter que colocar todas as informações do jogo na m�
 - **From Steam:** the title, the cover, the day it came out, what it runs on, its developers and
   publishers, its short description, and its tags and categories as Shelf's genres, themes, modes and
   perspectives. Its screenshots, and its library art as a backdrop. **Not from Steam:** a rating, a length, a franchise, videos. They stay empty.
-- **A game Steam marks for adults** counts as adult (3.13), so "Hide adult games" hides it, and has
-  no backdrop. The form says so.
+- **A game Steam marks for adults** counts as adult (3.13), so "Hide adult games" hides it. The form
+  says so. Its library art stands dimmed behind its cover, as on any game, and is in no public API
+  answer or link's preview. The owner, 1 Nov 2026: "notei que ta faltando banner nos 2 jogos [...]
+  seria legal por."
 - **A screenshot Steam keeps for adults,** on any game, is blurred under an eye and "+18", after the
   ones for anyone. Pressing one shows that game's, each still marked "+18", and opens nothing;
-  the viewer holds none of them until then. They are in no public API answer, a link's preview or a
-  backdrop. The owner, 1 Nov 2026: "pode trazer as imagens adultas tbm. So borra elas ou coloca um aviso do
+  the viewer holds none of them until then. They are in no public API answer or link's preview, and
+  are no backdrop. The owner, 1 Nov 2026: "pode trazer as imagens adultas tbm. So borra elas ou coloca um aviso do
   olhinho que são +18".
 - **A sync finds these games** by their Steam app (4.4), on any shelf linked to Steam: my copy, my hours,
   achievements. A wishlist game keeps its status, as any does (7.5).
@@ -823,6 +825,13 @@ owners do not allow, beyond Valve's own sign-in button.
    are read again after it is played, and after a week; Steam's definitions after a month, or
    as soon as Steam counts another number of them. A game with none is counted again at each
    daily sync, as it may have some after its release. Each game's page shows them (section 7.8).
+6. **One game by itself,** without reading the rest (the owner, 1 Nov 2026: "So aquele jogo que abriu
+   e fechou. Não precisa syncar tudo"): Steam is asked about that game's apps alone, its copy and
+   hours brought up to date, its achievements read at once. When a game **closes** in Shelf for Windows
+   (7.7), with the next look of the app's page, which happens within a minute with a window open, and
+   when the window next opens otherwise; and when a game **leaves the wishlist** (7.5). A game not on
+   the shelf waits for a sync, as its hours do. Opening a game asks nothing: nothing has changed yet.
+   "Last synced" still speaks of the whole list.
 
 | Problem | Behavior |
 | --- | --- |
@@ -1400,7 +1409,9 @@ so its box took the case of the first platform IGDB lists it on, PS4's here.
 - **Filter:** `wanted:switch`, a list like `owned`, families included (`wanted:nintendo`).
 - **When I get it,** changing its status from Wishlist turns Want it on back into Platforms
   owned, with the platform I wanted already picked, asking only physical or digital. What I
-  wanted is then let go.
+  wanted is then let go. If Steam lists the game for me, its copy, hours and achievements come at
+  once (4.4), and it is otherwise left to me. The owner, 1 Nov 2026: "Precisamos syncar quando ele
+  troca da lista de desejos pra um jogo [...] 'owned' pra aparecer os achievements".
 
 **Done when**
 
