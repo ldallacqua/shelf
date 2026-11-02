@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl'
 
 import type { AddActions } from '@/features/add-game/actions'
 import { AddButton } from '@/features/add-game/add-button'
-import { DownloadsLinkInApp } from '@/features/desktop/downloads-later'
+import { DownloadsLinkInApp } from '@/features/desktop/downloads-link-later'
 import { WindowControls } from '@/features/desktop/window-controls'
 import { WindowFrame } from '@/features/desktop/window-frame'
 import { LanguageSwitch } from '@/features/language/language-switch'
