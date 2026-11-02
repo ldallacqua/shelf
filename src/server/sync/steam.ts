@@ -14,6 +14,7 @@ import {
   steamTotalsSchema,
   totalsFromSteam,
 } from '@/domain/achievements/steam'
+import { steamReviewsIn, steamReviewsQuestion, type SteamReviews } from '@/domain/steam/reviews'
 import type { Reported, StoreKindOf } from '@/domain/sync/items'
 import {
   checkAuthenticationBody,
@@ -297,6 +298,40 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
     return found
   }
 
+  /**
+   * What the store's players say of these apps, a hundred to a request, four
+   * requests at a time. `answered` is every app a request came back for, reviews
+   * or none: what isn't in it is not known, not without reviews.
+   */
+  const reviews = async (
+    appIds: readonly string[],
+  ): Promise<{ reviews: Map<string, SteamReviews>; answered: Set<string> }> => {
+    const batches: string[][] = []
+    for (let at = 0; at < appIds.length; at += APPS_PER_REQUEST) {
+      batches.push(appIds.slice(at, at + APPS_PER_REQUEST))
+    }
+    const found = new Map<string, SteamReviews>()
+    const answered = new Set<string>()
+    for (let at = 0; at < batches.length; at += 4) {
+      const answers = await Promise.allSettled(
+        batches.slice(at, at + 4).map(async (batch) => ({
+          batch,
+          read: steamReviewsIn(
+            await ask('/IStoreBrowseService/GetItems/v1/', {
+              input_json: steamReviewsQuestion(batch),
+            }),
+          ),
+        })),
+      )
+      for (const answer of answers) {
+        if (answer.status !== 'fulfilled' || !answer.value.read) continue
+        for (const app of answer.value.batch) answered.add(app)
+        for (const [app, each] of answer.value.read) found.set(app, each)
+      }
+    }
+    return { reviews: found, answered }
+  }
+
   /** One game's page on the store. Nothing when no country shows it. */
   const storeGame = async (appId: string): Promise<StoreGame | undefined> =>
     (await storeGames([appId])).get(appId)
@@ -333,6 +368,7 @@ export const createSteam = ({ key, fetch: given, timeoutMs = 15_000, sleep = wai
     appKinds,
     storeGame,
     storeGames,
+    reviews,
     verifySignIn,
     gameAchievements,
     achievementTotals,

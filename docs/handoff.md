@@ -4,6 +4,15 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Scores (2 Nov 2026)
+
+A game's page has a section of scores (spec 7.11). Steam's arrive with the first daily call after this ships (06:00 UTC):
+until then a game shows IGDB and Shelf alone. The read of Steam has run only against the test double; one look at the real
+`GetItems` answer, by hand, gave the fields it reads and the words for steps 9, 8, 7, 6, 5 and 1 in both languages. The Portuguese
+for steps 2, 3 and 4 follows Steam's pattern and was not seen. `GetItems` is not in Valve's documentation that I found;
+`IUserReviewsService/GetAppReviews` is, one game to a call, if it ever goes. The owner's emulator hours were researched and not built:
+Hydra starts the emulator with the ROM itself and reads the emulator's `playtime.dat`.
+
 ## Download sources (1 Nov 2026)
 
 The owner asked to download games from sources in Hydra's format, by direct link and Real-Debrid.

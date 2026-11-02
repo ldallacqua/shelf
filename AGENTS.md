@@ -284,6 +284,10 @@ store's position in `storeNames` is in the library file, so a new one goes at th
 `store-choices.ts` is what the forms offer. `store-links.ts` chooses a game's links (`games.store_links`, read from IGDB by `toGameData`), only ever
 to the store's own servers. Spec 7.9.
 
+**Scores.** A game's page shows what others think (`features/game-detail/scores.tsx`, spec 7.11): each place keeps
+its own scale, and they are never averaged. `readShelfScore` is the one read across libraries: it gives a sum and a
+count, of public shelves only, and never whose. A new place is one more column, in the same bar.
+
 **Download sources.** Lists of downloads in Hydra's format, read by Shelf for Windows from an address
 the person pastes, and kept on that computer ([ADR 007](docs/adr/007-download-sources.md)). Shelf's server
 never sees one, and Real-Debrid's terms forbid it from reaching that service. Shelf ships, suggests and

@@ -9,6 +9,7 @@ import type {
 } from '@/domain/library/library'
 import { storeNames, type StoreLink, type StoreName } from '@/domain/library/stores'
 import { filterWord, type ListKey } from '@/domain/query/keys'
+import type { SteamReviews } from '@/domain/steam/reviews'
 
 /**
  * A game's page (spec 7.1). The library file carries what a shelf, a filter
@@ -17,6 +18,9 @@ import { filterWord, type ListKey } from '@/domain/query/keys'
  * facts. The page built on the server is sent them inside it; the game
  * opened over the shelf fetches them as a small file of their own.
  */
+
+/** What people on public shelves gave it, out of a hundred, and how many of them (spec 7.11). */
+export type ShelfScore = { rating: number; count: number }
 
 /** Names for the ids a game's lists hold, and for no others. */
 export type GameNames = Omit<LibraryNames, 'tag'>
@@ -39,6 +43,10 @@ export type GameFacts = {
   igdbUrl?: string
   /** Where it is sold, across every version, one link to a store. Absent when none is known. */
   stores?: StoreLink[]
+  /** What Steam's players say of it. Absent with no reviews there. */
+  steamReviews?: SteamReviews
+  /** What people on Shelf gave it. Absent until someone on a public shelf has. */
+  shelfScore?: ShelfScore
   /** Mine, when I have made them public for this game. Private notes are never here. */
   notes?: string
   /** The providers with achievements for it, which its page asks for as it opens (issue 72). */
@@ -67,6 +75,8 @@ export type GameExtras = {
   length?: Length
   igdbUrl?: string
   storeLinks?: StoreLink[]
+  steamReviews?: SteamReviews
+  shelfScore?: ShelfScore
   notes?: string
   notesPublic: boolean
   achievements?: AchievementProvider[]
@@ -208,6 +218,8 @@ export const buildGamePage = (
   if (extras.length) facts.length = extras.length
   if (extras.igdbUrl) facts.igdbUrl = extras.igdbUrl
   if (extras.storeLinks?.length) facts.stores = extras.storeLinks
+  if (extras.steamReviews) facts.steamReviews = extras.steamReviews
+  if (extras.shelfScore) facts.shelfScore = extras.shelfScore
   // A visitor never sees a private note: it does not leave the server.
   if (extras.notes && extras.notesPublic) facts.notes = extras.notes
   if (extras.achievements) facts.achievements = extras.achievements

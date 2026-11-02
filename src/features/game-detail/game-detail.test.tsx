@@ -222,7 +222,10 @@ describe('GameDetail', () => {
     const details = screen.getByRole('heading', { name: 'Details' }).closest('section')!
     expect(details).toHaveTextContent('March 24, 2015')
     expect(details).toHaveTextContent('Main story24 hours')
-    expect(details).toHaveTextContent('91 of 100, from 1,894 ratings')
+    expect(details).not.toHaveTextContent('1.9K ratings')
+    const scores = screen.getByRole('heading', { name: 'Scores' }).parentElement!
+    expect(scores).toHaveTextContent('91')
+    expect(scores).toHaveTextContent('1.9K ratings')
   })
 
   it('makes every value under Details a link to the library filtered by it', () => {

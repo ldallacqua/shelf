@@ -242,6 +242,153 @@
     font-weight: 500;
   }
 
+  /*
+   * What others think (spec 7.11): one panel, as the stores' card is, and not a card for each.
+   * Narrow, a place to a line; with room, a place to a column.
+   */
+  .game-scores {
+    container-type: inline-size;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    background: var(--surface-raised);
+    overflow: hidden;
+
+    & > dl {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    & > dl > * + * {
+      border-top: 1px solid var(--line);
+    }
+
+    @container (width >= 34rem) {
+      & > dl[data-columns='2'] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      & > dl[data-columns='3'] {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      & > dl > * + * {
+        border-top: 0;
+        border-left: 1px solid var(--line);
+      }
+    }
+  }
+
+  .game-score {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'source reading'
+      'bar bar'
+      'who who';
+    align-items: baseline;
+    gap: 0.5rem 0.75rem;
+    padding: 0.875rem;
+
+    @container (width >= 34rem) {
+      grid-template-rows: auto minmax(2.75rem, auto) auto auto;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'source'
+        'reading'
+        'bar'
+        'who';
+      padding: 1rem;
+    }
+  }
+
+  .game-score-source {
+    grid-area: source;
+    min-height: 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.5rem;
+
+    & > a {
+      display: inline-flex;
+      min-height: 1.5rem;
+      align-items: center;
+      gap: 0.375rem;
+      border-radius: 2px;
+    }
+
+    & > a:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+  }
+
+  .game-score-reading {
+    grid-area: reading;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.375rem;
+    line-height: 1.1;
+  }
+
+  .game-score-bar {
+    grid-area: bar;
+  }
+
+  .game-score-who {
+    grid-area: who;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--muted);
+
+    @container (width >= 34rem) {
+      flex-direction: column;
+    }
+  }
+
+  /*
+   * A bar of twenty lit segments, as a game draws its health: each lit part glows as the shelf's
+   * LEDs do, so it is strongest with the room's lights off. The empty ones keep the scale in view.
+   * Each layer is the whole bar, so their segments stand on each other; the lit one is cut to its
+   * mark, after its glow is drawn.
+   */
+  .game-score-meter {
+    display: block;
+    height: 0.5rem;
+    background: linear-gradient(to right, var(--line) calc(100% - 2px), transparent 0) 0 0 / 5% 100%;
+
+    & > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(to right, var(--accent) calc(100% - 2px), transparent 0) 0 0 / 5%
+        100%;
+      filter: drop-shadow(
+        0 0 0.25rem color-mix(in srgb, var(--led) calc(var(--glow) * 80%), transparent)
+      );
+      clip-path: inset(-0.5rem calc(100% - var(--score) * 1%) -0.5rem 0);
+    }
+
+    /* Resting on a few: said in words beside it, and lit no brighter than that deserves. */
+    &[data-few] > span {
+      opacity: 0.45;
+      filter: none;
+    }
+
+    /* The one thing here that moves, once, as the page opens: the bars fill to their marks. */
+    @media (prefers-reduced-motion: no-preference) {
+      & > span {
+        transition: clip-path var(--motion-slow) var(--ease-glide);
+
+        @starting-style {
+          clip-path: inset(-0.5rem 100% -0.5rem 0);
+        }
+      }
+    }
+  }
+
   .game-prose {
     display: grid;
     gap: 0.875rem;

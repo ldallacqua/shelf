@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { imageUrl } from '@/domain/igdb/images'
 import { namesOf, type GamePage } from '@/domain/library/game-page'
+import { steamStoreLink } from '@/domain/library/store-links'
 import { groupings, type Shelf } from '@/domain/library/group'
 import type { Library, LibraryGame, Named } from '@/domain/library/library'
 import { numberToDay } from '@/domain/library/snapshot'
@@ -132,6 +133,18 @@ export const apiGamePage = apiGame
       .describe('Hours, from IGDB: rushing, a normal playthrough, and everything'),
     igdbRatingCount: z.int().describe('How many ratings IGDB’s rests on'),
     igdbUrl: z.url().nullable(),
+    steamReviews: z
+      .object({
+        percent: z.number().describe('Of those who reviewed it on Steam, how many recommend it'),
+        count: z.int(),
+        url: z.url(),
+      })
+      .nullable()
+      .describe('What Steam’s players say of it'),
+    shelfRating: z
+      .object({ rating: z.number().describe('Out of ten'), count: z.int() })
+      .nullable()
+      .describe('What people on public shelves gave it'),
     stores: z
       .array(z.object({ store: z.string().describe('As `store:` takes it'), url: z.url() }))
       .describe('Where it is sold, one link to a store'),
@@ -316,6 +329,16 @@ export const answerGame = (library: Library, page: GamePage): z.infer<typeof api
       : null,
     igdbRatingCount: game.igdbRatingCount,
     igdbUrl: facts.igdbUrl ?? null,
+    steamReviews: facts.steamReviews
+      ? {
+          percent: facts.steamReviews.percent,
+          count: facts.steamReviews.count,
+          url: steamStoreLink(facts.steamReviews.app).url,
+        }
+      : null,
+    shelfRating: facts.shelfScore
+      ? { rating: Math.round(facts.shelfScore.rating) / 10, count: facts.shelfScore.count }
+      : null,
     stores: facts.stores ?? [],
     notes: facts.notes ?? null,
     // A device's "Hide adult games" takes a game for adults' art off a page; here nothing could.

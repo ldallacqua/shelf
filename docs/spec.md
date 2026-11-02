@@ -1282,10 +1282,11 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Heading** | Title, year, developer |
 | **Stores** | Where it is sold, with a link to its page there (section 7.9) |
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
+| **Scores** | What others think of it, a place to a column: IGDB, Steam, and people on Shelf (section 7.11) |
 | **About** | IGDB's summary and storyline, in their paragraphs. A long one shows about a screen's worth, and the rest behind **Read more**, opened in place |
 | **Videos and screenshots** | One strip, videos first: each video on one of the game's own pictures with a play button and what it is ("Launch Trailer"), then the screenshots. No scrollbar: an edge with more past it fades, and on a pointer that can hover an arrow there moves the strip. A screenshot opens a full-screen viewer (arrow keys, swipe, pinch to zoom); a video plays over the page, from YouTube, which nothing reaches before it is pressed |
 | **Achievements** | For a game a sync brought in from Steam: how many are unlocked, and each one (section 7.8) |
-| **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat, IGDB rating and how many ratings it rests on |
+| **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat |
 | **Versions** | The editions and ports linked to this entry (signed in) |
 
 Each value under Details is a link to the library filtered by it.
@@ -1726,6 +1727,42 @@ archive named for it; and browsers' mark on what they download, which Explorer p
 app restarts; a browser's account page shows nothing of this; a download paused and resumed ends as the
 same bytes as the file; a link to a web page writes nothing to the folder; nothing offers to start a file;
 no page ever holds a Real-Debrid token.
+
+### 7.11 Scores
+
+**Built 2 Nov 2026.** The owner: "queria mostrar a nota do igdb, da steam, e eventualmente da nossa
+propria plataforma em uma sessão ali na pagina do jogo", and then "uma sessão dedicada pras notas do
+game bem bonitinho [...] vamos mostrar notas de varios lugares diferentes".
+
+- **Where it stands:** a section of its own at the head of the page's main column, above About. In the
+  panel it comes after Mine, as the rest of that column does. IGDB's rating left Details for it.
+- **One panel, a place to a column,** in the look of the stores' card; narrower than 34rem, a place to a
+  line. Adding another place means adding one more column.
+- **Never one number.** A share of people who recommend a game (Steam) is not a mark out of a hundred
+  (IGDB) or out of ten (Shelf), so each keeps its own scale and they are not averaged. IsThereAnyDeal
+  shows the same mix as bars, and the eye still compares them.
+- **Who and how many:** under each number, who it speaks for and how many it rests on, as Rotten
+  Tomatoes puts its count under each score. Counts are short ("393 mil"). Steam's own words ("Muito
+  positivas") stand where the others name who is speaking; under ten reviews Steam has none.
+- **The bar** is what makes it Shelf's and not a table: twenty segments, like a game's health bar, lit in
+  the accent and glowing with the shelf's LEDs, so it is strongest with the room's lights off. Whole
+  segments only, rounded down: full means a hundred. It is decoration for the eye: the number and words
+  are what a screen reader gets. It fills once as the page opens, and under reduced motion it is simply
+  there. No color judges a score: a green or red would say what only the words should.
+- **Resting on a few** (under five): the bar dims, and the count says how few in words.
+- **Where they come from.** IGDB's as ever. Steam's from its store, once a day, for every game with a page
+  there, across its editions the most reviewed; a visitor never reaches Steam. A game's name leads to
+  where its score came from, in a tab of its own, and neither is a logo. Shelf's is the average of what
+  public shelves gave it, from every entry holding any of its versions: no private shelf, no game kept
+  private, nothing archived, and only the sum and the count ever leave the database. A page shows it as
+  of the last time that shelf changed or a score of the game moved.
+- **Nothing yet:** Shelf's place stands empty and says "No ratings yet", to show it is coming. With no score
+  from anywhere, the section is not drawn.
+- **Looked at:** Backloggd and Letterboxd (an average over a histogram of their own, which only one's own
+  ratings can give), OpenCritic (a ring for each score, stacked), IsThereAnyDeal (a bar for each source),
+  Rotten Tomatoes (two named scores side by side) and Steam (words, not a number). Trakt's page stood behind a
+  seasonal overlay and was not seen. Checked against the Design plugin's `design-critique`, `ux-copy` and
+  `accessibility-review` and `frontend-design`, read from their public source, not installed.
 
 ## 8. Data model
 

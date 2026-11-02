@@ -19,6 +19,7 @@ import {
   type ProgressProblem,
 } from '@/domain/achievements/achievements'
 import type { Palette } from '@/domain/color/palette'
+import type { SteamReviews } from '@/domain/steam/reviews'
 import type {
   GameArtwork,
   GameImage,
@@ -159,6 +160,10 @@ export const games = sqliteTable(
      * for a record stored before they were asked for: the daily refresh stores those again.
      */
     ages: text({ mode: 'json' }).$type<string[]>(),
+    /** What Steam's players say of it (spec 7.11). Null with no reviews there, or none read yet. */
+    steamReviews: text({ mode: 'json' }).$type<SteamReviews>(),
+    /** When Steam was last asked about it. The daily reading takes the oldest first. */
+    steamReviewsCheckedAt: integer(),
     /** When Shelf last stored this record. */
     fetchedAt: integer().notNull(),
     /** When Shelf last asked IGDB whether it changed. The daily refresh takes the oldest. */
@@ -169,6 +174,7 @@ export const games = sqliteTable(
     uniqueIndex('games_steam_app').on(table.steamAppId),
     uniqueIndex('games_slug').on(table.slug),
     index('games_checked_at').on(table.checkedAt),
+    index('games_steam_reviews_checked_at').on(table.steamReviewsCheckedAt),
     check('games_kind', sql`${table.kind} in (${oneOf(kinds)})`),
   ],
 )

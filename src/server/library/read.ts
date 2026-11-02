@@ -1,6 +1,18 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, isNotNull, isNull, ne, sql, type SQLWrapper } from 'drizzle-orm'
+import {
+  and,
+  avg,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  ne,
+  sql,
+  type SQLWrapper,
+} from 'drizzle-orm'
 
 import {
   achievementProviders,
@@ -15,7 +27,7 @@ import type {
   SteamApps,
   StoreHoursGame,
 } from '@/domain/library/editing'
-import type { GameExtras } from '@/domain/library/game-page'
+import type { GameExtras, ShelfScore } from '@/domain/library/game-page'
 import { linksOfRecord, mergeStoreLinks, steamStoreLink } from '@/domain/library/store-links'
 import { accountsReading } from '@/server/library/read-from'
 import {
@@ -57,6 +69,7 @@ import {
   playSessions,
   playTime,
   sourceItems,
+  users,
   tags,
   vocab,
 } from '@/server/db/schema'
@@ -381,8 +394,10 @@ export const readGameExtras = async (
         releases: games.releases,
         length: games.length,
         igdbUrl: games.igdbUrl,
+        gameId: games.id,
         storeIds: games.storeIds,
         storeLinks: games.storeLinks,
+        steamReviews: games.steamReviews,
       })
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
@@ -441,9 +456,52 @@ export const readGameExtras = async (
     app ? [steamStoreLink(app)] : [],
     ...[main, ...versionRows.filter((row) => row !== main)].map(linksOfRecord),
   ])
+  // Across its versions, the one most people reviewed: a game's editions can each have a page.
+  const steamReviews = versionRows
+    .flatMap((row) => row.steamReviews ?? [])
+    .sort((a, b) => b.count - a.count)[0]
+  if (steamReviews) extras.steamReviews = steamReviews
+  const shelfScore = await readShelfScore(
+    db,
+    versionRows.map((row) => row.gameId),
+  )
+  if (shelfScore) extras.shelfScore = shelfScore
   if (entry.notes) extras.notes = entry.notes
   if (providers.size > 0) extras.achievements = [...providers]
   return extras
+}
+
+/**
+ * What people on Shelf gave a game, any of these being its versions (spec 7.11):
+ * the one read across libraries, and it gives back a sum and nothing of whose.
+ * Only what its account already shows anyone counts: no private shelf, no game
+ * kept private, nothing archived.
+ */
+export const readShelfScore = async (
+  db: Executor,
+  gameIds: readonly string[],
+): Promise<ShelfScore | undefined> => {
+  const [found] = await db
+    .select({ count: count(), rating: avg(entries.rating) })
+    .from(entries)
+    .innerJoin(users, eq(users.id, entries.userId))
+    .where(
+      and(
+        isNotNull(entries.rating),
+        isNull(entries.archivedAt),
+        eq(entries.isPrivate, false),
+        eq(users.shelfPublic, true),
+        inArray(
+          entries.id,
+          db
+            .select({ id: entryVersions.entryId })
+            .from(entryVersions)
+            .where(inArray(entryVersions.gameId, [...gameIds])),
+        ),
+      ),
+    )
+  if (!found?.count || found.rating === null) return undefined
+  return { rating: Number(found.rating), count: found.count }
 }
 
 /**
