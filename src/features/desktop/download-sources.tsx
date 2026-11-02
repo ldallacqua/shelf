@@ -2,7 +2,7 @@
 
 import { FileUpIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
 import { useFormatter, useNow, useTranslations } from 'next-intl'
-import { type FormEvent, useEffect, useId, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useId, useState } from 'react'
 
 import { Button } from '@/ui/button'
 import { Confirm } from '@/ui/confirm'
@@ -13,7 +13,16 @@ import { AppWords } from './app-words'
 import { SourceCardGhost } from './download-sources-ghost'
 import { Downloads } from './downloads-list'
 import { RealDebrid } from './real-debrid'
-import { type Source, type SourceRefusal, sourceRefusalOf, sources } from './sources'
+import {
+  type ReadingAll,
+  type Source,
+  type SourceRefusal,
+  sourceRefusalOf,
+  sources,
+} from './sources'
+
+/** How often a page asks how far along Read all is. */
+const LOOK_EVERY = 1000
 
 /** Said after an action, in the section it belongs to. */
 export type SourcesSaid = { tone: 'done' | 'trouble'; text: string }
@@ -101,6 +110,9 @@ export function DownloadSourcesView({
   reading,
   said,
   invalid = false,
+  readingAll,
+  canReadAll = false,
+  onReadAll = () => undefined,
   onAddress,
   onAdd,
   onAddFile,
@@ -116,6 +128,11 @@ export function DownloadSourcesView({
   said?: SourcesSaid | undefined
   /** What was said is about the address in the field. */
   invalid?: boolean
+  /** How far along Read all is, while it is going. */
+  readingAll?: ReadingAll | undefined
+  /** Whether this app can do it, and has an address to read. */
+  canReadAll?: boolean
+  onReadAll?: () => void
   onAddress: (address: string) => void
   onAdd: () => void
   onAddFile: () => void
@@ -125,7 +142,7 @@ export function DownloadSourcesView({
   const t = useTranslations('DownloadSources')
   const warningId = useId()
   const saidId = useId()
-  const busy = adding || reading !== undefined
+  const busy = adding || reading !== undefined || readingAll !== undefined
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (!busy && address.trim() !== '') onAdd()
@@ -188,6 +205,19 @@ export function DownloadSourcesView({
         <p className="text-sm text-muted">{t('empty')}</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
+          {canReadAll ? (
+            <div className="grid gap-2 md:col-span-2">
+              <div>
+                <Button variant="secondary" disabled={busy} onClick={onReadAll}>
+                  <RefreshCwIcon aria-hidden="true" />
+                  {readingAll
+                    ? t('readingAll', { done: readingAll.done + 1, total: readingAll.total })
+                    : t('readAll')}
+                </Button>
+              </div>
+              <p className="max-w-xl text-sm text-pretty text-muted">{t('readAllHelp')}</p>
+            </div>
+          ) : null}
           {list.map((source) => (
             <SourceCard
               key={source.id}
@@ -217,6 +247,9 @@ function Sources() {
   const [reading, setReading] = useState<string>()
   const [said, setSaid] = useState<SourcesSaid>()
   const [invalid, setInvalid] = useState(false)
+  const [readingAll, setReadingAll] = useState<ReadingAll>()
+  // An app too old for it says so by not answering: then the button isn't offered.
+  const [canReadAll, setCanReadAll] = useState(false)
 
   const refused = (refusal: SourceRefusal) =>
     setSaid({ tone: 'trouble', text: t(`errors.${refusal}`) })
@@ -243,12 +276,53 @@ function Sources() {
     }
   }, [t])
 
+  const look = useCallback(async () => {
+    const now = await sources.readingAll()
+    setCanReadAll(true)
+    setReadingAll(now ?? undefined)
+    if (now) setList(await sources.list())
+  }, [])
+
+  // A page opened while one is going shows it too.
+  useEffect(() => {
+    void Promise.resolve()
+      .then(look)
+      .catch(() => setCanReadAll(false))
+  }, [look])
+
+  const going = readingAll !== undefined
+  useEffect(() => {
+    if (!going) return
+    const timer = setInterval(() => void look().catch(() => undefined), LOOK_EVERY)
+    return () => clearInterval(timer)
+  }, [going, look])
+
+  const readAll = async () => {
+    setSaid(undefined)
+    setInvalid(false)
+    const count = list?.filter((each) => each.file === null).length ?? 0
+    setReadingAll({ done: 0, total: count })
+    try {
+      const ended = await sources.readAll(t('windowTitle'))
+      setSaid({
+        tone: 'done',
+        text: ended.stopped
+          ? t('readAllStopped', { read: ended.read })
+          : t('readAllDone', { read: ended.read, failed: ended.failed }),
+      })
+    } catch (error) {
+      refused(sourceRefusalOf(error))
+    }
+    setReadingAll(undefined)
+    setList(await sources.list().catch(() => list ?? []))
+  }
+
   const add = async () => {
     setAdding(true)
     setSaid(undefined)
     setInvalid(false)
     try {
-      const source = await sources.add(address)
+      const source = await sources.add(address, t('windowTitle'))
       setList((kept) => [...(kept ?? []), source])
       setAddress('')
       setSaid({
@@ -302,7 +376,7 @@ function Sources() {
     setSaid(undefined)
     setInvalid(false)
     try {
-      const source = await sources.readAgain(id)
+      const source = await sources.readAgain(id, t('windowTitle'))
       setList((kept) => kept?.map((each) => (each.id === id ? source : each)))
       setSaid({ tone: 'done', text: t('readDone', { name: source.name, count: source.items }) })
     } catch (error) {
@@ -330,6 +404,9 @@ function Sources() {
       reading={reading}
       said={said}
       invalid={invalid}
+      readingAll={readingAll}
+      canReadAll={canReadAll && (list ?? []).some((each) => each.file === null)}
+      onReadAll={() => void readAll()}
       onAddress={(next) => {
         setAddress(next)
         setInvalid(false)

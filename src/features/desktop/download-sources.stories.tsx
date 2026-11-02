@@ -62,16 +62,33 @@ export const LastReadingFailed: Story = {
   args: { list: [source({ trouble: 'slow' })] },
 }
 
-/** It answered, and not with the file: the way on is in the words, and the button is beside the field. */
+/** It answered, and not with the file. */
 export const AnAddressThatRefuses: Story = {
   args: {
     address: 'https://files.example.invalid/source.json',
     invalid: true,
     said: {
       tone: 'trouble',
-      text: 'That address answered without the file. It may only answer browsers: open it in yours, save the file, and use From a saved file.',
+      text: 'That address answered without the file. Check it and try again.',
     },
   },
+}
+
+/** One click for all of them. What says why it opens windows stands under it, since that is the surprise. */
+export const ReadAll: Story = {
+  args: {
+    canReadAll: true,
+    list: [source(), source({ id: 'two', name: 'Another made-up source' })],
+  },
+}
+
+export const ReadingAllOfThem: Story = {
+  args: { ...ReadAll.args, readingAll: { done: 2, total: 12 } },
+}
+
+/** Read by itself once a day, it can't open a window, so the card says what will. */
+export const OnlyAnswersABrowser: Story = {
+  args: { canReadAll: true, list: [source({ trouble: 'browser' })] },
 }
 
 export const WithSources: Story = {

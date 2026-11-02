@@ -17,6 +17,8 @@ export const sourceRefusals = [
   'secure',
   'slow',
   'refused',
+  'browser',
+  'closed',
   'large',
   'unsupported',
   'missing',
@@ -183,11 +185,24 @@ export const downloads = {
   },
 }
 
+const readingAllSchema = z.object({ done: z.number(), total: z.number() })
+
+/** How far along Read all is. */
+export type ReadingAll = z.infer<typeof readingAllSchema>
+
+const allReadSchema = z.object({ read: z.number(), failed: z.number(), stopped: z.boolean() })
+
+/** How a Read all ended. */
+export type AllRead = z.infer<typeof allReadSchema>
+
 export const sources = {
   list: async (): Promise<Source[]> => z.array(sourceSchema).parse(await call('download_sources')),
-  /** Reads the source at an address, and keeps it. Nothing is downloaded. */
-  add: async (url: string): Promise<Source> =>
-    sourceSchema.parse(await call('add_source', { url })),
+  /**
+   * Reads the source at an address, and keeps it. Nothing is downloaded. An address that only answers a
+   * browser opens a window for the person, titled `ask`.
+   */
+  add: async (url: string, ask: string): Promise<Source> =>
+    sourceSchema.parse(await call('add_source', { url, ask })),
   /**
    * Windows' picker, titled `ask`, for a source a person saved: a new one, or a new list for the one
    * it `replaces`. Null when the picker is closed.
@@ -197,8 +212,14 @@ export const sources = {
       .nullable()
       .parse(await call('add_source_file', { ask, files, replacing: replacing ?? null })),
   /** Reads a source again. If that fails, the list it has stays. */
-  readAgain: async (id: string): Promise<Source> =>
-    sourceSchema.parse(await call('read_source_again', { id })),
+  readAgain: async (id: string, ask: string): Promise<Source> =>
+    sourceSchema.parse(await call('read_source_again', { id, ask })),
+  /** Every source with an address, one at a time. Resolves when it has ended. */
+  readAll: async (ask: string): Promise<AllRead> =>
+    allReadSchema.parse(await call('read_all_sources', { ask })),
+  /** How far along that is, or null. Throws on an app too old to do it. */
+  readingAll: async (): Promise<ReadingAll | null> =>
+    readingAllSchema.nullable().parse(await call('reading_all_sources')),
   remove: async (id: string): Promise<void> => {
     await call('remove_source', { id })
   },

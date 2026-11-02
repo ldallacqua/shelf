@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use url::{Host, Url};
 
 /// The most a source may be: the largest seen are a few dozen megabytes.
-const MOST_BYTES: u64 = 200 * 1024 * 1024;
+pub const MOST_BYTES: u64 = 200 * 1024 * 1024;
 const MOST_TIME: Duration = Duration::from_secs(120);
 const MOST_CONNECTING: Duration = Duration::from_secs(15);
 const MOST_REDIRECTS: usize = 5;
@@ -47,6 +47,10 @@ pub enum Refusal {
     Slow,
     /// It answered, without the file: an error, or a redirect `allowed` wouldn't follow.
     Refused,
+    /// It answers a browser and not the app: it has to be read through a window the person can see.
+    Browser,
+    /// That window was closed, or left, before it showed the file.
+    Closed,
     /// More than `MOST_BYTES`.
     Large,
     /// It answered with something that is not a source.
@@ -253,6 +257,12 @@ pub async fn read(url: &Url, etag: Option<&str>, version: &str) -> Result<Readin
         return Ok(Reading::Unchanged);
     }
     // A redirect stopped by the rule above comes back as the redirect itself.
+    if matches!(
+        response.status(),
+        reqwest::StatusCode::FORBIDDEN | reqwest::StatusCode::SERVICE_UNAVAILABLE
+    ) {
+        return Err(Refusal::Browser);
+    }
     if !response.status().is_success() {
         return Err(Refusal::Refused);
     }
@@ -886,7 +896,7 @@ mod tests {
         tauri::async_runtime::block_on(read_what_is_due(&sources, "0.0.0", DAY + 1));
         server.join().unwrap();
         let source = &sources.all()[0];
-        assert_eq!(source.trouble, Some(Refusal::Refused));
+        assert_eq!(source.trouble, Some(Refusal::Browser));
         assert_eq!((source.items, source.read_at), (items, 1));
         assert!(sources.due(DAY + 2).is_empty(), "not again at once");
         assert_eq!(sources.due(DAY + 1 + 6 * 60 * 60 * 1000).len(), 1);

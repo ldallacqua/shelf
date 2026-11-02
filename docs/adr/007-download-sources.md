@@ -73,6 +73,17 @@ What was read, 1 Nov 2026:
    a file refused at its address; the app said only that it didn't answer, so it now says which of: no such name
    from this computer, no secure connection, too slow, another failure to connect, or answered without the file.
    Nor does it look a name up by other means than Windows' own.
+   **An address that only answers a browser is read through a window the person can see,** as the owner
+   chose on 2 Nov 2026, once `curl` showed a 403 with `Cf-Mitigated: challenge` from the first real one. Adding,
+   Read again and **Read all** ask by themselves first, and on a 403 or a 503 open the address in a real
+   web view, in the app's own profile, so whatever it remembers it remembers as a browser would. If it asks
+   something, the person answers. When it shows anything that isn't a web page, the page hands that over, by a
+   command that window alone may call and that nothing else there may go past, and it is read like any source.
+   Closing the window stops a Read all. **Not chosen,** because they go around the check rather than through it:
+   a window kept out of sight, opening one with nobody having just asked, which is why the daily reading never
+   does and says so on the card, reusing its cookie outside it, FlareSolverr and the like. Hydra reads a source
+   on its own closed server, which [its code](https://github.com/hydralauncher/hydra/blob/main/src/main/events/download-sources/add-download-source.ts)
+   only calls. Using that API isn't chosen either: it is a private service with no documentation.
 10. **Nothing that was downloaded runs by itself, ever.** Not an installer, not a game, not after extracting.
     The file is reached through Windows' picker, as every game's is, so Play and the hours work as before.
     That is the one defense against what a source can hide, since anything it starts has my access to the computer.

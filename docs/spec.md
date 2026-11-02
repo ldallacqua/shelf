@@ -1653,6 +1653,12 @@ In Shelf for Windows alone, in Settings, under the rest. Why it is built this wa
   would come too late, and a general one is hard to act on.
 - **What a source shows:** its name and address, how many downloads, by which kind of link, how many were
   left out, and when it was read. The address is not a link. Nothing else from the list reaches the page.
+- **An address that only answers a browser** opens in a window of the app as I add it or read it again, a
+  normal one I can see. If it asks me something, I answer; once it shows the file, it closes by itself and the
+  source is read as any other. Closing it first says so, and nothing changes.
+- **Read all,** over the cards, reads every source with an address, one at a time, opening those windows one at
+  a time. It says how far along it is, and how it ended. The reading by itself never opens a window, so a source
+  that needs one says on its card that Read all will. Closing a window stops there: that is me saying enough.
 - **From a saved file** stands beside Add. An address may answer a browser and not the app, so I can save the
   file and choose it in Windows' picker. The card says which file, and its Read again chooses a file again.
 - **Refused:** an address that isn't `https`, one on this computer or its network, one whose name leads nowhere from

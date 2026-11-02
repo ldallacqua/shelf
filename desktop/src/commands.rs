@@ -21,6 +21,7 @@ use crate::processes::{self, Closing};
 use crate::real_debrid::{self, RealDebrid};
 use crate::running::{self, GameView, Games, Launch, Rules, SteamGame, Target};
 use crate::shortcut::{self, Pointed};
+use crate::source_window::{self, ReadingAll, SourceWindow};
 use crate::sources::{self, Reading, Source, Sources};
 use crate::steam;
 use crate::tracker::{Session, Tracker};
@@ -425,19 +426,39 @@ pub fn download_sources(kept: State<'_, Sources>) -> Vec<Source> {
     kept.all()
 }
 
+/// What the person just asked to read, by itself, and through a window they can see if the address
+/// only answers a browser.
+async fn read_as_asked(
+    app: &AppHandle,
+    url: &url::Url,
+    etag: Option<&str>,
+    ask: &str,
+) -> Result<Reading, sources::Refusal> {
+    let version = app.package_info().version.to_string();
+    match sources::read(url, etag, &version).await {
+        Err(sources::Refusal::Browser) => {
+            let reader = app.state::<SourceWindow>();
+            let bytes = reader.read(app, url, ask).await?;
+            Ok(Reading::Read { bytes, etag: None })
+        }
+        read => read,
+    }
+}
+
 /// Reads the source at an address the person pasted, and keeps it. Nothing is downloaded.
 #[tauri::command]
 pub async fn add_source(
     app: AppHandle,
     url: String,
+    ask: Option<String>,
     kept: State<'_, Sources>,
 ) -> Result<Source, sources::Refusal> {
     let url = sources::address(&url)?;
     if kept.has_address(url.as_str()) {
         return Err(sources::Refusal::Duplicate);
     }
-    let version = app.package_info().version.to_string();
-    let Reading::Read { bytes, etag } = sources::read(&url, None, &version).await? else {
+    let ask = short(ask.as_deref().unwrap_or("Shelf"));
+    let Reading::Read { bytes, etag } = read_as_asked(&app, &url, None, &ask).await? else {
         // Asked with no `ETag`, nothing can answer that it has not changed.
         return Err(sources::Refusal::Unreachable);
     };
@@ -517,6 +538,7 @@ async fn pick_source(
 pub async fn read_source_again(
     app: AppHandle,
     id: String,
+    ask: Option<String>,
     kept: State<'_, Sources>,
 ) -> Result<Source, sources::Refusal> {
     if !ids::entry(&id) {
@@ -524,12 +546,102 @@ pub async fn read_source_again(
     }
     let (address, etag) = kept.address(&id).ok_or(sources::Refusal::Missing)?;
     let url = sources::address(&address)?;
-    let version = app.package_info().version.to_string();
-    match sources::read(&url, etag.as_deref(), &version).await? {
+    let ask = short(ask.as_deref().unwrap_or("Shelf"));
+    match read_as_asked(&app, &url, etag.as_deref(), &ask).await? {
         Reading::Unchanged => kept.touch(&id, now()),
         Reading::Read { bytes, etag } => {
             kept.replace(&id, None, sources::parse(&bytes)?, etag, now())
         }
+    }
+}
+
+/// How a Read all ended.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AllRead {
+    read: usize,
+    failed: usize,
+    /// The person closed a window, so the rest weren't read.
+    stopped: bool,
+}
+
+/// Reads every source with an address, one at a time, opening a window for those that only answer a
+/// browser, one at a time. Closing a window stops it: that is someone saying enough, and the next would
+/// only open another. Sources saved in a file have nothing to read from.
+#[tauri::command]
+pub async fn read_all_sources(
+    app: AppHandle,
+    ask: String,
+    kept: State<'_, Sources>,
+    reader: State<'_, SourceWindow>,
+) -> Result<AllRead, sources::Refusal> {
+    let list: Vec<Source> = kept
+        .all()
+        .into_iter()
+        .filter(|each| each.file.is_none())
+        .collect();
+    {
+        let mut reading = reader.reading_all.lock().unwrap();
+        if reading.is_some() {
+            return Err(sources::Refusal::Failed);
+        }
+        *reading = Some(ReadingAll {
+            done: 0,
+            total: list.len(),
+        });
+    }
+    let ask = short(&ask);
+    let mut outcome = AllRead {
+        read: 0,
+        failed: 0,
+        stopped: false,
+    };
+    for (at, source) in list.iter().enumerate() {
+        *reader.reading_all.lock().unwrap() = Some(ReadingAll {
+            done: at,
+            total: list.len(),
+        });
+        let read = async {
+            let (address, etag) = kept.address(&source.id).ok_or(sources::Refusal::Missing)?;
+            let url = sources::address(&address)?;
+            match read_as_asked(&app, &url, etag.as_deref(), &ask).await? {
+                Reading::Unchanged => kept.touch(&source.id, now()),
+                Reading::Read { bytes, etag } => {
+                    kept.replace(&source.id, None, sources::parse(&bytes)?, etag, now())
+                }
+            }
+        };
+        match read.await {
+            Ok(_) => outcome.read += 1,
+            Err(sources::Refusal::Closed) => {
+                outcome.stopped = true;
+                break;
+            }
+            Err(why) => {
+                kept.failed_reading(&source.id, why, now());
+                outcome.failed += 1;
+            }
+        }
+    }
+    *reader.reading_all.lock().unwrap() = None;
+    Ok(outcome)
+}
+
+/// How far along a Read all is, for a page opened meanwhile too.
+#[tauri::command]
+pub fn reading_all_sources(reader: State<'_, SourceWindow>) -> Option<ReadingAll> {
+    *reader.reading_all.lock().unwrap()
+}
+
+/// A page in the window that reads a source hands over what the address showed. Asked of that window
+/// alone, it is read as any source is: only ever as a list.
+#[tauri::command]
+pub fn deliver_source(window: WebviewWindow, text: String, reader: State<'_, SourceWindow>) {
+    let from_there = window
+        .url()
+        .is_ok_and(|url| window.label() == source_window::LABEL && sources::allowed(&url));
+    if from_there {
+        reader.deliver(text);
     }
 }
 

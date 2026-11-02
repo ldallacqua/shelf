@@ -570,6 +570,16 @@ try {
   pass(`Skyrim offers “${await steam.textContent()}”, to ${await steam.getAttribute('href')}`)
 
   console.log('\nDownload sources (ADR 007), a made-up one on this computer')
+  const guardedAsks: string[] = []
+  const madeUpLargeSource = JSON.stringify({
+    name: 'Made-up large source',
+    downloads: Array.from({ length: 60_000 }, (_, at) => ({
+      title: `Made-up download ${at}`,
+      uris: [`magnet:?xt=urn:btih:${at.toString(16).padStart(40, '0')}&tr=${'x'.repeat(200)}`],
+      uploadDate: '2026-01-01T00:00:00.000Z',
+      fileSize: '1 GB',
+    })),
+  })
   // A made-up archive, as a zip is laid out, holding what could be started and what couldn't.
   const madeUpArchive = storedZip([
     ['Made-up Game/bin/made-up.exe', 'not a program: the words alone'],
@@ -602,6 +612,20 @@ try {
           ],
         }),
       )
+    } else if (request.url === '/asks-a-browser.json') {
+      // As an address behind a browser check: the app is turned away, and a window passes by itself here,
+      // where a real one would have the person answer. Large, as a real list is.
+      guardedAsks.push(request.headers['user-agent'] ?? '')
+      if (request.headers.cookie?.includes('made-up-pass=1')) {
+        response.setHeader('content-type', 'application/json')
+        response.end(madeUpLargeSource)
+      } else {
+        response.statusCode = 403
+        response.setHeader('content-type', 'text/html')
+        response.end(
+          '<!doctype html><script>document.cookie = "made-up-pass=1"; location.reload()</script>',
+        )
+      }
     } else if (request.url === '/made-up-archive.zip') {
       response.setHeader('content-type', 'application/zip')
       response.end(madeUpArchive)
@@ -673,6 +697,30 @@ try {
     await saved.getByRole('button', { name: 'Remove' }).click()
     await shelf.getByRole('button', { name: 'Remove source' }).click()
     await saved.waitFor({ state: 'detached', timeout: 10_000 })
+
+    console.log('\nAn address that only answers a browser (ADR 007), made up on this computer')
+    await field.fill(`http://127.0.0.1:${port}/asks-a-browser.json`)
+    await add.click()
+    const guarded = shelf.locator('article').filter({ hasText: 'Made-up large source' })
+    await guarded.waitFor({ timeout: 60_000 })
+    const guardedText = (await guarded.innerText()).replace(/\s+/g, ' ')
+    if (/60,000 downloads/.test(guardedText))
+      pass(
+        `adding it opens a window, and reads ${Math.round(madeUpLargeSource.length / 1e6)} MB through it`,
+      )
+    else fail(`through a window it said: ${guardedText}`)
+    if (
+      guardedAsks[0]?.startsWith('Shelf/') &&
+      guardedAsks.some((each) => !each.startsWith('Shelf/'))
+    )
+      pass('asks by itself first, as itself, and only then through the window')
+    else fail(`it was asked by: ${guardedAsks.join(', ')}`)
+    await shelf.getByRole('button', { name: 'Read all' }).click()
+    await shelf.getByRole('status').getByText('Read 1.').waitFor({ timeout: 60_000 })
+    pass('Read all goes through the window too, for the one that needs it')
+    await guarded.getByRole('button', { name: 'Remove' }).click()
+    await shelf.getByRole('button', { name: 'Remove source' }).click()
+    await guarded.waitFor({ state: 'detached', timeout: 10_000 })
 
     console.log('\nDownloading from a source (ADR 007), made-up bytes on this computer')
     await field.fill(`http://127.0.0.1:${port}/with-files.json`)

@@ -30,6 +30,10 @@ const SOURCE: Source = {
 let kept: Source[]
 let refuse: string | undefined
 let picked: Source | null
+let going: { done: number; total: number } | null
+let tooOld: boolean
+let ended: { read: number; failed: number; stopped: boolean }
+const WINDOW = 'Shelf is reading a source. If this asks you something, answer here.'
 
 const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
   if (refuse && command !== 'download_sources') throw refuse
@@ -38,6 +42,11 @@ const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
   if (command === 'real_debrid_account') return { state: 'out' }
   if (command === 'add_source') return { ...SOURCE, url: args?.url }
   if (command === 'read_source_again') return { ...SOURCE, items: 4 }
+  if (command === 'reading_all_sources') {
+    if (tooOld) throw 'not allowed'
+    return going
+  }
+  if (command === 'read_all_sources') return ended
   if (command === 'add_source_file') return picked
   return undefined
 })
@@ -46,6 +55,9 @@ beforeEach(() => {
   kept = []
   refuse = undefined
   picked = null
+  going = null
+  tooOld = false
+  ended = { read: 1, failed: 0, stopped: false }
   app.mockClear()
   setBridgeForTests(app)
 })
@@ -72,7 +84,7 @@ describe('download sources', () => {
     await user.click(screen.getByRole('button', { name: 'Add source' }))
 
     expect(await screen.findByRole('heading', { name: 'Made-up source' })).toBeInTheDocument()
-    expect(app).toHaveBeenCalledWith('add_source', { url: SOURCE.url })
+    expect(app).toHaveBeenCalledWith('add_source', { url: SOURCE.url, ask: WINDOW })
     expect(screen.getByRole('status')).toHaveTextContent(/3 downloads.*Nothing was downloaded/)
     expect(field()).toHaveValue('')
     expect(screen.queryByText('No sources yet.')).not.toBeInTheDocument()
@@ -85,7 +97,8 @@ describe('download sources', () => {
     ['name', /couldn’t find that address/],
     ['secure', /secure connection/],
     ['slow', /too long to answer/],
-    ['refused', /only answer browsers/],
+    ['refused', /answered without the file/],
+    ['closed', /window closed/],
     ['large', /too large/],
     ['unsupported', /no source/],
     ['failed', /couldn’t keep/],
@@ -123,7 +136,7 @@ describe('download sources', () => {
     renderWithIntl(<DownloadSources />)
     await user.click(await screen.findByRole('button', { name: 'Read again' }))
     expect(await screen.findByText('4 downloads')).toBeInTheDocument()
-    expect(app).toHaveBeenCalledWith('read_source_again', { id: 'one' })
+    expect(app).toHaveBeenCalledWith('read_source_again', { id: 'one', ask: WINDOW })
 
     refuse = 'unreachable'
     await user.click(screen.getByRole('button', { name: 'Read again' }))
@@ -139,6 +152,55 @@ describe('download sources', () => {
     expect(
       await screen.findByText(/The last reading failed, and the list it has stays\. .*too long/),
     ).toBeInTheDocument()
+  })
+
+  it('reads them all when asked, saying what it will open', async () => {
+    kept = [SOURCE]
+    const user = userEvent.setup()
+    renderWithIntl(<DownloadSources />)
+    expect(await screen.findByText(/open in a window, one at a time/)).toBeInTheDocument()
+    expect(app).not.toHaveBeenCalledWith('read_all_sources', expect.anything())
+    await user.click(screen.getByRole('button', { name: 'Read all' }))
+    expect(app).toHaveBeenCalledWith('read_all_sources', { ask: WINDOW })
+    expect(await screen.findByRole('status')).toHaveTextContent('Read 1.')
+  })
+
+  it.each([
+    [{ read: 3, failed: 2, stopped: false }, 'Read 3. 2 failed: their cards say why.'],
+    [{ read: 1, failed: 1, stopped: false }, 'Read 1. 1 failed: its card says why.'],
+    [{ read: 2, failed: 0, stopped: true }, 'Read 2. You closed the window, so the rest stay'],
+  ])('says how it ended: %o', async (how, words) => {
+    kept = [SOURCE]
+    ended = how
+    const user = userEvent.setup()
+    renderWithIntl(<DownloadSources />)
+    await user.click(await screen.findByRole('button', { name: 'Read all' }))
+    expect(await screen.findByRole('status')).toHaveTextContent(words)
+  })
+
+  it('shows one going when the page opens, and offers nothing else meanwhile', async () => {
+    kept = [SOURCE]
+    going = { done: 2, total: 12 }
+    renderWithIntl(<DownloadSources />)
+    const button = await screen.findByRole('button', { name: 'Reading 3 of 12…' })
+    expect(button).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Read again' })).toBeDisabled()
+  })
+
+  it('doesn’t offer it on an app too old to do it', async () => {
+    kept = [SOURCE]
+    tooOld = true
+    renderWithIntl(<DownloadSources />)
+    await screen.findByRole('button', { name: 'Read again' })
+    expect(screen.queryByRole('button', { name: 'Read all' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('doesn’t offer it when every source is a saved file', async () => {
+    kept = [{ ...SOURCE, url: 'file:a.json', file: 'a.json' }]
+    renderWithIntl(<DownloadSources />)
+    await screen.findByRole('button', { name: 'Choose the file again' })
+    expect(screen.queryByRole('button', { name: 'Read all' })).not.toBeInTheDocument()
   })
 
   const FROM_FILE: Source = { ...SOURCE, url: 'file:saved.json', file: 'saved.json' }
