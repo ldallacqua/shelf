@@ -181,7 +181,9 @@ fn safe_path(name: &str) -> Result<Vec<String>, Failure> {
         if safe.is_empty() {
             return Err(Failure::Unsafe);
         }
-        parts.push(safe);
+        // A download's name loses its leading dots, and a game's own `.config` needs them.
+        let dots = part.len() - part.trim_start_matches('.').len();
+        parts.push(format!("{}{safe}", &part[..dots]));
     }
     Ok(parts)
 }
@@ -1139,12 +1141,18 @@ mod tests {
         let archive = dir.join("game.zip");
         zip_of(
             &archive,
-            &[("CON.txt", b"a"), ("trailing. ", b"b"), ("sp?ce.txt", b"c")],
+            &[
+                ("CON.txt", b"a"),
+                ("trailing. ", b"b"),
+                ("sp?ce.txt", b"c"),
+                (".config/.hidden", b"d"),
+            ],
         );
         let out = open(&archive).unwrap();
         assert!(out.join("_CON.txt").is_file());
         assert!(out.join("trailing").is_file());
         assert!(out.join("spce.txt").is_file());
+        assert!(out.join(".config").join(".hidden").is_file());
     }
 
     #[test]

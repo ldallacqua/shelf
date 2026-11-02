@@ -9,8 +9,8 @@ step 3. This note is what the next session needs and cannot get from the code. R
 The owner asked to download games from sources in Hydra's format, by direct link and Real-Debrid.
 [ADR 007](adr/007-download-sources.md) has the phases: sources, direct downloads and Real-Debrid reached the owner
 in desktop 0.6.0, published with the owner's OK on 2 Nov. Extracting is built after it and needs a release, which
-needs the owner's OK. It has run on made-up archives only, the rar ones put together by hand in the tests, so a
-real one's method or size is unproven. Real-Debrid has run only against a
+needs the owner's OK. It has run on made-up archives, the rar ones put together by hand in the tests, and once on the small rar samples the
+`unrar` crate publishes, which are not in the repository. A large one, or a compressed one in several parts, is unproven. Real-Debrid has run only against a
 stand-in: its real answers may differ, above all a free account's and what its filters say. Windows Defender flagged the 0.5.0
 installer, `Trojan:Win32/Bearfoos.A!ml`, on 1 Nov, both the copy in `desktop/target` and the updater's copy in
 Temp: an unsigned installer and a machine-learning verdict, so probably a false positive, not proven. The
