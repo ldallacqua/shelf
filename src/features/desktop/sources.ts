@@ -64,8 +64,9 @@ const extractionSchema = z.object({
 
 const downloadSchema = z.object({
   id: z.string(),
+  // These three default, as a page goes out at once and an app of 0.6.0 doesn't send them until it updates.
   /** The game it was looked for from. */
-  entry: z.string().nullable(),
+  entry: z.string().nullable().default(null),
   title: z.string(),
   sourceName: z.string(),
   file: z.string().nullable(),
@@ -93,8 +94,8 @@ const downloadSchema = z.object({
   through: z.enum(['direct', 'realdebrid']),
   remote: z.number().nullable(),
   /** How many archives it brought. */
-  archives: z.number(),
-  extraction: extractionSchema.nullable(),
+  archives: z.number().default(0),
+  extraction: extractionSchema.nullable().default(null),
 })
 
 export type Download = z.infer<typeof downloadSchema>

@@ -151,6 +151,15 @@ describe('downloads', () => {
 
   const finished: Download = { ...DOWNLOAD, state: 'done', done: 12 * GB, speed: 0 }
 
+  it('still draws what an app that doesn’t extract yet sends, with nothing to extract', async () => {
+    const { entry: _entry, archives: _archives, extraction: _extraction, ...older } = finished
+    kept = [older as Download]
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    const names = here.getAllByRole('button').map((button) => button.textContent)
+    expect(names).toEqual(['Show in folder', 'Take off the list'])
+  })
+
   it('offers to extract an archive, first, and only when asked does it', async () => {
     kept = [{ ...finished, archives: 1 }]
     const user = userEvent.setup()
