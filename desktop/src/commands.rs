@@ -445,10 +445,71 @@ pub async fn add_source(
     kept.add(
         uuid::Uuid::new_v4().to_string(),
         url.to_string(),
+        None,
         feed,
         etag,
         now(),
     )
+}
+
+/// Asks Windows for a source a person saved, for an address that won't answer the app, and keeps it, or
+/// gives the source named a new list from it. Nothing, when the picker is closed. Nothing is downloaded.
+#[tauri::command]
+pub async fn add_source_file(
+    window: WebviewWindow,
+    ask: String,
+    files: String,
+    replacing: Option<String>,
+    kept: State<'_, Sources>,
+) -> Result<Option<Source>, sources::Refusal> {
+    if replacing.as_deref().is_some_and(|id| !ids::entry(id)) {
+        return Err(sources::Refusal::Invalid);
+    }
+    let Some(path) = pick_source(&window, short(&ask), short(&files)).await? else {
+        return Ok(None);
+    };
+    let name = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    // A list can be large.
+    let feed = tauri::async_runtime::spawn_blocking(move || sources::read_file(&path))
+        .await
+        .map_err(|_| sources::Refusal::Failed)??;
+    let source = match replacing {
+        Some(id) => kept.replace(&id, Some(name), feed, None, now())?,
+        None => kept.add(
+            uuid::Uuid::new_v4().to_string(),
+            format!("file:{name}"),
+            Some(name),
+            feed,
+            None,
+            now(),
+        )?,
+    };
+    Ok(Some(source))
+}
+
+async fn pick_source(
+    window: &WebviewWindow,
+    title: String,
+    files: String,
+) -> Result<Option<PathBuf>, sources::Refusal> {
+    // As `pick`: no script can answer Windows' picker.
+    #[cfg(debug_assertions)]
+    if let Ok(path) = std::env::var("SHELF_PICK_SOURCE") {
+        return Ok(Some(PathBuf::from(path)));
+    }
+    let dialog = window
+        .dialog()
+        .file()
+        .set_parent(window)
+        .set_title(title)
+        .add_filter(files, &["json", "txt"]);
+    let picked = tauri::async_runtime::spawn_blocking(move || dialog.blocking_pick_file())
+        .await
+        .map_err(|_| sources::Refusal::Failed)?;
+    Ok(picked.and_then(|file| file.into_path().ok()))
 }
 
 /// Reads a source again by its id. If that fails, the list it has stays.
@@ -466,7 +527,9 @@ pub async fn read_source_again(
     let version = app.package_info().version.to_string();
     match sources::read(&url, etag.as_deref(), &version).await? {
         Reading::Unchanged => kept.touch(&id, now()),
-        Reading::Read { bytes, etag } => kept.replace(&id, sources::parse(&bytes)?, etag, now()),
+        Reading::Read { bytes, etag } => {
+            kept.replace(&id, None, sources::parse(&bytes)?, etag, now())
+        }
     }
 }
 

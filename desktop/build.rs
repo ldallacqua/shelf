@@ -19,6 +19,7 @@ fn main() {
             "play_sessions_kept",
             "download_sources",
             "add_source",
+            "add_source_file",
             "read_source_again",
             "remove_source",
             "search_sources",

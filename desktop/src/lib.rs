@@ -377,6 +377,7 @@ pub fn run() {
             commands::play_sessions_kept,
             commands::download_sources,
             commands::add_source,
+            commands::add_source_file,
             commands::read_source_again,
             commands::remove_source,
             commands::search_sources,
@@ -416,6 +417,7 @@ pub fn run() {
                     .permission("allow-play-sessions-kept")
                     .permission("allow-download-sources")
                     .permission("allow-add-source")
+                    .permission("allow-add-source-file")
                     .permission("allow-read-source-again")
                     .permission("allow-remove-source")
                     .permission("allow-search-sources")

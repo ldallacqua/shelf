@@ -12,6 +12,8 @@ const sourceSchema = z.object({
   id: z.string(),
   name: z.string(),
   url: z.string(),
+  /** The file it was added from, when it has no address. An app of 0.7.0 or before doesn't send it. */
+  file: z.string().nullable().default(null),
   addedAt: z.number(),
   readAt: z.number(),
   items: z.number(),
@@ -27,6 +29,7 @@ export const sourceRefusals = [
   'invalid',
   'duplicate',
   'unreachable',
+  'refused',
   'large',
   'unsupported',
   'missing',
@@ -180,6 +183,14 @@ export const sources = {
   /** Reads the source at an address, and keeps it. Nothing is downloaded. */
   add: async (url: string): Promise<Source> =>
     sourceSchema.parse(await call('add_source', { url })),
+  /**
+   * Windows' picker, titled `ask`, for a source a person saved: a new one, or a new list for the one
+   * it `replaces`. Null when the picker is closed.
+   */
+  addFile: async (ask: string, files: string, replacing?: string): Promise<Source | null> =>
+    sourceSchema
+      .nullable()
+      .parse(await call('add_source_file', { ask, files, replacing: replacing ?? null })),
   /** Reads a source again. If that fails, the list it has stays. */
   readAgain: async (id: string): Promise<Source> =>
     sourceSchema.parse(await call('read_source_again', { id })),
