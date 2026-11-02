@@ -22,7 +22,8 @@
  * at each step, for a person to look at.
  *
  * A made-up source on this computer is added, and made-up bytes downloaded from it, paused, resumed and
- * compared: no real source is read, and nothing that arrives is started (ADR 007).
+ * compared, and a made-up archive downloaded and extracted: no real source is read, and nothing that arrives
+ * is started (ADR 007).
  *
  * Start the server first: pnpm build && pnpm serve:test. Never against
  * production: it signs in with the test doubles' made-up password.
@@ -42,6 +43,7 @@ import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { crc32 } from 'node:zlib'
 
 import { chromium, type Browser, type Page } from '@playwright/test'
 
@@ -72,6 +74,50 @@ const fail = (problem: string) => {
   console.log(`  ✗ ${problem}`)
 }
 const pass = (what: string) => console.log(`  ✓ ${what}`)
+
+/** A zip as it is laid out, with nothing compressed. No script here reaches a real archive. */
+const storedZip = (files: readonly (readonly [string, string])[]) => {
+  const number = (size: 2 | 4, value: number) => {
+    const bytes = Buffer.alloc(size)
+    bytes.writeUIntLE(value, 0, size)
+    return bytes
+  }
+  const locals: Buffer[] = []
+  const list: Buffer[] = []
+  let at = 0
+  for (const [name, text] of files) {
+    const [nameBytes, data] = [Buffer.from(name), Buffer.from(text)]
+    const shared = Buffer.concat([
+      ...[20, 0, 0, 0, 33].map((value) => number(2, value)),
+      number(4, crc32(data)),
+      number(4, data.length),
+      number(4, data.length),
+      number(2, nameBytes.length),
+      number(2, 0),
+    ])
+    locals.push(Buffer.from('PK\x03\x04', 'latin1'), shared, nameBytes, data)
+    list.push(
+      Buffer.from('PK\x01\x02', 'latin1'),
+      number(2, 20),
+      shared,
+      ...[0, 0, 0].map((value) => number(2, value)),
+      number(4, 0),
+      number(4, at),
+      nameBytes,
+    )
+    at += 30 + nameBytes.length + data.length
+  }
+  const middle = Buffer.concat(list)
+  return Buffer.concat([
+    ...locals,
+    middle,
+    Buffer.from('PK\x05\x06', 'latin1'),
+    ...[0, 0, files.length, files.length].map((value) => number(2, value)),
+    number(4, middle.length),
+    number(4, at),
+    number(2, 0),
+  ])
+}
 
 /** Waits for `ready` to be true, or fails with `what` after `seconds`. */
 async function until(what: string, seconds: number, ready: () => Promise<boolean>) {
@@ -522,6 +568,11 @@ try {
   pass(`Skyrim offers “${await steam.textContent()}”, to ${await steam.getAttribute('href')}`)
 
   console.log('\nDownload sources (ADR 007), a made-up one on this computer')
+  // A made-up archive, as a zip is laid out, holding what could be started and what couldn't.
+  const madeUpArchive = storedZip([
+    ['Made-up Game/bin/made-up.exe', 'not a program: the words alone'],
+    ['Made-up Game/data.txt', 'made-up data'],
+  ])
   // Made-up bytes to download, sent in two goes: the second waits for a request that continues.
   const madeUpFile = randomBytes(4 * 1024 * 1024)
   const half = madeUpFile.length / 2
@@ -540,6 +591,7 @@ try {
           downloads: [
             { title: 'Bloodborne, a made-up file', uris: [`${at}/made-up.bin`], fileSize: '4 MB' },
             { title: 'Bloodborne, a made-up page', uris: [`${at}/page.html`], fileSize: '1 GB' },
+            { title: 'Bloodborne, a made-up archive', uris: [`${at}/made-up-archive.zip`] },
             {
               title: 'Bloodborne, a made-up magnet',
               uris: ['magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567'],
@@ -548,6 +600,9 @@ try {
           ],
         }),
       )
+    } else if (request.url === '/made-up-archive.zip') {
+      response.setHeader('content-type', 'application/zip')
+      response.end(madeUpArchive)
     } else if (request.url === '/made-up.bin') {
       response.setHeader('etag', '"made-up"')
       const range = request.headers.range
@@ -653,8 +708,8 @@ try {
     if (mark.includes('ZoneId=3')) pass('marks it as from the internet, as a browser does')
     else fail(`its mark says: ${mark}`)
     const offered = await file.getByRole('button').allTextContents()
-    if (offered.join() === 'Show in folder,Take off the list')
-      pass('offers to show the file, and nothing that starts it')
+    if (offered.join() === 'Choose the game’s file,Show in folder,Take off the list')
+      pass('offers the picker and the folder, and nothing that starts it')
     else fail(`a finished file offers: ${offered.join(', ')}`)
     await shot('downloaded')
 
@@ -665,6 +720,49 @@ try {
     await file.waitFor({ state: 'detached', timeout: 10_000 })
     if (existsSync(join(downloaded, 'made-up.bin'))) pass('taken off the list, the file stays')
     else fail('taking it off the list deleted the file')
+
+    console.log('\nExtracting (ADR 007), a made-up archive on this computer')
+    await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
+    await shelf.getByRole('button', { name: 'Find a download' }).click()
+    await shelf.getByRole('button', { name: 'Download Bloodborne, a made-up archive' }).click()
+    await shelf
+      .getByRole('button', { name: 'In your downloads: Bloodborne, a made-up archive' })
+      .waitFor({ timeout: 15_000 })
+    await shelf.goto(`${BASE_URL}/en/account`)
+    const packed = shelf.locator('article').filter({ hasText: 'a made-up archive' })
+    await packed.getByRole('button', { name: 'Extract' }).click({ timeout: 20_000 })
+    await packed.getByText(/^Extracted/).waitFor({ timeout: 20_000 })
+    const out = join(downloaded, 'made-up-archive')
+    if (
+      readFileSync(join(out, 'data.txt'), 'utf8') === 'made-up data' &&
+      existsSync(join(out, 'bin', 'made-up.exe'))
+    )
+      pass('extracts into a folder named for the archive, with the one folder around it all gone')
+    else fail(`it came out as ${readdirSync(out).join(', ')}`)
+    if (existsSync(join(downloaded, 'made-up-archive.zip'))) pass('the archive stays')
+    else fail('extracting took the archive away')
+    if (!existsSync(`${out}.part`)) pass('leaves no unfinished folder')
+    else fail('an unfinished folder stayed')
+    if (
+      readFileSync(`${join(out, 'bin', 'made-up.exe')}:Zone.Identifier`, 'utf8').includes(
+        'ZoneId=3',
+      )
+    )
+      pass('what could be started keeps the mark of having come from the internet')
+    else fail('what could be started lost its mark')
+    const next = await packed.getByRole('button').allTextContents()
+    if (next.join() === 'Choose the game’s file,Show in folder,Take off the list')
+      pass('offers the game’s file through the picker, and nothing that starts it')
+    else fail(`extracted, it offers: ${next.join(', ')}`)
+    await packed.scrollIntoViewIfNeeded()
+    await shot('extracted')
+    await packed.getByRole('button', { name: 'Choose the game’s file' }).click()
+    await packed.getByText(/is what Play opens now/).waitFor({ timeout: 10_000 })
+    pass('the file chosen is the game’s it was looked for from')
+    await packed.getByRole('button', { name: 'Take off the list' }).click()
+    await packed.waitFor({ state: 'detached', timeout: 10_000 })
+    if (existsSync(join(out, 'data.txt'))) pass('taken off the list, what came out stays')
+    else fail('taking it off the list deleted what came out')
 
     console.log('\nThrough Real-Debrid (ADR 007), a stand-in on this computer')
     await shelf.getByRole('button', { name: 'Sign in to Real-Debrid' }).click()

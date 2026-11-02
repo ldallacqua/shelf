@@ -4,6 +4,7 @@
 mod autostart;
 mod commands;
 mod downloads;
+mod extract;
 mod ids;
 mod launch;
 mod launchers;
@@ -385,6 +386,8 @@ pub fn run() {
             commands::resume_download,
             commands::remove_download,
             commands::show_download,
+            commands::extract_download,
+            commands::cancel_extraction,
             commands::real_debrid_account,
             commands::real_debrid_sign_in,
             commands::real_debrid_cancel_sign_in,
@@ -422,6 +425,8 @@ pub fn run() {
                     .permission("allow-resume-download")
                     .permission("allow-remove-download")
                     .permission("allow-show-download")
+                    .permission("allow-extract-download")
+                    .permission("allow-cancel-extraction")
                     .permission("allow-real-debrid-account")
                     .permission("allow-real-debrid-sign-in")
                     .permission("allow-real-debrid-cancel-sign-in")
@@ -446,6 +451,10 @@ pub fn run() {
             let version = app.package_info().version.to_string();
             let debrid = std::sync::Arc::new(real_debrid::RealDebrid::open(vault(), &version)?);
             app.manage(debrid.clone());
+            let opening = downloading.clone();
+            std::thread::Builder::new()
+                .name("extracting".into())
+                .spawn(move || downloads::run_extractions(opening))?;
             tauri::async_runtime::spawn(downloads::run(downloading, debrid, version));
             app.manage(running::Games::default());
             app.manage(commands::Following::default());

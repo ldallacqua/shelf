@@ -195,7 +195,7 @@ export function FindDownloadView({
   )
 }
 
-function Finder({ title }: { title: string }) {
+function Finder({ title, entryId }: { title: string; entryId: string }) {
   const t = useTranslations('FindDownload')
   // Nothing is drawn for what may never come: with no source, there is nothing to find.
   const [hasSources, setHasSources] = useState(false)
@@ -243,7 +243,9 @@ function Finder({ title }: { title: string }) {
     setSaid(undefined)
     try {
       // False: the folder picker was closed, which changes nothing.
-      if (await downloads.start(found, t('chooseFolder', { title: found.title }), through)) {
+      if (
+        await downloads.start(found, t('chooseFolder', { title: found.title }), through, entryId)
+      ) {
         setAdded((now) => new Set(now).add(key))
       }
     } catch (error) {
@@ -295,11 +297,11 @@ function Finder({ title }: { title: string }) {
  * Looking for a game in the sources on this computer (ADR 007, spec 7.10), from its page, in the app
  * alone. A list to read and choose from: nothing is matched or started by itself.
  */
-export default function FindDownload({ title }: { title: string }) {
+export default function FindDownload({ title, entryId }: { title: string; entryId: string }) {
   return (
     <AppWords>
       <div data-play="">
-        <Finder title={title} />
+        <Finder title={title} entryId={entryId} />
       </div>
     </AppWords>
   )

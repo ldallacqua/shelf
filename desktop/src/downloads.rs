@@ -1,13 +1,14 @@
-//! Downloading from a source (ADR 007, phases 2 and 3): one at a time, on a task of the app's own, so it
+//! Downloading from a source (ADR 007, phases 2 to 4): one at a time, on a task of the app's own, so it
 //! goes on from the tray with no window open, by its links or through Real-Debrid. A page names a download
 //! by its source and place; the link stays here, in `downloads.json`. What arrives is written beside itself as
-//! `.part`, marked as coming from the internet, and never started.
+//! `.part`, marked as coming from the internet, and never started. An archive is opened when the person
+//! says, on a thread of its own, into a folder that only gets its name once all of it is there.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 use reqwest::header::{
@@ -19,6 +20,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use url::Url;
 
+use crate::extract;
 #[cfg(test)]
 use crate::real_debrid::double;
 use crate::real_debrid::{self, RealDebrid, Trouble};
@@ -136,6 +138,29 @@ struct Piece {
     finished: bool,
 }
 
+/// How opening a finished download's archives is coming along.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Opening {
+    Waiting,
+    Working,
+    Failed,
+    Done,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Extraction {
+    state: Opening,
+    why: Option<extract::Failure>,
+    done: u64,
+    total: u64,
+    /// Being written, under a `.part` name, and removed if it doesn't finish.
+    unfinished: Vec<PathBuf>,
+    /// Where it all ended up, once it has.
+    folders: Vec<PathBuf>,
+}
+
 /// A download as it is kept.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -176,6 +201,14 @@ struct Download {
     /// How far along Real-Debrid is, in percent, while `Remote`.
     #[serde(default)]
     remote: Option<u8>,
+    /// The game it was looked for from, for Windows' picker to start here. Older ones have none.
+    #[serde(default)]
+    entry: Option<String>,
+    /// Which of what it brought are archives, once it has finished.
+    #[serde(default)]
+    archives: Option<Vec<PathBuf>>,
+    #[serde(default)]
+    extraction: Option<Extraction>,
 }
 
 impl Download {
@@ -192,6 +225,44 @@ impl Download {
             .folders
             .iter()
             .fold(self.base(), |folder, part| folder.join(part))
+    }
+
+    /// What it brought, once it has finished.
+    fn files(&self) -> Vec<PathBuf> {
+        if self.pieces.is_empty() {
+            return self
+                .file
+                .iter()
+                .map(|name| self.folder.join(name))
+                .collect();
+        }
+        self.pieces
+            .iter()
+            .filter_map(|piece| Some(self.piece_folder(piece).join(piece.file.as_ref()?)))
+            .collect()
+    }
+
+    /// Reads what it brought for archives, the first time it is asked.
+    fn find_archives(&mut self) {
+        if self.archives.is_none() {
+            self.archives = Some(extract::archives_in(&self.files()));
+        }
+    }
+
+    /// What Explorer should show of it: what was extracted, or else what arrived.
+    fn to_show(&self) -> PathBuf {
+        match self
+            .extraction
+            .as_ref()
+            .filter(|each| each.state == Opening::Done)
+        {
+            Some(Extraction { folders, .. }) if folders.len() == 1 => folders[0].clone(),
+            Some(_) => self.base(),
+            None => match &self.file {
+                Some(name) => self.folder.join(name),
+                None => self.folder.clone(),
+            },
+        }
     }
 
     /// How much is here, from the files themselves.
@@ -251,6 +322,8 @@ impl Download {
 #[serde(rename_all = "camelCase")]
 pub struct View {
     pub id: String,
+    /// The game it was looked for from.
+    pub entry: Option<String>,
     pub title: String,
     pub source_name: String,
     pub file: Option<String>,
@@ -264,6 +337,18 @@ pub struct View {
     pub through: Through,
     /// How far along Real-Debrid is, in percent, while it fetches it.
     pub remote: Option<u8>,
+    /// How many archives it brought.
+    pub archives: usize,
+    pub extraction: Option<ExtractionView>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtractionView {
+    pub state: Opening,
+    pub why: Option<extract::Failure>,
+    pub done: u64,
+    pub total: u64,
 }
 
 /// What the task holds of the one it is on, for a page to read and a command to stop.
@@ -285,6 +370,23 @@ struct Job {
     speed: Arc<AtomicU64>,
 }
 
+/// What the thread that opens archives holds of the one it is on.
+struct RunningExtraction {
+    id: String,
+    stop: Arc<AtomicBool>,
+    done: Arc<AtomicU64>,
+}
+
+/// One to open, with what it reports through.
+struct ExtractionJob {
+    id: String,
+    archives: Vec<PathBuf>,
+    /// Left by an earlier go the app didn't live through.
+    leftover: Vec<PathBuf>,
+    stop: Arc<AtomicBool>,
+    done: Arc<AtomicU64>,
+}
+
 #[derive(Default, Serialize, Deserialize)]
 struct Kept {
     version: u32,
@@ -298,6 +400,9 @@ pub struct Downloads {
     kept: Mutex<Vec<Download>>,
     running: Mutex<Option<Running>>,
     wake: Notify,
+    extracting: Mutex<Option<RunningExtraction>>,
+    /// Goes with `kept`, whose lock it waits on.
+    extract_wake: Condvar,
 }
 
 fn part_of(folder: &Path, file: &str) -> PathBuf {
@@ -329,6 +434,15 @@ impl Downloads {
             }
             if download.state != State::Done {
                 download.done = download.arrived();
+            } else {
+                download.find_archives();
+            }
+            // Not started again by itself either. What it left stays until it is tried again or taken off.
+            if let Some(extraction) = &mut download.extraction
+                && matches!(extraction.state, Opening::Waiting | Opening::Working)
+            {
+                extraction.state = Opening::Failed;
+                extraction.why = Some(extract::Failure::Interrupted);
             }
         }
         Downloads {
@@ -336,17 +450,22 @@ impl Downloads {
             kept: Mutex::new(kept),
             running: Mutex::new(None),
             wake: Notify::new(),
+            extracting: Mutex::new(None),
+            extract_wake: Condvar::new(),
         }
     }
 
     pub fn all(&self) -> Vec<View> {
         let kept = self.kept.lock().unwrap();
         let running = self.running.lock().unwrap();
+        let extracting = self.extracting.lock().unwrap();
         kept.iter()
             .map(|download| {
                 let now = running.as_ref().filter(|each| each.id == download.id);
+                let opening = extracting.as_ref().filter(|each| each.id == download.id);
                 View {
                     id: download.id.clone(),
+                    entry: download.entry.clone(),
                     title: download.title.clone(),
                     source_name: download.source_name.clone(),
                     file: download.file.clone(),
@@ -360,6 +479,13 @@ impl Downloads {
                     speed: now.map_or(0, |each| each.speed.load(Ordering::Relaxed)),
                     through: download.through,
                     remote: download.remote,
+                    archives: download.archives.as_ref().map_or(0, Vec::len),
+                    extraction: download.extraction.as_ref().map(|each| ExtractionView {
+                        state: each.state,
+                        why: each.why,
+                        done: opening.map_or(each.done, |now| now.done.load(Ordering::Relaxed)),
+                        total: each.total,
+                    }),
                 }
             })
             .collect()
@@ -386,6 +512,7 @@ impl Downloads {
         links: Vec<String>,
         parts: Vec<Vec<String>>,
         folder: PathBuf,
+        entry: Option<String>,
         now: u64,
     ) -> Result<(), Refusal> {
         let mut kept = self.kept.lock().unwrap();
@@ -410,6 +537,9 @@ impl Downloads {
             torrent_ours: false,
             pieces: Vec::new(),
             remote: None,
+            entry,
+            archives: None,
+            extraction: None,
         });
         self.save(&kept)?;
         self.wake.notify_one();
@@ -466,6 +596,13 @@ impl Downloads {
             return Ok(None);
         }
         let download = kept.remove(at);
+        // The thread at it removes what it wrote, and finds this one gone. What an earlier go left is
+        // nobody's until now.
+        if !self.stop_extracting(id)
+            && let Some(extraction) = &download.extraction
+        {
+            remove_unfinished(&extraction.unfinished);
+        }
         let mut torrent = None;
         if download.state != State::Done {
             download.delete_what_arrived();
@@ -475,17 +612,181 @@ impl Downloads {
         Ok(torrent)
     }
 
-    /// The file finished, and only that, to show in Explorer.
+    /// What a finished one came to, and only that, to show in Explorer.
     pub fn finished_file(&self, id: &str) -> Result<PathBuf, Refusal> {
         let kept = self.kept.lock().unwrap();
         let download = kept
             .iter()
             .find(|each| each.id == id)
             .ok_or(Refusal::Missing)?;
-        match (&download.state, &download.file) {
-            (State::Done, Some(name)) => Ok(download.folder.join(name)),
+        match download.state {
+            State::Done if download.file.is_some() => Ok(download.to_show()),
             _ => Err(Refusal::Missing),
         }
+    }
+
+    /// Where Windows' picker should start for a game: the last thing downloaded for it.
+    pub fn folder_for_game(&self, entry: &str) -> Option<PathBuf> {
+        let kept = self.kept.lock().unwrap();
+        let download = kept
+            .iter()
+            .rev()
+            .find(|each| each.state == State::Done && each.entry.as_deref() == Some(entry))?;
+        Some(
+            match download
+                .extraction
+                .as_ref()
+                .filter(|each| each.state == Opening::Done)
+            {
+                Some(extraction) if !extraction.folders.is_empty() => extraction.folders[0].clone(),
+                _ => download.base(),
+            },
+        )
+    }
+
+    /// Puts a finished download's archives in line to be opened, once more if the last go failed.
+    pub fn extract(&self, id: &str) -> Result<(), Refusal> {
+        let mut kept = self.kept.lock().unwrap();
+        let download = kept
+            .iter_mut()
+            .find(|each| each.id == id)
+            .ok_or(Refusal::Missing)?;
+        let ready = download.state == State::Done
+            && download
+                .archives
+                .as_ref()
+                .is_some_and(|all| !all.is_empty());
+        if !ready {
+            return Err(Refusal::Missing);
+        }
+        let leftover = match &download.extraction {
+            None => Vec::new(),
+            Some(earlier) if earlier.state == Opening::Failed => earlier.unfinished.clone(),
+            Some(_) => return Ok(()),
+        };
+        download.extraction = Some(Extraction {
+            state: Opening::Waiting,
+            why: None,
+            done: 0,
+            total: 0,
+            unfinished: leftover,
+            folders: Vec::new(),
+        });
+        self.save(&kept)?;
+        self.extract_wake.notify_one();
+        Ok(())
+    }
+
+    /// Stops opening one, and what had come out goes. The archive stays.
+    pub fn cancel_extraction(&self, id: &str) -> Result<(), Refusal> {
+        let mut kept = self.kept.lock().unwrap();
+        let download = kept
+            .iter_mut()
+            .find(|each| each.id == id)
+            .ok_or(Refusal::Missing)?;
+        // Being worked on: the thread at it says so when it has let go.
+        if self.stop_extracting(id) {
+            return Ok(());
+        }
+        if let Some(extraction) = download
+            .extraction
+            .as_ref()
+            .filter(|each| each.state != Opening::Done)
+        {
+            remove_unfinished(&extraction.unfinished);
+            download.extraction = None;
+            self.save(&kept)?;
+        }
+        Ok(())
+    }
+
+    fn stop_extracting(&self, id: &str) -> bool {
+        let extracting = self.extracting.lock().unwrap();
+        match extracting.as_ref().filter(|each| each.id == id) {
+            Some(each) => {
+                each.stop.store(true, Ordering::Relaxed);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// The next to open, waiting until there is one.
+    fn take_next_extraction(&self) -> ExtractionJob {
+        let mut kept = self.kept.lock().unwrap();
+        loop {
+            let waiting = kept.iter_mut().find(|each| {
+                each.extraction
+                    .as_ref()
+                    .is_some_and(|extraction| extraction.state == Opening::Waiting)
+            });
+            if let Some(download) = waiting {
+                let id = download.id.clone();
+                let archives = download.archives.clone().unwrap_or_default();
+                let mut leftover = Vec::new();
+                if let Some(extraction) = &mut download.extraction {
+                    extraction.state = Opening::Working;
+                    leftover = std::mem::take(&mut extraction.unfinished);
+                }
+                let job = ExtractionJob {
+                    id,
+                    archives,
+                    leftover,
+                    stop: Arc::new(AtomicBool::new(false)),
+                    done: Arc::new(AtomicU64::new(0)),
+                };
+                *self.extracting.lock().unwrap() = Some(RunningExtraction {
+                    id: job.id.clone(),
+                    stop: job.stop.clone(),
+                    done: job.done.clone(),
+                });
+                let _ = self.save(&kept);
+                return job;
+            }
+            kept = self.extract_wake.wait(kept).unwrap();
+        }
+    }
+
+    fn change_extraction(&self, id: &str, change: impl FnOnce(&mut Extraction)) {
+        self.change(id, |download| {
+            if let Some(extraction) = &mut download.extraction {
+                change(extraction);
+            }
+        });
+    }
+
+    /// The thread has let go of it. Cancel leaves it as if it had never been asked.
+    fn settle_extraction(
+        &self,
+        id: &str,
+        outcome: Result<Vec<PathBuf>, extract::Failure>,
+        done: u64,
+    ) {
+        let mut kept = self.kept.lock().unwrap();
+        *self.extracting.lock().unwrap() = None;
+        let Some(download) = kept.iter_mut().find(|each| each.id == id) else {
+            return;
+        };
+        match outcome {
+            Err(extract::Failure::Stopped) => download.extraction = None,
+            outcome => {
+                if let Some(extraction) = &mut download.extraction {
+                    extraction.unfinished.clear();
+                    extraction.done = done;
+                    match outcome {
+                        Ok(folders) => {
+                            extraction.state = Opening::Done;
+                            extraction.folders = folders;
+                        }
+                        Err(failure) => {
+                            extraction.state = Opening::Failed;
+                            extraction.why = Some(failure);
+                        }
+                    }
+                }
+            }
+        }
+        let _ = self.save(&kept);
     }
 
     /// Stops the one under way, if it is this one, and says so.
@@ -602,6 +903,7 @@ impl Downloads {
                 download.done = total;
                 download.total = Some(total);
                 download.why = None;
+                download.find_archives();
             }
             // Pause has said what it is now, and Resume may already have.
             Err(Failure::Stopped) => {}
@@ -654,6 +956,93 @@ pub async fn run(downloads: Arc<Downloads>, debrid: Arc<RealDebrid>, version: St
         }
         let done = job.before.load(Ordering::Relaxed) + job.done.load(Ordering::Relaxed);
         downloads.settle(&id, outcome, done);
+    }
+}
+
+/// The thread that opens archives, for as long as the app runs: apart from the task that downloads,
+/// which it would hold up for as long as a game takes to come out.
+pub fn run_extractions(downloads: Arc<Downloads>) {
+    loop {
+        let job = downloads.take_next_extraction();
+        let outcome = open_archives(&downloads, &job);
+        let done = job.done.load(Ordering::Relaxed);
+        downloads.settle_extraction(&job.id, outcome, done);
+    }
+}
+
+/// Every archive read through first, so that a bad one leaves nothing, and then all of them written,
+/// each under a `.part` name until the last is whole.
+fn open_archives(
+    downloads: &Downloads,
+    job: &ExtractionJob,
+) -> Result<Vec<PathBuf>, extract::Failure> {
+    remove_unfinished(&job.leftover);
+    let plans = job
+        .archives
+        .iter()
+        .map(|archive| extract::plan(archive))
+        .collect::<Result<Vec<_>, _>>()?;
+    let total = plans.iter().map(|plan| plan.total).sum::<u64>();
+    downloads.change_extraction(&job.id, |extraction| extraction.total = total);
+    let room = job
+        .archives
+        .first()
+        .and_then(|archive| free_space(archive.parent()?));
+    if room.is_some_and(|free| total > free) {
+        return Err(extract::Failure::Disk);
+    }
+    let mut folders = Vec::with_capacity(plans.len());
+    let mut unfinished = Vec::with_capacity(plans.len());
+    for (plan, archive) in plans.iter().zip(&job.archives) {
+        let parent = archive.parent().ok_or(extract::Failure::Write)?;
+        let name = unused_folder(parent, &plan.name);
+        let writing = part_of(parent, &name);
+        fs::create_dir_all(&writing).map_err(|_| extract::Failure::Write)?;
+        unfinished.push(writing);
+        folders.push(parent.join(name));
+    }
+    let kept = unfinished.clone();
+    downloads.change_extraction(&job.id, |extraction| extraction.unfinished = kept);
+    let progress = extract::Progress {
+        stop: &job.stop,
+        done: &job.done,
+    };
+    let written = plans
+        .iter()
+        .zip(&unfinished)
+        .try_for_each(|(plan, writing)| extract::unpack(plan, writing, &progress));
+    if let Err(failure) = written {
+        remove_unfinished(&unfinished);
+        return Err(failure);
+    }
+    for (writing, folder) in unfinished.iter().zip(&folders) {
+        if fs::rename(writing, folder).is_err() {
+            remove_unfinished(&unfinished);
+            return Err(extract::Failure::Write);
+        }
+    }
+    Ok(folders)
+}
+
+/// A name nothing in the folder has, nor its `.part`. A folder's dots aren't a kind of file.
+fn unused_folder(parent: &Path, name: &str) -> String {
+    let free =
+        |candidate: &str| !parent.join(candidate).exists() && !part_of(parent, candidate).exists();
+    if free(name) {
+        return name.to_string();
+    }
+    (2..)
+        .map(|count| format!("{name} ({count})"))
+        .find(|candidate| free(candidate))
+        .expect("numbers don't run out")
+}
+
+/// What an unfinished opening wrote. Only ever a folder under a `.part` name, which Shelf made.
+fn remove_unfinished(folders: &[PathBuf]) {
+    for folder in folders {
+        if folder.extension().is_some_and(|kind| kind == "part") {
+            let _ = fs::remove_dir_all(folder);
+        }
     }
 }
 
@@ -1880,6 +2269,7 @@ mod tests {
                 links,
                 Vec::new(),
                 dir.to_path_buf(),
+                None,
                 1,
             )
             .unwrap();
@@ -2212,6 +2602,7 @@ mod tests {
                 links,
                 parts,
                 dir.to_path_buf(),
+                None,
                 1,
             )
             .unwrap();
@@ -2404,6 +2795,7 @@ mod tests {
                 vec![MAGNET.into()],
                 Vec::new(),
                 dir.clone(),
+                None,
                 1,
             )
             .unwrap();
@@ -2513,5 +2905,239 @@ mod tests {
         assert_eq!(pieces.len(), 1);
         assert_eq!(pieces[0].file, None);
         assert_eq!(pieces[0].size, None);
+    }
+
+    /// A download that has finished with this file, or this folder of them.
+    fn finished(app: &Path, dir: &Path, file: &str, entry: Option<&str>) -> Arc<Downloads> {
+        let downloads = Arc::new(Downloads::open(app));
+        downloads
+            .add(
+                "one".into(),
+                "A made-up game".into(),
+                "Made-up source".into(),
+                Through::Direct,
+                vec!["https://example.invalid/a.zip".into()],
+                Vec::new(),
+                dir.to_path_buf(),
+                entry.map(str::to_string),
+                1,
+            )
+            .unwrap();
+        downloads.change("one", |download| {
+            download.state = State::Done;
+            download.file = Some(file.to_string());
+            download.find_archives();
+        });
+        downloads
+    }
+
+    fn zip_at(path: &Path, files: &[(&str, &[u8])]) {
+        let mut zip = zip::ZipWriter::new(File::create(path).unwrap());
+        for (name, bytes) in files {
+            zip.start_file(*name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(bytes).unwrap();
+        }
+        zip.finish().unwrap();
+    }
+
+    /// It waits for the next for as long as the process lasts, as it does in the app.
+    fn opening_thread(downloads: &Arc<Downloads>) {
+        let downloads = downloads.clone();
+        std::thread::spawn(move || run_extractions(downloads));
+    }
+
+    fn opened(state: Opening) -> impl Fn(&View) -> bool {
+        move |seen| {
+            seen.extraction
+                .as_ref()
+                .is_some_and(|each| each.state == state)
+        }
+    }
+
+    #[test]
+    fn a_finished_archive_is_opened_when_asked_into_a_folder_beside_it() {
+        let dir = folder("extract");
+        let app = folder("extract-app");
+        zip_at(&dir.join("a.zip"), &[("bin/game.exe", b"not a game")]);
+        let downloads = finished(&app, &dir, "a.zip", Some("an-entry"));
+        assert_eq!(downloads.all()[0].archives, 1);
+        assert_eq!(downloads.all()[0].extraction, None);
+        assert_eq!(downloads.folder_for_game("an-entry"), Some(dir.clone()));
+
+        opening_thread(&downloads);
+        downloads.extract("one").unwrap();
+        let extraction = wait_for(&downloads, opened(Opening::Done))
+            .extraction
+            .unwrap();
+        assert_eq!((extraction.done, extraction.total), (10, 10));
+        let out = dir.join("a");
+        assert_eq!(fs::read(out.join("game.exe")).unwrap(), b"not a game");
+        assert!(dir.join("a.zip").is_file(), "the archive stays");
+        assert!(!dir.join("a.part").exists());
+        assert_eq!(downloads.finished_file("one"), Ok(out.clone()));
+        assert_eq!(downloads.folder_for_game("an-entry"), Some(out));
+        assert_eq!(downloads.folder_for_game("another"), None);
+    }
+
+    #[test]
+    fn a_folder_already_there_is_never_written_into() {
+        let dir = folder("extract-taken");
+        let app = folder("extract-taken-app");
+        zip_at(&dir.join("a.zip"), &[("b.txt", b"new")]);
+        fs::create_dir_all(dir.join("a")).unwrap();
+        fs::write(dir.join("a").join("b.txt"), "old").unwrap();
+        let downloads = finished(&app, &dir, "a.zip", None);
+        opening_thread(&downloads);
+        downloads.extract("one").unwrap();
+        wait_for(&downloads, opened(Opening::Done));
+        assert_eq!(fs::read(dir.join("a").join("b.txt")).unwrap(), b"old");
+        assert_eq!(fs::read(dir.join("a (2)").join("b.txt")).unwrap(), b"new");
+    }
+
+    #[test]
+    fn an_archive_that_would_leave_its_folder_writes_nothing_and_says_so() {
+        let dir = folder("extract-bad");
+        let app = folder("extract-bad-app");
+        zip_at(
+            &dir.join("a.zip"),
+            &[("fine.txt", b"a"), ("../outside.txt", b"b")],
+        );
+        let downloads = finished(&app, &dir, "a.zip", None);
+        opening_thread(&downloads);
+        downloads.extract("one").unwrap();
+        let seen = wait_for(&downloads, opened(Opening::Failed));
+        assert_eq!(seen.extraction.unwrap().why, Some(extract::Failure::Unsafe));
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1, "only the archive");
+        assert!(!dir.parent().unwrap().join("outside.txt").exists());
+    }
+
+    #[test]
+    fn what_is_no_archive_has_nothing_to_open() {
+        let dir = folder("extract-none");
+        let app = folder("extract-none-app");
+        fs::write(dir.join("setup.exe"), "MZ").unwrap();
+        let downloads = finished(&app, &dir, "setup.exe", None);
+        assert_eq!(downloads.all()[0].archives, 0);
+        assert_eq!(downloads.extract("one"), Err(Refusal::Missing));
+    }
+
+    #[test]
+    fn stopping_takes_back_what_had_come_out() {
+        let dir = folder("extract-stop");
+        let app = folder("extract-stop-app");
+        zip_at(&dir.join("a.zip"), &[("b.txt", b"hello")]);
+        let downloads = finished(&app, &dir, "a.zip", None);
+        downloads.extract("one").unwrap();
+        let job = downloads.take_next_extraction();
+        job.stop.store(true, Ordering::Relaxed);
+        let outcome = open_archives(&downloads, &job);
+        assert_eq!(outcome, Err(extract::Failure::Stopped));
+        downloads.settle_extraction("one", outcome, 0);
+        assert_eq!(downloads.all()[0].extraction, None, "as if never asked");
+        assert!(!dir.join("a.part").exists());
+        assert!(!dir.join("a").exists());
+        assert!(dir.join("a.zip").is_file());
+    }
+
+    #[test]
+    fn cancelling_one_being_opened_reaches_the_thread() {
+        let dir = folder("extract-cancel");
+        let app = folder("extract-cancel-app");
+        zip_at(&dir.join("a.zip"), &[("b.txt", b"hello")]);
+        let downloads = finished(&app, &dir, "a.zip", None);
+        downloads.extract("one").unwrap();
+        let job = downloads.take_next_extraction();
+        downloads.cancel_extraction("one").unwrap();
+        assert!(job.stop.load(Ordering::Relaxed));
+    }
+
+    #[test]
+    fn opening_cut_short_by_the_app_ending_says_so_and_starts_over_when_asked() {
+        let dir = folder("extract-cut");
+        let app = folder("extract-cut-app");
+        zip_at(&dir.join("a.zip"), &[("b.txt", b"hello")]);
+        let downloads = finished(&app, &dir, "a.zip", None);
+        downloads.extract("one").unwrap();
+        // As the app leaves it: being worked on, and part of it written.
+        let writing = dir.join("a.part");
+        fs::create_dir_all(&writing).unwrap();
+        fs::write(writing.join("half.txt"), "half").unwrap();
+        let kept = writing.clone();
+        downloads.change_extraction("one", |extraction| {
+            extraction.state = Opening::Working;
+            extraction.unfinished = vec![kept];
+        });
+
+        let again = Arc::new(Downloads::open(&app));
+        let view = again.all().remove(0).extraction.unwrap();
+        assert_eq!(view.state, Opening::Failed);
+        assert_eq!(view.why, Some(extract::Failure::Interrupted));
+        assert!(writing.exists(), "nothing is deleted until it is asked");
+
+        opening_thread(&again);
+        again.extract("one").unwrap();
+        wait_for(&again, opened(Opening::Done));
+        assert!(!writing.exists());
+        assert_eq!(fs::read_dir(dir.join("a")).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn taking_one_off_the_list_clears_what_an_earlier_go_left_and_keeps_the_rest() {
+        let dir = folder("extract-forget");
+        let app = folder("extract-forget-app");
+        zip_at(&dir.join("a.zip"), &[("b.txt", b"hello")]);
+        let downloads = finished(&app, &dir, "a.zip", None);
+        downloads.extract("one").unwrap();
+        let writing = dir.join("a.part");
+        fs::create_dir_all(&writing).unwrap();
+        let kept = writing.clone();
+        downloads.change_extraction("one", |extraction| {
+            extraction.state = Opening::Failed;
+            extraction.unfinished = vec![kept];
+        });
+        downloads.remove("one").unwrap();
+        assert!(!writing.exists());
+        assert!(dir.join("a.zip").is_file());
+    }
+
+    #[test]
+    fn only_a_folder_shelf_named_is_ever_removed() {
+        let dir = folder("extract-guard");
+        let kept = dir.join("games");
+        fs::create_dir_all(&kept).unwrap();
+        remove_unfinished(std::slice::from_ref(&kept));
+        assert!(kept.is_dir());
+    }
+
+    #[test]
+    fn a_set_of_files_shows_its_folder_and_finds_an_archive_among_them() {
+        let dir = folder("extract-set");
+        let app = folder("extract-set-app");
+        let set = dir.join("A made-up game");
+        fs::create_dir_all(&set).unwrap();
+        zip_at(&set.join("data.zip"), &[("b.txt", b"hello")]);
+        fs::write(set.join("readme.txt"), "read me").unwrap();
+        let downloads = finished(&app, &dir, "A made-up game", None);
+        downloads.change("one", |download| {
+            download.archives = None;
+            download.pieces = ["data.zip", "readme.txt"]
+                .map(|name| Piece {
+                    link: "made-up".into(),
+                    folders: Vec::new(),
+                    file: Some(name.into()),
+                    size: None,
+                    validator: None,
+                    finished: true,
+                })
+                .to_vec();
+            download.find_archives();
+        });
+        assert_eq!(downloads.all()[0].archives, 1);
+        assert_eq!(downloads.finished_file("one"), Ok(set.clone()));
+        opening_thread(&downloads);
+        downloads.extract("one").unwrap();
+        wait_for(&downloads, opened(Opening::Done));
+        assert_eq!(fs::read(set.join("data").join("b.txt")).unwrap(), b"hello");
     }
 }

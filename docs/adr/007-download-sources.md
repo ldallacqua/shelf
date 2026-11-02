@@ -1,7 +1,6 @@
 # ADR 007: Downloading a game from a source, in the app
 
-- **Status:** accepted, 1 Nov 2026. Sources, direct downloads and Real-Debrid are built; extracting is
-  not yet (the phases, below)
+- **Status:** accepted, 1 Nov 2026. All four phases are built (below)
 - **Date:** 1 Nov 2026
 - **Decides:** how Shelf for Windows reads a list of downloads in Hydra's format and downloads from it,
   by a direct link or through Real-Debrid, and what it refuses to do along the way
@@ -89,14 +88,33 @@ Each is its own pull request.
    not added again, and Cancel takes off only one this download put there. Each link is opened just before it
    is used, as those it gives don't last. A set of files stands in a folder of its own named for the title, with
    the torrent's paths made safe part by part. The app says what it can't know ahead (above).
-4. **Extracting and Play.** Whichever of `zip`, `7z` and `rar` it is, with every path checked to stay in the
-   folder, and then the existing file picker for Play.
+4. **Extracting and Play** (built). Whichever of `zip`, `7z` and `rar` it is, by its name and what it starts
+   with, an archive in parts counted once by its first (`.part1.rar`, `.7z.001`). Only when asked, since it takes
+   the time and the disk, and on a thread of its own, so a download isn't held up. Every path in it is read before
+   anything is written: one that would leave the folder, or one link, refuses the whole archive, which says so,
+   and so does a password (decision 3). The disk has to have room for what it says it holds, and a file that runs
+   past what its archive said is damaged. It comes out into a folder beside it named for the archive, never one
+   already there, under a `.part` name until all of it is whole, without the one folder around everything that
+   many have. The archive stays. What Windows could start keeps the archive's mark (`Zone.Identifier`), and the
+   rest doesn't, as .NET refuses to load a marked library. From there the way on is the existing picker, from the
+   card or from Play, and it opens where the game came out, since the download knows which game it was looked for
+   from. An installer is left for the person to run, as a repack's is not an archive. Cut short by the app
+   ending, it waits for Try again, which starts over.
 
 Each needs a desktop release for the owner, and that needs the owner's OK.
 
 ## Consequences
 
 - `reqwest` is a direct dependency. It was in the app already through the updater.
+- **Three more for archives.** `zip` and `sevenz-rust2` are Rust, built without what compresses or calls C.
+  RAR has no decoder in Rust, so `unrar_sys` builds its makers' C++ (their license allows that, and rules out
+  making an archiver with it), which reads files we didn't write in this process. It carries UnRAR 7.1.0, of
+  May 2024, older than the fixes for CVE-2025-6218 and CVE-2025-8088, which are about where it writes. So it is
+  only ever asked to test: it hands over each file's bytes through a callback and creates nothing, and Shelf
+  writes them under a name it has checked itself. Its faults in reading a hostile file aren't covered by that,
+  and whoever opens what comes out gives it the same access anyway (decision 10). Look for a newer `unrar_sys`
+  when releasing. Its struct declarations miss `dll.hpp`'s `#pragma pack(1)`, so `extract.rs` lays them out itself.
+  `rust-version` is 1.93, for `sevenz-rust2`.
 - The account page gains a section for the app alone, loaded apart, so no visitor pays for it. `desktop:check`
   leaves it out of what it compares (`data-device`).
 - **Its words are in `messages/app/`,** not `messages/{locale}.json`. The layout hands every visitor

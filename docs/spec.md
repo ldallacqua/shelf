@@ -1643,7 +1643,7 @@ onde veio o game é importante".
 ### 7.10 Download sources
 
 In Shelf for Windows alone, on the account page, under Platforms. Why it is built this way:
-[ADR 007](adr/007-download-sources.md). Extracting what is downloaded is the next phase.
+[ADR 007](adr/007-download-sources.md).
 
 - **Adding one.** I paste the address of a list in the format Hydra uses, and the app reads it and keeps
   it on this computer. Adding downloads nothing, so it asks nothing first.
@@ -1677,6 +1677,17 @@ In Shelf for Windows alone, on the account page, under Platforms. Why it is buil
   folder and Take off the list, which leaves the file. **Nothing offers to start a file,** and the card says
   why. It goes on with the window closed to the tray; after Quit or a restart it waits for Resume.
 - **Never written over:** a name already in the folder becomes `name (2).zip`.
+- **Extract** comes first on a finished download that brought a `zip`, `7z` or `rar`, and only happens when I
+  press it, since it takes the time and the disk. The card says it is reading the archive, then how far along
+  it is, with Stop extracting, which asks and says the archive stays. It comes out into a folder beside the
+  archive, named for it, and the archive stays too.
+- **When it can't,** the card says which: a password (Shelf doesn't ask for one), paths that would leave the
+  folder or links (nothing is extracted, and it says to be careful with it), damaged or unreadable, a part
+  missing, no room, can't write, or the app closing first. Try again is there for what another go could change.
+- **Choose the game's file** comes first once it is extracted, or at once when it wasn't an archive, on what was
+  looked for from a game's page. It is Windows' picker, opening in the folder it came out in, and the same one
+  Play has, which opens there too. The card then says what Play opens. **Still nothing starts a file:** an
+  installer among what arrived is for me to run from its folder.
 
 Based on: Hydra's own settings (a card per source with its name, count and address, though with no empty
 state and no reason given for a failure), F-Droid's "add a repository" (saved, and nothing installed until I
@@ -1684,7 +1695,9 @@ choose), and a GNOME Podcasts report of a feed that wasn't one being accepted in
 downloading: Hydra's options list (a search, and a line of details per download, then a folder) and its
 downloads page, without its speed charts and hero art, as this is one section of a page; and Mozilla's
 notes on a download manager (time left, amount, speed, and pause together, the speed averaged so it doesn't jump).
-Signing in: Real-Debrid's own device flow, as its documentation sets it out.
+Signing in: Real-Debrid's own device flow, as its documentation sets it out. Extracting: Hydra's own extract
+step, as a button rather than its setting; Windows' Extract All and 7-Zip's Extract to, for a folder beside the
+archive named for it; and browsers' mark on what they download, which Explorer passes on to what it extracts.
 
 **Done when:** an address that isn't a source says so and adds nothing; a source added is there after the
 app restarts; a browser's account page shows nothing of this; a download paused and resumed ends as the

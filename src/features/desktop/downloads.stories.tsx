@@ -12,6 +12,7 @@ import type { Download } from './sources'
 const GB = 1024 ** 3
 const download = (over: Partial<Download> = {}): Download => ({
   id: 'one',
+  entry: 'made-up-entry',
   title: 'Made-up Game: Deluxe Edition v1.2',
   sourceName: 'Made-up source',
   file: 'made-up-game.zip',
@@ -23,6 +24,8 @@ const download = (over: Partial<Download> = {}): Download => ({
   speed: 18 * 1024 * 1024,
   through: 'direct',
   remote: null,
+  archives: 0,
+  extraction: null,
   ...over,
 })
 
@@ -42,6 +45,9 @@ const meta = {
     onResume: () => undefined,
     onRemove: () => undefined,
     onShow: () => undefined,
+    onExtract: () => undefined,
+    onStopExtracting: () => undefined,
+    onChoose: () => undefined,
   },
 } satisfies Meta<typeof DownloadsView>
 
@@ -96,6 +102,55 @@ export const Paused: Story = { args: { list: [download({ state: 'paused', speed:
 export const Finished: Story = {
   args: { list: [download({ state: 'done', done: 12.4 * GB, speed: 0 })] },
 }
+
+const archive = (extraction: Download['extraction']) => ({
+  args: {
+    list: [download({ state: 'done', done: 12.4 * GB, speed: 0, archives: 1, extraction })],
+  },
+})
+
+/** What to do next is the button that comes first. It takes the time and the disk, so it is asked for. */
+export const AnArchiveToExtract: Story = archive(null)
+
+export const ReadingTheArchive: Story = archive({
+  state: 'working',
+  why: null,
+  done: 0,
+  total: 0,
+})
+
+export const Extracting: Story = archive({
+  state: 'working',
+  why: null,
+  done: 9 * GB,
+  total: 31 * GB,
+})
+
+/** From here the way on is Windows' picker, which opens where it came out. */
+export const Extracted: Story = archive({
+  state: 'done',
+  why: null,
+  done: 31 * GB,
+  total: 31 * GB,
+})
+
+export const ExtractedAndChosen: Story = {
+  args: {
+    ...archive({ state: 'done', why: null, done: 31 * GB, total: 31 * GB }).args,
+    chosen: { one: 'game.exe' },
+  },
+}
+
+const stuck = (why: NonNullable<Download['extraction']>['why']) =>
+  archive({ state: 'failed', why, done: 0, total: 31 * GB })
+
+/** Another go can't change these two, so none is offered. */
+export const NeedsAPassword: Story = stuck('password')
+export const WouldLeaveItsFolder: Story = stuck('unsafe')
+export const ArchiveDamaged: Story = stuck('damaged')
+export const ArchiveMissingAPart: Story = stuck('volume')
+export const NoRoomToExtract: Story = stuck('disk')
+export const ExtractingCutShort: Story = stuck('interrupted')
 
 export const LinksThatArePages: Story = {
   args: {
