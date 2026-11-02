@@ -14,6 +14,7 @@ mod processes;
 mod real_debrid;
 mod running;
 mod shortcut;
+mod source_window;
 mod sources;
 mod steam;
 mod tracker;
@@ -343,7 +344,7 @@ pub fn run() {
         builder.plugin(
             tauri_plugin_window_state::Builder::default()
                 .with_state_flags(kept_state())
-                .with_denylist(&["splash"])
+                .with_denylist(&["splash", source_window::LABEL])
                 .skip_initial_state("main")
                 .build(),
         )
@@ -379,6 +380,9 @@ pub fn run() {
             commands::add_source,
             commands::add_source_file,
             commands::read_source_again,
+            commands::read_all_sources,
+            commands::reading_all_sources,
+            commands::deliver_source,
             commands::remove_source,
             commands::search_sources,
             commands::start_download,
@@ -419,6 +423,8 @@ pub fn run() {
                     .permission("allow-add-source")
                     .permission("allow-add-source-file")
                     .permission("allow-read-source-again")
+                    .permission("allow-read-all-sources")
+                    .permission("allow-reading-all-sources")
                     .permission("allow-remove-source")
                     .permission("allow-search-sources")
                     .permission("allow-start-download")
@@ -441,6 +447,19 @@ pub fn run() {
                     .permission("core:window:allow-start-dragging")
                     .permission("core:window:allow-internal-toggle-maximize"),
             )?;
+            // A page in the window that reads a source may hand it over, and ask for nothing else.
+            let reader = CapabilityBuilder::new("source-window")
+                .window(source_window::LABEL)
+                .local(false)
+                .remote("https://*/*".to_string())
+                .permission("allow-deliver-source");
+            app.add_capability(if cfg!(debug_assertions) {
+                // As `sources::allowed`, for `pnpm desktop:check`.
+                reader.remote("http://127.0.0.1:*/*".to_string())
+            } else {
+                reader
+            })?;
+            app.manage(source_window::SourceWindow::default());
             app.manage(Shelf(shelf.clone()));
             let folder = match data_dir() {
                 Some(dir) => dir,

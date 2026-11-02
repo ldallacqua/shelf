@@ -110,6 +110,7 @@ desktop/
     navigation.rs        Which addresses stay in the window (unit-tested)
     launchers.rs         The files chosen, kept in launchers.json
     sources.rs           Download sources (ADR 007): which addresses, read, checked, kept, searched
+    source_window.rs     A window the person can see, for an address that only answers a browser
     downloads.rs         Downloading from them: one at a time, resuming, and never starting anything
     extract.rs           Opening what arrived: zip, 7z, rar, every path checked before anything is written
     real_debrid.rs       Real-Debrid: its device sign-in, kept in Credential Manager, and its API
