@@ -1081,7 +1081,13 @@ async fn through_real_debrid(
     let id = &job.download.id;
     let mut download = job.download.clone();
     if download.pieces.is_empty() {
-        let pieces = pieces_to_fetch(debrid, downloads, job).await?;
+        let mut pieces = pieces_to_fetch(debrid, downloads, job).await?;
+        // A torrent it made one archive of doesn't say its size until the link is opened.
+        for piece in pieces.iter_mut().filter(|piece| piece.size.is_none()) {
+            if let Ok(opened) = asking(&job.stop, debrid.unrestrict(&piece.link)).await? {
+                piece.size = opened.filesize;
+            }
+        }
         download.pieces = pieces;
         // A set of files gets a folder of its own, which a single file doesn't need.
         if download.pieces.len() > 1 {
@@ -1193,7 +1199,16 @@ async fn fetch_piece(
         let outcome = fetch(
             client,
             transfer,
-            |started| said = Some(started.validator.clone()),
+            |started| {
+                said = Some(started.validator.clone());
+                // What it still didn't know, said by the answer: for the bar, from now on.
+                if let Some(total) = started.total {
+                    downloads.change(&id, |kept| {
+                        kept.pieces[at].size.get_or_insert(total);
+                        kept.total = kept.pieces.iter().map(|piece| piece.size).sum();
+                    });
+                }
+            },
             |_| {},
         )
         .await;
@@ -2530,7 +2545,7 @@ mod tests {
             } else if line.contains("/torrents/info/") {
                 let now = step.fetch_add(1, Ordering::Relaxed);
                 let status = statuses[now.min(statuses.len() - 1)];
-                let names: Vec<String> = files
+                let mut names: Vec<String> = files
                     .iter()
                     .enumerate()
                     .map(|(at, (name, body))| {
@@ -2540,6 +2555,10 @@ mod tests {
                         )
                     })
                     .collect();
+                // Many files it made one archive of: more of them than links, and no telling which.
+                if files.iter().any(|(name, _)| name.ends_with(".rar")) {
+                    names.push(r#"{"id":99,"path":"/inside.bin","bytes":1,"selected":1}"#.into());
+                }
                 let links: Vec<String> = files
                     .iter()
                     .map(|(name, _)| format!("\"https://host.example/{name}\""))
@@ -2577,6 +2596,10 @@ mod tests {
                     .iter()
                     .find(|(name, _)| name.ends_with(wanted))
                     .map_or("", |(_, body)| body);
+                // Long enough to be seen under way.
+                if wanted.ends_with(".rar") {
+                    std::thread::sleep(Duration::from_millis(400));
+                }
                 said("200 OK", body)
             } else {
                 said("404 Not Found", "")
@@ -2626,6 +2649,19 @@ mod tests {
     }
 
     const MAGNET: &str = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567";
+
+    #[test]
+    fn a_torrent_made_into_one_archive_knows_its_size_while_it_comes() {
+        let dir = folder("rd-one-archive");
+        let (base, _) = debrid_double(vec![("whole.rar", "the whole archive")], vec!["downloaded"]);
+        let (downloads, task) = through(&dir, base, vec![MAGNET.into()], Vec::new());
+        let seen = wait_for(&downloads, |seen| seen.total.is_some());
+        assert_eq!(seen.total, Some(17));
+        assert_ne!(seen.state, State::Done, "known before it has all come");
+        let seen = wait_for(&downloads, |seen| seen.state == State::Done);
+        assert_eq!(seen.done, 17);
+        task.abort();
+    }
 
     #[test]
     fn a_magnet_goes_through_real_debrid_into_a_folder_of_its_own() {

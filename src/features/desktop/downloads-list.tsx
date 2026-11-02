@@ -13,8 +13,10 @@ import {
 import { useFormatter, useTranslations } from 'next-intl'
 import { useCallback, useEffect, useState } from 'react'
 
+import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Confirm } from '@/ui/confirm'
+import { Ghost, Loading } from '@/ui/ghost'
 import { Progress } from '@/ui/progress'
 
 import { desktop } from './bridge'
@@ -88,6 +90,7 @@ function DownloadCard({
     total !== null
       ? t('sizeOf', { done: size(format, done), total: size(format, total) })
       : size(format, done)
+  const percent = total ? format.number(Math.min(1, done / total), { style: 'percent' }) : undefined
   const remaining =
     state === 'downloading' && speed > 0 && total !== null
       ? t('speedAndLeft', {
@@ -119,12 +122,19 @@ function DownloadCard({
                 max={extraction.total}
                 aria-label={t('extractProgress', { title: download.title })}
               />
-              <p className="text-sm">
-                {`${t('extracting')} · ${t('sizeOf', {
-                  done: size(format, extraction.done),
-                  total: size(format, extraction.total),
-                })}`}
-              </p>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <p className="text-sm">
+                  {`${t('extracting')} · ${t('sizeOf', {
+                    done: size(format, extraction.done),
+                    total: size(format, extraction.total),
+                  })}`}
+                </p>
+                <span className="readout text-xs text-muted">
+                  {format.number(Math.min(1, extraction.done / extraction.total), {
+                    style: 'percent',
+                  })}
+                </span>
+              </div>
             </>
           ) : (
             <p className="text-sm">{t('reading')}</p>
@@ -157,12 +167,22 @@ function DownloadCard({
               max={total}
               aria-label={t('progress', { title: download.title })}
             />
+          ) : state === 'downloading' ? (
+            // The server doesn't say how much there is: moving, and no more can be said.
+            <Progress aria-label={t('progress', { title: download.title })} />
           ) : null}
-          <p className="text-sm">
-            {state === 'remote' ? t('state.remote', { percent: remote ?? 0 }) : t(`state.${state}`)}
-            {state !== 'remote' && (done > 0 || total !== null) ? ` · ${howFar}` : ''}
-            {remaining ? <span className="text-muted">{` · ${remaining}`}</span> : null}
-          </p>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <p className="text-sm">
+              {state === 'remote'
+                ? t('state.remote', { percent: remote ?? 0 })
+                : t(`state.${state}`)}
+              {state !== 'remote' && (done > 0 || total !== null) ? ` · ${howFar}` : ''}
+              {remaining ? <span className="text-muted">{` · ${remaining}`}</span> : null}
+            </p>
+            {state !== 'remote' && percent ? (
+              <span className="readout text-xs text-muted">{percent}</span>
+            ) : null}
+          </div>
           {state === 'failed' ? (
             <p role="alert" className="text-sm text-pretty">
               {t(`why.${why ?? 'unreachable'}`)}
@@ -258,6 +278,20 @@ function DownloadCard({
   )
 }
 
+const opening = (each: Download) =>
+  each.extraction?.state === 'waiting' || each.extraction?.state === 'working'
+
+/**
+ * Where each stands: what needs looking at first, then what is waiting its turn, then what is
+ * finished, as a launcher's downloads page does. One stopped or paused stays with what is under way:
+ * it is unfinished, and it is mine to do something about.
+ */
+const groupsOf = (list: readonly Download[]) => ({
+  now: list.filter((each) => opening(each) || (each.state !== 'queued' && each.state !== 'done')),
+  next: list.filter((each) => each.state === 'queued'),
+  finished: list.filter((each) => each.state === 'done' && !opening(each)),
+})
+
 /** The list, drawn from what it is given: every state of it, for Storybook too. */
 export function DownloadsView({
   list,
@@ -271,7 +305,8 @@ export function DownloadsView({
   onChoose,
   chosen,
 }: {
-  list: readonly Download[]
+  /** Undefined while the app is asked. */
+  list: readonly Download[] | undefined
   trouble?: string | undefined
   onPause: (id: string) => void
   onResume: (id: string) => void
@@ -284,11 +319,16 @@ export function DownloadsView({
   chosen?: Readonly<Record<string, string>> | undefined
 }) {
   const t = useTranslations('Downloads')
-  // Nothing is drawn for what may never come: most people here have downloaded nothing.
-  if (list.length === 0 && !trouble) return null
+  if (list === undefined) {
+    return (
+      <Loading label={t('loading')} className="grid gap-4 lg:grid-cols-2">
+        <Ghost className="h-52 rounded-panel" />
+      </Loading>
+    )
+  }
+  const groups = groupsOf(list)
   return (
-    <section className="grid gap-5 border-t border-line pt-8">
-      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+    <div className="grid gap-10">
       {trouble ? (
         <p
           role="alert"
@@ -297,24 +337,47 @@ export function DownloadsView({
           {trouble}
         </p>
       ) : null}
-      <div className="grid gap-4 md:grid-cols-2">
-        {list.map((download) => (
-          <DownloadCard
-            key={download.id}
-            download={download}
-            onPause={() => onPause(download.id)}
-            onResume={() => onResume(download.id)}
-            onCancel={() => onRemove(download.id)}
-            onForget={() => onRemove(download.id)}
-            onShow={() => onShow(download.id)}
-            onExtract={() => onExtract(download.id)}
-            onStopExtracting={() => onStopExtracting(download.id)}
-            onChoose={() => onChoose(download)}
-            chosen={chosen?.[download.id]}
-          />
-        ))}
-      </div>
-    </section>
+      {list.length === 0 ? (
+        <p className="max-w-xl text-pretty text-muted">
+          {t.rich('empty', {
+            link: (chunks) => (
+              <Link
+                href="/account/settings"
+                className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
+        </p>
+      ) : null}
+      {(['now', 'next', 'finished'] as const).map((group) =>
+        groups[group].length === 0 ? null : (
+          <section key={group} className="grid gap-4">
+            <h2 className="readout text-[0.6875rem] tracking-wide text-muted uppercase">
+              {t(`group.${group}`)}
+            </h2>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {groups[group].map((download) => (
+                <DownloadCard
+                  key={download.id}
+                  download={download}
+                  onPause={() => onPause(download.id)}
+                  onResume={() => onResume(download.id)}
+                  onCancel={() => onRemove(download.id)}
+                  onForget={() => onRemove(download.id)}
+                  onShow={() => onShow(download.id)}
+                  onExtract={() => onExtract(download.id)}
+                  onStopExtracting={() => onStopExtracting(download.id)}
+                  onChoose={() => onChoose(download)}
+                  chosen={chosen?.[download.id]}
+                />
+              ))}
+            </div>
+          </section>
+        ),
+      )}
+    </div>
   )
 }
 
@@ -326,7 +389,7 @@ export function DownloadsView({
  */
 export function Downloads() {
   const t = useTranslations('Downloads')
-  const [list, setList] = useState<Download[]>([])
+  const [list, setList] = useState<Download[]>()
   const [trouble, setTrouble] = useState<string>()
   const [chosen, setChosen] = useState<Readonly<Record<string, string>>>({})
 
@@ -339,7 +402,7 @@ export function Downloads() {
     }
   }, [t])
 
-  const moving = list.some(
+  const moving = (list ?? []).some(
     (each) =>
       ['downloading', 'queued', 'remote'].includes(each.state) ||
       each.extraction?.state === 'waiting' ||

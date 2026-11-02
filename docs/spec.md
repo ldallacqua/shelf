@@ -84,6 +84,7 @@ language the browser asks for.
 | `/en/sign-up` | A shelf of one's own: name, handle, email address, password, public or private |
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
 | `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
+| `/en/downloads` | In Shelf for Windows alone: what is being downloaded on this computer (7.10). A browser goes home |
 | `/en/account/settings` | How Shelf behaves here, in a tab beside Account: experimental views (3.6), adult games, and in Shelf for Windows downloads, their sources and Real-Debrid (7.10). Who I am is the account; this is what I choose. The owner, 2 Nov 2026, on the download sections: they "definitivamente não devem estar na aba de conta" |
 | `/en/account/start` | Setting a new shelf up, where signing up leads: the platforms to bring games in from, and the way to placing them ([section 4.6](#46-setting-a-new-shelf-up)) |
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once, or to archive or remove; Organize's first tab ([section 4.5](#45-placing-what-a-sync-brought-in)) |
@@ -1670,8 +1671,10 @@ In Shelf for Windows alone, in Settings, under the rest. Why it is built this wa
   fails, the list it has stays, and one that failed by itself says why on its card until one works.
 - **Remove** asks first. It forgets the list, and what was downloaded stays.
 - **It isn't on the landing page,** by decision ([ADR 007](adr/007-download-sources.md), decision 4).
-- **Find a download** stands beside Play on my own game, once I have a source. Without one, nothing is
-  drawn. It opens a sheet with the game's name in a field and what my sources have with every one of
+- **Find a download** is in the ⋯ menu beside Play on my own game, once I have a source. Without one, it isn't
+  there. A row that also holds Play has room for one button and a menu, and I look for a game once, not every
+  time I open it. It opens a sheet, or beside the button where the game stands in the middle of a very wide
+  window, so as not to be a second frame at the far edge of the screen. It has the game's name in a field and what my sources have with every one of
   those words, closest first: title, size, source and date, and Download. Nothing is chosen for me.
 - **Downloading** asks Windows for a folder, then waits in line: one at a time. A link that leads to a web
   page isn't a file, so the next is tried, and if all of them are it says so. What has only magnet links,
@@ -1684,8 +1687,11 @@ In Shelf for Windows alone, in Settings, under the rest. Why it is built this wa
   file. A magnet is fetched to its servers first: the card says **Real-Debrid is getting it** with how far.
   A set of files stands in a folder named for the title. When it can't, the card says which of signed out, not
   Premium, its filters, nobody sharing it, a virus, a host it doesn't open, its limits, or another refusal.
-- **Downloads,** in Settings above the sources and only once there is one, shows how far along
-  each is, how fast and about how long, with Pause and Cancel, which asks. A finished one offers Show in
+- **Downloads** are a page of their own, `/downloads`, reached from an icon in the header beside the theme, there
+  once I have a source or a download. A ring around the icon fills with how far along what is moving is, so
+  it is there on any page, and a dot says one has stopped. The page puts what is under way first, then what
+  waits, then what is finished. Each shows a bar with how far along, how fast and about how long, or a bar that
+  only moves where the server doesn't say its size, with Pause and Cancel, which asks. A finished one offers Show in
   folder and Take off the list, which leaves the file. **Nothing offers to start a file,** and the card says
   why. It goes on with the window closed to the tray; after Quit or a restart it waits for Resume.
 - **Never written over:** a name already in the folder becomes `name (2).zip`.
@@ -1707,7 +1713,7 @@ choose), and a GNOME Podcasts report of a feed that wasn't one being accepted in
 downloading: Hydra's options list (a search, and a line of details per download, then a folder) and its
 downloads page, without its speed charts and hero art, as this is one section of a page; and Mozilla's
 notes on a download manager (time left, amount, speed, and pause together, the speed averaged so it doesn't jump).
-Signing in: Real-Debrid's own device flow, as its documentation sets it out. Extracting: Hydra's own extract
+Signing in: Real-Debrid's own device flow, as its documentation sets it out. The page and its icon: Steam's downloads page (under way, up next, finished) and Chrome's toolbar button, whose ring fills; one modal at a time, from the case against nesting them. Extracting: Hydra's own extract
 step, as a button rather than its setting; Windows' Extract All and 7-Zip's Extract to, for a folder beside the
 archive named for it; and browsers' mark on what they download, which Explorer passes on to what it extracts.
 

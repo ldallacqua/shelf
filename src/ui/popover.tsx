@@ -13,6 +13,8 @@ import { cn } from '@/ui/cn'
 const Popover = Primitive.Root
 const PopoverTrigger = Primitive.Trigger
 const PopoverClose = Primitive.Close
+/** What it stands beside, when something other than a trigger opens it. */
+const PopoverAnchor = Primitive.Anchor
 
 function PopoverContent({
   className,
@@ -38,4 +40,4 @@ function PopoverContent({
   )
 }
 
-export { Popover, PopoverClose, PopoverContent, PopoverTrigger }
+export { Popover, PopoverAnchor, PopoverClose, PopoverContent, PopoverTrigger }

@@ -19,6 +19,7 @@
     "read": "Read {when}",
     "lastReadFailed": "The last reading failed, and the list it has stays. {why}",
     "readAgain": "Read again",
+    "seeDownloads": "See downloads",
     "readAll": "Read all",
     "readingAll": "Reading {done} of {total}…",
     "readAllHelp": "Those that only answer a browser open in a window, one at a time. If one asks you something, the answer is yours to give. Closing it stops here.",
@@ -56,6 +57,17 @@
   },
   "Downloads": {
     "title": "Downloads",
+    "loading": "Asking this computer…",
+    "toSettings": "Sources and Real-Debrid",
+    "empty": "Nothing here yet. On one of your games, open the ⋯ menu beside Play and choose Find a download. Sources and Real-Debrid are in <link>Settings</link>.",
+    "group": {
+      "now": "Under way",
+      "next": "Waiting",
+      "finished": "Finished"
+    },
+    "linkShare": "Downloads: {percent}",
+    "linkMoving": "Downloads: under way",
+    "linkStopped": "Downloads: one has stopped",
     "progress": "How far along {title} is",
     "sizeOf": "{done} of {total}",
     "perSecond": "{size}/s",
@@ -132,7 +144,7 @@
     "downloadThis": "Download {title}",
     "added": "In your downloads",
     "addedThis": "In your downloads: {title}",
-    "addedSay": "On its way. See how far along it is in <link>Settings</link>.",
+    "addedSay": "On its way. See how far along it is in <link>Downloads</link>.",
     "chooseFolder": "Where to save {title}",
     "errors": {
       "duplicate": "That one is already in your downloads.",

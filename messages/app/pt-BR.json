@@ -19,6 +19,7 @@
     "read": "Lida {when}",
     "lastReadFailed": "A última leitura falhou, e a lista que ela tem continua. {why}",
     "readAgain": "Ler de novo",
+    "seeDownloads": "Ver downloads",
     "readAll": "Ler todas",
     "readingAll": "Lendo {done} de {total}…",
     "readAllHelp": "As que só atendem navegadores abrem em uma janela, uma por vez. Se ela pedir alguma confirmação, é você quem responde. Fechar a janela para por ali.",
@@ -56,6 +57,17 @@
   },
   "Downloads": {
     "title": "Downloads",
+    "loading": "Perguntando a este computador…",
+    "toSettings": "Fontes e Real-Debrid",
+    "empty": "Nada por aqui ainda. Em um jogo seu, abra o menu ⋯ ao lado de Jogar e escolha Procurar download. Fontes e Real-Debrid ficam em <link>Configurações</link>.",
+    "group": {
+      "now": "Em andamento",
+      "next": "Na fila",
+      "finished": "Concluídos"
+    },
+    "linkShare": "Downloads: {percent}",
+    "linkMoving": "Downloads: em andamento",
+    "linkStopped": "Downloads: um parou",
     "progress": "Andamento de {title}",
     "sizeOf": "{done} de {total}",
     "perSecond": "{size}/s",
@@ -132,7 +144,7 @@
     "downloadThis": "Baixar {title}",
     "added": "Nos seus downloads",
     "addedThis": "Nos seus downloads: {title}",
-    "addedSay": "A caminho. Veja o andamento em <link>Configurações</link>.",
+    "addedSay": "A caminho. Veja o andamento em <link>Downloads</link>.",
     "chooseFolder": "Onde salvar {title}",
     "errors": {
       "duplicate": "Esse já está nos seus downloads.",

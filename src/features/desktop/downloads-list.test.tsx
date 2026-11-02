@@ -8,6 +8,8 @@ import { Downloads } from './downloads-list'
 import type { Download } from './sources'
 import { setBridgeForTests } from './tauri'
 
+vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
+
 /** Downloads in Settings, with the app's commands faked (ADR 007). */
 
 const GB = 1024 ** 3
@@ -53,11 +55,45 @@ const card = async () =>
   (await screen.findByRole('heading', { name: 'Made-up Game' })).closest('article')!
 
 describe('downloads', () => {
-  it('draws nothing when there are none', async () => {
+  it('says what to do when there are none', async () => {
     kept = []
-    const { container } = renderWithIntl(<Downloads />)
-    await vi.waitFor(() => expect(app).toHaveBeenCalledWith('downloads_now', {}))
-    expect(container).toBeEmptyDOMElement()
+    renderWithIntl(<Downloads />)
+    expect(await screen.findByText(/Nothing here yet/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute(
+      'href',
+      '/en/account/settings',
+    )
+  })
+
+  it('puts what is under way first, then what waits, then what is finished', async () => {
+    kept = [
+      { ...DOWNLOAD, id: 'done', title: 'Finished one', state: 'done', speed: 0 },
+      { ...DOWNLOAD, id: 'wait', title: 'Waiting one', state: 'queued', speed: 0 },
+      { ...DOWNLOAD, id: 'stop', title: 'Stopped one', state: 'failed', why: 'disk', speed: 0 },
+      { ...DOWNLOAD, id: 'now', title: 'Moving one' },
+      {
+        ...DOWNLOAD,
+        id: 'open',
+        title: 'Extracting one',
+        state: 'done',
+        speed: 0,
+        archives: 1,
+        extraction: { state: 'working', why: null, done: 1, total: 2 },
+      },
+    ]
+    renderWithIntl(<Downloads />)
+    await screen.findByRole('heading', { name: 'Moving one' })
+    const order = screen.getAllByRole('heading').map((heading) => heading.textContent)
+    expect(order).toEqual([
+      'Under way',
+      'Stopped one',
+      'Moving one',
+      'Extracting one',
+      'Waiting',
+      'Waiting one',
+      'Finished',
+      'Finished one',
+    ])
   })
 
   it('says how far, how fast and about how long', async () => {
@@ -65,9 +101,18 @@ describe('downloads', () => {
     const here = within(await card())
     expect(here.getByText(/Downloading · 3 GB of 12 GB/)).toBeInTheDocument()
     expect(here.getByText(/10 MB\/s, about 16 min left/)).toBeInTheDocument()
+    expect(here.getByText('25%')).toBeInTheDocument()
     expect(
       here.getByRole('progressbar', { name: 'How far along Made-up Game is' }),
     ).toHaveAttribute('aria-valuenow', String(3 * GB))
+  })
+
+  it('still shows something moving when the server doesn’t say how much there is', async () => {
+    kept = [{ ...DOWNLOAD, total: null }]
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    expect(here.getByRole('progressbar')).not.toHaveAttribute('aria-valuenow')
+    expect(here.queryByText(/%$/)).not.toBeInTheDocument()
   })
 
   it('pauses by its id', async () => {

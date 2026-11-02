@@ -7,6 +7,11 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { SteamApps } from '@/domain/library/editing'
 import { steamInstallLink, steamPlayLink } from '@/domain/sync/steam'
 import { desktop, inDesktopApp, refusalOf, type Launcher } from '@/features/desktop/bridge'
+import {
+  FindDownloadItem,
+  FindDownloadLater,
+  useHasSources,
+} from '@/features/desktop/find-download-later'
 import { notify } from '@/features/shell/notices'
 import { Button } from '@/ui/button'
 import { Confirm } from '@/ui/confirm'
@@ -73,6 +78,11 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const t = useTranslations('Edit')
   const [here, setHere] = useState<Here>()
   const [busy, setBusy] = useState(false)
+  const hasSources = useHasSources()
+  const [finding, setFinding] = useState(false)
+  // Fetched only once it is asked for, and kept from then on, for the sheet to slide away.
+  const [asked, setAsked] = useState(false)
+  const around = useRef<HTMLDivElement>(null)
   const installedApps = here?.installed ?? noApps
   const { state, check, sentGameToSteam } = useGameState(
     entryId,
@@ -288,15 +298,16 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   }
 
   // The menu holds what the primary button is not: the file's name and what can be done
-  // with it, or choosing one in place of Steam.
+  // with it, choosing one in place of Steam, or looking for a download. One button in this row and
+  // the rest behind it, as a panel's column has room for no more.
   const menu = launcher || playLink || installLink
   return (
-    <div className="flex items-center gap-1" data-play="">
+    <div ref={around} className="flex items-center gap-1" data-play="">
       <span role="status" className="sr-only">
         {spoken}
       </span>
       {primary}
-      {menu ? (
+      {menu || hasSources ? (
         <DropdownMenu>
           <Tip label={t('playOptions')}>
             <DropdownMenuTrigger asChild>
@@ -305,7 +316,14 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
               </Button>
             </DropdownMenuTrigger>
           </Tip>
-          <DropdownMenuContent align="end" className="min-w-56">
+          <DropdownMenuContent
+            align="end"
+            className="min-w-56"
+            // Focus goes to what just opened, not back to this button.
+            onCloseAutoFocus={(event) => {
+              if (finding) event.preventDefault()
+            }}
+          >
             {launcher ? (
               <>
                 {/* The whole path, wrapped: a menu's label takes no focus, so a tip could not show it. */}
@@ -320,11 +338,31 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={forget}>{t('forgetFile')}</DropdownMenuItem>
               </>
-            ) : (
+            ) : menu ? (
               <DropdownMenuItem onSelect={choose}>{t('chooseFileInstead')}</DropdownMenuItem>
-            )}
+            ) : null}
+            {hasSources ? (
+              <>
+                {menu ? <DropdownMenuSeparator /> : null}
+                <FindDownloadItem
+                  onOpen={() => {
+                    setFinding(true)
+                    setAsked(true)
+                  }}
+                />
+              </>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
+      ) : null}
+      {asked ? (
+        <FindDownloadLater
+          title={title}
+          entryId={entryId}
+          open={finding}
+          onOpenChange={setFinding}
+          anchor={around}
+        />
       ) : null}
     </div>
   )

@@ -2,23 +2,41 @@
 
 import { CloudDownloadIcon, DownloadIcon, SearchIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { type FormEvent, type ReactNode, useEffect, useState } from 'react'
+import {
+  type FormEvent,
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 
+import { GAME_CENTERED } from '@/features/game-detail/hero'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { DropdownMenuItem } from '@/ui/dropdown-menu'
 import { Input } from '@/ui/field'
 import { GhostText, Loading } from '@/ui/ghost'
+import { Popover, PopoverAnchor, PopoverContent } from '@/ui/popover'
 import { Sheet, SheetContent } from '@/ui/sheet'
 
 import { AppWords } from './app-words'
 import { type Download, type Found, downloads, realDebrid, sources } from './sources'
 
-/** A link to where downloads and Real-Debrid are, inside the words that say so. */
-const toAccount = (chunks: ReactNode) => (
-  <Link
-    href="/account/settings"
-    className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
-  >
+const linkClass =
+  'rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2'
+
+/** A link to where Real-Debrid is signed in to, inside the words that say it is needed. */
+const toSettings = (chunks: ReactNode) => (
+  <Link href="/account/settings" className={linkClass}>
+    {chunks}
+  </Link>
+)
+
+/** A link to where what was put in line can be seen. */
+const toDownloads = (chunks: ReactNode) => (
+  <Link href="/downloads" className={linkClass}>
     {chunks}
   </Link>
 )
@@ -98,7 +116,7 @@ function FoundRow({
         </div>
       ) : (
         <p className="text-xs text-pretty text-muted">
-          {t.rich(found.inParts ? 'needsDebridParts' : 'needsDebrid', { link: toAccount })}
+          {t.rich(found.inParts ? 'needsDebridParts' : 'needsDebrid', { link: toSettings })}
         </p>
       )}
     </li>
@@ -164,7 +182,7 @@ export function FindDownloadView({
       ) : null}
       {added.size > 0 ? (
         <p role="status" className="text-sm text-muted">
-          {t.rich('addedSay', { link: toAccount })}
+          {t.rich('addedSay', { link: toDownloads })}
         </p>
       ) : null}
       {results === undefined ? (
@@ -195,11 +213,9 @@ export function FindDownloadView({
   )
 }
 
+/** What a search holds, for as long as it is open: reopened, it starts from the game's name again. */
 function Finder({ title, entryId }: { title: string; entryId: string }) {
   const t = useTranslations('FindDownload')
-  // Nothing is drawn for what may never come: with no source, there is nothing to find.
-  const [hasSources, setHasSources] = useState(false)
-  const [open, setOpen] = useState(false)
   const [words, setWords] = useState(title)
   const [results, setResults] = useState<Found[]>()
   const [said, setSaid] = useState<string>()
@@ -207,14 +223,23 @@ function Finder({ title, entryId }: { title: string; entryId: string }) {
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set())
   const [debrid, setDebrid] = useState(false)
 
+  const search = useCallback(
+    async (asked: string) => {
+      setResults(undefined)
+      setSaid(undefined)
+      try {
+        setResults(await sources.search(asked))
+      } catch {
+        setResults([])
+        setSaid(t('errors.failed'))
+      }
+    },
+    [t],
+  )
+
   useEffect(() => {
     let current = true
-    sources
-      .list()
-      .then((kept) => {
-        if (current) setHasSources(kept.length > 0)
-      })
-      .catch(() => undefined)
+    void Promise.resolve().then(() => search(title))
     realDebrid
       .account()
       .then((account) => {
@@ -224,18 +249,7 @@ function Finder({ title, entryId }: { title: string; entryId: string }) {
     return () => {
       current = false
     }
-  }, [])
-
-  const search = async (asked: string) => {
-    setResults(undefined)
-    setSaid(undefined)
-    try {
-      setResults(await sources.search(asked))
-    } catch {
-      setResults([])
-      setSaid(t('errors.failed'))
-    }
-  }
+  }, [search, title])
 
   const download = async (found: Found, through: Download['through']) => {
     const key = `${found.source}:${found.place}`
@@ -256,53 +270,112 @@ function Finder({ title, entryId }: { title: string; entryId: string }) {
     setBusy(undefined)
   }
 
-  if (!hasSources) return null
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next)
-        if (next) void search(words)
-      }}
-    >
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={() => {
-          setOpen(true)
-          void search(words)
-        }}
-      >
-        <DownloadIcon aria-hidden="true" />
-        {t('open')}
-      </Button>
+    <FindDownloadView
+      words={words}
+      results={results}
+      said={said}
+      busy={busy}
+      added={added}
+      debrid={debrid}
+      onWords={setWords}
+      onSearch={() => void search(words)}
+      onDownload={(found, through) => void download(found, through)}
+    />
+  )
+}
+
+const onResize = (change: () => void) => {
+  const query = window.matchMedia(GAME_CENTERED)
+  query.addEventListener('change', change)
+  return () => query.removeEventListener('change', change)
+}
+
+type FindDownloadProps = {
+  title: string
+  entryId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** What it stands beside when it opens in place. */
+  anchor: RefObject<HTMLElement | null>
+}
+
+/**
+ * Looking for a game in the sources on this computer (ADR 007, spec 7.10), from its page, in the app
+ * alone. A list to read and choose from: nothing is matched or started by itself. A sheet, as anything
+ * opened from a game is; but where the game stands in the middle of a very wide window, a sheet would be a
+ * second frame at the far edge of the screen, so it opens beside the button, over the game and not apart.
+ */
+export default function FindDownload({
+  title,
+  entryId,
+  open,
+  onOpenChange,
+  anchor,
+}: FindDownloadProps) {
+  return (
+    <AppWords>
+      <Frame title={title} open={open} onOpenChange={onOpenChange} anchor={anchor}>
+        <Finder title={title} entryId={entryId} />
+      </Frame>
+    </AppWords>
+  )
+}
+
+function Frame({
+  title,
+  open,
+  onOpenChange,
+  anchor,
+  children,
+}: Omit<FindDownloadProps, 'entryId'> & { children: ReactNode }) {
+  const t = useTranslations('FindDownload')
+  const inPlace = useSyncExternalStore(
+    onResize,
+    () => window.matchMedia(GAME_CENTERED).matches,
+    () => false,
+  )
+  if (inPlace) {
+    return (
+      <Popover open={open} onOpenChange={onOpenChange}>
+        <PopoverAnchor virtualRef={anchor as RefObject<HTMLElement>} />
+        <PopoverContent
+          align="end"
+          aria-label={t('title', { title })}
+          className="scrollbar-quiet grid max-h-[min(70dvh,44rem)] w-[36rem] max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto p-5"
+          // The menu it was opened from hands focus back as it goes, which is no click away.
+          onFocusOutside={(event) => event.preventDefault()}
+        >
+          <h2 className="title text-lg text-balance">{t('title', { title })}</h2>
+          {children}
+        </PopoverContent>
+      </Popover>
+    )
+  }
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent title={t('title', { title })} closeLabel={t('close')}>
-        <FindDownloadView
-          words={words}
-          results={results}
-          said={said}
-          busy={busy}
-          added={added}
-          debrid={debrid}
-          onWords={setWords}
-          onSearch={() => void search(words)}
-          onDownload={(found, through) => void download(found, through)}
-        />
+        {children}
       </SheetContent>
     </Sheet>
   )
 }
 
-/**
- * Looking for a game in the sources on this computer (ADR 007, spec 7.10), from its page, in the app
- * alone. A list to read and choose from: nothing is matched or started by itself.
- */
-export default function FindDownload({ title, entryId }: { title: string; entryId: string }) {
+/** Its place in Play's menu, with its own words, which come with this code and not with the page. */
+export function FindDownloadItem({ onOpen }: { onOpen: () => void }) {
   return (
     <AppWords>
-      <div data-play="">
-        <Finder title={title} entryId={entryId} />
-      </div>
+      <ItemWords onOpen={onOpen} />
     </AppWords>
+  )
+}
+
+function ItemWords({ onOpen }: { onOpen: () => void }) {
+  const t = useTranslations('FindDownload')
+  return (
+    <DropdownMenuItem onSelect={onOpen}>
+      <DownloadIcon aria-hidden="true" />
+      {t('open')}
+    </DropdownMenuItem>
   )
 }
