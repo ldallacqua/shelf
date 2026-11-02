@@ -22,6 +22,7 @@ export const storeNames = [
   'google-play',
   'gamejolt',
   'amazon',
+  'third-party',
 ] as const
 
 export type StoreName = (typeof storeNames)[number]

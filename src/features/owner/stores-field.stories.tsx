@@ -34,6 +34,9 @@ export const NoneChosen: Story = {}
 
 export const Chosen: Story = { args: { value: ['gog'] } }
 
+/** A download from outside the big stores, or from a reseller: always there to tick. */
+export const ThirdParty: Story = { args: { value: ['third-party'], soldOn: ['steam'] } }
+
 /** Ticked by a linked account: not mine to untick, and not faded either. */
 export const FromALinkedAccount: Story = {
   args: { value: ['steam'], fixed: ['steam'], soldOn: ['steam'] },

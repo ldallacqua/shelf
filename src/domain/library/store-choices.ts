@@ -6,8 +6,9 @@ import type { StoreName } from '@/domain/library/stores'
  */
 
 /**
- * What I can say a PC game is from. The last three have no link: IGDB lists no
- * page on them, but plenty of games live there.
+ * What I can say a PC game is from. Most of the last have no link: IGDB lists no
+ * page on them, but plenty of games live there. `third-party` is anywhere that
+ * isn't one of these, a reseller or a download from elsewhere.
  */
 export const pcStores = [
   'steam',
@@ -18,6 +19,7 @@ export const pcStores = [
   'ea',
   'ubisoft',
   'battlenet',
+  'third-party',
 ] as const satisfies readonly StoreName[]
 
 const PC_STORES: ReadonlySet<StoreName> = new Set(pcStores)
@@ -36,6 +38,8 @@ export const storeChoices = (
   const known = new Set([...soldOn.filter((store) => PC_STORES.has(store)), ...chosen])
   // Knowing nothing of it, the ones nearly every PC game is on.
   if (known.size === 0) for (const store of ['steam', 'gog', 'epic'] as const) known.add(store)
+  // No game's record can say it is sold here, so nothing else would ever bring it up.
+  known.add('third-party')
   return {
     offered: pcStores.filter((store) => known.has(store)),
     rest: pcStores.filter((store) => !known.has(store)),

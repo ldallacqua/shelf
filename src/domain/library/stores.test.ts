@@ -119,12 +119,17 @@ describe('takesStore', () => {
 describe('storeChoices', () => {
   it('offers what it is sold on and what I said, and keeps the rest to ask for', () => {
     const { offered, rest } = storeChoices(['steam', 'epic', 'playstation'], ['battlenet'])
-    expect(offered).toEqual(['steam', 'epic', 'battlenet'])
+    expect(offered).toEqual(['steam', 'epic', 'battlenet', 'third-party'])
     expect(rest).toEqual(['gog', 'microsoft', 'itch', 'ea', 'ubisoft'])
   })
 
   it('offers what nearly every PC game is on when it knows nothing', () => {
-    expect(storeChoices([], []).offered).toEqual(['steam', 'gog', 'epic'])
+    expect(storeChoices([], []).offered).toEqual(['steam', 'gog', 'epic', 'third-party'])
+  })
+
+  it('always offers third-party, which no record of a game can name', () => {
+    expect(storeChoices(['steam'], []).offered).toEqual(['steam', 'third-party'])
+    expect(storeChoices(['steam'], []).rest).not.toContain('third-party')
   })
 })
 
@@ -132,5 +137,6 @@ describe('cleanStores', () => {
   it('keeps each PC store once, in our order, and nothing a PC game cannot be from', () => {
     expect(cleanStores(['epic', 'steam', 'epic', 'playstation'])).toEqual(['steam', 'epic'])
     expect(cleanStores(null)).toEqual([])
+    expect(cleanStores(['third-party', 'steam'])).toEqual(['steam', 'third-party'])
   })
 })
