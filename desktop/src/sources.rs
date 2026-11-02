@@ -53,6 +53,9 @@ pub enum Link {
 /// checksum and plain `http` would then have no check at all, and a magnet that names its hash.
 pub fn link(uri: &str) -> Option<Link> {
     let url = Url::parse(uri).ok()?;
+    if local_for_development(&url) {
+        return Some(Link::Web);
+    }
     match url.scheme() {
         "https" if url.host().is_some() && url.username().is_empty() => Some(Link::Web),
         "magnet" => url
@@ -190,6 +193,17 @@ pub fn allowed(url: &Url) -> bool {
     url.scheme() == "https" && url.host().is_some_and(|host| !private(&host))
 }
 
+/// Follows a redirect only if it passes `allowed`, and not many of them.
+pub fn redirects() -> reqwest::redirect::Policy {
+    reqwest::redirect::Policy::custom(|attempt| {
+        if attempt.previous().len() >= MOST_REDIRECTS || !allowed(attempt.url()) {
+            attempt.stop()
+        } else {
+            attempt.follow()
+        }
+    })
+}
+
 /// What reading an address brought.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Reading {
@@ -206,16 +220,9 @@ pub async fn read(url: &Url, etag: Option<&str>, version: &str) -> Result<Readin
     if !allowed(url) {
         return Err(Refusal::Invalid);
     }
-    let redirects = reqwest::redirect::Policy::custom(|attempt| {
-        if attempt.previous().len() >= MOST_REDIRECTS || !allowed(attempt.url()) {
-            attempt.stop()
-        } else {
-            attempt.follow()
-        }
-    });
     let client = reqwest::Client::builder()
         .user_agent(format!("Shelf/{version}"))
-        .redirect(redirects)
+        .redirect(redirects())
         .connect_timeout(MOST_CONNECTING)
         .timeout(MOST_TIME)
         .build()
@@ -402,6 +409,19 @@ impl Sources {
         Ok(source)
     }
 
+    /// The folder and sources to search, for a thread of its own: a list can be large.
+    pub fn searchable(&self) -> (PathBuf, Vec<Source>) {
+        (self.folder.clone(), self.all())
+    }
+
+    /// One download in a source, if it is still what a page was shown: a list read again since
+    /// may have moved it. Its source's name comes with it.
+    pub fn item(&self, id: &str, place: usize, title: &str) -> Option<(String, Item)> {
+        let name = self.all().into_iter().find(|each| each.id == id)?.name;
+        let item = read_list(&self.folder, id)?.into_iter().nth(place)?;
+        (item.title == title).then_some((name, item))
+    }
+
     /// A source's new list, from reading it again.
     pub fn replace(
         &self,
@@ -467,6 +487,101 @@ impl Sources {
         .map_err(|_| Refusal::Failed)?;
         write_whole(&self.folder.join(FILE), &text).map_err(|_| Refusal::Failed)
     }
+}
+
+fn read_list(folder: &Path, id: &str) -> Option<Vec<Item>> {
+    serde_json::from_str(&fs::read_to_string(list_file(folder, id)).ok()?).ok()
+}
+
+/// A title's words, the way two spellings of one name agree: in lower case, with no accents, and
+/// punctuation apart from an apostrophe ending a word. "Assassin's" and "Assassins" are one word.
+pub fn words_in(text: &str) -> Vec<String> {
+    text.to_lowercase()
+        .chars()
+        .filter(|c| !matches!(c, '\'' | '\u{2019}'))
+        .map(|c| match c {
+            'à' | 'á' | 'â' | 'ã' | 'ä' | 'å' => 'a',
+            'ç' => 'c',
+            'è' | 'é' | 'ê' | 'ë' => 'e',
+            'ì' | 'í' | 'î' | 'ï' => 'i',
+            'ñ' => 'n',
+            'ò' | 'ó' | 'ô' | 'õ' | 'ö' => 'o',
+            'ù' | 'ú' | 'û' | 'ü' => 'u',
+            other => other,
+        })
+        .collect::<String>()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+/// The most results a search gives: past this, more words are what is needed.
+const MOST_RESULTS: usize = 100;
+
+/// One download a search found, as a page sees it: never its links.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Found {
+    pub source: String,
+    pub source_name: String,
+    /// Its place in the list, which with `title` is how a page asks for it.
+    pub place: usize,
+    pub title: String,
+    pub file_size: Option<String>,
+    pub upload_date: Option<String>,
+    /// How many links the app can try by itself, and how many it can't yet.
+    pub web: usize,
+    pub magnets: usize,
+    pub in_parts: bool,
+}
+
+/// Every download whose title has every word asked for (ADR 007: no looser). Closest first, by how
+/// few other words it has, then newest. Nothing chooses for the person: this is a list to read.
+pub fn search(folder: &Path, kept: &[Source], asked: &str) -> Vec<Found> {
+    let asked = words_in(asked);
+    if asked.is_empty() {
+        return Vec::new();
+    }
+    let mut found: Vec<(usize, Found)> = Vec::new();
+    for source in kept {
+        let Some(items) = read_list(folder, &source.id) else {
+            continue;
+        };
+        for (place, item) in items.into_iter().enumerate() {
+            let words = words_in(&item.title);
+            if !asked.iter().all(|word| words.contains(word)) {
+                continue;
+            }
+            let kinds = |kind: Link| {
+                item.uris
+                    .iter()
+                    .filter(|uri| link(uri).is_some_and(|each| each == kind))
+                    .count()
+            };
+            found.push((
+                words.len(),
+                Found {
+                    source: source.id.clone(),
+                    source_name: source.name.clone(),
+                    place,
+                    web: kinds(Link::Web),
+                    magnets: kinds(Link::Magnet),
+                    in_parts: !item.uri_groups.is_empty(),
+                    title: item.title,
+                    file_size: item.file_size,
+                    upload_date: item.upload_date,
+                },
+            ));
+        }
+    }
+    found.sort_by(|(a_words, a), (b_words, b)| {
+        a_words
+            .cmp(b_words)
+            .then_with(|| b.upload_date.cmp(&a.upload_date))
+    });
+    found.truncate(MOST_RESULTS);
+    found.into_iter().map(|(_, each)| each).collect()
 }
 
 /// A pasted address as the app takes it, in one spelling, so a paste twice is seen as twice.
@@ -855,6 +970,91 @@ mod tests {
         assert!(!list_file(&dir, "one").exists());
         assert_eq!(sources.remove("one"), Err(Refusal::Missing));
         assert!(Sources::open(&dir).all().is_empty());
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn two_spellings_of_a_name_have_the_same_words() {
+        assert_eq!(
+            words_in("Assassin's Creed: Valhalla"),
+            ["assassins", "creed", "valhalla"]
+        );
+        assert_eq!(
+            words_in("ASSASSINS CREED - VALHALLA"),
+            ["assassins", "creed", "valhalla"]
+        );
+        assert_eq!(words_in("Pokémon"), words_in("Pokemon"));
+        assert_eq!(words_in("  :: "), Vec::<String>::new());
+    }
+
+    fn searched(asked: &str) -> Vec<Found> {
+        let dir = folder(&format!("search-{}", asked.len()));
+        let sources = Sources::open(&dir);
+        sources
+            .add(
+                "one".into(),
+                "https://a.example/s".into(),
+                parse(MADE_UP.as_bytes()).unwrap(),
+                None,
+                1,
+            )
+            .unwrap();
+        let (place, kept) = sources.searchable();
+        let found = search(&place, &kept, asked);
+        fs::remove_dir_all(dir).unwrap();
+        found
+    }
+
+    #[test]
+    fn a_search_needs_every_word_and_never_gives_a_link() {
+        // Every "made-up game" has both words. The shortest title comes first.
+        let found = searched("Made-Up Game");
+        assert_eq!(
+            found
+                .iter()
+                .map(|each| each.title.as_str())
+                .collect::<Vec<_>>(),
+            [
+                "Another Made-up Game",
+                "A Third Made-up Game",
+                "Made-up Game: Deluxe Edition v1.2"
+            ]
+        );
+        assert_eq!((found[2].web, found[2].magnets), (1, 1));
+        assert_eq!(found[2].file_size.as_deref(), Some("12.4 GB"));
+        assert_eq!(found[2].place, 0);
+        assert!(
+            !serde_json::to_string(&found)
+                .unwrap()
+                .contains("example.invalid")
+        );
+
+        assert_eq!(searched("Deluxe Made-up").len(), 1);
+        // A missing word is no match, however close the rest.
+        assert!(searched("Made-up Game Remastered").is_empty());
+        assert!(searched("Deluxe Editions").is_empty());
+        assert!(searched(" : ").is_empty());
+    }
+
+    #[test]
+    fn asks_for_a_download_only_as_it_was_shown() {
+        let dir = folder("item");
+        let sources = Sources::open(&dir);
+        sources
+            .add(
+                "one".into(),
+                "https://a.example/s".into(),
+                parse(MADE_UP.as_bytes()).unwrap(),
+                None,
+                1,
+            )
+            .unwrap();
+        let (name, item) = sources.item("one", 1, "Another Made-up Game").unwrap();
+        assert_eq!(name, "Made-up source");
+        assert_eq!(item.uris.len(), 1);
+        assert!(sources.item("one", 1, "Something else by now").is_none());
+        assert!(sources.item("one", 99, "Another Made-up Game").is_none());
+        assert!(sources.item("nope", 1, "Another Made-up Game").is_none());
         fs::remove_dir_all(dir).unwrap();
     }
 

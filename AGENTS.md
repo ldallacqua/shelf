@@ -289,7 +289,8 @@ the person pastes, and kept on that computer ([ADR 007](docs/adr/007-download-so
 never sees one, and Real-Debrid's terms forbid it from reaching that service. Shelf ships, suggests and
 links to no source, and no test or check reads a real one. No code that runs a host's script for a
 token, no passwords of cracking sites, and nothing downloaded ever runs by itself. A page gets a
-source's name and counts, never its links. This is the exception to the landing page's rule: it is not
+source's name, counts and titles, never its links, and names a download by its place in a list. Downloads
+are `desktop/src/downloads.rs`, one at a time, on a task of the app's own. This is the exception to the landing page's rule: it is not
 shown there.
 
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a

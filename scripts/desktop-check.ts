@@ -21,11 +21,23 @@
  * has an error. `DESKTOP_CHECK_SHOTS=<folder>` keeps a picture of the window
  * at each step, for a person to look at.
  *
+ * A made-up source on this computer is added, and made-up bytes downloaded from it, paused, resumed and
+ * compared: no real source is read, and nothing that arrives is started (ADR 007).
+ *
  * Start the server first: pnpm build && pnpm serve:test. Never against
  * production: it signs in with the test doubles' made-up password.
  */
 import { spawn, spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { randomBytes } from 'node:crypto'
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -115,12 +127,14 @@ writeFileSync(
 )
 /** Ends the stand-in from outside, as closing a game any other way would. */
 const endStandIn = () => spawnSync('taskkill', ['/F', '/IM', STAND_IN], { stdio: 'ignore' })
+const downloaded = mkdtempSync(join(tmpdir(), 'shelf-desktop-downloads-'))
 const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
   env: {
     ...process.env,
     SHELF_URL: BASE_URL,
     SHELF_DATA_DIR: profile,
     SHELF_PICK: join(game, 'start.bat'),
+    SHELF_PICK_FOLDER: downloaded,
     SHELF_REOPEN_AFTER: '5',
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}`,
   },
@@ -431,10 +445,49 @@ try {
   pass(`Skyrim offers “${await steam.textContent()}”, to ${await steam.getAttribute('href')}`)
 
   console.log('\nDownload sources (ADR 007), a made-up one on this computer')
+  // Made-up bytes to download, sent in two goes: the second waits for a request that continues.
+  const madeUpFile = randomBytes(4 * 1024 * 1024)
+  const half = madeUpFile.length / 2
+  const ranges: string[] = []
   const source = createServer((request, response) => {
+    const { port } = source.address() as AddressInfo
     if (request.url === '/source.json') {
       response.setHeader('content-type', 'application/json')
       response.end(readFileSync('fixtures/sources/hydra-format.json'))
+    } else if (request.url === '/with-files.json') {
+      response.setHeader('content-type', 'application/json')
+      const at = `http://127.0.0.1:${port}`
+      response.end(
+        JSON.stringify({
+          name: 'Made-up files',
+          downloads: [
+            { title: 'Bloodborne, a made-up file', uris: [`${at}/made-up.bin`], fileSize: '4 MB' },
+            { title: 'Bloodborne, a made-up page', uris: [`${at}/page.html`], fileSize: '1 GB' },
+            {
+              title: 'Bloodborne, a made-up magnet',
+              uris: ['magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567'],
+            },
+            { title: 'Something else', uris: [`${at}/made-up.bin`] },
+          ],
+        }),
+      )
+    } else if (request.url === '/made-up.bin') {
+      response.setHeader('etag', '"made-up"')
+      const range = request.headers.range
+      if (range) {
+        ranges.push(range)
+        const from = Number(/bytes=(\d+)-/.exec(range)?.[1] ?? 0)
+        response.statusCode = 206
+        response.setHeader(
+          'content-range',
+          `bytes ${from}-${madeUpFile.length - 1}/${madeUpFile.length}`,
+        )
+        response.end(madeUpFile.subarray(from))
+      } else {
+        // The first half, and the connection held open: Pause has something to stop.
+        response.setHeader('content-length', madeUpFile.length)
+        response.write(madeUpFile.subarray(0, half))
+      }
     } else {
       response.setHeader('content-type', 'text/html')
       response.end('<html>not a source</html>')
@@ -470,7 +523,72 @@ try {
     await shelf.getByRole('button', { name: 'Remove source' }).click()
     await shelf.getByText('No sources yet.').waitFor({ timeout: 10_000 })
     pass('removes it, after asking')
+
+    console.log('\nDownloading from a source (ADR 007), made-up bytes on this computer')
+    await field.fill(`http://127.0.0.1:${port}/with-files.json`)
+    await add.click()
+    await shelf.locator('article').filter({ hasText: 'Made-up files' }).waitFor({ timeout: 15_000 })
+    await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
+    await shelf.getByRole('button', { name: 'Find a download' }).click()
+    const made = shelf.getByRole('button', { name: 'Download Bloodborne, a made-up file' })
+    await made.waitFor({ timeout: 15_000 })
+    const sheet = (await shelf.getByRole('dialog').innerText()).replace(/\s+/g, ' ')
+    if (/Only by magnet link/.test(sheet) && !sheet.includes('Something else'))
+      pass('lists what has every word of the game’s name, and says what it can’t download')
+    else fail(`finding a download said: ${sheet}`)
+    // Past the sheet's sliding in, so the picture is of it and not of what is behind.
+    await shelf.waitForTimeout(600)
+    await shot('find-download')
+    await made.click()
+    await shelf.getByRole('status').getByText('On its way').waitFor({ timeout: 15_000 })
+    await shelf.getByRole('button', { name: 'Download Bloodborne, a made-up page' }).click()
+    await shelf
+      .getByRole('button', { name: 'In your downloads: Bloodborne, a made-up page' })
+      .waitFor({ timeout: 15_000 })
+    pass('puts two in line, in the folder chosen')
+
+    await shelf.goto(`${BASE_URL}/en/account`)
+    const file = shelf.locator('article').filter({ hasText: 'a made-up file' })
+    await file.getByText(/2 MB of 4 MB/).waitFor({ timeout: 20_000 })
+    await shot('downloading')
+    pass('shows how far along it is')
+    await file.getByRole('button', { name: 'Pause' }).click()
+    await file.getByText(/^Paused/).waitFor({ timeout: 10_000 })
+    if (existsSync(join(downloaded, 'made-up.bin.part'))) pass('pauses, and keeps what came')
+    else fail('paused with no .part in the folder')
+    // The second waits its turn: the first paused, it goes, and it is a page.
+    const page = shelf.locator('article').filter({ hasText: 'a made-up page' })
+    await page.getByText(/web pages, not files/).waitFor({ timeout: 15_000 })
+    pass('says a link that is a web page is no file, and writes nothing')
+
+    await file.getByRole('button', { name: 'Resume' }).click()
+    await file.getByText(/Finished/).waitFor({ timeout: 20_000 })
+    if (ranges.length === 1 && ranges[0] === `bytes=${half}-`)
+      pass('resumes from where it stopped, and doesn’t start over')
+    else fail(`resuming asked for ${JSON.stringify(ranges)}`)
+    const arrived = readFileSync(join(downloaded, 'made-up.bin'))
+    if (arrived.equals(madeUpFile)) pass('ends as the same bytes as the file')
+    else fail(`ended with ${arrived.length} bytes of ${madeUpFile.length}, or different ones`)
+    if (readdirSync(downloaded).sort().join() === 'made-up.bin') pass('leaves nothing else there')
+    else fail(`the folder holds ${readdirSync(downloaded).join(', ')}`)
+    const mark = readFileSync(`${join(downloaded, 'made-up.bin')}:Zone.Identifier`, 'utf8')
+    if (mark.includes('ZoneId=3')) pass('marks it as from the internet, as a browser does')
+    else fail(`its mark says: ${mark}`)
+    const offered = await file.getByRole('button').allTextContents()
+    if (offered.join() === 'Show in folder,Take off the list')
+      pass('offers to show the file, and nothing that starts it')
+    else fail(`a finished file offers: ${offered.join(', ')}`)
+    await shot('downloaded')
+
+    await page.getByRole('button', { name: 'Cancel' }).click()
+    await shelf.getByRole('button', { name: 'Cancel the download' }).click()
+    await page.waitFor({ state: 'detached', timeout: 10_000 })
+    await file.getByRole('button', { name: 'Take off the list' }).click()
+    await file.waitFor({ state: 'detached', timeout: 10_000 })
+    if (existsSync(join(downloaded, 'made-up.bin'))) pass('taken off the list, the file stays')
+    else fail('taking it off the list deleted the file')
   } finally {
+    source.closeAllConnections()
     source.close()
   }
 
@@ -539,6 +657,7 @@ try {
   if (app.pid) spawnSync('taskkill', ['/pid', String(app.pid), '/t', '/f'], { stdio: 'ignore' })
   endStandIn()
   rmSync(game, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
+  rmSync(downloaded, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
   try {
     rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
   } catch {

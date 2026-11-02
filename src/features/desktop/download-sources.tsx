@@ -1,24 +1,17 @@
 'use client'
 
 import { PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
-import {
-  NextIntlClientProvider,
-  useFormatter,
-  useLocale,
-  useNow,
-  useTimeZone,
-  useTranslations,
-} from 'next-intl'
+import { useFormatter, useNow, useTranslations } from 'next-intl'
 import { type FormEvent, useEffect, useId, useState } from 'react'
 
 import { Button } from '@/ui/button'
 import { Confirm } from '@/ui/confirm'
 import { Input } from '@/ui/field'
 import { Loading } from '@/ui/ghost'
-import en from '@messages/app/en.json'
-import ptBR from '@messages/app/pt-BR.json'
 
+import { AppWords } from './app-words'
 import { SourceCardGhost } from './download-sources-ghost'
+import { Downloads } from './downloads-list'
 import { type Source, type SourceRefusal, sourceRefusalOf, sources } from './sources'
 
 /** Said after an action, in the section it belongs to. */
@@ -296,19 +289,16 @@ function Sources() {
 }
 
 /**
- * The section with its own words, which come with its code and not with the page: the layout hands
- * every visitor all of `messages/`, and these are for the app alone (ADR 007, decision 4).
+ * Downloads and sources with their own words, which come with this code and not with the page
+ * (`app-words.tsx`).
  */
 export default function DownloadSources() {
-  const locale = useLocale()
-  const timeZone = useTimeZone()
   return (
-    <NextIntlClientProvider
-      locale={locale}
-      timeZone={timeZone}
-      messages={locale === 'pt-BR' ? ptBR : en}
-    >
-      <Sources />
-    </NextIntlClientProvider>
+    <AppWords>
+      <div className="grid gap-10">
+        <Downloads />
+        <Sources />
+      </div>
+    </AppWords>
   )
 }

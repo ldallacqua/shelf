@@ -38,6 +38,68 @@ export type SourceRefusal = (typeof sourceRefusals)[number]
 export const sourceRefusalOf = (error: unknown): SourceRefusal =>
   sourceRefusals.find((refusal) => refusal === error) ?? 'failed'
 
+const foundSchema = z.object({
+  source: z.string(),
+  sourceName: z.string(),
+  place: z.number(),
+  title: z.string(),
+  fileSize: z.string().nullable(),
+  uploadDate: z.string().nullable(),
+  web: z.number(),
+  magnets: z.number(),
+  inParts: z.boolean(),
+})
+
+/** One download a search found, and what a person chooses by. Never its links. */
+export type Found = z.infer<typeof foundSchema>
+
+const downloadSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  sourceName: z.string(),
+  file: z.string().nullable(),
+  folder: z.string(),
+  state: z.enum(['queued', 'downloading', 'paused', 'failed', 'done']),
+  why: z.enum(['page', 'unreachable', 'disk', 'write']).nullable(),
+  done: z.number(),
+  total: z.number().nullable(),
+  speed: z.number(),
+})
+
+export type Download = z.infer<typeof downloadSchema>
+
+/** What the app is downloading (`desktop/src/downloads.rs`). A page names, and never hands it a link. */
+export const downloads = {
+  list: async (): Promise<Download[]> => z.array(downloadSchema).parse(await call('downloads_now')),
+  /**
+   * Asks Windows for a folder, titled `ask`, then puts this one in line. False when the picker is
+   * closed. Named by its place and what was shown there, so a list since changed starts nothing.
+   */
+  start: async (found: Found, ask: string): Promise<boolean> =>
+    z.boolean().parse(
+      await call('start_download', {
+        source: found.source,
+        place: found.place,
+        title: found.title,
+        ask,
+      }),
+    ),
+  pause: async (id: string): Promise<void> => {
+    await call('pause_download', { id })
+  },
+  resume: async (id: string): Promise<void> => {
+    await call('resume_download', { id })
+  },
+  /** Off the list. Unfinished, what it had goes too; finished, the file stays. */
+  remove: async (id: string): Promise<void> => {
+    await call('remove_download', { id })
+  },
+  /** Explorer, at a finished file. Showing it, never opening it. */
+  show: async (id: string): Promise<void> => {
+    await call('show_download', { id })
+  },
+}
+
 export const sources = {
   list: async (): Promise<Source[]> => z.array(sourceSchema).parse(await call('download_sources')),
   /** Reads the source at an address, and keeps it. Nothing is downloaded. */
@@ -49,4 +111,7 @@ export const sources = {
   remove: async (id: string): Promise<void> => {
     await call('remove_source', { id })
   },
+  /** Every download whose title has all these words. */
+  search: async (words: string): Promise<Found[]> =>
+    z.array(foundSchema).parse(await call('search_sources', { words })),
 }

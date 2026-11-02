@@ -21,6 +21,13 @@ fn main() {
             "add_source",
             "read_source_again",
             "remove_source",
+            "search_sources",
+            "start_download",
+            "downloads_now",
+            "pause_download",
+            "resume_download",
+            "remove_download",
+            "show_download",
         ]),
     ))
     .expect("tauri-build failed");

@@ -3,6 +3,7 @@
 
 mod autostart;
 mod commands;
+mod downloads;
 mod ids;
 mod launch;
 mod launchers;
@@ -366,6 +367,13 @@ pub fn run() {
             commands::add_source,
             commands::read_source_again,
             commands::remove_source,
+            commands::search_sources,
+            commands::start_download,
+            commands::downloads_now,
+            commands::pause_download,
+            commands::resume_download,
+            commands::remove_download,
+            commands::show_download,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -392,6 +400,13 @@ pub fn run() {
                     .permission("allow-add-source")
                     .permission("allow-read-source-again")
                     .permission("allow-remove-source")
+                    .permission("allow-search-sources")
+                    .permission("allow-start-download")
+                    .permission("allow-downloads-now")
+                    .permission("allow-pause-download")
+                    .permission("allow-resume-download")
+                    .permission("allow-remove-download")
+                    .permission("allow-show-download")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")
@@ -407,6 +422,12 @@ pub fn run() {
             };
             app.manage(Launchers::open(&folder));
             app.manage(sources::Sources::open(&folder));
+            let downloading = std::sync::Arc::new(downloads::Downloads::open(&folder));
+            app.manage(downloading.clone());
+            tauri::async_runtime::spawn(downloads::run(
+                downloading,
+                app.package_info().version.to_string(),
+            ));
             app.manage(running::Games::default());
             app.manage(commands::Following::default());
             app.manage(Tracker::open(&folder, commands::now()));
