@@ -62,6 +62,7 @@ const PAGES = [
   '/en/u/sample/game/the-elder-scrolls-v-skyrim',
   '/en/u/sample/trophies',
   '/en/account',
+  '/en/account/settings',
   '/en/account/unsorted',
   '/pt-BR/u/sample?view=list',
 ]
@@ -629,7 +630,7 @@ try {
   await new Promise<void>((listening) => source.listen(0, '127.0.0.1', listening))
   try {
     const { port } = source.address() as AddressInfo
-    await shelf.goto(`${BASE_URL}/en/account`)
+    await shelf.goto(`${BASE_URL}/en/account/settings`)
     const field = shelf.getByLabel('Source address')
     await field.waitFor({ timeout: 20_000 })
     const add = shelf.getByRole('button', { name: 'Add source' })
@@ -696,7 +697,7 @@ try {
       .waitFor({ timeout: 15_000 })
     pass('puts two in line, in the folder chosen')
 
-    await shelf.goto(`${BASE_URL}/en/account`)
+    await shelf.goto(`${BASE_URL}/en/account/settings`)
     const file = shelf.locator('article').filter({ hasText: 'a made-up file' })
     await file.getByText(/2 MB of 4 MB/).waitFor({ timeout: 20_000 })
     await file.scrollIntoViewIfNeeded()
@@ -745,7 +746,7 @@ try {
     await shelf
       .getByRole('button', { name: 'In your downloads: Bloodborne, a made-up archive' })
       .waitFor({ timeout: 15_000 })
-    await shelf.goto(`${BASE_URL}/en/account`)
+    await shelf.goto(`${BASE_URL}/en/account/settings`)
     const packed = shelf.locator('article').filter({ hasText: 'a made-up archive' })
     await packed.getByRole('button', { name: 'Extract' }).click({ timeout: 20_000 })
     await packed.getByText(/^Extracted/).waitFor({ timeout: 20_000 })
@@ -801,7 +802,7 @@ try {
     await shelf.getByRole('status').getByText('On its way').waitFor({ timeout: 15_000 })
     pass('offers Real-Debrid for what has only a magnet')
 
-    await shelf.goto(`${BASE_URL}/en/account`)
+    await shelf.goto(`${BASE_URL}/en/account/settings`)
     const fetched = shelf.locator('article').filter({ hasText: 'a made-up magnet' })
     await fetched.getByText(/Finished/).waitFor({ timeout: 40_000 })
     const set = join(downloaded, 'Bloodborne, a made-up magnet')

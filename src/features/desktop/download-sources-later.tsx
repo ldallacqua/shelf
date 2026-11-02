@@ -15,7 +15,7 @@ const DownloadSources = dynamic(() => import('./download-sources'), {
 
 /**
  * Download sources (ADR 007), in Shelf for Windows alone. Its code is fetched only there, so a
- * browser's account page pays for almost none of it and shows nothing of it. `data-device` leaves it
+ * browser's Settings pays for almost none of it and shows nothing of it. `data-device` leaves it
  * out of what `pnpm desktop:check` compares with a plain browser.
  */
 export function DownloadSourcesInApp() {

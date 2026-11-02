@@ -124,7 +124,7 @@
     "downloadThis": "Baixar {title}",
     "added": "Nos seus downloads",
     "addedThis": "Nos seus downloads: {title}",
-    "addedSay": "A caminho. Veja o andamento na <link>sua conta</link>.",
+    "addedSay": "A caminho. Veja o andamento em <link>Configurações</link>.",
     "chooseFolder": "Onde salvar {title}",
     "errors": {
       "duplicate": "Esse já está nos seus downloads.",

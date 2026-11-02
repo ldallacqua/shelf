@@ -1242,6 +1242,12 @@
   "AccountPage": {
     "metaTitle": "Sua conta",
     "title": "Sua conta",
+    "settingsTitle": "Configurações",
+    "tabs": {
+      "label": "Sua conta e configurações",
+      "account": "Conta",
+      "settings": "Configurações"
+    },
     "checking": "Verificando quem é você…",
     "signInFirst": "Entre para ver sua conta.",
     "signIn": "Entrar",

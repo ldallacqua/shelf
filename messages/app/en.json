@@ -124,7 +124,7 @@
     "downloadThis": "Download {title}",
     "added": "In your downloads",
     "addedThis": "In your downloads: {title}",
-    "addedSay": "On its way. See how far along it is in <link>your account</link>.",
+    "addedSay": "On its way. See how far along it is in <link>Settings</link>.",
     "chooseFolder": "Where to save {title}",
     "errors": {
       "duplicate": "That one is already in your downloads.",

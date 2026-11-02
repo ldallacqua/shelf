@@ -205,7 +205,7 @@ export function DownloadSourcesView({
 }
 
 /**
- * Download sources on this computer (ADR 007, spec 7.10), on the account page and in the app
+ * Download sources on this computer (ADR 007, spec 7.10), in Settings and in the app
  * alone: an address pasted, read and kept, read again, removed. Adding one downloads nothing, so it
  * asks nothing first; removing it can't be undone and does.
  */

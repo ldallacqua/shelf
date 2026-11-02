@@ -360,32 +360,35 @@ function AccountGhosts() {
   )
 }
 
+/** For someone not signed in, on either tab, coming back to it afterwards. */
+function SignInFirst({ from }: { from: string }) {
+  const t = useTranslations('AccountPage')
+  const locale = useLocale()
+  return (
+    <div className="mt-6 max-w-xl">
+      <p className="text-pretty">{t('signInFirst')}</p>
+      <div className="mt-6">
+        <Button variant="primary" asChild>
+          <Link href={{ pathname: '/sign-in', query: { from: `/${locale}${from}` } }}>
+            {t('signIn')}
+          </Link>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 /**
  * One's account (ADR 004): what the shelf is called and where, who may see
- * it, the views this device offers and whether it hides adult games, the
- * password, the sessions, and the way out for good. Drawn in the browser,
- * for the account signed in.
+ * it, the platforms it syncs from, the password, the sessions, and the way out
+ * for good. Drawn in the browser, for the account signed in.
  */
 export function AccountSettings() {
   const t = useTranslations('AccountPage')
-  const locale = useLocale()
   const account = useAccount('checking')
 
   if (account.status === 'checking') return <AccountGhosts />
-  if (account.status !== 'signed-in') {
-    return (
-      <div className="mt-6 max-w-xl">
-        <p className="text-pretty">{t('signInFirst')}</p>
-        <div className="mt-6">
-          <Button variant="primary" asChild>
-            <Link href={{ pathname: '/sign-in', query: { from: `/${locale}/account` } }}>
-              {t('signIn')}
-            </Link>
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  if (account.status !== 'signed-in') return <SignInFirst from="/account" />
 
   return (
     <div className="mt-6 grid gap-10">
@@ -404,12 +407,37 @@ export function AccountSettings() {
       {/* Saved, the fields already hold what the account now is: kept, with what was said. */}
       <ShelfSettings account={account} />
       <Platforms handle={account.handle} />
-      <DownloadSourcesInApp />
-      <ExperimentalViews />
-      <AdultGames />
       <PasswordSettings />
       <SignOutEverywhere />
       <DeleteAccount />
+    </div>
+  )
+}
+
+/**
+ * How Shelf behaves here: the views this device offers, whether it hides adult games, and, in Shelf for
+ * Windows alone, downloads, their sources and Real-Debrid. Under the tabs' line, the first section needs none
+ * of its own.
+ */
+export function AppSettings() {
+  const t = useTranslations('AccountPage')
+  const account = useAccount('checking')
+
+  if (account.status === 'checking') {
+    return (
+      <Loading label={t('checking')} className="mt-8 grid gap-10">
+        <Ghosts lines={2} className="max-w-xl" />
+        <Ghosts lines={2} className="max-w-xl" />
+      </Loading>
+    )
+  }
+  if (account.status !== 'signed-in') return <SignInFirst from="/account/settings" />
+
+  return (
+    <div className="mt-8 grid gap-10 [&>section:first-child]:border-t-0 [&>section:first-child]:pt-0">
+      <ExperimentalViews />
+      <AdultGames />
+      <DownloadSourcesInApp />
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { DownloadsView } from './downloads-list'
 import type { Download } from './sources'
 
 /**
- * Downloads, on the account page above the sources, in Shelf for Windows alone (ADR 007, spec 7.10).
+ * Downloads, in Settings above the sources, in Shelf for Windows alone (ADR 007, spec 7.10).
  * What is said while moving is what a person decides by: how far, how fast, how long. Nothing is
  * offered that starts a file: a finished one is shown in its folder.
  */

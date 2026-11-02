@@ -8,7 +8,7 @@ import { Downloads } from './downloads-list'
 import type { Download } from './sources'
 import { setBridgeForTests } from './tauri'
 
-/** Downloads on the account page, with the app's commands faked (ADR 007). */
+/** Downloads in Settings, with the app's commands faked (ADR 007). */
 
 const GB = 1024 ** 3
 const DOWNLOAD: Download = {

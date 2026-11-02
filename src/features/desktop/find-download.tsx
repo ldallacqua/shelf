@@ -13,10 +13,10 @@ import { Sheet, SheetContent } from '@/ui/sheet'
 import { AppWords } from './app-words'
 import { type Download, type Found, downloads, realDebrid, sources } from './sources'
 
-/** A link to where Real-Debrid is signed in to, inside the words that say it is needed. */
+/** A link to where downloads and Real-Debrid are, inside the words that say so. */
 const toAccount = (chunks: ReactNode) => (
   <Link
-    href="/account"
+    href="/account/settings"
     className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
   >
     {chunks}

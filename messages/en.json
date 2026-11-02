@@ -1242,6 +1242,12 @@
   "AccountPage": {
     "metaTitle": "Your account",
     "title": "Your account",
+    "settingsTitle": "Settings",
+    "tabs": {
+      "label": "Your account and settings",
+      "account": "Account",
+      "settings": "Settings"
+    },
     "checking": "Checking who you are…",
     "signInFirst": "Sign in to see your account.",
     "signIn": "Sign in",
