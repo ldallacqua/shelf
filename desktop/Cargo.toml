@@ -1,6 +1,6 @@
 [package]
 name = "shelf-desktop"
-version = "0.5.0"
+version = "0.6.0"
 description = "Shelf for Windows: the shelf in a window of its own, and Play"
 edition = "2024"
 rust-version = "1.90"
