@@ -1884,7 +1884,7 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 | Filters | Bottom sheet | Side panel | Side panel; from 1536px, a column beside the library |
 | Sort and group | Bottom sheet | Menus | Menus |
 | Detail | Bottom sheet, two heights | Side panel; sheet in portrait | Side panel; from 2400px wide, centered in two columns (7.2) |
-| Add | Full-screen sheet | Dialog | Dialog |
+| Add | Bottom sheet | Side panel | Side panel; from 2400px wide, centered, as a game is |
 | List columns | Four | Six | All |
 
 **Touch, designed on purpose**

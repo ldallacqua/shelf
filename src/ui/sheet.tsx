@@ -81,6 +81,14 @@ const placing = {
   },
 }
 
+/**
+ * In the middle of a very wide window (spec 7.2), where a column at the edge is too far to read. CSS alone,
+ * so crossing the line while resizing moves the same elements and loses nothing. Give it a size with
+ * the same variant.
+ */
+const SHEET_CENTERED =
+  'game-centered:inset-0 game-centered:m-auto game-centered:rounded-panel game-centered:border game-centered:[--sheet-fade:0] game-centered:[--sheet-from:0_1.5rem]'
+
 /** The look of the close button, for buttons and links beside it. */
 const sheetButton = (bleed?: boolean) =>
   cn(
@@ -219,4 +227,4 @@ function SheetContent({
   )
 }
 
-export { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger, sheetButton }
+export { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger, SHEET_CENTERED, sheetButton }

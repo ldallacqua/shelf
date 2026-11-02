@@ -9,7 +9,7 @@ import { announceChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
 import { useRouter } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
-import { Sheet, SheetContent } from '@/ui/sheet'
+import { Sheet, SHEET_CENTERED, SheetContent } from '@/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/tabs'
 
 import type { AddActions } from './actions'
@@ -85,7 +85,13 @@ export function AddGame({ open, onOpenChange, actions }: AddGameProps) {
         description={t('help')}
         closeLabel={t('close')}
         // A list's review needs the room: a row is a game and three choices.
-        className={cn(tab === 'list' ? 'sm:w-[44rem] lg:w-[56rem]' : 'lg:w-[34rem]')}
+        className={cn(
+          tab === 'list' ? 'sm:w-[44rem] lg:w-[56rem]' : 'lg:w-[34rem]',
+          // In the middle of a very wide window, as a game is. One size for both tabs, so changing tab
+          // moves nothing, and as wide as a list's review needs: a search needs less than a game's page.
+          SHEET_CENTERED,
+          'game-centered:h-[min(94dvh,60rem)] game-centered:w-[56rem]',
+        )}
         onOpenAutoFocus={(event) => {
           // Straight to the field: typing is the first thing to do.
           const field = (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
