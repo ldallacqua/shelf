@@ -11,8 +11,8 @@ The owner asked to download games from sources in Hydra's format, by direct link
 in desktop 0.6.0, published with the owner's OK on 2 Nov. Extracting reaches the owner in desktop 0.7.0, and reading
 a source once a day, a source from a saved file and saying why a connection failed in 0.8.0, each published with the
 owner's OK the same day. The first real address the owner tried answers their own `curl` with a 403 and `Cf-Mitigated: challenge`:
-Cloudflare asks for a browser to prove itself. The app doesn't get past that (ADR 007, decision 3), so for such an address
-a saved file is the way, and it doesn't update by itself. Extracting has run on made-up archives, the rar ones put together by hand in the tests, and once on the small rar samples the
+Cloudflare asks for a browser to prove itself. The owner chose a window they can see, in 0.9.0 with Read all (ADR 007, decision 9). It has run against a
+made-up check and over HTTPS with a made-up file, and never against Cloudflare, so whether it passes there is for the owner to find out; a saved file is what is left if not. Extracting has run on made-up archives, the rar ones put together by hand in the tests, and once on the small rar samples the
 `unrar` crate publishes, which are not in the repository. A large one, or a compressed one in several parts, is unproven. Real-Debrid has run only against a
 stand-in: its real answers may differ, above all a free account's and what its filters say. Windows Defender flagged the 0.5.0
 installer, `Trojan:Win32/Bearfoos.A!ml`, on 1 Nov, both the copy in `desktop/target` and the updater's copy in
