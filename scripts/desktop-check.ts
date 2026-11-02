@@ -257,6 +257,7 @@ const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
     SHELF_DATA_DIR: profile,
     SHELF_PICK: join(game, 'start.bat'),
     SHELF_PICK_FOLDER: downloaded,
+    SHELF_PICK_SOURCE: resolve('fixtures/sources/hydra-format.json'),
     SHELF_REAL_DEBRID: `http://127.0.0.1:${(debrid.address() as AddressInfo).port}`,
     SHELF_REOPEN_AFTER: '5',
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}`,
@@ -655,6 +656,22 @@ try {
     await shelf.getByRole('button', { name: 'Remove source' }).click()
     await shelf.getByText('No sources yet.').waitFor({ timeout: 10_000 })
     pass('removes it, after asking')
+
+    await shelf.getByRole('button', { name: 'From a saved file' }).click()
+    const saved = shelf.locator('article').filter({ hasText: 'From a file: hydra-format.json' })
+    await saved.waitFor({ timeout: 15_000 })
+    if (/3 downloads/.test((await saved.innerText()).replace(/\s+/g, ' ')))
+      pass('adds a source from a file a person saved, as it reads one from an address')
+    else fail(`from a file it said: ${await saved.innerText()}`)
+    await saved.getByRole('button', { name: 'Choose the file again' }).click()
+    await shelf
+      .getByRole('status')
+      .getByText(/^Read /)
+      .waitFor({ timeout: 15_000 })
+    pass('gives it a new list by choosing the file again')
+    await saved.getByRole('button', { name: 'Remove' }).click()
+    await shelf.getByRole('button', { name: 'Remove source' }).click()
+    await saved.waitFor({ state: 'detached', timeout: 10_000 })
 
     console.log('\nDownloading from a source (ADR 007), made-up bytes on this computer')
     await field.fill(`http://127.0.0.1:${port}/with-files.json`)

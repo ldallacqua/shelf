@@ -1,6 +1,6 @@
 'use client'
 
-import { PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
+import { FileUpIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
 import { useFormatter, useNow, useTranslations } from 'next-intl'
 import { type FormEvent, useEffect, useId, useState } from 'react'
 
@@ -39,7 +39,9 @@ function SourceCard({
     <article className="grid gap-4 rounded-panel border border-line bg-surface p-5">
       <div className="grid min-w-0 gap-1">
         <h3 className="title text-lg wrap-anywhere">{source.name}</h3>
-        <p className="text-sm wrap-anywhere text-muted">{source.url}</p>
+        <p className="text-sm wrap-anywhere text-muted">
+          {source.file !== null ? t('fromFile', { name: source.file }) : source.url}
+        </p>
       </div>
       <dl className="grid gap-1 text-sm">
         <div className="flex flex-wrap gap-x-1.5">
@@ -67,7 +69,7 @@ function SourceCard({
       <div className="flex flex-wrap gap-3">
         <Button size="sm" variant="secondary" disabled={disabled} onClick={onReadAgain}>
           <RefreshCwIcon aria-hidden="true" />
-          {reading ? t('reading') : t('readAgain')}
+          {reading ? t('reading') : source.file !== null ? t('chooseAgain') : t('readAgain')}
         </Button>
         <Confirm
           title={t('removeTitle', { name: source.name })}
@@ -96,6 +98,7 @@ export function DownloadSourcesView({
   invalid = false,
   onAddress,
   onAdd,
+  onAddFile,
   onReadAgain,
   onRemove,
 }: {
@@ -110,6 +113,7 @@ export function DownloadSourcesView({
   invalid?: boolean
   onAddress: (address: string) => void
   onAdd: () => void
+  onAddFile: () => void
   onReadAgain: (id: string) => void
   onRemove: (id: string) => void
 }) {
@@ -147,10 +151,14 @@ export function DownloadSourcesView({
         <p id={warningId} className="text-sm text-pretty text-muted">
           {t('warning')}
         </p>
-        <div>
+        <div className="flex flex-wrap gap-3">
           <Button type="submit" variant="secondary" disabled={busy || address.trim() === ''}>
             <PlusIcon aria-hidden="true" />
             {adding ? t('adding') : t('add')}
+          </Button>
+          <Button type="button" variant="ghost" disabled={busy} onClick={onAddFile}>
+            <FileUpIcon aria-hidden="true" />
+            {t('addFile')}
           </Button>
         </div>
       </form>
@@ -207,6 +215,11 @@ function Sources() {
 
   const refused = (refusal: SourceRefusal) =>
     setSaid({ tone: 'trouble', text: t(`errors.${refusal}`) })
+  // What the same refusal means of a file, which has no address to check.
+  const refusedFile = (refusal: SourceRefusal) =>
+    refusal === 'unsupported'
+      ? setSaid({ tone: 'trouble', text: t('errors.fileUnsupported') })
+      : refused(refusal)
 
   useEffect(() => {
     let current = true
@@ -245,7 +258,41 @@ function Sources() {
     setAdding(false)
   }
 
+  const addFile = async () => {
+    setAdding(true)
+    setSaid(undefined)
+    setInvalid(false)
+    try {
+      const source = await sources.addFile(t('fileTitle'), t('fileKinds'))
+      // Closed without a file: nothing changes.
+      if (source) {
+        setList((kept) => [...(kept ?? []), source])
+        setSaid({ tone: 'done', text: t('added', { name: source.name, count: source.items }) })
+      }
+    } catch (error) {
+      refusedFile(sourceRefusalOf(error))
+    }
+    setAdding(false)
+  }
+
+  const chooseAgain = async (id: string) => {
+    setReading(id)
+    setSaid(undefined)
+    setInvalid(false)
+    try {
+      const source = await sources.addFile(t('fileTitle'), t('fileKinds'), id)
+      if (source) {
+        setList((kept) => kept?.map((each) => (each.id === id ? source : each)))
+        setSaid({ tone: 'done', text: t('readDone', { name: source.name, count: source.items }) })
+      }
+    } catch (error) {
+      refusedFile(sourceRefusalOf(error))
+    }
+    setReading(undefined)
+  }
+
   const readAgain = async (id: string) => {
+    if (list?.find((each) => each.id === id)?.file != null) return chooseAgain(id)
     setReading(id)
     setSaid(undefined)
     setInvalid(false)
@@ -283,6 +330,7 @@ function Sources() {
         setInvalid(false)
       }}
       onAdd={() => void add()}
+      onAddFile={() => void addFile()}
       onReadAgain={(id) => void readAgain(id)}
       onRemove={(id) => void remove(id)}
     />

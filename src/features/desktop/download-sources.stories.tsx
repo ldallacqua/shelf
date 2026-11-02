@@ -15,6 +15,7 @@ const source = (over: Partial<Source> = {}): Source => ({
   id: 'one',
   name: 'Made-up source',
   url: 'https://files.example.invalid/source.json',
+  file: null,
   addedAt: Date.now() - 48 * HOUR,
   readAt: Date.now() - 3 * HOUR,
   items: 1240,
@@ -39,6 +40,7 @@ const meta = {
     address: '',
     onAddress: () => undefined,
     onAdd: () => undefined,
+    onAddFile: () => undefined,
     onReadAgain: () => undefined,
     onRemove: () => undefined,
   },
@@ -48,6 +50,23 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const NoneYet: Story = {}
+
+/** Saved by hand, for an address that doesn't answer the app: reading it again means choosing it again. */
+export const FromASavedFile: Story = {
+  args: { list: [source({ url: 'file:made-up.json', file: 'made-up.json' })] },
+}
+
+/** It answered, and not with the file: the way on is in the words, and the button is beside the field. */
+export const AnAddressThatRefuses: Story = {
+  args: {
+    address: 'https://files.example.invalid/source.json',
+    invalid: true,
+    said: {
+      tone: 'trouble',
+      text: 'That address answered without the file. It may only answer browsers: open it in yours, save the file, and use From a saved file.',
+    },
+  },
+}
 
 export const WithSources: Story = {
   args: {

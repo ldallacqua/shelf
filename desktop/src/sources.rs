@@ -32,6 +32,8 @@ pub enum Refusal {
     Duplicate,
     /// Nothing answered, or it answered with an error.
     Unreachable,
+    /// It answered, without the file: an error, or a redirect `allowed` wouldn't follow.
+    Refused,
     /// More than `MOST_BYTES`.
     Large,
     /// It answered with something that is not a source.
@@ -133,6 +135,8 @@ pub fn parse(bytes: &[u8]) -> Result<Feed, Refusal> {
         name: String,
         downloads: Vec<serde_json::Value>,
     }
+    // Notepad starts a file it saves with this mark, which JSON has no place for.
+    let bytes = bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(bytes);
     let raw: Raw = serde_json::from_slice(bytes).map_err(|_| Refusal::Unsupported)?;
     let name = words(&raw.name).ok_or(Refusal::Unsupported)?;
     let whole = raw.downloads.len();
@@ -237,7 +241,7 @@ pub async fn read(url: &Url, etag: Option<&str>, version: &str) -> Result<Readin
     }
     // A redirect stopped by the rule above comes back as the redirect itself.
     if !response.status().is_success() {
-        return Err(Refusal::Unreachable);
+        return Err(Refusal::Refused);
     }
     if response
         .content_length()
@@ -261,6 +265,15 @@ pub async fn read(url: &Url, etag: Option<&str>, version: &str) -> Result<Readin
     Ok(Reading::Read { bytes, etag })
 }
 
+/// Reads a source a person saved, from where Windows' picker found it, to the same limit.
+pub fn read_file(path: &Path) -> Result<Feed, Refusal> {
+    let size = fs::metadata(path).map_err(|_| Refusal::Failed)?.len();
+    if size > MOST_BYTES {
+        return Err(Refusal::Large);
+    }
+    parse(&fs::read(path).map_err(|_| Refusal::Failed)?)
+}
+
 /// What is kept of a source besides its list.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -268,6 +281,9 @@ pub struct Source {
     pub id: String,
     pub name: String,
     pub url: String,
+    /// The name of the file it was added from, when it has no address to read again.
+    #[serde(default)]
+    pub file: Option<String>,
     /// When it was added and last read, in milliseconds since 1970.
     pub added_at: u64,
     pub read_at: u64,
@@ -379,6 +395,7 @@ impl Sources {
         &self,
         id: String,
         url: String,
+        file: Option<String>,
         feed: Feed,
         etag: Option<String>,
         now: u64,
@@ -387,6 +404,7 @@ impl Sources {
             id,
             name: feed.name,
             url,
+            file,
             added_at: now,
             read_at: now,
             items: feed.items.len(),
@@ -426,6 +444,7 @@ impl Sources {
     pub fn replace(
         &self,
         id: &str,
+        file: Option<String>,
         feed: Feed,
         etag: Option<String>,
         now: u64,
@@ -443,6 +462,9 @@ impl Sources {
         each.source.web = count(&feed.items, Link::Web);
         each.source.left_out = feed.left_out;
         each.kept_etag = etag;
+        if let Some(name) = file {
+            each.source.file = Some(name);
+        }
         let source = each.source.clone();
         self.save(&kept)?;
         Ok(source)
@@ -648,6 +670,49 @@ mod tests {
     }
 
     #[test]
+    fn reads_a_saved_file_with_the_mark_notepad_leaves() {
+        let dir = folder("saved");
+        let saved = dir.join("saved.txt");
+        let mut bytes = b"\xEF\xBB\xBF".to_vec();
+        bytes.extend_from_slice(MADE_UP.as_bytes());
+        fs::write(&saved, bytes).unwrap();
+        assert_eq!(read_file(&saved), parse(MADE_UP.as_bytes()));
+    }
+
+    #[test]
+    fn a_saved_file_is_held_to_the_same_rules() {
+        let dir = folder("saved-bad");
+        let saved = dir.join("saved.txt");
+        fs::write(&saved, "<html>a page saved by mistake</html>").unwrap();
+        assert_eq!(read_file(&saved), Err(Refusal::Unsupported));
+        assert_eq!(read_file(&dir.join("gone.txt")), Err(Refusal::Failed));
+    }
+
+    #[test]
+    fn a_source_from_a_file_says_which_and_keeps_it_when_its_list_changes() {
+        let dir = folder("from-file");
+        let sources = Sources::open(&dir);
+        let first = parse(MADE_UP.as_bytes()).unwrap();
+        let added = sources
+            .add(
+                "one".into(),
+                "file:a.json".into(),
+                Some("a.json".into()),
+                first,
+                None,
+                1,
+            )
+            .unwrap();
+        assert_eq!(added.file.as_deref(), Some("a.json"));
+        let next = parse(MADE_UP.as_bytes()).unwrap();
+        let again = sources
+            .replace("one", Some("b.json".into()), next, None, 2)
+            .unwrap();
+        assert_eq!(again.file.as_deref(), Some("b.json"));
+        assert_eq!(Sources::open(&dir).all()[0].file.as_deref(), Some("b.json"));
+    }
+
+    #[test]
     fn reads_hydras_format() {
         let feed = parse(MADE_UP.as_bytes()).unwrap();
         assert_eq!(feed.name, "Made-up source");
@@ -808,7 +873,7 @@ mod tests {
     #[test]
     fn an_error_or_nothing_is_unreachable() {
         let (address, server) = serve(vec![answer("404 Not Found", "", "no")]);
-        assert_eq!(reading(&address, None), Err(Refusal::Unreachable));
+        assert_eq!(reading(&address, None), Err(Refusal::Refused));
         server.join().unwrap();
 
         // Bound, then let go: nothing is listening there any more.
@@ -835,7 +900,7 @@ mod tests {
             "Location: http://192.168.1.1/secret\r\n",
             "",
         )]);
-        assert_eq!(reading(&address, None), Err(Refusal::Unreachable));
+        assert_eq!(reading(&address, None), Err(Refusal::Refused));
         server.join().unwrap();
 
         let (address, server) = serve(vec![answer(
@@ -843,7 +908,7 @@ mod tests {
             "Location: file:///C:/Windows/win.ini\r\n",
             "",
         )]);
-        assert_eq!(reading(&address, None), Err(Refusal::Unreachable));
+        assert_eq!(reading(&address, None), Err(Refusal::Refused));
         server.join().unwrap();
     }
 
@@ -864,6 +929,7 @@ mod tests {
             .add(
                 "one".into(),
                 "https://a.example/s.json".into(),
+                None,
                 feed,
                 Some("\"tag\"".into()),
                 10,
@@ -901,6 +967,7 @@ mod tests {
             .add(
                 "one".into(),
                 "https://a.example/s.json".into(),
+                None,
                 feed,
                 Some("\"tag\"".into()),
                 10,
@@ -918,10 +985,24 @@ mod tests {
         let sources = Sources::open(&dir);
         let feed = || parse(br#"{"name":"a","downloads":[]}"#).unwrap();
         sources
-            .add("one".into(), "https://a.example/s".into(), feed(), None, 1)
+            .add(
+                "one".into(),
+                "https://a.example/s".into(),
+                None,
+                feed(),
+                None,
+                1,
+            )
             .unwrap();
         assert_eq!(
-            sources.add("two".into(), "https://a.example/s".into(), feed(), None, 2),
+            sources.add(
+                "two".into(),
+                "https://a.example/s".into(),
+                None,
+                feed(),
+                None,
+                2
+            ),
             Err(Refusal::Duplicate)
         );
         assert!(!list_file(&dir, "two").exists());
@@ -935,7 +1016,14 @@ mod tests {
         let sources = Sources::open(&dir);
         let first = parse(br#"{"name":"old","downloads":[]}"#).unwrap();
         sources
-            .add("one".into(), "https://a.example/s".into(), first, None, 1)
+            .add(
+                "one".into(),
+                "https://a.example/s".into(),
+                None,
+                first,
+                None,
+                1,
+            )
             .unwrap();
 
         let touched = sources.touch("one", 5).unwrap();
@@ -943,14 +1031,14 @@ mod tests {
 
         let next = parse(MADE_UP.as_bytes()).unwrap();
         let replaced = sources
-            .replace("one", next, Some("\"two\"".into()), 9)
+            .replace("one", None, next, Some("\"two\"".into()), 9)
             .unwrap();
         assert_eq!(
             (replaced.name.as_str(), replaced.read_at, replaced.items),
             ("Made-up source", 9, 3)
         );
         assert_eq!(
-            sources.replace("nope", parse(MADE_UP.as_bytes()).unwrap(), None, 9),
+            sources.replace("nope", None, parse(MADE_UP.as_bytes()).unwrap(), None, 9),
             Err(Refusal::Missing)
         );
         assert_eq!(sources.touch("nope", 9), Err(Refusal::Missing));
@@ -963,7 +1051,14 @@ mod tests {
         let sources = Sources::open(&dir);
         let feed = parse(MADE_UP.as_bytes()).unwrap();
         sources
-            .add("one".into(), "https://a.example/s".into(), feed, None, 1)
+            .add(
+                "one".into(),
+                "https://a.example/s".into(),
+                None,
+                feed,
+                None,
+                1,
+            )
             .unwrap();
         sources.remove("one").unwrap();
         assert!(sources.all().is_empty());
@@ -994,6 +1089,7 @@ mod tests {
             .add(
                 "one".into(),
                 "https://a.example/s".into(),
+                None,
                 parse(MADE_UP.as_bytes()).unwrap(),
                 None,
                 1,
@@ -1044,6 +1140,7 @@ mod tests {
             .add(
                 "one".into(),
                 "https://a.example/s".into(),
+                None,
                 parse(MADE_UP.as_bytes()).unwrap(),
                 None,
                 1,

@@ -17,6 +17,7 @@ const SOURCE: Source = {
   id: 'one',
   name: 'Made-up source',
   url: 'https://files.example.invalid/source.json',
+  file: null,
   addedAt: 1,
   readAt: Date.now(),
   items: 3,
@@ -27,6 +28,7 @@ const SOURCE: Source = {
 
 let kept: Source[]
 let refuse: string | undefined
+let picked: Source | null
 
 const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
   if (refuse && command !== 'download_sources') throw refuse
@@ -35,12 +37,14 @@ const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
   if (command === 'real_debrid_account') return { state: 'out' }
   if (command === 'add_source') return { ...SOURCE, url: args?.url }
   if (command === 'read_source_again') return { ...SOURCE, items: 4 }
+  if (command === 'add_source_file') return picked
   return undefined
 })
 
 beforeEach(() => {
   kept = []
   refuse = undefined
+  picked = null
   app.mockClear()
   setBridgeForTests(app)
 })
@@ -76,7 +80,8 @@ describe('download sources', () => {
   it.each([
     ['invalid', /https address/],
     ['duplicate', /already here/],
-    ['unreachable', /didn’t answer/],
+    ['unreachable', /couldn’t connect/],
+    ['refused', /only answer browsers/],
     ['large', /too large/],
     ['unsupported', /no source/],
     ['failed', /couldn’t keep/],
@@ -118,10 +123,53 @@ describe('download sources', () => {
 
     refuse = 'unreachable'
     await user.click(screen.getByRole('button', { name: 'Read again' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(/didn’t answer/)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn’t connect/)
     expect(screen.getByText('4 downloads')).toBeInTheDocument()
     // That was about a source, not about the address in the field.
     expect(field()).toBeValid()
+  })
+
+  const FROM_FILE: Source = { ...SOURCE, url: 'file:saved.json', file: 'saved.json' }
+  const ASKED = { ask: 'A source you saved', files: 'Sources (JSON or text)' }
+
+  it('adds a source from a saved file, through Windows’ picker, with no address', async () => {
+    picked = FROM_FILE
+    const user = userEvent.setup()
+    renderWithIntl(<DownloadSources />)
+    await user.click(await screen.findByRole('button', { name: 'From a saved file' }))
+    expect(app).toHaveBeenCalledWith('add_source_file', { ...ASKED, replacing: null })
+    const card = (await screen.findByRole('heading', { name: SOURCE.name })).closest('article')!
+    expect(within(card).getByText('From a file: saved.json')).toBeInTheDocument()
+    expect(within(card).queryByText('file:saved.json')).not.toBeInTheDocument()
+  })
+
+  it('changes nothing when the picker is closed', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<DownloadSources />)
+    await user.click(await screen.findByRole('button', { name: 'From a saved file' }))
+    expect(screen.getByText('No sources yet.')).toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('says a file that isn’t a source is the file’s fault, not an address’s', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<DownloadSources />)
+    const button = await screen.findByRole('button', { name: 'From a saved file' })
+    refuse = 'unsupported'
+    await user.click(button)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/That file isn’t a source/)
+  })
+
+  it('reads one from a file again by choosing the file, not by an address', async () => {
+    kept = [FROM_FILE]
+    picked = { ...FROM_FILE, items: 9 }
+    const user = userEvent.setup()
+    renderWithIntl(<DownloadSources />)
+    await user.click(await screen.findByRole('button', { name: 'Choose the file again' }))
+    expect(app).toHaveBeenCalledWith('add_source_file', { ...ASKED, replacing: 'one' })
+    expect(app).not.toHaveBeenCalledWith('read_source_again', expect.anything())
+    expect(await screen.findByText('9 downloads')).toBeInTheDocument()
   })
 
   it('asks before removing, and removes only on yes', async () => {

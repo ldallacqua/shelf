@@ -1652,9 +1652,12 @@ In Shelf for Windows alone, on the account page, under Platforms. Why it is buil
   would come too late, and a general one is hard to act on.
 - **What a source shows:** its name and address, how many downloads, by which kind of link, how many were
   left out, and when it was read. The address is not a link. Nothing else from the list reaches the page.
-- **Refused:** an address that isn't `https`, one on this computer or its network, one that doesn't answer,
-  a file over 200 MB, and anything without a name and a list of downloads. Each says which, with the
-  address kept in the field to be corrected.
+- **From a saved file** stands beside Add. An address may answer a browser and not the app, so I can save the
+  file and choose it in Windows' picker. The card says which file, and its Read again chooses a file again.
+- **Refused:** an address that isn't `https`, one on this computer or its network, one it can't connect to, one
+  that answers without the file, which says to save it in a browser and add it from there, a file over
+  200 MB, and anything without a name and a list of downloads. Each says which, with the address kept in
+  the field to be corrected.
 - **Read again** is by hand. If it fails, the list it has stays.
 - **Remove** asks first. It forgets the list, and what was downloaded stays.
 - **It isn't on the landing page,** by decision ([ADR 007](adr/007-download-sources.md), decision 4).
