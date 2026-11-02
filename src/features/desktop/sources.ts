@@ -53,8 +53,20 @@ const foundSchema = z.object({
 /** One download a search found, and what a person chooses by. Never its links. */
 export type Found = z.infer<typeof foundSchema>
 
+const extractionSchema = z.object({
+  state: z.enum(['waiting', 'working', 'failed', 'done']),
+  why: z
+    .enum(['interrupted', 'password', 'unsafe', 'damaged', 'volume', 'disk', 'write'])
+    .nullable(),
+  done: z.number(),
+  total: z.number(),
+})
+
 const downloadSchema = z.object({
   id: z.string(),
+  // These three default, as a page goes out at once and an app of 0.6.0 doesn't send them until it updates.
+  /** The game it was looked for from. */
+  entry: z.string().nullable().default(null),
   title: z.string(),
   sourceName: z.string(),
   file: z.string().nullable(),
@@ -81,6 +93,9 @@ const downloadSchema = z.object({
   speed: z.number(),
   through: z.enum(['direct', 'realdebrid']),
   remote: z.number().nullable(),
+  /** How many archives it brought. */
+  archives: z.number().default(0),
+  extraction: extractionSchema.nullable().default(null),
 })
 
 export type Download = z.infer<typeof downloadSchema>
@@ -120,7 +135,12 @@ export const downloads = {
    * Asks Windows for a folder, titled `ask`, then puts this one in line. False when the picker is
    * closed. Named by its place and what was shown there, so a list since changed starts nothing.
    */
-  start: async (found: Found, ask: string, through: Download['through']): Promise<boolean> =>
+  start: async (
+    found: Found,
+    ask: string,
+    through: Download['through'],
+    entry: string,
+  ): Promise<boolean> =>
     z.boolean().parse(
       await call('start_download', {
         source: found.source,
@@ -128,6 +148,7 @@ export const downloads = {
         title: found.title,
         ask,
         through,
+        entry,
       }),
     ),
   pause: async (id: string): Promise<void> => {
@@ -140,9 +161,17 @@ export const downloads = {
   remove: async (id: string): Promise<void> => {
     await call('remove_download', { id })
   },
-  /** Explorer, at a finished file. Showing it, never opening it. */
+  /** Explorer, at a finished file or what came out of it. Showing it, never opening it. */
   show: async (id: string): Promise<void> => {
     await call('show_download', { id })
+  },
+  /** Opens its archives, into a folder beside them. Nothing that comes out is started. */
+  extract: async (id: string): Promise<void> => {
+    await call('extract_download', { id })
+  },
+  /** Stops that, and what had come out goes. The archives stay. */
+  stopExtracting: async (id: string): Promise<void> => {
+    await call('cancel_extraction', { id })
   },
 }
 

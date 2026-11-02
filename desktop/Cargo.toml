@@ -3,7 +3,7 @@ name = "shelf-desktop"
 version = "0.6.0"
 description = "Shelf for Windows: the shelf in a window of its own, and Play"
 edition = "2024"
-rust-version = "1.90"
+rust-version = "1.93"
 publish = false
 
 # Named apart from the program: on Windows a library and a program of one name write the same
@@ -22,11 +22,14 @@ tauri-plugin-single-instance = "2.5"
 tauri-plugin-updater = "2.14"
 tauri-plugin-window-state = "2"
 reqwest = { version = "0.13", default-features = false, features = ["rustls", "http2", "system-proxy"] }
+# Reading archives in Rust alone: what a game is packed with, and no compression, which is never needed.
+sevenz-rust2 = { version = "0.24", default-features = false, features = ["aes256", "bzip2", "deflate", "ppmd"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["macros", "sync", "time"] }
 url = "2"
 uuid = { version = "1", features = ["v4"] }
+zip = { version = "9", default-features = false, features = ["bzip2", "deflate-flate2-zlib-rs", "deflate64", "lzma", "xz"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [
@@ -46,7 +49,12 @@ windows-sys = { version = "0.61", features = [
   "Win32_UI_WindowsAndMessaging",
 ] }
 keyring = { version = "3", default-features = false, features = ["windows-native"] }
+# RAR's own decoder, in C++: there is none in Rust. Only ever asked to test, so it writes nothing (`extract.rs`).
+unrar_sys = "0.5"
 winreg = "0.56"
+
+[dev-dependencies]
+sevenz-rust2 = { version = "0.24", default-features = false, features = ["aes256", "compress"] }
 
 [profile.release]
 codegen-units = 1

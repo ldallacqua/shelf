@@ -102,9 +102,14 @@ pub async fn choose_launcher(
     files: String,
     launchers: State<'_, Launchers>,
     games: State<'_, Games>,
+    list: State<'_, Arc<Downloads>>,
 ) -> Result<Option<LauncherView>, Refusal> {
     entry_id(&entry)?;
-    let picked = pick(&window, short(&title), short(&files)).await?;
+    // What was downloaded for this game, if anything was: the file is most likely there.
+    let start = list
+        .folder_for_game(&entry)
+        .filter(|folder| folder.is_dir());
+    let picked = pick(&window, short(&title), short(&files), start).await?;
     let Some(path) = picked else {
         return Ok(None);
     };
@@ -119,6 +124,7 @@ async fn pick(
     window: &WebviewWindow,
     title: String,
     files: String,
+    start: Option<PathBuf>,
 ) -> Result<Option<PathBuf>, Refusal> {
     // A development build can be handed the file instead, so `pnpm desktop:check`
     // goes through choosing without a picker no script can answer.
@@ -126,12 +132,15 @@ async fn pick(
     if let Ok(path) = std::env::var("SHELF_PICK") {
         return Ok(Some(PathBuf::from(path)));
     }
-    let dialog = window
+    let mut dialog = window
         .dialog()
         .file()
         .set_parent(window)
         .set_title(title)
         .add_filter(files, &["exe", "bat", "lnk", "url"]);
+    if let Some(start) = start {
+        dialog = dialog.set_directory(start);
+    }
     let picked = tauri::async_runtime::spawn_blocking(move || dialog.blocking_pick_file())
         .await
         .map_err(|_| Refusal::Failed)?;
@@ -494,11 +503,12 @@ pub async fn start_download(
     title: String,
     ask: String,
     through: Through,
+    entry: Option<String>,
     kept: State<'_, Sources>,
     list: State<'_, Arc<Downloads>>,
     debrid: State<'_, Arc<RealDebrid>>,
 ) -> Result<bool, downloads::Refusal> {
-    if !ids::entry(&source) {
+    if !ids::entry(&source) || entry.as_deref().is_some_and(|entry| !ids::entry(entry)) {
         return Err(downloads::Refusal::Invalid);
     }
     let (source_name, item) = kept
@@ -540,6 +550,7 @@ pub async fn start_download(
         links,
         parts,
         folder,
+        entry,
         now(),
     )?;
     Ok(true)
@@ -608,8 +619,29 @@ pub async fn remove_download(
     Ok(())
 }
 
-/// Opens the folder of a finished download in Explorer, the file selected. Showing, and never opening:
-/// nothing downloaded is started from here (ADR 007, decision 10).
+/// Opens a finished download's archives, into a folder beside them. Nothing that comes out is started
+/// (ADR 007, decision 10).
+#[tauri::command]
+pub fn extract_download(
+    id: String,
+    list: State<'_, Arc<Downloads>>,
+) -> Result<(), downloads::Refusal> {
+    download_id(&id)?;
+    list.extract(&id)
+}
+
+/// Stops opening them, and what had come out goes. The archives stay.
+#[tauri::command]
+pub fn cancel_extraction(
+    id: String,
+    list: State<'_, Arc<Downloads>>,
+) -> Result<(), downloads::Refusal> {
+    download_id(&id)?;
+    list.cancel_extraction(&id)
+}
+
+/// Opens the folder of a finished download in Explorer, with what it came to selected. Showing, and never
+/// opening: nothing downloaded is started from here (ADR 007, decision 10).
 #[tauri::command]
 pub fn show_download(
     app: AppHandle,
@@ -618,7 +650,8 @@ pub fn show_download(
 ) -> Result<(), downloads::Refusal> {
     download_id(&id)?;
     let file = list.finished_file(&id)?;
-    if !file.is_file() {
+    // A set of files, or what came out of an archive, is a folder.
+    if !file.exists() {
         return Err(downloads::Refusal::Missing);
     }
     app.opener()

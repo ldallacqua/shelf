@@ -13,6 +13,7 @@ import { setBridgeForTests } from './tauri'
 const GB = 1024 ** 3
 const DOWNLOAD: Download = {
   id: 'one',
+  entry: null,
   title: 'Made-up Game',
   sourceName: 'Made-up source',
   file: 'made-up.zip',
@@ -24,17 +25,22 @@ const DOWNLOAD: Download = {
   speed: 10 * 1024 * 1024,
   through: 'direct',
   remote: null,
+  archives: 0,
+  extraction: null,
 }
 
 let kept: Download[]
+let picked: { name: string; path: string; exists: boolean } | null
 
 const app = vi.fn(async (command: string) => {
   if (command === 'downloads_now') return kept
+  if (command === 'choose_launcher') return picked
   return undefined
 })
 
 beforeEach(() => {
   kept = [DOWNLOAD]
+  picked = null
   app.mockClear()
   setBridgeForTests(app)
 })
@@ -141,6 +147,151 @@ describe('downloads', () => {
 
     await user.click(here.getByRole('button', { name: 'Show in folder' }))
     expect(app).toHaveBeenCalledWith('show_download', { id: 'one' })
+  })
+
+  const finished: Download = { ...DOWNLOAD, state: 'done', done: 12 * GB, speed: 0 }
+
+  it('still draws what an app that doesn’t extract yet sends, with nothing to extract', async () => {
+    const { entry: _entry, archives: _archives, extraction: _extraction, ...older } = finished
+    kept = [older as Download]
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    const names = here.getAllByRole('button').map((button) => button.textContent)
+    expect(names).toEqual(['Show in folder', 'Take off the list'])
+  })
+
+  it('offers to extract an archive, first, and only when asked does it', async () => {
+    kept = [{ ...finished, archives: 1 }]
+    const user = userEvent.setup()
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    const names = here.getAllByRole('button').map((button) => button.textContent)
+    expect(names).toEqual(['Extract', 'Show in folder', 'Take off the list'])
+    expect(app).not.toHaveBeenCalledWith('extract_download', { id: 'one' })
+    await user.click(here.getByRole('button', { name: 'Extract' }))
+    expect(app).toHaveBeenCalledWith('extract_download', { id: 'one' })
+  })
+
+  it('offers nothing to extract when it brought no archive', async () => {
+    kept = [finished]
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    expect(here.queryByRole('button', { name: 'Extract' })).not.toBeInTheDocument()
+  })
+
+  it('says how far extracting has got, and goes on asking', async () => {
+    kept = [
+      {
+        ...finished,
+        archives: 1,
+        extraction: { state: 'working', why: null, done: 3 * GB, total: 12 * GB },
+      },
+    ]
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    expect(here.getByText('Extracting · 3 GB of 12 GB')).toBeInTheDocument()
+    expect(
+      here.getByRole('progressbar', { name: 'How far along extracting Made-up Game is' }),
+    ).toHaveAttribute('aria-valuenow', String(3 * GB))
+    expect(here.queryByRole('button', { name: 'Show in folder' })).not.toBeInTheDocument()
+    const before = app.mock.calls.filter(([command]) => command === 'downloads_now').length
+    await vi.waitFor(
+      () =>
+        expect(
+          app.mock.calls.filter(([command]) => command === 'downloads_now').length,
+        ).toBeGreaterThan(before),
+      { timeout: 2500 },
+    )
+  })
+
+  it('says it is reading until it knows how much there is', async () => {
+    kept = [
+      { ...finished, archives: 1, extraction: { state: 'working', why: null, done: 0, total: 0 } },
+    ]
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    expect(here.getByText('Reading the archive…')).toBeInTheDocument()
+    expect(here.queryByRole('progressbar')).not.toBeInTheDocument()
+  })
+
+  it('asks before stopping, and says the archive stays', async () => {
+    kept = [
+      {
+        ...finished,
+        archives: 1,
+        extraction: { state: 'working', why: null, done: 3 * GB, total: 12 * GB },
+      },
+    ]
+    const user = userEvent.setup()
+    renderWithIntl(<Downloads />)
+    await user.click(within(await card()).getByRole('button', { name: 'Stop extracting' }))
+    const dialog = within(await screen.findByRole('alertdialog'))
+    expect(dialog.getByText(/The downloaded archive stays/)).toBeInTheDocument()
+    await user.click(dialog.getByRole('button', { name: 'Stop extracting' }))
+    expect(app).toHaveBeenCalledWith('cancel_extraction', { id: 'one' })
+  })
+
+  it.each([
+    ['interrupted', /closed before it finished/, true],
+    ['damaged', /damaged, incomplete/, true],
+    ['volume', /part of this archive is missing/, true],
+    ['disk', /doesn’t have room for what’s inside/, true],
+    ['write', /couldn’t write/, true],
+    ['password', /needs a password/, false],
+    ['unsafe', /would leave its folder/, false],
+  ] as const)('says why it did not extract: %s', async (why, words, again) => {
+    kept = [
+      { ...finished, archives: 1, extraction: { state: 'failed', why, done: 0, total: 12 * GB } },
+    ]
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    expect(here.getByRole('alert')).toHaveTextContent(words)
+    expect(here.queryAllByRole('button', { name: 'Try again' })).toHaveLength(again ? 1 : 0)
+    expect(here.getByRole('button', { name: 'Show in folder' })).toBeInTheDocument()
+  })
+
+  it('goes on to the game’s file from what was extracted, through Windows’ picker', async () => {
+    kept = [
+      {
+        ...finished,
+        entry: 'an-entry',
+        archives: 1,
+        extraction: { state: 'done', why: null, done: 31 * GB, total: 31 * GB },
+      },
+    ]
+    picked = { name: 'game.exe', path: 'D:\\Games\\game.exe', exists: true }
+    const user = userEvent.setup()
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    expect(here.getByText('Extracted: 31 GB.')).toBeInTheDocument()
+    expect(here.getByText(/doesn’t start what it downloads/)).toBeInTheDocument()
+    const names = here.getAllByRole('button').map((button) => button.textContent)
+    expect(names).toEqual(['Choose the game’s file', 'Show in folder', 'Take off the list'])
+    await user.click(here.getByRole('button', { name: 'Choose the game’s file' }))
+    expect(app).toHaveBeenCalledWith('choose_launcher', {
+      entry: 'an-entry',
+      title: 'The file that starts Made-up Game',
+      files: 'Games and shortcuts',
+    })
+    expect(await here.findByRole('status')).toHaveTextContent(/game\.exe is what Play opens now/)
+  })
+
+  it('says nothing when the picker is closed', async () => {
+    kept = [{ ...finished, entry: 'an-entry' }]
+    const user = userEvent.setup()
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    await user.click(here.getByRole('button', { name: 'Choose the game’s file' }))
+    expect(app).toHaveBeenCalledWith('choose_launcher', expect.anything())
+    expect(here.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('doesn’t offer the game’s file before an archive is extracted, or with no game', async () => {
+    kept = [{ ...finished, entry: 'an-entry', archives: 1 }]
+    renderWithIntl(<Downloads />)
+    expect(
+      within(await card()).queryByRole('button', { name: 'Choose the game’s file' }),
+    ).not.toBeInTheDocument()
   })
 
   it('stops asking when nothing is moving', async () => {

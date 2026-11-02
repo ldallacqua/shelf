@@ -66,7 +66,7 @@ afterEach(() => {
 
 const opened = async () => {
   const user = userEvent.setup()
-  renderWithIntl(<FindDownload title="Made-up Game" />)
+  renderWithIntl(<FindDownload title="Made-up Game" entryId="made-up-entry" />)
   await user.click(await screen.findByRole('button', { name: 'Find a download' }))
   return user
 }
@@ -74,14 +74,16 @@ const opened = async () => {
 describe('finding a download', () => {
   it('draws nothing with no source to search', async () => {
     sources = []
-    renderWithIntl(<FindDownload title="Made-up Game" />)
+    renderWithIntl(<FindDownload title="Made-up Game" entryId="made-up-entry" />)
     await vi.waitFor(() => expect(app).toHaveBeenCalledWith('download_sources', {}))
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
   it('draws nothing outside the app, and asks nothing', () => {
     setBridgeForTests(null)
-    const { container } = renderWithIntl(<FindDownloadLater title="Made-up Game" />)
+    const { container } = renderWithIntl(
+      <FindDownloadLater title="Made-up Game" entryId="made-up-entry" />,
+    )
     expect(container).toBeEmptyDOMElement()
   })
 
@@ -111,6 +113,7 @@ describe('finding a download', () => {
       title: 'Made-up Game v1.2',
       ask: 'Where to save Made-up Game v1.2',
       through: 'direct',
+      entry: 'made-up-entry',
     })
     expect(await screen.findByRole('status')).toHaveTextContent(/On its way/)
     expect(
@@ -180,6 +183,7 @@ describe('finding a download', () => {
       title: 'Magnet only',
       ask: 'Where to save Magnet only',
       through: 'realdebrid',
+      entry: 'made-up-entry',
     })
   })
 

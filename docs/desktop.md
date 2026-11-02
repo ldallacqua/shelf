@@ -53,6 +53,9 @@ steps it is built in.
 10. **Real-Debrid,** on the account page, signs in with a code you enter on its own page, and needs an
     account of your own. Then Find a download also offers **Through Real-Debrid**, for magnets and file
     hosts. It has to fetch a magnet first, which can take a while, and the card shows how far along it is.
+11. **Extract,** on a finished download that brought a `zip`, `7z` or `rar`, unpacks it into a folder beside it.
+    An archive with a password, or with paths that would leave its folder, isn't opened. **Choose the game's
+    file** then opens Windows' picker in that folder, and Play on the game's page starts what you choose.
 
 What the app keeps on this computer is the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`, the sources, in `sources.json` and `sources\` beside it,
@@ -108,6 +111,7 @@ desktop/
     launchers.rs         The files chosen, kept in launchers.json
     sources.rs           Download sources (ADR 007): which addresses, read, checked, kept, searched
     downloads.rs         Downloading from them: one at a time, resuming, and never starting anything
+    extract.rs           Opening what arrived: zip, 7z, rar, every path checked before anything is written
     real_debrid.rs       Real-Debrid: its device sign-in, kept in Credential Manager, and its API
     launch.rs            Starting a file as Explorer does, or Steam
     steam.rs             Steam's folders: which apps are installed, asked or all

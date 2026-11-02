@@ -290,7 +290,9 @@ never sees one, and Real-Debrid's terms forbid it from reaching that service. Sh
 links to no source, and no test or check reads a real one. No code that runs a host's script for a
 token, no passwords of cracking sites, and nothing downloaded ever runs by itself. A page gets a
 source's name, counts and titles, never its links, and names a download by its place in a list. Downloads
-are `desktop/src/downloads.rs`, one at a time, on a task of the app's own. `desktop/src/real_debrid.rs` is the
+are `desktop/src/downloads.rs`, one at a time, on a task of the app's own. `desktop/src/extract.rs` opens what
+arrived when asked, reads every path before writing anything, and writes every file itself: the RAR decoder is
+only ever asked to test, as it is old C++ that shouldn't choose where anything goes. `desktop/src/real_debrid.rs` is the
 only code that knows Real-Debrid's addresses; what its sign-in gives stays in Windows' Credential Manager, and
 a page is only told who is signed in. This is the exception to the landing page's rule: it is not
 shown there.
