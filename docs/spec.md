@@ -1121,7 +1121,7 @@ keeps the figure whole and not below nothing instead.
 | Platform owned | `owned` | List. Also accepts a family: `playstation`, `xbox`, `nintendo`, `pc`. |
 | Wanted on | `wanted` | List: the platforms a wishlist game is wanted on (7.5). Families too. |
 | Format | `format` | `physical`, `digital` |
-| Store | `store` | Where a download on a PC is from, or would be bought from: `steam`, `gog`, `epic`, `microsoft`, `itch`, `ea`, `ubisoft`, `battlenet`. |
+| Store | `store` | Where a download on a PC is from, or would be bought from: `steam`, `gog`, `epic`, `microsoft`, `itch`, `ea`, `ubisoft`, `battlenet`, `third-party`. |
 | Number of platforms owned | `copies` | Range |
 | Completion date | `completed` | Date range |
 | Date added | `added` | Date range |
@@ -1636,6 +1636,11 @@ onde veio o game é importante".
   I can have a game on two: it stays one copy, on one box. First what the game is sold on, then
   **Another store** for the rest, which IGDB does not know. Only PC downloads for now: a disc, or a
   console, has no such field, and switching a copy to physical lets its stores go.
+- **Third-party** (Terceiros) is the choice for anywhere else: a reseller, or a download from outside
+  the big stores (the owner, 2 Nov 2026). No game's record can say it is sold there, so it is always
+  among the first choices instead of behind Another store. It has no link, and shows as mine like
+  Battle.net. A disc bought in a shop is already **Physical**, so it is not this. Playnite's Source
+  field and GOG Galaxy's Other platform answer the same need; only their docs and forums were read.
 - **A sync says it itself:** a copy a sync brings from Steam is marked Steam as it comes on, and
   the same for copies already there when this was built. While the account lists it, that chip is
   ticked with a lock and cannot be unticked (7.3).

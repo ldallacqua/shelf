@@ -496,7 +496,7 @@ describe('MineEditor, where a PC game is from (spec 7.9)', () => {
       .getAllByRole('checkbox')
       .map((box) => box.parentElement?.textContent)
     // Sold on Steam and Epic, and mine on GOG; not PlayStation, which is no PC store.
-    expect(names).toEqual(['Steam', 'GOG', 'Epic Games'])
+    expect(names).toEqual(['Steam', 'GOG', 'Epic Games', 'Third-party'])
     expect(within(field!).getByRole('checkbox', { name: 'GOG' })).toBeChecked()
     await userEvent.click(within(field!).getByRole('checkbox', { name: 'Steam' }))
     await waitFor(() =>

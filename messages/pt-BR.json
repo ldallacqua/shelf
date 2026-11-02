@@ -415,7 +415,8 @@
       "apple": "App Store",
       "google-play": "Google Play",
       "gamejolt": "Game Jolt",
-      "amazon": "Amazon"
+      "amazon": "Amazon",
+      "third-party": "Terceiros"
     },
     "shelf": {
       "tabs": "Prateleiras",
