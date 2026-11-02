@@ -12,7 +12,7 @@ import { gameHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { cn } from '@/ui/cn'
-import { Sheet, SheetContent, SheetTitle, sheetButton } from '@/ui/sheet'
+import { Sheet, SHEET_CENTERED, SheetContent, SheetTitle, sheetButton } from '@/ui/sheet'
 import { SHEET_FROM_BOTTOM } from '@/ui/sheet-from-bottom'
 import { Tip } from '@/ui/tooltip'
 
@@ -39,13 +39,10 @@ type Height = 'short' | 'full'
 const fromBottom = () => window.matchMedia(SHEET_FROM_BOTTOM).matches
 
 /**
- * In the middle of a very wide window, as wide as the game's page (spec 7.2).
- * CSS alone, so crossing the line while resizing moves the same elements and
- * loses nothing. Its height is fixed: stepping through games neither resizes
- * it nor moves Next.
+ * As wide as the game's page (spec 7.2). Its height is fixed: stepping through
+ * games neither resizes it nor moves Next.
  */
-const CENTERED =
-  'game-centered:inset-0 game-centered:m-auto game-centered:h-[min(94dvh,70rem)] game-centered:w-[80rem] game-centered:rounded-panel game-centered:border game-centered:[--sheet-fade:0] game-centered:[--sheet-from:0_1.5rem]'
+const CENTERED_SIZE = 'game-centered:h-[min(94dvh,70rem)] game-centered:w-[80rem]'
 
 /** Where a press on the sheet started, while it may yet become a drag. */
 type Press = { id: number; x: number; y: number; from: Height; onGrip: boolean; moved: boolean }
@@ -217,7 +214,7 @@ export function GamePanel({
           className={cn(
             // Stacked because `lg:` alone loses: custom variants come after breakpoints in the CSS.
             'sheet-bottom:h-[92dvh] sheet-bottom:max-h-[92dvh] sheet-side:lg:w-[32rem]',
-            !pulled && CENTERED,
+            !pulled && [SHEET_CENTERED, CENTERED_SIZE],
           )}
           upright
           data-game={game.slug}
