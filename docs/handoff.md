@@ -7,8 +7,9 @@ step 3. This note is what the next session needs and cannot get from the code. R
 ## Download sources (1 Nov 2026)
 
 The owner asked to download games from sources in Hydra's format, by direct link and Real-Debrid.
-[ADR 007](adr/007-download-sources.md) has the phases: sources and direct downloads are built, and they reach
-the owner only in a desktop release, which needs the owner's OK. Windows Defender flagged the 0.5.0
+[ADR 007](adr/007-download-sources.md) has the phases: sources, direct downloads and Real-Debrid are built, and
+they reach the owner only in a desktop release, which needs the owner's OK. Real-Debrid has run only against a
+stand-in: its real answers may differ, above all a free account's and what its filters say. Windows Defender flagged the 0.5.0
 installer, `Trojan:Win32/Bearfoos.A!ml`, on 1 Nov, both the copy in `desktop/target` and the updater's copy in
 Temp: an unsigned installer and a machine-learning verdict, so probably a false positive, not proven. The
 owner was told to ask Microsoft to review it, and the next release may be flagged too. Hydra now reads a source through its own API, so

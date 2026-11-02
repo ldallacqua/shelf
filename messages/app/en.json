@@ -47,13 +47,22 @@
       "queued": "Waiting",
       "downloading": "Downloading",
       "paused": "Paused",
-      "failed": "Stopped"
+      "failed": "Stopped",
+      "remote": "Real-Debrid is getting it: {percent}%"
     },
     "why": {
-      "page": "Its links lead to web pages, not files. Those are usually a file host’s, which Real-Debrid can open once Shelf has it.",
+      "page": "Its links lead to web pages, not files. Those are usually a file host’s, which Real-Debrid may be able to open.",
       "unreachable": "Its link stopped answering. What arrived is kept, so Try again continues if the file hasn’t changed.",
       "disk": "This disk doesn’t have room for it.",
-      "write": "Shelf couldn’t write to that folder."
+      "write": "Shelf couldn’t write to that folder.",
+      "signedout": "Real-Debrid isn’t signed in any more. Sign in again on this page, then try again.",
+      "premium": "Real-Debrid needs a Premium account for this.",
+      "blocked": "Real-Debrid’s filters don’t allow this one.",
+      "dead": "Real-Debrid couldn’t get it: nobody may be sharing it, or the file is gone.",
+      "virus": "Real-Debrid found a virus in it, and nothing was downloaded.",
+      "host": "Real-Debrid doesn’t open these links, or can’t just now.",
+      "busy": "Real-Debrid says it’s too much just now: its limits, or your traffic. Try again later.",
+      "declined": "Real-Debrid refused this one. Check your account on its site."
     },
     "pause": "Pause",
     "resume": "Resume",
@@ -83,13 +92,39 @@
     "added": "In your downloads",
     "addedThis": "In your downloads: {title}",
     "addedSay": "On its way. See how far along it is in <link>your account</link>.",
-    "onlyMagnet": "Only by magnet link, which needs Real-Debrid. Shelf doesn’t have that yet.",
-    "onlyInParts": "Only in several parts, which Shelf can’t put together yet.",
     "chooseFolder": "Where to save {title}",
     "errors": {
       "duplicate": "That one is already in your downloads.",
       "missing": "That source has changed since this list was drawn. Search again.",
-      "failed": "This computer couldn’t do that. Try again."
+      "failed": "This computer couldn’t do that. Try again.",
+      "signedout": "Real-Debrid isn’t signed in any more."
+    },
+    "through": "Through Real-Debrid",
+    "throughThis": "Through Real-Debrid: {title}",
+    "needsDebrid": "Only by magnet link, which needs <link>Real-Debrid</link>.",
+    "needsDebridParts": "Only in several parts, which needs <link>Real-Debrid</link>."
+  },
+  "RealDebrid": {
+    "title": "Real-Debrid",
+    "intro": "With a Real-Debrid account of your own, Shelf can download magnet links and links from file hosts. Its terms don’t allow downloading infringing files, and its account is for you alone.",
+    "signIn": "Sign in to Real-Debrid",
+    "enterCode": "Enter this code on Real-Debrid’s page. Shelf never sees your password.",
+    "code": "The code to enter",
+    "openPage": "Open Real-Debrid’s page",
+    "cancel": "Cancel",
+    "waiting": "Waiting for you to enter it…",
+    "signedInAs": "Signed in as {name}",
+    "premium": "Premium.",
+    "premiumUntil": "Premium until {date}.",
+    "notPremium": "This account isn’t Premium, so Real-Debrid won’t take magnet links from it.",
+    "signOut": "Sign out of Real-Debrid",
+    "signOutTitle": "Sign out of Real-Debrid?",
+    "signOutBody": "Shelf forgets the sign-in and ends it at Real-Debrid. What you downloaded stays.",
+    "signOutConfirm": "Sign out of Real-Debrid",
+    "signOutCancel": "Stay signed in",
+    "errors": {
+      "failed": "That didn’t work. Check your connection and try again.",
+      "expired": "That code ran out before it was entered. Ask for a new one."
     }
   }
 }

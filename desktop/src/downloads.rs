@@ -1,7 +1,7 @@
-//! Downloading a file from a source (ADR 007, phase 2): one at a time, on a task of the app's own, so
-//! it goes on from the tray with no window open. A page names a download by its source and place; the
-//! link stays here, in `downloads.json`. What arrives is written beside itself as `.part`, marked
-//! as coming from the internet, and never started.
+//! Downloading from a source (ADR 007, phases 2 and 3): one at a time, on a task of the app's own, so it
+//! goes on from the tray with no window open, by its links or through Real-Debrid. A page names a download
+//! by its source and place; the link stays here, in `downloads.json`. What arrives is written beside itself as
+//! `.part`, marked as coming from the internet, and never started.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
@@ -19,6 +19,9 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use url::Url;
 
+#[cfg(test)]
+use crate::real_debrid::double;
+use crate::real_debrid::{self, RealDebrid, Trouble};
 use crate::sources;
 
 const MOST_CONNECTING: Duration = Duration::from_secs(15);
@@ -32,6 +35,14 @@ const RETRIES: [Duration; 3] = [
 ];
 /// How often how far it got is written down. A restart reads the `.part` anyway.
 const KEEP_EVERY: Duration = Duration::from_secs(5);
+/// How often Real-Debrid is asked how a torrent is coming along. Its limit is 250 calls a minute.
+const ASK_EVERY: Duration = if cfg!(debug_assertions) {
+    Duration::from_millis(500)
+} else {
+    Duration::from_secs(5)
+};
+/// How long a magnet may take to become a torrent. One nobody is sharing never does.
+const MOST_CONVERTING: Duration = Duration::from_secs(600);
 /// Longer names than this are cut: Windows allows 255, and `.part` and ` (2)` need room.
 const MOST_NAME: usize = 200;
 
@@ -47,6 +58,9 @@ pub enum Refusal {
     Unlinked,
     /// It is in the list already.
     Duplicate,
+    /// It was asked to go through Real-Debrid, and nobody is signed in.
+    #[serde(rename = "signedout")]
+    SignedOut,
     /// Windows would not open the folder.
     Refused,
     /// This computer could not keep it.
@@ -57,10 +71,22 @@ pub enum Refusal {
 #[serde(rename_all = "lowercase")]
 pub enum State {
     Queued,
+    /// Real-Debrid is fetching it to its own servers, which nothing here can hurry.
+    Remote,
     Downloading,
     Paused,
     Failed,
     Done,
+}
+
+/// How a download gets its file.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Through {
+    #[default]
+    Direct,
+    #[serde(rename = "realdebrid")]
+    RealDebrid,
 }
 
 /// Why a download stopped by itself.
@@ -75,6 +101,39 @@ pub enum Why {
     Disk,
     /// The folder can't be written to.
     Write,
+    /// Real-Debrid isn't signed in any more.
+    #[serde(rename = "signedout")]
+    SignedOut,
+    /// The account isn't Premium.
+    Premium,
+    /// Real-Debrid's filters won't have it.
+    Blocked,
+    /// Nobody is sharing it, or the torrent failed on its servers.
+    Dead,
+    /// Real-Debrid found a virus in it.
+    Virus,
+    /// Real-Debrid doesn't open these links, or can't just now.
+    Host,
+    /// Real-Debrid says too much just now: its limits, or its traffic.
+    Busy,
+    /// Real-Debrid said no for another reason.
+    Declined,
+}
+
+/// One file of a download through Real-Debrid. Its link doesn't change, and what it opens into does.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Piece {
+    link: String,
+    /// Inside the download's folder, from the torrent, each part made safe. Empty beside the rest.
+    #[serde(default)]
+    folders: Vec<String>,
+    /// Its name, as the torrent or the first answer said.
+    file: Option<String>,
+    size: Option<u64>,
+    validator: Option<String>,
+    #[serde(default)]
+    finished: bool,
 }
 
 /// A download as it is kept.
@@ -101,6 +160,90 @@ struct Download {
     /// Set by Cancel on one being downloaded, for the task to finish when it has let go of the file.
     #[serde(default, skip_serializing)]
     cancelled: bool,
+    #[serde(default)]
+    through: Through,
+    /// Mirrors split into parts, for Real-Debrid to open one by one.
+    #[serde(default)]
+    parts: Vec<Vec<String>>,
+    /// The torrent on the account, so that a resume doesn't add it again.
+    #[serde(default)]
+    torrent: Option<String>,
+    /// Whether this download put it there, so that Cancel takes it off.
+    #[serde(default)]
+    torrent_ours: bool,
+    #[serde(default)]
+    pieces: Vec<Piece>,
+    /// How far along Real-Debrid is, in percent, while `Remote`.
+    #[serde(default)]
+    remote: Option<u8>,
+}
+
+impl Download {
+    /// The folder a set of files stands in, or the one chosen for a single file.
+    fn base(&self) -> PathBuf {
+        match (&self.file, self.pieces.len() > 1) {
+            (Some(name), true) => self.folder.join(name),
+            _ => self.folder.clone(),
+        }
+    }
+
+    fn piece_folder(&self, piece: &Piece) -> PathBuf {
+        piece
+            .folders
+            .iter()
+            .fold(self.base(), |folder, part| folder.join(part))
+    }
+
+    /// How much is here, from the files themselves.
+    fn arrived(&self) -> u64 {
+        if self.pieces.is_empty() {
+            return self
+                .file
+                .as_ref()
+                .and_then(|name| fs::metadata(part_of(&self.folder, name)).ok())
+                .map_or(0, |part| part.len());
+        }
+        self.pieces
+            .iter()
+            .map(|piece| match (&piece.file, piece.finished) {
+                (_, true) => piece.size.unwrap_or(0),
+                (Some(name), false) => fs::metadata(part_of(&self.piece_folder(piece), name))
+                    .map_or(0, |part| part.len()),
+                (None, false) => 0,
+            })
+            .sum()
+    }
+
+    /// Everything of it that was written, and the folders made for it if nothing else is there.
+    fn delete_what_arrived(&self) {
+        if self.pieces.is_empty() {
+            if let Some(name) = &self.file {
+                let _ = fs::remove_file(part_of(&self.folder, name));
+            }
+            return;
+        }
+        for piece in &self.pieces {
+            if let Some(name) = &piece.file {
+                let folder = self.piece_folder(piece);
+                let _ = fs::remove_file(part_of(&folder, name));
+                if piece.finished {
+                    let _ = fs::remove_file(folder.join(name));
+                }
+            }
+        }
+        for piece in &self.pieces {
+            // Deepest first. `remove_dir` leaves a folder with anything in it, which isn't ours to take.
+            for depth in (1..=piece.folders.len()).rev() {
+                let inner = piece.folders[..depth]
+                    .iter()
+                    .fold(self.base(), |folder, part| folder.join(part));
+                let _ = fs::remove_dir(inner);
+            }
+        }
+        if self.pieces.len() > 1 {
+            let _ = fs::remove_dir(self.base());
+        }
+    }
 }
 
 /// A download as a page sees it: never its links.
@@ -118,6 +261,9 @@ pub struct View {
     pub total: Option<u64>,
     /// Bytes a second, averaged over the last few.
     pub speed: u64,
+    pub through: Through,
+    /// How far along Real-Debrid is, in percent, while it fetches it.
+    pub remote: Option<u8>,
 }
 
 /// What the task holds of the one it is on, for a page to read and a command to stop.
@@ -125,6 +271,17 @@ struct Running {
     id: String,
     stop: Arc<Notify>,
     done: Arc<AtomicU64>,
+    /// What the files already finished come to, when there are several.
+    before: Arc<AtomicU64>,
+    speed: Arc<AtomicU64>,
+}
+
+/// The one the task is on, with what it reports through.
+struct Job {
+    download: Download,
+    stop: Arc<Notify>,
+    done: Arc<AtomicU64>,
+    before: Arc<AtomicU64>,
     speed: Arc<AtomicU64>,
 }
 
@@ -163,15 +320,15 @@ impl Downloads {
             Err(_) => Vec::new(),
         };
         for download in &mut kept {
-            if matches!(download.state, State::Queued | State::Downloading) {
+            if matches!(
+                download.state,
+                State::Queued | State::Remote | State::Downloading
+            ) {
                 download.state = State::Paused;
+                download.remote = None;
             }
             if download.state != State::Done {
-                download.done = download
-                    .file
-                    .as_ref()
-                    .and_then(|name| fs::metadata(part_of(&download.folder, name)).ok())
-                    .map_or(0, |part| part.len());
+                download.done = download.arrived();
             }
         }
         Downloads {
@@ -196,9 +353,13 @@ impl Downloads {
                     folder: download.folder.display().to_string(),
                     state: download.state,
                     why: download.why,
-                    done: now.map_or(download.done, |each| each.done.load(Ordering::Relaxed)),
+                    done: now.map_or(download.done, |each| {
+                        each.before.load(Ordering::Relaxed) + each.done.load(Ordering::Relaxed)
+                    }),
                     total: download.total,
                     speed: now.map_or(0, |each| each.speed.load(Ordering::Relaxed)),
+                    through: download.through,
+                    remote: download.remote,
                 }
             })
             .collect()
@@ -207,7 +368,12 @@ impl Downloads {
     /// Whether one of these links is already on its way or waiting.
     pub fn has_link(&self, links: &[String]) -> bool {
         self.kept.lock().unwrap().iter().any(|download| {
-            download.state != State::Done && download.links.iter().any(|each| links.contains(each))
+            download.state != State::Done
+                && download
+                    .links
+                    .iter()
+                    .chain(download.parts.iter().flatten())
+                    .any(|each| links.contains(each))
         })
     }
 
@@ -216,7 +382,9 @@ impl Downloads {
         id: String,
         title: String,
         source_name: String,
+        through: Through,
         links: Vec<String>,
+        parts: Vec<Vec<String>>,
         folder: PathBuf,
         now: u64,
     ) -> Result<(), Refusal> {
@@ -236,6 +404,12 @@ impl Downloads {
             validator: None,
             added_at: now,
             cancelled: false,
+            through,
+            parts,
+            torrent: None,
+            torrent_ours: false,
+            pieces: Vec::new(),
+            remote: None,
         });
         self.save(&kept)?;
         self.wake.notify_one();
@@ -249,8 +423,12 @@ impl Downloads {
             .iter_mut()
             .find(|each| each.id == id)
             .ok_or(Refusal::Missing)?;
-        if matches!(download.state, State::Queued | State::Downloading) {
+        if matches!(
+            download.state,
+            State::Queued | State::Remote | State::Downloading
+        ) {
             download.state = State::Paused;
+            download.remote = None;
             self.stop(id);
             self.save(&kept)?;
         }
@@ -274,8 +452,9 @@ impl Downloads {
         Ok(())
     }
 
-    /// Takes one off the list. What it had of the file goes; a finished file stays where it is.
-    pub fn remove(&self, id: &str) -> Result<(), Refusal> {
+    /// Takes one off the list. What it had of the file goes; a finished file stays where it is. Says
+    /// which torrent to take off the account, if it is time to and this download put it there.
+    pub fn remove(&self, id: &str) -> Result<Option<String>, Refusal> {
         let mut kept = self.kept.lock().unwrap();
         let at = kept
             .iter()
@@ -284,15 +463,16 @@ impl Downloads {
         // Windows can't delete a file still open: the task does it, once it has let go.
         if self.stop(id) {
             kept[at].cancelled = true;
-            return Ok(());
+            return Ok(None);
         }
         let download = kept.remove(at);
-        if download.state != State::Done
-            && let Some(name) = &download.file
-        {
-            let _ = fs::remove_file(part_of(&download.folder, name));
+        let mut torrent = None;
+        if download.state != State::Done {
+            download.delete_what_arrived();
+            torrent = download.torrent.filter(|_| download.torrent_ours);
         }
-        self.save(&kept)
+        self.save(&kept)?;
+        Ok(torrent)
     }
 
     /// The file finished, and only that, to show in Explorer.
@@ -321,22 +501,64 @@ impl Downloads {
     }
 
     /// The next in line, marked as under way.
-    fn take_next(&self) -> Option<(Download, Arc<Notify>, Arc<AtomicU64>, Arc<AtomicU64>)> {
+    fn take_next(&self) -> Option<Job> {
         let mut kept = self.kept.lock().unwrap();
         let download = kept.iter_mut().find(|each| each.state == State::Queued)?;
         download.state = State::Downloading;
-        let job = download.clone();
-        let stop = Arc::new(Notify::new());
-        let done = Arc::new(AtomicU64::new(job.done));
-        let speed = Arc::new(AtomicU64::new(0));
+        let job = Job {
+            download: download.clone(),
+            stop: Arc::new(Notify::new()),
+            done: Arc::new(AtomicU64::new(download.done)),
+            before: Arc::new(AtomicU64::new(0)),
+            speed: Arc::new(AtomicU64::new(0)),
+        };
         *self.running.lock().unwrap() = Some(Running {
-            id: job.id.clone(),
-            stop: stop.clone(),
-            done: done.clone(),
-            speed: speed.clone(),
+            id: download.id.clone(),
+            stop: job.stop.clone(),
+            done: job.done.clone(),
+            before: job.before.clone(),
+            speed: job.speed.clone(),
         });
         let _ = self.save(&kept);
-        Some((job, stop, done, speed))
+        Some(job)
+    }
+
+    fn change(&self, id: &str, change: impl FnOnce(&mut Download)) {
+        let mut kept = self.kept.lock().unwrap();
+        if let Some(download) = kept.iter_mut().find(|each| each.id == id) {
+            change(download);
+            let _ = self.save(&kept);
+        }
+    }
+
+    /// Real-Debrid is fetching it, this far along. Not over a Pause already said.
+    fn remote(&self, id: &str, percent: u8) {
+        self.change(id, |download| {
+            if matches!(download.state, State::Downloading | State::Remote) {
+                download.state = State::Remote;
+                download.remote = Some(percent);
+            }
+        });
+    }
+
+    /// Its files are ready to fetch. Not over a Pause already said.
+    fn downloading(&self, id: &str) {
+        self.change(id, |download| {
+            if download.state == State::Remote {
+                download.state = State::Downloading;
+            }
+            download.remote = None;
+        });
+    }
+
+    /// What is taken off the account, if a Cancel is waiting on this one.
+    fn torrent_to_delete(&self, id: &str) -> Option<String> {
+        let kept = self.kept.lock().unwrap();
+        let download = kept.iter().find(|each| each.id == id)?;
+        download
+            .cancelled
+            .then(|| download.torrent.clone().filter(|_| download.torrent_ours))
+            .flatten()
     }
 
     /// What the first answer said: kept at once, since continuing later depends on it.
@@ -367,15 +589,13 @@ impl Downloads {
             return;
         };
         if kept[at].cancelled {
-            let download = kept.remove(at);
-            if let Some(name) = &download.file {
-                let _ = fs::remove_file(part_of(&download.folder, name));
-            }
+            kept.remove(at).delete_what_arrived();
             let _ = self.save(&kept);
             return;
         }
         let download = &mut kept[at];
         download.done = done;
+        download.remote = None;
         match outcome {
             Ok(total) => {
                 download.state = State::Done;
@@ -410,7 +630,7 @@ impl Downloads {
 }
 
 /// The task that does the downloading, for as long as the app runs.
-pub async fn run(downloads: Arc<Downloads>, version: String) {
+pub async fn run(downloads: Arc<Downloads>, debrid: Arc<RealDebrid>, version: String) {
     let client = match client(&version) {
         Ok(client) => client,
         Err(error) => {
@@ -419,24 +639,373 @@ pub async fn run(downloads: Arc<Downloads>, version: String) {
         }
     };
     loop {
-        let Some((job, stop, done, speed)) = downloads.take_next() else {
+        let Some(job) = downloads.take_next() else {
             downloads.wake.notified().await;
             continue;
         };
-        let outcome = work(&client, &downloads, &job, &stop, &done, &speed).await;
-        downloads.settle(&job.id, outcome, done.load(Ordering::Relaxed));
+        let id = job.download.id.clone();
+        let outcome = match job.download.through {
+            Through::Direct => work(&client, &downloads, &job).await,
+            Through::RealDebrid => through_real_debrid(&client, &debrid, &downloads, &job).await,
+        };
+        job.speed.store(0, Ordering::Relaxed);
+        if let Some(torrent) = downloads.torrent_to_delete(&id) {
+            debrid.delete_torrent(&torrent).await;
+        }
+        let done = job.before.load(Ordering::Relaxed) + job.done.load(Ordering::Relaxed);
+        downloads.settle(&id, outcome, done);
     }
 }
 
-/// One download, through its links, asking again when a connection is lost.
-async fn work(
-    client: &Client,
-    downloads: &Downloads,
-    job: &Download,
+/// What Real-Debrid can't do becomes why the download stopped.
+fn stopped_by(trouble: Trouble) -> Failure {
+    Failure::Debrid(match trouble {
+        Trouble::SignedOut => Why::SignedOut,
+        Trouble::NotPremium => Why::Premium,
+        Trouble::Blocked => Why::Blocked,
+        Trouble::Host => Why::Host,
+        Trouble::Gone => Why::Dead,
+        Trouble::Busy => Why::Busy,
+        Trouble::Declined => Why::Declined,
+        Trouble::Network => Why::Unreachable,
+    })
+}
+
+/// A call to Real-Debrid that Pause and Cancel don't wait for.
+async fn asking<T>(
     stop: &Notify,
-    done: &AtomicU64,
-    speed: &AtomicU64,
+    call: impl Future<Output = Result<T, Trouble>>,
+) -> Result<Result<T, Trouble>, Failure> {
+    tokio::select! {
+        answer = call => Ok(answer),
+        () = stop.notified() => Err(Failure::Stopped),
+    }
+}
+
+/// One download through Real-Debrid: what it has to fetch, then each of those from where it opens them.
+async fn through_real_debrid(
+    client: &Client,
+    debrid: &RealDebrid,
+    downloads: &Downloads,
+    job: &Job,
 ) -> Result<u64, Failure> {
+    let id = &job.download.id;
+    let mut download = job.download.clone();
+    if download.pieces.is_empty() {
+        let pieces = pieces_to_fetch(debrid, downloads, job).await?;
+        download.pieces = pieces;
+        // A set of files gets a folder of its own, which a single file doesn't need.
+        if download.pieces.len() > 1 {
+            let name = safe_name(&download.title);
+            let name = if name.is_empty() {
+                "download".to_string()
+            } else {
+                name
+            };
+            download.file = Some(unused_name(&download.folder, &name));
+        }
+        let total = download
+            .pieces
+            .iter()
+            .map(|piece| piece.size)
+            .sum::<Option<u64>>();
+        download.total = total;
+        downloads.change(id, |kept| {
+            kept.pieces = download.pieces.clone();
+            kept.file = download.file.clone();
+            kept.total = total;
+        });
+    }
+    downloads.downloading(id);
+    job.done.store(0, Ordering::Relaxed);
+    let mut before: u64 = download
+        .pieces
+        .iter()
+        .filter(|piece| piece.finished)
+        .filter_map(|piece| piece.size)
+        .sum();
+    job.before.store(before, Ordering::Relaxed);
+    for at in 0..download.pieces.len() {
+        if download.pieces[at].finished {
+            continue;
+        }
+        let size = fetch_piece(client, debrid, downloads, job, &mut download, at).await?;
+        before += size;
+        job.before.store(before, Ordering::Relaxed);
+        job.done.store(0, Ordering::Relaxed);
+        download.pieces[at].finished = true;
+        download.pieces[at].size = Some(size);
+        downloads.change(id, |kept| {
+            kept.pieces = download.pieces.clone();
+        });
+    }
+    Ok(before)
+}
+
+/// One file: opened just before it is used, and opened again if a link stops working.
+async fn fetch_piece(
+    client: &Client,
+    debrid: &RealDebrid,
+    downloads: &Downloads,
+    job: &Job,
+    download: &mut Download,
+    at: usize,
+) -> Result<u64, Failure> {
+    let id = download.id.clone();
+    let single = download.pieces.len() == 1;
+    let mut retries = 0;
+    let mut last_done = 0;
+    loop {
+        let link = download.pieces[at].link.clone();
+        let opened = match asking(&job.stop, debrid.unrestrict(&link)).await? {
+            Ok(opened) => opened,
+            Err(Trouble::Network | Trouble::Busy) => {
+                wait_to_retry(&job.stop, &mut retries).await?;
+                continue;
+            }
+            Err(trouble) => return Err(stopped_by(trouble)),
+        };
+        let folder = download.piece_folder(&download.pieces[at]);
+        // Named once, so a later attempt finds the `.part` of the first.
+        let file = match &download.pieces[at].file {
+            Some(name) => name.clone(),
+            None => {
+                let name = safe_name(&opened.filename);
+                let name = if name.is_empty() {
+                    format!("part {}", at + 1)
+                } else {
+                    name
+                };
+                unused_name(&folder, &name)
+            }
+        };
+        download.pieces[at].file = Some(file.clone());
+        if single {
+            download.file = Some(file.clone());
+        }
+        let pieces = download.pieces.clone();
+        let whole = download.file.clone();
+        downloads.change(&id, |kept| {
+            kept.pieces = pieces;
+            kept.file = whole;
+        });
+        let validator = download.pieces[at].validator.clone();
+        let transfer = Transfer {
+            url: &opened.download,
+            folder: &folder,
+            title: &download.title,
+            file: Some(&file),
+            validator: validator.as_deref(),
+            done: &job.done,
+            speed: &job.speed,
+            stop: &job.stop,
+        };
+        let mut said = None;
+        let outcome = fetch(
+            client,
+            transfer,
+            |started| said = Some(started.validator.clone()),
+            |_| {},
+        )
+        .await;
+        job.speed.store(0, Ordering::Relaxed);
+        if let Some(tag) = said {
+            download.pieces[at].validator.clone_from(&tag);
+            let pieces = download.pieces.clone();
+            downloads.change(&id, |kept| kept.pieces = pieces);
+        }
+        match outcome {
+            Ok(size) => return Ok(size),
+            // A link that no longer works is opened again.
+            Err(Failure::Network | Failure::Refused) => {
+                let have = job.done.load(Ordering::Relaxed);
+                if have > last_done {
+                    retries = 0;
+                    last_done = have;
+                }
+                wait_to_retry(&job.stop, &mut retries).await?;
+            }
+            Err(failure) => return Err(failure),
+        }
+    }
+}
+
+async fn wait_to_retry(stop: &Notify, retries: &mut usize) -> Result<(), Failure> {
+    let Some(wait) = RETRIES.get(*retries) else {
+        return Err(Failure::Network);
+    };
+    *retries += 1;
+    tokio::select! {
+        () = tokio::time::sleep(*wait) => Ok(()),
+        () = stop.notified() => Err(Failure::Stopped),
+    }
+}
+
+/// What has to be fetched: a host's link it can open, a mirror's parts, or a magnet's files.
+async fn pieces_to_fetch(
+    debrid: &RealDebrid,
+    downloads: &Downloads,
+    job: &Job,
+) -> Result<Vec<Piece>, Failure> {
+    let stop = &*job.stop;
+    let download = &job.download;
+    let piece = |link: &str, size| Piece {
+        link: link.to_string(),
+        folders: Vec::new(),
+        file: None,
+        size,
+        validator: None,
+        finished: false,
+    };
+    let (magnets, webs): (Vec<&String>, Vec<&String>) = download
+        .links
+        .iter()
+        .partition(|link| link.starts_with("magnet:"));
+    for link in webs {
+        match asking(stop, debrid.unrestrict(link)).await? {
+            Ok(opened) => return Ok(vec![piece(link, opened.filesize)]),
+            // This one it can't do: the next may be somewhere it can.
+            Err(Trouble::Host | Trouble::Gone | Trouble::Declined) => {}
+            Err(trouble) => return Err(stopped_by(trouble)),
+        }
+    }
+    for group in &download.parts {
+        let mut sizes = Vec::with_capacity(group.len());
+        let mut whole = true;
+        for link in group {
+            match asking(stop, debrid.unrestrict(link)).await? {
+                Ok(opened) => sizes.push(opened.filesize),
+                Err(Trouble::Host | Trouble::Gone | Trouble::Declined) => {
+                    whole = false;
+                    break;
+                }
+                Err(trouble) => return Err(stopped_by(trouble)),
+            }
+        }
+        if whole && !group.is_empty() {
+            return Ok(group
+                .iter()
+                .zip(sizes)
+                .map(|(link, size)| piece(link, size))
+                .collect());
+        }
+    }
+    match magnets.first() {
+        Some(magnet) => pieces_of_magnet(debrid, downloads, job, magnet).await,
+        None => Err(Failure::Debrid(Why::Host)),
+    }
+}
+
+/// Puts a magnet on the account, unless it is there, and waits for Real-Debrid to have its files.
+async fn pieces_of_magnet(
+    debrid: &RealDebrid,
+    downloads: &Downloads,
+    job: &Job,
+    magnet: &str,
+) -> Result<Vec<Piece>, Failure> {
+    let stop = &*job.stop;
+    let id = &job.download.id;
+    let mut torrent = job.download.torrent.clone();
+    let started = Instant::now();
+    downloads.remote(id, 0);
+    loop {
+        let on_account = match torrent.clone() {
+            Some(on_account) => on_account,
+            None => {
+                let found = match real_debrid::hash_of(magnet) {
+                    Some(hash) => asking(stop, debrid.torrent_with_hash(&hash))
+                        .await?
+                        .map_err(stopped_by)?,
+                    None => None,
+                };
+                let ours = found.is_none();
+                let on_account = match found {
+                    Some(on_account) => on_account,
+                    None => asking(stop, debrid.add_magnet(magnet))
+                        .await?
+                        .map_err(stopped_by)?,
+                };
+                let kept_id = on_account.clone();
+                downloads.change(id, |kept| {
+                    kept.torrent = Some(kept_id);
+                    kept.torrent_ours = ours;
+                });
+                torrent = Some(on_account.clone());
+                on_account
+            }
+        };
+        let info = match asking(stop, debrid.torrent(&on_account)).await? {
+            Ok(info) => info,
+            // Taken off the account since: it goes on again.
+            Err(Trouble::Gone) => {
+                torrent = None;
+                continue;
+            }
+            Err(trouble) => return Err(stopped_by(trouble)),
+        };
+        match info.status.as_str() {
+            "downloaded" => return Ok(pieces_of_torrent(&info)),
+            "magnet_error" | "error" | "dead" => return Err(Failure::Debrid(Why::Dead)),
+            "virus" => return Err(Failure::Debrid(Why::Virus)),
+            "waiting_files_selection" => {
+                asking(stop, debrid.select_all(&on_account))
+                    .await?
+                    .map_err(stopped_by)?;
+            }
+            "magnet_conversion" if started.elapsed() > MOST_CONVERTING => {
+                return Err(Failure::Debrid(Why::Dead));
+            }
+            _ => downloads.remote(id, info.progress.clamp(0.0, 100.0) as u8),
+        }
+        tokio::select! {
+            () = tokio::time::sleep(ASK_EVERY) => {}
+            () = stop.notified() => return Err(Failure::Stopped),
+        }
+    }
+}
+
+/// A finished torrent's links, each with the file it is, when they can be told apart: they come in
+/// the order of its selected files, unless Real-Debrid made them one archive.
+fn pieces_of_torrent(info: &real_debrid::Torrent) -> Vec<Piece> {
+    let files: Vec<&real_debrid::TorrentFile> = info
+        .files
+        .iter()
+        .filter(|file| file.selected == 1)
+        .collect();
+    let matched = files.len() == info.links.len();
+    info.links
+        .iter()
+        .enumerate()
+        .map(|(at, link)| {
+            let (folders, file, size) = if matched {
+                let mut parts: Vec<String> = files[at]
+                    .path
+                    .split(['/', '\\'])
+                    .map(safe_name)
+                    .filter(|part| !part.is_empty())
+                    .collect();
+                let file = parts.pop();
+                (parts, file, Some(files[at].bytes))
+            } else {
+                (Vec::new(), None, None)
+            };
+            Piece {
+                link: link.clone(),
+                folders,
+                file,
+                size,
+                validator: None,
+                finished: false,
+            }
+        })
+        .collect()
+}
+
+/// One download, through its links, asking again when a connection is lost.
+async fn work(client: &Client, downloads: &Downloads, running: &Job) -> Result<u64, Failure> {
+    let job = &running.download;
+    let (stop, done, speed): (&Notify, &AtomicU64, &AtomicU64) =
+        (&running.stop, &running.done, &running.speed);
     let mut link = job.link.min(job.links.len().saturating_sub(1));
     let mut file = job.file.clone();
     let mut validator = job.validator.clone();
@@ -514,6 +1083,8 @@ pub enum Failure {
     Page,
     Disk,
     Write,
+    /// Real-Debrid could not do it, for this reason.
+    Debrid(Why),
 }
 
 impl Failure {
@@ -522,6 +1093,7 @@ impl Failure {
             Failure::Page => Why::Page,
             Failure::Disk => Why::Disk,
             Failure::Write => Why::Write,
+            Failure::Debrid(why) => why,
             Failure::Stopped | Failure::Network | Failure::Refused => Why::Unreachable,
         }
     }
@@ -1304,16 +1876,23 @@ mod tests {
                 id.into(),
                 "A made-up game".into(),
                 "Made-up source".into(),
+                Through::Direct,
                 links,
+                Vec::new(),
                 dir.to_path_buf(),
                 1,
             )
             .unwrap();
     }
 
+    fn nobody_signed_in() -> Arc<RealDebrid> {
+        double::at("http://127.0.0.1:9".into(), double::memory(None))
+    }
+
     /// Runs the app's task until `ready`, for a few seconds at most.
     fn until(downloads: &Arc<Downloads>, ready: impl Fn(&[View]) -> bool) -> Vec<View> {
-        let task = tauri::async_runtime::spawn(run(downloads.clone(), "0.0.0".into()));
+        let task =
+            tauri::async_runtime::spawn(run(downloads.clone(), nobody_signed_in(), "0.0.0".into()));
         let deadline = Instant::now() + Duration::from_secs(10);
         let mut seen = downloads.all();
         while Instant::now() < deadline {
@@ -1394,7 +1973,8 @@ mod tests {
         let downloads = Arc::new(Downloads::open(&dir.join("app")));
         let (address, release, server) = serve_slowly();
         added(&downloads, "one", vec![format!("{address}/a.zip")], &dir);
-        let task = tauri::async_runtime::spawn(run(downloads.clone(), "0.0.0".into()));
+        let task =
+            tauri::async_runtime::spawn(run(downloads.clone(), nobody_signed_in(), "0.0.0".into()));
         let deadline = Instant::now() + Duration::from_secs(10);
         while downloads.all()[0].done < 5 && Instant::now() < deadline {
             std::thread::sleep(Duration::from_millis(10));
@@ -1421,7 +2001,8 @@ mod tests {
         let downloads = Arc::new(Downloads::open(&dir.join("app")));
         let (address, release, server) = serve_slowly();
         added(&downloads, "one", vec![format!("{address}/a.zip")], &dir);
-        let task = tauri::async_runtime::spawn(run(downloads.clone(), "0.0.0".into()));
+        let task =
+            tauri::async_runtime::spawn(run(downloads.clone(), nobody_signed_in(), "0.0.0".into()));
         let deadline = Instant::now() + Duration::from_secs(10);
         while downloads.all()[0].done < 5 && Instant::now() < deadline {
             std::thread::sleep(Duration::from_millis(10));
@@ -1529,5 +2110,408 @@ mod tests {
             "{ half a fi"
         );
         fs::remove_dir_all(dir).unwrap();
+    }
+
+    /// Real-Debrid's stand-in with one torrent, which goes through what a real one does. It serves
+    /// its own "generated" files too, under `/files/`.
+    fn debrid_double(
+        files: Vec<(&'static str, &'static str)>,
+        statuses: Vec<&'static str>,
+    ) -> (String, Arc<Mutex<Vec<String>>>) {
+        use double::{answer as said, serve};
+        let asked = Arc::new(Mutex::new(Vec::new()));
+        let seen = asked.clone();
+        let step = AtomicUsize::new(0);
+        let address = Arc::new(Mutex::new(String::new()));
+        let at = address.clone();
+        let base = serve(move |request| {
+            seen.lock().unwrap().push(request.line.clone());
+            let line = request.line.as_str();
+            let base = at.lock().unwrap().clone();
+            if line.ends_with("/rest/1.0/torrents?limit=1000") {
+                said("200 OK", "[]")
+            } else if line.ends_with("/torrents/addMagnet") {
+                said("201 Created", r#"{"id":"T1"}"#)
+            } else if line.contains("/torrents/selectFiles/") {
+                assert!(request.body.contains("files=all"));
+                said("204 No Content", "")
+            } else if line.contains("/torrents/delete/") {
+                said("204 No Content", "")
+            } else if line.contains("/torrents/info/") {
+                let now = step.fetch_add(1, Ordering::Relaxed);
+                let status = statuses[now.min(statuses.len() - 1)];
+                let names: Vec<String> = files
+                    .iter()
+                    .enumerate()
+                    .map(|(at, (name, body))| {
+                        format!(
+                            r#"{{"id":{at},"path":"/{name}","bytes":{},"selected":1}}"#,
+                            body.len()
+                        )
+                    })
+                    .collect();
+                let links: Vec<String> = files
+                    .iter()
+                    .map(|(name, _)| format!("\"https://host.example/{name}\""))
+                    .collect();
+                said(
+                    "200 OK",
+                    &format!(
+                        r#"{{"status":"{status}","progress":40,"files":[{}],"links":[{}]}}"#,
+                        names.join(","),
+                        links.join(",")
+                    ),
+                )
+            } else if line.ends_with("/unrestrict/link") {
+                let wanted = request.body.rsplit("%2F").next().unwrap_or("").to_string();
+                let wanted = percent_decode(&wanted);
+                if wanted.starts_with("unsupported") {
+                    return said(
+                        "503 Unavailable",
+                        r#"{"error":"hoster_unsupported","error_code":16}"#,
+                    );
+                }
+                let size = files
+                    .iter()
+                    .find(|(name, _)| name.ends_with(wanted.as_str()))
+                    .map_or(0, |(_, body)| body.len());
+                said(
+                    "200 OK",
+                    &format!(
+                        r#"{{"filename":"{wanted}","filesize":{size},"download":"{base}/files/{wanted}"}}"#
+                    ),
+                )
+            } else if let Some(at) = line.find("/files/") {
+                let wanted = &line[at + "/files/".len()..];
+                let body = files
+                    .iter()
+                    .find(|(name, _)| name.ends_with(wanted))
+                    .map_or("", |(_, body)| body);
+                said("200 OK", body)
+            } else {
+                said("404 Not Found", "")
+            }
+        });
+        *address.lock().unwrap() = base.clone();
+        (base, asked)
+    }
+
+    fn through(
+        dir: &Path,
+        base: String,
+        links: Vec<String>,
+        parts: Vec<Vec<String>>,
+    ) -> (Arc<Downloads>, tauri::async_runtime::JoinHandle<()>) {
+        let downloads = Arc::new(Downloads::open(&dir.join("app")));
+        downloads
+            .add(
+                "one".into(),
+                "A made-up game".into(),
+                "Made-up source".into(),
+                Through::RealDebrid,
+                links,
+                parts,
+                dir.to_path_buf(),
+                1,
+            )
+            .unwrap();
+        let debrid = double::at(
+            base,
+            double::memory(Some(&double::signed_in_tokens(u64::MAX / 2))),
+        );
+        let task = tauri::async_runtime::spawn(run(downloads.clone(), debrid, "0.0.0".into()));
+        (downloads, task)
+    }
+
+    fn wait_for(downloads: &Downloads, ready: impl Fn(&View) -> bool) -> View {
+        let deadline = Instant::now() + Duration::from_secs(15);
+        loop {
+            let seen = downloads.all().remove(0);
+            if ready(&seen) || Instant::now() > deadline {
+                return seen;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+    }
+
+    const MAGNET: &str = "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567";
+
+    #[test]
+    fn a_magnet_goes_through_real_debrid_into_a_folder_of_its_own() {
+        let dir = folder("rd-magnet");
+        let (base, asked) = debrid_double(
+            vec![
+                ("setup.bin", "first file"),
+                ("data/two.bin", "the second file"),
+            ],
+            vec![
+                "magnet_conversion",
+                "waiting_files_selection",
+                "downloading",
+                "downloaded",
+            ],
+        );
+        let (downloads, task) = through(&dir, base, vec![MAGNET.into()], Vec::new());
+        let remote = wait_for(&downloads, |seen| seen.state == State::Remote);
+        assert_eq!(remote.state, State::Remote);
+        let seen = wait_for(&downloads, |seen| seen.state == State::Done);
+        task.abort();
+        assert_eq!(seen.state, State::Done, "{seen:?}");
+        assert_eq!(seen.total, Some(25));
+        assert_eq!(seen.done, 25);
+        assert_eq!(seen.remote, None);
+        let base = dir.join("A made-up game");
+        assert_eq!(fs::read(base.join("setup.bin")).unwrap(), b"first file");
+        assert_eq!(
+            fs::read(base.join("data").join("two.bin")).unwrap(),
+            b"the second file"
+        );
+        let asked = asked.lock().unwrap();
+        assert!(
+            asked
+                .iter()
+                .any(|line| line.ends_with("/torrents/selectFiles/T1"))
+        );
+        // Added once, however many times it was asked about.
+        assert_eq!(
+            asked
+                .iter()
+                .filter(|line| line.ends_with("addMagnet"))
+                .count(),
+            1
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn a_hosts_link_goes_first_and_needs_no_torrent() {
+        let dir = folder("rd-host");
+        let (base, asked) = debrid_double(vec![("a.zip", "from a host")], vec!["downloaded"]);
+        let (downloads, task) = through(
+            &dir,
+            base,
+            vec!["https://host.example/a.zip".into(), MAGNET.into()],
+            Vec::new(),
+        );
+        let seen = wait_for(&downloads, |seen| seen.state == State::Done);
+        task.abort();
+        assert_eq!(seen.file.as_deref(), Some("a.zip"));
+        assert_eq!(fs::read(dir.join("a.zip")).unwrap(), b"from a host");
+        assert!(
+            !asked
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|line| line.contains("addMagnet"))
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn a_host_it_cannot_open_falls_to_the_magnet() {
+        let dir = folder("rd-fallback");
+        let (base, asked) = debrid_double(vec![("a.zip", "from a torrent")], vec!["downloaded"]);
+        let (downloads, task) = through(
+            &dir,
+            base,
+            vec![
+                "https://nowhere.example/unsupported.zip".into(),
+                MAGNET.into(),
+            ],
+            Vec::new(),
+        );
+        let seen = wait_for(&downloads, |seen| seen.state == State::Done);
+        task.abort();
+        assert_eq!(seen.state, State::Done, "{seen:?}");
+        assert!(
+            asked
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|line| line.ends_with("addMagnet"))
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn says_so_when_nothing_can_be_opened() {
+        let dir = folder("rd-none");
+        let (base, _) = debrid_double(Vec::new(), vec!["downloaded"]);
+        let (downloads, task) = through(
+            &dir,
+            base,
+            vec!["https://nowhere.example/unsupported.zip".into()],
+            Vec::new(),
+        );
+        let seen = wait_for(&downloads, |seen| seen.state == State::Failed);
+        task.abort();
+        assert_eq!(seen.why, Some(Why::Host));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn a_mirror_in_parts_comes_as_a_set_in_order() {
+        let dir = folder("rd-parts");
+        let (base, _) = debrid_double(
+            vec![("game.part1.rar", "one"), ("game.part2.rar", "two")],
+            vec!["downloaded"],
+        );
+        let (downloads, task) = through(
+            &dir,
+            base,
+            Vec::new(),
+            vec![vec![
+                "https://host.example/game.part1.rar".into(),
+                "https://host.example/game.part2.rar".into(),
+            ]],
+        );
+        let seen = wait_for(&downloads, |seen| seen.state == State::Done);
+        task.abort();
+        assert_eq!(seen.state, State::Done, "{seen:?}");
+        let base = dir.join("A made-up game");
+        assert_eq!(fs::read(base.join("game.part1.rar")).unwrap(), b"one");
+        assert_eq!(fs::read(base.join("game.part2.rar")).unwrap(), b"two");
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn says_what_went_wrong_on_its_servers() {
+        for (status, why) in [
+            ("dead", Why::Dead),
+            ("virus", Why::Virus),
+            ("magnet_error", Why::Dead),
+        ] {
+            let dir = folder(&format!("rd-{status}"));
+            let (base, _) = debrid_double(Vec::new(), vec![status]);
+            let (downloads, task) = through(&dir, base, vec![MAGNET.into()], Vec::new());
+            let seen = wait_for(&downloads, |seen| seen.state == State::Failed);
+            task.abort();
+            assert_eq!(seen.why, Some(why), "{status}");
+            fs::remove_dir_all(dir).unwrap();
+        }
+    }
+
+    #[test]
+    fn says_when_nobody_is_signed_in() {
+        let dir = folder("rd-out");
+        let downloads = Arc::new(Downloads::open(&dir.join("app")));
+        downloads
+            .add(
+                "one".into(),
+                "A made-up game".into(),
+                "Made-up source".into(),
+                Through::RealDebrid,
+                vec![MAGNET.into()],
+                Vec::new(),
+                dir.clone(),
+                1,
+            )
+            .unwrap();
+        let task =
+            tauri::async_runtime::spawn(run(downloads.clone(), nobody_signed_in(), "0.0.0".into()));
+        let seen = wait_for(&downloads, |seen| seen.state == State::Failed);
+        task.abort();
+        assert_eq!(seen.why, Some(Why::SignedOut));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn pausing_while_it_fetches_keeps_the_torrent_for_later_and_cancel_takes_it_off() {
+        let dir = folder("rd-pause");
+        let (base, asked) = debrid_double(vec![("a.zip", "x")], vec!["downloading"]);
+        let (downloads, task) = through(&dir, base, vec![MAGNET.into()], Vec::new());
+        wait_for(&downloads, |seen| seen.remote == Some(40));
+        downloads.pause("one").unwrap();
+        let seen = wait_for(&downloads, |seen| seen.state == State::Paused);
+        assert_eq!((seen.state, seen.remote), (State::Paused, None));
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while downloads.running.lock().unwrap().is_some() && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        task.abort();
+        assert_eq!(downloads.remove("one").unwrap().as_deref(), Some("T1"));
+        // Reading what was asked: pausing didn't take it off the account.
+        assert!(
+            !asked
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|line| line.contains("delete"))
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn a_torrent_already_on_the_account_is_not_taken_off_by_cancel() {
+        let dir = folder("rd-theirs");
+        let downloads = Downloads::open(&dir.join("app"));
+        added(&downloads, "one", vec![MAGNET.into()], &dir);
+        downloads.change("one", |kept| {
+            kept.torrent = Some("THEIRS".into());
+            kept.torrent_ours = false;
+            kept.state = State::Paused;
+        });
+        assert_eq!(downloads.remove("one").unwrap(), None);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn a_torrents_paths_stay_inside_the_folder() {
+        let info = real_debrid::Torrent {
+            status: "downloaded".into(),
+            progress: 100.0,
+            links: vec![
+                "https://host.example/1".into(),
+                "https://host.example/2".into(),
+            ],
+            files: vec![
+                real_debrid::TorrentFile {
+                    path: "/../../Windows/evil.dll".into(),
+                    bytes: 1,
+                    selected: 1,
+                },
+                real_debrid::TorrentFile {
+                    path: "/left out.nfo".into(),
+                    bytes: 1,
+                    selected: 0,
+                },
+                real_debrid::TorrentFile {
+                    path: "/sub\\CON/ok.bin".into(),
+                    bytes: 2,
+                    selected: 1,
+                },
+            ],
+        };
+        let pieces = pieces_of_torrent(&info);
+        assert_eq!(pieces[0].folders, ["Windows"]);
+        assert_eq!(pieces[0].file.as_deref(), Some("evil.dll"));
+        assert_eq!(pieces[1].folders, ["sub", "_CON"]);
+        assert_eq!(pieces[1].file.as_deref(), Some("ok.bin"));
+        assert_eq!(pieces[1].size, Some(2));
+    }
+
+    #[test]
+    fn an_archive_of_a_torrents_files_takes_the_name_it_is_given() {
+        let info = real_debrid::Torrent {
+            status: "downloaded".into(),
+            progress: 100.0,
+            links: vec!["https://host.example/archive".into()],
+            files: vec![
+                real_debrid::TorrentFile {
+                    path: "/a.bin".into(),
+                    bytes: 1,
+                    selected: 1,
+                },
+                real_debrid::TorrentFile {
+                    path: "/b.bin".into(),
+                    bytes: 1,
+                    selected: 1,
+                },
+            ],
+        };
+        let pieces = pieces_of_torrent(&info);
+        assert_eq!(pieces.len(), 1);
+        assert_eq!(pieces[0].file, None);
+        assert_eq!(pieces[0].size, None);
     }
 }

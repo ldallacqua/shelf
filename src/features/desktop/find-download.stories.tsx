@@ -52,6 +52,9 @@ type Story = StoryObj<typeof meta>
 
 export const Results: Story = {}
 
+/** Signed in: Real-Debrid first, since what it opens is likelier to be a file. */
+export const WithRealDebrid: Story = { args: { debrid: true } }
+
 export const Looking: Story = { args: { results: undefined } }
 
 export const NothingFound: Story = { args: { results: [] } }

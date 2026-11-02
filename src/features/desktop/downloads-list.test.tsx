@@ -22,6 +22,8 @@ const DOWNLOAD: Download = {
   done: 3 * GB,
   total: 12 * GB,
   speed: 10 * 1024 * 1024,
+  through: 'direct',
+  remote: null,
 }
 
 let kept: Download[]
@@ -100,6 +102,32 @@ describe('downloads', () => {
     const here = within(await card())
     expect(here.getByRole('alert')).toHaveTextContent(words)
     expect(here.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+  })
+
+  it('says how far Real-Debrid has got, which nothing here can hurry', async () => {
+    kept = [
+      { ...DOWNLOAD, state: 'remote', remote: 40, through: 'realdebrid', total: null, done: 0 },
+    ]
+    renderWithIntl(<Downloads />)
+    const here = within(await card())
+    expect(here.getByText('Real-Debrid is getting it: 40%')).toBeInTheDocument()
+    expect(here.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40')
+    expect(here.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
+  })
+
+  it.each([
+    ['signedout', /isn’t signed in/],
+    ['premium', /Premium/],
+    ['blocked', /filters/],
+    ['dead', /nobody may be sharing/],
+    ['virus', /found a virus/],
+    ['host', /doesn’t open these links/],
+    ['busy', /too much just now/],
+    ['declined', /refused/],
+  ] as const)('says why Real-Debrid stopped it: %s', async (why, words) => {
+    kept = [{ ...DOWNLOAD, state: 'failed', why, through: 'realdebrid', speed: 0 }]
+    renderWithIntl(<Downloads />)
+    expect(within(await card()).getByRole('alert')).toHaveTextContent(words)
   })
 
   it('offers to show a finished file, and nothing that starts it', async () => {

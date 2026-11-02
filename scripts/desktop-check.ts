@@ -128,6 +128,82 @@ writeFileSync(
 /** Ends the stand-in from outside, as closing a game any other way would. */
 const endStandIn = () => spawnSync('taskkill', ['/F', '/IM', STAND_IN], { stdio: 'ignore' })
 const downloaded = mkdtempSync(join(tmpdir(), 'shelf-desktop-downloads-'))
+/** A stand-in for Real-Debrid, so a check never reaches the real one. */
+const debridFiles = { 'setup.bin': randomBytes(64 * 1024), 'data/more.bin': randomBytes(32 * 1024) }
+const debridSecret = 'made-up-real-debrid-token'
+const debridAsked: string[] = []
+let debridStep = 0
+const debrid = createServer((request, response) => {
+  const { port } = debrid.address() as AddressInfo
+  const path = request.url ?? ''
+  debridAsked.push(`${request.method} ${path}`)
+  const json = (status: number, body: unknown) => {
+    response.statusCode = status
+    response.setHeader('content-type', 'application/json')
+    response.end(JSON.stringify(body))
+  }
+  const names = Object.keys(debridFiles) as (keyof typeof debridFiles)[]
+  if (path.startsWith('/oauth/v2/device/code')) {
+    json(200, {
+      device_code: 'MADE-UP-DEVICE',
+      user_code: 'MADEUP12',
+      interval: 1,
+      expires_in: 600,
+      verification_url: 'https://real-debrid.com/device',
+    })
+  } else if (path.startsWith('/oauth/v2/device/credentials')) {
+    json(200, { client_id: 'made-up-client', client_secret: 'made-up-secret' })
+  } else if (path.startsWith('/oauth/v2/token')) {
+    json(200, { access_token: debridSecret, refresh_token: 'made-up-refresh', expires_in: 3600 })
+  } else if (path === '/rest/1.0/user') {
+    json(200, { username: 'made-up', type: 'premium', expiration: '2027-01-01T00:00:00.000Z' })
+  } else if (path === '/rest/1.0/disable_access_token') {
+    response.statusCode = 204
+    response.end()
+  } else if (path.startsWith('/rest/1.0/torrents?')) {
+    json(200, [])
+  } else if (path === '/rest/1.0/torrents/addMagnet') {
+    json(201, { id: 'MADE-UP-TORRENT' })
+  } else if (path.startsWith('/rest/1.0/torrents/selectFiles/')) {
+    response.statusCode = 204
+    response.end()
+  } else if (path.startsWith('/rest/1.0/torrents/info/')) {
+    const status = ['waiting_files_selection', 'downloading', 'downloading', 'downloaded'][
+      Math.min(debridStep++, 3)
+    ]
+    json(200, {
+      status,
+      progress: status === 'downloaded' ? 100 : 40,
+      files: names.map((name, id) => ({
+        id,
+        path: `/${name}`,
+        bytes: debridFiles[name].length,
+        selected: 1,
+      })),
+      links: names.map((name) => `https://host.example/${name}`),
+    })
+  } else if (path === '/rest/1.0/unrestrict/link') {
+    let body = ''
+    request.on('data', (chunk: Buffer) => (body += chunk.toString()))
+    request.on('end', () => {
+      const link = new URLSearchParams(body).get('link') ?? ''
+      const name = names.find((each) => link.endsWith(each))
+      if (!name) return json(503, { error: 'hoster_unsupported', error_code: 16 })
+      json(200, {
+        filename: name,
+        filesize: debridFiles[name].length,
+        download: `http://127.0.0.1:${port}/files/${name}`,
+      })
+    })
+  } else if (path.startsWith('/files/')) {
+    const name = names.find((each) => path.endsWith(each))
+    response.setHeader('content-type', 'application/octet-stream')
+    response.end(name ? debridFiles[name] : '')
+  } else {
+    json(404, { error: 'unknown_ressource', error_code: 7 })
+  }
+})
+await new Promise<void>((listening) => debrid.listen(0, '127.0.0.1', listening))
 const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
   env: {
     ...process.env,
@@ -135,6 +211,7 @@ const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
     SHELF_DATA_DIR: profile,
     SHELF_PICK: join(game, 'start.bat'),
     SHELF_PICK_FOLDER: downloaded,
+    SHELF_REAL_DEBRID: `http://127.0.0.1:${(debrid.address() as AddressInfo).port}`,
     SHELF_REOPEN_AFTER: '5',
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}`,
   },
@@ -550,6 +627,7 @@ try {
     await shelf.goto(`${BASE_URL}/en/account`)
     const file = shelf.locator('article').filter({ hasText: 'a made-up file' })
     await file.getByText(/2 MB of 4 MB/).waitFor({ timeout: 20_000 })
+    await file.scrollIntoViewIfNeeded()
     await shot('downloading')
     pass('shows how far along it is')
     await file.getByRole('button', { name: 'Pause' }).click()
@@ -587,9 +665,68 @@ try {
     await file.waitFor({ state: 'detached', timeout: 10_000 })
     if (existsSync(join(downloaded, 'made-up.bin'))) pass('taken off the list, the file stays')
     else fail('taking it off the list deleted the file')
+
+    console.log('\nThrough Real-Debrid (ADR 007), a stand-in on this computer')
+    await shelf.getByRole('button', { name: 'Sign in to Real-Debrid' }).click()
+    await shelf.getByText('MADEUP12').waitFor({ timeout: 15_000 })
+    const signIn = shelf.getByRole('link', { name: 'Open Real-Debrid’s page' })
+    if ((await signIn.getAttribute('href')) === 'https://real-debrid.com/device')
+      pass('shows a code, and sends to its own page')
+    else fail(`sends to ${await signIn.getAttribute('href')}`)
+    await signIn.scrollIntoViewIfNeeded()
+    await shot('real-debrid-code')
+    await shelf.getByText('Signed in as made-up').waitFor({ timeout: 20_000 })
+    pass('moves on by itself once the code is entered')
+
+    await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
+    await shelf.getByRole('button', { name: 'Find a download' }).click()
+    await shelf
+      .getByRole('button', { name: 'Through Real-Debrid: Bloodborne, a made-up magnet' })
+      .click()
+    await shelf.getByRole('status').getByText('On its way').waitFor({ timeout: 15_000 })
+    pass('offers Real-Debrid for what has only a magnet')
+
+    await shelf.goto(`${BASE_URL}/en/account`)
+    const fetched = shelf.locator('article').filter({ hasText: 'a made-up magnet' })
+    await fetched.getByText(/Finished/).waitFor({ timeout: 40_000 })
+    const set = join(downloaded, 'Bloodborne, a made-up magnet')
+    if (
+      readFileSync(join(set, 'setup.bin')).equals(debridFiles['setup.bin']) &&
+      readFileSync(join(set, 'data', 'more.bin')).equals(debridFiles['data/more.bin'])
+    )
+      pass('fetches a torrent’s files into a folder of its own, as the same bytes')
+    else fail('the files that arrived are not the ones it had')
+    await fetched.scrollIntoViewIfNeeded()
+    await shot('real-debrid-done')
+    if (debridAsked.filter((line) => line.endsWith('addMagnet')).length === 1)
+      pass('puts the magnet on the account once')
+    else fail(`asked ${debridAsked.filter((line) => line.endsWith('addMagnet')).length} times`)
+
+    const leaked = await shelf.evaluate(
+      (secret) =>
+        document.documentElement.outerHTML.includes(secret) ||
+        JSON.stringify(localStorage).includes(secret) ||
+        JSON.stringify(sessionStorage).includes(secret) ||
+        document.cookie.includes(secret),
+      debridSecret,
+    )
+    if (leaked) fail('a page holds the Real-Debrid token')
+    else pass('no page holds what the sign-in gave')
+
+    await shelf.getByRole('button', { name: 'Sign out of Real-Debrid' }).click()
+    await shelf
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Sign out of Real-Debrid' })
+      .click()
+    await shelf.getByRole('button', { name: 'Sign in to Real-Debrid' }).waitFor({ timeout: 15_000 })
+    if (debridAsked.includes('GET /rest/1.0/disable_access_token'))
+      pass('signing out ends the token there too')
+    else fail('signing out never told Real-Debrid')
   } finally {
     source.closeAllConnections()
     source.close()
+    debrid.closeAllConnections()
+    debrid.close()
   }
 
   console.log('\nThe splash, with no Shelf to open')
