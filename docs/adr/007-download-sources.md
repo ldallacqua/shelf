@@ -1,6 +1,7 @@
 # ADR 007: Downloading a game from a source, in the app
 
-- **Status:** accepted, 1 Nov 2026. Sources are built; downloading is not yet (the phases, below)
+- **Status:** accepted, 1 Nov 2026. Sources and direct downloads are built; Real-Debrid and extracting
+  are not yet (the phases, below)
 - **Date:** 1 Nov 2026
 - **Decides:** how Shelf for Windows reads a list of downloads in Hydra's format and downloads from it,
   by a direct link or through Real-Debrid, and what it refuses to do along the way
@@ -72,11 +73,14 @@ What was read, 1 Nov 2026:
 
 Each is its own pull request.
 
-1. **Sources** (this one): paste, read, list, read again, remove, on the account page.
-2. **A direct download.** The game's page lists what a source has for it, by every word of the game's
-   name (the rule for matching: no looser), and I choose. A folder from Windows' picker. One at a time,
-   resuming with `Range` and `If-Range` into a `.part` file, kept going from the tray, with progress
-   and the disk's space checked first.
+1. **Sources** (built): paste, read, list, read again, remove, on the account page.
+2. **A direct download** (built). The game's page lists what a source has for it, by every word of the
+   game's name (the rule for matching: no looser), in a field I can change, and I choose. A folder from
+   Windows' picker. One at a time, resuming with `Range` and `If-Range` into a `.part` file, kept going from
+   the tray, with progress and the disk's space checked first. What arrives gets the mark a browser gives a
+   download (`Zone.Identifier`), so SmartScreen looks at it when it is opened. A link that answers with a web
+   page is not a file: the next link is tried, and then it says so. One under way when the app ended waits
+   to be resumed, since the app starts with Windows. Mirrors in parts (`uriGroups`) are not downloaded yet.
 3. **Real-Debrid.** Signing in through its device code, with the client id it offers open-source apps, and
    never the private token, which it warns against. Kept in Windows' Credential Manager and never given to a
    page. Magnets, and the hosts its `/hosts` lists. The app says what it can't know ahead (above).

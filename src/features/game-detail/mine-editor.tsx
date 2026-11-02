@@ -50,6 +50,8 @@ import {
   mineNewCard,
   mineTop,
 } from './mine-layout'
+import { FindDownloadLater } from '@/features/desktop/find-download-later'
+
 import { Play } from './play'
 
 /**
@@ -345,6 +347,7 @@ export function MineEditor({
           <p className="text-xs text-muted" aria-live="polite">
             {saving > 0 ? t('saving') : ''}
           </p>
+          <FindDownloadLater title={owned.title} />
           <Play entryId={owned.entryId} title={owned.title} steam={owned.steam} />
         </div>
       </div>

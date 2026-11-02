@@ -1643,7 +1643,8 @@ onde veio o game é importante".
 ### 7.10 Download sources
 
 In Shelf for Windows alone, on the account page, under Platforms. Why it is built this way:
-[ADR 007](adr/007-download-sources.md). Downloading from a source is not built yet.
+[ADR 007](adr/007-download-sources.md). Downloading is direct links for now: Real-Debrid and extracting
+are the next phases.
 
 - **Adding one.** I paste the address of a list in the format Hydra uses, and the app reads it and keeps
   it on this computer. Adding downloads nothing, so it asks nothing first.
@@ -1658,13 +1659,28 @@ In Shelf for Windows alone, on the account page, under Platforms. Why it is buil
 - **Read again** is by hand. If it fails, the list it has stays.
 - **Remove** asks first. It forgets the list, and what was downloaded stays.
 - **It isn't on the landing page,** by decision ([ADR 007](adr/007-download-sources.md), decision 4).
+- **Find a download** stands beside Play on my own game, once I have a source. Without one, nothing is
+  drawn. It opens a sheet with the game's name in a field and what my sources have with every one of
+  those words, closest first: title, size, source and date, and Download. Nothing is chosen for me.
+- **Downloading** asks Windows for a folder, then waits in line: one at a time. A link that leads to a web
+  page isn't a file, so the next is tried, and if all of them are it says so. What has only magnet links,
+  or comes only in parts, says it can't be downloaded yet and has no button.
+- **Downloads,** on the account page above the sources and only once there is one, shows how far along
+  each is, how fast and about how long, with Pause and Cancel, which asks. A finished one offers Show in
+  folder and Take off the list, which leaves the file. **Nothing offers to start a file,** and the card says
+  why. It goes on with the window closed to the tray; after Quit or a restart it waits for Resume.
+- **Never written over:** a name already in the folder becomes `name (2).zip`.
 
 Based on: Hydra's own settings (a card per source with its name, count and address, though with no empty
 state and no reason given for a failure), F-Droid's "add a repository" (saved, and nothing installed until I
-choose), and a GNOME Podcasts report of a feed that wasn't one being accepted in silence.
+choose), and a GNOME Podcasts report of a feed that wasn't one being accepted in silence. Finding and
+downloading: Hydra's options list (a search, and a line of details per download, then a folder) and its
+downloads page, without its speed charts and hero art, as this is one section of a page; and Mozilla's
+notes on a download manager (time left, amount, speed, and pause together, the speed averaged so it doesn't jump).
 
 **Done when:** an address that isn't a source says so and adds nothing; a source added is there after the
-app restarts; a browser's account page shows nothing of this.
+app restarts; a browser's account page shows nothing of this; a download paused and resumed ends as the
+same bytes as the file; a link to a web page writes nothing to the folder; nothing offers to start a file.
 
 ## 8. Data model
 
@@ -2031,7 +2047,7 @@ Not built now. The design leaves room for each.
 | PlayStation, Xbox and Nintendo sync | Steam is built ([section 4.4](#44-from-a-store-or-console)). The others plug into the same matcher and memory; how each is read: [ADR 003](adr/003-platform-sync.md) |
 | Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
-| Downloading from a source | Sources are read and kept ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
+| Real-Debrid, and extracting what is downloaded | Direct downloads are built ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |

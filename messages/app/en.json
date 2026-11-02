@@ -34,5 +34,62 @@
       "missing": "That source is no longer here.",
       "failed": "This computer couldn’t keep that. Try again."
     }
+  },
+  "Downloads": {
+    "title": "Downloads",
+    "progress": "How far along {title} is",
+    "sizeOf": "{done} of {total}",
+    "perSecond": "{size}/s",
+    "speedAndLeft": "{speed}, about {left} left",
+    "finished": "Finished: {size}.",
+    "nothingRuns": "Shelf doesn’t start what it downloads. Look it over first, and open it yourself if you trust it.",
+    "state": {
+      "queued": "Waiting",
+      "downloading": "Downloading",
+      "paused": "Paused",
+      "failed": "Stopped"
+    },
+    "why": {
+      "page": "Its links lead to web pages, not files. Those are usually a file host’s, which Real-Debrid can open once Shelf has it.",
+      "unreachable": "Its link stopped answering. What arrived is kept, so Try again continues if the file hasn’t changed.",
+      "disk": "This disk doesn’t have room for it.",
+      "write": "Shelf couldn’t write to that folder."
+    },
+    "pause": "Pause",
+    "resume": "Resume",
+    "tryAgain": "Try again",
+    "show": "Show in folder",
+    "forget": "Take off the list",
+    "cancel": "Cancel",
+    "cancelTitle": "Cancel {title}?",
+    "cancelBody": "What has arrived so far is deleted, and it would start again from nothing.",
+    "cancelConfirm": "Cancel the download",
+    "cancelKeep": "Keep it",
+    "errors": {
+      "failed": "This computer couldn’t do that. Try again."
+    }
+  },
+  "FindDownload": {
+    "open": "Find a download",
+    "title": "Find a download for {title}",
+    "close": "Close",
+    "warning": "From your own sources, which Shelf can’t check. Download only what you have the right to. Nothing starts by itself.",
+    "words": "Every one of these words",
+    "search": "Search",
+    "searching": "Searching your sources",
+    "nothing": "Nothing in your sources has every one of those words. A shorter name may find more.",
+    "download": "Download",
+    "downloadThis": "Download {title}",
+    "added": "In your downloads",
+    "addedThis": "In your downloads: {title}",
+    "addedSay": "On its way. See how far along it is in <link>your account</link>.",
+    "onlyMagnet": "Only by magnet link, which needs Real-Debrid. Shelf doesn’t have that yet.",
+    "onlyInParts": "Only in several parts, which Shelf can’t put together yet.",
+    "chooseFolder": "Where to save {title}",
+    "errors": {
+      "duplicate": "That one is already in your downloads.",
+      "missing": "That source has changed since this list was drawn. Search again.",
+      "failed": "This computer couldn’t do that. Try again."
+    }
   }
 }

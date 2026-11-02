@@ -46,10 +46,15 @@ steps it is built in.
 8. **Download sources,** on the account page, are lists of games to download in the format
    Hydra uses (ADR 007, spec 7.10). Paste a source's address; adding one downloads nothing. Add only
    sources you trust: Shelf can't check where their links lead.
+9. **Find a download,** beside Play on a game of your own once you have a source, lists what your
+   sources have with every word of the game's name. Choose one and a folder. It goes on with the window
+   closed to the tray, and **Downloads** on the account page shows how far along it is, with Pause and
+   Cancel. Shelf never starts what it downloads.
 
 What the app keeps on this computer is the files chosen, in
-`%APPDATA%\com.ldallacqua.shelf\launchers.json`, and the sources, in `sources.json` and `sources\`
-beside it. Uninstalling leaves those; delete the folder to forget everything.
+`%APPDATA%\com.ldallacqua.shelf\launchers.json`, the sources, in `sources.json` and `sources\` beside it,
+and the list of downloads, in `downloads.json`. Uninstalling leaves those, and everything downloaded, in
+the folders you chose; delete the app's folder to forget the rest.
 
 ## 2. Building and running it
 
@@ -98,7 +103,8 @@ desktop/
     ids.rs               What an entry's id and a Steam app id may be
     navigation.rs        Which addresses stay in the window (unit-tested)
     launchers.rs         The files chosen, kept in launchers.json
-    sources.rs           Download sources (ADR 007): which addresses, read, checked, kept
+    sources.rs           Download sources (ADR 007): which addresses, read, checked, kept, searched
+    downloads.rs         Downloading from them: one at a time, resuming, and never starting anything
     launch.rs            Starting a file as Explorer does, or Steam
     steam.rs             Steam's folders: which apps are installed, asked or all
     shortcut.rs          What a chosen .lnk or .url points at

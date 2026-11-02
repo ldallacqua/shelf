@@ -4,6 +4,7 @@
 //! picker, which the person sees and answers.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
@@ -12,6 +13,7 @@ use tauri::{AppHandle, Manager, State, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
+use crate::downloads::{self, Downloads};
 use crate::ids;
 use crate::launch::{self, Failure};
 use crate::launchers::{Launcher, Launchers};
@@ -465,6 +467,139 @@ pub fn remove_source(id: String, kept: State<'_, Sources>) -> Result<(), sources
         return Err(sources::Refusal::Invalid);
     }
     kept.remove(&id)
+}
+
+/// Every download on this computer whose title has all these words. Never a link.
+#[tauri::command]
+pub async fn search_sources(
+    words: String,
+    kept: State<'_, Sources>,
+) -> Result<Vec<sources::Found>, sources::Refusal> {
+    let (folder, all) = kept.searchable();
+    let words: String = words.chars().take(200).collect();
+    tauri::async_runtime::spawn_blocking(move || sources::search(&folder, &all, &words))
+        .await
+        .map_err(|_| sources::Refusal::Failed)
+}
+
+/// Asks Windows for a folder, then puts a download in line. Nothing, when the picker is closed.
+/// The links are the app's own copy of the source's: a page names a place in a list, and what it
+/// showed there, and if the list has changed since, nothing starts.
+#[tauri::command]
+pub async fn start_download(
+    window: WebviewWindow,
+    source: String,
+    place: usize,
+    title: String,
+    ask: String,
+    kept: State<'_, Sources>,
+    list: State<'_, Arc<Downloads>>,
+) -> Result<bool, downloads::Refusal> {
+    if !ids::entry(&source) {
+        return Err(downloads::Refusal::Invalid);
+    }
+    let (source_name, item) = kept
+        .item(&source, place, &title)
+        .ok_or(downloads::Refusal::Missing)?;
+    let links: Vec<String> = item
+        .uris
+        .into_iter()
+        .filter(|uri| sources::link(uri) == Some(sources::Link::Web))
+        .collect();
+    if links.is_empty() {
+        return Err(downloads::Refusal::Unlinked);
+    }
+    if list.has_link(&links) {
+        return Err(downloads::Refusal::Duplicate);
+    }
+    let Some(folder) = pick_folder(&window, short(&ask)).await? else {
+        return Ok(false);
+    };
+    list.add(
+        uuid::Uuid::new_v4().to_string(),
+        item.title,
+        source_name,
+        links,
+        folder,
+        now(),
+    )?;
+    Ok(true)
+}
+
+async fn pick_folder(
+    window: &WebviewWindow,
+    title: String,
+) -> Result<Option<PathBuf>, downloads::Refusal> {
+    // As `pick`: no script can answer Windows' picker.
+    #[cfg(debug_assertions)]
+    if let Ok(path) = std::env::var("SHELF_PICK_FOLDER") {
+        return Ok(Some(PathBuf::from(path)));
+    }
+    let dialog = window.dialog().file().set_parent(window).set_title(title);
+    let picked = tauri::async_runtime::spawn_blocking(move || dialog.blocking_pick_folder())
+        .await
+        .map_err(|_| downloads::Refusal::Failed)?;
+    Ok(picked.and_then(|folder| folder.into_path().ok()))
+}
+
+/// What is being downloaded, waiting or finished, and how far along.
+#[tauri::command]
+pub fn downloads_now(list: State<'_, Arc<Downloads>>) -> Vec<downloads::View> {
+    list.all()
+}
+
+fn download_id(id: &str) -> Result<(), downloads::Refusal> {
+    if ids::entry(id) {
+        Ok(())
+    } else {
+        Err(downloads::Refusal::Invalid)
+    }
+}
+
+#[tauri::command]
+pub fn pause_download(
+    id: String,
+    list: State<'_, Arc<Downloads>>,
+) -> Result<(), downloads::Refusal> {
+    download_id(&id)?;
+    list.pause(&id)
+}
+
+#[tauri::command]
+pub fn resume_download(
+    id: String,
+    list: State<'_, Arc<Downloads>>,
+) -> Result<(), downloads::Refusal> {
+    download_id(&id)?;
+    list.resume(&id)
+}
+
+/// Takes a download off the list: unfinished, what it had goes too; finished, the file stays.
+#[tauri::command]
+pub fn remove_download(
+    id: String,
+    list: State<'_, Arc<Downloads>>,
+) -> Result<(), downloads::Refusal> {
+    download_id(&id)?;
+    list.remove(&id)
+}
+
+/// Opens the folder of a finished download in Explorer, the file selected. Showing, and never opening:
+/// nothing downloaded is started from here (ADR 007, decision 10).
+#[tauri::command]
+pub fn show_download(
+    app: AppHandle,
+    id: String,
+    list: State<'_, Arc<Downloads>>,
+) -> Result<(), downloads::Refusal> {
+    download_id(&id)?;
+    let file = list.finished_file(&id)?;
+    if !file.is_file() {
+        return Err(downloads::Refusal::Missing);
+    }
+    app.opener()
+        .reveal_item_in_dir(&file)
+        .map_err(|_| downloads::Refusal::Refused)
 }
 
 #[cfg(test)]

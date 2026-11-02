@@ -34,5 +34,62 @@
       "missing": "Essa fonte não está mais aqui.",
       "failed": "Este computador não conseguiu guardar isso. Tente de novo."
     }
+  },
+  "Downloads": {
+    "title": "Downloads",
+    "progress": "Andamento de {title}",
+    "sizeOf": "{done} de {total}",
+    "perSecond": "{size}/s",
+    "speedAndLeft": "{speed}, cerca de {left} restantes",
+    "finished": "Concluído: {size}.",
+    "nothingRuns": "O Shelf não inicia o que baixa. Confira antes e abra você mesmo, se confiar.",
+    "state": {
+      "queued": "Na fila",
+      "downloading": "Baixando",
+      "paused": "Pausado",
+      "failed": "Parado"
+    },
+    "why": {
+      "page": "Os links levam a páginas da web, não a arquivos. Em geral são de sites de hospedagem, que o Real-Debrid poderá abrir quando o Shelf tiver suporte a ele.",
+      "unreachable": "O link parou de responder. O que chegou fica guardado, e Tentar de novo continua se o arquivo não tiver mudado.",
+      "disk": "Este disco não tem espaço para ele.",
+      "write": "O Shelf não conseguiu gravar nessa pasta."
+    },
+    "pause": "Pausar",
+    "resume": "Continuar",
+    "tryAgain": "Tentar de novo",
+    "show": "Mostrar na pasta",
+    "forget": "Tirar da lista",
+    "cancel": "Cancelar",
+    "cancelTitle": "Cancelar {title}?",
+    "cancelBody": "O que já chegou é apagado, e ele começaria de novo do zero.",
+    "cancelConfirm": "Cancelar o download",
+    "cancelKeep": "Manter",
+    "errors": {
+      "failed": "Este computador não conseguiu fazer isso. Tente de novo."
+    }
+  },
+  "FindDownload": {
+    "open": "Procurar download",
+    "title": "Procurar download de {title}",
+    "close": "Fechar",
+    "warning": "Das suas próprias fontes, que o Shelf não consegue verificar. Baixe só o que você tem o direito de baixar. Nada é iniciado sozinho.",
+    "words": "Todas estas palavras",
+    "search": "Buscar",
+    "searching": "Buscando nas suas fontes",
+    "nothing": "Nada nas suas fontes tem todas essas palavras. Um nome mais curto pode encontrar mais.",
+    "download": "Baixar",
+    "downloadThis": "Baixar {title}",
+    "added": "Nos seus downloads",
+    "addedThis": "Nos seus downloads: {title}",
+    "addedSay": "A caminho. Veja o andamento na <link>sua conta</link>.",
+    "onlyMagnet": "Só por link magnet, que precisa do Real-Debrid. O Shelf ainda não tem isso.",
+    "onlyInParts": "Só em várias partes, que o Shelf ainda não consegue juntar.",
+    "chooseFolder": "Onde salvar {title}",
+    "errors": {
+      "duplicate": "Esse já está nos seus downloads.",
+      "missing": "Essa fonte mudou desde que a lista foi desenhada. Busque de novo.",
+      "failed": "Este computador não conseguiu fazer isso. Tente de novo."
+    }
   }
 }
