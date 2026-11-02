@@ -90,6 +90,9 @@ Each needs a desktop release for the owner, and that needs the owner's OK.
 - `reqwest` is a direct dependency. It was in the app already through the updater.
 - The account page gains a section for the app alone, loaded apart, so no visitor pays for it. `desktop:check`
   leaves it out of what it compares (`data-device`).
+- **Its words are in `messages/app/`,** not `messages/{locale}.json`. The layout hands every visitor
+  all of those, in every page's HTML, the landing page's too, which decision 4 can't allow. They come
+  with the section's code, and `pnpm i18n:check` checks them the same way.
 - **Tests never talk to a real source or to Real-Debrid.**
 - Anyone can read this code. It holds nothing about where to find a source.
 

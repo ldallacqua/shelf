@@ -19,15 +19,16 @@ export function SourceCardGhost() {
 }
 
 /**
- * The section before its code is here: its title for real, and a ghost for what is unknown. Apart
- * from the section, so the account page can draw this without fetching Zod and the commands.
+ * The section before its code is here. Its own words come with that code, so that no page's HTML
+ * carries them (`messages/app`): even its title is a ghost, and the label is Platforms' plain one.
+ * Apart from the section, so the account page can draw this without fetching any of it.
  */
 export function DownloadSourcesGhost() {
-  const t = useTranslations('DownloadSources')
+  const t = useTranslations('Sync')
   return (
     <section className="grid gap-5 border-t border-line pt-8">
-      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
       <Loading label={t('loading')} className="contents">
+        <GhostText order={0} className="w-56 text-xl sm:text-2xl" />
         <SourceCardGhost />
       </Loading>
     </section>

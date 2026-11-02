@@ -9,21 +9,28 @@ import { join } from 'node:path'
 import { compareMessages, type Messages } from './lib/compare-messages.ts'
 
 const SOURCE = 'en'
-const directory = join(import.meta.dirname, '..', 'messages')
+const messages = join(import.meta.dirname, '..', 'messages')
 
-function read(locale: string): Messages {
+function read(directory: string, locale: string): Messages {
   return JSON.parse(readFileSync(join(directory, `${locale}.json`), 'utf8')) as Messages
 }
 
-const locales = readdirSync(directory)
+const locales = readdirSync(messages)
   .filter((file) => file.endsWith('.json'))
   .map((file) => file.replace(/\.json$/, ''))
 
-const others = Object.fromEntries(
-  locales.filter((locale) => locale !== SOURCE).map((locale) => [locale, read(locale)]),
+// `messages/app` holds the words only Shelf for Windows draws, which no page's HTML carries.
+const problems = [messages, join(messages, 'app')].flatMap((directory) =>
+  compareMessages(
+    read(directory, SOURCE),
+    Object.fromEntries(
+      locales
+        .filter((locale) => locale !== SOURCE)
+        .map((locale) => [locale, read(directory, locale)]),
+    ),
+    SOURCE,
+  ),
 )
-
-const problems = compareMessages(read(SOURCE), others, SOURCE)
 
 if (problems.length === 0) {
   console.log(`Translations agree across ${locales.join(', ')}.`)

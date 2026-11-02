@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderWithIntl } from '@/test/render'
+import en from '@messages/en.json'
+import ptBR from '@messages/pt-BR.json'
 
 import DownloadSources from './download-sources'
 import { DownloadSourcesInApp } from './download-sources-later'
@@ -149,15 +151,20 @@ describe('download sources', () => {
 })
 
 describe('outside the app', () => {
+  it('leaves its words out of what the layout hands every visitor', () => {
+    expect(en).not.toHaveProperty('DownloadSources')
+    expect(ptBR).not.toHaveProperty('DownloadSources')
+  })
+
   it('draws nothing', () => {
     setBridgeForTests(null)
     const { container } = renderWithIntl(<DownloadSourcesInApp />)
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('in the app, stands apart from what a browser shows', async () => {
-    const { container } = renderWithIntl(<DownloadSourcesInApp />)
-    await screen.findByRole('heading', { name: 'Download sources' })
+  it('in the app, brings its own words, in the page’s language', async () => {
+    const { container } = renderWithIntl(<DownloadSourcesInApp />, 'pt-BR')
+    await screen.findByRole('heading', { name: 'Fontes de download' })
     expect(container.querySelector('[data-device]')).not.toBeNull()
   })
 })
