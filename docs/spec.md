@@ -1654,11 +1654,13 @@ In Shelf for Windows alone, on the account page, under Platforms. Why it is buil
   left out, and when it was read. The address is not a link. Nothing else from the list reaches the page.
 - **From a saved file** stands beside Add. An address may answer a browser and not the app, so I can save the
   file and choose it in Windows' picker. The card says which file, and its Read again chooses a file again.
-- **Refused:** an address that isn't `https`, one on this computer or its network, one it can't connect to, one
-  that answers without the file, which says to save it in a browser and add it from there, a file over
+- **Refused:** an address that isn't `https`, one on this computer or its network, one whose name leads nowhere from
+  here, one with no secure connection, one too slow, one it can't otherwise connect to, one that answers
+  without the file, which says to save it in a browser and add it from there, a file over
   200 MB, and anything without a name and a list of downloads. Each says which, with the address kept in
   the field to be corrected.
-- **Read again** is by hand. If it fails, the list it has stays.
+- **Read again** happens by itself once a day while the app runs, and by hand whenever I press it. If it
+  fails, the list it has stays, and one that failed by itself says why on its card until one works.
 - **Remove** asks first. It forgets the list, and what was downloaded stays.
 - **It isn't on the landing page,** by decision ([ADR 007](adr/007-download-sources.md), decision 4).
 - **Find a download** stands beside Play on my own game, once I have a source. Without one, nothing is

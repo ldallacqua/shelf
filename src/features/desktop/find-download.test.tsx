@@ -47,6 +47,7 @@ beforeEach(() => {
     name: 'Made-up source',
     url: 'https://files.example.invalid/source.json',
     file: null,
+    trouble: null,
     addedAt: 1,
     readAt: 1,
     items: 1,

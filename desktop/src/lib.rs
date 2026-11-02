@@ -453,6 +453,11 @@ pub fn run() {
             let version = app.package_info().version.to_string();
             let debrid = std::sync::Arc::new(real_debrid::RealDebrid::open(vault(), &version)?);
             app.manage(debrid.clone());
+            let reading = app.handle().clone();
+            let read_as = version.clone();
+            tauri::async_runtime::spawn(async move {
+                sources::keep_reading(&reading.state::<sources::Sources>(), &read_as).await;
+            });
             let opening = downloading.clone();
             std::thread::Builder::new()
                 .name("extracting".into())

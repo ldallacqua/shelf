@@ -16,6 +16,7 @@ const source = (over: Partial<Source> = {}): Source => ({
   name: 'Made-up source',
   url: 'https://files.example.invalid/source.json',
   file: null,
+  trouble: null,
   addedAt: Date.now() - 48 * HOUR,
   readAt: Date.now() - 3 * HOUR,
   items: 1240,
@@ -54,6 +55,11 @@ export const NoneYet: Story = {}
 /** Saved by hand, for an address that doesn't answer the app: reading it again means choosing it again. */
 export const FromASavedFile: Story = {
   args: { list: [source({ url: 'file:made-up.json', file: 'made-up.json' })] },
+}
+
+/** Read by itself once a day. A failure keeps the list, and the card says so until one works. */
+export const LastReadingFailed: Story = {
+  args: { list: [source({ trouble: 'slow' })] },
 }
 
 /** It answered, and not with the file: the way on is in the words, and the button is beside the field. */
