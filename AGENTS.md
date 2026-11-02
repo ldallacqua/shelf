@@ -112,7 +112,8 @@ however small: a new element, a moved one, a new state, an animation. The owner'
 
 **Text.** Every word a visitor reads comes from `messages/`. English is the source; add the
 key to both files or `pnpm i18n:check` fails. A literal string inside a component is a lint
-error. Filter keys stay English in both languages.
+error. Filter keys stay English in both languages. Everything in `messages/{locale}.json` is in every
+page's HTML, for every visitor; words for the app alone go in `messages/app/`, imported by what draws them.
 
 **A new page.** Add the folder under `src/app/[locale]/`, then add its address to `pathnames`
 in `src/i18n/routing.ts`. Links are type-checked against that list, the proxy answers 404

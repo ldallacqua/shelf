@@ -2,13 +2,15 @@ import type { Decorator, Preview } from '@storybook/nextjs-vite'
 import { NextIntlClientProvider } from 'next-intl'
 import { useEffect, type ReactNode } from 'react'
 
+import appEn from '../messages/app/en.json'
+import appPtBR from '../messages/app/pt-BR.json'
 import en from '../messages/en.json'
 import ptBR from '../messages/pt-BR.json'
 import { fontVariables } from '../src/ui/fonts'
 
 import '../src/app/globals.css'
 
-const messages = { en, 'pt-BR': ptBR } as const
+const messages = { en: { ...en, ...appEn }, 'pt-BR': { ...ptBR, ...appPtBR } } as const
 type Locale = keyof typeof messages
 
 /**

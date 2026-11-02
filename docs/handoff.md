@@ -11,7 +11,9 @@ The owner asked to download games from sources in Hydra's format, by direct link
 only in a desktop release, which needs the owner's OK. Hydra now reads a source through its own API, so
 the format is known from its last open validator and its types: a real file may hold more, which is
 ignored. I told the owner I would build the mechanism and not look for, suggest or test with real
-sources, or copy what exists only to get past a host or an archive's password.
+sources, or copy what exists only to get past a host or an archive's password. The section's words live
+in `messages/app/`: the first version had them in `messages/en.json`, which put them in the HTML of every
+page, the landing page included.
 
 ## Links in the app, images, the cover's flight, fixed copies (1 Nov 2026)
 

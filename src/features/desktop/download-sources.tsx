@@ -1,13 +1,22 @@
 'use client'
 
 import { PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
-import { useFormatter, useNow, useTranslations } from 'next-intl'
+import {
+  NextIntlClientProvider,
+  useFormatter,
+  useLocale,
+  useNow,
+  useTimeZone,
+  useTranslations,
+} from 'next-intl'
 import { type FormEvent, useEffect, useId, useState } from 'react'
 
 import { Button } from '@/ui/button'
 import { Confirm } from '@/ui/confirm'
 import { Input } from '@/ui/field'
 import { Loading } from '@/ui/ghost'
+import en from '@messages/app/en.json'
+import ptBR from '@messages/app/pt-BR.json'
 
 import { SourceCardGhost } from './download-sources-ghost'
 import { type Source, type SourceRefusal, sourceRefusalOf, sources } from './sources'
@@ -193,7 +202,7 @@ export function DownloadSourcesView({
  * alone: an address pasted, read and kept, read again, removed. Adding one downloads nothing, so it
  * asks nothing first; removing it can't be undone and does.
  */
-export default function DownloadSources() {
+function Sources() {
   const t = useTranslations('DownloadSources')
   const [list, setList] = useState<Source[]>()
   const [address, setAddress] = useState('')
@@ -283,5 +292,23 @@ export default function DownloadSources() {
       onReadAgain={(id) => void readAgain(id)}
       onRemove={(id) => void remove(id)}
     />
+  )
+}
+
+/**
+ * The section with its own words, which come with its code and not with the page: the layout hands
+ * every visitor all of `messages/`, and these are for the app alone (ADR 007, decision 4).
+ */
+export default function DownloadSources() {
+  const locale = useLocale()
+  const timeZone = useTimeZone()
+  return (
+    <NextIntlClientProvider
+      locale={locale}
+      timeZone={timeZone}
+      messages={locale === 'pt-BR' ? ptBR : en}
+    >
+      <Sources />
+    </NextIntlClientProvider>
   )
 }
