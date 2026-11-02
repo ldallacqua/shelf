@@ -18,6 +18,7 @@ use crate::launchers::{Launcher, Launchers};
 use crate::processes::{self, Closing};
 use crate::running::{self, GameView, Games, Launch, Rules, SteamGame, Target};
 use crate::shortcut::{self, Pointed};
+use crate::sources::{self, Reading, Source, Sources};
 use crate::steam;
 use crate::tracker::{Session, Tracker};
 
@@ -404,6 +405,66 @@ pub fn play_sessions_kept(ids: Vec<String>, tracker: State<'_, Tracker>) -> Resu
         return Err(Refusal::Invalid);
     }
     tracker.kept(&ids).map_err(|_| Refusal::Failed)
+}
+
+/// The download sources on this computer (ADR 007): what they are, never their links.
+#[tauri::command]
+pub fn download_sources(kept: State<'_, Sources>) -> Vec<Source> {
+    kept.all()
+}
+
+/// Reads the source at an address the person pasted, and keeps it. Nothing is downloaded.
+#[tauri::command]
+pub async fn add_source(
+    app: AppHandle,
+    url: String,
+    kept: State<'_, Sources>,
+) -> Result<Source, sources::Refusal> {
+    let url = sources::address(&url)?;
+    if kept.has_address(url.as_str()) {
+        return Err(sources::Refusal::Duplicate);
+    }
+    let version = app.package_info().version.to_string();
+    let Reading::Read { bytes, etag } = sources::read(&url, None, &version).await? else {
+        // Asked with no `ETag`, nothing can answer that it has not changed.
+        return Err(sources::Refusal::Unreachable);
+    };
+    let feed = sources::parse(&bytes)?;
+    kept.add(
+        uuid::Uuid::new_v4().to_string(),
+        url.to_string(),
+        feed,
+        etag,
+        now(),
+    )
+}
+
+/// Reads a source again by its id. If that fails, the list it has stays.
+#[tauri::command]
+pub async fn read_source_again(
+    app: AppHandle,
+    id: String,
+    kept: State<'_, Sources>,
+) -> Result<Source, sources::Refusal> {
+    if !ids::entry(&id) {
+        return Err(sources::Refusal::Invalid);
+    }
+    let (address, etag) = kept.address(&id).ok_or(sources::Refusal::Missing)?;
+    let url = sources::address(&address)?;
+    let version = app.package_info().version.to_string();
+    match sources::read(&url, etag.as_deref(), &version).await? {
+        Reading::Unchanged => kept.touch(&id, now()),
+        Reading::Read { bytes, etag } => kept.replace(&id, sources::parse(&bytes)?, etag, now()),
+    }
+}
+
+/// Forgets a source and its list. What was downloaded from it stays.
+#[tauri::command]
+pub fn remove_source(id: String, kept: State<'_, Sources>) -> Result<(), sources::Refusal> {
+    if !ids::entry(&id) {
+        return Err(sources::Refusal::Invalid);
+    }
+    kept.remove(&id)
 }
 
 #[cfg(test)]

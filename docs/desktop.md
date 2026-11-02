@@ -43,9 +43,13 @@ steps it is built in.
    program is the game. Stop asks it to close; a game that doesn't answer offers Force stop, with
    a warning. A launcher waiting, or a game Windows won't let the app check, says so instead.
 
-What the app keeps on this computer is only the files chosen, in
-`%APPDATA%\com.ldallacqua.shelf\launchers.json`. Uninstalling leaves that file; delete the
-folder to forget everything.
+8. **Download sources,** on the account page, are lists of games to download in the format
+   Hydra uses (ADR 007, spec 7.10). Paste a source's address; adding one downloads nothing. Add only
+   sources you trust: Shelf can't check where their links lead.
+
+What the app keeps on this computer is the files chosen, in
+`%APPDATA%\com.ldallacqua.shelf\launchers.json`, and the sources, in `sources.json` and `sources\`
+beside it. Uninstalling leaves those; delete the folder to forget everything.
 
 ## 2. Building and running it
 
@@ -94,6 +98,7 @@ desktop/
     ids.rs               What an entry's id and a Steam app id may be
     navigation.rs        Which addresses stay in the window (unit-tested)
     launchers.rs         The files chosen, kept in launchers.json
+    sources.rs           Download sources (ADR 007): which addresses, read, checked, kept
     launch.rs            Starting a file as Explorer does, or Steam
     steam.rs             Steam's folders: which apps are installed, asked or all
     shortcut.rs          What a chosen .lnk or .url points at

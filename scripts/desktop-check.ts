@@ -26,6 +26,8 @@
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -427,6 +429,50 @@ try {
   const steam = shelf.locator('[data-play] a[href^="steam://"]')
   await steam.waitFor({ timeout: 10_000 })
   pass(`Skyrim offers “${await steam.textContent()}”, to ${await steam.getAttribute('href')}`)
+
+  console.log('\nDownload sources (ADR 007), a made-up one on this computer')
+  const source = createServer((request, response) => {
+    if (request.url === '/source.json') {
+      response.setHeader('content-type', 'application/json')
+      response.end(readFileSync('fixtures/sources/hydra-format.json'))
+    } else {
+      response.setHeader('content-type', 'text/html')
+      response.end('<html>not a source</html>')
+    }
+  })
+  await new Promise<void>((listening) => source.listen(0, '127.0.0.1', listening))
+  try {
+    const { port } = source.address() as AddressInfo
+    await shelf.goto(`${BASE_URL}/en/account`)
+    const field = shelf.getByLabel('Source address')
+    await field.waitFor({ timeout: 20_000 })
+    const add = shelf.getByRole('button', { name: 'Add source' })
+    await field.fill(`http://127.0.0.1:${port}/page.html`)
+    await add.click()
+    await shelf.getByText('That address has no source').waitFor({ timeout: 15_000 })
+    pass('says a page is not a source, and adds nothing')
+    await field.fill(`http://127.0.0.1:${port}/source.json`)
+    await add.click()
+    const card = shelf.locator('article').filter({ hasText: 'Made-up source' })
+    await card.waitFor({ timeout: 15_000 })
+    const words = (await card.innerText()).replace(/\s+/g, ' ')
+    if (/3 downloads/.test(words) && /5 left out/.test(words))
+      pass('reads a source: 3 downloads, 5 left out')
+    else fail(`the source's card said: ${words}`)
+    await shot('download-sources')
+    await shelf.reload()
+    await card.waitFor({ timeout: 20_000 })
+    pass('is still there after the page is opened again')
+    await card.getByRole('button', { name: 'Read again' }).click()
+    await shelf.getByRole('status').getByText('Read Made-up source').waitFor({ timeout: 15_000 })
+    pass('reads it again')
+    await card.getByRole('button', { name: 'Remove' }).click()
+    await shelf.getByRole('button', { name: 'Remove source' }).click()
+    await shelf.getByText('No sources yet.').waitFor({ timeout: 10_000 })
+    pass('removes it, after asking')
+  } finally {
+    source.close()
+  }
 
   console.log('\nThe splash, with no Shelf to open')
   // A second app, on an address nothing answers, with a profile and a port of its own.

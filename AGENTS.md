@@ -26,7 +26,8 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
    [`design/assets/PROMPTS.md`](design/assets/PROMPTS.md).
 4. **It must read as games, not books.** Covers face out. No serif type. See
    [ADR 002](docs/adr/002-visual-direction.md) for what went wrong the first time.
-5. **Tests never talk to the real IGDB, Steam or Nintendo.** They use fixtures.
+5. **Tests never talk to the real IGDB, Steam, Nintendo or Real-Debrid, or to a real download
+   source.** They use fixtures.
 6. **No bot commits.** Vercel's free plan only deploys commits authored by the owner's
    account.
 
@@ -281,6 +282,14 @@ that reads a game's screenshots.
 store's position in `storeNames` is in the library file, so a new one goes at the end.
 `store-choices.ts` is what the forms offer. `store-links.ts` chooses a game's links (`games.store_links`, read from IGDB by `toGameData`), only ever
 to the store's own servers. Spec 7.9.
+
+**Download sources.** Lists of downloads in Hydra's format, read by Shelf for Windows from an address
+the person pastes, and kept on that computer ([ADR 007](docs/adr/007-download-sources.md)). Shelf's server
+never sees one, and Real-Debrid's terms forbid it from reaching that service. Shelf ships, suggests and
+links to no source, and no test or check reads a real one. No code that runs a host's script for a
+token, no passwords of cracking sites, and nothing downloaded ever runs by itself. A page gets a
+source's name and counts, never its links. This is the exception to the landing page's rule: it is not
+shown there.
 
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in

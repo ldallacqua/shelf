@@ -8,6 +8,8 @@
   Hydra does, while the site stays what it is
 - **Built in steps:** [the desktop guide](../desktop.md), which also says how to build, run and
   install it
+- **Changed by:** [ADR 007](007-download-sources.md), 1 Nov 2026: the app reads download sources, so one
+  command takes an address, and downloading is now something Shelf does
 
 ## Context
 
