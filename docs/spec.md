@@ -1640,6 +1640,32 @@ onde veio o game é importante".
 - **Leaving the wishlist** starts the first copy on the PC, from the store I wanted, as a download.
 - **Records stored before this** have only their Steam link until the daily refresh stores them again.
 
+### 7.10 Download sources
+
+In Shelf for Windows alone, on the account page, under Platforms. Why it is built this way:
+[ADR 007](adr/007-download-sources.md). Downloading from a source is not built yet.
+
+- **Adding one.** I paste the address of a list in the format Hydra uses, and the app reads it and keeps
+  it on this computer. Adding downloads nothing, so it asks nothing first.
+- **The warning stands beside the field.** That is where the choice is made, and it says what a source
+  can do (its programs run with my access) and what to do about it. A warning read only after adding
+  would come too late, and a general one is hard to act on.
+- **What a source shows:** its name and address, how many downloads, by which kind of link, how many were
+  left out, and when it was read. The address is not a link. Nothing else from the list reaches the page.
+- **Refused:** an address that isn't `https`, one on this computer or its network, one that doesn't answer,
+  a file over 200 MB, and anything without a name and a list of downloads. Each says which, with the
+  address kept in the field to be corrected.
+- **Read again** is by hand. If it fails, the list it has stays.
+- **Remove** asks first. It forgets the list, and what was downloaded stays.
+- **It isn't on the landing page,** by decision ([ADR 007](adr/007-download-sources.md), decision 4).
+
+Based on: Hydra's own settings (a card per source with its name, count and address, though with no empty
+state and no reason given for a failure), F-Droid's "add a repository" (saved, and nothing installed until I
+choose), and a GNOME Podcasts report of a feed that wasn't one being accepted in silence.
+
+**Done when:** an address that isn't a source says so and adds nothing; a source added is there after the
+app restarts; a browser's account page shows nothing of this.
+
 ## 8. Data model
 
 [ADR 001](adr/001-game-entry-model.md) is the decision; [ADR 004](adr/004-one-library-per-account.md)
@@ -2005,6 +2031,7 @@ Not built now. The design leaves room for each.
 | PlayStation, Xbox and Nintendo sync | Steam is built ([section 4.4](#44-from-a-store-or-console)). The others plug into the same matcher and memory; how each is read: [ADR 003](adr/003-platform-sync.md) |
 | Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
+| Downloading from a source | Sources are read and kept ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |

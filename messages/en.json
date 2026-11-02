@@ -1239,6 +1239,42 @@
       "failed": "Creating your shelf did not work. Try again."
     }
   },
+  "DownloadSources": {
+    "title": "Download sources",
+    "intro": "Lists of games to download, in the format Hydra uses. They stay on this computer, and adding one downloads nothing.",
+    "address": "Source address",
+    "addressHint": "https://…/source.json",
+    "warning": "Anyone can write a source, and Shelf can’t check where its links lead. A program from one runs with your access to this computer. Add only sources you trust, for games you have the right to download.",
+    "add": "Add source",
+    "adding": "Reading…",
+    "added": "Added {name}, with {count, plural, one {# download} other {# downloads}}. Nothing was downloaded.",
+    "empty": "No sources yet.",
+    "loading": "Looking for your sources",
+    "downloadsLabel": "Downloads",
+    "downloads": "{count, plural, one {# download} other {# downloads}}",
+    "links": "{magnets, number} by magnet link, {web, number} by web link",
+    "leftOutLabel": "Left out",
+    "leftOut": "{count, plural, one {# left out: nothing in it Shelf can use} other {# left out: nothing in them Shelf can use}}",
+    "readLabel": "Last read",
+    "read": "Read {when}",
+    "readAgain": "Read again",
+    "reading": "Reading…",
+    "readDone": "Read {name}: {count, plural, one {# download} other {# downloads}}.",
+    "remove": "Remove",
+    "removeTitle": "Remove {name}?",
+    "removeBody": "Its list leaves this computer. You can add it again from its address.",
+    "removeConfirm": "Remove source",
+    "removeCancel": "Keep it",
+    "errors": {
+      "invalid": "That isn’t an https address Shelf can read. Addresses on this computer or its network aren’t read.",
+      "duplicate": "That source is already here.",
+      "unreachable": "That address didn’t answer with a file. Check it and try again.",
+      "large": "That file is too large to be a source.",
+      "unsupported": "That address has no source: a source is a JSON file with a name and a list of downloads.",
+      "missing": "That source is no longer here.",
+      "failed": "This computer couldn’t keep that. Try again."
+    }
+  },
   "AccountPage": {
     "metaTitle": "Your account",
     "title": "Your account",

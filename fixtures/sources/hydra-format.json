@@ -1,0 +1,38 @@
+{
+  "name": "Made-up source",
+  "unknownField": true,
+  "downloads": [
+    {
+      "title": "Made-up Game: Deluxe Edition v1.2",
+      "uris": [
+        "magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=made-up-game",
+        "https://files.example.invalid/made-up-game.zip"
+      ],
+      "uploadDate": "2026-10-20T12:00:00.000Z",
+      "fileSize": "12.4 GB"
+    },
+    {
+      "title": "Another Made-up Game",
+      "uris": ["https://files.example.invalid/another-made-up-game.7z"],
+      "uploadDate": "2026-09-01T08:30:00.000Z",
+      "fileSize": "800 MB"
+    },
+    {
+      "title": "A Third Made-up Game",
+      "uris": ["magnet:?xt=urn:btih:fedcba9876543210fedcba9876543210fedcba98"]
+    },
+    {
+      "title": "A plain http link, which has no check at all",
+      "uris": ["http://files.example.invalid/plain.zip"],
+      "uploadDate": "2026-08-01T08:30:00.000Z",
+      "fileSize": "1 GB"
+    },
+    {
+      "title": "A magnet with no hash, and a link to something else",
+      "uris": ["magnet:?dn=no-hash", "file:///C:/Windows/System32/cmd.exe", "steam://install/620"]
+    },
+    { "title": "", "uris": ["https://files.example.invalid/no-title.zip"] },
+    { "uris": ["https://files.example.invalid/none-at-all.zip"] },
+    "not even an object"
+  ]
+}

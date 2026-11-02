@@ -1239,6 +1239,42 @@
       "failed": "Não deu para criar sua estante. Tente de novo."
     }
   },
+  "DownloadSources": {
+    "title": "Fontes de download",
+    "intro": "Listas de jogos para baixar, no formato que o Hydra usa. Elas ficam neste computador, e adicionar uma não baixa nada.",
+    "address": "Endereço da fonte",
+    "addressHint": "https://…/source.json",
+    "warning": "Qualquer pessoa pode escrever uma fonte, e o Shelf não consegue verificar para onde os links dela levam. Um programa vindo dela roda com o seu acesso a este computador. Adicione só fontes em que você confia, para jogos que você tem o direito de baixar.",
+    "add": "Adicionar fonte",
+    "adding": "Lendo…",
+    "added": "{name} adicionada, com {count, plural, one {# download} other {# downloads}}. Nada foi baixado.",
+    "empty": "Nenhuma fonte ainda.",
+    "loading": "Procurando suas fontes",
+    "downloadsLabel": "Downloads",
+    "downloads": "{count, plural, one {# download} other {# downloads}}",
+    "links": "{magnets, number} por link magnet, {web, number} por link da web",
+    "leftOutLabel": "Deixados de fora",
+    "leftOut": "{count, plural, one {# deixado de fora: nada nele que o Shelf possa usar} other {# deixados de fora: nada neles que o Shelf possa usar}}",
+    "readLabel": "Última leitura",
+    "read": "Lida {when}",
+    "readAgain": "Ler de novo",
+    "reading": "Lendo…",
+    "readDone": "{name} lida: {count, plural, one {# download} other {# downloads}}.",
+    "remove": "Remover",
+    "removeTitle": "Remover {name}?",
+    "removeBody": "A lista dela sai deste computador. Você pode adicioná-la de novo pelo endereço.",
+    "removeConfirm": "Remover fonte",
+    "removeCancel": "Manter",
+    "errors": {
+      "invalid": "Esse não é um endereço https que o Shelf possa ler. Endereços deste computador ou da rede dele não são lidos.",
+      "duplicate": "Essa fonte já está aqui.",
+      "unreachable": "Esse endereço não respondeu com um arquivo. Confira e tente de novo.",
+      "large": "Esse arquivo é grande demais para ser uma fonte.",
+      "unsupported": "Esse endereço não tem uma fonte: uma fonte é um arquivo JSON com um nome e uma lista de downloads.",
+      "missing": "Essa fonte não está mais aqui.",
+      "failed": "Este computador não conseguiu guardar isso. Tente de novo."
+    }
+  },
   "AccountPage": {
     "metaTitle": "Sua conta",
     "title": "Sua conta",

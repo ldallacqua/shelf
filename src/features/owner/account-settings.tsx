@@ -6,6 +6,7 @@ import { type ReactNode, useState } from 'react'
 
 import { NAME_MAX, PASSWORD_MAX, PASSWORD_MIN } from '@/domain/accounts/account'
 import { libraryHref } from '@/features/library/shelf-address'
+import { DownloadSourcesInApp } from '@/features/desktop/download-sources-later'
 import { PlatformCardGhosts, Platforms } from '@/features/platforms/platforms'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -403,6 +404,7 @@ export function AccountSettings() {
       {/* Saved, the fields already hold what the account now is: kept, with what was said. */}
       <ShelfSettings account={account} />
       <Platforms handle={account.handle} />
+      <DownloadSourcesInApp />
       <ExperimentalViews />
       <AdultGames />
       <PasswordSettings />

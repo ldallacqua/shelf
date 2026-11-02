@@ -11,6 +11,7 @@ mod pads;
 mod processes;
 mod running;
 mod shortcut;
+mod sources;
 mod steam;
 mod tracker;
 mod tray;
@@ -361,6 +362,10 @@ pub fn run() {
             commands::force_stop_game,
             commands::play_sessions,
             commands::play_sessions_kept,
+            commands::download_sources,
+            commands::add_source,
+            commands::read_source_again,
+            commands::remove_source,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -383,6 +388,10 @@ pub fn run() {
                     .permission("allow-force-stop-game")
                     .permission("allow-play-sessions")
                     .permission("allow-play-sessions-kept")
+                    .permission("allow-download-sources")
+                    .permission("allow-add-source")
+                    .permission("allow-read-source-again")
+                    .permission("allow-remove-source")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")
@@ -397,6 +406,7 @@ pub fn run() {
                 None => app.path().app_data_dir()?,
             };
             app.manage(Launchers::open(&folder));
+            app.manage(sources::Sources::open(&folder));
             app.manage(running::Games::default());
             app.manage(commands::Following::default());
             app.manage(Tracker::open(&folder, commands::now()));
