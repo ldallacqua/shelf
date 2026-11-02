@@ -1,8 +1,8 @@
 'use client'
 
-import { DownloadIcon, SearchIcon } from 'lucide-react'
+import { CloudDownloadIcon, DownloadIcon, SearchIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useState } from 'react'
 
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -11,7 +11,17 @@ import { GhostText, Loading } from '@/ui/ghost'
 import { Sheet, SheetContent } from '@/ui/sheet'
 
 import { AppWords } from './app-words'
-import { type Found, downloads, sources } from './sources'
+import { type Download, type Found, downloads, realDebrid, sources } from './sources'
+
+/** A link to where Real-Debrid is signed in to, inside the words that say it is needed. */
+const toAccount = (chunks: ReactNode) => (
+  <Link
+    href="/account"
+    className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
+  >
+    {chunks}
+  </Link>
+)
 
 const when = (date: string | null) => {
   if (!date) return undefined
@@ -23,11 +33,14 @@ const when = (date: string | null) => {
 function FoundRow({
   found,
   state,
+  debrid,
   onDownload,
 }: {
   found: Found
   state: 'idle' | 'busy' | 'added'
-  onDownload: () => void
+  /** Whether Real-Debrid is signed in on this computer. */
+  debrid: boolean
+  onDownload: (through: Download['through']) => void
 }) {
   const t = useTranslations('FindDownload')
   const format = useFormatter()
@@ -44,22 +57,48 @@ function FoundRow({
         <p className="text-sm font-medium wrap-anywhere">{found.title}</p>
         <p className="text-xs wrap-anywhere text-muted">{details.join(' · ')}</p>
       </div>
-      {found.web > 0 ? (
+      {state === 'added' ? (
         <div>
           <Button
             size="sm"
             variant="secondary"
-            disabled={state !== 'idle'}
-            onClick={onDownload}
-            aria-label={t(state === 'added' ? 'addedThis' : 'downloadThis', { title: found.title })}
+            disabled
+            aria-label={t('addedThis', { title: found.title })}
           >
             <DownloadIcon aria-hidden="true" />
-            {state === 'added' ? t('added') : t('download')}
+            {t('added')}
           </Button>
+        </div>
+      ) : found.web > 0 || debrid ? (
+        <div className="flex flex-wrap gap-2">
+          {debrid ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={state !== 'idle'}
+              onClick={() => onDownload('realdebrid')}
+              aria-label={t('throughThis', { title: found.title })}
+            >
+              <CloudDownloadIcon aria-hidden="true" />
+              {t('through')}
+            </Button>
+          ) : null}
+          {found.web > 0 ? (
+            <Button
+              size="sm"
+              variant={debrid ? 'ghost' : 'secondary'}
+              disabled={state !== 'idle'}
+              onClick={() => onDownload('direct')}
+              aria-label={t('downloadThis', { title: found.title })}
+            >
+              <DownloadIcon aria-hidden="true" />
+              {t('download')}
+            </Button>
+          ) : null}
         </div>
       ) : (
         <p className="text-xs text-pretty text-muted">
-          {t(found.inParts ? 'onlyInParts' : 'onlyMagnet')}
+          {t.rich(found.inParts ? 'needsDebridParts' : 'needsDebrid', { link: toAccount })}
         </p>
       )}
     </li>
@@ -73,6 +112,7 @@ export function FindDownloadView({
   said,
   busy,
   added,
+  debrid = false,
   onWords,
   onSearch,
   onDownload,
@@ -85,9 +125,11 @@ export function FindDownloadView({
   busy?: string | undefined
   /** The results put in line. */
   added: ReadonlySet<string>
+  /** Whether Real-Debrid is signed in on this computer. */
+  debrid?: boolean
   onWords: (words: string) => void
   onSearch: () => void
-  onDownload: (found: Found) => void
+  onDownload: (found: Found, through: Download['through']) => void
 }) {
   const t = useTranslations('FindDownload')
   const key = (found: Found) => `${found.source}:${found.place}`
@@ -122,16 +164,7 @@ export function FindDownloadView({
       ) : null}
       {added.size > 0 ? (
         <p role="status" className="text-sm text-muted">
-          {t.rich('addedSay', {
-            link: (chunks) => (
-              <Link
-                href="/account"
-                className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
-              >
-                {chunks}
-              </Link>
-            ),
-          })}
+          {t.rich('addedSay', { link: toAccount })}
         </p>
       ) : null}
       {results === undefined ? (
@@ -152,7 +185,8 @@ export function FindDownloadView({
               key={key(found)}
               found={found}
               state={busy === key(found) ? 'busy' : added.has(key(found)) ? 'added' : 'idle'}
-              onDownload={() => onDownload(found)}
+              debrid={debrid}
+              onDownload={(through) => onDownload(found, through)}
             />
           ))}
         </ul>
@@ -171,6 +205,7 @@ function Finder({ title }: { title: string }) {
   const [said, setSaid] = useState<string>()
   const [busy, setBusy] = useState<string>()
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set())
+  const [debrid, setDebrid] = useState(false)
 
   useEffect(() => {
     let current = true
@@ -178,6 +213,12 @@ function Finder({ title }: { title: string }) {
       .list()
       .then((kept) => {
         if (current) setHasSources(kept.length > 0)
+      })
+      .catch(() => undefined)
+    realDebrid
+      .account()
+      .then((account) => {
+        if (current) setDebrid(account.state === 'in')
       })
       .catch(() => undefined)
     return () => {
@@ -196,17 +237,18 @@ function Finder({ title }: { title: string }) {
     }
   }
 
-  const download = async (found: Found) => {
+  const download = async (found: Found, through: Download['through']) => {
     const key = `${found.source}:${found.place}`
     setBusy(key)
     setSaid(undefined)
     try {
       // False: the folder picker was closed, which changes nothing.
-      if (await downloads.start(found, t('chooseFolder', { title: found.title }))) {
+      if (await downloads.start(found, t('chooseFolder', { title: found.title }), through)) {
         setAdded((now) => new Set(now).add(key))
       }
     } catch (error) {
-      const refusal = error === 'duplicate' || error === 'missing' ? error : 'failed'
+      const refusal =
+        error === 'duplicate' || error === 'missing' || error === 'signedout' ? error : 'failed'
       setSaid(t(`errors.${refusal}`))
     }
     setBusy(undefined)
@@ -239,9 +281,10 @@ function Finder({ title }: { title: string }) {
           said={said}
           busy={busy}
           added={added}
+          debrid={debrid}
           onWords={setWords}
           onSearch={() => void search(words)}
-          onDownload={(found) => void download(found)}
+          onDownload={(found, through) => void download(found, through)}
         />
       </SheetContent>
     </Sheet>

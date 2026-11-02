@@ -28,10 +28,12 @@ const FOUND: Found = {
 let sources: unknown[]
 let found: Found[]
 let started: unknown
+let account: unknown
 
 const app = vi.fn(async (command: string) => {
   if (command === 'download_sources') return sources
   if (command === 'search_sources') return found
+  if (command === 'real_debrid_account') return account
   if (command === 'start_download') {
     if (typeof started === 'string') throw started
     return started
@@ -53,6 +55,7 @@ beforeEach(() => {
   }))
   found = [FOUND]
   started = true
+  account = { state: 'out' }
   app.mockClear()
   setBridgeForTests(app)
 })
@@ -107,6 +110,7 @@ describe('finding a download', () => {
       place: 3,
       title: 'Made-up Game v1.2',
       ask: 'Where to save Made-up Game v1.2',
+      through: 'direct',
     })
     expect(await screen.findByRole('status')).toHaveTextContent(/On its way/)
     expect(
@@ -127,6 +131,7 @@ describe('finding a download', () => {
   it.each([
     ['duplicate', /already in your downloads/],
     ['missing', /has changed/],
+    ['signedout', /isn’t signed in/],
     ['failed', /couldn’t do that/],
   ])('says why it did not start: %s', async (refusal, words) => {
     started = refusal
@@ -142,11 +147,40 @@ describe('finding a download', () => {
     ]
     await opened()
     const magnet = (await screen.findByText('Magnet only')).closest('li')!
-    expect(within(magnet).getByText(/needs Real-Debrid/)).toBeInTheDocument()
+    expect(magnet).toHaveTextContent(/needs Real-Debrid/)
+    expect(within(magnet).getByRole('link', { name: 'Real-Debrid' })).toHaveAttribute(
+      'href',
+      '/en/account',
+    )
     expect(within(magnet).queryByRole('button')).not.toBeInTheDocument()
     const parts = screen.getByText('In parts').closest('li')!
-    expect(within(parts).getByText(/several parts/)).toBeInTheDocument()
+    expect(parts).toHaveTextContent(/several parts/)
     expect(within(parts).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('signed in to Real-Debrid, offers it for what has any link at all', async () => {
+    account = { state: 'in', username: 'made-up', premium: true, until: null }
+    found = [
+      { ...FOUND, place: 1, title: 'Magnet only', web: 0 },
+      { ...FOUND, place: 2, title: 'Both' },
+      { ...FOUND, place: 3, title: 'In parts', web: 0, magnets: 0, inParts: true },
+    ]
+    const user = await opened()
+    const magnet = (await screen.findByText('Magnet only')).closest('li')!
+    expect(within(magnet).getAllByRole('button')).toHaveLength(1)
+    expect(within(screen.getByText('Both').closest('li')!).getAllByRole('button')).toHaveLength(2)
+    expect(within(screen.getByText('In parts').closest('li')!).getAllByRole('button')).toHaveLength(
+      1,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Through Real-Debrid: Magnet only' }))
+    expect(app).toHaveBeenCalledWith('start_download', {
+      source: 'one',
+      place: 1,
+      title: 'Magnet only',
+      ask: 'Where to save Magnet only',
+      through: 'realdebrid',
+    })
   })
 
   it('says when nothing has every word', async () => {

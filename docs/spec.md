@@ -1643,8 +1643,7 @@ onde veio o game é importante".
 ### 7.10 Download sources
 
 In Shelf for Windows alone, on the account page, under Platforms. Why it is built this way:
-[ADR 007](adr/007-download-sources.md). Downloading is direct links for now: Real-Debrid and extracting
-are the next phases.
+[ADR 007](adr/007-download-sources.md). Extracting what is downloaded is the next phase.
 
 - **Adding one.** I paste the address of a list in the format Hydra uses, and the app reads it and keeps
   it on this computer. Adding downloads nothing, so it asks nothing first.
@@ -1664,7 +1663,15 @@ are the next phases.
   those words, closest first: title, size, source and date, and Download. Nothing is chosen for me.
 - **Downloading** asks Windows for a folder, then waits in line: one at a time. A link that leads to a web
   page isn't a file, so the next is tried, and if all of them are it says so. What has only magnet links,
-  or comes only in parts, says it can't be downloaded yet and has no button.
+  or comes only in parts, has no button until Real-Debrid is signed in, and says so with a link to do it.
+- **Real-Debrid** stands on the account page below the sources. **Sign in** shows a code, large, to enter on
+  its own page, which opens in the browser; it moves on by itself once entered, and a code that runs out
+  says so. Signed in, it says who and until when Premium lasts, with Sign out, which asks. Shelf never sees
+  the password, and no page sees what the sign-in gives.
+- **Through Real-Debrid** stands first beside Download once signed in, since what it opens is likelier to be a
+  file. A magnet is fetched to its servers first: the card says **Real-Debrid is getting it** with how far.
+  A set of files stands in a folder named for the title. When it can't, the card says which of signed out, not
+  Premium, its filters, nobody sharing it, a virus, a host it doesn't open, its limits, or another refusal.
 - **Downloads,** on the account page above the sources and only once there is one, shows how far along
   each is, how fast and about how long, with Pause and Cancel, which asks. A finished one offers Show in
   folder and Take off the list, which leaves the file. **Nothing offers to start a file,** and the card says
@@ -1677,10 +1684,12 @@ choose), and a GNOME Podcasts report of a feed that wasn't one being accepted in
 downloading: Hydra's options list (a search, and a line of details per download, then a folder) and its
 downloads page, without its speed charts and hero art, as this is one section of a page; and Mozilla's
 notes on a download manager (time left, amount, speed, and pause together, the speed averaged so it doesn't jump).
+Signing in: Real-Debrid's own device flow, as its documentation sets it out.
 
 **Done when:** an address that isn't a source says so and adds nothing; a source added is there after the
 app restarts; a browser's account page shows nothing of this; a download paused and resumed ends as the
-same bytes as the file; a link to a web page writes nothing to the folder; nothing offers to start a file.
+same bytes as the file; a link to a web page writes nothing to the folder; nothing offers to start a file;
+no page ever holds a Real-Debrid token.
 
 ## 8. Data model
 
@@ -2047,7 +2056,7 @@ Not built now. The design leaves room for each.
 | PlayStation, Xbox and Nintendo sync | Steam is built ([section 4.4](#44-from-a-store-or-console)). The others plug into the same matcher and memory; how each is read: [ADR 003](adr/003-platform-sync.md) |
 | Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
-| Real-Debrid, and extracting what is downloaded | Direct downloads are built ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
+| Extracting what is downloaded | Downloads are built ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |

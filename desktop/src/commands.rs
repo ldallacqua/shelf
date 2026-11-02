@@ -13,11 +13,12 @@ use tauri::{AppHandle, Manager, State, WebviewWindow};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
-use crate::downloads::{self, Downloads};
+use crate::downloads::{self, Downloads, Through};
 use crate::ids;
 use crate::launch::{self, Failure};
 use crate::launchers::{Launcher, Launchers};
 use crate::processes::{self, Closing};
+use crate::real_debrid::{self, RealDebrid};
 use crate::running::{self, GameView, Games, Launch, Rules, SteamGame, Target};
 use crate::shortcut::{self, Pointed};
 use crate::sources::{self, Reading, Source, Sources};
@@ -492,8 +493,10 @@ pub async fn start_download(
     place: usize,
     title: String,
     ask: String,
+    through: Through,
     kept: State<'_, Sources>,
     list: State<'_, Arc<Downloads>>,
+    debrid: State<'_, Arc<RealDebrid>>,
 ) -> Result<bool, downloads::Refusal> {
     if !ids::entry(&source) {
         return Err(downloads::Refusal::Invalid);
@@ -501,15 +504,29 @@ pub async fn start_download(
     let (source_name, item) = kept
         .item(&source, place, &title)
         .ok_or(downloads::Refusal::Missing)?;
-    let links: Vec<String> = item
-        .uris
-        .into_iter()
-        .filter(|uri| sources::link(uri) == Some(sources::Link::Web))
-        .collect();
-    if links.is_empty() {
+    let web = |uri: &String| sources::link(uri) == Some(sources::Link::Web);
+    let (links, parts): (Vec<String>, Vec<Vec<String>>) = match through {
+        Through::Direct => (item.uris.into_iter().filter(web).collect(), Vec::new()),
+        // What a host has is ready at once, and a magnet may have to be fetched: the first goes first.
+        Through::RealDebrid => {
+            if !debrid.signed_in() {
+                return Err(downloads::Refusal::SignedOut);
+            }
+            let (mut links, magnets): (Vec<String>, Vec<String>) =
+                item.uris.into_iter().partition(web);
+            links.extend(magnets);
+            (links, item.uri_groups)
+        }
+    };
+    if links.is_empty() && parts.is_empty() {
         return Err(downloads::Refusal::Unlinked);
     }
-    if list.has_link(&links) {
+    let every: Vec<String> = links
+        .iter()
+        .chain(parts.iter().flatten())
+        .cloned()
+        .collect();
+    if list.has_link(&every) {
         return Err(downloads::Refusal::Duplicate);
     }
     let Some(folder) = pick_folder(&window, short(&ask)).await? else {
@@ -519,7 +536,9 @@ pub async fn start_download(
         uuid::Uuid::new_v4().to_string(),
         item.title,
         source_name,
+        through,
         links,
+        parts,
         folder,
         now(),
     )?;
@@ -576,12 +595,17 @@ pub fn resume_download(
 
 /// Takes a download off the list: unfinished, what it had goes too; finished, the file stays.
 #[tauri::command]
-pub fn remove_download(
+pub async fn remove_download(
     id: String,
     list: State<'_, Arc<Downloads>>,
+    debrid: State<'_, Arc<RealDebrid>>,
 ) -> Result<(), downloads::Refusal> {
     download_id(&id)?;
-    list.remove(&id)
+    // A torrent this download put on the account goes with it, to free the place it takes there.
+    if let Some(torrent) = list.remove(&id)? {
+        debrid.delete_torrent(&torrent).await;
+    }
+    Ok(())
 }
 
 /// Opens the folder of a finished download in Explorer, the file selected. Showing, and never opening:
@@ -600,6 +624,41 @@ pub fn show_download(
     app.opener()
         .reveal_item_in_dir(&file)
         .map_err(|_| downloads::Refusal::Refused)
+}
+
+/// Whether Real-Debrid is signed in, as much as a page may know. Never a token.
+#[tauri::command]
+pub async fn real_debrid_account(
+    debrid: State<'_, Arc<RealDebrid>>,
+) -> Result<real_debrid::Account, downloads::Refusal> {
+    Ok(debrid.account().await)
+}
+
+/// Asks Real-Debrid for a code for the person to enter on its own page.
+#[tauri::command]
+pub async fn real_debrid_sign_in(
+    debrid: State<'_, Arc<RealDebrid>>,
+) -> Result<real_debrid::Account, downloads::Refusal> {
+    debrid
+        .inner()
+        .clone()
+        .begin_sign_in()
+        .await
+        .map_err(|_| downloads::Refusal::Failed)
+}
+
+#[tauri::command]
+pub fn real_debrid_cancel_sign_in(debrid: State<'_, Arc<RealDebrid>>) {
+    debrid.cancel_sign_in();
+}
+
+/// Ends the sign-in here and at Real-Debrid. What was downloaded stays.
+#[tauri::command]
+pub async fn real_debrid_sign_out(
+    debrid: State<'_, Arc<RealDebrid>>,
+) -> Result<(), downloads::Refusal> {
+    debrid.sign_out().await;
+    Ok(())
 }
 
 #[cfg(test)]

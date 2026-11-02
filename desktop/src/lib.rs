@@ -10,6 +10,7 @@ mod launchers;
 mod navigation;
 mod pads;
 mod processes;
+mod real_debrid;
 mod running;
 mod shortcut;
 mod sources;
@@ -90,6 +91,16 @@ fn data_dir() -> Option<PathBuf> {
         return Some(PathBuf::from(dir));
     }
     None
+}
+
+/// Where the Real-Debrid sign-in is kept: Windows' Credential Manager, or in a development build run with
+/// a profile of its own, a file there, so `pnpm desktop:check` never touches the real one.
+fn vault() -> Box<dyn real_debrid::Vault> {
+    #[cfg(debug_assertions)]
+    if let Some(dir) = data_dir() {
+        return Box::new(real_debrid::FileVault(dir.join("real-debrid.json")));
+    }
+    Box::new(real_debrid::CredentialManager)
 }
 
 /// The Shelf this app opens, for the commands that need it.
@@ -374,6 +385,10 @@ pub fn run() {
             commands::resume_download,
             commands::remove_download,
             commands::show_download,
+            commands::real_debrid_account,
+            commands::real_debrid_sign_in,
+            commands::real_debrid_cancel_sign_in,
+            commands::real_debrid_sign_out,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -407,6 +422,10 @@ pub fn run() {
                     .permission("allow-resume-download")
                     .permission("allow-remove-download")
                     .permission("allow-show-download")
+                    .permission("allow-real-debrid-account")
+                    .permission("allow-real-debrid-sign-in")
+                    .permission("allow-real-debrid-cancel-sign-in")
+                    .permission("allow-real-debrid-sign-out")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")
@@ -424,10 +443,10 @@ pub fn run() {
             app.manage(sources::Sources::open(&folder));
             let downloading = std::sync::Arc::new(downloads::Downloads::open(&folder));
             app.manage(downloading.clone());
-            tauri::async_runtime::spawn(downloads::run(
-                downloading,
-                app.package_info().version.to_string(),
-            ));
+            let version = app.package_info().version.to_string();
+            let debrid = std::sync::Arc::new(real_debrid::RealDebrid::open(vault(), &version)?);
+            app.manage(debrid.clone());
+            tauri::async_runtime::spawn(downloads::run(downloading, debrid, version));
             app.manage(running::Games::default());
             app.manage(commands::Following::default());
             app.manage(Tracker::open(&folder, commands::now()));

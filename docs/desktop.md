@@ -50,6 +50,9 @@ steps it is built in.
    sources have with every word of the game's name. Choose one and a folder. It goes on with the window
    closed to the tray, and **Downloads** on the account page shows how far along it is, with Pause and
    Cancel. Shelf never starts what it downloads.
+10. **Real-Debrid,** on the account page, signs in with a code you enter on its own page, and needs an
+    account of your own. Then Find a download also offers **Through Real-Debrid**, for magnets and file
+    hosts. It has to fetch a magnet first, which can take a while, and the card shows how far along it is.
 
 What the app keeps on this computer is the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`, the sources, in `sources.json` and `sources\` beside it,
@@ -105,6 +108,7 @@ desktop/
     launchers.rs         The files chosen, kept in launchers.json
     sources.rs           Download sources (ADR 007): which addresses, read, checked, kept, searched
     downloads.rs         Downloading from them: one at a time, resuming, and never starting anything
+    real_debrid.rs       Real-Debrid: its device sign-in, kept in Credential Manager, and its API
     launch.rs            Starting a file as Explorer does, or Steam
     steam.rs             Steam's folders: which apps are installed, asked or all
     shortcut.rs          What a chosen .lnk or .url points at

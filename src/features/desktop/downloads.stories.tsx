@@ -21,6 +21,8 @@ const download = (over: Partial<Download> = {}): Download => ({
   done: 3.2 * GB,
   total: 12.4 * GB,
   speed: 18 * 1024 * 1024,
+  through: 'direct',
+  remote: null,
   ...over,
 })
 
@@ -58,6 +60,36 @@ export const Waiting: Story = {
     ],
   },
 }
+
+/** On Real-Debrid's servers: nothing arrives here yet, and it can take a while. */
+export const RealDebridIsGettingIt: Story = {
+  args: {
+    list: [
+      download({
+        state: 'remote',
+        remote: 40,
+        through: 'realdebrid',
+        file: null,
+        done: 0,
+        total: null,
+        speed: 0,
+      }),
+    ],
+  },
+}
+
+const stoppedBy = (why: Download['why']) => ({
+  args: { list: [download({ state: 'failed', why, through: 'realdebrid', done: 0, speed: 0 })] },
+})
+
+export const RealDebridSignedOut: Story = stoppedBy('signedout')
+export const RealDebridNotPremium: Story = stoppedBy('premium')
+export const RealDebridBlocked: Story = stoppedBy('blocked')
+export const RealDebridDead: Story = stoppedBy('dead')
+export const RealDebridVirus: Story = stoppedBy('virus')
+export const RealDebridHost: Story = stoppedBy('host')
+export const RealDebridBusy: Story = stoppedBy('busy')
+export const RealDebridDeclined: Story = stoppedBy('declined')
 
 export const Paused: Story = { args: { list: [download({ state: 'paused', speed: 0 })] } }
 

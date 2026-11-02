@@ -12,6 +12,7 @@ import { Loading } from '@/ui/ghost'
 import { AppWords } from './app-words'
 import { SourceCardGhost } from './download-sources-ghost'
 import { Downloads } from './downloads-list'
+import { RealDebrid } from './real-debrid'
 import { type Source, type SourceRefusal, sourceRefusalOf, sources } from './sources'
 
 /** Said after an action, in the section it belongs to. */
@@ -298,6 +299,7 @@ export default function DownloadSources() {
       <div className="grid gap-10">
         <Downloads />
         <Sources />
+        <RealDebrid />
       </div>
     </AppWords>
   )

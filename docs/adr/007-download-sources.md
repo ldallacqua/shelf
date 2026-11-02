@@ -1,7 +1,7 @@
 # ADR 007: Downloading a game from a source, in the app
 
-- **Status:** accepted, 1 Nov 2026. Sources and direct downloads are built; Real-Debrid and extracting
-  are not yet (the phases, below)
+- **Status:** accepted, 1 Nov 2026. Sources, direct downloads and Real-Debrid are built; extracting is
+  not yet (the phases, below)
 - **Date:** 1 Nov 2026
 - **Decides:** how Shelf for Windows reads a list of downloads in Hydra's format and downloads from it,
   by a direct link or through Real-Debrid, and what it refuses to do along the way
@@ -81,9 +81,14 @@ Each is its own pull request.
    download (`Zone.Identifier`), so SmartScreen looks at it when it is opened. A link that answers with a web
    page is not a file: the next link is tried, and then it says so. One under way when the app ended waits
    to be resumed, since the app starts with Windows. Mirrors in parts (`uriGroups`) are not downloaded yet.
-3. **Real-Debrid.** Signing in through its device code, with the client id it offers open-source apps, and
-   never the private token, which it warns against. Kept in Windows' Credential Manager and never given to a
-   page. Magnets, and the hosts its `/hosts` lists. The app says what it can't know ahead (above).
+3. **Real-Debrid** (built). Signing in through its device code, with the client id it offers open-source
+   apps, and never the private token, which it warns against. Kept in Windows' Credential Manager and never
+   given to a page, which is told only who is signed in. Offered as its own button beside Download. Links
+   at a host it opens go first, as they are ready at once, then mirrors in parts, then a magnet, which it has
+   to fetch to its own servers first and whose state the card shows. A magnet already on the account is reused,
+   not added again, and Cancel takes off only one this download put there. Each link is opened just before it
+   is used, as those it gives don't last. A set of files stands in a folder of its own named for the title, with
+   the torrent's paths made safe part by part. The app says what it can't know ahead (above).
 4. **Extracting and Play.** Whichever of `zip`, `7z` and `rar` it is, with every path checked to stay in the
    folder, and then the existing file picker for Play.
 
@@ -97,7 +102,9 @@ Each needs a desktop release for the owner, and that needs the owner's OK.
 - **Its words are in `messages/app/`,** not `messages/{locale}.json`. The layout hands every visitor
   all of those, in every page's HTML, the landing page's too, which decision 4 can't allow. They come
   with the section's code, and `pnpm i18n:check` checks them the same way.
-- **Tests never talk to a real source or to Real-Debrid.**
+- **Tests never talk to a real source or to Real-Debrid.** A development build can be pointed at a stand-in
+  (`SHELF_REAL_DEBRID`), and with a profile of its own keeps the sign-in in a file there, so `pnpm desktop:check`
+  never touches the real API or the real Credential Manager. A release build has neither.
 - Anyone can read this code. It holds nothing about where to find a source.
 
 ## Not chosen

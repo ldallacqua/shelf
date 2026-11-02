@@ -58,8 +58,8 @@ function DownloadCard({
 }) {
   const t = useTranslations('Downloads')
   const format = useFormatter()
-  const { state, done, total, speed, why } = download
-  const moving = state === 'downloading' || state === 'queued'
+  const { state, done, total, speed, why, remote } = download
+  const moving = state === 'downloading' || state === 'queued' || state === 'remote'
   const howFar =
     total !== null
       ? t('sizeOf', { done: size(format, done), total: size(format, total) })
@@ -79,14 +79,23 @@ function DownloadCard({
       <div className="grid min-w-0 gap-1">
         <h3 className="title text-lg wrap-anywhere">{download.title}</h3>
         <p className="text-sm wrap-anywhere text-muted">
-          {download.file ? `${download.file} · ${download.sourceName}` : download.sourceName}
+          {/* A set of files stands in a folder named for the title: no need to say it twice. */}
+          {download.file && download.file !== download.title
+            ? `${download.file} · ${download.sourceName}`
+            : download.sourceName}
         </p>
       </div>
       {state === 'done' ? (
         <p className="text-sm">{t('finished', { size: size(format, done) })}</p>
       ) : (
         <div className="grid gap-2">
-          {total !== null ? (
+          {state === 'remote' ? (
+            <Progress
+              value={remote ?? 0}
+              max={100}
+              aria-label={t('progress', { title: download.title })}
+            />
+          ) : total !== null ? (
             <Progress
               value={done}
               max={total}
@@ -94,8 +103,8 @@ function DownloadCard({
             />
           ) : null}
           <p className="text-sm">
-            {t(`state.${state}`)}
-            {done > 0 || total !== null ? ` · ${howFar}` : ''}
+            {state === 'remote' ? t('state.remote', { percent: remote ?? 0 }) : t(`state.${state}`)}
+            {state !== 'remote' && (done > 0 || total !== null) ? ` · ${howFar}` : ''}
             {remaining ? <span className="text-muted">{` · ${remaining}`}</span> : null}
           </p>
           {state === 'failed' ? (
@@ -223,7 +232,7 @@ export function Downloads() {
     }
   }, [t])
 
-  const moving = list.some((each) => each.state === 'downloading' || each.state === 'queued')
+  const moving = list.some((each) => ['downloading', 'queued', 'remote'].includes(each.state))
 
   useEffect(() => {
     void Promise.resolve().then(look)

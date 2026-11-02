@@ -59,14 +59,59 @@ const downloadSchema = z.object({
   sourceName: z.string(),
   file: z.string().nullable(),
   folder: z.string(),
-  state: z.enum(['queued', 'downloading', 'paused', 'failed', 'done']),
-  why: z.enum(['page', 'unreachable', 'disk', 'write']).nullable(),
+  state: z.enum(['queued', 'remote', 'downloading', 'paused', 'failed', 'done']),
+  why: z
+    .enum([
+      'page',
+      'unreachable',
+      'disk',
+      'write',
+      'signedout',
+      'premium',
+      'blocked',
+      'dead',
+      'virus',
+      'host',
+      'busy',
+      'declined',
+    ])
+    .nullable(),
   done: z.number(),
   total: z.number().nullable(),
   speed: z.number(),
+  through: z.enum(['direct', 'realdebrid']),
+  remote: z.number().nullable(),
 })
 
 export type Download = z.infer<typeof downloadSchema>
+
+const accountSchema = z.discriminatedUnion('state', [
+  z.object({ state: z.literal('out') }),
+  z.object({ state: z.literal('waiting'), code: z.string(), url: z.string() }),
+  z.object({
+    state: z.literal('in'),
+    username: z.string(),
+    premium: z.boolean(),
+    until: z.string().nullable(),
+  }),
+])
+
+/** All a page is told about Real-Debrid: never what a sign-in gives. */
+export type RealDebridAccount = z.infer<typeof accountSchema>
+
+export const realDebrid = {
+  account: async (): Promise<RealDebridAccount> =>
+    accountSchema.parse(await call('real_debrid_account')),
+  /** Asks for a code to enter on Real-Debrid's own page. */
+  signIn: async (): Promise<RealDebridAccount> =>
+    accountSchema.parse(await call('real_debrid_sign_in')),
+  cancelSignIn: async (): Promise<void> => {
+    await call('real_debrid_cancel_sign_in')
+  },
+  signOut: async (): Promise<void> => {
+    await call('real_debrid_sign_out')
+  },
+}
 
 /** What the app is downloading (`desktop/src/downloads.rs`). A page names, and never hands it a link. */
 export const downloads = {
@@ -75,13 +120,14 @@ export const downloads = {
    * Asks Windows for a folder, titled `ask`, then puts this one in line. False when the picker is
    * closed. Named by its place and what was shown there, so a list since changed starts nothing.
    */
-  start: async (found: Found, ask: string): Promise<boolean> =>
+  start: async (found: Found, ask: string, through: Download['through']): Promise<boolean> =>
     z.boolean().parse(
       await call('start_download', {
         source: found.source,
         place: found.place,
         title: found.title,
         ask,
+        through,
       }),
     ),
   pause: async (id: string): Promise<void> => {

@@ -32,6 +32,7 @@ const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
   if (refuse && command !== 'download_sources') throw refuse
   if (command === 'download_sources') return kept
   if (command === 'downloads_now') return []
+  if (command === 'real_debrid_account') return { state: 'out' }
   if (command === 'add_source') return { ...SOURCE, url: args?.url }
   if (command === 'read_source_again') return { ...SOURCE, items: 4 }
   return undefined

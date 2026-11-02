@@ -28,6 +28,10 @@ fn main() {
             "resume_download",
             "remove_download",
             "show_download",
+            "real_debrid_account",
+            "real_debrid_sign_in",
+            "real_debrid_cancel_sign_in",
+            "real_debrid_sign_out",
         ]),
     ))
     .expect("tauri-build failed");
