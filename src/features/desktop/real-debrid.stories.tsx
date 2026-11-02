@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 import { RealDebridView } from './real-debrid'
 
 /**
- * Real-Debrid on the account page, in Shelf for Windows alone (ADR 007, phase 3). The code is large
+ * Real-Debrid in Settings, in Shelf for Windows alone (ADR 007, phase 3). The code is large
  * because it has to be read and typed on another page, and the way there is the primary button.
  */
 

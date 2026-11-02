@@ -5,7 +5,7 @@ import { DownloadSourcesGhost } from './download-sources-ghost'
 import type { Source } from './sources'
 
 /**
- * Download sources on the account page, in Shelf for Windows alone (ADR 007, spec 7.10). The cards
+ * Download sources in Settings, in Shelf for Windows alone (ADR 007, spec 7.10). The cards
  * follow Platforms', on the same page. The warning stands beside the field because that is where the
  * choice is made, and says what a source can do and what to do about it.
  */

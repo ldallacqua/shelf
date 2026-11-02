@@ -45,7 +45,7 @@ What was read, 1 Nov 2026:
    `https` address, or Real-Debrid's to resolve. What neither can do is left out and said.
 4. **Not on the landing page.** AGENTS.md has a feature a visitor would choose Shelf for shown there; this
    one is the exception. The repository and installer are public, and Shelf is not offered as a place to get
-   games. It appears only inside the app, on the account page, for someone who goes looking.
+   games. It appears only inside the app, in Settings, for someone who goes looking.
 5. **The app reads a source itself.** The page hands over the address as text and gets back a name and
    counts. The links stay in the app's folder. Once downloads exist the page will name a download by its
    source's id and its place, and the app takes the link from its own copy, so a page that went wrong can't
@@ -81,7 +81,7 @@ What was read, 1 Nov 2026:
 
 Each is its own pull request.
 
-1. **Sources** (built): paste, read, list, read again, remove, on the account page.
+1. **Sources** (built): paste, read, list, read again, remove, in what is now Settings.
 2. **A direct download** (built). The game's page lists what a source has for it, by every word of the
    game's name (the rule for matching: no looser), in a field I can change, and I choose. A folder from
    Windows' picker. One at a time, resuming with `Range` and `If-Range` into a `.part` file, kept going from
@@ -124,7 +124,7 @@ Each needs a desktop release for the owner, and that needs the owner's OK.
   and whoever opens what comes out gives it the same access anyway (decision 10). Look for a newer `unrar_sys`
   when releasing. Its struct declarations miss `dll.hpp`'s `#pragma pack(1)`, so `extract.rs` lays them out itself.
   `rust-version` is 1.93, for `sevenz-rust2`.
-- The account page gains a section for the app alone, loaded apart, so no visitor pays for it. `desktop:check`
+- Settings has a section for the app alone, loaded apart, so no visitor pays for it. `desktop:check`
   leaves it out of what it compares (`data-device`).
 - **Its words are in `messages/app/`,** not `messages/{locale}.json`. The layout hands every visitor
   all of those, in every page's HTML, the landing page's too, which decision 4 can't allow. They come

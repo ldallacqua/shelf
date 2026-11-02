@@ -84,6 +84,7 @@ language the browser asks for.
 | `/en/sign-up` | A shelf of one's own: name, handle, email address, password, public or private |
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
 | `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
+| `/en/account/settings` | How Shelf behaves here, in a tab beside Account: experimental views (3.6), adult games, and in Shelf for Windows downloads, their sources and Real-Debrid (7.10). Who I am is the account; this is what I choose. The owner, 2 Nov 2026, on the download sections: they "definitivamente não devem estar na aba de conta" |
 | `/en/account/start` | Setting a new shelf up, where signing up leads: the platforms to bring games in from, and the way to placing them ([section 4.6](#46-setting-a-new-shelf-up)) |
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once, or to archive or remove; Organize's first tab ([section 4.5](#45-placing-what-a-sync-brought-in)) |
 | `/en/account/hours` | The games whose stores report far past IGDB's time, to take idle time out of; Organize's second tab ([section 4.7](#47-hours-a-store-counted)) |
@@ -280,7 +281,7 @@ Built to feel best on a phone and on modest hardware. It is a design of its own,
 
 **Experimental views.** The 3D shelf and the compact shelf are unfinished: in 3D covers are
 hard to read, and spines make games hard to recognize (issue 63). They stay out of sight until
-I turn on **Experimental views** (Visualizações experimentais) on my account page, a switch with
+I turn on **Experimental views** (Visualizações experimentais) in my settings, a switch with
 a line that says they are unfinished and may look or work wrong.
 
 - It belongs to this device, like the theme: off in a fresh browser, kept over a reload and
@@ -646,7 +647,7 @@ mostrar esses games."
   Adults Only game not Erotic too is known within days. The ESRB gives AO for violence too
   (Hatred, Thrill Kill): those count, as the owner asked for Adults Only.
 - **One switch, Hide adult games on this device** (Esconder jogos adultos neste aparelho), on
-  my account page, in a section of its own, Adult games, after Experimental views (3.6), with a
+  my settings, in a section of its own, Adult games, after Experimental views (3.6), with a
   line that says which games it hides. No shelf has a button or a key for it, so nothing beside
   a shelf shows that anything is hidden, or offers to. It began as a button in the library's
   row of controls, shown only on a shelf with an adult game, and `H`; the owner moved it on 28
@@ -1642,7 +1643,7 @@ onde veio o game é importante".
 
 ### 7.10 Download sources
 
-In Shelf for Windows alone, on the account page, under Platforms. Why it is built this way:
+In Shelf for Windows alone, in Settings, under the rest. Why it is built this way:
 [ADR 007](adr/007-download-sources.md).
 
 - **Adding one.** I paste the address of a list in the format Hydra uses, and the app reads it and keeps
@@ -1669,7 +1670,7 @@ In Shelf for Windows alone, on the account page, under Platforms. Why it is buil
 - **Downloading** asks Windows for a folder, then waits in line: one at a time. A link that leads to a web
   page isn't a file, so the next is tried, and if all of them are it says so. What has only magnet links,
   or comes only in parts, has no button until Real-Debrid is signed in, and says so with a link to do it.
-- **Real-Debrid** stands on the account page below the sources. **Sign in** shows a code, large, to enter on
+- **Real-Debrid** stands in Settings below the sources. **Sign in** shows a code, large, to enter on
   its own page, which opens in the browser; it moves on by itself once entered, and a code that runs out
   says so. Signed in, it says who and until when Premium lasts, with Sign out, which asks. Shelf never sees
   the password, and no page sees what the sign-in gives.
@@ -1677,7 +1678,7 @@ In Shelf for Windows alone, on the account page, under Platforms. Why it is buil
   file. A magnet is fetched to its servers first: the card says **Real-Debrid is getting it** with how far.
   A set of files stands in a folder named for the title. When it can't, the card says which of signed out, not
   Premium, its filters, nobody sharing it, a virus, a host it doesn't open, its limits, or another refusal.
-- **Downloads,** on the account page above the sources and only once there is one, shows how far along
+- **Downloads,** in Settings above the sources and only once there is one, shows how far along
   each is, how fast and about how long, with Pause and Cancel, which asks. A finished one offers Show in
   folder and Take off the list, which leaves the file. **Nothing offers to start a file,** and the card says
   why. It goes on with the window closed to the tray; after Quit or a restart it waits for Resume.

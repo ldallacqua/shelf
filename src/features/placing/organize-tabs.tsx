@@ -6,8 +6,8 @@ import { useEffect, useState } from 'react'
 import { useAccount } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
 import { Link } from '@/i18n/navigation'
-import { cn } from '@/ui/cn'
 import { Ghost } from '@/ui/ghost'
+import { pageTabClass } from '@/ui/page-tab'
 
 /** Each tab of Organize: a list of my games with one thing to say of each (spec 4.5). */
 const tabs = [
@@ -17,15 +17,6 @@ const tabs = [
 ] as const
 
 export type OrganizeTab = (typeof tabs)[number]['key']
-
-const tabClass = cn(
-  'relative flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-medium whitespace-nowrap text-muted',
-  'transition-colors duration-quick ease-settle hover:text-text',
-  // The lit line inside the tab's box: the row scrolls sideways on a phone, and a line past it would scroll too.
-  'after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-accent after:opacity-0',
-  'after:shadow-[0_0_calc(var(--glow)*12px)_var(--accent)]',
-  'aria-[current=page]:text-text aria-[current=page]:after:opacity-100',
-)
 
 /**
  * How many games a tab's list holds, read here unless the page is that tab
@@ -92,7 +83,7 @@ export function OrganizeTabs({
               <Link
                 href={tab.href}
                 aria-current={tab.key === current ? 'page' : undefined}
-                className={tabClass}
+                className={pageTabClass}
               >
                 {t(tab.key)}
                 {count === undefined ? (
