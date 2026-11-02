@@ -285,7 +285,9 @@ function Sources() {
 
   // A page opened while one is going shows it too.
   useEffect(() => {
-    look().catch(() => setCanReadAll(false))
+    void Promise.resolve()
+      .then(look)
+      .catch(() => setCanReadAll(false))
   }, [look])
 
   const going = readingAll !== undefined
