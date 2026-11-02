@@ -4,6 +4,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 
 import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
 
+import { isAchievementProvider, setIdOf } from '@/domain/achievements/achievements'
 import type { Palette } from '@/domain/color/palette'
 import type { Company, GameData, GameImage, LineageStep } from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
@@ -38,6 +39,7 @@ import type { Platform } from '@/domain/platforms/platforms'
 import type { Db, Executor } from '@/server/db/client'
 import { accountsReading, storesOf } from '@/server/library/read-from'
 import {
+  achievementProgress,
   copies,
   entries,
   entryTags,
@@ -1362,6 +1364,7 @@ export const separateVersion = (
             .select({
               id: sourceItems.id,
               source: sourceItems.source,
+              storeId: sourceItems.storeId,
               igdbId: sourceItems.igdbId,
               copyId: sourceItems.copyId,
             })
@@ -1406,6 +1409,18 @@ export const separateVersion = (
         owned.push(there)
       }
       await tx.update(sourceItems).set({ copyId: there.id }).where(eq(sourceItems.id, item.id))
+      // What was read of its achievements goes with it: the copy left behind may go, and take it along.
+      if (isAchievementProvider(item.source)) {
+        await tx
+          .update(achievementProgress)
+          .set({ copyId: there.id })
+          .where(
+            and(
+              eq(achievementProgress.userId, libraryId),
+              eq(achievementProgress.setId, setIdOf(item.source, item.storeId)),
+            ),
+          )
+      }
       touched.set(from.id, from.entryId)
       touched.set(there.id, there.entryId)
       sources.add(item.source)
