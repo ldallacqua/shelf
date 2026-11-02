@@ -14,6 +14,7 @@ import {
   entries,
   entryVersions,
   games,
+  sourceItems,
   users,
 } from '@/server/db/schema'
 import { createIgdbApi } from '@/server/igdb/api'
@@ -600,6 +601,28 @@ describe('reading achievements from Steam', () => {
     // Each account's own progress is still its own to read: one question a game with unlocks.
     expect(times('GetPlayerAchievements')).toBe(2)
     expect(progressOf(await halfLife(other))).toMatchObject({ earned: 4, total: 6 })
+  })
+})
+
+describe('when a store item has moved to another copy', () => {
+  it('shows its set only on the game it is on now, with what was read of it', async () => {
+    const me = await synced()
+    await readAll(me)
+    const [portal] = await db
+      .select({ copyId: sourceItems.copyId })
+      .from(sourceItems)
+      .where(and(eq(sourceItems.userId, me), eq(sourceItems.storeId, '52003')))
+    // As separating left it before: the item on its own game, its progress on the copy it left.
+    await db
+      .update(achievementProgress)
+      .set({ copyId: portal!.copyId! })
+      .where(and(eq(achievementProgress.userId, me), eq(achievementProgress.setId, 'steam:220')))
+    const sets = async (title: string) =>
+      (await achievements(me).game(await slugOfApp(me, title), 'en', { mine: true }))!.sets
+    expect((await sets('Portal')).map((set) => set.setId)).toEqual(['52003'])
+    const [life] = await sets('Half-Life 2')
+    expect(life).toMatchObject({ setId: '220', state: 'ready', readAt: NOW })
+    expect(progressOf(life!)).toMatchObject({ earned: 4, total: 6 })
   })
 })
 

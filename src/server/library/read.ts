@@ -60,6 +60,7 @@ import {
   tags,
   vocab,
 } from '@/server/db/schema'
+import { progressStayed } from '@/server/sync/achievements'
 
 /**
  * Reads one library, an account's (ADR 004), whole, in a handful of
@@ -402,7 +403,7 @@ export const readGameExtras = async (
       .selectDistinct({ setId: achievementProgress.setId })
       .from(achievementProgress)
       .innerJoin(copies, eq(copies.id, achievementProgress.copyId))
-      .where(eq(copies.entryId, primary.entryId)),
+      .where(and(eq(copies.entryId, primary.entryId), progressStayed)),
     // The app Steam listed it under, whatever IGDB lists: its page is the one I bought.
     db
       .select({ storeId: sourceItems.storeId })

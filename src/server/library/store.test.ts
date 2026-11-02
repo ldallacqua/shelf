@@ -7,6 +7,8 @@ import { igdbGameSchema } from '@/domain/igdb/schema'
 import { curatedPlatform } from '@/domain/platforms/platforms'
 import type { Db } from '@/server/db/client'
 import {
+  achievementProgress,
+  achievementSets,
   copies,
   entries,
   entryTags,
@@ -593,9 +595,23 @@ describe('separating a version (spec 7.6)', () => {
     await steamItem('236430', 2368, 600, copy!.id)
     await steamItem('335300', 9727, 1200, copy!.id)
     await feedCopies(db, me, 'steam')
+    await db
+      .insert(achievementSets)
+      .values({ id: 'steam:335300', provider: 'steam', providerSetId: '335300' })
+    await db.insert(achievementProgress).values({
+      userId: me,
+      setId: 'steam:335300',
+      externalId: 'made-up',
+      copyId: copy!.id,
+      triedAt: 1,
+    })
     const before = await readVersion(db, me)
 
     const apart = await separateVersion(db, me, entry, scholar)
+
+    const [movedTo] = await db.select().from(copies).where(eq(copies.entryId, apart))
+    const [read] = await db.select().from(achievementProgress)
+    expect(read?.copyId).toBe(movedTo?.id)
 
     expect(await readVersion(db, me)).toBe(before + 1)
     expect(await readOwnerGame(db, me, entry)).toMatchObject({

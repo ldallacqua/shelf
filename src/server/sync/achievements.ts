@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, isNotNull, like, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, like, ne, or, sql } from 'drizzle-orm'
 
 import {
   isAchievementProvider,
@@ -461,12 +461,26 @@ export const forgetOtherProgress = (
     )
 
 /**
+ * Progress kept for the copy it was read for, unless its store item is on
+ * another copy by now: then it is that copy's, whatever the row still says.
+ */
+export const progressStayed = sql`not exists (
+  select 1 from ${sourceItems}
+  where ${sourceItems.userId} = ${achievementProgress.userId}
+    and ${sourceItems.copyId} is not null
+    and ${sourceItems.copyId} <> ${achievementProgress.copyId}
+    and ${sourceItems.source} || ':' || ${sourceItems.storeId} = ${achievementProgress.setId}
+)`
+
+/**
  * The sets of the games on these copies, with their achievements and the
  * account's progress, as a game's page shows them, in the visitor's
  * language. A set is a game's when the provider put that copy on the shelf
  * (`source_items`), or when its progress was read for the copy and kept
  * after the account disconnected. Progress read for another account at the
- * provider than the one linked now is never shown.
+ * provider than the one linked now is never shown. Progress goes with its
+ * store item when that has moved to another copy, as when a version is
+ * separated, whichever copy it was read for.
  */
 export const readSetsOf = async (
   db: Executor,
@@ -479,18 +493,26 @@ export const readSetsOf = async (
   if (copyIds !== 'all' && copyIds.length === 0) return byCopy
   const ofItems =
     copyIds === 'all' ? isNotNull(sourceItems.copyId) : inArray(sourceItems.copyId, [...copyIds])
+  const items = await db
+    .select({
+      source: sourceItems.source,
+      storeId: sourceItems.storeId,
+      title: sourceItems.title,
+      copyId: sourceItems.copyId,
+    })
+    .from(sourceItems)
+    .where(and(eq(sourceItems.userId, userId), ofItems))
+  const itemSets = items.flatMap((item) =>
+    isAchievementProvider(item.source) ? [setIdOf(item.source, item.storeId)] : [],
+  )
   const ofProgress =
-    copyIds === 'all' ? undefined : inArray(achievementProgress.copyId, [...copyIds])
-  const [items, progress, links] = await Promise.all([
-    db
-      .select({
-        source: sourceItems.source,
-        storeId: sourceItems.storeId,
-        title: sourceItems.title,
-        copyId: sourceItems.copyId,
-      })
-      .from(sourceItems)
-      .where(and(eq(sourceItems.userId, userId), ofItems)),
+    copyIds === 'all'
+      ? undefined
+      : or(
+          and(inArray(achievementProgress.copyId, [...copyIds]), progressStayed),
+          inArray(achievementProgress.setId, itemSets),
+        )
+  const [progress, links] = await Promise.all([
     db
       .select()
       .from(achievementProgress)
