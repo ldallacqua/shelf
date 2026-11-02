@@ -8,12 +8,30 @@ import { call } from './tauri'
  * doesn't carry it, and only the account page's section, fetched in the app alone, imports it.
  */
 
+/** Why the app did nothing (`desktop/src/sources.rs`). */
+export const sourceRefusals = [
+  'invalid',
+  'duplicate',
+  'unreachable',
+  'name',
+  'secure',
+  'slow',
+  'refused',
+  'large',
+  'unsupported',
+  'missing',
+  'failed',
+] as const
+export type SourceRefusal = (typeof sourceRefusals)[number]
+
 const sourceSchema = z.object({
   id: z.string(),
   name: z.string(),
   url: z.string(),
   /** The file it was added from, when it has no address. An app of 0.7.0 or before doesn't send it. */
   file: z.string().nullable().default(null),
+  /** Why the last reading by itself failed, until one works. The app before 0.8.0 doesn't send it. */
+  trouble: z.enum(sourceRefusals).nullable().default(null),
   addedAt: z.number(),
   readAt: z.number(),
   items: z.number(),
@@ -23,19 +41,6 @@ const sourceSchema = z.object({
 })
 
 export type Source = z.infer<typeof sourceSchema>
-
-/** Why the app did nothing (`desktop/src/sources.rs`). */
-export const sourceRefusals = [
-  'invalid',
-  'duplicate',
-  'unreachable',
-  'refused',
-  'large',
-  'unsupported',
-  'missing',
-  'failed',
-] as const
-export type SourceRefusal = (typeof sourceRefusals)[number]
 
 /** A command's refusal as a word; anything else it throws is `failed`. */
 export const sourceRefusalOf = (error: unknown): SourceRefusal =>

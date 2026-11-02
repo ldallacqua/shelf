@@ -18,6 +18,7 @@ const SOURCE: Source = {
   name: 'Made-up source',
   url: 'https://files.example.invalid/source.json',
   file: null,
+  trouble: null,
   addedAt: 1,
   readAt: Date.now(),
   items: 3,
@@ -81,6 +82,9 @@ describe('download sources', () => {
     ['invalid', /https address/],
     ['duplicate', /already here/],
     ['unreachable', /couldn’t connect/],
+    ['name', /couldn’t find that address/],
+    ['secure', /secure connection/],
+    ['slow', /too long to answer/],
     ['refused', /only answer browsers/],
     ['large', /too large/],
     ['unsupported', /no source/],
@@ -127,6 +131,14 @@ describe('download sources', () => {
     expect(screen.getByText('4 downloads')).toBeInTheDocument()
     // That was about a source, not about the address in the field.
     expect(field()).toBeValid()
+  })
+
+  it('says on the card that a reading by itself failed, and that the list stays', async () => {
+    kept = [{ ...SOURCE, trouble: 'slow' }]
+    renderWithIntl(<DownloadSources />)
+    expect(
+      await screen.findByText(/The last reading failed, and the list it has stays\. .*too long/),
+    ).toBeInTheDocument()
   })
 
   const FROM_FILE: Source = { ...SOURCE, url: 'file:saved.json', file: 'saved.json' }

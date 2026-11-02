@@ -1,7 +1,7 @@
 {
   "DownloadSources": {
     "title": "Fontes de download",
-    "intro": "Listas de jogos para baixar, no formato que o Hydra usa. Elas ficam neste computador, e adicionar uma não baixa nada.",
+    "intro": "Listas de jogos para baixar, no formato que o Hydra usa. Elas ficam neste computador e são lidas de novo uma vez por dia enquanto o app está aberto, e adicionar uma não baixa nada.",
     "address": "Endereço da fonte",
     "addressHint": "https://…/source.json",
     "warning": "Qualquer pessoa pode escrever uma fonte, e o Shelf não consegue verificar para onde os links dela levam. Um programa vindo dela roda com o seu acesso a este computador. Adicione só fontes em que você confia, para jogos que você tem o direito de baixar.",
@@ -17,6 +17,7 @@
     "leftOut": "{count, plural, one {# deixado de fora: nada nele que o Shelf possa usar} other {# deixados de fora: nada neles que o Shelf possa usar}}",
     "readLabel": "Última leitura",
     "read": "Lida {when}",
+    "lastReadFailed": "A última leitura falhou, e a lista que ela tem continua. {why}",
     "readAgain": "Ler de novo",
     "chooseAgain": "Escolher o arquivo de novo",
     "addFile": "De um arquivo salvo",
@@ -34,6 +35,9 @@
       "invalid": "Esse não é um endereço https que o Shelf possa ler. Endereços deste computador ou da rede dele não são lidos.",
       "duplicate": "Essa fonte já está aqui.",
       "unreachable": "O Shelf não conseguiu se conectar a esse endereço. Confira e tente de novo.",
+      "name": "Este computador não encontrou esse endereço: o nome dele não leva a lugar nenhum daqui. Confira se está escrito certo.",
+      "secure": "O Shelf não conseguiu fazer uma conexão segura com esse endereço.",
+      "slow": "Esse endereço demorou demais para responder. Tente mais tarde.",
       "refused": "Esse endereço respondeu sem o arquivo. Talvez ele só atenda navegadores: abra no seu, salve o arquivo e use De um arquivo salvo.",
       "fileUnsupported": "Esse arquivo não é uma fonte: uma fonte é um arquivo JSON com um nome e uma lista de downloads.",
       "large": "Esse arquivo é grande demais para ser uma fonte.",

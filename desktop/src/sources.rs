@@ -1,6 +1,6 @@
 //! Download sources (ADR 007): lists of downloads in Hydra's format, read from an address the
-//! person pasted, and kept on this computer. Shelf's server never sees one. A page is told a
-//! source's name and counts, and the links stay here.
+//! person pasted, and kept on this computer, and read again once a day for as long as the app runs.
+//! Shelf's server never sees one. A page is told a source's name and counts, and the links stay here.
 
 use std::fs;
 use std::io;
@@ -17,21 +17,34 @@ const MOST_BYTES: u64 = 200 * 1024 * 1024;
 const MOST_TIME: Duration = Duration::from_secs(120);
 const MOST_CONNECTING: Duration = Duration::from_secs(15);
 const MOST_REDIRECTS: usize = 5;
+/// How long after a good reading a source is read again, in milliseconds.
+const READ_EVERY: u64 = 24 * 60 * 60 * 1000;
+/// How long after a failed one, so that a day's trouble at the address doesn't lose a day.
+const TRY_AGAIN_AFTER: u64 = 6 * 60 * 60 * 1000;
+/// How long the app waits after it starts, as it starts with Windows, and how often it looks after that.
+const FIRST_LOOK: Duration = Duration::from_secs(60);
+const LOOK_EVERY: Duration = Duration::from_secs(60 * 60);
 /// Longer than any address a person pastes, and short enough to show.
 const MOST_ADDRESS: usize = 2048;
 /// The lengths Hydra's own validator held these to.
 const MOST_WORDS: usize = 255;
 
 /// Why nothing was done, in a word a page has a sentence for.
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Refusal {
     /// Not an address the app will read (`allowed`), or not a source's id.
     Invalid,
     /// This address is here already.
     Duplicate,
-    /// Nothing answered, or it answered with an error.
+    /// The connection failed, for no reason named below.
     Unreachable,
+    /// This computer found no such name.
+    Name,
+    /// A secure connection couldn't be made.
+    Secure,
+    /// It took too long to answer.
+    Slow,
     /// It answered, without the file: an error, or a redirect `allowed` wouldn't follow.
     Refused,
     /// More than `MOST_BYTES`.
@@ -235,7 +248,7 @@ pub async fn read(url: &Url, etag: Option<&str>, version: &str) -> Result<Readin
     if let Some(etag) = etag {
         request = request.header(reqwest::header::IF_NONE_MATCH, etag);
     }
-    let mut response = request.send().await.map_err(|_| Refusal::Unreachable)?;
+    let mut response = request.send().await.map_err(|error| why_not(&error))?;
     if response.status() == reqwest::StatusCode::NOT_MODIFIED {
         return Ok(Reading::Unchanged);
     }
@@ -256,13 +269,72 @@ pub async fn read(url: &Url, etag: Option<&str>, version: &str) -> Result<Readin
         .map(str::to_string);
     // The length it says may not be the length it sends.
     let mut bytes = Vec::new();
-    while let Some(chunk) = response.chunk().await.map_err(|_| Refusal::Unreachable)? {
+    while let Some(chunk) = response.chunk().await.map_err(|error| why_not(&error))? {
         if bytes.len() as u64 + chunk.len() as u64 > MOST_BYTES {
             return Err(Refusal::Large);
         }
         bytes.extend_from_slice(&chunk);
     }
     Ok(Reading::Read { bytes, etag })
+}
+
+/// What went wrong with a connection, from everything the error says of itself.
+fn why_not(error: &reqwest::Error) -> Refusal {
+    if error.is_timeout() {
+        return Refusal::Slow;
+    }
+    let mut said = String::new();
+    let mut at: Option<&dyn std::error::Error> = Some(error);
+    while let Some(each) = at {
+        said.push_str(&each.to_string());
+        said.push(' ');
+        at = each.source();
+    }
+    named_in(&said.to_lowercase())
+}
+
+/// By the words the libraries use, which Windows' own language doesn't change.
+fn named_in(said: &str) -> Refusal {
+    if said.contains("dns error") {
+        Refusal::Name
+    } else if ["certificate", "tls", "handshake", "alert"]
+        .iter()
+        .any(|word| said.contains(word))
+    {
+        Refusal::Secure
+    } else {
+        Refusal::Unreachable
+    }
+}
+
+/// Reads every source whose time has come, one at a time. A reading that fails keeps the list there is.
+pub async fn read_what_is_due(sources: &Sources, version: &str, now: u64) {
+    for (id, address, etag) in sources.due(now) {
+        let read = async {
+            let url = self::address(&address)?;
+            match read(&url, etag.as_deref(), version).await? {
+                Reading::Unchanged => sources.touch(&id, now),
+                Reading::Read { bytes, etag } => {
+                    sources.replace(&id, None, parse(&bytes)?, etag, now)
+                }
+            }
+        };
+        if let Err(why) = read.await {
+            sources.failed_reading(&id, why, now);
+        }
+    }
+}
+
+/// For as long as the app runs (ADR 007, decision 9).
+pub async fn keep_reading(sources: &Sources, version: &str) {
+    tokio::time::sleep(FIRST_LOOK).await;
+    loop {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |since| since.as_millis() as u64);
+        read_what_is_due(sources, version, now).await;
+        tokio::time::sleep(LOOK_EVERY).await;
+    }
 }
 
 /// Reads a source a person saved, from where Windows' picker found it, to the same limit.
@@ -284,6 +356,12 @@ pub struct Source {
     /// The name of the file it was added from, when it has no address to read again.
     #[serde(default)]
     pub file: Option<String>,
+    /// Why the last reading by itself failed, until one works.
+    #[serde(default)]
+    pub trouble: Option<Refusal>,
+    /// When one by itself last failed.
+    #[serde(default)]
+    pub tried_at: u64,
     /// When it was added and last read, in milliseconds since 1970.
     pub added_at: u64,
     pub read_at: u64,
@@ -405,6 +483,8 @@ impl Sources {
             name: feed.name,
             url,
             file,
+            trouble: None,
+            tried_at: 0,
             added_at: now,
             read_at: now,
             items: feed.items.len(),
@@ -461,6 +541,7 @@ impl Sources {
         each.source.magnets = count(&feed.items, Link::Magnet);
         each.source.web = count(&feed.items, Link::Web);
         each.source.left_out = feed.left_out;
+        each.source.trouble = None;
         each.kept_etag = etag;
         if let Some(name) = file {
             each.source.file = Some(name);
@@ -468,6 +549,37 @@ impl Sources {
         let source = each.source.clone();
         self.save(&kept)?;
         Ok(source)
+    }
+
+    /// Those with an address whose time to be read again has come, and what to ask them by.
+    pub fn due(&self, now: u64) -> Vec<(String, String, Option<String>)> {
+        self.kept
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|each| {
+                each.source.file.is_none()
+                    && now >= each.source.read_at.saturating_add(READ_EVERY)
+                    && now >= each.source.tried_at.saturating_add(TRY_AGAIN_AFTER)
+            })
+            .map(|each| {
+                (
+                    each.source.id.clone(),
+                    each.source.url.clone(),
+                    each.kept_etag.clone(),
+                )
+            })
+            .collect()
+    }
+
+    /// A reading by itself failed, which the source's card says. The list it has stays.
+    pub fn failed_reading(&self, id: &str, why: Refusal, now: u64) {
+        let mut kept = self.kept.lock().unwrap();
+        if let Some(each) = kept.iter_mut().find(|each| each.source.id == id) {
+            each.source.trouble = Some(why);
+            each.source.tried_at = now;
+            let _ = self.save(&kept);
+        }
     }
 
     /// Read again and found the same.
@@ -478,6 +590,7 @@ impl Sources {
             .find(|each| each.source.id == id)
             .ok_or(Refusal::Missing)?;
         each.source.read_at = now;
+        each.source.trouble = None;
         let source = each.source.clone();
         self.save(&kept)?;
         Ok(source)
@@ -710,6 +823,112 @@ mod tests {
             .unwrap();
         assert_eq!(again.file.as_deref(), Some("b.json"));
         assert_eq!(Sources::open(&dir).all()[0].file.as_deref(), Some("b.json"));
+    }
+
+    #[test]
+    fn says_what_went_wrong_with_a_connection() {
+        let name = "error sending request: client error (connect): dns error: failed to lookup";
+        assert_eq!(named_in(name), Refusal::Name);
+        let secure = "client error (connect): invalid peer certificate: unknown issuer";
+        assert_eq!(named_in(secure), Refusal::Secure);
+        let refused = "client error (connect): tcp connect error: connection refused";
+        assert_eq!(named_in(refused), Refusal::Unreachable);
+    }
+
+    const DAY: u64 = 24 * 60 * 60 * 1000;
+
+    #[test]
+    fn reads_a_source_again_a_day_later_and_not_before() {
+        let dir = folder("daily");
+        let sources = Sources::open(&dir);
+        let (address, server) = serve(vec![answer("304 Not Modified", "", "")]);
+        let feed = parse(MADE_UP.as_bytes()).unwrap();
+        sources
+            .add("one".into(), address, None, feed, Some("\"one\"".into()), 1)
+            .unwrap();
+        assert!(sources.due(DAY).is_empty(), "a day has not gone by");
+        tauri::async_runtime::block_on(read_what_is_due(&sources, "0.0.0", DAY + 1));
+        let asked = server.join().unwrap();
+        assert!(asked[0].to_lowercase().contains("if-none-match: \"one\""));
+        assert_eq!(sources.all()[0].read_at, DAY + 1);
+        assert!(sources.due(DAY + 2).is_empty());
+    }
+
+    #[test]
+    fn a_source_read_by_itself_gets_its_new_list() {
+        let dir = folder("daily-new");
+        let sources = Sources::open(&dir);
+        let (address, server) = serve(vec![answer(
+            "200 OK",
+            "",
+            r#"{"name":"new","downloads":[]}"#,
+        )]);
+        let feed = parse(MADE_UP.as_bytes()).unwrap();
+        sources
+            .add("one".into(), address, None, feed, None, 1)
+            .unwrap();
+        tauri::async_runtime::block_on(read_what_is_due(&sources, "0.0.0", DAY + 1));
+        server.join().unwrap();
+        let source = &sources.all()[0];
+        assert_eq!((source.name.as_str(), source.items), ("new", 0));
+    }
+
+    #[test]
+    fn a_failed_reading_keeps_the_list_says_why_and_tries_again_later() {
+        let dir = folder("daily-fail");
+        let sources = Sources::open(&dir);
+        let (address, server) = serve(vec![answer("403 Forbidden", "", "no")]);
+        let feed = parse(MADE_UP.as_bytes()).unwrap();
+        let items = feed.items.len();
+        sources
+            .add("one".into(), address.clone(), None, feed, None, 1)
+            .unwrap();
+        tauri::async_runtime::block_on(read_what_is_due(&sources, "0.0.0", DAY + 1));
+        server.join().unwrap();
+        let source = &sources.all()[0];
+        assert_eq!(source.trouble, Some(Refusal::Refused));
+        assert_eq!((source.items, source.read_at), (items, 1));
+        assert!(sources.due(DAY + 2).is_empty(), "not again at once");
+        assert_eq!(sources.due(DAY + 1 + 6 * 60 * 60 * 1000).len(), 1);
+    }
+
+    #[test]
+    fn a_good_reading_clears_what_a_failed_one_said() {
+        let dir = folder("daily-clears");
+        let sources = Sources::open(&dir);
+        let feed = parse(MADE_UP.as_bytes()).unwrap();
+        sources
+            .add(
+                "one".into(),
+                "https://a.example/s".into(),
+                None,
+                feed,
+                None,
+                1,
+            )
+            .unwrap();
+        sources.failed_reading("one", Refusal::Name, 2);
+        assert_eq!(Sources::open(&dir).all()[0].trouble, Some(Refusal::Name));
+        let touched = sources.touch("one", 3).unwrap();
+        assert_eq!(touched.trouble, None);
+    }
+
+    #[test]
+    fn a_source_from_a_file_is_never_read_by_itself() {
+        let dir = folder("daily-file");
+        let sources = Sources::open(&dir);
+        let feed = parse(MADE_UP.as_bytes()).unwrap();
+        sources
+            .add(
+                "one".into(),
+                "file:a.json".into(),
+                Some("a.json".into()),
+                feed,
+                None,
+                1,
+            )
+            .unwrap();
+        assert!(sources.due(DAY * 30).is_empty());
     }
 
     #[test]

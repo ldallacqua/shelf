@@ -64,6 +64,11 @@ function SourceCard({
           <dd className="text-muted">
             {t('read', { when: format.relativeTime(new Date(source.readAt), now) })}
           </dd>
+          {source.trouble ? (
+            <dd className="mt-1 text-pretty">
+              {t('lastReadFailed', { why: t(`errors.${source.trouble}`) })}
+            </dd>
+          ) : null}
         </div>
       </dl>
       <div className="flex flex-wrap gap-3">

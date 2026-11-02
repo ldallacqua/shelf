@@ -62,13 +62,17 @@ What was read, 1 Nov 2026:
    format has no checksum.
 8. **What is the computer's stays on the computer** (ADR 005, section 4): `sources.json` for what they are,
    and `sources/{id}.json` for each list, read only when asked for. A file that can't be read is put aside.
-9. **Reading again is by hand.** Nothing is fetched by itself, so a source's owner doesn't learn when
-   the app is open. It sends the `ETag` it has, and a failed reading keeps the list it has.
+9. **A source is read again once a day, while the app runs,** so its links stay current without a
+   thought. The owner asked for that on 2 Nov 2026; before, it was by hand, so that a source's owner wouldn't
+   learn when the app is open, which they now can, and the section says it reads. A minute after the app starts
+   and every hour it looks for what was read over a day ago, one at a time. It sends the `ETag` it has, and a
+   failed reading keeps the list it has, says why on the card, and is tried again six hours later.
    A source can also be **added from a file** a person saved, through Windows' picker, for an address that
    won't answer the app, and is read the same way. The app doesn't pretend to be a browser to get an
    answer: that is a way around a host's limits (decision 3). The owner, 2 Nov 2026, saw a source they had in
-   a file refused at its address; the app said only that it didn't answer, so it now says whether it couldn't
-   connect or was answered without the file.
+   a file refused at its address; the app said only that it didn't answer, so it now says which of: no such name
+   from this computer, no secure connection, too slow, another failure to connect, or answered without the file.
+   Nor does it look a name up by other means than Windows' own.
 10. **Nothing that was downloaded runs by itself, ever.** Not an installer, not a game, not after extracting.
     The file is reached through Windows' picker, as every game's is, so Play and the hours work as before.
     That is the one defense against what a source can hide, since anything it starts has my access to the computer.

@@ -1,7 +1,7 @@
 {
   "DownloadSources": {
     "title": "Download sources",
-    "intro": "Lists of games to download, in the format Hydra uses. They stay on this computer, and adding one downloads nothing.",
+    "intro": "Lists of games to download, in the format Hydra uses. They stay on this computer and are read again once a day while the app is running, and adding one downloads nothing.",
     "address": "Source address",
     "addressHint": "https://…/source.json",
     "warning": "Anyone can write a source, and Shelf can’t check where its links lead. A program from one runs with your access to this computer. Add only sources you trust, for games you have the right to download.",
@@ -17,6 +17,7 @@
     "leftOut": "{count, plural, one {# left out: nothing in it Shelf can use} other {# left out: nothing in them Shelf can use}}",
     "readLabel": "Last read",
     "read": "Read {when}",
+    "lastReadFailed": "The last reading failed, and the list it has stays. {why}",
     "readAgain": "Read again",
     "chooseAgain": "Choose the file again",
     "addFile": "From a saved file",
@@ -34,6 +35,9 @@
       "invalid": "That isn’t an https address Shelf can read. Addresses on this computer or its network aren’t read.",
       "duplicate": "That source is already here.",
       "unreachable": "Shelf couldn’t connect to that address. Check it and try again.",
+      "name": "This computer couldn’t find that address: its name doesn’t lead anywhere from here. Check it for typos.",
+      "secure": "Shelf couldn’t make a secure connection to that address.",
+      "slow": "That address took too long to answer. Try again later.",
       "refused": "That address answered without the file. It may only answer browsers: open it in yours, save the file, and use From a saved file.",
       "fileUnsupported": "That file isn’t a source: a source is a JSON file with a name and a list of downloads.",
       "large": "That file is too large to be a source.",
