@@ -20,6 +20,7 @@ import { GAME_CENTERED, HERO_COVER } from './hero'
 import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
 import { AdultNotice } from './adult-notice'
+import { Scores } from './scores'
 import { Screenshots } from './screenshots'
 import { Stores } from './stores'
 
@@ -417,6 +418,20 @@ export function GameDetail({
     </div>
   )
 
+  const scores = (
+    <Scores
+      igdb={
+        game.igdbRating === undefined
+          ? undefined
+          : { rating: game.igdbRating, count: game.igdbRatingCount, url: facts?.igdbUrl }
+      }
+      steam={facts?.steamReviews}
+      shelf={facts?.shelfScore}
+      waiting={!facts}
+      level={level}
+    />
+  )
+
   const about =
     facts && !facts.summary && !facts.storyline ? null : (
       <Section title={t('about')} level={level}>
@@ -581,13 +596,6 @@ export function GameDetail({
               </ul>
             </Row>
           ) : null}
-          {game.igdbRating === undefined ? null : (
-            <Row label={t('igdbRating')}>
-              <span className="text-sm">
-                {t('igdbValue', { value: game.igdbRating, count: game.igdbRatingCount })}
-              </span>
-            </Row>
-          )}
         </dl>
       ) : (
         <Ghosts lines={5} />
@@ -603,6 +611,7 @@ export function GameDetail({
         {/* Positioned to paint over the hero, which would cut off the glow of a button near it. */}
         <div className="relative mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-10">
           <div className="grid min-w-0 content-start gap-10">
+            {scores}
             {about}
             {shots}
             {achievements}
@@ -639,6 +648,7 @@ export function GameDetail({
             </p>
           ) : (
             <>
+              {scores}
               {about}
               {shots}
               {achievements}

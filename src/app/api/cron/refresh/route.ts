@@ -4,6 +4,7 @@ import { revalidateTag } from 'next/cache'
 
 import { cronSecret } from '@/server/env'
 import { refreshOldest } from '@/server/services/refresh'
+import { readSteamReviews } from '@/server/services/steam-reviews'
 import { libraryTag } from '@/server/services/tags'
 
 /** The owner's whole shelf is asked about each day besides the hundred: time for a large one. */
@@ -28,6 +29,14 @@ export async function GET(request: Request) {
     return Response.json({ error: 'Not allowed' }, { status: 401 })
   }
   const { checked, changed, libraries } = await refreshOldest()
-  for (const libraryId of libraries) revalidateTag(libraryTag(libraryId), { expire: 0 })
-  return Response.json({ checked, changed, libraries: libraries.length })
+  // Steam failing costs a day's scores, and never the refresh of IGDB's records beside it.
+  const reviews = await readSteamReviews().catch(() => undefined)
+  const stale = new Set([...libraries, ...(reviews?.libraries ?? [])])
+  for (const libraryId of stale) revalidateTag(libraryTag(libraryId), { expire: 0 })
+  return Response.json({
+    checked,
+    changed,
+    libraries: stale.size,
+    steamReviews: reviews ? { checked: reviews.checked, changed: reviews.changed } : null,
+  })
 }

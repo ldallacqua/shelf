@@ -20,6 +20,17 @@ import { STEAM_API } from '@/server/sync/steam'
 
 export { mockSteamAnswer, MOCK_STEAM_SIGNATURE } from '@/server/mocks/steam-answer'
 
+/** What the double's store says of an app: made up, and the same each time. */
+const madeUpReviews = (appid: number) => {
+  const percent = 50 + (appid % 50)
+  return {
+    review_count: 40 + (appid % 90_000),
+    percent_positive: percent,
+    review_score: percent >= 95 ? 9 : percent >= 80 ? 8 : percent >= 70 ? 6 : 5,
+    review_score_label: 'Made up',
+  }
+}
+
 export type SteamMockState = {
   /** The Web API questions asked, by path. */
   asked: string[]
@@ -231,12 +242,17 @@ export const createSteamHandlers = (state: SteamMockState = newSteamMockState())
       if (refused) return refused
       const question = JSON.parse(address.searchParams.get('input_json') ?? '{}') as {
         ids?: { appid: number }[]
+        data_request?: { include_reviews?: boolean }
       }
       return HttpResponse.json({
         response: {
-          store_items: (question.ids ?? []).map(
-            ({ appid }) => store.get(appid) ?? { id: appid, success: 15 },
-          ),
+          store_items: (question.ids ?? []).map(({ appid }) => {
+            const item = store.get(appid)
+            if (!item) return { id: appid, success: 15 }
+            return question.data_request?.include_reviews
+              ? { ...item, reviews: { summary_filtered: madeUpReviews(appid) } }
+              : item
+          }),
         },
       })
     }),

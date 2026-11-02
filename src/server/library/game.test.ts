@@ -1,12 +1,12 @@
-import { eq } from 'drizzle-orm'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { eq, inArray } from 'drizzle-orm'
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { buildGamePage } from '@/domain/library/game-page'
 import type { Library } from '@/domain/library/library'
 import type { Db } from '@/server/db/client'
-import { entries, entryVersions, games } from '@/server/db/schema'
-import { readGameExtras, readLibrary } from '@/server/library/read'
-import { createTestDatabase, sampleLibraryId } from '@/test/database'
+import { entries, entryVersions, games, users } from '@/server/db/schema'
+import { readGameExtras, readLibrary, readShelfScore } from '@/server/library/read'
+import { createTestAccount, createTestDatabase, sampleLibraryId } from '@/test/database'
 
 /** What a game's page reads beyond the library file, on the sample library. */
 
@@ -63,5 +63,101 @@ describe('readGameExtras', () => {
       expect(game.hasNotes).toBe(kept)
       expect(buildGamePage(library, game, extras!).facts.notes).toBe(kept ? row.notes : undefined)
     }
+  })
+
+  it('takes the most reviewed of what Steam says of its versions', async () => {
+    const skyrim = await slugOf(472)
+    const versions = await db
+      .select({ gameId: entryVersions.gameId })
+      .from(entryVersions)
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(
+        inArray(
+          entryVersions.entryId,
+          db
+            .select({ id: entryVersions.entryId })
+            .from(entryVersions)
+            .innerJoin(games, eq(games.id, entryVersions.gameId))
+            .where(eq(games.slug, skyrim)),
+        ),
+      )
+    const [first, second] = versions
+    const less = { app: '1', count: 10, percent: 50, score: 5 }
+    const more = { app: '2', count: 900, percent: 90, score: 8 }
+    await db.update(games).set({ steamReviews: less }).where(eq(games.id, first!.gameId))
+    await db.update(games).set({ steamReviews: more }).where(eq(games.id, second!.gameId))
+    expect((await readGameExtras(db, sample, skyrim))?.steamReviews).toEqual(more)
+  })
+})
+
+describe('readShelfScore (spec 7.11)', () => {
+  let scoreDb: Db
+  let game: string
+
+  /** An account's entry for the game, rated, as a new shelf of its own. */
+  const rated = async (
+    handle: string,
+    rating: number,
+    entry: Partial<typeof entries.$inferInsert> = {},
+  ) => {
+    const library = await createTestAccount(scoreDb, handle)
+    const id = `${handle}-entry`
+    await scoreDb.insert(entries).values({
+      id,
+      userId: library,
+      status: 'completed',
+      rating,
+      addedAt: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      ...entry,
+    })
+    await scoreDb
+      .insert(entryVersions)
+      .values({ entryId: id, gameId: game, relation: 'primary', userId: library })
+    return library
+  }
+
+  const score = () => readShelfScore(scoreDb, [game])
+
+  beforeEach(async () => {
+    scoreDb = await createTestDatabase('default')
+    const [row] = await scoreDb.select({ id: games.id }).from(games).where(eq(games.igdbId, 472))
+    game = row!.id
+    // The sample shelf's own rating for it is left out, to count only what these tests add.
+    await scoreDb
+      .update(entries)
+      .set({ rating: null })
+      .where(
+        inArray(
+          entries.id,
+          scoreDb
+            .select({ id: entryVersions.entryId })
+            .from(entryVersions)
+            .where(eq(entryVersions.gameId, game)),
+        ),
+      )
+  })
+
+  it('has nothing to say until someone has rated it', async () => {
+    expect(await score()).toBeUndefined()
+  })
+
+  it('sums what public shelves gave it, and how many', async () => {
+    await rated('first', 80)
+    await rated('second', 90)
+    expect(await score()).toEqual({ rating: 85, count: 2 })
+  })
+
+  it('counts nothing from a private shelf', async () => {
+    const library = await rated('hidden', 10)
+    await scoreDb.update(users).set({ shelfPublic: false }).where(eq(users.id, library))
+    expect(await score()).toBeUndefined()
+  })
+
+  it('counts neither a game kept private nor one archived', async () => {
+    await rated('kept', 10, { isPrivate: true })
+    await rated('gone', 10, { archivedAt: 1 })
+    expect(await score()).toBeUndefined()
   })
 })

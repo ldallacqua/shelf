@@ -551,6 +551,32 @@
     "stripBefore": "Scroll back",
     "stripAfter": "Scroll on",
     "details": "Details",
+    "scores": {
+      "title": "Scores",
+      "igdb": "IGDB",
+      "igdbWho": "Critics and players",
+      "steam": "Steam",
+      "steamWho": "Steam players",
+      "shelf": "Shelf",
+      "shelfWho": "People on Shelf",
+      "ofHundred": "of 100",
+      "ofTen": "of 10",
+      "positive": "positive",
+      "none": "No ratings yet",
+      "ratings": "{count, plural, one {{shown} rating} other {{shown} ratings}}",
+      "reviews": "{count, plural, one {{shown} review} other {{shown} reviews}}",
+      "steamWords": {
+        "overwhelminglyPositive": "Overwhelmingly Positive",
+        "veryPositive": "Very Positive",
+        "positive": "Positive",
+        "mostlyPositive": "Mostly Positive",
+        "mixed": "Mixed",
+        "mostlyNegative": "Mostly Negative",
+        "negative": "Negative",
+        "veryNegative": "Very Negative",
+        "overwhelminglyNegative": "Overwhelmingly Negative"
+      }
+    },
     "genres": "Genres",
     "themes": "Themes",
     "modes": "Modes",
@@ -567,8 +593,6 @@
       "normally": "Main and extras",
       "completely": "Everything"
     },
-    "igdbRating": "IGDB rating",
-    "igdbValue": "{value} of 100, from {count, plural, one {# rating} other {# ratings}}",
     "factsFailed": "The rest of this game's page did not load. <page>Open its own page</page>.",
     "screenshotOpen": "Screenshot {at} of {total} from {title}: open it full screen",
     "screenshotAlt": "Screenshot {at} of {total} from {title}",
@@ -1527,7 +1551,7 @@
       },
       "shelf": {
         "title": "Your shelf",
-        "body": "The games you add and what you say about them: where you own them, how far you got, ratings, dates, tags and notes. A public shelf can be seen by anyone, and search engines can list it; a private one only by you. Notes stay private unless you mark them public, and a game marked private is seen only by you."
+        "body": "The games you add and what you say about them: where you own them, how far you got, ratings, dates, tags and notes. A public shelf can be seen by anyone, and search engines can list it; a private one only by you. Notes stay private unless you mark them public, and a game marked private is seen only by you. A rating on a public shelf also counts toward the average a game’s page shows, with no name beside it; one on a private shelf, or on a game you keep private, does not."
       },
       "signIn": {
         "title": "Signing in",

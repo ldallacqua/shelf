@@ -3,7 +3,7 @@ import { getFormatter, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 
 /** When this page last changed what it says. */
-const CHANGED = new Date('2026-10-25T00:00:00Z')
+const CHANGED = new Date('2026-11-02T00:00:00Z')
 
 const SECTIONS = [
   'account',

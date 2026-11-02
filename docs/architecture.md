@@ -394,6 +394,12 @@ allow caching. If the repository is ever made public, the fixtures need another 
 
 ## 8. IGDB
 
+**What Steam's players say** is read beside this refresh, by the same daily call: `services/steam-reviews.ts`
+asks `IStoreBrowseService/GetItems` with `include_reviews`, a hundred apps to a request, about up to 5,000 games
+with a page there, the longest unasked first. A game with its request failed keeps what it has. Only a move in what
+a page shows (its share, its words, a count a twentieth larger) is stored, and only that gives the shelves holding
+it a new version. The call answers even if Steam fails: IGDB's refresh does not depend on it.
+
 One module, `server/igdb`, is the only code that knows IGDB's address.
 
 | Concern | Design |
