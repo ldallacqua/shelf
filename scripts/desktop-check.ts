@@ -723,11 +723,32 @@ try {
     await guarded.waitFor({ state: 'detached', timeout: 10_000 })
 
     console.log('\nDownloading from a source (ADR 007), made-up bytes on this computer')
+    const findADownload = async () => {
+      await shelf.getByRole('button', { name: 'Ways to play' }).click()
+      await shelf.getByRole('menuitem', { name: 'Find a download' }).click()
+    }
     await field.fill(`http://127.0.0.1:${port}/with-files.json`)
     await add.click()
     await shelf.locator('article').filter({ hasText: 'Made-up files' }).waitFor({ timeout: 15_000 })
     await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
-    await shelf.getByRole('button', { name: 'Find a download' }).click()
+    // On a very wide window the game stands in the middle, and this opens beside its button.
+    await control('Maximize').click()
+    await control('Restore').waitFor({ timeout: 5_000 })
+    if (await shelf.evaluate(() => matchMedia('(width >= 150rem) and (height >= 45rem)').matches)) {
+      await findADownload()
+      const beside = shelf.locator('[data-slot="popover-content"]')
+      await beside.getByText('Bloodborne, a made-up file').waitFor({ timeout: 15_000 })
+      if ((await shelf.locator('[data-slot="sheet"]').count()) === 0)
+        pass('on a very wide window it opens beside the button, not as a second frame')
+      else fail('on a very wide window it opened a sheet')
+      await shot('find-download-wide')
+      await shelf.keyboard.press('Escape')
+      await beside.waitFor({ state: 'detached', timeout: 5_000 })
+    } else console.log('  (This screen is too narrow for that.)')
+    await control('Restore').click()
+    await control('Maximize').waitFor({ timeout: 5_000 })
+
+    await findADownload()
     const made = shelf.getByRole('button', { name: 'Download Bloodborne, a made-up file' })
     await made.waitFor({ timeout: 15_000 })
     const sheet = (await shelf.getByRole('dialog').innerText()).replace(/\s+/g, ' ')
@@ -745,7 +766,14 @@ try {
       .waitFor({ timeout: 15_000 })
     pass('puts two in line, in the folder chosen')
 
-    await shelf.goto(`${BASE_URL}/en/account/settings`)
+    // Past the sheet: it holds focus, and covers the header.
+    await shelf.keyboard.press('Escape')
+    const toDownloads = shelf.getByRole('banner').getByRole('link', { name: /^Downloads/ })
+    await toDownloads.waitFor({ timeout: 15_000 })
+    pass('the header has a way to the downloads')
+    await toDownloads.click()
+    await shelf.waitForURL('**/en/downloads', { timeout: 15_000 })
+    pass('and it leads to a page of their own')
     const file = shelf.locator('article').filter({ hasText: 'a made-up file' })
     await file.getByText(/2 MB of 4 MB/).waitFor({ timeout: 20_000 })
     await file.scrollIntoViewIfNeeded()
@@ -789,12 +817,12 @@ try {
 
     console.log('\nExtracting (ADR 007), a made-up archive on this computer')
     await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
-    await shelf.getByRole('button', { name: 'Find a download' }).click()
+    await findADownload()
     await shelf.getByRole('button', { name: 'Download Bloodborne, a made-up archive' }).click()
     await shelf
       .getByRole('button', { name: 'In your downloads: Bloodborne, a made-up archive' })
       .waitFor({ timeout: 15_000 })
-    await shelf.goto(`${BASE_URL}/en/account/settings`)
+    await shelf.goto(`${BASE_URL}/en/downloads`)
     const packed = shelf.locator('article').filter({ hasText: 'a made-up archive' })
     await packed.getByRole('button', { name: 'Extract' }).click({ timeout: 20_000 })
     await packed.getByText(/^Extracted/).waitFor({ timeout: 20_000 })
@@ -831,6 +859,7 @@ try {
     else fail('taking it off the list deleted what came out')
 
     console.log('\nThrough Real-Debrid (ADR 007), a stand-in on this computer')
+    await shelf.goto(`${BASE_URL}/en/account/settings`)
     await shelf.getByRole('button', { name: 'Sign in to Real-Debrid' }).click()
     await shelf.getByText('MADEUP12').waitFor({ timeout: 15_000 })
     const signIn = shelf.getByRole('link', { name: 'Open Real-Debrid’s page' })
@@ -843,14 +872,14 @@ try {
     pass('moves on by itself once the code is entered')
 
     await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
-    await shelf.getByRole('button', { name: 'Find a download' }).click()
+    await findADownload()
     await shelf
       .getByRole('button', { name: 'Through Real-Debrid: Bloodborne, a made-up magnet' })
       .click()
     await shelf.getByRole('status').getByText('On its way').waitFor({ timeout: 15_000 })
     pass('offers Real-Debrid for what has only a magnet')
 
-    await shelf.goto(`${BASE_URL}/en/account/settings`)
+    await shelf.goto(`${BASE_URL}/en/downloads`)
     const fetched = shelf.locator('article').filter({ hasText: 'a made-up magnet' })
     await fetched.getByText(/Finished/).waitFor({ timeout: 40_000 })
     const set = join(downloaded, 'Bloodborne, a made-up magnet')
@@ -877,6 +906,7 @@ try {
     if (leaked) fail('a page holds the Real-Debrid token')
     else pass('no page holds what the sign-in gave')
 
+    await shelf.goto(`${BASE_URL}/en/account/settings`)
     await shelf.getByRole('button', { name: 'Sign out of Real-Debrid' }).click()
     await shelf
       .getByRole('alertdialog')

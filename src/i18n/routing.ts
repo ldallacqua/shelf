@@ -29,6 +29,8 @@ export const routing = defineRouting({
     '/account/archived': '/account/archived',
     // How Shelf behaves here, beside the account (spec 2).
     '/account/settings': '/account/settings',
+    // Shelf for Windows' downloads (ADR 007).
+    '/downloads': '/downloads',
     '/consent': '/consent',
     // What Shelf keeps, and how to remove it: Steam's terms ask for one (ADR 003).
     '/privacy': '/privacy',

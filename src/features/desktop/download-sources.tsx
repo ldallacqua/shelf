@@ -1,9 +1,10 @@
 'use client'
 
-import { FileUpIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
+import { DownloadIcon, FileUpIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
 import { useFormatter, useNow, useTranslations } from 'next-intl'
 import { type FormEvent, useCallback, useEffect, useId, useState } from 'react'
 
+import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Confirm } from '@/ui/confirm'
 import { Input } from '@/ui/field'
@@ -11,7 +12,6 @@ import { Loading } from '@/ui/ghost'
 
 import { AppWords } from './app-words'
 import { SourceCardGhost } from './download-sources-ghost'
-import { Downloads } from './downloads-list'
 import { RealDebrid } from './real-debrid'
 import {
   type ReadingAll,
@@ -150,7 +150,15 @@ export function DownloadSourcesView({
 
   return (
     <section className="grid gap-5 border-t border-line pt-8">
-      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+        <Button asChild size="sm" variant="ghost">
+          <Link href="/downloads">
+            <DownloadIcon aria-hidden="true" />
+            {t('seeDownloads')}
+          </Link>
+        </Button>
+      </div>
       <p className="max-w-xl text-pretty text-muted">{t('intro')}</p>
       <form className="grid max-w-xl gap-3" onSubmit={submit}>
         <label className="grid gap-1.5 text-sm font-medium">
@@ -420,14 +428,13 @@ function Sources() {
 }
 
 /**
- * Downloads and sources with their own words, which come with this code and not with the page
+ * Sources and Real-Debrid with their own words, which come with this code and not with the page
  * (`app-words.tsx`).
  */
 export default function DownloadSources() {
   return (
     <AppWords>
       <div className="grid gap-10">
-        <Downloads />
         <Sources />
         <RealDebrid />
       </div>

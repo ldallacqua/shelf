@@ -46,9 +46,9 @@ steps it is built in.
 8. **Download sources,** in Settings (a tab of your account), are lists of games to download in the format
    Hydra uses (ADR 007, spec 7.10). Paste a source's address; adding one downloads nothing. Add only
    sources you trust: Shelf can't check where their links lead.
-9. **Find a download,** beside Play on a game of your own once you have a source, lists what your
+9. **Find a download,** in the ⋯ menu beside Play on a game of your own once you have a source, lists what your
    sources have with every word of the game's name. Choose one and a folder. It goes on with the window
-   closed to the tray, and **Downloads** in Settings shows how far along it is, with Pause and
+   closed to the tray, and **Downloads**, from the icon in the header, shows how far along it is, with Pause and
    Cancel. Shelf never starts what it downloads.
 10. **Real-Debrid,** in Settings, signs in with a code you enter on its own page, and needs an
     account of your own. Then Find a download also offers **Through Real-Debrid**, for magnets and file

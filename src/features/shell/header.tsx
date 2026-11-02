@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl'
 
 import type { AddActions } from '@/features/add-game/actions'
 import { AddButton } from '@/features/add-game/add-button'
+import { DownloadsLinkInApp } from '@/features/desktop/downloads-link-later'
 import { WindowControls } from '@/features/desktop/window-controls'
 import { WindowFrame } from '@/features/desktop/window-frame'
 import { LanguageSwitch } from '@/features/language/language-switch'
@@ -47,6 +48,7 @@ export function Header({ add }: { add?: AddActions }) {
         <div className="ml-auto flex items-center gap-0.5">
           {add ? <AddButton actions={add} /> : null}
           <HeaderSearch />
+          <DownloadsLinkInApp />
           <ThemeSwitch />
           <LanguageSwitch />
           <AccountMenu />

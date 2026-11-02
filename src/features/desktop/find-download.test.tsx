@@ -1,11 +1,12 @@
-import { screen, within } from '@testing-library/react'
+import { renderHook, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { GAME_CENTERED } from '@/features/game-detail/hero'
 import { renderWithIntl } from '@/test/render'
 
 import FindDownload from './find-download'
-import { FindDownloadLater } from './find-download-later'
+import { FindDownloadLater, useHasSources } from './find-download-later'
 import type { Found } from './sources'
 import { setBridgeForTests } from './tauri'
 
@@ -58,6 +59,7 @@ beforeEach(() => {
   found = [FOUND]
   started = true
   account = { state: 'out' }
+  wide(false)
   app.mockClear()
   setBridgeForTests(app)
 })
@@ -66,27 +68,76 @@ afterEach(() => {
   setBridgeForTests(undefined)
 })
 
+const anchor = { current: null }
+const finder = (
+  <FindDownload
+    title="Made-up Game"
+    entryId="made-up-entry"
+    open
+    onOpenChange={() => undefined}
+    anchor={anchor}
+  />
+)
+
 const opened = async () => {
   const user = userEvent.setup()
-  renderWithIntl(<FindDownload title="Made-up Game" entryId="made-up-entry" />)
-  await user.click(await screen.findByRole('button', { name: 'Find a download' }))
+  renderWithIntl(finder)
   return user
 }
 
+const wide = (matches: boolean) =>
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: matches && query === GAME_CENTERED,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }))
+
 describe('finding a download', () => {
-  it('draws nothing with no source to search', async () => {
+  it('has nothing to offer with no source to search', async () => {
     sources = []
-    renderWithIntl(<FindDownload title="Made-up Game" entryId="made-up-entry" />)
+    const { result } = renderHook(() => useHasSources())
     await vi.waitFor(() => expect(app).toHaveBeenCalledWith('download_sources', {}))
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(result.current).toBe(false)
   })
 
-  it('draws nothing outside the app, and asks nothing', () => {
+  it('has something to offer with one', async () => {
+    const { result } = renderHook(() => useHasSources())
+    await vi.waitFor(() => expect(result.current).toBe(true))
+  })
+
+  it('asks nothing outside the app', () => {
+    setBridgeForTests(null)
+    const { result } = renderHook(() => useHasSources())
+    expect(result.current).toBe(false)
+    expect(app).not.toHaveBeenCalled()
+  })
+
+  it('draws nothing outside the app', () => {
     setBridgeForTests(null)
     const { container } = renderWithIntl(
-      <FindDownloadLater title="Made-up Game" entryId="made-up-entry" />,
+      <FindDownloadLater
+        title="Made-up Game"
+        entryId="made-up-entry"
+        open
+        onOpenChange={() => undefined}
+        anchor={anchor}
+      />,
     )
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('is a sheet, as anything opened from a game is', async () => {
+    wide(false)
+    await opened()
+    expect(await screen.findByRole('dialog')).toHaveAttribute('data-slot', 'sheet')
+  })
+
+  it('opens in place where the game stands in the middle of a very wide window', async () => {
+    wide(true)
+    await opened()
+    const inPlace = await screen.findByRole('dialog', { name: 'Find a download for Made-up Game' })
+    expect(inPlace).toHaveAttribute('data-slot', 'popover-content')
+    expect(await within(inPlace).findByText('Made-up Game v1.2')).toBeInTheDocument()
   })
 
   it('searches for the game’s name, and says what a person chooses by', async () => {

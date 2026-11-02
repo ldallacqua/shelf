@@ -56,6 +56,26 @@ type Story = StoryObj<typeof meta>
 
 export const Downloading: Story = {}
 
+export const AskingTheApp: Story = { args: { list: undefined } }
+
+/** Under way, then waiting, then finished: what needs looking at comes first. */
+export const OfEveryKind: Story = {
+  args: {
+    list: [
+      download(),
+      download({ id: 'stopped', title: 'A stopped one', state: 'failed', why: 'disk', speed: 0 }),
+      download({ id: 'waiting', title: 'A waiting one', state: 'queued', done: 0, speed: 0 }),
+      download({
+        id: 'finished',
+        title: 'A finished one',
+        state: 'done',
+        done: 12.4 * GB,
+        speed: 0,
+      }),
+    ],
+  },
+}
+
 export const SizeNotKnown: Story = { args: { list: [download({ total: null })] } }
 
 export const Waiting: Story = {

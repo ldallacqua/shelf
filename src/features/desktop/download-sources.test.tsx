@@ -11,6 +11,8 @@ import { DownloadSourcesInApp } from './download-sources-later'
 import type { Source } from './sources'
 import { setBridgeForTests } from './tauri'
 
+vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
+
 /** Download sources, with the app's commands faked (ADR 007). */
 
 const SOURCE: Source = {
@@ -270,7 +272,7 @@ describe('download sources', () => {
     kept = [SOURCE]
     renderWithIntl(<DownloadSources />)
     await screen.findByRole('heading', { name: 'Made-up source' })
-    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: SOURCE.url })).not.toBeInTheDocument()
   })
 })
 
