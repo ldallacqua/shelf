@@ -75,10 +75,14 @@ const view = (over: Partial<SavesView> = {}): SavesView => ({
       here: false,
     },
   ],
+  heads: ['a'],
+  changedAt: now - 2 * HOUR,
   state: 'in-step',
   last: null,
   busy: false,
   caps: { mostMb: 500, kept: 20 },
+  place: 'D:\\OneDrive\\Shelf saves',
+  reachable: true,
   ...over,
 })
 
@@ -107,6 +111,7 @@ const meta = {
     onRemove: () => undefined,
     onChooseGame: () => undefined,
     onChooseBase: () => undefined,
+    onKeep: () => undefined,
   },
 } satisfies Meta<typeof SavesPanelView>
 
@@ -179,6 +184,54 @@ export const AddedAndRefused: Story = {
     }),
   },
 }
+
+/** Another computer played since: its snapshot is offered, as Steam offers the cloud's before a game starts. */
+export const Behind: Story = {
+  args: {
+    state: view({
+      state: 'behind',
+      heads: ['b'],
+      snapshots: view().snapshots.map((snapshot, at) => ({
+        ...snapshot,
+        here: at === 2,
+        createdAt: at === 1 ? now - HOUR : snapshot.createdAt,
+      })),
+    }),
+  },
+}
+
+/**
+ * Changed here and on another computer without a backup between: two cards with their dates, as Steam's
+ * conflict window has, and nothing chosen by itself.
+ */
+export const Choice: Story = {
+  args: {
+    state: view({
+      state: 'choose',
+      heads: ['b'],
+      changedAt: now - 30 * 60 * 1000,
+      snapshots: view().snapshots.map((snapshot) => ({ ...snapshot, here: false })),
+    }),
+  },
+}
+
+/** Two computers backed up from the same snapshot: two latest, and this computer holds one of them. */
+export const TwoLatest: Story = {
+  args: {
+    state: view({
+      state: 'choose',
+      heads: ['a', 'b'],
+    }),
+  },
+}
+
+/** The folder is a USB drive that isn't plugged in. */
+export const FolderAway: Story = {
+  args: { state: view({ place: 'E:\\Shelf saves', reachable: false }) },
+}
+
+/** No folder chosen: this computer alone. */
+export const ThisComputerOnly: Story = { args: { state: view({ place: null }) } }
 
 export const Restoring: Story = { args: { busy: 'restore:b' } }
 

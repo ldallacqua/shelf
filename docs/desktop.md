@@ -60,13 +60,18 @@ steps it is built in.
     (PCGamingWiki's list, through the Ludusavi manifest) and keep snapshots of them on this computer, with
     their history (ADR 008, spec 7.12). Turn them on, **Back up now**, and **Restore** any snapshot: what is
     here is kept as a backup first, and nothing is done while the game runs. A folder the list doesn't know is
-    added by hand. Nothing is sent to Shelf. The limits are on Settings' Saves page.
+    added by hand. Nothing is sent to Shelf. On Settings' Saves page, **Where they go** takes a folder of
+    yours (one OneDrive, Google Drive for desktop or Dropbox syncs, a network drive, a USB drive): choose the
+    same on each PC, and a game's Saves offers another PC's newer snapshot, or asks which copy to keep when
+    both changed. The limits are there too.
 
 What the app keeps on this computer is the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`, the sources, in `sources.json` and `sources\` beside it,
 the list of downloads, in `downloads.json`, and the saves: what was decided for each game in `saves.json`,
 the list of where games save in `save-manifest.json`, the snapshots in `saves\{entry}\`, what was there
-before each restore in `save-backups\{entry}\`, and while a restore runs, `save-restore.json`.
+before each restore in `save-backups\{entry}\`, those waiting for a folder that can't be reached in
+`saves-waiting\{entry}\`, and while a restore runs, `save-restore.json`. In a folder you chose, Shelf keeps
+its own, `Shelf saves`.
 Uninstalling leaves those, and everything downloaded, in the folders you chose; delete the app's folder
 to forget the rest.
 
@@ -441,8 +446,27 @@ Issue 151, [ADR 008](adr/008-save-sync.md)'s phase 2; spec 7.12.
 - [ ] By hand, by the owner, on an installed version: a game from outside the stores, its saves found or
       added, backed up, played, backed up again, and an older one restored.
 
-**Done when** the owner has seen those on an installed version. Next: phase 3, a folder of my own and
-two PCs.
+**Done when** the owner has seen those on an installed version.
+
+### Step 10: Saves between PCs, through a folder
+
+ADR 008's phase 3; spec 7.12.
+
+**Built 7 Nov 2026.**
+
+- [x] This PC's place (`saves.json`'s `place`), `Shelf saves` inside it, this PC's history copied there;
+      snapshots waiting in `saves-waiting\` while it can't be reached, and sent when it can.
+- [x] Section 5's table on the page: another PC's newer snapshot offered, and the choice, settled by
+      `keep_saves` with a snapshot whose parents are every latest one.
+- [x] Commands: `save_place`, `choose_save_place`, `forget_save_place`, `keep_saves`.
+- [x] Tests: two made-up PCs sharing a folder (one then the other, both, two latest), a folder gone and
+      back, the history taken along; the page's choice and Settings' place with the bridge faked;
+      `pnpm desktop:check` chooses a folder and finds the history there.
+- [ ] By hand, by the owner, on two PCs with an installed version: one folder synced between them, a game
+      played on one and opened on the other, and a choice after playing both.
+
+**Done when** the owner has carried a game's progress between two PCs. Next: phase 4, by itself after a
+session and before Play.
 
 ### Later
 

@@ -6,6 +6,8 @@ import {
   FolderOpenIcon,
   FolderPlusIcon,
   HardDriveDownloadIcon,
+  MonitorIcon,
+  TriangleAlertIcon,
   XIcon,
 } from 'lucide-react'
 import { useFormatter, useNow, useTranslations } from 'next-intl'
@@ -41,7 +43,14 @@ export type SavesState = 'loading' | 'failed' | SavesView
 
 /** What is being done: one thing at a time, and what it is done to. */
 export type SavesBusy =
-  'turn' | 'back-up' | 'add' | 'game' | 'base' | `remove:${string}` | `restore:${string}`
+  | 'turn'
+  | 'back-up'
+  | 'add'
+  | 'game'
+  | 'base'
+  | `remove:${string}`
+  | `restore:${string}`
+  | `keep:${string}`
 
 /** Said after something was done, at the top of the panel. */
 export type SavesSaid = { tone: 'done' | 'trouble'; text: string }
@@ -80,6 +89,8 @@ type ViewProps = {
   onRemove: (location: string) => void
   onChooseGame: (title: string | null) => void
   onChooseBase: () => void
+  /** Keeps this computer's copy (null) or one of the latest snapshots, when they differ. */
+  onKeep: (snapshot: string | null) => void
 }
 
 /**
@@ -140,6 +151,7 @@ function Ready({
   onRemove,
   onChooseGame,
   onChooseBase,
+  onKeep,
 }: ViewProps & { view: SavesView }) {
   const t = useTranslations('Saves')
   const format = useFormatter()
@@ -154,6 +166,17 @@ function Ready({
 
   return (
     <>
+      {view.state === 'choose' ? (
+        <Choice view={view} computerOf={computerOf} busy={busy} onKeep={onKeep} />
+      ) : view.state === 'behind' ? (
+        <Behind
+          title={title}
+          view={view}
+          computerOf={computerOf}
+          busy={busy}
+          onRestore={onRestore}
+        />
+      ) : null}
       <div className="grid gap-2">
         <div className="flex items-center gap-3">
           <Switch
@@ -333,6 +356,11 @@ function Ready({
           </ol>
         )}
         <p className="text-xs text-pretty text-muted">
+          {view.place === null
+            ? t('placeHere')
+            : view.reachable
+              ? t('placeThere', { place: view.place })
+              : t('placeAway', { place: view.place })}{' '}
           {t.rich('caps', {
             kept: view.caps.kept,
             size: sizeOf(format, view.caps.mostMb * 1024 * 1024),
@@ -345,6 +373,121 @@ function Ready({
         </p>
       </section>
     </>
+  )
+}
+
+/** The copies a choice is between, as cards: this computer's, if it differs, and each latest snapshot. */
+function Choice({
+  view,
+  computerOf,
+  busy,
+  onKeep,
+}: {
+  view: SavesView
+  computerOf: (device: string | null) => string
+  busy?: SavesBusy | undefined
+  onKeep: (snapshot: string | null) => void
+}) {
+  const t = useTranslations('Saves')
+  const format = useFormatter()
+  const id = useId()
+  const heads = view.snapshots.filter((snapshot) => view.heads.includes(snapshot.id))
+  // What is here is one of the latest already: it needs no card of its own.
+  const here = view.files > 0 && !heads.some((snapshot) => snapshot.here)
+  const keep = (key: string | null) => (
+    <Button variant="secondary" size="sm" disabled={busy !== undefined} onClick={() => onKeep(key)}>
+      {busy === `keep:${key ?? 'here'}` ? t('choice.keeping') : t('choice.keep')}
+    </Button>
+  )
+  return (
+    <section
+      aria-labelledby={`${id}-choice`}
+      className="grid gap-3 rounded-panel border border-line-strong p-4"
+    >
+      <h3 id={`${id}-choice`} className="flex items-center gap-2 text-sm font-medium">
+        <TriangleAlertIcon aria-hidden="true" className="size-4 text-accent" />
+        {t('choice.title')}
+      </h3>
+      <p className="text-sm text-pretty text-muted">{t('choice.body')}</p>
+      <ul className="grid gap-2">
+        {here ? (
+          <li className="flex items-center gap-3 rounded-control border border-line px-3 py-2">
+            <MonitorIcon aria-hidden="true" className="size-4 flex-none text-muted" />
+            <span className="grid min-w-0 flex-1 gap-0.5">
+              <span className="text-sm font-medium">{t('choice.here')}</span>
+              <span className="text-xs text-muted">
+                {view.changedAt === null
+                  ? t('files', { files: view.files, size: sizeOf(format, view.bytes) })
+                  : t('choice.changed', {
+                      when: madeAt(format, view.changedAt),
+                      files: view.files,
+                      size: sizeOf(format, view.bytes),
+                    })}
+              </span>
+            </span>
+            {keep(null)}
+          </li>
+        ) : null}
+        {heads.map((snapshot) => (
+          <li
+            key={snapshot.id}
+            className="flex items-center gap-3 rounded-control border border-line px-3 py-2"
+          >
+            <HardDriveDownloadIcon aria-hidden="true" className="size-4 flex-none text-muted" />
+            <span className="grid min-w-0 flex-1 gap-0.5">
+              <span className="text-sm font-medium">{computerOf(snapshot.device)}</span>
+              <span className="text-xs text-muted">
+                {t('choice.backedUp', {
+                  when: madeAt(format, snapshot.createdAt),
+                  files: snapshot.files,
+                  size: sizeOf(format, snapshot.bytes),
+                })}
+              </span>
+            </span>
+            {keep(snapshot.id)}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/** A snapshot newer than what is here, from another computer or from before the saves here went. */
+function Behind({
+  title,
+  view,
+  computerOf,
+  busy,
+  onRestore,
+}: {
+  title: string
+  view: SavesView
+  computerOf: (device: string | null) => string
+  busy?: SavesBusy | undefined
+  onRestore: (snapshot: Snapshot) => void
+}) {
+  const t = useTranslations('Saves')
+  const format = useFormatter()
+  const newer = view.snapshots.find((snapshot) => view.heads.includes(snapshot.id))
+  if (!newer) return null
+  const when = madeAt(format, newer.createdAt)
+  return (
+    <section className="grid justify-items-start gap-3 rounded-panel border border-line-strong p-4">
+      <p className="text-sm text-pretty">
+        {t('behind', { computer: computerOf(newer.device), when })}
+      </p>
+      <Confirm
+        title={t('restoreTitle', { when })}
+        description={t('restoreBody', { title })}
+        confirm={t('restore')}
+        cancel={t('cancel')}
+        onConfirm={() => onRestore(newer)}
+      >
+        <Button variant="primary" size="sm" disabled={busy !== undefined}>
+          {busy === `restore:${newer.id}` ? t('restoring') : t('restoreNewer')}
+        </Button>
+      </Confirm>
+    </section>
   )
 }
 
@@ -513,7 +656,12 @@ function SavesBody({ game }: { game: SaveGame }) {
         void run(
           'back-up',
           () => saves.backUp(game),
-          (view) => (view.last?.did === 'unchanged' ? t('unchanged') : t('backedUp')),
+          (view) =>
+            view.last?.did === 'unchanged'
+              ? t('unchanged')
+              : view.last?.did === 'waiting'
+                ? t('waiting')
+                : t('backedUp'),
         )
       }
       onRestore={(snapshot) =>
@@ -535,6 +683,13 @@ function SavesBody({ game }: { game: SaveGame }) {
       onChooseGame={(chosen) => void run('game', () => saves.chooseGame(game, chosen))}
       onChooseBase={() =>
         void run('base', () => saves.chooseGameFolder(game, t('gameFolderTitle', { title })))
+      }
+      onKeep={(snapshot) =>
+        void run(
+          `keep:${snapshot ?? 'here'}`,
+          () => saves.keep(game, snapshot),
+          () => t('choice.kept'),
+        )
       }
     />
   )

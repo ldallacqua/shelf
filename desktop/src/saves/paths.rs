@@ -341,7 +341,7 @@ pub fn key(path: &Path) -> String {
     text.trim_end_matches('\\').to_string()
 }
 
-fn inside_or_same(path: &str, folder: &str) -> bool {
+pub fn inside_or_same(path: &str, folder: &str) -> bool {
     path == folder
         || path
             .strip_prefix(folder)

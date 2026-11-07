@@ -299,6 +299,22 @@
       "damaged": "Esse snapshot está danificado, ou cita um arquivo fora das pastas deste jogo, então nada foi restaurado.",
       "changed": "Um save mudou enquanto era lido. Tente de novo quando o jogo tiver fechado.",
       "failed": "Não deu certo. Tente de novo."
+    },
+    "behind": "Há um snapshot mais novo que o que está aqui, feito em {computer} em {when}.",
+    "restoreNewer": "Restaurar",
+    "waiting": "Backup feito neste computador: a pasta não pôde ser alcançada. Ele vai para lá assim que puder.",
+    "placeHere": "Guardados só neste computador.",
+    "placeThere": "Guardados em {place}.",
+    "placeAway": "Guardados em {place}, que não pode ser alcançada agora: os snapshots novos esperam neste computador.",
+    "choice": {
+      "title": "Duas cópias diferem",
+      "body": "Estes saves mudaram em mais de um computador sem um backup no meio. Escolha qual manter: a outra fica nos snapshots, e o que está aqui é guardado antes como backup.",
+      "here": "Este computador",
+      "changed": "Mudou em {when} · {files, plural, one {# arquivo} other {# arquivos}} · {size}",
+      "backedUp": "Backup de {when} · {files, plural, one {# arquivo} other {# arquivos}} · {size}",
+      "keep": "Manter esta",
+      "keeping": "Mantendo…",
+      "kept": "Mantida. Todo computador que usa a pasta vai vê-la como a mais recente."
     }
   },
   "SaveSettings": {
@@ -315,6 +331,23 @@
     "larger": "Maior",
     "saved": "Salvo.",
     "failed": "Não foi possível salvar o limite. Tente de novo.",
-    "old": "Atualize o Shelf para Windows para guardar os saves dos jogos."
+    "old": "Atualize o Shelf para Windows para guardar os saves dos jogos.",
+    "place": {
+      "title": "Para onde vão",
+      "intro": "Os snapshots ficam na pasta do app neste computador até você escolher uma pasta sua: uma que o OneDrive, o Google Drive para computador ou o Dropbox sincronizam, um drive de rede ou um pen drive. Escolha a mesma em cada um dos seus computadores e cada um vê os snapshots dos outros lá. O Shelf nunca os recebe.",
+      "here": "Só este computador",
+      "hereHint": "Na pasta do próprio app.",
+      "thereHint": "O Shelf mantém uma pasta própria aqui, Shelf saves, e só acrescenta arquivos a ela.",
+      "away": "Não pode ser alcançada agora. Os snapshots novos esperam neste computador e vão para lá assim que der.",
+      "choose": "Escolher uma pasta",
+      "change": "Escolher outra",
+      "forget": "Manter só neste computador",
+      "pickerTitle": "Escolha para onde vão os snapshots dos seus jogos",
+      "chosen": "Os snapshots vão para lá agora. Os feitos neste computador também foram copiados.",
+      "forgotten": "Os snapshots ficam neste computador agora. O que está na pasta continua lá.",
+      "refused": "Escolha uma pasta sua, não uma do Windows ou de um programa.",
+      "failed": "Não foi possível usar essa pasta. Tente de novo, ou escolha outra.",
+      "old": "Atualize o Shelf para Windows para guardar os saves dos jogos."
+    }
   }
 }

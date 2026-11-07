@@ -12,9 +12,19 @@ import { setBridgeForTests } from './tauri'
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 
 let caps: { mostMb: number; kept: number } | 'old'
+let place: { folder: string | null; reachable: boolean }
 
 const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
   if (caps === 'old') throw 'command save_caps not found'
+  if (command === 'save_place') return place
+  if (command === 'choose_save_place') {
+    place = { folder: 'D:\\Synced\\Shelf saves', reachable: true }
+    return place
+  }
+  if (command === 'forget_save_place') {
+    place = { folder: null, reachable: true }
+    return place
+  }
   if (command === 'set_save_caps') {
     // The app keeps them within its bounds, whatever it is asked.
     caps = { mostMb: Number(args?.mostMb), kept: Math.max(3, Number(args?.kept)) }
@@ -24,12 +34,42 @@ const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
 
 beforeEach(() => {
   caps = { mostMb: 500, kept: 20 }
+  place = { folder: null, reachable: true }
   app.mockClear()
   setBridgeForTests(app)
 })
 
 afterEach(() => {
   setBridgeForTests(undefined)
+})
+
+describe('where games’ snapshots go', () => {
+  it('start on this computer alone, and go to a folder once one is chosen', async () => {
+    const user = userEvent.setup()
+    renderWithIntl(<SaveSettings />)
+    expect(await screen.findByText('This computer only')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Choose a folder' }))
+    expect(app).toHaveBeenCalledWith('choose_save_place', {
+      ask: 'Choose where your games’ snapshots go',
+    })
+    expect(await screen.findByText('D:\\Synced\\Shelf saves')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('copied there too')
+  })
+
+  it('go back to this computer alone, leaving the folder as it is', async () => {
+    place = { folder: 'D:\\Synced\\Shelf saves', reachable: true }
+    const user = userEvent.setup()
+    renderWithIntl(<SaveSettings />)
+    await user.click(await screen.findByRole('button', { name: 'Keep them on this computer only' }))
+    expect(app).toHaveBeenCalledWith('forget_save_place', {})
+    expect(await screen.findByText('This computer only')).toBeInTheDocument()
+  })
+
+  it('say when the folder can’t be reached', async () => {
+    place = { folder: 'E:\\Shelf saves', reachable: false }
+    renderWithIntl(<SaveSettings />)
+    expect(await screen.findByText(/Can’t be reached now/)).toBeInTheDocument()
+  })
 })
 
 describe('the limits on games’ snapshots', () => {
@@ -50,7 +90,7 @@ describe('the limits on games’ snapshots', () => {
     await vi.waitFor(() =>
       expect(app).toHaveBeenCalledWith('set_save_caps', { mostMb: 500, kept: 30 }),
     )
-    expect(await screen.findByRole('status')).toHaveTextContent('Saved.')
+    expect(await screen.findByText('Saved.')).toBeInTheDocument()
   })
 
   it('never ask for fewer than three', async () => {
@@ -68,7 +108,7 @@ describe('the limits on games’ snapshots', () => {
     caps = 'old'
     renderWithIntl(<SaveSettings />)
     expect(
-      await screen.findByText('Update Shelf for Windows to keep games’ saves.'),
-    ).toBeInTheDocument()
+      await screen.findAllByText('Update Shelf for Windows to keep games’ saves.'),
+    ).toHaveLength(2)
   })
 })

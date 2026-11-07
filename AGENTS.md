@@ -312,7 +312,9 @@ which copy wins by parents, never clocks, and `restore.rs` checks every path bef
 Shelf's server never receives a save, a token or a key: no endpoint for them may exist. A command takes
 entry ids, titles, Steam ids and snapshot ids, never a path; folders come from Windows' picker. A game's
 saves are never read or written while it runs. Tests use `fixtures/saves/manifest.yaml`, temporary folders
-and made-up games, never the real manifest or a real save. Spec 7.12.
+and made-up games, never the real manifest or a real save. A place (a folder of the owner's, chosen per PC)
+only ever gets new files, in a folder of Shelf's own (`Shelf saves`); what can't reach it waits on the PC.
+Spec 7.12.
 
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in

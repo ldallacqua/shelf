@@ -22,6 +22,8 @@ use snapshot::{Here, Item, Known, List, Making, Unmade, Verdict};
 
 const FILE: &str = "saves.json";
 const JOURNAL: &str = "save-restore.json";
+/// The folder Shelf keeps inside the one chosen as this PC's place (ADR 008, section 8).
+pub const PLACE_NAME: &str = "Shelf saves";
 /// What was here before a restore is kept this long, and never fewer than the last few.
 const BACKUPS_FOR_MS: u64 = 30 * 24 * 60 * 60_000;
 const BACKUPS_AT_LEAST: usize = 5;
@@ -108,6 +110,8 @@ pub struct Last {
 #[serde(rename_all = "kebab-case")]
 pub enum Did {
     BackedUp,
+    /// Backed up on this computer, the place not reached: it is copied there once it can be.
+    Waiting,
     Unchanged,
     Restored,
     Failed,
@@ -145,6 +149,9 @@ struct Kept {
     caps: Caps,
     #[serde(default)]
     games: BTreeMap<String, GameSaves>,
+    /// The folder chosen as this PC's place, when one is (ADR 008, section 8).
+    #[serde(default)]
+    place: Option<PathBuf>,
 }
 
 /// One of a game's locations on this computer.
@@ -322,10 +329,25 @@ pub struct View {
     pub files: usize,
     pub bytes: u64,
     pub snapshots: Vec<SnapshotView>,
+    /// The latest snapshots: one, or several when a choice waits.
+    pub heads: Vec<String>,
+    /// When the saves here last changed, to show beside the place's in a choice.
+    pub changed_at: Option<u64>,
     pub state: State,
     pub last: Option<Last>,
     pub busy: bool,
     pub caps: Caps,
+    /// This PC's place: None is this computer alone.
+    pub place: Option<String>,
+    pub reachable: bool,
+}
+
+/// This PC's place, as Settings shows it.
+#[derive(Debug, Serialize)]
+pub struct PlaceView {
+    /// The folder Shelf keeps there; None is this computer alone.
+    pub folder: Option<String>,
+    pub reachable: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -391,6 +413,7 @@ impl Saves {
             version: 1,
             caps: kept.caps,
             games: kept.games.clone(),
+            place: kept.place.clone(),
         })
         .map_err(io::Error::other)?;
         fs::write(&next, text)?;
@@ -424,9 +447,136 @@ impl Saves {
         Ok(kept.caps)
     }
 
-    /// Where this PC's snapshots of a game go. Until a place is chosen, the app's own folder.
+    /// This PC's place (ADR 008, section 8): a folder named `Shelf saves` in the one chosen, unless that
+    /// is the one chosen. None until one is.
+    pub fn place_root(&self) -> Option<PathBuf> {
+        let chosen = self.kept.lock().unwrap().place.clone()?;
+        let named = chosen
+            .file_name()
+            .is_some_and(|name| name.to_string_lossy().eq_ignore_ascii_case(PLACE_NAME));
+        Some(if named {
+            chosen
+        } else {
+            chosen.join(PLACE_NAME)
+        })
+    }
+
+    /// Whether the place can be reached now: the folder chosen is there. This computer always can.
+    pub fn reachable(&self) -> bool {
+        self.kept
+            .lock()
+            .unwrap()
+            .place
+            .as_ref()
+            .is_none_or(|chosen| chosen.is_dir())
+    }
+
+    /// Where this PC's snapshots of a game go: the place, or until one is chosen, the app's own folder.
     pub fn place(&self, entry: &str) -> PathBuf {
+        match self.place_root() {
+            Some(root) => root.join(entry),
+            None => self.local(entry),
+        }
+    }
+
+    fn local(&self, entry: &str) -> PathBuf {
         self.folder.join("saves").join(entry)
+    }
+
+    /// Snapshots made while the place couldn't be reached, waiting on this computer to go there.
+    fn waiting(&self, entry: &str) -> PathBuf {
+        self.folder.join("saves-waiting").join(entry)
+    }
+
+    /// Every snapshot of a game that counts: the place's, and those waiting here for it. Newest first.
+    pub fn lists(&self, entry: &str) -> Vec<List> {
+        let mut lists = if self.reachable() {
+            snapshot::whole(&self.place(entry))
+        } else {
+            Vec::new()
+        };
+        for waiting in snapshot::whole(&self.waiting(entry)) {
+            if !lists.iter().any(|list| list.id == waiting.id) {
+                lists.push(waiting);
+            }
+        }
+        lists.sort_by(|a, b| b.created_at.cmp(&a.created_at).then(b.id.cmp(&a.id)));
+        lists
+    }
+
+    /// Where a snapshot's files are: the place, or waiting here.
+    fn folder_of(&self, entry: &str, id: &str) -> Option<PathBuf> {
+        [self.place(entry), self.waiting(entry)]
+            .into_iter()
+            .find(|folder| {
+                folder.join(format!("{id}.json")).is_file()
+                    && folder.join(format!("{id}.zip")).is_file()
+            })
+    }
+
+    /// Copies what waited here into the place, now it can be reached, and lets go of it here.
+    pub fn send_waiting(&self, entry: &str) {
+        if self.place_root().is_none() || !self.reachable() {
+            return;
+        }
+        let waiting = self.waiting(entry);
+        let place = self.place(entry);
+        for list in snapshot::whole(&waiting) {
+            if snapshot::copy(&waiting, &place, &list).is_ok() {
+                let _ = fs::remove_file(waiting.join(format!("{}.json", list.id)));
+                let _ = fs::remove_file(waiting.join(format!("{}.zip", list.id)));
+            }
+        }
+    }
+
+    /// This PC's place, as Settings shows it.
+    pub fn place_view(&self) -> PlaceView {
+        PlaceView {
+            folder: self.place_root().map(|root| root.display().to_string()),
+            reachable: self.reachable(),
+        }
+    }
+
+    /// Chooses a folder as this PC's place. This computer's history goes with it, as new files only, so
+    /// nothing there is replaced. Never inside Windows, Program Files or the app's own folder.
+    pub fn choose_place(&self, chosen: &Path) -> Result<PlaceView, Refusal> {
+        let at = paths::key(chosen);
+        let refused = [&self.folders.windows, &self.folders.app]
+            .into_iter()
+            .flatten()
+            .chain(self.folders.program_files.iter())
+            .any(|each| paths::inside_or_same(&at, &paths::key(each)));
+        if refused || !chosen.is_dir() {
+            return Err(Refusal::Wide);
+        }
+        {
+            let mut kept = self.kept.lock().unwrap();
+            kept.place = Some(chosen.to_path_buf());
+            self.save(&kept).map_err(|_| Refusal::Failed)?;
+        }
+        let root = self.place_root().ok_or(Refusal::Failed)?;
+        fs::create_dir_all(&root).map_err(|_| Refusal::Unreachable)?;
+        if let Ok(games) = fs::read_dir(self.folder.join("saves")) {
+            for game in games.filter_map(Result::ok) {
+                let entry = game.file_name().to_string_lossy().into_owned();
+                if !crate::ids::entry(&entry) {
+                    continue;
+                }
+                for list in snapshot::whole(&game.path()) {
+                    let _ = snapshot::copy(&game.path(), &root.join(&entry), &list);
+                }
+            }
+        }
+        Ok(self.place_view())
+    }
+
+    /// Back to this computer alone. What is in the folder stays there.
+    pub fn forget_place(&self) -> Result<PlaceView, Refusal> {
+        let mut kept = self.kept.lock().unwrap();
+        kept.place = None;
+        self.save(&kept).map_err(|_| Refusal::Failed)?;
+        drop(kept);
+        Ok(self.place_view())
     }
 
     fn backups(&self, entry: &str) -> PathBuf {
@@ -564,6 +714,7 @@ impl Saves {
 
     /// A game's saves as a page shows them.
     pub fn view(&self, entry: &str, setup: &Setup, manifest: bool) -> View {
+        self.send_waiting(entry);
         let kept = self.game(entry);
         let here = self.here(setup).ok();
         let locations = setup
@@ -596,7 +747,14 @@ impl Saves {
                 locations.iter().map(|each| each.bytes).sum(),
             ),
         };
-        let lists = snapshot::whole(&self.place(entry));
+        let lists = self.lists(entry);
+        let heads: Vec<String> = snapshot::heads(&lists)
+            .iter()
+            .map(|head| head.id.clone())
+            .collect();
+        let changed_at = here
+            .as_ref()
+            .and_then(|here| here.files.iter().map(|(item, _)| item.modified).max());
         let state = match snapshot::decide(
             here.as_ref()
                 .filter(|here| !here.is_empty())
@@ -643,10 +801,14 @@ impl Saves {
             files,
             bytes,
             snapshots,
+            heads,
+            changed_at,
             state,
             last: kept.last,
             busy: self.is_busy(entry),
             caps: self.caps(),
+            place: self.place_root().map(|root| root.display().to_string()),
+            reachable: self.reachable(),
         }
     }
 
@@ -733,7 +895,15 @@ impl Saves {
         match &made {
             Ok(Some(list)) => self.finished(
                 entry,
-                Did::BackedUp,
+                if self
+                    .waiting(entry)
+                    .join(format!("{}.json", list.id))
+                    .is_file()
+                {
+                    Did::Waiting
+                } else {
+                    Did::BackedUp
+                },
                 None,
                 Some(Known {
                     id: list.id.clone(),
@@ -759,8 +929,8 @@ impl Saves {
         if here.is_empty() {
             return Err(Refusal::Empty);
         }
-        let place = self.place(entry);
-        let lists = snapshot::whole(&place);
+        self.send_waiting(entry);
+        let lists = self.lists(entry);
         let settling = parents.is_some();
         let known = self.game(entry).known;
         if !settling
@@ -773,31 +943,44 @@ impl Saves {
         let parents =
             parents.unwrap_or_else(|| known.iter().map(|known| known.id.clone()).collect());
         let title = short_title(title);
-        self.write_game_file(&place, entry, &title);
-        let list = snapshot::write(
-            &place,
-            &here,
-            Making {
-                entry,
-                title: &title,
-                device: self.device.as_deref(),
-                parents,
-                created_at: now,
-            },
-        )
-        .map_err(|unmade| match unmade {
+        let making = || Making {
+            entry,
+            title: &title,
+            device: self.device.as_deref(),
+            parents: parents.clone(),
+            created_at: now,
+        };
+        let refused = |unmade| match unmade {
             Unmade::Changed => Refusal::Changed,
             Unmade::Io => Refusal::Failed,
-        })?;
-        let kept = self.caps().kept as usize;
-        snapshot::prune(&place, &snapshot::whole(&place), kept, &[&list.id]);
+        };
+        let place = self.place(entry);
+        let written = if self.reachable() {
+            self.write_game_file(&place, entry, &title);
+            snapshot::write(&place, &here, making())
+        } else {
+            Err(Unmade::Io)
+        };
+        let list = match written {
+            Ok(list) => {
+                let kept = self.caps().kept as usize;
+                snapshot::prune(&place, &snapshot::whole(&place), kept, &[&list.id]);
+                list
+            }
+            // A place gone, full or refusing: it waits on this computer, and nothing is lost.
+            Err(Unmade::Io) if self.place_root().is_some() => {
+                snapshot::write(&self.waiting(entry), &here, making()).map_err(refused)?
+            }
+            Err(unmade) => return Err(refused(unmade)),
+        };
         Ok(Some(list))
     }
 
     /// Puts a snapshot back (ADR 008, section 6). The caller has checked the game isn't running, and
     /// holds it (`begin`).
     pub fn restore(&self, entry: &str, id: &str, setup: &Setup, now: u64) -> Result<(), Refusal> {
-        let heads: Vec<String> = snapshot::heads(&snapshot::whole(&self.place(entry)))
+        self.send_waiting(entry);
+        let heads: Vec<String> = snapshot::heads(&self.lists(entry))
             .iter()
             .map(|head| head.id.clone())
             .collect();
@@ -838,12 +1021,15 @@ impl Saves {
     }
 
     fn put_back(&self, entry: &str, id: &str, setup: &Setup, now: u64) -> Result<List, Refusal> {
-        let place = self.place(entry);
-        let list = snapshot::whole(&place)
+        let list = self
+            .lists(entry)
             .into_iter()
             .find(|list| list.id == id)
             .ok_or(Refusal::Missing)?;
-        let archive = place.join(format!("{id}.zip"));
+        let archive = self
+            .folder_of(entry, id)
+            .ok_or(Refusal::Missing)?
+            .join(format!("{id}.zip"));
         let usable: Vec<&Location> = setup
             .locations
             .iter()
@@ -974,10 +1160,33 @@ impl Saves {
 
     /// A snapshot's archive, for Explorer to show.
     pub fn archive(&self, entry: &str, id: &str) -> Option<PathBuf> {
-        snapshot::whole(&self.place(entry))
+        Some(self.folder_of(entry, id)?.join(format!("{id}.zip")))
+    }
+
+    /// Settles a choice (ADR 008, section 5): keeps this PC's saves (`None`) or one of the latest
+    /// snapshots, and writes a new snapshot of it whose parents are every latest one, so every PC sees
+    /// it settled. The copy not chosen stays in the history. The caller has checked the game isn't
+    /// running, and holds it (`begin`).
+    pub fn keep(
+        &self,
+        entry: &str,
+        title: &str,
+        setup: &Setup,
+        now: u64,
+        keep: Option<&str>,
+    ) -> Result<(), Refusal> {
+        self.send_waiting(entry);
+        let heads: Vec<String> = snapshot::heads(&self.lists(entry))
             .iter()
-            .any(|list| list.id == id)
-            .then(|| self.place(entry).join(format!("{id}.zip")))
+            .map(|head| head.id.clone())
+            .collect();
+        match keep {
+            None => self
+                .back_up(entry, title, setup, now, Some(heads))
+                .map(|_| ()),
+            Some(id) if heads.iter().any(|head| head == id) => self.restore(entry, id, setup, now),
+            Some(_) => Err(Refusal::Invalid),
+        }
     }
 }
 
@@ -1073,14 +1282,18 @@ mod tests {
                 "busy",
                 "bytes",
                 "caps",
+                "changedAt",
                 "cloud",
                 "files",
+                "heads",
                 "last",
                 "locations",
                 "manifest",
                 "matched",
                 "on",
                 "others",
+                "place",
+                "reachable",
                 "registry",
                 "snapshots",
                 "state"
@@ -1111,6 +1324,219 @@ mod tests {
             serde_json::to_value(Refusal::Outside).unwrap(),
             serde_json::json!("outside")
         );
+    }
+
+    /// Two made-up PCs, each its own folders, sharing one place, as two PCs share a synced folder.
+    fn two_pcs(name: &str) -> (Pc, Pc, PathBuf) {
+        let one = Pc::new(&format!("{name}-one"), "one", &["<winAppData>/A Game"]);
+        let two = Pc::new(&format!("{name}-two"), "two", &["<winAppData>/A Game"]);
+        let shared = folder(&format!("{name}-shared"));
+        one.saves.choose_place(&shared).unwrap();
+        two.saves.choose_place(&shared).unwrap();
+        (one, two, shared)
+    }
+
+    fn slot(pc: &Pc) -> PathBuf {
+        pc.app_data().join("A Game").join("slot1.sav")
+    }
+
+    fn state(pc: &Pc) -> State {
+        pc.saves.view("entry-1", &pc.setup(), true).state
+    }
+
+    fn latest(pc: &Pc) -> String {
+        pc.saves.lists("entry-1")[0].id.clone()
+    }
+
+    #[test]
+    fn played_on_one_pc_then_opened_on_another_it_starts_with_the_first_s_progress() {
+        let (one, two, shared) = two_pcs("saves-two");
+        put(&slot(&one), "chapter one");
+        let first = one
+            .saves
+            .back_up("entry-1", "A Game", &one.setup(), 1000, None)
+            .unwrap()
+            .unwrap();
+        assert!(
+            shared
+                .join(PLACE_NAME)
+                .join("entry-1")
+                .join(format!("{}.zip", first.id))
+                .is_file()
+        );
+        // The second PC has nothing of its own: the place's is put here.
+        assert_eq!(state(&two), State::Behind);
+        two.saves
+            .restore("entry-1", &first.id, &two.setup(), 2000)
+            .unwrap();
+        assert_eq!(fs::read_to_string(slot(&two)).unwrap(), "chapter one");
+        assert_eq!(state(&two), State::InStep);
+        // Played further on the first: the second is behind, and takes it.
+        put(&slot(&one), "chapter two");
+        let second = one
+            .saves
+            .back_up("entry-1", "A Game", &one.setup(), 3000, None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(state(&two), State::Behind);
+        two.saves
+            .restore("entry-1", &second.id, &two.setup(), 4000)
+            .unwrap();
+        assert_eq!(fs::read_to_string(slot(&two)).unwrap(), "chapter two");
+        // Taking the latest writes nothing new: it is already the latest.
+        assert_eq!(latest(&two), second.id);
+        let _ = fs::remove_dir_all(shared);
+    }
+
+    #[test]
+    fn played_on_both_without_a_backup_between_is_a_choice_and_nothing_is_lost() {
+        let (one, two, shared) = two_pcs("saves-both");
+        put(&slot(&one), "start");
+        let first = one
+            .saves
+            .back_up("entry-1", "A Game", &one.setup(), 1000, None)
+            .unwrap()
+            .unwrap();
+        two.saves
+            .restore("entry-1", &first.id, &two.setup(), 1500)
+            .unwrap();
+        put(&slot(&one), "one went left");
+        let left = one
+            .saves
+            .back_up("entry-1", "A Game", &one.setup(), 2000, None)
+            .unwrap()
+            .unwrap();
+        put(&slot(&two), "two went right");
+        // Both moved: never a silent overwrite.
+        assert_eq!(state(&two), State::Choose);
+        let view = two.saves.view("entry-1", &two.setup(), true);
+        assert_eq!(view.heads, std::slice::from_ref(&left.id));
+        assert!(view.changed_at.is_some());
+        // Keeping this PC's writes it as the latest, after the other's.
+        two.saves
+            .keep("entry-1", "A Game", &two.setup(), 3000, None)
+            .unwrap();
+        let kept = two.saves.lists("entry-1")[0].clone();
+        assert_eq!(kept.parents, std::slice::from_ref(&left.id));
+        assert_eq!(state(&two), State::InStep);
+        // The first PC follows, and the copy not chosen is still in the history.
+        assert_eq!(state(&one), State::Behind);
+        one.saves
+            .restore("entry-1", &kept.id, &one.setup(), 4000)
+            .unwrap();
+        assert_eq!(fs::read_to_string(slot(&one)).unwrap(), "two went right");
+        assert!(
+            one.saves
+                .lists("entry-1")
+                .iter()
+                .any(|list| list.id == left.id)
+        );
+        let _ = fs::remove_dir_all(shared);
+    }
+
+    #[test]
+    fn two_latest_snapshots_are_a_choice_settled_for_every_pc() {
+        let (one, two, shared) = two_pcs("saves-forked");
+        put(&slot(&one), "start");
+        let first = one
+            .saves
+            .back_up("entry-1", "A Game", &one.setup(), 1000, None)
+            .unwrap()
+            .unwrap();
+        two.saves
+            .restore("entry-1", &first.id, &two.setup(), 1500)
+            .unwrap();
+        put(&slot(&one), "one's");
+        put(&slot(&two), "two's");
+        let ones = one
+            .saves
+            .back_up("entry-1", "A Game", &one.setup(), 2000, None)
+            .unwrap()
+            .unwrap();
+        let twos = two
+            .saves
+            .back_up("entry-1", "A Game", &two.setup(), 2100, None)
+            .unwrap()
+            .unwrap();
+        // Two PCs backed up from the same snapshot: two latest, and a choice on both.
+        assert_eq!(state(&one), State::Choose);
+        assert_eq!(state(&two), State::Choose);
+        assert_eq!(
+            one.saves
+                .keep("entry-1", "A Game", &one.setup(), 3000, Some("not-a-head")),
+            Err(Refusal::Invalid)
+        );
+        // The first PC keeps the second's: it is put here, and settled for both.
+        one.saves
+            .keep("entry-1", "A Game", &one.setup(), 3000, Some(&twos.id))
+            .unwrap();
+        assert_eq!(fs::read_to_string(slot(&one)).unwrap(), "two's");
+        let settled = one.saves.lists("entry-1")[0].clone();
+        let mut parents = settled.parents.clone();
+        parents.sort();
+        let mut expected = vec![ones.id.clone(), twos.id.clone()];
+        expected.sort();
+        assert_eq!(parents, expected);
+        assert_eq!(state(&one), State::InStep);
+        assert_eq!(state(&two), State::InStep);
+        let _ = fs::remove_dir_all(shared);
+    }
+
+    #[test]
+    fn a_place_that_can_t_be_reached_keeps_the_snapshot_here_until_it_can() {
+        let pc = Pc::new("saves-away", "dev1", &["<winAppData>/A Game"]);
+        let drive = folder("saves-away-drive");
+        pc.saves.choose_place(&drive).unwrap();
+        fs::remove_dir_all(&drive).unwrap();
+        assert!(!pc.saves.reachable());
+        put(&slot(&pc), "made while away");
+        let made = pc
+            .saves
+            .back_up("entry-1", "A Game", &pc.setup(), 1000, None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(pc.saves.game("entry-1").last.unwrap().did, Did::Waiting);
+        let view = pc.saves.view("entry-1", &pc.setup(), true);
+        assert!(!view.reachable);
+        assert_eq!(view.snapshots.len(), 1);
+        // The drive is back: what waited goes there.
+        fs::create_dir_all(&drive).unwrap();
+        pc.saves.view("entry-1", &pc.setup(), true);
+        let there = drive.join(PLACE_NAME).join("entry-1");
+        assert!(there.join(format!("{}.json", made.id)).is_file());
+        assert!(snapshot::whole(&pc.saves.waiting("entry-1")).is_empty());
+        let _ = fs::remove_dir_all(drive);
+    }
+
+    #[test]
+    fn choosing_a_place_takes_this_pc_s_history_along_and_never_a_system_folder() {
+        let pc = Pc::new("saves-along", "dev1", &["<winAppData>/A Game"]);
+        put(&slot(&pc), "kept here first");
+        let made = pc
+            .saves
+            .back_up("entry-1", "A Game", &pc.setup(), 1000, None)
+            .unwrap()
+            .unwrap();
+        let drive = folder("saves-along-drive");
+        let named = drive.join(PLACE_NAME);
+        fs::create_dir_all(&named).unwrap();
+        // A folder already named for Shelf is used as it is.
+        let place = pc.saves.choose_place(&named).unwrap();
+        assert_eq!(place.folder, Some(named.display().to_string()));
+        assert!(
+            named
+                .join("entry-1")
+                .join(format!("{}.zip", made.id))
+                .is_file()
+        );
+        assert!(named.join("entry-1").join("game.json").is_file());
+        assert_eq!(pc.saves.lists("entry-1").len(), 1);
+        let windows = pc.saves.folders.windows.clone().unwrap();
+        fs::create_dir_all(&windows).unwrap();
+        assert_eq!(pc.saves.choose_place(&windows).err(), Some(Refusal::Wide));
+        pc.saves.forget_place().unwrap();
+        assert_eq!(pc.saves.place_view().folder, None);
+        let _ = fs::remove_dir_all(drive);
     }
 
     #[test]

@@ -1261,6 +1261,80 @@ pub fn show_save_snapshot(
         .map_err(|_| SaveRefusal::Failed)
 }
 
+/// This PC's place (ADR 008, section 8): the folder Shelf keeps in the one chosen, or this computer alone.
+#[tauri::command]
+pub fn save_place(saves: State<'_, Saves>) -> saves::PlaceView {
+    saves.place_view()
+}
+
+/// Asks Windows for a folder to be this PC's place, one that a cloud client syncs, a network drive or a
+/// USB drive, and takes this computer's history there. Nothing, when the picker is closed.
+#[tauri::command]
+pub async fn choose_save_place(
+    window: WebviewWindow,
+    ask: String,
+) -> Result<Option<saves::PlaceView>, SaveRefusal> {
+    #[cfg(debug_assertions)]
+    let picked = match std::env::var("SHELF_PICK_SAVE_PLACE") {
+        Ok(path) => Some(PathBuf::from(path)),
+        Err(_) => pick_place(&window, short(&ask)).await?,
+    };
+    #[cfg(not(debug_assertions))]
+    let picked = pick_place(&window, short(&ask)).await?;
+    let Some(folder) = picked else {
+        return Ok(None);
+    };
+    let app = window.app_handle().clone();
+    tauri::async_runtime::spawn_blocking(move || app.state::<Saves>().choose_place(&folder))
+        .await
+        .map_err(|_| SaveRefusal::Failed)?
+        .map(Some)
+}
+
+async fn pick_place(window: &WebviewWindow, title: String) -> Result<Option<PathBuf>, SaveRefusal> {
+    let dialog = window.dialog().file().set_parent(window).set_title(title);
+    let picked = tauri::async_runtime::spawn_blocking(move || dialog.blocking_pick_folder())
+        .await
+        .map_err(|_| SaveRefusal::Failed)?;
+    Ok(picked.and_then(|folder| folder.into_path().ok()))
+}
+
+/// Back to this computer alone. What is in the folder stays there.
+#[tauri::command]
+pub fn forget_save_place(saves: State<'_, Saves>) -> Result<saves::PlaceView, SaveRefusal> {
+    saves.forget_place()
+}
+
+/// Settles a choice between copies: this PC's (`keep` none) or one of the latest snapshots. Never while
+/// the game runs.
+#[tauri::command]
+pub async fn keep_saves(
+    app: AppHandle,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+    keep: Option<String>,
+) -> Result<saves::View, SaveRefusal> {
+    if keep.as_deref().is_some_and(|id| !ids::entry(id)) {
+        return Err(SaveRefusal::Invalid);
+    }
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        move |app, saves, entry, title, apps, setup, read| {
+            if running_now(app, entry, apps) {
+                return Err(SaveRefusal::Running);
+            }
+            let _busy = saves.begin(entry)?;
+            saves.keep(entry, title, &setup, now(), keep.as_deref())?;
+            Ok(saves.view(entry, &setup, read))
+        },
+    )
+    .await
+}
+
 /// The caps, the same for every game (ADR 008, section 4).
 #[tauri::command]
 pub fn save_caps(saves: State<'_, Saves>) -> Caps {

@@ -76,17 +76,30 @@ const viewSchema = z.object({
   files: z.number(),
   bytes: z.number(),
   snapshots: z.array(snapshotSchema),
+  /** The latest snapshots: one, or several when a choice waits. */
+  heads: z.array(z.string()),
+  /** When the saves here last changed. */
+  changedAt: z.number().nullable(),
   state: z.enum(['nothing', 'in-step', 'changed', 'behind', 'choose']),
   last: z
     .object({
       at: z.number(),
-      did: z.enum(['backed-up', 'unchanged', 'restored', 'failed']),
+      did: z.enum(['backed-up', 'waiting', 'unchanged', 'restored', 'failed']),
       why: z.enum(saveRefusals).optional(),
     })
     .nullable(),
   busy: z.boolean(),
   caps: capsSchema,
+  /** This computer's place, the folder Shelf keeps there; null is this computer alone. */
+  place: z.string().nullable(),
+  /** Whether that folder can be reached now. */
+  reachable: z.boolean(),
 })
+
+const placeSchema = z.object({ folder: z.string().nullable(), reachable: z.boolean() })
+
+/** Where this computer's snapshots go (ADR 008, section 8). */
+export type SavePlace = z.infer<typeof placeSchema>
 
 /** A game's saves on this computer, as the app tells them. */
 export type SavesView = z.infer<typeof viewSchema>
@@ -121,10 +134,18 @@ export const saves = {
   /** Windows' folder picker for the game's own folder; null when it is closed. */
   chooseGameFolder: async (game: SaveGame, ask: string): Promise<SavesView | null> =>
     maybeView(await call('choose_game_folder', { ...named(game), ask })),
+  /** Settles a choice: this computer's copy (null), or one of the latest snapshots. */
+  keep: async (game: SaveGame, keep: string | null): Promise<SavesView> =>
+    view(await call('keep_saves', { ...named(game), keep })),
   /** Explorer, at a snapshot's archive. */
   show: async (entryId: string, snapshot: string): Promise<void> => {
     await call('show_save_snapshot', { entry: entryId, snapshot })
   },
   caps: async (): Promise<Caps> => capsSchema.parse(await call('save_caps')),
+  place: async (): Promise<SavePlace> => placeSchema.parse(await call('save_place')),
+  /** Windows' folder picker, titled `ask`; null when it is closed. */
+  choosePlace: async (ask: string): Promise<SavePlace | null> =>
+    placeSchema.nullable().parse(await call('choose_save_place', { ask })),
+  forgetPlace: async (): Promise<SavePlace> => placeSchema.parse(await call('forget_save_place')),
   setCaps: async (caps: Caps): Promise<Caps> => capsSchema.parse(await call('set_save_caps', caps)),
 }

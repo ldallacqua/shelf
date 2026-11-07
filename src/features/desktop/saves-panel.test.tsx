@@ -73,10 +73,14 @@ const view = (changes: Partial<SavesView> = {}): SavesView => ({
       here: false,
     },
   ],
+  heads: ['20261107T193000Z-devicehe-0f1e2d3c4b5a'],
+  changedAt: Date.now() - DAY,
   state: 'in-step',
   last: null,
   busy: false,
   caps: { mostMb: 500, kept: 20 },
+  place: null,
+  reachable: true,
   ...changes,
 })
 
@@ -252,6 +256,75 @@ describe('a game’s saves', () => {
     expect(within(panel).getByText(/doesn’t say where this game saves/)).toBeInTheDocument()
     // Nothing to back up: the button can't be pressed.
     expect(within(panel).getByRole('button', { name: 'Back up now' })).toBeDisabled()
+  })
+
+  it('offer the newer snapshot another computer made, and restore it once asked', async () => {
+    answer = view({
+      state: 'behind',
+      heads: ['20261106T120000Z-deviceot-aaaaaaaaaaaa'],
+      snapshots: view().snapshots.map((snapshot) => ({ ...snapshot, here: false })),
+      place: 'D:\\Synced\\Shelf saves',
+    })
+    const { user, panel } = await opened()
+    await vi.waitFor(() =>
+      expect(
+        within(panel).getByText(/A newer snapshot than what’s here, made on Living room/),
+      ).toBeVisible(),
+    )
+    await user.click(within(panel).getByRole('button', { name: 'Restore it' }))
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Restore' }),
+    )
+    expect(app).toHaveBeenCalledWith('restore_saves', {
+      ...named,
+      snapshot: '20261106T120000Z-deviceot-aaaaaaaaaaaa',
+    })
+    expect(
+      within(panel).getByText('Kept in D:\\Synced\\Shelf saves.', { exact: false }),
+    ).toBeVisible()
+  })
+
+  it('ask which copy to keep when two differ, and never choose by itself', async () => {
+    answer = view({
+      state: 'choose',
+      heads: ['20261106T120000Z-deviceot-aaaaaaaaaaaa'],
+      snapshots: view().snapshots.map((snapshot) => ({ ...snapshot, here: false })),
+    })
+    const { user, panel } = await opened()
+    const choice = within(panel).getByRole('region', { name: 'Two copies differ' })
+    const cards = within(choice).getAllByRole('listitem')
+    expect(cards).toHaveLength(2)
+    expect(cards[0]).toHaveTextContent('This computer')
+    await vi.waitFor(() => expect(cards[1]).toHaveTextContent('Living room'))
+    expect(app).not.toHaveBeenCalledWith('keep_saves', expect.anything())
+    await user.click(within(cards[1]!).getByRole('button', { name: 'Keep this one' }))
+    expect(app).toHaveBeenCalledWith('keep_saves', {
+      ...named,
+      keep: '20261106T120000Z-deviceot-aaaaaaaaaaaa',
+    })
+  })
+
+  it('keep this computer’s copy when that is the one chosen', async () => {
+    answer = view({
+      state: 'choose',
+      heads: ['20261106T120000Z-deviceot-aaaaaaaaaaaa'],
+      snapshots: view().snapshots.map((snapshot) => ({ ...snapshot, here: false })),
+    })
+    const { user, panel } = await opened()
+    const choice = within(panel).getByRole('region', { name: 'Two copies differ' })
+    await user.click(within(within(choice).getAllByRole('listitem')[0]!).getByRole('button'))
+    expect(app).toHaveBeenCalledWith('keep_saves', { ...named, keep: null })
+  })
+
+  it('say when the folder can’t be reached and the snapshot waits here', async () => {
+    answer = view({ place: 'E:\\Shelf saves', reachable: false })
+    const { user, panel } = await opened()
+    expect(within(panel).getByText(/which can’t be reached now/)).toBeVisible()
+    app.mockImplementationOnce(async () => ({ ...answer, last: { at: 1, did: 'waiting' } }))
+    await user.click(within(panel).getByRole('button', { name: 'Back up now' }))
+    expect(await within(panel).findByRole('status')).toHaveTextContent(
+      'Backed up on this computer: the folder couldn’t be reached.',
+    )
   })
 
   it('say which stores carry the game’s saves themselves', async () => {

@@ -299,6 +299,22 @@
       "damaged": "That snapshot is damaged, or names a file outside this game’s folders, so nothing was put back.",
       "changed": "A save changed while it was being read. Try again once the game has closed.",
       "failed": "That didn’t work. Try again."
+    },
+    "behind": "A newer snapshot than what’s here, made on {computer} on {when}.",
+    "restoreNewer": "Restore it",
+    "waiting": "Backed up on this computer: the folder couldn’t be reached. It goes there once it can.",
+    "placeHere": "Kept on this computer only.",
+    "placeThere": "Kept in {place}.",
+    "placeAway": "Kept in {place}, which can’t be reached now: new snapshots wait on this computer.",
+    "choice": {
+      "title": "Two copies differ",
+      "body": "These saves changed on more than one computer without a backup between. Choose which to keep: the other stays in the snapshots, and what’s here is backed up first.",
+      "here": "This computer",
+      "changed": "Changed {when} · {files, plural, one {# file} other {# files}} · {size}",
+      "backedUp": "Backed up {when} · {files, plural, one {# file} other {# files}} · {size}",
+      "keep": "Keep this one",
+      "keeping": "Keeping…",
+      "kept": "Kept. Every computer sharing the folder will see it as the latest."
     }
   },
   "SaveSettings": {
@@ -315,6 +331,23 @@
     "larger": "Larger",
     "saved": "Saved.",
     "failed": "The limit couldn’t be saved. Try again.",
-    "old": "Update Shelf for Windows to keep games’ saves."
+    "old": "Update Shelf for Windows to keep games’ saves.",
+    "place": {
+      "title": "Where they go",
+      "intro": "Snapshots stay in the app’s folder on this computer until you choose a folder of your own: one that OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB drive. Choose the same one on each of your computers and each sees the others’ snapshots there. Shelf never receives them.",
+      "here": "This computer only",
+      "hereHint": "In the app’s own folder.",
+      "thereHint": "Shelf keeps its own folder here, Shelf saves, and only ever adds files to it.",
+      "away": "Can’t be reached now. New snapshots wait on this computer and go there once it can be.",
+      "choose": "Choose a folder",
+      "change": "Choose another",
+      "forget": "Keep them on this computer only",
+      "pickerTitle": "Choose where your games’ snapshots go",
+      "chosen": "Snapshots go there now. Those made on this computer were copied there too.",
+      "forgotten": "Snapshots stay on this computer now. What’s in the folder stays there.",
+      "refused": "Choose a folder of your own, not one of Windows’ or a program’s.",
+      "failed": "That folder couldn’t be used. Try again, or choose another.",
+      "old": "Update Shelf for Windows to keep games’ saves."
+    }
   }
 }

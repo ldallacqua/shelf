@@ -14,9 +14,12 @@ of it. While building, the ADR gained one rule the owner hasn't seen: going back
 writes a new one of it, so phase 4's check before Play won't undo it. The real manifest was read once by hand
 (0.35 s, 21,554 games with saves), never by a test. The design skills were not installed: their checklists
 were applied by hand. It reaches the owner only in a desktop release (0.13.0), which needs the owner's OK.
-**Next:** phase 3, a folder of the owner's and two PCs, with the choice between two copies; phase 5 waits for
-Shelf to be registered with Microsoft and Google, which only the owner can do. **Still unchecked, by the
-owner:** a real game from outside the stores, its saves backed up, played, and an older one restored.
+Phase 3 followed the same day: on Settings' Saves page a folder of the owner's (synced by OneDrive or the
+like) becomes this PC's place, and a game's Saves offers another PC's newer snapshot, or a choice when both
+changed. **Next:** phase 4, by itself after a session and before Play; phase 5 waits for Shelf to be
+registered with Microsoft and Google, which only the owner can do. **Still unchecked, by the owner:** a real
+game from outside the stores, its saves backed up and restored, then carried between two PCs through one
+folder.
 
 ## Settings, one area (7 Nov 2026)
 

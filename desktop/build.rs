@@ -51,6 +51,10 @@ fn main() {
             "show_save_snapshot",
             "save_caps",
             "set_save_caps",
+            "save_place",
+            "choose_save_place",
+            "forget_save_place",
+            "keep_saves",
         ]),
     ))
     .expect("tauri-build failed");
