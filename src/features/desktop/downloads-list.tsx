@@ -20,32 +20,15 @@ import { Ghost, Loading } from '@/ui/ghost'
 import { Progress } from '@/ui/progress'
 
 import { desktop } from './bridge'
+import { sizeOf as size } from './size'
 import { type Download, downloads as commands } from './sources'
 
-const KB = 1024
-const MB = KB * 1024
-const GB = MB * 1024
 /** How often a page asks how far along it is, while something is moving. */
 const LOOK_EVERY = 1000
 /** What another go can't change: the same archive would say the same. */
 const FINAL = ['password', 'unsafe']
 
 type Format = ReturnType<typeof useFormatter>
-
-/** A size in the unit a person reads it in, with a decimal only where it says something. */
-const size = (format: Format, bytes: number) => {
-  const [value, unit] =
-    bytes >= GB
-      ? [bytes / GB, 'gigabyte']
-      : bytes >= MB
-        ? [bytes / MB, 'megabyte']
-        : [bytes / KB, 'kilobyte']
-  return format.number(value, {
-    style: 'unit',
-    unit,
-    maximumFractionDigits: value < 100 ? 1 : 0,
-  })
-}
 
 /** Time left, to the minute: a second-by-second count would only make it look exact. */
 const left = (format: Format, seconds: number) => {

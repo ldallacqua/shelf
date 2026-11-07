@@ -14,6 +14,7 @@ mod pads;
 mod processes;
 mod real_debrid;
 mod running;
+mod saves;
 mod shortcut;
 mod source_window;
 mod sources;
@@ -404,6 +405,17 @@ pub fn run() {
             commands::real_debrid_sign_in,
             commands::real_debrid_cancel_sign_in,
             commands::real_debrid_sign_out,
+            commands::saves,
+            commands::turn_saves,
+            commands::back_up_saves,
+            commands::restore_saves,
+            commands::add_save_folder,
+            commands::remove_save_location,
+            commands::choose_save_game,
+            commands::choose_game_folder,
+            commands::show_save_snapshot,
+            commands::save_caps,
+            commands::set_save_caps,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -448,6 +460,17 @@ pub fn run() {
                     .permission("allow-real-debrid-sign-in")
                     .permission("allow-real-debrid-cancel-sign-in")
                     .permission("allow-real-debrid-sign-out")
+                    .permission("allow-saves")
+                    .permission("allow-turn-saves")
+                    .permission("allow-back-up-saves")
+                    .permission("allow-restore-saves")
+                    .permission("allow-add-save-folder")
+                    .permission("allow-remove-save-location")
+                    .permission("allow-choose-save-game")
+                    .permission("allow-choose-game-folder")
+                    .permission("allow-show-save-snapshot")
+                    .permission("allow-save-caps")
+                    .permission("allow-set-save-caps")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")
@@ -499,6 +522,14 @@ pub fn run() {
                 commands::now(),
                 Some(device.id.clone()),
             ));
+            let saves = saves::Saves::open(
+                &folder,
+                saves::paths::this_computer(Some(folder.clone()), steam::folder()),
+                Some(device.id.clone()),
+            );
+            // A restore the app ended in the middle of is undone before anything can ask for the game.
+            saves.recover();
+            app.manage(saves);
             app.manage(device);
 
             autostart::first_start(&folder);

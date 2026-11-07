@@ -12,6 +12,7 @@ import {
   FindDownloadLater,
   useHasSources,
 } from '@/features/desktop/find-download-later'
+import { SavesItem, SavesLater, useSavesAvailable } from '@/features/desktop/saves-later'
 import { notify } from '@/features/shell/notices'
 import { Button } from '@/ui/button'
 import { Confirm } from '@/ui/confirm'
@@ -82,6 +83,9 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const [finding, setFinding] = useState(false)
   // Fetched only once it is asked for, and kept from then on, for the sheet to slide away.
   const [asked, setAsked] = useState(false)
+  const keepsSaves = useSavesAvailable()
+  const [saving, setSaving] = useState(false)
+  const [savesAsked, setSavesAsked] = useState(false)
   const around = useRef<HTMLDivElement>(null)
   const installedApps = here?.installed ?? noApps
   const { state, check, sentGameToSteam } = useGameState(
@@ -321,7 +325,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
             className="min-w-56"
             // Focus goes to what just opened, not back to this button.
             onCloseAutoFocus={(event) => {
-              if (finding) event.preventDefault()
+              if (finding || saving) event.preventDefault()
             }}
           >
             {launcher ? (
@@ -337,6 +341,17 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
                   {t('showFile')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={forget}>{t('forgetFile')}</DropdownMenuItem>
+                {keepsSaves ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <SavesItem
+                      onOpen={() => {
+                        setSaving(true)
+                        setSavesAsked(true)
+                      }}
+                    />
+                  </>
+                ) : null}
               </>
             ) : menu ? (
               <DropdownMenuItem onSelect={choose}>{t('chooseFileInstead')}</DropdownMenuItem>
@@ -361,6 +376,16 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
           entryId={entryId}
           open={finding}
           onOpenChange={setFinding}
+          anchor={around}
+        />
+      ) : null}
+      {savesAsked ? (
+        <SavesLater
+          title={title}
+          entryId={entryId}
+          apps={steam?.known ?? noApps}
+          open={saving}
+          onOpenChange={setSaving}
           anchor={around}
         />
       ) : null}

@@ -1,0 +1,63 @@
+---
+"A Game":
+  cloud:
+    steam: true
+  files:
+    "<winAppData>/A Game/saves":
+      tags:
+        - save
+      when:
+        - os: windows
+    "<winAppData>/A Game/settings.ini":
+      tags:
+        - config
+    "<home>/Library/Application Support/A Game":
+      tags:
+        - save
+      when:
+        - os: mac
+    "<xdgData>/a-game":
+      tags:
+        - save
+  installDir:
+    AGame: {}
+  launch:
+    "<base>/AGame.exe":
+      - when:
+          - os: windows
+  steam:
+    id: 1000001
+"A Game: Remastered":
+  alias: "A Game"
+"Another Game":
+  files:
+    "<base>/save/*.sav": {}
+    "<winDocuments>/My Games/Another Game":
+      when:
+        - os: windows
+          store: gog
+  id:
+    steamExtra:
+      - 1000003
+  steam:
+    id: 1000002
+"Game Without Saves":
+  steam:
+    id: 1000004
+"Registry Game":
+  registry:
+    HKEY_CURRENT_USER/Software/Registry Game:
+      tags:
+        - save
+"Broken: Game":
+  files: [this is: not: a map
+"Only Settings":
+  files:
+    "<winAppData>/Only Settings/a.ini":
+      tags:
+        - config
+"Made-up Stand-in":
+  files:
+    "<base>/saves":
+      tags:
+        - save

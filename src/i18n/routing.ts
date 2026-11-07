@@ -36,6 +36,7 @@ export const routing = defineRouting({
     '/settings/app': '/settings/app',
     '/settings/download-sources': '/settings/download-sources',
     '/settings/download-services': '/settings/download-services',
+    '/settings/saves': '/settings/saves',
     // Shelf for Windows' downloads (ADR 007).
     '/downloads': '/downloads',
     '/consent': '/consent',

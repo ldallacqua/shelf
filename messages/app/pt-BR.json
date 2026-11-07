@@ -208,6 +208,10 @@
       "download-services": {
         "title": "Serviços de download",
         "description": "Real-Debrid, conectado neste computador"
+      },
+      "saves": {
+        "title": "Saves",
+        "description": "Quanto dos saves de cada jogo é guardado"
       }
     },
     "startWithWindows": {
@@ -222,5 +226,95 @@
       "title": "Serviços",
       "intro": "Um serviço baixa para você a partir dos links de uma fonte. Cada um é conectado só neste computador, e o Shelf só fica sabendo quem entrou."
     }
+  },
+  "Saves": {
+    "open": "Saves",
+    "title": "Saves de {title}",
+    "close": "Fechar",
+    "loading": "Procurando os saves deste jogo",
+    "switch": "Fazer backup dos saves deste jogo",
+    "intro": "O Shelf para Windows copia os saves em snapshots neste computador, guarda o histórico e põe qualquer um de volta quando você pedir. Nada é enviado ao Shelf.",
+    "cloud": "{stores} guardam os saves deste jogo para cópias compradas lá. Se você joga uma dessas, a loja já cuida deles.",
+    "stores": {
+      "steam": "Steam",
+      "gog": "GOG",
+      "epic": "Epic",
+      "origin": "EA",
+      "uplay": "Ubisoft"
+    },
+    "where": "Onde estão",
+    "foundAs": "Encontrado na lista do PCGamingWiki como {name}.",
+    "notThis": "Não é este jogo",
+    "otherGames": "Outros jogos da lista com este nome",
+    "firstFound": "O encontrado primeiro",
+    "unknownGame": "A lista do PCGamingWiki não diz onde este jogo salva. Adicione a pasta em que ele salva.",
+    "noList": "Não foi possível ler a lista de onde os jogos salvam. Adicione a pasta em que este jogo salva, ou abra isto de novo mais tarde.",
+    "files": "{files, plural, one {# arquivo} other {# arquivos}} · {size}",
+    "nothingThere": "Nada lá agora",
+    "refused": "Deixada de fora: guarda mais que os saves deste jogo",
+    "quiet": "{count, plural, one {Mais # lugar} other {Mais # lugares}} na lista, sem nada neste computador.",
+    "leaveOut": "Deixar de fora {path}",
+    "add": "Adicionar uma pasta",
+    "addTitle": "Escolha a pasta em que {title} salva",
+    "gameFolder": "A pasta do jogo",
+    "changeGameFolder": "Trocar",
+    "gameFolderTitle": "Escolha a pasta de {title}",
+    "registry": "Este jogo também guarda saves no registro do Windows, que o Shelf ainda não copia.",
+    "credit": "Onde os jogos salvam vem do <wiki>PCGamingWiki</wiki>, pelo <manifest>manifesto do Ludusavi</manifest>.",
+    "history": "Snapshots",
+    "state": {
+      "nothing": "Nenhum save encontrado neste computador ainda.",
+      "in-step": "O snapshot mais recente tem o que está neste computador.",
+      "changed": "Mudou desde o snapshot mais recente.",
+      "behind": "Há um snapshot mais novo que o que está neste computador.",
+      "choose": "Duas cópias diferem. Escolha qual manter."
+    },
+    "backUp": "Fazer backup agora",
+    "backingUp": "Fazendo backup…",
+    "noneYet": "Nenhum snapshot ainda.",
+    "at": "<time>{when}</time><muted> · {ago}</muted>",
+    "made": "{files, plural, one {# arquivo} other {# arquivos}} · {size} · {computer}",
+    "thisComputer": "este computador",
+    "anotherComputer": "outro computador",
+    "hereNow": "Neste computador agora",
+    "restore": "Restaurar",
+    "restoring": "Restaurando…",
+    "restoreTitle": "Restaurar os saves de {when}?",
+    "restoreBody": "O que está neste computador agora é guardado antes como backup, então nada se perde.",
+    "cancel": "Cancelar",
+    "show": "Mostrar o snapshot de {when} na pasta",
+    "caps": "Até {kept} snapshots são guardados, cada um com até {size}. <link>Mudar</link>",
+    "backedUp": "Backup feito.",
+    "unchanged": "Nada mudou desde o snapshot mais recente.",
+    "restored": "Os saves de {when} voltaram.",
+    "old": "Atualize o Shelf para Windows para guardar os saves deste jogo.",
+    "refusal": {
+      "running": "Feche {title} antes: o Shelf nunca mexe nos saves enquanto ele roda.",
+      "busy": "Um backup ou uma restauração deste jogo está em andamento.",
+      "empty": "Nenhum save foi encontrado para o backup. Adicione a pasta em que este jogo salva.",
+      "large": "Estes saves passam do tamanho que um snapshot pode ter. Aumente o limite em Configurações, ou deixe uma pasta de fora.",
+      "wide": "Essa pasta guarda mais que os saves de um jogo. Escolha a pasta do próprio jogo dentro dela.",
+      "outside": "Escolha uma pasta dentro da pasta do jogo ou das pastas do seu usuário do Windows: outro computador não encontraria uma em outro lugar.",
+      "missing": "Esse snapshot não está mais lá.",
+      "damaged": "Esse snapshot está danificado, ou cita um arquivo fora das pastas deste jogo, então nada foi restaurado.",
+      "changed": "Um save mudou enquanto era lido. Tente de novo quando o jogo tiver fechado.",
+      "failed": "Não deu certo. Tente de novo."
+    }
+  },
+  "SaveSettings": {
+    "title": "Snapshots",
+    "intro": "Ligado na página de um jogo, o Shelf para Windows guarda snapshots dos saves dele neste computador. Estes limites valem para todos os jogos.",
+    "kept": "Snapshots guardados por jogo",
+    "keptHint": "Os mais antigos saem primeiro. Nunca menos que {fewest}.",
+    "most": "Maior snapshot",
+    "mostHint": "Os saves de um jogo maiores que isso não entram no backup, e a página dele avisa.",
+    "megabytes": "MB",
+    "fewer": "Um a menos",
+    "more": "Um a mais",
+    "smaller": "Menor",
+    "larger": "Maior",
+    "saved": "Salvo.",
+    "failed": "Não foi possível salvar o limite. Tente de novo.",
+    "old": "Atualize o Shelf para Windows para guardar os saves dos jogos."
   }
 }

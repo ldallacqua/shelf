@@ -26,6 +26,10 @@
  * compared, and a made-up archive downloaded and extracted: no real source is read, and nothing that arrives
  * is started (ADR 007).
  *
+ * Made-up saves beside the made-up game are found in a folder added (a development build takes it from
+ * `SHELF_PICK_SAVES`), backed up twice, and the first snapshot restored (ADR 008). The list of where games
+ * save is the hand-written one in `fixtures/saves/`, never the real one.
+ *
  * Start the server first: pnpm build && pnpm serve:test. Never against
  * production: it signs in with the test doubles' made-up password.
  */
@@ -34,6 +38,7 @@ import { randomBytes } from 'node:crypto'
 import {
   copyFileSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -170,6 +175,8 @@ const game = mkdtempSync(join(tmpdir(), 'shelf-desktop-game-'))
 const started = join(game, 'started.txt')
 const stubborn = join(game, 'stubborn.txt')
 const played = join(game, 'played.txt')
+/** Made-up saves, beside the made-up game. */
+const saved = join(game, 'saves')
 copyFileSync(resolve('desktop/target/debug/examples/stand_in.exe'), join(game, STAND_IN))
 writeFileSync(
   join(game, 'start.bat'),
@@ -267,6 +274,8 @@ const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
     SHELF_PICK: join(game, 'start.bat'),
     SHELF_PICK_FOLDER: downloaded,
     SHELF_PICK_SOURCE: resolve('fixtures/sources/hydra-format.json'),
+    SHELF_PICK_SAVES: saved,
+    SHELF_SAVE_MANIFEST: `file:${resolve('fixtures/saves/manifest.yaml')}`,
     SHELF_REAL_DEBRID: `http://127.0.0.1:${(debrid.address() as AddressInfo).port}`,
     SHELF_REOPEN_AFTER: '5',
     SHELF_QUIT_ON: quitFile,
@@ -543,6 +552,42 @@ try {
   if (session && 'entry' in session.game && session.seconds > 0 && kept.includes(session.id))
     pass(`counted ${session.seconds} s of the game in front, and Shelf kept it`)
   else fail(`counted ${JSON.stringify(sent)}, and Shelf kept ${JSON.stringify(kept)}`)
+
+  console.log('\nSaves, on this computer (ADR 008)')
+  // The list doesn't know the game, so its folder is added by hand, as a person would.
+  mkdirSync(saved, { recursive: true })
+  writeFileSync(join(saved, 'slot1.sav'), 'chapter one')
+  await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
+  await shelf.getByRole('button', { name: 'Ways to play' }).click()
+  await shelf.getByRole('menuitem', { name: 'Saves' }).click()
+  const savesPanel = shelf.getByRole('dialog', { name: 'Saves for Bloodborne' })
+  await savesPanel.getByText(/doesn’t say where this game saves/).waitFor({ timeout: 30_000 })
+  await savesPanel.getByRole('button', { name: 'Add a folder' }).click()
+  await savesPanel.getByText(/^1 file · /).waitFor({ timeout: 15_000 })
+  await savesPanel.getByRole('switch', { name: 'Back up this game’s saves' }).click()
+  await savesPanel
+    .getByText('The latest snapshot holds what’s on this computer.')
+    .waitFor({ timeout: 15_000 })
+  pass('finds the folder added, and makes a first snapshot once turned on')
+  writeFileSync(join(saved, 'slot1.sav'), 'chapter two')
+  await savesPanel.getByRole('button', { name: 'Back up now' }).click()
+  await savesPanel.getByText('Backed up.').waitFor({ timeout: 15_000 })
+  const snapshots = savesPanel.locator('ol > li')
+  if ((await snapshots.count()) === 2) pass('backs up what changed, keeping the first')
+  else fail(`has ${await snapshots.count()} snapshots after two backups`)
+  await snapshots.nth(1).getByRole('button', { name: 'Restore' }).click()
+  await shelf.getByRole('alertdialog').getByRole('button', { name: 'Restore' }).click()
+  await savesPanel.getByText(/Put back the saves from/).waitFor({ timeout: 15_000 })
+  if (readFileSync(join(saved, 'slot1.sav'), 'utf8') === 'chapter one')
+    pass('restores the first, and it becomes the latest')
+  else fail('restored, and the save is not the first snapshot’s')
+  await shot('saves')
+  await shelf.keyboard.press('Escape')
+  await shelf.goto(`${BASE_URL}/en/settings/saves`)
+  const keptField = shelf.getByRole('textbox', { name: 'Snapshots kept per game' })
+  await keptField.waitFor({ timeout: 20_000 })
+  if ((await keptField.inputValue()) === '20') pass('Settings shows the snapshots kept per game')
+  else fail(`Settings shows ${await keptField.inputValue()} snapshots kept per game`)
 
   console.log('\nReady to play')
   // Bloodborne has a file now. What else is ready comes from this computer's own Steam, read,

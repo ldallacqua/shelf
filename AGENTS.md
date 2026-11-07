@@ -304,6 +304,16 @@ only code that knows Real-Debrid's addresses; what its sign-in gives stays in Wi
 a page is only told who is signed in. This is the exception to the landing page's rule: it is not
 shown there.
 
+**Saves.** Shelf for Windows keeps snapshots of a game's saves ([ADR 008](docs/adr/008-save-sync.md)), in
+`desktop/src/saves/`: `paths.rs` turns the Ludusavi manifest's placeholders into this computer's folders and
+refuses any folder too wide to be one game's, `manifest.rs` reads the manifest from its own address (Shelf
+ships and serves no copy: its data is PCGamingWiki's), `snapshot.rs` writes a zip and its list and decides
+which copy wins by parents, never clocks, and `restore.rs` checks every path before writing anything.
+Shelf's server never receives a save, a token or a key: no endpoint for them may exist. A command takes
+entry ids, titles, Steam ids and snapshot ids, never a path; folders come from Windows' picker. A game's
+saves are never read or written while it runs. Tests use `fixtures/saves/manifest.yaml`, temporary folders
+and made-up games, never the real manifest or a real save. Spec 7.12.
+
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in
 button (architecture, section 11). Name them in words. An icon beside words is `aria-hidden`.

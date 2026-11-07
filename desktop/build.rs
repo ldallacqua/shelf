@@ -40,6 +40,17 @@ fn main() {
             "real_debrid_sign_in",
             "real_debrid_cancel_sign_in",
             "real_debrid_sign_out",
+            "saves",
+            "turn_saves",
+            "back_up_saves",
+            "restore_saves",
+            "add_save_folder",
+            "remove_save_location",
+            "choose_save_game",
+            "choose_game_folder",
+            "show_save_snapshot",
+            "save_caps",
+            "set_save_caps",
         ]),
     ))
     .expect("tauri-build failed");

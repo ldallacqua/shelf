@@ -1,6 +1,6 @@
 'use client'
 
-import { AppWindowIcon, CloudDownloadIcon, LinkIcon } from 'lucide-react'
+import { AppWindowIcon, CloudDownloadIcon, HardDriveDownloadIcon, LinkIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import type { AppPage } from '@/features/settings/pages'
@@ -16,6 +16,7 @@ const pages = [
   { key: 'app', href: '/settings/app', icon: AppWindowIcon },
   { key: 'download-sources', href: '/settings/download-sources', icon: LinkIcon },
   { key: 'download-services', href: '/settings/download-services', icon: CloudDownloadIcon },
+  { key: 'saves', href: '/settings/saves', icon: HardDriveDownloadIcon },
 ] as const satisfies readonly { key: AppPage; href: string; icon: unknown }[]
 
 function Side({ current }: { current?: AppPage }) {

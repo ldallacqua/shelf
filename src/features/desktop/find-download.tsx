@@ -9,19 +9,16 @@ import {
   useCallback,
   useEffect,
   useState,
-  useSyncExternalStore,
 } from 'react'
 
-import { GAME_CENTERED } from '@/features/game-detail/hero'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { DropdownMenuItem } from '@/ui/dropdown-menu'
 import { Input } from '@/ui/field'
 import { GhostText, Loading } from '@/ui/ghost'
-import { Popover, PopoverAnchor, PopoverContent } from '@/ui/popover'
-import { Sheet, SheetContent } from '@/ui/sheet'
 
 import { AppWords } from './app-words'
+import { BesidePlay } from './beside-play'
 import { type Download, type Found, downloads, realDebrid, sources } from './sources'
 
 const linkClass =
@@ -285,12 +282,6 @@ function Finder({ title, entryId }: { title: string; entryId: string }) {
   )
 }
 
-const onResize = (change: () => void) => {
-  const query = window.matchMedia(GAME_CENTERED)
-  query.addEventListener('change', change)
-  return () => query.removeEventListener('change', change)
-}
-
 type FindDownloadProps = {
   title: string
   entryId: string
@@ -330,34 +321,16 @@ function Frame({
   children,
 }: Omit<FindDownloadProps, 'entryId'> & { children: ReactNode }) {
   const t = useTranslations('FindDownload')
-  const inPlace = useSyncExternalStore(
-    onResize,
-    () => window.matchMedia(GAME_CENTERED).matches,
-    () => false,
-  )
-  if (inPlace) {
-    return (
-      <Popover open={open} onOpenChange={onOpenChange}>
-        <PopoverAnchor virtualRef={anchor as RefObject<HTMLElement>} />
-        <PopoverContent
-          align="end"
-          aria-label={t('title', { title })}
-          className="scrollbar-quiet grid max-h-[min(70dvh,44rem)] w-[36rem] max-w-[calc(100vw-2rem)] gap-3 overflow-y-auto p-5"
-          // The menu it was opened from hands focus back as it goes, which is no click away.
-          onFocusOutside={(event) => event.preventDefault()}
-        >
-          <h2 className="title text-lg text-balance">{t('title', { title })}</h2>
-          {children}
-        </PopoverContent>
-      </Popover>
-    )
-  }
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent title={t('title', { title })} closeLabel={t('close')}>
-        {children}
-      </SheetContent>
-    </Sheet>
+    <BesidePlay
+      heading={t('title', { title })}
+      closeLabel={t('close')}
+      open={open}
+      onOpenChange={onOpenChange}
+      anchor={anchor}
+    >
+      {children}
+    </BesidePlay>
   )
 }
 

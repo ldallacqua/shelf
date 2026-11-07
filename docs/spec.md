@@ -155,7 +155,7 @@ On one's own shelf, an Add button. **Footer:** credit to IGDB.com, Privacy, and 
 One area (issue 152), each page an address of its own, under three headings that say whose the
 choices are: **Account** (Profile, Privacy & content, Platforms, Security), the same wherever I
 sign in; **This device** (Appearance), only in this browser; and **Shelf for Windows** (App,
-Download sources, Download services), only in the app, whose code and words only the app fetches
+Download sources, Download services, Saves), only in the app, whose code and words only the app fetches
 (ADR 007, decision 4). Beside each setting's title a small tag says **Account** or **This device**,
 instead of the body text explaining it; hiding adult games sits in Privacy & content, where people
 look for it (Steam's store preferences, Discord's Content & Social, Hydra's Content & gameplay),
@@ -1844,6 +1844,45 @@ game bem bonitinho [...] vamos mostrar notas de varios lugares diferentes".
   seasonal overlay and was not seen. Checked against the Design plugin's `design-critique`, `ux-copy` and
   `accessibility-review` and `frontend-design`, read from their public source, not installed.
 
+### 7.12 Saves
+
+In Shelf for Windows alone, for a game whose file is chosen on this computer. Why it is built this way, and
+what comes next (a folder or a cloud of my own, and the same saves on every PC): [ADR 008](adr/008-save-sync.md).
+
+- **Where it is.** **Saves** in the ⋯ menu beside Play, under the file's own items: a game's saves belong
+  with how it is started here, and the row that holds Play has room for one button and a menu. It opens a
+  sheet, or beside the button where the game stands in the middle of a very wide window, as Find a download
+  does. A game played through Steam has no file chosen and no Saves: Steam Cloud carries it.
+- **Off until I turn it on.** One switch first, as Steam puts its cloud's switch first in a game's
+  properties, with what it does under it: snapshots on this computer, with their history, and nothing sent to
+  Shelf. Turned on, a first one is made at once, unless the game is running. When the list says stores carry
+  the game's saves, it names them, for a copy bought there.
+- **Where they are** shows before it is on: each place found, with how many files and how large, as Ludusavi
+  lists them, credited to PCGamingWiki and the Ludusavi manifest by name, with links. Places the list names
+  with nothing there are counted, not listed. A place can be left out, a folder added through Windows'
+  picker, and the game's own folder changed. A folder that holds more than a game's saves, or that another PC
+  couldn't find, is refused, and says why. A game the list doesn't know says so; when other games in the list
+  have the same name, I can choose one.
+- **Snapshots,** newest first: when, how long ago, how many files, how large, and which of my computers made
+  it, by the name I gave it in Settings. The one that holds what is on this computer now says so in words.
+  **Back up now** makes one, unless nothing changed. **Restore** asks first, keeps what is here as a backup,
+  and makes what it put back the latest. The folder button shows the snapshot's zip in Explorer, from which
+  a save can be taken by hand.
+- **Never while the game runs:** Back up and Restore say to close it first.
+- **Settings' Saves page** holds the limits, the same for every game and this computer's own: how many
+  snapshots are kept per game (20, never fewer than 3) and the largest one (500 MB).
+- **It isn't on the landing page yet,** as nothing of Shelf for Windows is there; it goes with the app's part.
+
+Based on: Steam's Cloud help (a switch per game in its properties, and the window that offers two copies
+with their dates, which phase 3 follows), Ludusavi's window (each game's places with their size, the backups
+by date), and Shelf's own Find a download, whose frame it shares. Heroic's wiki has no page on it, and GOG
+Galaxy's wasn't looked at. The design skills were not installed: their checklists were applied by hand.
+
+**Done when**
+
+- A game's saves are found, or their folder added, then backed up and restored, on this computer.
+- A restore never runs while the game runs, and one cut short is undone at the next start.
+
 ## 8. Data model
 
 [ADR 001](adr/001-game-entry-model.md) is the decision; [ADR 004](adr/004-one-library-per-account.md)
@@ -2211,6 +2250,7 @@ Not built now. The design leaves room for each.
 | Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Extracting what is downloaded | Downloads are built ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
+| Saves carried between my PCs | Snapshots are kept on this computer, each naming its parents and its computer ([section 7.12](#712-saves)); a place of my own and the choice between two copies are [ADR 008](adr/008-save-sync.md)'s phases 3 to 5 |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |
