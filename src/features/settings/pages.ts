@@ -23,7 +23,7 @@ export const devicePages = [
   { key: 'appearance', href: '/settings/appearance', icon: PaletteIcon },
 ] as const satisfies readonly SettingsPage[]
 
-export const appPages = ['app', 'download-sources', 'download-services'] as const
+export const appPages = ['app', 'download-sources', 'download-services', 'saves'] as const
 export type AppPage = (typeof appPages)[number]
 
 type SettingsPage = { key: string; href: `/settings/${string}`; icon: LucideIcon }

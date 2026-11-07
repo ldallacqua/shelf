@@ -4,6 +4,20 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Saves, on this computer (7 Nov 2026)
+
+Issue 151: [ADR 008](adr/008-save-sync.md), written from the issue's research and **accepted by the owner the
+same day**, and its phase 2. In the app, **Saves** in Play's menu shows where a game's saves are (the Ludusavi
+manifest, read by the app from its own address, or a folder added by hand) and keeps snapshots of them on this
+computer, with Back up now and Restore; Settings has a Saves page with the limits. Shelf's server holds nothing
+of it. While building, the ADR gained one rule the owner hasn't seen: going back by hand to an older snapshot
+writes a new one of it, so phase 4's check before Play won't undo it. The real manifest was read once by hand
+(0.35 s, 21,554 games with saves), never by a test. The design skills were not installed: their checklists
+were applied by hand. It reaches the owner only in a desktop release (0.13.0), which needs the owner's OK.
+**Next:** phase 3, a folder of the owner's and two PCs, with the choice between two copies; phase 5 waits for
+Shelf to be registered with Microsoft and Google, which only the owner can do. **Still unchecked, by the
+owner:** a real game from outside the stores, its saves backed up, played, and an older one restored.
+
 ## Settings, one area (7 Nov 2026)
 
 Issue 152: the account page and its Settings tab are one area, `/settings`, a page each under three

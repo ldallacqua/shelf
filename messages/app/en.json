@@ -208,6 +208,10 @@
       "download-services": {
         "title": "Download services",
         "description": "Real-Debrid, connected on this computer"
+      },
+      "saves": {
+        "title": "Saves",
+        "description": "How much of each game’s saves is kept"
       }
     },
     "startWithWindows": {
@@ -222,5 +226,95 @@
       "title": "Services",
       "intro": "A service downloads from a source’s links for you. Each is connected on this computer alone, and Shelf is only told who is signed in."
     }
+  },
+  "Saves": {
+    "open": "Saves",
+    "title": "Saves for {title}",
+    "close": "Close",
+    "loading": "Looking for this game’s saves",
+    "switch": "Back up this game’s saves",
+    "intro": "Shelf for Windows copies them into snapshots on this computer, keeps their history, and puts any one back when you ask. Nothing is sent to Shelf.",
+    "cloud": "{stores} keep this game’s saves for copies bought there. If you play one of those, its store already carries them.",
+    "stores": {
+      "steam": "Steam",
+      "gog": "GOG",
+      "epic": "Epic",
+      "origin": "EA",
+      "uplay": "Ubisoft"
+    },
+    "where": "Where they are",
+    "foundAs": "Found in PCGamingWiki’s list as {name}.",
+    "notThis": "Not this game",
+    "otherGames": "Other games in the list with this name",
+    "firstFound": "The one found first",
+    "unknownGame": "PCGamingWiki’s list doesn’t say where this game saves. Add the folder it saves in.",
+    "noList": "The list of where games save couldn’t be read. Add the folder this game saves in, or open this again later.",
+    "files": "{files, plural, one {# file} other {# files}} · {size}",
+    "nothingThere": "Nothing there now",
+    "refused": "Left out: it holds more than this game’s saves",
+    "quiet": "{count, plural, one {# more place} other {# more places}} in the list, with nothing there on this computer.",
+    "leaveOut": "Leave out {path}",
+    "add": "Add a folder",
+    "addTitle": "Choose the folder where {title} saves",
+    "gameFolder": "The game’s folder",
+    "changeGameFolder": "Change",
+    "gameFolderTitle": "Choose {title}’s own folder",
+    "registry": "This game also keeps saves in Windows’ registry, which Shelf doesn’t copy yet.",
+    "credit": "Where games save comes from <wiki>PCGamingWiki</wiki>, through the <manifest>Ludusavi manifest</manifest>.",
+    "history": "Snapshots",
+    "state": {
+      "nothing": "No saves found on this computer yet.",
+      "in-step": "The latest snapshot holds what’s on this computer.",
+      "changed": "Changed since the latest snapshot.",
+      "behind": "A snapshot is newer than what’s on this computer.",
+      "choose": "Two copies differ. Choose which to keep."
+    },
+    "backUp": "Back up now",
+    "backingUp": "Backing up…",
+    "noneYet": "No snapshots yet.",
+    "at": "<time>{when}</time><muted> · {ago}</muted>",
+    "made": "{files, plural, one {# file} other {# files}} · {size} · {computer}",
+    "thisComputer": "this computer",
+    "anotherComputer": "another computer",
+    "hereNow": "On this computer now",
+    "restore": "Restore",
+    "restoring": "Restoring…",
+    "restoreTitle": "Restore the saves from {when}?",
+    "restoreBody": "What’s on this computer now is kept as a backup first, so nothing is lost.",
+    "cancel": "Cancel",
+    "show": "Show the snapshot from {when} in its folder",
+    "caps": "Up to {kept} snapshots are kept, each up to {size}. <link>Change</link>",
+    "backedUp": "Backed up.",
+    "unchanged": "Nothing changed since the latest snapshot.",
+    "restored": "Put back the saves from {when}.",
+    "old": "Update Shelf for Windows to keep this game’s saves.",
+    "refusal": {
+      "running": "Close {title} first: Shelf never touches its saves while it runs.",
+      "busy": "A backup or a restore of this game is under way.",
+      "empty": "No saves were found to back up. Add the folder this game saves in.",
+      "large": "These saves are larger than a snapshot may be. Raise the limit in Settings, or leave a folder out.",
+      "wide": "That folder holds more than one game’s saves. Choose the game’s own folder inside it.",
+      "outside": "Choose a folder inside the game’s folder or your Windows user’s folders: another computer couldn’t find one anywhere else.",
+      "missing": "That snapshot isn’t there any more.",
+      "damaged": "That snapshot is damaged, or names a file outside this game’s folders, so nothing was put back.",
+      "changed": "A save changed while it was being read. Try again once the game has closed.",
+      "failed": "That didn’t work. Try again."
+    }
+  },
+  "SaveSettings": {
+    "title": "Snapshots",
+    "intro": "Turned on from a game’s page, Shelf for Windows keeps snapshots of that game’s saves on this computer. These limits are the same for every game.",
+    "kept": "Snapshots kept per game",
+    "keptHint": "The oldest go first. Never fewer than {fewest}.",
+    "most": "Largest snapshot",
+    "mostHint": "A game’s saves larger than this aren’t backed up, and its page says so.",
+    "megabytes": "MB",
+    "fewer": "One fewer",
+    "more": "One more",
+    "smaller": "Smaller",
+    "larger": "Larger",
+    "saved": "Saved.",
+    "failed": "The limit couldn’t be saved. Try again.",
+    "old": "Update Shelf for Windows to keep games’ saves."
   }
 }

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SteamApps } from '@/domain/library/editing'
 import { setBridgeForTests, type GameView, type Launcher } from '@/features/desktop/bridge'
+import type * as SavesLater from '@/features/desktop/saves-later'
 import { renderWithIntl } from '@/test/render'
 
 import { Play } from './play'
@@ -15,6 +16,12 @@ import { Play } from './play'
 
 const notices = vi.hoisted(() => ({ notify: vi.fn() }))
 vi.mock('@/features/shell/notices', () => notices)
+vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
+// The menu's Saves item, at once rather than as the app fetches it.
+vi.mock('@/features/desktop/saves-later', async (original) => ({
+  ...(await original<typeof SavesLater>()),
+  SavesItem: (await import('@/features/desktop/saves-panel')).SavesItem,
+}))
 
 const GRIM_DAWN: Launcher = {
   name: 'Grim Dawn.exe',
@@ -32,6 +39,8 @@ const computer = {
   game: undefined as GameView | undefined,
   stopAnswer: undefined as string | undefined,
   forceAnswer: undefined as string | undefined,
+  /** Whether the app keeps saves (ADR 008): one older than them has no such command. */
+  saves: false,
 }
 const invoke = vi.fn(async (command: string, args: Record<string, unknown> = {}) => {
   const entry = args.entry as string
@@ -59,6 +68,9 @@ const invoke = vi.fn(async (command: string, args: Record<string, unknown> = {})
     case 'force_stop_game':
       if (computer.forceAnswer) throw computer.forceAnswer
       return null
+    case 'save_caps':
+      if (!computer.saves) throw 'Command save_caps not found'
+      return { mostMb: 500, kept: 20 }
     default:
       throw 'invalid'
   }
@@ -76,6 +88,7 @@ beforeEach(() => {
   computer.game = undefined
   computer.stopAnswer = undefined
   computer.forceAnswer = undefined
+  computer.saves = false
   setBridgeForTests(invoke)
 })
 
@@ -169,6 +182,23 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
     await userEvent.click(screen.getByRole('menuitem', { name: 'Forget the file' }))
     expect(invoke).toHaveBeenCalledWith('forget_launcher', { entry: 'entry-1' })
     expect(await screen.findByRole('button', { name: 'Choose the game’s file' })).toBeEnabled()
+  })
+
+  it('offers a game’s saves beside its file, in an app that keeps them', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.saves = true
+    play()
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('save_caps', {}))
+    await userEvent.click(await screen.findByRole('button', { name: 'Ways to play' }))
+    expect(await screen.findByRole('menuitem', { name: 'Saves' })).toBeInTheDocument()
+  })
+
+  it('offers no saves in an app older than them', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    play()
+    await userEvent.click(await screen.findByRole('button', { name: 'Ways to play' }))
+    expect(screen.getByRole('menuitem', { name: 'Forget the file' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Saves' })).toBeNull()
   })
 
   it('lets a file be chosen in place of Steam', async () => {

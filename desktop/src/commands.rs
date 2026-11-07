@@ -20,6 +20,7 @@ use crate::launchers::{Launcher, Launchers};
 use crate::processes::{self, Closing};
 use crate::real_debrid::{self, RealDebrid};
 use crate::running::{self, GameView, Games, Launch, Rules, SteamGame, Target};
+use crate::saves::{self, Caps, Refusal as SaveRefusal, Saves};
 use crate::shortcut::{self, Pointed};
 use crate::source_window::{self, ReadingAll, SourceWindow};
 use crate::sources::{self, Reading, Source, Sources};
@@ -896,6 +897,384 @@ pub async fn real_debrid_sign_out(
 ) -> Result<(), downloads::Refusal> {
     debrid.sign_out().await;
     Ok(())
+}
+
+// --- A game's saves (ADR 008) ---------------------------------------------------------------------
+//
+// A page names a game by its entry, its title and its Steam apps, and a snapshot by its id. Folders
+// come from Windows' picker alone, and no command reads a save's bytes or deletes a snapshot.
+
+/// The Steam apps a page names, digits only, fifty at most.
+fn apps_of(apps: Vec<String>) -> Vec<String> {
+    apps.into_iter()
+        .filter(|app| ids::steam_app(app))
+        .take(50)
+        .collect()
+}
+
+/// Whether the game is starting or running now: its saves are never read or written then.
+fn running_now(app: &AppHandle, entry: &str, apps: &[String]) -> bool {
+    app.state::<Games>().is_starting(entry, now()) || !confirmed(app, entry, apps).is_empty()
+}
+
+/// The file a game is started from, or what its shortcut points at: where `<base>` is worked out from.
+fn game_file(app: &AppHandle, entry: &str) -> Option<PathBuf> {
+    let kept = app.state::<Launchers>().get(entry)?;
+    Some(match shortcut::pointed_at(&kept.path) {
+        Pointed::Program(program) => program,
+        _ => kept.path,
+    })
+}
+
+/// The game set up on this computer, with what is here of the manifest.
+fn set_up(
+    app: &AppHandle,
+    saves: &Saves,
+    entry: &str,
+    title: &str,
+    apps: &[String],
+) -> saves::Setup {
+    let lookup = saves.manifest.held();
+    let file = game_file(app, entry);
+    saves.setup(entry, file.as_deref(), lookup.as_deref(), title, apps)
+}
+
+/// What every save command starts with: the game's file on this computer, the manifest read (or
+/// what is here of it), and the game set up. `work` runs on a thread of its own, as it reads disks.
+async fn with_saves<T: Send + 'static>(
+    app: &AppHandle,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+    work: impl FnOnce(
+        &AppHandle,
+        &Saves,
+        &str,
+        &str,
+        &[String],
+        saves::Setup,
+        bool,
+    ) -> Result<T, SaveRefusal>
+    + Send
+    + 'static,
+) -> Result<T, SaveRefusal> {
+    if !ids::entry(&entry) {
+        return Err(SaveRefusal::Invalid);
+    }
+    let apps = apps_of(apps);
+    let title = short(&title);
+    if app.state::<Launchers>().get(&entry).is_none() {
+        return Err(SaveRefusal::Unset);
+    }
+    let version = app.package_info().version.to_string();
+    let read = app
+        .state::<Saves>()
+        .manifest
+        .lookup(&version, now())
+        .await
+        .is_ok();
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let saves = app.state::<Saves>();
+        let setup = set_up(&app, &saves, &entry, &title, &apps);
+        work(&app, &saves, &entry, &title, &apps, setup, read)
+    })
+    .await
+    .map_err(|_| SaveRefusal::Failed)?
+}
+
+/// A game's saves on this computer: where they were found, where they go, and their history.
+#[tauri::command]
+pub async fn saves(
+    app: AppHandle,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+) -> Result<saves::View, SaveRefusal> {
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        |_, saves, entry, _, _, setup, read| Ok(saves.view(entry, &setup, read)),
+    )
+    .await
+}
+
+/// Turns a game's saves on or off. On, a first snapshot is made at once, unless the game is running.
+#[tauri::command]
+pub async fn turn_saves(
+    app: AppHandle,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+    on: bool,
+) -> Result<saves::View, SaveRefusal> {
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        move |app, saves, entry, title, apps, setup, read| {
+            saves.set_on(entry, on, title)?;
+            if on
+                && !running_now(app, entry, apps)
+                && let Ok(_busy) = saves.begin(entry)
+            {
+                // Nothing found yet is said on the page, not refused: the person may add a folder next.
+                let _ = saves.back_up(entry, title, &setup, now(), None);
+            }
+            Ok(saves.view(entry, &setup, read))
+        },
+    )
+    .await
+}
+
+/// A snapshot of the game's saves now, unless it is what the latest holds.
+#[tauri::command]
+pub async fn back_up_saves(
+    app: AppHandle,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+) -> Result<saves::View, SaveRefusal> {
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        |app, saves, entry, title, apps, setup, read| {
+            if running_now(app, entry, apps) {
+                return Err(SaveRefusal::Running);
+            }
+            let _busy = saves.begin(entry)?;
+            saves.back_up(entry, title, &setup, now(), None)?;
+            Ok(saves.view(entry, &setup, read))
+        },
+    )
+    .await
+}
+
+/// Puts a snapshot back, what is here backed up first. Never while the game runs.
+#[tauri::command]
+pub async fn restore_saves(
+    app: AppHandle,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+    snapshot: String,
+) -> Result<saves::View, SaveRefusal> {
+    if !ids::entry(&snapshot) {
+        return Err(SaveRefusal::Invalid);
+    }
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        move |app, saves, entry, _, apps, setup, read| {
+            if running_now(app, entry, apps) {
+                return Err(SaveRefusal::Running);
+            }
+            let _busy = saves.begin(entry)?;
+            saves.restore(entry, &snapshot, &setup, now())?;
+            Ok(saves.view(entry, &setup, read))
+        },
+    )
+    .await
+}
+
+async fn pick_save_folder(
+    window: &WebviewWindow,
+    title: String,
+    start: Option<PathBuf>,
+) -> Result<Option<PathBuf>, SaveRefusal> {
+    // As `pick`: no script can answer Windows' picker.
+    #[cfg(debug_assertions)]
+    if let Ok(path) = std::env::var("SHELF_PICK_SAVES") {
+        return Ok(Some(PathBuf::from(path)));
+    }
+    let mut dialog = window.dialog().file().set_parent(window).set_title(title);
+    if let Some(start) = start.filter(|start| start.is_dir()) {
+        dialog = dialog.set_directory(start);
+    }
+    let picked = tauri::async_runtime::spawn_blocking(move || dialog.blocking_pick_folder())
+        .await
+        .map_err(|_| SaveRefusal::Failed)?;
+    Ok(picked.and_then(|folder| folder.into_path().ok()))
+}
+
+/// Asks Windows for a folder that holds the game's saves, and adds it. Nothing, when the picker is
+/// closed. Refused when it holds more than a game's saves, or is outside every folder a placeholder
+/// names.
+#[tauri::command]
+pub async fn add_save_folder(
+    window: WebviewWindow,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+    ask: String,
+) -> Result<Option<saves::View>, SaveRefusal> {
+    if !ids::entry(&entry) {
+        return Err(SaveRefusal::Invalid);
+    }
+    let start = window
+        .app_handle()
+        .state::<Saves>()
+        .folders
+        .documents
+        .clone();
+    let Some(folder) = pick_save_folder(&window, short(&ask), start).await? else {
+        return Ok(None);
+    };
+    let app = window.app_handle().clone();
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        move |app, saves, entry, title, apps, setup, read| {
+            saves.add(entry, &folder, &setup)?;
+            let again = set_up(app, saves, entry, title, apps);
+            Ok(Some(saves.view(entry, &again, read)))
+        },
+    )
+    .await
+}
+
+/// Takes a location away: a folder added is forgotten, one the list names is left out from now on.
+#[tauri::command]
+pub async fn remove_save_location(
+    app: AppHandle,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+    location: String,
+) -> Result<saves::View, SaveRefusal> {
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        move |app, saves, entry, title, apps, setup, read| {
+            if !setup.locations.iter().any(|each| each.text == location) {
+                return Err(SaveRefusal::Invalid);
+            }
+            saves.remove(entry, &location)?;
+            let again = set_up(app, saves, entry, title, apps);
+            Ok(saves.view(entry, &again, read))
+        },
+    )
+    .await
+}
+
+/// Which of the list's games this is, when several answer to its name; none goes back to the one
+/// found first.
+#[tauri::command]
+pub async fn choose_save_game(
+    app: AppHandle,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+    chosen: Option<String>,
+) -> Result<saves::View, SaveRefusal> {
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        move |app, saves, entry, title, apps, setup, read| {
+            if let Some(chosen) = &chosen {
+                let offered = setup
+                    .entry
+                    .as_ref()
+                    .is_some_and(|each| &each.title == chosen)
+                    || setup.others.contains(chosen);
+                if !offered {
+                    return Err(SaveRefusal::Invalid);
+                }
+            }
+            saves.choose_manifest(entry, chosen)?;
+            let again = set_up(app, saves, entry, title, apps);
+            Ok(saves.view(entry, &again, read))
+        },
+    )
+    .await
+}
+
+/// Asks Windows for the game's own folder, `<base>`, when the one worked out from its file is wrong.
+#[tauri::command]
+pub async fn choose_game_folder(
+    window: WebviewWindow,
+    entry: String,
+    title: String,
+    apps: Vec<String>,
+    ask: String,
+) -> Result<Option<saves::View>, SaveRefusal> {
+    if !ids::entry(&entry) {
+        return Err(SaveRefusal::Invalid);
+    }
+    let start = game_file(window.app_handle(), &entry)
+        .and_then(|file| file.parent().map(Path::to_path_buf));
+    let Some(folder) = pick_save_folder(&window, short(&ask), start).await? else {
+        return Ok(None);
+    };
+    let app = window.app_handle().clone();
+    with_saves(
+        &app,
+        entry,
+        title,
+        apps,
+        move |app, saves, entry, title, apps, setup, read| {
+            // The game's folder is never a disk's top, one of Windows' own, or one above them.
+            let elsewhere = saves::paths::GameAt {
+                base: None,
+                ..setup.game.clone()
+            };
+            if saves::paths::too_wide(&folder, &saves.folders, &elsewhere) {
+                return Err(SaveRefusal::Wide);
+            }
+            saves.set_base(entry, Some(folder))?;
+            let again = set_up(app, saves, entry, title, apps);
+            Ok(Some(saves.view(entry, &again, read)))
+        },
+    )
+    .await
+}
+
+/// Opens the folder of a snapshot in Explorer, its archive selected, for a save to be taken out by hand.
+#[tauri::command]
+pub fn show_save_snapshot(
+    app: AppHandle,
+    entry: String,
+    snapshot: String,
+    saves: State<'_, Saves>,
+) -> Result<(), SaveRefusal> {
+    if !ids::entry(&entry) || !ids::entry(&snapshot) {
+        return Err(SaveRefusal::Invalid);
+    }
+    let archive = saves
+        .archive(&entry, &snapshot)
+        .ok_or(SaveRefusal::Missing)?;
+    app.opener()
+        .reveal_item_in_dir(&archive)
+        .map_err(|_| SaveRefusal::Failed)
+}
+
+/// The caps, the same for every game (ADR 008, section 4).
+#[tauri::command]
+pub fn save_caps(saves: State<'_, Saves>) -> Caps {
+    saves.caps()
+}
+
+/// Changes the caps, kept within what Settings offers: never fewer than three snapshots.
+#[tauri::command]
+pub fn set_save_caps(
+    most_mb: u32,
+    kept: u32,
+    saves: State<'_, Saves>,
+) -> Result<Caps, SaveRefusal> {
+    saves.set_caps(Caps { most_mb, kept })
 }
 
 #[cfg(test)]

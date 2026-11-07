@@ -55,6 +55,15 @@ export function AppPageGhost({ page }: { page: AppPage }) {
           <SectionGhost>
             {page === 'download-sources' ? (
               <SourceCardGhost />
+            ) : page === 'saves' ? (
+              <div className="grid max-w-md gap-5">
+                {[0, 1].map((row) => (
+                  <div key={row} className="grid gap-1.5">
+                    <GhostText order={row} className="w-40 text-sm" />
+                    <Ghost order={row} className="h-10 w-40 rounded-control" />
+                  </div>
+                ))}
+              </div>
             ) : (
               <Ghost className="h-44 rounded-panel" />
             )}
@@ -77,6 +86,10 @@ const inApp: Record<AppPage, ComponentType> = {
   'download-services': dynamic(() => import('@/features/desktop/download-services'), {
     ssr: false,
     loading: () => <AppPageGhost page="download-services" />,
+  }),
+  saves: dynamic(() => import('@/features/desktop/save-settings'), {
+    ssr: false,
+    loading: () => <AppPageGhost page="saves" />,
   }),
 }
 

@@ -56,11 +56,19 @@ steps it is built in.
 11. **Extract,** on a finished download that brought a `zip`, `7z` or `rar`, unpacks it into a folder beside it.
     An archive with a password, or with paths that would leave its folder, isn't opened. **Choose the game's
     file** then opens Windows' picker in that folder, and Play on the game's page starts what you choose.
+12. **Saves,** in the ⋯ menu beside Play on a game whose file is chosen, show where its saves were found
+    (PCGamingWiki's list, through the Ludusavi manifest) and keep snapshots of them on this computer, with
+    their history (ADR 008, spec 7.12). Turn them on, **Back up now**, and **Restore** any snapshot: what is
+    here is kept as a backup first, and nothing is done while the game runs. A folder the list doesn't know is
+    added by hand. Nothing is sent to Shelf. The limits are on Settings' Saves page.
 
 What the app keeps on this computer is the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`, the sources, in `sources.json` and `sources\` beside it,
-and the list of downloads, in `downloads.json`. Uninstalling leaves those, and everything downloaded, in
-the folders you chose; delete the app's folder to forget the rest.
+the list of downloads, in `downloads.json`, and the saves: what was decided for each game in `saves.json`,
+the list of where games save in `save-manifest.json`, the snapshots in `saves\{entry}\`, what was there
+before each restore in `save-backups\{entry}\`, and while a restore runs, `save-restore.json`.
+Uninstalling leaves those, and everything downloaded, in the folders you chose; delete the app's folder
+to forget the rest.
 
 ## 2. Building and running it
 
@@ -119,6 +127,10 @@ desktop/
     shortcut.rs          What a chosen .lnk or .url points at
     processes.rs         What Windows says is running, and asking it to close or ending it
     running.rs           Which of that is a game, and the game's state (unit-tested, no process)
+    saves/               A game's saves (ADR 008): paths.rs (the manifest's placeholders as this
+                         computer's folders, and those too wide refused), manifest.rs (the Ludusavi
+                         manifest, read from its address), snapshot.rs (a zip and its list, and which
+                         copy wins), restore.rs (every path checked, then put back), mod.rs (saves.json)
   examples/stand_in.rs   A stand-in for a game, for the tests, that takes no focus
   tests/fixtures/        Steam's files as Steam writes them, and a shortcut, for the tests
 src/features/desktop/    The site's side: Tauri's global (tauri.ts), the commands that answer
@@ -127,6 +139,8 @@ src/features/desktop/    The site's side: Tauri's global (tauri.ts), the command
 src/features/game-detail/play.tsx   Play, under Mine
 src/features/game-detail/use-game-state.ts   Asks whether the game is running, and when
 src/features/library/use-ready.ts   Ready to play: which of my games this computer can start
+src/features/desktop/saves*.tsx, save-settings.tsx   A game's saves, from Play's menu, and their limits
+fixtures/saves/manifest.yaml        Where made-up games save, in the manifest's shape, for the tests
 ```
 
 ### The bridge
@@ -403,6 +417,32 @@ Issue 102; what counts as evidence, and the limits, are ADR 005, section 11.
       starts a real game or opens Steam.
 
 **Done when** the owner has seen those on an installed version.
+
+### Step 9: Saves on this computer
+
+Issue 151, [ADR 008](adr/008-save-sync.md)'s phase 2; spec 7.12.
+
+**Built 7 Nov 2026.**
+
+- [x] `saves/`: the manifest read a game at a time from its address, with its `ETag`, kept small; a game
+      found by its Steam apps, then its title's words; `<base>` from the chosen file; every location
+      checked against the folders too wide to be one game's.
+- [x] Snapshots: a zip and its list, never overwritten, parents named, history pruned to the caps;
+      Restore with every path checked first, what is here backed up, staged, and a journal that undoes one
+      cut short at the next start. Going back by hand makes the snapshot the latest.
+- [x] Commands: `saves`, `turn_saves`, `back_up_saves`, `restore_saves`, `add_save_folder`,
+      `remove_save_location`, `choose_save_game`, `choose_game_folder`, `show_save_snapshot`, `save_caps`,
+      `set_save_caps`. None takes a path, reads a save's bytes or deletes a snapshot; none acts while the
+      game runs.
+- [x] Saves in Play's menu (`saves-panel.tsx`), and Settings' Saves page (`save-settings.tsx`), with their
+      stories. An app older than these commands offers neither.
+- [x] Tests: every rule above with made-up games and temporary folders; the page with the bridge faked;
+      `pnpm desktop:check` adds a folder, backs up twice and restores the first in the real app.
+- [ ] By hand, by the owner, on an installed version: a game from outside the stores, its saves found or
+      added, backed up, played, backed up again, and an older one restored.
+
+**Done when** the owner has seen those on an installed version. Next: phase 3, a folder of my own and
+two PCs.
 
 ### Later
 
