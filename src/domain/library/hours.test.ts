@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { durationOf, isPcSource, pastIgdb, playedMinutes, trackedMinutes } from './hours'
+import { durationOf } from './duration'
+import { isPcSource, pastIgdb, playedMinutes, trackedMinutes } from './hours'
 
 /** A game's hours, and the games whose stores count far past IGDB (ADR 003). */
 

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 
-import { durationOf } from '@/domain/library/hours'
+import { durationOf } from '@/domain/library/duration'
 
 /**
  * A game's play time in words, the same everywhere it is shown (`durationOf`): "45 min",
