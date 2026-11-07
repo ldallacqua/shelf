@@ -14,7 +14,7 @@
     "nothingYet": "nada contado ainda"
   },
   "DownloadSources": {
-    "title": "Fontes de download",
+    "title": "Suas fontes",
     "intro": "Listas de jogos para baixar, no formato que o Hydra usa. Elas ficam neste computador e são lidas de novo uma vez por dia enquanto o app está aberto, e adicionar uma não baixa nada.",
     "address": "Endereço da fonte",
     "addressHint": "https://…/source.json",
@@ -192,6 +192,35 @@
     "errors": {
       "failed": "Isso não funcionou. Confira sua conexão e tente de novo.",
       "expired": "Esse código expirou antes de ser digitado. Peça um novo."
+    }
+  },
+  "AppSettings": {
+    "group": "Shelf para Windows",
+    "pages": {
+      "app": {
+        "title": "App",
+        "description": "Abrir com o Windows, e o nome deste computador"
+      },
+      "download-sources": {
+        "title": "Fontes de download",
+        "description": "Listas de downloads, lidas neste computador"
+      },
+      "download-services": {
+        "title": "Serviços de download",
+        "description": "Real-Debrid, conectado neste computador"
+      }
+    },
+    "startWithWindows": {
+      "title": "Abrir com o Windows",
+      "label": "Abrir o Shelf para Windows na bandeja quando o Windows iniciar",
+      "body": "Assim um jogo aberto pela Steam é contado sem precisar abrir o Shelf antes. <link>Como as horas são contadas</link>",
+      "unavailable": "Só o Shelf para Windows instalado pode abrir com o Windows.",
+      "old": "Atualize o Shelf para Windows para mudar isto aqui. Até lá, fica no menu do ícone do Shelf na bandeja.",
+      "failed": "O Windows não aceitou a mudança. Tente de novo."
+    },
+    "services": {
+      "title": "Serviços",
+      "intro": "Um serviço baixa para você a partir dos links de uma fonte. Cada um é conectado só neste computador, e o Shelf só fica sabendo quem entrou."
     }
   }
 }

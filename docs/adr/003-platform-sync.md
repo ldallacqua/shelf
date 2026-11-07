@@ -290,7 +290,7 @@ Nintendo's own page and Shelf keeps the session token, encrypted." What building
   does, read 24 Oct 2026. Nintendo's page says the account is linked to "Nintendo Store". Its
   answer goes to an address only that app opens, so it never comes back to Shelf by itself:
   the person copies the link of the page's "Select this account" button and pastes it into
-  the account page. The round trip's state and secret wait in a cookie only this browser
+  Settings' Platforms page (the account page until issue 152). The round trip's state and secret wait in a cookie only this browser
   sends back (`shelf_nintendo_trip`, fifteen minutes), so a link from another sign-in links
   nothing.
 - **The session is kept sealed.** The link's code becomes a session of about two years; each
@@ -399,8 +399,8 @@ Xbox and PlayStation tickets extend rather than repeat. What building settled:
   again twice, a second and then three seconds later, or as long as its `Retry-After` asks, up
   to five seconds.
 - **In steps, after the games.** A step reads the games due, the latest played first, eight at
-  a time, for 15 seconds, and then answers; the next step goes on from there. The account page
-  asks for steps once the games are in, and the daily sync does the same after each link's own.
+  a time, for 15 seconds, and then answers; the next step goes on from there. Settings' Platforms
+  page asks for steps once the games are in, and the daily sync does the same after each link's own.
 - **Counted first, asked one by one only for what the count cannot tell.** A step asks Steam
   to count the next hundred games. Then:
   - A game counted with none is read as none, with no other question.

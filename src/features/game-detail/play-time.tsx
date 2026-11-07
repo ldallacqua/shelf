@@ -179,7 +179,7 @@ export function PlayTimeView({
             {t.rich('emptyHint', {
               link: (chunks: ReactNode) => (
                 <Link
-                  href={{ pathname: '/account', hash: 'platforms' }}
+                  href="/settings/platforms"
                   className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
                 >
                   {chunks}

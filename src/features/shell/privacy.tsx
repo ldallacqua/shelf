@@ -43,7 +43,7 @@ export async function Privacy() {
       ))}
       <p>
         <Link
-          href="/account"
+          href="/settings"
           className="underline decoration-1 underline-offset-4 hover:decoration-2"
         >
           {t('account')}

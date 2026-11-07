@@ -2,7 +2,7 @@
 
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Result};
+use tauri::{AppHandle, Manager, Result};
 
 use crate::autostart;
 
@@ -53,6 +53,16 @@ pub fn quit(app: &AppHandle) {
     app.exit(0);
 }
 
+/// The tray's Start with Windows check, kept so Settings can change it too.
+struct StartingCheck(CheckMenuItem<tauri::Wry>);
+
+/// Settings changed starting with Windows: the tray's check says what is now so.
+pub fn starting_changed(app: &AppHandle) {
+    if let Some(check) = app.try_state::<StartingCheck>() {
+        let _ = check.0.set_checked(autostart::enabled());
+    }
+}
+
 pub fn add(app: &AppHandle) -> Result<()> {
     let words = words();
     let open = MenuItem::with_id(app, OPEN, words.open, true, None::<&str>)?;
@@ -68,6 +78,7 @@ pub fn add(app: &AppHandle) -> Result<()> {
     let quit = MenuItem::with_id(app, QUIT, words.quit, true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &starting, &line, &quit])?;
 
+    app.manage(StartingCheck(starting.clone()));
     let toggled = starting.clone();
     let mut tray = TrayIconBuilder::with_id("shelf")
         .tooltip("Shelf")

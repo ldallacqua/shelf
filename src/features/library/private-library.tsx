@@ -47,7 +47,7 @@ function OnlyYou() {
     <p className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-control border border-line px-3 py-2 text-sm text-muted">
       <LockIcon aria-hidden="true" className="size-4 flex-none" />
       {t('onlyYou')}
-      <Link href="/account" className="text-text underline underline-offset-4">
+      <Link href="/settings/privacy" className="text-text underline underline-offset-4">
         {t('changeVisibility')}
       </Link>
     </p>

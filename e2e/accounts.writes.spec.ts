@@ -66,9 +66,11 @@ async function visitorPage(browser: Browser): Promise<Page> {
   return context.newPage()
 }
 
-const accountPage = async (page: Page) => {
-  await page.goto('/en/account')
-  await page.getByRole('heading', { name: 'Your shelf' }).waitFor()
+/** One of the account's settings pages (issue 152), once it has its fields. */
+const settingsPage = async (page: Page, which: 'profile' | 'privacy' | 'security') => {
+  await page.goto(`/en/settings/${which}`)
+  const heading = { profile: 'Your shelf', privacy: 'Visibility', security: 'Password' }[which]
+  await page.getByRole('heading', { name: heading }).waitFor()
 }
 
 test.describe('signing up', () => {
@@ -238,7 +240,7 @@ test.describe('a private shelf', () => {
     const before = (await file).url()
     await expect(visitor.getByRole('button', { name: /^Mass Effect/ })).toBeVisible()
 
-    await accountPage(page)
+    await settingsPage(page, 'privacy')
     await page.getByRole('radio', { name: /^Private/ }).check()
     await expect(page.getByText(/Going private hides your shelf from now on/)).toBeVisible()
     await page.getByRole('button', { name: 'Save' }).click()
@@ -250,7 +252,7 @@ test.describe('a private shelf', () => {
     expect((await visitor.request.get(before)).status()).toBe(404)
 
     // And back: public again, at a new address of its own.
-    await accountPage(page)
+    await settingsPage(page, 'privacy')
     await page.getByRole('radio', { name: /^Public/ }).check()
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByRole('status').filter({ hasText: 'Saved.' })).toBeVisible()
@@ -266,7 +268,7 @@ test.describe('one’s account', () => {
     await signUpThroughApi(page.request, who)
     const moved = `${who.handle}-new`
 
-    await accountPage(page)
+    await settingsPage(page, 'profile')
     await page.getByRole('textbox', { name: 'Handle' }).fill(moved)
     await expect(page.getByText(/A new handle moves your shelf to a new address/)).toBeVisible()
     await expect(page.getByText('Free to take.')).toBeVisible()
@@ -286,7 +288,7 @@ test.describe('one’s account', () => {
     await signUpThroughApi(page.request, who)
     const next = `${who.password}, changed`
 
-    await accountPage(page)
+    await settingsPage(page, 'security')
     await page.getByLabel('Current password', { exact: true }).fill(who.password)
     await page.getByLabel('New password', { exact: true }).fill(next)
     await page.getByRole('button', { name: 'Change password' }).click()
@@ -313,7 +315,7 @@ test.describe('one’s account', () => {
       await signUpThroughApi(page.request, who)
       const slug = await addThroughApi(page.request, 'Max Payne')
 
-      await accountPage(page)
+      await settingsPage(page, 'security')
       await page.getByRole('button', { name: 'Delete my account…' }).click()
       await page.getByLabel('Your password, to confirm', { exact: true }).fill('not the password')
       await page.getByRole('button', { name: 'Delete everything for good' }).click()

@@ -4,6 +4,19 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Settings, one area (7 Nov 2026)
+
+Issue 152: the account page and its Settings tab are one area, `/settings`, a page each under three
+headings: Account (Profile, Privacy & content, Platforms, Security), This device (Appearance), and
+Shelf for Windows (App, Download sources, Download services), the last only in the app. Each setting
+says whose it is with a small tag; adult games moved beside the shelf's visibility, tagged as this
+device's. The old addresses move there for good. Start with Windows can now be changed on the App
+page, through two new commands: that reaches the owner only in a desktop release (0.12.0), which needs
+the owner's OK; until then the page says to use the tray. The design skills were not installed: their
+checklists were applied by hand. Steam, Discord and GitHub's settings need a sign-in, so their help
+pages stood in. **Still unchecked, by the owner:** the App page's switch in an installed 0.12.0, with
+the tray's check following it.
+
 ## The library, as I left it (7 Nov 2026)
 
 Issue 149: the view, grouping and sort last chosen in the toolbar are remembered on the device, in a cookie

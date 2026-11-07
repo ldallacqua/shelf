@@ -83,9 +83,16 @@ language the browser asks for.
 | `/en/u/{handle}/game/{slug}` | A game's page. Opened from the library, it appears over the shelf; opened directly, it is a full page. |
 | `/en/sign-up` | A shelf of one's own: name, handle, email address, password, public or private |
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
-| `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
+| `/en/settings` | Settings ([section 2.1](#21-settings)): every page below, by whose it is, each with what it holds. A phone starts here |
+| `/en/settings/profile` | The account's: the shelf's name and handle |
+| `/en/settings/privacy` | Privacy & content: who can see the shelf (the account's), and hiding adult games (this device's, 3.13) |
+| `/en/settings/platforms` | The account's: the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)) |
+| `/en/settings/security` | The account's: the password, signing out everywhere, and, last, deleting the account |
+| `/en/settings/appearance` | This device's: the theme, the language and experimental views (3.6) |
+| `/en/settings/app` | In Shelf for Windows alone: starting with Windows, and this computer's name (7.3). A browser is told the page is the app's |
+| `/en/settings/download-sources` | In Shelf for Windows alone: download sources (7.10) |
+| `/en/settings/download-services` | In Shelf for Windows alone: Real-Debrid, one card per service (7.10) |
 | `/en/downloads` | In Shelf for Windows alone: what is being downloaded on this computer (7.10). A browser goes home |
-| `/en/account/settings` | How Shelf behaves here, in a tab beside Account: experimental views (3.6), adult games, and in Shelf for Windows the name of this computer (7.3), downloads, their sources and Real-Debrid (7.10). Who I am is the account; this is what I choose. The owner, 2 Nov 2026, on the download sections: they "definitivamente não devem estar na aba de conta" |
 | `/en/account/start` | Setting a new shelf up, where signing up leads: the platforms to bring games in from, and the way to placing them ([section 4.6](#46-setting-a-new-shelf-up)) |
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once, or to archive or remove; Organize's first tab ([section 4.5](#45-placing-what-a-sync-brought-in)) |
 | `/en/account/hours` | The games whose stores report far past IGDB's time, to take idle time out of; Organize's second tab ([section 4.7](#47-hours-a-store-counted)) |
@@ -94,7 +101,9 @@ language the browser asks for.
 | `/llms.txt` | A plain-text guide to the site for AI tools |
 
 The addresses from before accounts (`/en/library`, `/en/game/…`, `/en/shelves/…`,
-`/en/trophies`) move for good to the same page under `/en/u/lucas`, query string kept.
+`/en/trophies`) move for good to the same page under `/en/u/lucas`, query string kept. So do the
+account page and its Settings tab (`/en/account` to Profile, or to Platforms when it carries how
+linking Steam went; `/en/account/settings` to `/en/settings`).
 
 Library query string, in full:
 
@@ -140,6 +149,35 @@ On one's own shelf, an Add button. **Footer:** credit to IGDB.com, Privacy, and 
   on this device, with nothing drawn first in the default arrangement.
 - Back and forward step through filter, sort, group and view changes.
 - An unknown or malformed parameter falls back to its default and never shows an error page.
+
+### 2.1 Settings
+
+One area (issue 152), each page an address of its own, under three headings that say whose the
+choices are: **Account** (Profile, Privacy & content, Platforms, Security), the same wherever I
+sign in; **This device** (Appearance), only in this browser; and **Shelf for Windows** (App,
+Download sources, Download services), only in the app, whose code and words only the app fetches
+(ADR 007, decision 4). Beside each setting's title a small tag says **Account** or **This device**,
+instead of the body text explaining it; hiding adult games sits in Privacy & content, where people
+look for it (Steam's store preferences, Discord's Content & Social, Hydra's Content & gameplay),
+tagged as this device's.
+
+On a wide window a side list stands beside each page, the current one marked by a lit line and
+`aria-current`; narrower, a page opens with the way back to the list of every page, `/en/settings`,
+which is where the account menu's **Settings** leads. A page of the app's opened in a browser says it
+is Shelf for Windows' and offers the way back, rather than "not found". Switches act at once; forms
+have a Save button. Deleting the account is last on Security, in a bordered box with a warning.
+
+Based on: Hydra's settings (read from its code: a side list of categories with icons, group
+headings, debrid services together, content filters apart from downloads), Microsoft's guidelines
+for app settings (one-word labels, a toggle for on and off, a change applies at once), and the
+research in issue 152 (Steam, Discord and GitHub, from their help pages: they need a sign-in to
+open). Organize stays out of Settings: it is work on the library, not a choice.
+
+**Done when**
+
+- Every setting has one home, and a page's tag says whose it is.
+- The old addresses lead to the new pages, query string kept.
+- Start with Windows can be changed from the app's page, and the tray's check follows.
 
 ---
 
@@ -803,7 +841,7 @@ Not yet: anyone but a moderator finding these games in the search; refreshing on
 
 ### 4.4 From a store or console
 
-On the account page, under **Platforms** ([ADR 003](adr/003-platform-sync.md)), and as the
+In Settings, on **Platforms** ([ADR 003](adr/003-platform-sync.md)), and as the
 first step of setting a new shelf up ([section 4.6](#46-setting-a-new-shelf-up)): the same
 cards in both. Steam and Nintendo are built; PlayStation and Xbox come next, and the page says
 so. Every store and console is named in words: Shelf draws none of their logos, which their
@@ -1043,7 +1081,7 @@ was added. On 27 Oct 2026 they moved it into the header, as a link with a count 
 - **A page of its own**, `/account/start`, titled "Set up your shelf", where signing up leads.
   An empty shelf leads there too.
 - **Two steps,** each checked off by what is true of the shelf, never by a box I tick:
-  1. **Bring your games in:** the platform cards of 4.4, working here as on the account page:
+  1. **Bring your games in:** the platform cards of 4.4, working here as in Settings:
      linking, the first sync with its progress, and the games that need my answer, answered
      in the card; a card's "240 games to place" is left to the next step here. Or by hand, on
      my shelf. Done once the shelf has a game and no platform
@@ -1053,7 +1091,7 @@ was added. On 27 Oct 2026 they moved it into the header, as a link with a count 
      some for another day is fine, and the step says so.
 - **See my shelf** ends the page, its main action once both steps are done.
 - **Nothing else points here:** no banner, no menu item. What waits has its own place:
-  platforms on the account page, unsorted games in the header's link to placing them, with
+  platforms in Settings, unsorted games in the header's link to placing them, with
   their count (the owner chose a count on 27 Oct 2026, though leaving games unsorted is
   allowed, so it may stay a while); a banner would push the games down to say what the link
   says; a tour teaches less than doing (Nielsen Norman Group
@@ -1690,7 +1728,7 @@ onde veio o game é importante".
 
 ### 7.10 Download sources
 
-In Shelf for Windows alone, in Settings, under the rest. Why it is built this way:
+In Shelf for Windows alone, on Settings' Download sources page. Why it is built this way:
 [ADR 007](adr/007-download-sources.md).
 
 - **Adding one.** I paste the address of a list in the format Hydra uses, and the app reads it and keeps
@@ -1725,7 +1763,8 @@ In Shelf for Windows alone, in Settings, under the rest. Why it is built this wa
 - **Downloading** asks Windows for a folder, then waits in line: one at a time. A link that leads to a web
   page isn't a file, so the next is tried, and if all of them are it says so. What has only magnet links,
   or comes only in parts, has no button until Real-Debrid is signed in, and says so with a link to do it.
-- **Real-Debrid** stands in Settings below the sources. **Sign in** shows a code, large, to enter on
+- **Real-Debrid** is a card on Settings' Download services page, the shape every other service's
+  card will take. **Sign in** shows a code, large, to enter on
   its own page, which opens in the browser; it moves on by itself once entered, and a code that runs out
   says so. Signed in, it says who and until when Premium lasts, with Sign out, which asks. Shelf never sees
   the password, and no page sees what the sign-in gives.
@@ -1764,7 +1803,7 @@ step, as a button rather than its setting; Windows' Extract All and 7-Zip's Extr
 archive named for it; and browsers' mark on what they download, which Explorer passes on to what it extracts.
 
 **Done when:** an address that isn't a source says so and adds nothing; a source added is there after the
-app restarts; a browser's account page shows nothing of this; a download paused and resumed ends as the
+app restarts; a browser's Settings show nothing of this; a download paused and resumed ends as the
 same bytes as the file; a link to a web page writes nothing to the folder; nothing offers to start a file;
 no page ever holds a Real-Debrid token.
 
@@ -1914,9 +1953,10 @@ English and Brazilian Portuguese from the first build.
   new shelf up (4.6).
 - **Sign-in** is an email address or handle, and the password. A wrong one is turned away with
   a plain message, and repeated tries are slowed down.
-- **The account page** changes the name, the handle (the old address then leads nowhere), the
-  visibility and the password; signs out everywhere; and deletes the account and everything
-  on its shelf, after the password. The archived games are Organize's (7.4).
+- **The account's settings** change the name and the handle (Profile; the old address then
+  leads nowhere), the visibility (Privacy & content) and the password; sign out everywhere; and
+  delete the account and everything on its shelf, after the password (Security, last, in a box of
+  its own). The archived games are Organize's (7.4).
 - **Every change** is checked on the server, against the session's own account. A write never
   names a library: it acts on one's own. Hiding a button is never the protection.
 - **IGDB search is for accounts**, each limited per hour, so no one spends the whole site's
@@ -2208,7 +2248,7 @@ Made on 25 Oct 2026 for the five sections not built yet (3.12, 3.13, 7.4, 7.5, 1
 | 18 | An archived game's address is not found, to me too: I bring it back to look at it | Its own account sees its page, marked archived |
 | 19 | Adult is IGDB's Erotic theme or the ESRB's Adults Only | Also IGDB's keywords for sexual content, or a mark of my own per game |
 | 20 | Hiding adult games is per device, and off until turned on, for visitors too | Per account, or on by default for visitors |
-| 21 | Nothing counts the hidden adult games, and from 28 Oct 2026 nothing on a shelf is a sign of them: the switch is on the account page | Say how many are hidden |
+| 21 | Nothing counts the hidden adult games, and from 28 Oct 2026 nothing on a shelf is a sign of them: the switch is in Settings, on Privacy & content | Say how many are hidden |
 | 22 | IGDB's results when adding a game are not hidden: they are not the shelf's games, and it is me typing | Hidden too, which needs every result's themes and age ratings |
 | 23 | A wished game stays on the Not owned shelf, in the case of the platform I want it on | It stands, outlined, on that platform's shelf |
 | 24 | A wish names platforms, not physical or digital | The format too |

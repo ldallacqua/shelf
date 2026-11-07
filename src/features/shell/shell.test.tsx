@@ -91,8 +91,8 @@ describe('Header', () => {
 
   it('signed in, away from any shelf, links to one’s own, with a menu for the account', async () => {
     who.account = ANA
-    setPathname('/account')
-    page.path = '/en/account'
+    setPathname('/settings/profile')
+    page.path = '/en/settings/profile'
     renderWithIntl(<Header />)
 
     const nav = screen.getByRole('navigation', { name: 'Main' })
@@ -106,9 +106,9 @@ describe('Header', () => {
       'href',
       '/en/u/ana',
     )
-    expect(within(menu).getByRole('menuitem', { name: 'Account' })).toHaveAttribute(
+    expect(within(menu).getByRole('menuitem', { name: 'Settings' })).toHaveAttribute(
       'href',
-      '/en/account',
+      '/en/settings',
     )
     expect(within(menu).getByRole('menuitem', { name: 'Sign out' })).toBeInTheDocument()
   })
@@ -202,7 +202,7 @@ describe('NavLinks', () => {
 
   it('marks nothing on a page that is no shelf’s', () => {
     who.account = ANA
-    setPathname('/account')
+    setPathname('/settings/profile')
     renderWithIntl(<NavLinks />)
 
     expect(screen.getByRole('link', { name: 'Library' })).not.toHaveAttribute('aria-current')

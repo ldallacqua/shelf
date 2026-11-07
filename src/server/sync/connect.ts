@@ -45,7 +45,7 @@ const cookie = (value: string, maxAge: number) =>
     ...(onVercel() ? ['Secure'] : []),
   ].join('; ')
 
-/** The page linking began on, as the address names it: the account page unless it says otherwise. */
+/** The page linking began on, as the address names it: Settings' Platforms unless it says otherwise. */
 const pageOf = (value: string | null): LinkPage => (isLinkPage(value) ? value : 'account')
 
 /**
@@ -67,11 +67,13 @@ const go = (location: string, cookies: string[] = []) => {
 const pageAfter = (origin: string, locale: Locale, page: LinkPage, outcome: 'linked' | 'failed') =>
   page === 'start'
     ? `${origin}/${locale}/account/start?steam=${outcome}`
-    : `${origin}/${locale}/account?steam=${outcome}#platforms`
+    : `${origin}/${locale}/settings/platforms?steam=${outcome}`
 
 /** Signing in to Shelf first, then back to the page linking began on. */
 const signInFirst = (origin: string, locale: Locale, page: LinkPage) => {
-  const from = encodeURIComponent(`/${locale}/account${page === 'start' ? '/start' : ''}`)
+  const from = encodeURIComponent(
+    `/${locale}${page === 'start' ? '/account/start' : '/settings/platforms'}`,
+  )
   return `${origin}/${locale}/sign-in?from=${from}`
 }
 

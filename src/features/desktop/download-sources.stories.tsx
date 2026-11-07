@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
 import { DownloadSourcesView } from './download-sources'
-import { DownloadSourcesGhost } from './download-sources-ghost'
+import { AppPageGhost } from '@/features/settings/app-only'
 import type { Source } from './sources'
 
 /**
@@ -144,5 +144,5 @@ export const ReadingAgain: Story = { args: { list: [source()], reading: 'one' } 
 export const AskingTheApp: Story = { args: { list: undefined } }
 
 export const ItsCodeOnTheWay: Story = {
-  render: () => <DownloadSourcesGhost />,
+  render: () => <AppPageGhost page="download-sources" />,
 }

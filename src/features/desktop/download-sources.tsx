@@ -4,16 +4,16 @@ import { DownloadIcon, FileUpIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from 'l
 import { useFormatter, useNow, useTranslations } from 'next-intl'
 import { type FormEvent, useCallback, useEffect, useId, useState } from 'react'
 
+import { SECTIONS, SectionHead, titleClass } from '@/features/settings/settings-section'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { cn } from '@/ui/cn'
 import { Confirm } from '@/ui/confirm'
 import { Input } from '@/ui/field'
 import { Loading } from '@/ui/ghost'
 
 import { AppWords } from './app-words'
 import { SourceCardGhost } from './download-sources-ghost'
-import { RealDebrid } from './real-debrid'
-import { ThisComputer } from './this-computer'
 import {
   type ReadingAll,
   type Source,
@@ -152,7 +152,7 @@ export function DownloadSourcesView({
   return (
     <section className="grid gap-5 border-t border-line pt-8">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+        <SectionHead title={t('title')} scope="device" />
         <Button asChild size="sm" variant="ghost">
           <Link href="/downloads">
             <DownloadIcon aria-hidden="true" />
@@ -432,14 +432,23 @@ function Sources() {
  * This computer's name, sources and Real-Debrid with their own words, which come with this code and not with the page
  * (`app-words.tsx`).
  */
+function Page() {
+  const t = useTranslations('AppSettings')
+  return (
+    <>
+      <h1 className={titleClass}>{t('pages.download-sources.title')}</h1>
+      <div className={cn('mt-8', SECTIONS)}>
+        <Sources />
+      </div>
+    </>
+  )
+}
+
+/** Download sources' page in Settings (ADR 007, issue 152). Fetched only in the app. */
 export default function DownloadSources() {
   return (
     <AppWords>
-      <div className="grid gap-10">
-        <ThisComputer />
-        <Sources />
-        <RealDebrid />
-      </div>
+      <Page />
     </AppWords>
   )
 }

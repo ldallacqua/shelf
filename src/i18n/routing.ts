@@ -19,7 +19,6 @@ export const routing = defineRouting({
     '/u/[handle]/trophies': '/u/[handle]/trophies',
     '/sign-in': '/sign-in',
     '/sign-up': '/sign-up',
-    '/account': '/account',
     // Setting a new shelf up, where signing up leads.
     '/account/start': '/account/start',
     // Organizing one's games, a tab each (spec 4.5): placing the games a sync
@@ -27,8 +26,16 @@ export const routing = defineRouting({
     '/account/unsorted': '/account/unsorted',
     '/account/hours': '/account/hours',
     '/account/archived': '/account/archived',
-    // How Shelf behaves here, beside the account (spec 2).
-    '/account/settings': '/account/settings',
+    // Settings, a page each (issue 152): the account's, this device's, and Shelf for Windows'.
+    '/settings': '/settings',
+    '/settings/profile': '/settings/profile',
+    '/settings/privacy': '/settings/privacy',
+    '/settings/platforms': '/settings/platforms',
+    '/settings/security': '/settings/security',
+    '/settings/appearance': '/settings/appearance',
+    '/settings/app': '/settings/app',
+    '/settings/download-sources': '/settings/download-sources',
+    '/settings/download-services': '/settings/download-services',
     // Shelf for Windows' downloads (ADR 007).
     '/downloads': '/downloads',
     '/consent': '/consent',

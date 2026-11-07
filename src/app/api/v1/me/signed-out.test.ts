@@ -181,7 +181,7 @@ describe('signed out, one’s own library', () => {
     )
     expect(response.status).toBe(303)
     expect(response.headers.get('Location')).toBe(
-      'http://localhost/pt-BR/sign-in?from=%2Fpt-BR%2Faccount',
+      'http://localhost/pt-BR/sign-in?from=%2Fpt-BR%2Fsettings%2Fplatforms',
     )
     expect(response.headers.get('Set-Cookie')).toBeNull()
   })
@@ -204,7 +204,7 @@ describe('signed out, one’s own library', () => {
     )
     expect(response.status).toBe(303)
     expect(response.headers.get('Location')).toBe(
-      'http://localhost/en/account?steam=failed#platforms',
+      'http://localhost/en/settings/platforms?steam=failed',
     )
   })
 

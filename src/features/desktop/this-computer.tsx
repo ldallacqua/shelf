@@ -6,6 +6,7 @@ import { useEffect, useId, useState } from 'react'
 
 import { DEVICE_NAME_MAX, type Device } from '@/domain/library/devices'
 import { callApi } from '@/features/owner/call-api'
+import { SectionHead } from '@/features/settings/settings-section'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/field'
 
@@ -53,7 +54,7 @@ export function ThisComputerView({
 
   return (
     <section className="grid gap-5 border-t border-line pt-8">
-      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+      <SectionHead title={t('title')} scope="device" />
       <p className="max-w-xl text-pretty text-muted">{t('intro')}</p>
       <form
         className="grid max-w-md gap-5"

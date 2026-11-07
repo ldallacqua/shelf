@@ -5,7 +5,12 @@ import { renderWithIntl } from '@/test/render'
 
 import type { AccountState } from './account'
 import { AccountMenu } from './account-menu'
-import { AccountSettings } from './account-settings'
+import {
+  PlatformSettings,
+  PrivacySettings,
+  ProfileSettings,
+  SecuritySettings,
+} from './account-settings'
 import { Consent } from './consent'
 import { HandleField } from './handle-field'
 
@@ -35,12 +40,18 @@ afterEach(() => {
 })
 
 describe('the account, on its way', () => {
-  it('draws the page’s shape, and asks nobody to sign in', () => {
-    const { container } = renderWithIntl(<AccountSettings />)
+  it.each([
+    ['Profile', ProfileSettings, 'Your shelf'],
+    ['Privacy', PrivacySettings, 'Visibility'],
+    ['Platforms', PlatformSettings, 'Stores and consoles'],
+    ['Security', SecuritySettings, 'Password'],
+  ])('draws %s’s shape, its titles for real, and asks nobody to sign in', (_, Settings, title) => {
+    const { container } = renderWithIntl(<Settings />)
     const status = screen.getByRole('status')
     expect(status).toHaveTextContent('Checking who you are…')
     expect(status).toHaveClass('sr-only')
     expect(container.querySelector('[aria-busy="true"] .ghost')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: title, hidden: true })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument()
   })
 
