@@ -48,6 +48,11 @@ const OPEN: &str = "open";
 const START_WITH_WINDOWS: &str = "start-with-windows";
 const QUIT: &str = "quit";
 
+/// Quit: the app ends, and with it the counting of hours.
+pub fn quit(app: &AppHandle) {
+    app.exit(0);
+}
+
 pub fn add(app: &AppHandle) -> Result<()> {
     let words = words();
     let open = MenuItem::with_id(app, OPEN, words.open, true, None::<&str>)?;
@@ -77,7 +82,7 @@ pub fn add(app: &AppHandle) -> Result<()> {
                     let _ = toggled.set_checked(autostart::enabled());
                 }
             }
-            QUIT => app.exit(0),
+            QUIT => self::quit(app),
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {

@@ -1597,7 +1597,7 @@
       },
       "signIn": {
         "title": "Signing in",
-        "body": "While you are signed in, a cookie keeps you signed in, and Shelf keeps the address and the browser each session came from, so you can sign out everywhere. A second cookie only says whether you are signed in. Your choices for the shelf, such as the theme, stay in your browser."
+        "body": "While you are signed in, a cookie keeps you signed in, and Shelf keeps the address and the browser each session came from, so you can sign out everywhere. A second cookie only says whether you are signed in. Your choices for the shelf, such as the theme, stay in your browser. One of them, how you last arranged a library (its view, grouping and order), is a cookie, so that Shelf’s server can draw the library that way when you open it again."
       },
       "steam": {
         "title": "Steam",

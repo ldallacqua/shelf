@@ -16,6 +16,7 @@ import {
 import { groupings, type Grouping } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 import { onlyReady } from '@/domain/library/ready'
+import { namesArrangement, newSeed, type Completion } from '@/domain/library/remembered'
 import type { SmartShelf } from '@/domain/library/shelves'
 import { writeSort, type Sort } from '@/domain/library/sort'
 import { libraryStats } from '@/domain/library/stats'
@@ -82,7 +83,9 @@ import { Button } from '@/ui/button'
 import { GhostShelves } from './ghosts'
 import { GhostList, ListView } from './list-view'
 import { markPageLive } from './live'
+import { rememberArrangement } from './arrangement'
 import { NothingReady } from './nothing-ready'
+import { useArrival } from './use-arrival'
 import type { Dimension } from './preferences'
 import { anchorIn2d, ShelfStage } from './shelf-stage'
 import { StatsLine } from './stats-line'
@@ -112,6 +115,9 @@ import { GhostWall, WallView } from './wall-view'
 const viewParam = parseAsStringLiteral(views)
   .withDefault(DEFAULT_VIEW)
   .withOptions({ history: 'push' })
+
+/** Whether the address names the view, the grouping or the sort: read as written, even if wrong. */
+const arrangingParams = { view: parseAsString, group: parseAsString, sort: parseAsString }
 
 const never = () => () => {}
 
@@ -174,9 +180,6 @@ const loadPanel = (handle: string): Promise<GamePanelComponent> =>
 const onAGame = (target: EventTarget) =>
   target instanceof Element && target.closest('[data-flip], [data-box]') !== null
 
-/** A new seed for a shuffle: short, and safe in an address. */
-const newSeed = (): string => Math.random().toString(36).slice(2, 8)
-
 type LibraryViewProps = {
   /** The start of the library, sent with the page. */
   first: FirstScreen
@@ -188,6 +191,11 @@ type LibraryViewProps = {
   shelf?: SmartShelf
   /** The owner's ways to save and remove shelves. Offered once the browser knows the owner is here. */
   actions?: ShelfActions
+  /**
+   * How this device last arranged a library, when the address named no view, grouping or sort
+   * (issue 149): the first screen was built for it, and it goes into the address.
+   */
+  completion?: Completion
 }
 
 /**
@@ -205,6 +213,7 @@ export function LibraryView({
   shelves: smartShelves,
   shelf,
   actions: ownerActions,
+  completion,
 }: LibraryViewProps) {
   const { handle, files, name: ownerName } = useShelf()
   // Nobody is offered a control on a shelf not their own: they appear once
@@ -223,7 +232,7 @@ export function LibraryView({
     sort: shelf?.sort ?? 'title',
     group: shelf?.group ?? DEFAULT_GROUPING,
   }
-  const [view, setView] = useQueryState('view', viewParam)
+  const [addressView, setView] = useQueryState('view', viewParam)
   const [rawGroup, setGroup] = useQueryState(
     'group',
     parseAsStringLiteral(groupings).withDefault(defaults.group).withOptions({ history: 'push' }),
@@ -236,8 +245,23 @@ export function LibraryView({
     },
     { history: 'push' },
   )
-  const query = parseLibraryQuery({ view, group: rawGroup, ...address })
-  const { group, sort, seed } = query
+  // The arrangement remembered on this device, while the address still names none (issue 149).
+  // It goes into the address in the same step of history: a link copied from it opens the same
+  // library, and Back still leaves the library rather than undoing what nobody chose here.
+  const [named] = useQueryStates(arrangingParams)
+  const arrival = useArrival(completion, namesArrangement(named), (put) => {
+    const replace = { history: 'replace' } as const
+    if (put.view) void setView(put.view, replace)
+    if (put.group) void setGroup(put.group, replace)
+    if (put.sort) void setAddress({ sort: put.sort, seed: put.seed ?? null }, replace)
+  })
+  const query = parseLibraryQuery({
+    view: arrival?.view ?? addressView,
+    group: arrival?.group ?? rawGroup,
+    ...address,
+    ...(arrival?.sort && { sort: arrival.sort, seed: arrival.seed }),
+  })
+  const { view, group, sort, seed } = query
   const sortText = writeSort(sort)
 
   const [density, setDensity] = useDensity()
@@ -376,6 +400,21 @@ export function LibraryView({
     void set(value)
   }
 
+  /** A choice in the toolbar is remembered on this device: the library as it leaves it. */
+  const remember = (next: { view?: View; group?: Grouping; sort?: Sort }) =>
+    rememberArrangement(
+      { view: next.view ?? view, group: next.group ?? group, sort: next.sort ?? sort },
+      { smart: shelf !== undefined },
+    )
+  const chooseView = (next: View) => {
+    remember({ view: next })
+    change(setView, next)
+  }
+  const chooseGroup = (next: Grouping) => {
+    remember({ group: next })
+    change(setGroup, next)
+  }
+
   /** A new filter. Typing replaces the history entry it started; anything else adds one. */
   const writeQ = (text: string, typed = false) => {
     setOpen(undefined)
@@ -383,11 +422,13 @@ export function LibraryView({
   }
   const writeTree = (tree: QueryNode | undefined) => writeQ(textWith(tree, parsed.problems))
   const writeSortTo = (next: Sort) => {
+    remember({ sort: next })
     capture()
     setOpen(undefined)
     void setAddress({ sort: writeSort(next), seed: null })
   }
   const shuffle = () => {
+    remember({ sort: { key: 'random', descending: false } })
     capture()
     setOpen(undefined)
     void setAddress({ sort: 'random', seed: newSeed() })
@@ -458,7 +499,7 @@ export function LibraryView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edit, library, matching, shelves.length, drawnQ])
 
-  const nextView = () => change(setView, views[(views.indexOf(view) + 1) % views.length]!)
+  const nextView = () => chooseView(views[(views.indexOf(view) + 1) % views.length]!)
 
   const keys = useRef({
     view,
@@ -808,9 +849,9 @@ export function LibraryView({
 
           <Toolbar
             view={view}
-            onView={(value: View) => change(setView, value)}
+            onView={chooseView}
             group={group}
-            onGroup={(value: Grouping) => change(setGroup, value)}
+            onGroup={chooseGroup}
             groupOpen={groupMenu}
             onGroupOpen={setGroupMenu}
             density={density}

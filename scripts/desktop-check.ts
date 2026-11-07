@@ -17,8 +17,9 @@
  * answer Shelf's page, if the header is not the window's bar (ADR 005,
  * section 8), if linking Steam (the test double) does not come back to the
  * app, if Play does not start the file where it should, if Ready to play
- * does not leave the game whose file was chosen (spec 7.7), or if the console
- * has an error. `DESKTOP_CHECK_SHOTS=<folder>` keeps a picture of the window
+ * does not leave the game whose file was chosen (spec 7.7), if Ready to play
+ * and the library's arrangement do not survive Quit (issue 149), or if the
+ * console has an error. `DESKTOP_CHECK_SHOTS=<folder>` keeps a picture of the window
  * at each step, for a person to look at.
  *
  * A made-up source on this computer is added, and made-up bytes downloaded from it, paused, resumed and
@@ -154,6 +155,8 @@ if (built.status !== 0) process.exit(built.status ?? 1)
 
 // A web view profile of its own, so each run starts signed out, and the installed app's is untouched.
 const profile = mkdtempSync(join(tmpdir(), 'shelf-desktop-check-'))
+// No script can press the tray's Quit: a development build quits as it does once this file appears.
+const quitFile = join(mkdtempSync(join(tmpdir(), 'shelf-desktop-quit-')), 'quit')
 // A stand-in for a game's file: a batch file that writes down the folder it was started in, and
 // starts a stand-in for the game, which leaves the script behind as a launcher would. A name no
 // other program has, so ending it from outside can't end anything else.
@@ -261,10 +264,13 @@ const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
     SHELF_PICK_SOURCE: resolve('fixtures/sources/hydra-format.json'),
     SHELF_REAL_DEBRID: `http://127.0.0.1:${(debrid.address() as AddressInfo).port}`,
     SHELF_REOPEN_AFTER: '5',
+    SHELF_QUIT_ON: quitFile,
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}`,
   },
   stdio: 'inherit',
 })
+/** The app opened again after Quit, on the same profile. */
+let reopened: ReturnType<typeof spawn> | undefined
 
 let plain: Browser | undefined
 let exitCode = 0
@@ -980,12 +986,80 @@ try {
     return page !== undefined && (await page.locator('header').count()) > 0
   })
   pass('opens again from the tray, through the splash')
+
+  console.log('\nQuit, and open again')
+  // What the page keeps on this computer, Ready to play and the library's arrangement, must
+  // survive Quit (issue 149): chosen a moment before, then the app ends as the tray's Quit ends it.
+  const back = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`)
+  const before = back
+    .contexts()
+    .flatMap((context) => context.pages())
+    .find((each) => each.url().startsWith(BASE_URL))!
+  await before.goto(`${BASE_URL}/en/u/sample`)
+  await before.getByRole('button', { name: 'Ready to play' }).click()
+  await before.getByRole('radio', { name: 'Wall', exact: true }).click()
+  await before.waitForURL(/view=wall/)
+  const ended = new Promise<number | null>((resolve) => app.once('exit', resolve))
+  writeFileSync(quitFile, '')
+  const code = await Promise.race([
+    ended,
+    new Promise<'running'>((r) => setTimeout(r, 20_000, 'running')),
+  ])
+  if (code === 0) pass('Quit ends the app')
+  else fail(`Quit left the app ${code === 'running' ? 'running' : `ended with ${code}`}`)
+  rmSync(quitFile)
+  await until('its web view ending', 30, async () => {
+    try {
+      await fetch(`http://127.0.0.1:${PORT}/json/version`)
+      return false
+    } catch {
+      return true
+    }
+  })
+  reopened = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
+    env: {
+      ...process.env,
+      SHELF_URL: BASE_URL,
+      SHELF_DATA_DIR: profile,
+      WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}`,
+    },
+    stdio: 'inherit',
+  })
+  await until(
+    'the app opening again',
+    60,
+    async () => (await fetch(`http://127.0.0.1:${PORT}/json/version`)).ok,
+  )
+  const anew = await chromium.connectOverCDP(`http://127.0.0.1:${PORT}`)
+  const pageAnew = () =>
+    anew
+      .contexts()
+      .flatMap((context) => context.pages())
+      .find((each) => each.url().startsWith(BASE_URL))
+  await until('Shelf in its window', 60, async () => pageAnew() !== undefined)
+  const library = pageAnew()!
+  // The bare address, as the header's link opens it.
+  await library.goto(`${BASE_URL}/en/u/sample`)
+  await library.getByRole('button', { name: 'Ready to play' }).waitFor({ timeout: 15_000 })
+  await library.waitForURL(/view=wall/, { timeout: 10_000 }).catch(() => {})
+  const survived = {
+    ready: await library
+      .getByRole('button', { name: 'Ready to play' })
+      .getAttribute('aria-pressed'),
+    view: await library.locator('.library:not([aria-busy])').getAttribute('data-view'),
+    address: new URL(library.url()).search,
+  }
+  if (survived.ready === 'true' && survived.view === 'wall' && survived.address === '?view=wall')
+    pass('opens with Ready to play on, on the wall, as it was left')
+  else fail(`after Quit it opened with ${JSON.stringify(survived)}`)
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error))
 } finally {
   await plain?.close()
   // The app and the web view's own processes, which hold its profile until they end.
-  if (app.pid) spawnSync('taskkill', ['/pid', String(app.pid), '/t', '/f'], { stdio: 'ignore' })
+  for (const each of [app, reopened])
+    if (each?.pid)
+      spawnSync('taskkill', ['/pid', String(each.pid), '/t', '/f'], { stdio: 'ignore' })
   endStandIn()
   rmSync(game, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
   rmSync(downloaded, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })

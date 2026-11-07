@@ -80,7 +80,12 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // hundred bytes; the rest is Turbopack splitting the panel's chunk in two around the module the
   // list and the panel now share. Moving it into a module both already import was looked at: the
   // trophy page imports that one too, with 0.2 KB to spare.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 288 },
+  // The library as I left it (issue 149, 7 Nov 2026): measured 289.3 KB, from 287.5 (main measured
+  // the same day). Reading and writing the remembered arrangement, the hook that puts it into the
+  // address, and the library view's handlers that remember each choice, which the React Compiler
+  // memoizes: 3.9 KB more in the view's chunk before compression. The first screen arrives already
+  // arranged, so nothing is redrawn for it.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 289.5 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).

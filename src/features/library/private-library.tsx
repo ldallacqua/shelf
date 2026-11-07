@@ -7,6 +7,7 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { useEffect, useState } from 'react'
 
 import type { Library } from '@/domain/library/library'
+import { completionOf, namesArrangement } from '@/domain/library/remembered'
 import type { SmartShelf } from '@/domain/library/shelves'
 import {
   buildFirstScreen,
@@ -18,6 +19,7 @@ import type { ShelfActions } from '@/features/filters/shelf-controls'
 import { useAccount } from '@/features/owner/account'
 import { Link } from '@/i18n/navigation'
 
+import { readRememberedHere } from './arrangement'
 import { EmptyLibrary } from './empty-library'
 import { LibrarySkeleton } from './library-skeleton'
 import { LibraryView } from './library-view'
@@ -66,6 +68,14 @@ function MyLibrary({
   const params = useSearchParams()
   const [own, setOwn] = useState<{ library: Library; shelves: SmartShelf[] }>()
   const [failed, setFailed] = useState(false)
+  // Opened from an address that names no view, grouping or sort: as this device last left a
+  // library (issue 149), until the address names one. Built only here, in the browser.
+  const [completion, setCompletion] = useState(() =>
+    namesArrangement(Object.fromEntries(params))
+      ? undefined
+      : completionOf(readRememberedHere(), { smart: smart !== undefined }),
+  )
+  if (completion && namesArrangement(Object.fromEntries(params))) setCompletion(undefined)
 
   useEffect(() => {
     let current = true
@@ -83,11 +93,12 @@ function MyLibrary({
   if (smart && !shelf) return <PrivateShelf missing />
   if (own.library.games.length === 0) return <EmptyLibrary />
 
+  const arranged = { ...Object.fromEntries(params), ...completion }
   const query = parseLibraryQuery({
-    ...Object.fromEntries(params),
+    ...arranged,
     q: params.get('q') ?? shelf?.query,
-    sort: params.get('sort') ?? shelf?.sort,
-    group: params.get('group') ?? shelf?.group,
+    sort: arranged.sort ?? shelf?.sort,
+    group: arranged.group ?? shelf?.group,
   })
   // A phone shows fewer boxes at once; the rest follow in a moment, as on a public shelf.
   const boxes = window.matchMedia('(width < 40rem)').matches ? FIRST_BOXES_PHONE : FIRST_BOXES
@@ -102,6 +113,7 @@ function MyLibrary({
           shelves={own.shelves}
           shelf={shelf}
           actions={actions}
+          completion={completion}
         />
       </NuqsAdapter>
     </>

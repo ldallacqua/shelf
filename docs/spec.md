@@ -114,6 +114,20 @@ Library query string, in full:
 2D or 3D is **not** in the address. It is a per-device preference, and 3D is offered only with
 experimental views on ([section 3.6](#36-switching-2d-and-3d)).
 
+**The library opens the way I left it** (issue 149). The view, grouping and sort I last chose in
+the toolbar are remembered on this device, for every shelf, mine or anyone's, and a library
+address that names none of the three opens arranged that way: the header's link, a bookmark of
+`/en/u/{handle}`, a new tab, Shelf for Windows starting. The remembered parts are then written
+into the address, in place, without a new step in history, so the address still says exactly what
+is shown. An address that names any of them shows only what it names, and opening it remembers
+nothing: only the toolbar does. A shuffle is remembered as a shuffle, with a new seed each time,
+and a sort or grouping that no longer exists is the default. A smart shelf keeps its own grouping
+and sort; only the view applies to it, and only its view is remembered from it. It is kept in a
+cookie, `shelf_arrangement`, the one place the server can read it too: the library's first screen
+is drawn for each visit anyway, so it arrives already arranged. With cookies blocked, the defaults
+apply. Following me across devices would mean reading the account on the server: not built.
+Ready to play stays a choice of the device's (spec 7.7), kept apart.
+
 **Header, on every page:** the name; Library and Trophies of the shelf in the address (or,
 elsewhere, one's own); a search field over it; theme switch, language switch. On the right, a
 visitor's Sign in and Create your shelf, or, signed in, a menu: My shelf, Account, Sign out.
@@ -122,6 +136,8 @@ On one's own shelf, an Add button. **Footer:** credit to IGDB.com, Privacy, and 
 **Done when**
 
 - Loading any library address directly shows exactly the state it describes.
+- A library address that names no view, grouping or sort opens as the toolbar last left a library
+  on this device, with nothing drawn first in the default arrangement.
 - Back and forward step through filter, sort, group and view changes.
 - An unknown or malformed parameter falls back to its default and never shows an error page.
 
