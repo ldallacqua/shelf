@@ -1,4 +1,18 @@
 {
+  "ThisComputer": {
+    "title": "This computer",
+    "intro": "Shelf for Windows notes which of your computers each session of play came from. Name this one to tell them apart. Only you see it.",
+    "name": "Name",
+    "unnamed": "Computer {number}",
+    "hint": "Left empty, it’s called {unnamed}. Never your computer’s own name in Windows.",
+    "save": "Save name",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "failed": "The name couldn’t be saved. Try again.",
+    "others": "Your other computers",
+    "lastPlayed": "last played {when}",
+    "nothingYet": "nothing counted yet"
+  },
   "DownloadSources": {
     "title": "Download sources",
     "intro": "Lists of games to download, in the format Hydra uses. They stay on this computer and are read again once a day while the app is running, and adding one downloads nothing.",

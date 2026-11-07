@@ -1,8 +1,38 @@
 import { describe, expect, it } from 'vitest'
 
-import { isPcSource, pastIgdb, playedMinutes, trackedMinutes } from './hours'
+import { durationOf, isPcSource, pastIgdb, playedMinutes, trackedMinutes } from './hours'
 
 /** A game's hours, and the games whose stores count far past IGDB (ADR 003). */
+
+describe('how a play time is said', () => {
+  it('says nothing of nothing', () => {
+    expect(durationOf(0)).toEqual({ unit: 'none' })
+    expect(durationOf(-3)).toEqual({ unit: 'none' })
+    expect(durationOf(Number.NaN)).toEqual({ unit: 'none' })
+  })
+
+  it('says a few seconds are something, never nothing', () => {
+    expect(durationOf(1 / 60)).toEqual({ unit: 'under' })
+    expect(durationOf(0.99)).toEqual({ unit: 'under' })
+  })
+
+  it('says minutes under an hour, rounded down', () => {
+    expect(durationOf(1)).toEqual({ unit: 'minutes', minutes: 1 })
+    expect(durationOf(45.9)).toEqual({ unit: 'minutes', minutes: 45 })
+    expect(durationOf(59.99)).toEqual({ unit: 'minutes', minutes: 59 })
+  })
+
+  it('says hours and minutes from an hour, and no minutes on the hour', () => {
+    expect(durationOf(60)).toEqual({ unit: 'hours', hours: 1 })
+    expect(durationOf(85)).toEqual({ unit: 'hoursMinutes', hours: 1, minutes: 25 })
+    expect(durationOf(99 * 60 + 59.5)).toEqual({ unit: 'hoursMinutes', hours: 99, minutes: 59 })
+  })
+
+  it('says whole hours from a hundred, rounded down', () => {
+    expect(durationOf(100 * 60)).toEqual({ unit: 'hours', hours: 100 })
+    expect(durationOf(312 * 60 + 59)).toEqual({ unit: 'hours', hours: 312 })
+  })
+})
 
 describe('a game’s hours', () => {
   const time = (tracked: number, pc: number, console = 0) => ({ tracked, pc, console })

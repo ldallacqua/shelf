@@ -19,6 +19,7 @@ import {
   MAX_MATCH_LINES,
   type MatchAnswer,
 } from '@/domain/library/bulk'
+import { deviceName } from '@/domain/library/devices'
 import { MAX_NOTES, type OwnerGame } from '@/domain/library/editing'
 import { MAX_PLACED } from '@/domain/library/placing'
 import { storeList } from '@/domain/library/store-list'
@@ -448,6 +449,12 @@ export const apiPlaySessions = z
           startedAt: z.number().int().min(0).describe('Milliseconds since 1970'),
           endedAt: z.number().int().min(0).describe('Milliseconds since 1970'),
           seconds: z.number().int().min(0).max(SEVEN_DAYS).describe('Played, not merely open'),
+          device: z
+            .uuid()
+            .optional()
+            .describe(
+              'The computer it was played on: Shelf for Windows’ own random id for it, which says nothing of the machine. Absent from an app older than 0.11.0',
+            ),
         }),
       )
       .max(200),
@@ -464,6 +471,39 @@ export const apiPlaySessionsKept = z
     version: z.number().int(),
   })
   .meta({ id: 'PlaySessionsKept' })
+
+export const apiDevices = z
+  .object({
+    devices: z.array(
+      z.object({
+        id: z.string().describe('Shelf for Windows’ own random id for it'),
+        name: z.string().optional().describe('The name the account gave it; absent until it has'),
+        number: z
+          .int()
+          .min(1)
+          .describe(
+            'Its place among the account’s computers, in the order Shelf first heard of them: what to call it until it is named',
+          ),
+        firstSeenAt: z
+          .int()
+          .optional()
+          .describe('The start of its first session kept, in milliseconds since 1970'),
+        lastSeenAt: z
+          .int()
+          .optional()
+          .describe('The end of its latest session kept, in milliseconds since 1970'),
+      }),
+    ),
+  })
+  .meta({ id: 'Devices' })
+
+export const apiDeviceName = z
+  .object({
+    name: deviceName
+      .nullable()
+      .describe('What to call it. Null, or nothing but spaces, takes its name away'),
+  })
+  .meta({ id: 'DeviceName' })
 
 export const apiStoreHours = z
   .object({

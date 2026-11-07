@@ -41,6 +41,7 @@ import { accountsReading, storesOf } from '@/server/library/read-from'
 import {
   achievementProgress,
   copies,
+  devices,
   entries,
   entryTags,
   entryVersions,
@@ -1650,14 +1651,37 @@ export type PlaySession = {
   startedAt: number
   endedAt: number
   seconds: number
+  /** The computer it was played on; none from an app older than computers' ids. */
+  deviceId?: string
+}
+
+/** Each computer's first and last moment in these sessions. */
+const seenIn = (sessions: readonly PlaySession[]) => {
+  const seen = new Map<string, { first: number; last: number }>()
+  for (const { deviceId, startedAt, endedAt } of sessions) {
+    if (!deviceId) continue
+    const known = seen.get(deviceId)
+    seen.set(deviceId, {
+      first: Math.min(known?.first ?? startedAt, startedAt),
+      last: Math.max(known?.last ?? endedAt, endedAt),
+    })
+  }
+  return seen
 }
 
 /**
  * Keeps what Shelf for Windows counted (ADR 005, section 12), and answers with the ids it kept. A
  * session sent again changes nothing but what it has grown by, as the app sends again whatever
  * it never heard back about. A game not in this library is left out, and the app holds on to it.
+ * Each session is a row of its own, so two computers never write over each other: a game's hours
+ * are their sum. The computers they came from are noted among the library's `devices`.
  */
-export const recordPlaySessions = (db: Db, libraryId: string, sessions: readonly PlaySession[]) =>
+export const recordPlaySessions = (
+  db: Db,
+  libraryId: string,
+  sessions: readonly PlaySession[],
+  now = Date.now(),
+) =>
   db.transaction(async (tx) => {
     if (sessions.length === 0) return []
     const named = [...new Set(sessions.map((session) => session.entryId))]
@@ -1679,12 +1703,53 @@ export const recordPlaySessions = (db: Db, libraryId: string, sessions: readonly
         set: {
           seconds: sql`max(${playSessions.seconds}, excluded.seconds)`,
           endedAt: sql`max(${playSessions.endedAt}, excluded.ended_at)`,
+          deviceId: sql`coalesce(${playSessions.deviceId}, excluded.device_id)`,
         },
         // An id another library's session has is not this one's to change.
         where: sql`${playSessions.entryId} = excluded.entry_id`,
       })
+    const seen = seenIn(kept)
+    if (seen.size > 0) {
+      await tx
+        .insert(devices)
+        .values(
+          [...seen].map(([id, { first, last }]) => ({
+            userId: libraryId,
+            id,
+            firstSeenAt: first,
+            lastSeenAt: last,
+            createdAt: now,
+          })),
+        )
+        .onConflictDoUpdate({
+          target: [devices.userId, devices.id],
+          set: {
+            firstSeenAt: sql`min(coalesce(${devices.firstSeenAt}, excluded.first_seen_at), excluded.first_seen_at)`,
+            lastSeenAt: sql`max(coalesce(${devices.lastSeenAt}, excluded.last_seen_at), excluded.last_seen_at)`,
+          },
+        })
+    }
     await bumpVersion(tx, libraryId)
     return kept.map((session) => session.id)
+  })
+
+/**
+ * Gives one of my computers a name, or takes it away (null). One that has sent nothing yet is
+ * named all the same: it is a computer Shelf for Windows runs on, and its sessions will find it.
+ */
+export const nameDevice = (
+  db: Db,
+  libraryId: string,
+  deviceId: string,
+  name: string | null,
+  now = Date.now(),
+) =>
+  db.transaction(async (tx) => {
+    await tx
+      .insert(devices)
+      .values({ userId: libraryId, id: deviceId, name, createdAt: now })
+      .onConflictDoUpdate({ target: [devices.userId, devices.id], set: { name } })
+    await bumpVersion(tx, libraryId)
   })
 
 export const setTags = (
@@ -1775,6 +1840,7 @@ export const removeLibrary = (db: Db, libraryId: string) =>
     await tx.delete(tags).where(eq(tags.userId, libraryId))
     await tx.delete(shelves).where(eq(shelves.userId, libraryId))
     await tx.delete(removedEntries).where(eq(removedEntries.userId, libraryId))
+    await tx.delete(devices).where(eq(devices.userId, libraryId))
     await tx.delete(libraries).where(eq(libraries.userId, libraryId))
   })
 

@@ -283,7 +283,7 @@
       },
       "hours": {
         "q": "Como o Shelf conta minhas horas?",
-        "a": "Não dá para digitar: elas vêm de onde você jogou. A Steam e a Nintendo informam as delas, e o PlayStation e o Xbox vão informar assim que puderem ser vinculados. No PC, o Shelf para Windows conta um jogo enquanto ele está na sua frente e você está usando, tenha aberto pelo Shelf ou pela Steam. Depois de 5 minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, ou AFK. Quando a Steam e o Shelf contam a mesma jogatina, aparece o maior dos dois, nunca os dois somados."
+        "a": "Não dá para digitar: elas vêm de onde você jogou. A Steam e a Nintendo informam as delas, e o PlayStation e o Xbox vão informar assim que puderem ser vinculados. No PC, o Shelf para Windows conta um jogo enquanto ele está na sua frente e você está usando, tenha aberto pelo Shelf ou pela Steam. As horas de todos os computadores com o Shelf para Windows se somam. Depois de 5 minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, ou AFK. Quando a Steam e o Shelf contam a mesma jogatina, aparece o maior dos dois, nunca os dois somados."
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
@@ -604,6 +604,18 @@
     "viewerClose": "Fechar as capturas",
     "viewerPrevious": "Captura anterior",
     "viewerNext": "Próxima captura"
+  },
+  "Duration": {
+    "under": "Menos de um minuto",
+    "minutes": "{minutes, number} min",
+    "hoursMinutes": "{hours, number} h {minutes, number} min",
+    "hours": "{hours, number} h",
+    "long": {
+      "under": "menos de um minuto",
+      "minutes": "{minutes, plural, one {# minuto} other {# minutos}}",
+      "hoursMinutes": "{hours, plural, one {# hora} other {# horas}} e {minutes, plural, one {# minuto} other {# minutos}}",
+      "hours": "{hours, plural, one {# hora} other {# horas}}"
+    }
   },
   "Trophies": {
     "loading": "Carregando os troféus…",
@@ -1567,7 +1579,7 @@
       },
       "desktop": {
         "title": "Shelf para Windows",
-        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou. Para o Shelf ele envia só isso, e só de jogos que estão na sua estante. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
+        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou, com um id aleatório que o app criou para aquele computador, que não diz nada dele, nem o nome dele no Windows. Para o Shelf ele envia só isso, e só de jogos que estão na sua estante. O Shelf guarda o nome que você dá a cada computador, e só você vê esse nome, ou qual computador jogou o quê. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
       },
       "where": {
         "title": "Onde fica guardado",
@@ -1748,13 +1760,12 @@
     "forceBody": "O Shelf vai encerrar o jogo na hora, sem deixar ele salvar. O que não estiver salvo será perdido.",
     "forceCancel": "Deixar aberto",
     "played": "Horas jogadas",
-    "playedHours": "{hours, number} h",
     "playedNone": "Nenhuma contada ainda",
-    "playedTracked": "Shelf para Windows: {hours, number} h",
-    "playedIdle": "{hours, number} h do tempo das lojas retiradas como tempo parado",
+    "playedTracked": "Shelf para Windows: {time}",
+    "playedIdle": "{time} do tempo das lojas retirado como tempo parado",
     "playedSamePlay": "A Steam conta a mesma jogatina, então vale o maior dos dois.",
     "playedHow": "Como as horas são contadas",
-    "playedHowBody": "No PC, o Shelf para Windows conta um jogo enquanto ele está na sua frente na tela e você está usando, não importa como você abriu, desde que o app esteja rodando. Depois de {minutes} minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, também chamado de AFK (longe do teclado). Uma cena longa sem controle também pode cair nisso. As horas de console, e as da própria Steam, vêm de cada plataforma como ela informa, e essas incluem o tempo ausente. Não dá para digitar horas.",
+    "playedHowBody": "No PC, o Shelf para Windows conta um jogo enquanto ele está na sua frente na tela e você está usando, não importa como você abriu, desde que o app esteja rodando. As horas de todos os computadores em que ele roda se somam, e nunca uma apaga a outra. Depois de {minutes} minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, também chamado de AFK (longe do teclado). Uma cena longa sem controle também pode cair nisso. As horas de console, e as da própria Steam, vêm de cada plataforma como ela informa, e essas incluem o tempo ausente. Não dá para digitar horas.",
     "hourFewer": "Uma hora a menos",
     "hourMore": "Uma hora a mais",
     "idleStart": "Tirar tempo parado",
@@ -1767,8 +1778,8 @@
     "newCopy": "Nova cópia",
     "addThisCopy": "Adicionar",
     "cancel": "Cancelar",
-    "syncedHours": "{source}: {hours, number} h",
-    "fromAccount": "Da sua conta {source}: {hours, number} h",
+    "syncedHours": "{source}: {time}",
+    "fromAccount": "Da sua conta {source}: {time}",
     "notesPublic": "Os visitantes podem ler estas notas",
     "versions": "Versões",
     "relations": {

@@ -23,10 +23,11 @@ import {
   type SyncSource,
 } from '@/domain/library/values'
 import { Cover } from '@/features/library/cover'
+import { useDuration } from '@/features/library/duration'
 import { useShelf } from '@/features/library/shelf'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
 import { DayField, SavedRating, TagsField, today } from '@/features/owner/fields'
-import { announceChange } from '@/features/owner/library-change'
+import { announceChange, useLibraryChange } from '@/features/owner/library-change'
 import { StoresField } from '@/features/owner/stores-field'
 import { notify } from '@/features/shell/notices'
 import { useRouter } from '@/i18n/navigation'
@@ -88,6 +89,7 @@ export function MineEditor({
   const library = useTranslations('Library')
   const errors = useTranslations('Add')
   const sync = useTranslations('Sync')
+  const duration = useDuration()
   const router = useRouter()
   const locale = useLocale()
   const { handle } = useShelf()
@@ -108,6 +110,10 @@ export function MineEditor({
   const [idling, setIdling] = useState(false)
   const idleField = useRef<HTMLDivElement>(null)
   const shown = useRef<OwnerGame | undefined>(owned)
+  // The library's versions this editor's own saves made: each reads the record again itself.
+  const own = useRef(new Set<number>())
+  const change = useLibraryChange()
+  const heard = useRef(change?.id)
 
   // Asked for from the line above it, the field takes the focus the button had.
   useEffect(() => {
@@ -137,6 +143,28 @@ export function MineEditor({
     }
   }, [slug, errors])
 
+  // The library changed from elsewhere on the page (a session sent the moment a game closed, a
+  // sync): the record is read again, so its hours change in place. Not over an edit on its way.
+  useEffect(() => {
+    if (!change || change.id === heard.current) return
+    heard.current = change.id
+    if (own.current.has(change.version)) return
+    let current = true
+    void actions
+      .read(slug)
+      .catch(() => undefined)
+      .then((result) => {
+        if (!current || !result?.ok) return
+        if (shown.current !== records.get(slug)) return
+        shown.current = result.value
+        records.set(slug, result.value)
+        setOwned(result.value)
+      })
+    return () => {
+      current = false
+    }
+  }, [change, slug])
+
   if (!owned) return fallback
 
   /**
@@ -144,6 +172,7 @@ export function MineEditor({
    * record is read again for any new ids.
    */
   const changed = async (version: number, next: OwnerGame) => {
+    own.current.add(version)
     // The new file, and nothing else: an edit moves neither the view behind the game nor
     // the game in front of it, as landing on a game just added would.
     announceChange({ version })
@@ -245,7 +274,6 @@ export function MineEditor({
   // Of that, what I said sat idle: it comes off the stores' hours, never off what the app counted.
   const idle = owned.idle ?? 0
   const played = playedMinutes(time, idle)
-  const tenths = (minutes: number) => Math.round(minutes / 6) / 10
 
   /** Out of sight, kept whole (spec 7.4): nothing is lost, so nothing is asked first. */
   const archive = async () => {
@@ -387,22 +415,22 @@ export function MineEditor({
           <div className="grid gap-1.5">
             <span className="text-sm font-medium">{t('played')}</span>
             <p className="flex h-10 items-center text-xl font-semibold tabular-nums pointer-coarse:h-11">
-              {played > 0 ? t('playedHours', { hours: tenths(played) }) : t('playedNone')}
+              {played > 0 ? duration(played) : t('playedNone')}
             </p>
             {owned.tracked > 0 || synced > 0 ? (
               <ul className="grid gap-0.5 text-xs text-muted">
                 {owned.tracked > 0 ? (
-                  <li>{t('playedTracked', { hours: tenths(owned.tracked) })}</li>
+                  <li>{t('playedTracked', { time: duration(owned.tracked) })}</li>
                 ) : null}
                 {[...reports].map(([source, minutes]) => (
                   <li key={source}>
                     {t('syncedHours', {
                       source: sync(`source.${source}`),
-                      hours: tenths(minutes),
+                      time: duration(minutes),
                     })}
                   </li>
                 ))}
-                {idle > 0 ? <li>{t('playedIdle', { hours: tenths(idle) })}</li> : null}
+                {idle > 0 ? <li>{t('playedIdle', { time: duration(idle) })}</li> : null}
                 {owned.tracked > 0 && time.pc > 0 ? <li>{t('playedSamePlay')}</li> : null}
               </ul>
             ) : null}
@@ -800,6 +828,7 @@ export function Copies({
   const game = useTranslations('Game')
   const library = useTranslations('Library')
   const sync = useTranslations('Sync')
+  const duration = useDuration()
   const id = useId()
   const have = new Set(owned.copies.map((copy) => `${copy.platformId}:${copy.format}`))
   const open = platforms.filter((platform) =>
@@ -842,11 +871,9 @@ export function Copies({
                           <LockIcon aria-hidden="true" className="size-3 flex-none" />
                           {t('fromAccount', {
                             source: sync(`source.${source}`),
-                            hours:
-                              Math.round(
-                                (copy.synced?.find((each) => each.source === source)?.minutes ??
-                                  0) / 6,
-                              ) / 10,
+                            time: duration(
+                              copy.synced?.find((each) => each.source === source)?.minutes ?? 0,
+                            ),
                           })}
                         </span>
                       ))}
@@ -856,7 +883,7 @@ export function Copies({
                           <span key={each.source} className="text-xs text-muted">
                             {t('syncedHours', {
                               source: sync(`source.${each.source}`),
-                              hours: Math.round(each.minutes / 6) / 10,
+                              time: duration(each.minutes),
                             })}
                           </span>
                         ))}

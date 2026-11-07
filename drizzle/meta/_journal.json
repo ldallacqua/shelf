@@ -211,6 +211,13 @@
       "when": 1793639139153,
       "tag": "0029_steam-reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1794021100509,
+      "tag": "0030_devices",
+      "breakpoints": true
     }
   ]
 }

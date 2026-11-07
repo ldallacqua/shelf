@@ -12,7 +12,8 @@ import { shareFirstBoxes } from '@/domain/library/view'
 import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
 import { FoldBody, FoldToggle } from './fold-toggle'
-import { dateOf, hoursOf, outOfTen } from './format'
+import { Duration } from './duration'
+import { dateOf, outOfTen } from './format'
 import { platformFor } from './game-box'
 import { GhostHeading } from './ghosts'
 import { StatusMark } from './status-mark'
@@ -181,7 +182,6 @@ function ListTable({
           if (!item) return <GhostRow key={`ghost-${index}`} index={offset} />
           const { game, copy } = item
           const platform = platformFor(item, platforms)
-          const hours = hoursOf(game.minutes)
           const isOpen = open?.key === shelf.key && open.index === index
           return (
             <tr
@@ -256,7 +256,7 @@ function ListTable({
                 {game.igdbRating ?? t('list.none')}
               </td>
               <td data-number="" className={MEDIUM}>
-                {hours > 0 ? t('hoursShort', { count: hours }) : t('list.none')}
+                {game.minutes > 0 ? <Duration minutes={game.minutes} /> : t('list.none')}
               </td>
               <td className={`${WIDE} text-muted`}>{day(game.addedOn)}</td>
               <td className={`${WIDE} text-muted`}>{day(game.completedOn)}</td>

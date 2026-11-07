@@ -1,4 +1,18 @@
 {
+  "ThisComputer": {
+    "title": "Este computador",
+    "intro": "O Shelf para Windows anota de qual dos seus computadores veio cada sessão de jogo. Dê um nome a este para diferenciá-los. Só você vê.",
+    "name": "Nome",
+    "unnamed": "Computador {number}",
+    "hint": "Vazio, ele se chama {unnamed}. Nunca o nome do seu computador no Windows.",
+    "save": "Salvar nome",
+    "saving": "Salvando…",
+    "saved": "Salvo.",
+    "failed": "Não deu para salvar o nome. Tente de novo.",
+    "others": "Seus outros computadores",
+    "lastPlayed": "jogado por último {when}",
+    "nothingYet": "nada contado ainda"
+  },
   "DownloadSources": {
     "title": "Fontes de download",
     "intro": "Listas de jogos para baixar, no formato que o Hydra usa. Elas ficam neste computador e são lidas de novo uma vez por dia enquanto o app está aberto, e adicionar uma não baixa nada.",

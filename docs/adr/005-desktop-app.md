@@ -308,10 +308,21 @@ active time, games on a console keeping their platform's hours. So:
   sleeping computer spent is never counted: a gap between two looks longer than 15 seconds adds
   nothing. A session ends when the programs seen of it have all ended.
 - **Reaching the server.** The page, only inside the app, asks for what is finished and sends it to
-  `POST /api/v1/me/play/sessions` once a minute and when the window opens, then tells the app what
-  was kept. Sent again it is the same session, the larger number winning. A Steam session names its
+  `POST /api/v1/me/play/sessions` the moment a session ends (the app says `shelf:played` on the
+  page, 7 Nov 2026), once a minute in case it missed that, and when the window opens, then tells
+  the app what was kept. An open game's page reads its record again when the library's version
+  changes, so the hours change in place. Sent again it is the same session, the larger number winning. A Steam session names its
   app and the server finds the game; one on no shelf stays on the computer, for when it is added,
   up to 90 days.
+- **Which computer.** Since 0.11.0 (7 Nov 2026) the app makes a random id on its first start and
+  keeps it in its own folder (`device.rs`, `device.json`), and every session carries it. It says
+  nothing of the machine: never the computer's name in Windows, which often holds a person's, nor
+  its hardware. The server keeps it on the session (`play_sessions.device_id`) and lists the
+  library's computers (`devices`), each with the name I give it in Settings, or "Computer 2" by
+  the order Shelf first heard of them. Both are answered only to their account, under
+  `/api/v1/me/`. A session counted before, or sent by an older app, has none and still counts.
+  Each session is a row of its own, so two computers, even at the same time, never write over
+  each other: a game's hours are the sum of its sessions.
 - **Which number shows.** `playedMinutes`: on a PC the larger of the app's and Steam's, since they
   count the same play; a console's add to that. Hours typed before this stay in `play_time`,
   counting for nothing, so taking the decision back loses nothing.

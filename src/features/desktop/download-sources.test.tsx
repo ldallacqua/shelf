@@ -12,6 +12,8 @@ import type { Source } from './sources'
 import { setBridgeForTests } from './tauri'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
+// This computer's name is its own section, with its own tests (`this-computer.test.tsx`).
+vi.mock('./this-computer', () => ({ ThisComputer: () => null }))
 
 /** Download sources, with the app's commands faked (ADR 007). */
 

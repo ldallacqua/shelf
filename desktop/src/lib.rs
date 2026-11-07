@@ -3,6 +3,7 @@
 
 mod autostart;
 mod commands;
+mod device;
 mod downloads;
 mod extract;
 mod ids;
@@ -136,13 +137,17 @@ fn hand_off(app: &AppHandle, url: &Url, decision: Decision) {
 #[derive(Serialize)]
 struct DesktopInfo {
     version: String,
+    /// This computer's id (`device.rs`): what the page names it by on Shelf.
+    device: String,
 }
 
-/// The app's version: how a page knows it is inside the app.
+/// The app's version, and this computer's id: how a page knows it is inside the app, and which
+/// of my computers it is on.
 #[tauri::command]
-fn desktop_info(app: AppHandle) -> DesktopInfo {
+fn desktop_info(app: AppHandle, device: State<'_, device::Device>) -> DesktopInfo {
     DesktopInfo {
         version: app.package_info().version.to_string(),
+        device: device.id.clone(),
     }
 }
 
@@ -484,7 +489,13 @@ pub fn run() {
             tauri::async_runtime::spawn(downloads::run(downloading, debrid, version));
             app.manage(running::Games::default());
             app.manage(commands::Following::default());
-            app.manage(Tracker::open(&folder, commands::now()));
+            let device = device::Device::open(&folder, || uuid::Uuid::new_v4().to_string());
+            app.manage(Tracker::open(
+                &folder,
+                commands::now(),
+                Some(device.id.clone()),
+            ));
+            app.manage(device);
 
             autostart::first_start(&folder);
             tray::add(app.handle())?;

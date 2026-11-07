@@ -8,6 +8,7 @@ import type { LibraryGame, LibraryPlatform, LibraryTag, Named } from '@/domain/l
 import type { StoreName } from '@/domain/library/stores'
 import type { ListKey } from '@/domain/query/keys'
 import { Cover } from '@/features/library/cover'
+import { Duration } from '@/features/library/duration'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
 import { StatusMark } from '@/features/library/status-mark'
 import { gameHref, libraryHref } from '@/features/library/shelf-address'
@@ -358,7 +359,11 @@ export function GameDetail({
             </ul>
           </Row>
         ) : null}
-        {game.minutes > 0 ? <Row label={t('played')}>{hours(game.minutes)}</Row> : null}
+        {game.minutes > 0 ? (
+          <Row label={t('played')}>
+            <Duration minutes={game.minutes} />
+          </Row>
+        ) : null}
         <Row label={t('added')}>{day(game.addedOn)}</Row>
         {game.completedOn ? <Row label={t('completed')}>{day(game.completedOn)}</Row> : null}
         {tags.length > 0 ? (
