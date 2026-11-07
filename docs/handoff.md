@@ -11,8 +11,8 @@ headings: Account (Profile, Privacy & content, Platforms, Security), This device
 Shelf for Windows (App, Download sources, Download services), the last only in the app. Each setting
 says whose it is with a small tag; adult games moved beside the shelf's visibility, tagged as this
 device's. The old addresses move there for good. Start with Windows can now be changed on the App
-page, through two new commands: that reaches the owner only in a desktop release (0.12.0), which needs
-the owner's OK; until then the page says to use the tray. The design skills were not installed: their
+page, through two new commands: that reaches the owner only in a desktop release, **0.12.0, published
+with the owner's OK the same day**; an app not yet updated says to use the tray. The design skills were not installed: their
 checklists were applied by hand. Steam, Discord and GitHub's settings need a sign-in, so their help
 pages stood in. **Still unchecked, by the owner:** the App page's switch in an installed 0.12.0, with
 the tray's check following it.
