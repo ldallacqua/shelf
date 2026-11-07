@@ -606,11 +606,13 @@
     "viewerNext": "Next screenshot"
   },
   "Duration": {
+    "none": "0 min",
     "under": "Less than a minute",
     "minutes": "{minutes, number} min",
     "hoursMinutes": "{hours, number} h {minutes, number} min",
     "hours": "{hours, number} h",
     "long": {
+      "none": "no time",
       "under": "less than a minute",
       "minutes": "{minutes, plural, one {# minute} other {# minutes}}",
       "hoursMinutes": "{hours, plural, one {# hour} other {# hours}} {minutes, plural, one {# minute} other {# minutes}}",

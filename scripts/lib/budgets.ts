@@ -75,7 +75,12 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // page: its modules load inside the app alone. What grew is the list of what can be fetched.
   // Stores (1 Nov 2026): measured 285.5 KB, just past it. The card on a game's panel and the
   // `store:` filter. Choosing links, and the forms' field, were moved off this page first.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 286 },
+  // Play time to the minute (issue 148, 7 Nov 2026): measured 287.5 KB, from 285.9. One formatter
+  // for a game's own hours, drawn by the list's column and the game's panel. Its code is a few
+  // hundred bytes; the rest is Turbopack splitting the panel's chunk in two around the module the
+  // list and the panel now share. Moving it into a module both already import was looked at: the
+  // trophy page imports that one too, with 0.2 KB to spare.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 288 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
@@ -113,7 +118,9 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // tooltip, which no smaller way of loading it saves without losing focus on the button.
   // Games from Steam (1 Nov 2026): measured 224.1 KB, from 223.9. The eye and the keeping of
   // screenshots for adults out of the viewer, which the page draws from the server (ADR 006).
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 224.5 },
+  // Play time to the minute (issue 148, 7 Nov 2026): measured 225.1 KB, from 224.5. The same
+  // formatter, for a visitor's "Played", and the same split of the panel's chunk.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 225.5 },
 ]
 
 /**

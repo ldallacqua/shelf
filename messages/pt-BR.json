@@ -606,11 +606,13 @@
     "viewerNext": "Próxima captura"
   },
   "Duration": {
+    "none": "0 min",
     "under": "Menos de um minuto",
     "minutes": "{minutes, number} min",
     "hoursMinutes": "{hours, number} h {minutes, number} min",
     "hours": "{hours, number} h",
     "long": {
+      "none": "nenhum tempo",
       "under": "menos de um minuto",
       "minutes": "{minutes, plural, one {# minuto} other {# minutos}}",
       "hoursMinutes": "{hours, plural, one {# hora} other {# horas}} e {minutes, plural, one {# minuto} other {# minutos}}",
