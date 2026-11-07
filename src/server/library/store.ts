@@ -845,10 +845,10 @@ export type FromSource = {
 
 /**
  * A completed game with no finish date takes the day it was last played on
- * any linked platform (spec 7.3): the owner seldom remembers the day, and the
- * last play is nearer it than the day it was marked. Once set it stays, so a
- * later play moves nothing; a game no platform saw played keeps none. Among
- * `entryIds` only, when given. True when one changed.
+ * any linked platform or in Shelf for Windows (spec 7.3): the owner seldom
+ * remembers the day, and the last play is nearer it than the day it was
+ * marked. Once set it stays, so a later play moves nothing; a game nothing saw
+ * played keeps none. Among `entryIds` only, when given. True when one changed.
  */
 const dateFinishes = async (
   tx: Executor,
@@ -856,24 +856,32 @@ const dateFinishes = async (
   entryIds?: readonly string[],
 ): Promise<boolean> => {
   if (entryIds?.length === 0) return false
-  const rows = await tx
+  const waiting = and(
+    eq(entries.userId, libraryId),
+    eq(entries.status, 'completed'),
+    isNull(entries.completedOn),
+    ...(entryIds ? [inArray(entries.id, [...entryIds])] : []),
+  )
+  // One after the other: a transaction's statements run in turn.
+  const onPlatforms = await tx
     .select({ id: entries.id, last: sql<number | null>`max(${sourceItems.lastPlayedAt})` })
     .from(entries)
     .innerJoin(copies, eq(copies.entryId, entries.id))
     .innerJoin(sourceItems, eq(sourceItems.copyId, copies.id))
-    .where(
-      and(
-        eq(entries.userId, libraryId),
-        eq(sourceItems.userId, libraryId),
-        eq(entries.status, 'completed'),
-        isNull(entries.completedOn),
-        ...(entryIds ? [inArray(entries.id, [...entryIds])] : []),
-      ),
-    )
+    .where(and(waiting, eq(sourceItems.userId, libraryId)))
     .groupBy(entries.id)
-  const dated = rows.flatMap((row) =>
-    row.last && row.last > 0 ? [{ ...row, last: row.last }] : [],
-  )
+  const inSessions = await tx
+    .select({ id: entries.id, last: sql<number | null>`max(${playSessions.endedAt})` })
+    .from(entries)
+    .innerJoin(playSessions, eq(playSessions.entryId, entries.id))
+    .where(waiting)
+    .groupBy(entries.id)
+  const lastOf = new Map<string, number>()
+  for (const row of [...onPlatforms, ...inSessions]) {
+    const last = Number(row.last) || 0
+    if (last > (lastOf.get(row.id) ?? 0)) lastOf.set(row.id, last)
+  }
+  const dated = [...lastOf].map(([id, last]) => ({ id, last }))
   for (const row of dated) {
     await tx
       .update(entries)

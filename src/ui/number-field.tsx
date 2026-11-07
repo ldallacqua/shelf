@@ -32,6 +32,11 @@ type NumberFieldProps = {
   increaseLabel: string
   /** Under the field: what the number means, or where else it comes from. */
   hint?: ReactNode
+  /**
+   * Enter, once what was typed has settled: a field in a small form sends it. The field keeps
+   * Enter from the form itself, which would send what was there before.
+   */
+  onEnter?: () => void
   className?: string
 }
 
@@ -63,6 +68,7 @@ function NumberField({
   decreaseLabel,
   increaseLabel,
   hint,
+  onEnter,
   className,
 }: NumberFieldProps) {
   const id = useId()
@@ -143,6 +149,7 @@ function NumberField({
               if (event.key === 'Enter') {
                 event.preventDefault()
                 commitTyped()
+                onEnter?.()
               } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 event.preventDefault()
                 stepBy(event.key === 'ArrowUp' ? 1 : -1, event.shiftKey)

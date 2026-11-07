@@ -64,8 +64,13 @@ export type OwnerGame = {
   private: boolean
   rating?: number
   completedOn?: Day
-  /** The day it was last played on any linked platform; absent when none saw it played. */
+  /**
+   * The day it was last played on any linked platform or in Shelf for Windows; absent when
+   * nothing saw it played.
+   */
   lastPlayedOn?: Day
+  /** Linked platforms reporting its hours whose last read failed: those hours may be behind. */
+  behind?: SyncSource[]
   notes?: string
   notesPublic: boolean
   /**

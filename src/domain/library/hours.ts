@@ -1,4 +1,5 @@
 import type { Length } from '@/domain/igdb/game'
+import { isPcPlatform } from '@/domain/library/stores'
 import { SOURCES } from '@/domain/sync/sources'
 
 import type { SyncSource } from './values'
@@ -19,8 +20,36 @@ export type GameTime = {
   console: number
 }
 
-/** A source's minutes, on the side of `GameTime` they belong to. */
+/** A source's minutes, on the side of `GameTime` they belong to, for a report on no copy. */
 export const isPcSource = (source: SyncSource): boolean => SOURCES[source].pc === true
+
+/**
+ * What a store reports of a game, on the copy it belongs to (ADR 003). `platform` is the copy's;
+ * absent for a report kept on no copy, which its store's kind then places.
+ */
+export type StoreReport<S extends string = SyncSource> = {
+  source: S
+  platform?: number
+  minutes: number
+}
+
+/**
+ * Whether a report is play on a computer, where Shelf for Windows saw the same play: by the
+ * platform of its copy (#153), so Xbox's hours on a PC copy overlap the app's as Steam's do, and
+ * its hours on a console add to them.
+ */
+const onPc = ({ source, platform }: StoreReport<string>): boolean =>
+  platform === undefined ? isPcSource(source as SyncSource) : isPcPlatform(platform)
+
+/** A game's time, from what its stores report and what the app counted. */
+export const gameTimeOf = (tracked: number, reports: readonly StoreReport<string>[]): GameTime => {
+  const time: GameTime = { tracked, pc: 0, console: 0 }
+  for (const report of reports) {
+    if (onPc(report)) time.pc += report.minutes
+    else time.console += report.minutes
+  }
+  return time
+}
 
 /**
  * A game's hours (ADR 003): the same play is never counted twice. A game opened through Steam is
@@ -33,6 +62,112 @@ export const playedMinutes = ({ tracked, pc, console }: GameTime, idle = 0): num
   const pcLeft = Math.max(0, pc - idle)
   const idleLeft = Math.max(0, idle - pc)
   return Math.max(tracked, pcLeft) + Math.max(0, console - idleLeft)
+}
+
+/** Where Shelf for Windows' hours stand among a game's sources: they are always play on a PC. */
+export const TRACKED = 'tracked'
+
+/** One source's hours on a platform, and whether they are the same play as another's there. */
+export type SourceTime<S extends string = SyncSource> = {
+  source: S | typeof TRACKED
+  /** As it reports them, before any idle time comes off. */
+  minutes: number
+  /** Saw the same play as another source on this platform, whose hours count instead. */
+  overlaps: boolean
+}
+
+/** One platform's share of a game's hours: what it adds to the total, and its sources. */
+export type PlatformTime<S extends string = SyncSource> = {
+  /** Every computer is one platform here: the app can't tell Windows from Linux. */
+  platform: 'pc' | number
+  minutes: number
+  sources: SourceTime<S>[]
+}
+
+/** A game's hours, platform by platform, the largest first, as its page breaks them down. */
+export type PlayTime<S extends string = SyncSource> = {
+  total: number
+  platforms: PlatformTime<S>[]
+  /** The idle time taken off, as I set it: the platforms' minutes are what is left. */
+  idle: number
+}
+
+const byMinutes = (a: { minutes: number }, b: { minutes: number }) => b.minutes - a.minutes
+
+/**
+ * A game's hours broken down by the platform of the copy they are on (#153), adding up to
+ * `playedMinutes`: on a PC the larger of the app's and its stores', the other marked as the same
+ * play; each console's added. Idle time comes off the PC's stores first, then the consoles', the
+ * largest first.
+ */
+export const playTimeOf = <S extends string = SyncSource>({
+  tracked,
+  reports,
+  idle = 0,
+}: {
+  tracked: number
+  reports: readonly StoreReport<S>[]
+  idle?: number
+}): PlayTime<S> => {
+  const groups = new Map<'pc' | number, Map<S, number>>()
+  for (const report of reports) {
+    const key = onPc(report) ? 'pc' : (report.platform ?? -1)
+    const sources = groups.get(key) ?? new Map<S, number>()
+    sources.set(report.source, (sources.get(report.source) ?? 0) + report.minutes)
+    groups.set(key, sources)
+  }
+  const sum = (sources: ReadonlyMap<S, number> | undefined) =>
+    [...(sources?.values() ?? [])].reduce((total, minutes) => total + minutes, 0)
+
+  const platforms: PlatformTime<S>[] = []
+  const pcStores = sum(groups.get('pc'))
+  const pcLeft = Math.max(0, pcStores - idle)
+  let idleLeft = Math.max(0, idle - pcStores)
+  if (tracked > 0 || pcStores > 0) {
+    // On a tie the app's count stands: it has no idle time in it.
+    const storesCount = pcLeft > tracked
+    platforms.push({
+      platform: 'pc',
+      minutes: Math.max(tracked, pcLeft),
+      sources: [
+        ...[...(groups.get('pc') ?? [])].map(([source, minutes]) => ({
+          source,
+          minutes,
+          overlaps: tracked > 0 && !storesCount,
+        })),
+        ...(tracked > 0
+          ? [
+              {
+                source: TRACKED as typeof TRACKED,
+                minutes: tracked,
+                overlaps: storesCount && pcStores > 0,
+              },
+            ]
+          : []),
+      ].sort(byMinutes),
+    })
+  }
+  const consoles = [...groups]
+    .filter(([key]) => key !== 'pc')
+    .map(([platform, sources]) => ({ platform, sources, reported: sum(sources) }))
+    .sort((a, b) => b.reported - a.reported)
+  for (const { platform, sources, reported } of consoles) {
+    const taken = Math.min(reported, idleLeft)
+    idleLeft -= taken
+    platforms.push({
+      platform,
+      minutes: reported - taken,
+      sources: [...sources]
+        .map(([source, minutes]) => ({ source, minutes, overlaps: false }))
+        .sort(byMinutes),
+    })
+  }
+  platforms.sort(byMinutes)
+  return {
+    total: platforms.reduce((total, each) => total + each.minutes, 0),
+    platforms,
+    idle,
+  }
 }
 
 /** Whole minutes of what the app counted: a game's seconds add up before they are rounded. */

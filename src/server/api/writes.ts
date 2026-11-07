@@ -296,7 +296,13 @@ export const apiOwnerGame = z
     lastPlayedOn: z.iso
       .date()
       .optional()
-      .describe('The day a linked platform last saw it played; absent when none did'),
+      .describe(
+        'The day a linked platform or Shelf for Windows last saw it played; absent when none did',
+      ),
+    behind: z
+      .array(z.enum(syncSources))
+      .optional()
+      .describe('Linked platforms reporting its hours whose last read failed: they may be behind'),
     notes: z
       .string()
       .optional()

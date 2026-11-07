@@ -109,7 +109,7 @@ describe('MineSkeleton', () => {
 
   it('has the editor’s labels where the editor has them, and nothing to press or read out', () => {
     shape(game())
-    for (const label of ['Status', 'My rating', 'Hours played', 'Owned on', 'Tags', 'Notes']) {
+    for (const label of ['Status', 'My rating', 'Play time', 'Owned on', 'Tags', 'Notes']) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
     expect(screen.queryAllByRole('button')).toHaveLength(0)
