@@ -1597,7 +1597,7 @@
       },
       "signIn": {
         "title": "Entrar na conta",
-        "body": "Enquanto você está conectado, um cookie mantém a sua sessão, e o Shelf guarda o endereço e o navegador de onde cada sessão veio, para você poder sair de todos os aparelhos. Um segundo cookie só diz se você está conectado. Suas escolhas para a estante, como o tema, ficam no seu navegador."
+        "body": "Enquanto você está conectado, um cookie mantém a sua sessão, e o Shelf guarda o endereço e o navegador de onde cada sessão veio, para você poder sair de todos os aparelhos. Um segundo cookie só diz se você está conectado. Suas escolhas para a estante, como o tema, ficam no seu navegador. Uma delas, como você arrumou a biblioteca da última vez (a visualização, o agrupamento e a ordem), fica num cookie, para o servidor do Shelf já desenhar a biblioteca assim quando você a abrir de novo."
       },
       "steam": {
         "title": "Steam",

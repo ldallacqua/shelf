@@ -499,6 +499,18 @@ pub fn run() {
 
             autostart::first_start(&folder);
             tray::add(app.handle())?;
+            // No script can press the tray's Quit either: `pnpm desktop:check` has the app quit the
+            // same way once the file it names appears, to see what the page kept survive it.
+            #[cfg(debug_assertions)]
+            if let Ok(file) = std::env::var("SHELF_QUIT_ON") {
+                let app = app.handle().clone();
+                std::thread::spawn(move || {
+                    while !std::path::Path::new(&file).exists() {
+                        std::thread::sleep(Duration::from_millis(100));
+                    }
+                    tray::quit(&app);
+                });
+            }
             watch::start(app.handle().clone());
 
             // Started by Windows it stays in the tray, counting. Otherwise, the splash first.

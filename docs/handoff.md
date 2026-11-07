@@ -4,6 +4,17 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## The library, as I left it (7 Nov 2026)
+
+Issue 149: the view, grouping and sort last chosen in the toolbar are remembered on the device, in a cookie
+(`shelf_arrangement`), and a library address that names none of them opens that way, with the address completed
+in place. The address still wins, and arriving through one remembers nothing. A cookie and not browser storage,
+because the server draws the first screen: it reads the cookie in the part it draws for each visit anyway. Ready
+to play was already kept on the device; a debug build quit a moment after choosing kept it and the cookie, so the
+app needed no fix, and `pnpm desktop:check` now quits and reopens to check it each time. The skeleton before the
+first screen still has a shelf's shape whatever the view, as it always had for `?view=wall`. **Still unchecked,
+by the owner:** in the installed app, Ready to play on and the wall chosen, Quit from the tray and open again.
+
 ## Play time, redesigned (7 Nov 2026)
 
 Issue 153: a game's hours under "Mine" are one total, the day last played, and a breakdown by the platform

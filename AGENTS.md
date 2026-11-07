@@ -171,7 +171,10 @@ dozen. A box is a button whose name says in words everything it shows by shape
 (covers or compact, cover size, 2D or 3D) goes through `preferences.ts`, which mirrors it on `<html>`
 before the first paint, and the shelves folded away go through `collapsed.ts`, which the same head
 script hides before the first paint; a choice that belongs to the address (view, grouping, filter, sort,
-seed) goes through `parseLibraryQuery`. Nothing on the shelf fades in: a cover that starts transparent is
+seed) goes through `parseLibraryQuery`. The view, grouping and sort last chosen in the toolbar are
+remembered in a cookie (`domain/library/remembered.ts`, issue 149): an address that names none of them
+is drawn arranged that way by the server (`first-screen.tsx`) and completed in place by `useArrival`;
+only a choice in the toolbar writes it, never an address arrived at. Nothing on the shelf fades in: a cover that starts transparent is
 counted as painted late.
 
 **A game's page.** `src/features/game-detail` draws it both as a page of its own
