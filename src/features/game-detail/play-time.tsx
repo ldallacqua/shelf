@@ -2,7 +2,7 @@
 
 import { EllipsisIcon, InfoIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import { type ReactNode, useId, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
 
 import { AWAY_AFTER_MINUTES } from '@/domain/library/hours'
 import { useDuration } from '@/features/library/duration'
@@ -77,6 +77,18 @@ export function PlayTimeView({
   // Chosen from the menu: the menu gives the focus to the field, not back to its button.
   const toField = useRef(false)
   const more = useRef<HTMLButtonElement>(null)
+  const edit = useRef<HTMLButtonElement>(null)
+  // Saved, the control it was set from goes (⋯ once there is idle time, Edit once there is none):
+  // the focus goes to the one that takes its place, not to the page.
+  const handOff = useRef(false)
+  const shown = useRef(idle)
+  useEffect(() => {
+    if (idle === shown.current) return
+    shown.current = idle
+    if (!handOff.current) return
+    handOff.current = false
+    ;(idle > 0 ? edit : more).current?.focus()
+  }, [idle])
   const canIdle = reported > 0
   // One platform says nothing a bar could: its sources stand alone.
   const several = platforms.length > 1
@@ -87,6 +99,7 @@ export function PlayTimeView({
       reported={reported}
       stores={stores}
       onSave={(minutes) => {
+        handOff.current = minutes > 0 !== idle > 0
         setEditing(undefined)
         onIdle(minutes)
       }}
@@ -219,9 +232,10 @@ export function PlayTimeView({
                 >
                   <PopoverTrigger asChild>
                     <Button
+                      ref={edit}
                       variant="link"
                       size="sm"
-                      className="h-auto px-0 text-xs pointer-coarse:h-auto"
+                      className="h-6 min-w-6 px-0 text-xs pointer-coarse:h-6"
                       aria-label={t('idleEditLabel')}
                     >
                       {t('idleEdit')}

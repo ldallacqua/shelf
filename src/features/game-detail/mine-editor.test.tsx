@@ -505,6 +505,23 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     expect(row.parentElement).toHaveTextContent('− 4 h')
     expect((await section()).getByText('6 h', { selector: 'p' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Play time options' })).not.toBeInTheDocument()
+    // The menu's button went with it: the focus is on what took its place.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Edit the idle time removed' })).toHaveFocus(),
+    )
+  })
+
+  it('gives the focus back to the menu when the idle time is taken away', async () => {
+    server.games.set('cleared', played('cleared', { tracked: 0, idle: 240 }))
+    editor('cleared')
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit the idle time removed' }))
+    const field = await screen.findByRole('textbox', { name: 'Idle time' })
+    await userEvent.clear(field)
+    await userEvent.type(field, '{Enter}')
+    expect(client.update).toHaveBeenLastCalledWith('entry-cleared', { idle: 0 })
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Play time options' })).toHaveFocus(),
+    )
   })
 
   it('shows the idle time taken out as a row, edited in place', async () => {
