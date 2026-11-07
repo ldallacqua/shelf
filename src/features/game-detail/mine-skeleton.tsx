@@ -7,6 +7,8 @@ import { formats, statuses } from '@/domain/library/values'
 import { cn } from '@/ui/cn'
 import { Textarea } from '@/ui/field'
 
+import { useDuration } from '@/features/library/duration'
+
 import {
   mineCard,
   mineGroup,
@@ -54,11 +56,11 @@ function Ghost({
  * below moves when the editor arrives. The editor (`mine-editor.tsx`) is
  * mirrored part for part, with the same classes; what decides its height is
  * known from the library file: the status, whether there is a completion
- * date, the copies, whether a copy could still be added, and the tags. A row of
- * stores may wrap where its ghost does not, as the editor knows which they are. Not
- * known there, and so drawn only by the editor: the lines under the hours saying
- * where they come from, the time left idle under them once there is any, and
- * the versions.
+ * date, the play time, the copies, whether a copy could still be added, and the
+ * tags. A row of stores may wrap where its ghost does not, as the editor knows
+ * which they are. Not known there, and so drawn only by the editor: the day it
+ * was last played, the hours by platform under the total, the time left idle
+ * once there is any, the menu beside the heading, and the versions.
  */
 export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkeletonProps) {
   const t = useTranslations('Edit')
@@ -66,6 +68,8 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
   const stores = useTranslations('Stores')
   const fields = useTranslations('Fields')
   const library = useTranslations('Library')
+  const playTime = useTranslations('PlayTime')
+  const duration = useDuration()
 
   const owned = new Set(game.copies.map((copy) => `${copy.platform}:${copy.format}`))
   const known = new Set([...game.platforms, ...game.copies.map((copy) => copy.platform)])
@@ -126,14 +130,24 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
             <span className="h-3" />
           </div>
 
-          <div className="grid gap-1.5">
-            <span className={label}>{t('played')}</span>
-            <Ghost index={7} className={cn(field, 'w-24')} />
-            <span className="text-xs">
-              <Ghost index={7} className="rounded-[2px]">
-                {t('playedHow')}
-              </Ghost>
-            </span>
+          {/* The total is the library file's, so it is drawn for real (`PlayTimeView`). */}
+          <div className="grid gap-1">
+            <div className="flex min-h-8 items-center justify-between gap-3">
+              <span className={mineHeading}>{playTime('heading')}</span>
+              <div className="-mr-1 flex items-center">
+                <Ghost index={7} className="size-8 rounded-control pointer-coarse:size-10" />
+              </div>
+            </div>
+            {game.minutes > 0 ? (
+              <p className="text-xl font-semibold tabular-nums">{duration(game.minutes)}</p>
+            ) : (
+              <>
+                <p className="text-sm text-muted">{playTime('empty')}</p>
+                <p className="text-xs text-pretty text-muted">
+                  {playTime.rich('emptyHint', { link: (chunks) => <span>{chunks}</span> })}
+                </p>
+              </>
+            )}
           </div>
 
           {game.status === 'completed' || game.completedOn ? (

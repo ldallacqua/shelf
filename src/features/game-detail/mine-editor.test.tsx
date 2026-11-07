@@ -360,38 +360,86 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     await waitFor(() => expect(copies.getAllByRole('listitem')).toHaveLength(2))
   })
 
-  it('says the hours counted and where they come from, with nothing to type', async () => {
-    server.games.set('hours', owned('hours'))
+  /** Played on a PC, through Steam and with Shelf for Windows counting: the same play. */
+  const played = (slug: string, more: Partial<OwnerGame> = {}): OwnerGame => ({
+    ...owned(slug),
+    copies: [
+      {
+        id: 'pc',
+        platformId: 6,
+        format: 'digital',
+        synced: [{ source: 'steam', minutes: 600 }],
+      },
+    ],
+    ...more,
+  })
+  const section = async () => within(await screen.findByRole('region', { name: 'Play time' }))
+  const breakdown = async () =>
+    within((await section()).getByRole('list', { name: 'Play time by platform' }))
+
+  it('says one total, and where it came from with the same play tagged, not explained', async () => {
+    server.games.set('hours', played('hours'))
     editor('hours')
-    expect(await screen.findByText('10 h')).toBeInTheDocument()
-    expect(screen.getByText('Shelf for Windows: 1 h 30 min')).toBeInTheDocument()
-    expect(screen.getAllByText('Steam: 10 h')).not.toHaveLength(0)
-    expect(screen.getByText(/the larger of the two counts/)).toBeInTheDocument()
+    const rows = await breakdown()
+    expect((await section()).getAllByText('10 h')).toHaveLength(2)
+    const [steam, app] = rows.getAllByRole('listitem')
+    expect(rows.queryByRole('list')).not.toBeInTheDocument()
+    expect(steam).toHaveTextContent(/^Steam10 h/)
+    expect(app).toHaveTextContent(/^Shelf for WindowsSame play, not added1 h 30 min/)
+    expect(screen.queryByText(/the larger/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Hours played' })).not.toBeInTheDocument()
+
+    await userEvent.click(rows.getByRole('button', { name: 'Same play, not added' }))
+    expect(
+      await screen.findByText('Shelf for Windows and Steam saw the same play. The larger counts.'),
+    ).toBeVisible()
+  })
+
+  it('breaks the hours down by platform, the largest first, with no bar for one alone', async () => {
+    server.games.set(
+      'both',
+      played('both', {
+        copies: [
+          {
+            id: 'switch',
+            platformId: 130,
+            format: 'digital',
+            synced: [{ source: 'nintendo', minutes: 365 }],
+          },
+        ],
+      }),
+    )
+    editor('both')
+    const rows = await breakdown()
+    expect((await section()).getByText('7 h 35 min')).toBeInTheDocument()
+    const platforms = rows.getAllByRole('listitem').filter((item) => item.querySelector('ul'))
+    expect(platforms.map((item) => item.firstElementChild?.textContent)).toEqual([
+      'Nintendo Switch6 h 5 min',
+      'PC1 h 30 min',
+    ])
   })
 
   it('says a few minutes as minutes, never 0 h', async () => {
     server.games.set('minutes', { ...owned('minutes'), tracked: 4.5, copies: [] })
     editor('minutes')
-    expect(await screen.findByText('4 min')).toBeInTheDocument()
-    expect(screen.getByText('Shelf for Windows: 4 min')).toBeInTheDocument()
+    expect((await section()).getAllByText('4 min')).toHaveLength(2)
   })
 
   it('says a few seconds counted as less than a minute, never as none', async () => {
     server.games.set('seconds', { ...owned('seconds'), tracked: 0.5, copies: [] })
     editor('seconds')
-    expect(await screen.findByText('Less than a minute')).toBeInTheDocument()
-    expect(screen.queryByText('None counted yet')).not.toBeInTheDocument()
+    expect((await section()).getByText('Less than a minute', { selector: 'p' })).toBeInTheDocument()
+    expect(screen.queryByText('No play time yet')).not.toBeInTheDocument()
   })
 
   it('shows new hours in place when the library changes elsewhere on the page', async () => {
     server.games.set('closed', { ...owned('closed'), tracked: 0, copies: [] })
     editor('closed')
-    expect(await screen.findByText('None counted yet')).toBeInTheDocument()
+    expect(await screen.findByText('No play time yet')).toBeInTheDocument()
     // A session sent the moment its game closed.
     server.games.set('closed', { ...owned('closed'), tracked: 25, copies: [] })
     act(() => announceChange({ version: 40 }))
-    expect(await screen.findByText('25 min')).toBeInTheDocument()
+    expect(await screen.findByText('25 min', { selector: 'p' })).toBeInTheDocument()
   })
 
   it('keeps an edit on its way when the library changes elsewhere on the page', async () => {
@@ -413,46 +461,57 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     await act(async () => finish())
   })
 
-  it('explains what counts, and that time away does not', async () => {
-    server.games.set('how', owned('how'))
+  it('explains what counts behind a button, and points to the FAQ', async () => {
+    server.games.set('how', played('how'))
     editor('how')
-    await userEvent.click(await screen.findByText('How hours are counted'))
-    expect(screen.getByText(/After 5 minutes with no key, mouse or controller/)).toBeVisible()
-    expect(screen.getByText(/also called AFK/)).toBeVisible()
+    expect(screen.queryByText(/After 5 minutes without input/)).not.toBeInTheDocument()
+    await userEvent.click(
+      (await section()).getByRole('button', { name: 'How play time is counted' }),
+    )
+    expect(await screen.findByText(/After 5 minutes without input, it stops/)).toBeVisible()
+    expect(screen.getByText(/never counted twice/)).toBeVisible()
+    expect(screen.getByRole('link', { name: 'More in the FAQ' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('#faq-hours'),
+    )
   })
 
-  it('says so when nothing has counted a game', async () => {
+  it('says so quietly when nothing has counted a game, with the way to link a platform', async () => {
     server.games.set('none', {
       ...owned('none'),
       tracked: 0,
       copies: [{ id: 'ps4', platformId: 48, format: 'physical' }],
     })
     editor('none')
-    expect(await screen.findByText('None counted yet')).toBeInTheDocument()
-    expect(screen.queryByText(/Shelf for Windows:/)).not.toBeInTheDocument()
+    expect(await screen.findByText('No play time yet')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'linked platforms' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('#platforms'),
+    )
+    expect(screen.queryByRole('list', { name: 'Play time by platform' })).not.toBeInTheDocument()
   })
 
-  it('takes time left idle off what the stores report, once asked for', async () => {
-    server.games.set('idle', owned('idle'))
+  it('takes time left idle off what the stores report, from the section’s menu', async () => {
+    server.games.set('idle', played('idle', { tracked: 0 }))
     editor('idle')
-    await screen.findByText('How hours are counted')
-    expect(screen.queryByRole('textbox', { name: 'Time left idle' })).not.toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Take out idle time' }))
-    const idle = screen.getByRole('textbox', { name: 'Time left idle' })
-    expect(idle).toHaveFocus()
-    expect(screen.getByText(/never off what Shelf for Windows counted/)).toBeInTheDocument()
+    await userEvent.click((await section()).getByRole('button', { name: 'Play time options' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Remove idle time…' }))
+    const idle = await screen.findByRole('textbox', { name: 'Idle time' })
+    await waitFor(() => expect(idle).toHaveFocus())
+    expect(screen.getByText(/Comes off what Steam reports, never/)).toBeInTheDocument()
     await userEvent.type(idle, '4{Enter}')
     expect(client.update).toHaveBeenLastCalledWith('entry-idle', { idle: 240 })
-    expect(await screen.findByText(/4 h of the stores’ time taken out as idle/)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Take out idle time' })).not.toBeInTheDocument()
+    const row = await screen.findByText('Idle time removed')
+    expect(row.parentElement).toHaveTextContent('− 4 h')
+    expect((await section()).getByText('6 h', { selector: 'p' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Play time options' })).not.toBeInTheDocument()
   })
 
-  it('shows the idle time taken out', async () => {
-    server.games.set('taken', { ...owned('taken'), idle: 240 })
+  it('shows the idle time taken out as a row, edited in place', async () => {
+    server.games.set('taken', played('taken', { tracked: 0, idle: 240 }))
     editor('taken')
-    expect(await screen.findByRole('textbox', { name: 'Time left idle' })).toHaveValue('4')
-    expect(screen.queryByRole('button', { name: 'Take out idle time' })).not.toBeInTheDocument()
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit the idle time removed' }))
+    expect(await screen.findByRole('textbox', { name: 'Idle time' })).toHaveValue('4')
   })
 
   it('offers no idle time where no store reports hours', async () => {
@@ -461,11 +520,25 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
       copies: [{ id: 'ps4', platformId: 48, format: 'physical' }],
     })
     editor('console')
-    await screen.findByText('How hours are counted')
-    expect(screen.queryByRole('button', { name: 'Take out idle time' })).not.toBeInTheDocument()
+    await section()
+    expect(screen.queryByRole('button', { name: 'Play time options' })).not.toBeInTheDocument()
   })
 
-  it('marks a game completed on the day a platform last saw it played, and says so', async () => {
+  it('says a platform’s hours may be behind when its last sync failed', async () => {
+    server.games.set('behind', played('behind', { behind: ['steam'] }))
+    editor('behind')
+    const rows = await breakdown()
+    await userEvent.click(rows.getByRole('button', { name: 'May be behind' }))
+    expect(await screen.findByText(/Steam’s last sync failed/)).toBeVisible()
+  })
+
+  it('says when it was last played under the total, whatever its status', async () => {
+    server.games.set('last', played('last', { lastPlayedOn: '2024-03-10' }))
+    editor('last')
+    expect((await section()).getByText('Last played Mar 10, 2024')).toBeInTheDocument()
+  })
+
+  it('marks a game completed on the day it was last played, and says so', async () => {
     server.games.set('finished', { ...owned('finished'), lastPlayedOn: '2024-03-10' })
     editor('finished')
     await userEvent.click(await screen.findByRole('radio', { name: 'Completed' }))
@@ -476,7 +549,7 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     const day = await screen.findByRole('button', { name: /Completed on/ })
     expect(day).toHaveTextContent('Mar 10, 2024')
     expect(day).toHaveAccessibleDescription(
-      'Last played Mar 10, 2024. With no day chosen, that one counts.',
+      'With no day chosen, the day it was last played counts.',
     )
   })
 

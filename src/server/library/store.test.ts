@@ -15,6 +15,7 @@ import {
   entryTags,
   entryVersions,
   games,
+  platformLinks,
   playSessions,
   playTime,
   sourceItems,
@@ -427,6 +428,42 @@ describe('changing an entry', () => {
     expect((await readDevices(db, me)).map((device) => device.name)).toEqual(['Mine'])
     expect((await readDevices(db, other)).map((device) => device.name)).toEqual(['Theirs'])
     expect(await count(devices)).toBe(2)
+  })
+
+  it('says which linked platforms reporting its hours failed their last read', async () => {
+    const copy = await addCopy(db, me, entry, { platformId: PC, format: 'digital' })
+    await db.insert(playTime).values({
+      id: 'steam-hours',
+      entryId: entry,
+      copyId: copy,
+      source: 'steam',
+      minutes: 600,
+      updatedAt: 1,
+    })
+    await db.insert(platformLinks).values([
+      { userId: me, source: 'steam', externalId: '1', linkedAt: 1, problem: 'private' },
+      { userId: me, source: 'nintendo', externalId: '2', linkedAt: 1, problem: 'private' },
+    ])
+    expect((await readOwnerGame(db, me, entry))?.behind).toEqual(['steam'])
+    await db.update(platformLinks).set({ problem: null })
+    expect((await readOwnerGame(db, me, entry))?.behind).toBeUndefined()
+  })
+
+  it('adds a store’s hours on a console copy to what the app counted, by the copy’s platform', async () => {
+    const onSwitch = await addCopy(db, me, entry, { platformId: SWITCH, format: 'digital' })
+    const onPc = await addCopy(db, me, entry, { platformId: PC, format: 'digital' })
+    await recordPlaySessions(db, me, [session('a', 600)])
+    await db.insert(playTime).values({
+      id: 'pc-hours',
+      entryId: entry,
+      copyId: onPc,
+      source: 'steam',
+      minutes: 4,
+      updatedAt: 1,
+    })
+    expect((await readLibrary(db, me)).games[0]?.minutes).toBe(10)
+    await db.update(playTime).set({ copyId: onSwitch }).where(eq(playTime.id, 'pc-hours'))
+    expect((await readLibrary(db, me)).games[0]?.minutes).toBe(14)
   })
 
   it('keeps no session of a game not in this library, and says which it kept', async () => {
@@ -1087,6 +1124,22 @@ describe('the day a game was finished (spec 7.3)', () => {
     await updateEntry(db, me, entry, { status: 'completed' })
     expect(await finishedOn()).toBe('2025-06-01')
     expect((await readOwnerGame(db, me, entry))?.lastPlayedOn).toBe('2025-06-01')
+  })
+
+  it('is the day Shelf for Windows last counted it, for a game no platform lists', async () => {
+    await played('steam', pc, Date.parse('2024-03-10T20:00:00Z'))
+    await recordPlaySessions(db, me, [
+      {
+        id: 'late',
+        entryId: entry,
+        startedAt: Date.parse('2025-08-02T21:00:00Z'),
+        endedAt: Date.parse('2025-08-02T23:00:00Z'),
+        seconds: 3600,
+      },
+    ])
+    expect((await readOwnerGame(db, me, entry))?.lastPlayedOn).toBe('2025-08-02')
+    await updateEntry(db, me, entry, { status: 'completed' })
+    expect(await finishedOn()).toBe('2025-08-02')
   })
 
   it('keeps a day I chose, and a later play moves no day once set', async () => {

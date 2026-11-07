@@ -12,7 +12,7 @@ import type {
   OwnedVersion,
   OwnerGame,
 } from '@/domain/library/editing'
-import { AWAY_AFTER_MINUTES, isPcSource, playedMinutes } from '@/domain/library/hours'
+import { playTimeOf, TRACKED } from '@/domain/library/hours'
 import { storeOfSource } from '@/domain/library/store-choices'
 import { isPcPlatform, takesStore, type StoreName } from '@/domain/library/stores'
 import {
@@ -36,7 +36,6 @@ import { Switch } from '@/ui/checkbox'
 import { ChoiceChip } from '@/ui/chip'
 import { cn } from '@/ui/cn'
 import { Textarea } from '@/ui/field'
-import { NumberField } from '@/ui/number-field'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
 import { Tip } from '@/ui/tooltip'
@@ -53,6 +52,7 @@ import {
 } from './mine-layout'
 
 import { Play } from './play'
+import { PlayTimeView } from './play-time'
 
 /**
  * The records read so far this visit, by game: a game opened again is
@@ -89,7 +89,7 @@ export function MineEditor({
   const library = useTranslations('Library')
   const errors = useTranslations('Add')
   const sync = useTranslations('Sync')
-  const duration = useDuration()
+  const playTime = useTranslations('PlayTime')
   const router = useRouter()
   const locale = useLocale()
   const { handle } = useShelf()
@@ -106,19 +106,11 @@ export function MineEditor({
   // The platform I wanted it on, once it has left the wishlist: its first copy starts there.
   const [wasWanted, setWasWanted] = useState<number>()
   const [wasWantedStores, setWasWantedStores] = useState<StoreName[]>()
-  // Asked for, the field for time left idle shows before it holds any.
-  const [idling, setIdling] = useState(false)
-  const idleField = useRef<HTMLDivElement>(null)
   const shown = useRef<OwnerGame | undefined>(owned)
   // The library's versions this editor's own saves made: each reads the record again itself.
   const own = useRef(new Set<number>())
   const change = useLibraryChange()
   const heard = useRef(change?.id)
-
-  // Asked for from the line above it, the field takes the focus the button had.
-  useEffect(() => {
-    if (idling) idleField.current?.querySelector('input')?.focus()
-  }, [idling])
 
   useEffect(() => {
     let current = true
@@ -258,22 +250,26 @@ export function MineEditor({
   }
 
   const labels = new Map(owned.platforms.map((platform) => [platform.id, platform]))
-  const hoursText = (hours: number) =>
-    new Intl.NumberFormat(locale, { maximumFractionDigits: 1, useGrouping: false }).format(hours)
-  // What the stores report on its copies, source by source.
-  const reports = new Map<SyncSource, number>()
-  for (const { source, minutes } of owned.copies.flatMap((copy) => copy.synced ?? [])) {
-    reports.set(source, (reports.get(source) ?? 0) + minutes)
-  }
-  const synced = [...reports.values()].reduce((sum, minutes) => sum + minutes, 0)
-  const time = { tracked: owned.tracked, pc: 0, console: 0 }
-  for (const [source, minutes] of reports) {
-    if (isPcSource(source)) time.pc += minutes
-    else time.console += minutes
-  }
+  const dayText = (day: string) =>
+    new Intl.DateTimeFormat(locale, { timeZone: 'UTC', dateStyle: 'medium' }).format(
+      new Date(`${day}T00:00:00Z`),
+    )
+  const list = new Intl.ListFormat(locale, { type: 'conjunction' })
+  // What the stores report, on the copy each hour is on: its platform says what overlaps (#153).
+  const reports = owned.copies.flatMap((copy) =>
+    (copy.synced ?? []).map(({ source, minutes }) => ({
+      source,
+      platform: copy.platformId,
+      minutes,
+    })),
+  )
+  const reported = reports.reduce((sum, report) => sum + report.minutes, 0)
+  const storeSources = [...new Set(reports.map((report) => report.source))]
   // Of that, what I said sat idle: it comes off the stores' hours, never off what the app counted.
   const idle = owned.idle ?? 0
-  const played = playedMinutes(time, idle)
+  const time = playTimeOf({ tracked: owned.tracked, reports, idle })
+  const sourceName = (source: SyncSource | typeof TRACKED) =>
+    source === TRACKED ? playTime('tracker') : sync(`source.${source}`)
 
   /** Out of sight, kept whole (spec 7.4): nothing is lost, so nothing is asked first. */
   const archive = async () => {
@@ -412,79 +408,44 @@ export function MineEditor({
             }
           />
 
-          <div className="grid gap-1.5">
-            <span className="text-sm font-medium">{t('played')}</span>
-            <p className="flex h-10 items-center text-xl font-semibold tabular-nums pointer-coarse:h-11">
-              {played > 0 ? duration(played) : t('playedNone')}
-            </p>
-            {owned.tracked > 0 || synced > 0 ? (
-              <ul className="grid gap-0.5 text-xs text-muted">
-                {owned.tracked > 0 ? (
-                  <li>{t('playedTracked', { time: duration(owned.tracked) })}</li>
-                ) : null}
-                {[...reports].map(([source, minutes]) => (
-                  <li key={source}>
-                    {t('syncedHours', {
-                      source: sync(`source.${source}`),
-                      time: duration(minutes),
-                    })}
-                  </li>
-                ))}
-                {idle > 0 ? <li>{t('playedIdle', { time: duration(idle) })}</li> : null}
-                {owned.tracked > 0 && time.pc > 0 ? <li>{t('playedSamePlay')}</li> : null}
-              </ul>
-            ) : null}
-            {synced > 0 && idle === 0 && !idling ? (
-              <button
-                type="button"
-                onClick={() => setIdling(true)}
-                className="w-fit rounded-[2px] text-xs text-text underline decoration-1 underline-offset-4 hover:decoration-2"
-              >
-                {t('idleStart')}
-              </button>
-            ) : null}
-            <details className="text-xs text-muted">
-              <summary className="w-fit cursor-pointer rounded-[2px] underline decoration-1 underline-offset-4 hover:decoration-2">
-                {t('playedHow')}
-              </summary>
-              <p className="mt-1.5">{t('playedHowBody', { minutes: AWAY_AFTER_MINUTES })}</p>
-            </details>
-          </div>
-
-          {synced > 0 && (idle > 0 || idling) ? (
-            <div ref={idleField}>
-              <NumberField
-                label={t('idle')}
-                value={idle > 0 ? idle / 60 : undefined}
-                decimals={1}
-                max={synced / 60}
-                unit="h"
-                format={hoursText}
-                decreaseLabel={t('hourFewer')}
-                increaseLabel={t('hourMore')}
-                hint={t('idleHint')}
-                onCommit={(hours) => {
-                  const minutes = Math.round((hours ?? 0) * 60)
-                  void update({ idle: minutes }, { idle: minutes })
-                }}
-              />
-            </div>
-          ) : null}
+          <PlayTimeView
+            heading={Minor}
+            total={time.total}
+            lastPlayed={owned.lastPlayedOn ? dayText(owned.lastPlayedOn) : undefined}
+            platforms={time.platforms.map((platform) => {
+              const counted = platform.sources.filter((source) => !source.overlaps)
+              return {
+                name:
+                  platform.platform === 'pc'
+                    ? playTime('pc')
+                    : (labels.get(platform.platform)?.name ?? playTime('pc')),
+                minutes: platform.minutes,
+                sources: platform.sources.map((source) => ({
+                  name: sourceName(source.source),
+                  minutes: source.minutes,
+                  ...(source.overlaps
+                    ? { sameAs: list.format(counted.map((each) => sourceName(each.source))) }
+                    : {}),
+                  ...(source.source !== TRACKED && owned.behind?.includes(source.source)
+                    ? { behind: true }
+                    : {}),
+                })),
+              }
+            })}
+            idle={idle}
+            reported={reported}
+            stores={storeSources.map((source) => sync(`source.${source}`))}
+            onIdle={(minutes) => void update({ idle: minutes }, { idle: minutes })}
+          />
 
           {owned.status === 'completed' || owned.completedOn ? (
             <DayField
               label={t('completedOn')}
               value={owned.completedOn}
               clearable
+              // The day itself is under the play time now, for every status.
               hint={
-                owned.lastPlayedOn && owned.status === 'completed'
-                  ? t('lastPlayed', {
-                      date: new Intl.DateTimeFormat(locale, {
-                        timeZone: 'UTC',
-                        dateStyle: 'medium',
-                      }).format(new Date(`${owned.lastPlayedOn}T00:00:00Z`)),
-                    })
-                  : undefined
+                owned.lastPlayedOn && owned.status === 'completed' ? t('completedHint') : undefined
               }
               onChange={(day) => {
                 // Taken away, a completed game's day is its last play's again: the server does

@@ -1320,35 +1320,52 @@ the versions, and archiving or removing.
 
 - **Status** changes take effect on the shelf at once: the box changes posture.
 - **Completed** sets the completion date to the day a linked platform (Steam, Nintendo, any
-  that syncs) last saw the game played, editable. The owner, 28 Oct 2026: "I don't remember
-  most of the time when I finished my games", and the last play is nearer the finish than the
-  day it was marked. A line under the date says that day. A game no platform saw played takes
-  today, as before.
+  that syncs) or Shelf for Windows last saw the game played, editable. The owner, 28 Oct 2026: "I
+  don't remember most of the time when I finished my games", and the last play is nearer the
+  finish than the day it was marked. A line under the date says that, with no day chosen, the
+  last play's counts; the day itself is under the play time (#153). A game nothing saw played
+  takes today, as before.
   - **Every way of marking it does the same:** many at once (4.5), the API and the MCP tools.
     A completed game left with no date, or whose date I take away, takes its last play's; a
     sync dates those a platform has only now seen played. Once set the day stays: a later play
     moves nothing, and a day I chose is never replaced.
-- **Hours played** can't be typed (the owner, 31 Oct 2026). It says the game's hours, and under
-  them where they come from: Shelf for Windows, and each store that reports some. Every play time
-  on a game's own page and in the list says minutes under an hour ("45 min"), hours and minutes
-  under a hundred ("1 h 25 min"), whole hours past it ("312 h"), and a few seconds as "Less than a
-  minute", never "0 h" (`durationOf`, #148). The trophy page keeps whole hours: its figures are
-  totals across games, where minutes say nothing. The hours change in place when a game closes
-  in Shelf for Windows, without undoing an edit on its way. Hours from every computer with Shelf
-  for Windows add up, and each session knows which of them it came from; I name each computer in
-  Settings, **This computer**, in the app alone (ADR 005, section 12). Where Shelf for
-  Windows and Steam both have hours, a line says they count the same play and the larger counts.
-  **How hours are counted** opens what time away is: after 5 minutes with no key, mouse or
-  controller, that stretch doesn't count, and a long cutscene can fall into it.
+- **Play time** can't be typed (the owner, 31 Oct 2026). Redesigned in #153 (7 Nov 2026) to read
+  at a glance, as HowLongToBeat's game page does (a headline figure, then a table by platform):
+  - **One total,** in the shared format: minutes under an hour ("45 min"), hours and minutes
+    under a hundred ("1 h 25 min"), whole hours past it ("312 h"), and a few seconds as "Less
+    than a minute", never "0 h" (`durationOf`, #148). The list's column says the same; the trophy
+    page keeps whole hours, as its figures are totals across games. Under it, muted, **Last
+    played** and its day, for any status: the latest of what a linked platform saw and the end of
+    the latest session Shelf for Windows counted. With nothing counted, one quiet line, "No play
+    time yet", and a second saying it is counted by Shelf for Windows and my **linked platforms**,
+    a link to them in Settings.
+  - **By platform,** the largest first: the platform of the copy the hours are on, not the
+    source (`playTimeOf`). Shelf for Windows' hours are always on the PC. One row per platform,
+    with what it adds to the total and a thin bar of one hue for its share; under it, smaller and
+    muted, each source and what it reports. With a single platform there is no row nor bar, only
+    its sources. A source that saw the same play as another on the platform, whose hours count
+    instead, carries the tag **Same play, not added**; pressing it says which and that the larger
+    counts. On a PC that is Steam's and the app's hours, and would be Xbox's on a PC copy (PC Game
+    Pass, #73); a console's hours always add. A linked platform whose last sync failed carries
+    **May be behind**. The hours change in place when a game closes in Shelf for Windows, without
+    undoing an edit on its way. Hours from every computer with Shelf for Windows add up, and each
+    session knows which of them it came from; I name each computer in Settings, **This
+    computer**, in the app alone (ADR 005, section 12).
+  - **Idle time** (4.7): **⋯** beside the heading holds **Remove idle time…**, offered only while
+    a store reports hours and none is set. It opens a small dialog: **Idle time** in hours, a
+    line saying it comes off what the stores report and never off what Shelf for Windows counted,
+    and Save. Once set it is a row at the end, "Idle time removed − 2 h", with **Edit**, and every
+    platform's figure is what is left: idle time comes off the PC's stores first, then the
+    largest console's.
+  - **(i)** beside the heading opens how it is counted, in three points (Shelf for Windows counts
+    a game in front and in use and stops after 5 minutes without input; stores report totals that
+    include time left open; the same play never counts twice and every computer adds up), and a
+    link to the question in the FAQ.
   - **What Shelf for Windows counts** (ADR 005, section 12): a PC game while it is in front and in
     use, however it was opened, for as long as the app runs, which it does in the tray from when
     Windows starts unless I turn that off. Consoles keep their platform's hours.
-  - **Take out idle time,** at the end of that line, opens **Time left idle** under it, and
-    the focus goes there. Its hours are of what the stores report that the game sat open,
-    unplayed (Steam and Nintendo count the whole time a game is open, 4.7). They come off the
-    stores' hours, never off what Shelf for Windows counted, and stay taken off as the stores report more; the
-    line then says what the stores report and what is left without the idle time. Once there
-    is any, the field shows from the start.
+  - **A visitor** sees the total alone, in the game's facts. Which platforms, which sources and
+    idle time are not in the public library file, and stay out of it.
 - **Platforms owned:** each copy on a card of its own, with its platform, the hours a store
   reports on it, physical or digital, and a button to remove it. **Add a copy** opens a new one
   apart from them: a platform, physical or digital (one I own already cannot be picked), and

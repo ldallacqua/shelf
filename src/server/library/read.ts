@@ -32,11 +32,11 @@ import type { GameExtras, ShelfScore } from '@/domain/library/game-page'
 import { linksOfRecord, mergeStoreLinks, steamStoreLink } from '@/domain/library/store-links'
 import { accountsReading } from '@/server/library/read-from'
 import {
-  isPcSource,
+  gameTimeOf,
   pastIgdb,
   playedMinutes,
   trackedMinutes,
-  type GameTime,
+  type StoreReport,
 } from '@/domain/library/hours'
 import {
   emptyTally,
@@ -67,6 +67,7 @@ import {
   entryVersions,
   games,
   libraries,
+  platformLinks,
   platforms,
   playSessions,
   playTime,
@@ -161,11 +162,14 @@ export const readLibrary = async (
       .select({
         entryId: playTime.entryId,
         source: playTime.source,
+        // The copy's platform says whether it is the same play the app counted (#153).
+        platform: copies.platformId,
         minutes: sql<number>`sum(${playTime.minutes})`,
       })
       .from(playTime)
+      .leftJoin(copies, eq(copies.id, playTime.copyId))
       .where(and(sql`${playTime.entryId} in ${own}`, ne(playTime.source, 'manual')))
-      .groupBy(playTime.entryId, playTime.source),
+      .groupBy(playTime.entryId, playTime.source, copies.platformId),
     trackedSeconds(db, own),
     db.select().from(tags).where(eq(tags.userId, libraryId)).orderBy(tags.name),
     db
@@ -542,77 +546,91 @@ export const readOwnerGame = async (
   libraryId: string,
   entryId: string,
 ): Promise<OwnerGame | undefined> => {
-  const [entryRows, versionRows, copyRows, timeRows, trackedRows, tagRows, steamRows, playedRows] =
-    await Promise.all([
-      db
-        .select()
-        .from(entries)
-        .where(
-          and(eq(entries.id, entryId), eq(entries.userId, libraryId), isNull(entries.archivedAt)),
+  const [
+    entryRows,
+    versionRows,
+    copyRows,
+    timeRows,
+    trackedRows,
+    tagRows,
+    steamRows,
+    playedRows,
+    troubleRows,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(entries)
+      .where(
+        and(eq(entries.id, entryId), eq(entries.userId, libraryId), isNull(entries.archivedAt)),
+      ),
+    db
+      .select({
+        gameId: games.id,
+        igdbId: games.igdbId,
+        storeIds: games.storeIds,
+        storeLinks: games.storeLinks,
+        slug: games.slug,
+        title: games.title,
+        relation: entryVersions.relation,
+        kind: games.kind,
+        year: games.year,
+        platforms: games.platforms,
+        cover: games.cover,
+        colors: games.colors,
+        thumbhash: games.thumbhash,
+      })
+      .from(entryVersions)
+      .innerJoin(games, eq(games.id, entryVersions.gameId))
+      .where(eq(entryVersions.entryId, entryId)),
+    db
+      .select({
+        id: copies.id,
+        platformId: copies.platformId,
+        format: copies.format,
+        stores: copies.stores,
+      })
+      .from(copies)
+      .where(eq(copies.entryId, entryId))
+      .orderBy(copies.createdAt, sql`rowid`),
+    db
+      .select({ source: playTime.source, copyId: playTime.copyId, minutes: playTime.minutes })
+      .from(playTime)
+      .where(eq(playTime.entryId, entryId)),
+    trackedSeconds(db, [entryId]),
+    db
+      .select({ name: tags.name })
+      .from(entryTags)
+      .innerJoin(tags, eq(tags.id, entryTags.tagId))
+      .where(eq(entryTags.entryId, entryId))
+      .orderBy(tags.name),
+    // The Steam apps the sync found I own, feeding this game's copies (spec 7.7).
+    db
+      .select({
+        storeId: sourceItems.storeId,
+        igdbId: sourceItems.igdbId,
+        minutes: sourceItems.minutes,
+      })
+      .from(sourceItems)
+      .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+      .where(
+        and(
+          eq(sourceItems.userId, libraryId),
+          eq(sourceItems.source, 'steam'),
+          eq(copies.entryId, entryId),
         ),
-      db
-        .select({
-          gameId: games.id,
-          igdbId: games.igdbId,
-          storeIds: games.storeIds,
-          storeLinks: games.storeLinks,
-          slug: games.slug,
-          title: games.title,
-          relation: entryVersions.relation,
-          kind: games.kind,
-          year: games.year,
-          platforms: games.platforms,
-          cover: games.cover,
-          colors: games.colors,
-          thumbhash: games.thumbhash,
-        })
-        .from(entryVersions)
-        .innerJoin(games, eq(games.id, entryVersions.gameId))
-        .where(eq(entryVersions.entryId, entryId)),
-      db
-        .select({
-          id: copies.id,
-          platformId: copies.platformId,
-          format: copies.format,
-          stores: copies.stores,
-        })
-        .from(copies)
-        .where(eq(copies.entryId, entryId))
-        .orderBy(copies.createdAt, sql`rowid`),
-      db
-        .select({ source: playTime.source, copyId: playTime.copyId, minutes: playTime.minutes })
-        .from(playTime)
-        .where(eq(playTime.entryId, entryId)),
-      trackedSeconds(db, [entryId]),
-      db
-        .select({ name: tags.name })
-        .from(entryTags)
-        .innerJoin(tags, eq(tags.id, entryTags.tagId))
-        .where(eq(entryTags.entryId, entryId))
-        .orderBy(tags.name),
-      // The Steam apps the sync found I own, feeding this game's copies (spec 7.7).
-      db
-        .select({
-          storeId: sourceItems.storeId,
-          igdbId: sourceItems.igdbId,
-          minutes: sourceItems.minutes,
-        })
-        .from(sourceItems)
-        .innerJoin(copies, eq(copies.id, sourceItems.copyId))
-        .where(
-          and(
-            eq(sourceItems.userId, libraryId),
-            eq(sourceItems.source, 'steam'),
-            eq(copies.entryId, entryId),
-          ),
-        ),
-      // Its last play on any platform, which a finish without a day takes (spec 7.3).
-      db
-        .select({ last: sql<number | null>`max(${sourceItems.lastPlayedAt})` })
-        .from(sourceItems)
-        .innerJoin(copies, eq(copies.id, sourceItems.copyId))
-        .where(and(eq(sourceItems.userId, libraryId), eq(copies.entryId, entryId))),
-    ])
+      ),
+    // Its last play on any platform, which a finish without a day takes (spec 7.3).
+    db
+      .select({ last: sql<number | null>`max(${sourceItems.lastPlayedAt})` })
+      .from(sourceItems)
+      .innerJoin(copies, eq(copies.id, sourceItems.copyId))
+      .where(and(eq(sourceItems.userId, libraryId), eq(copies.entryId, entryId))),
+    // The linked platforms whose last read failed: what they report may be behind.
+    db
+      .select({ source: platformLinks.source })
+      .from(platformLinks)
+      .where(and(eq(platformLinks.userId, libraryId), isNotNull(platformLinks.problem))),
+  ])
   const entry = entryRows[0]
   const primary = versionRows.find((row) => row.relation === 'primary')
   if (!entry || !primary) return undefined
@@ -693,8 +711,15 @@ export const readOwnerGame = async (
   }
   if (entry.rating !== null) owned.rating = entry.rating
   if (entry.completedOn) owned.completedOn = entry.completedOn
-  const last = playedRows[0]?.last
-  if (last && last > 0) owned.lastPlayedOn = dayOf(last)
+  // On a platform, or in a session Shelf for Windows counted: a game from outside the big stores
+  // has only the app to say when.
+  const last = Math.max(playedRows[0]?.last ?? 0, Number(trackedRows[0]?.last) || 0)
+  if (last > 0) owned.lastPlayedOn = dayOf(last)
+  const reporting = new Set(
+    owned.copies.flatMap((copy) => copy.synced ?? []).map((each) => each.source),
+  )
+  const behind = troubleRows.map((row) => row.source).filter((source) => reporting.has(source))
+  if (behind.length > 0) owned.behind = behind
   if (entry.notes) owned.notes = entry.notes
   const steam = steamAppsOf(primary.igdbId, steamRows, [
     primary,
@@ -723,46 +748,55 @@ export const readDevices = async (db: Executor, libraryId: string): Promise<Devi
   }))
 }
 
-/** What Shelf for Windows counted, by game, in seconds, of a list of entries or a query for them. */
+/**
+ * What Shelf for Windows counted, by game, in seconds, of a list of entries or a query for them, and
+ * when its latest session ended.
+ */
 const trackedSeconds = (db: Executor, ids: SQLWrapper | string[]) =>
   db
     .select({
       entryId: playSessions.entryId,
       seconds: sql<number>`sum(${playSessions.seconds})`,
+      last: sql<number | null>`max(${playSessions.endedAt})`,
     })
     .from(playSessions)
     .where(inArray(playSessions.entryId, ids as string[]))
     .groupBy(playSessions.entryId)
 
-/** A game's time, from what its sources report and what the app counted. */
-const timeFrom = (
-  reported: readonly { source: SyncSource; minutes: number }[],
-  tracked: number,
-): GameTime => {
-  const time: GameTime = { tracked, pc: 0, console: 0 }
-  for (const { source, minutes } of reported) {
-    if (isPcSource(source)) time.pc += minutes
-    else time.console += minutes
+/** Rows of what stores report, by game, each on its copy's platform when it has one. */
+const reportsByEntry = (
+  rows: readonly { entryId: string; source: string; platform: number | null; minutes: number }[],
+) => {
+  const byEntry = new Map<string, StoreReport[]>()
+  for (const { entryId, source, platform, minutes } of rows) {
+    if (source === 'manual') continue
+    const list = byEntry.get(entryId) ?? []
+    list.push({
+      source: source as SyncSource,
+      ...(platform === null ? {} : { platform }),
+      minutes: Number(minutes) || 0,
+    })
+    byEntry.set(entryId, list)
   }
-  return time
+  return byEntry
 }
 
-/** Every game's time, from rows of what its sources report and of what the app counted. */
+/** Every game's time, from rows of what its stores report and of what the app counted. */
 const gameTimes = (
-  reported: readonly { entryId: string; source: string; minutes: number }[],
+  reported: readonly {
+    entryId: string
+    source: string
+    platform: number | null
+    minutes: number
+  }[],
   tracked: readonly { entryId: string; seconds: number }[],
 ) => {
-  const bySource = new Map<string, { source: SyncSource; minutes: number }[]>()
-  for (const { entryId, source, minutes } of reported) {
-    const list = bySource.get(entryId) ?? []
-    list.push({ source: source as SyncSource, minutes: Number(minutes) || 0 })
-    bySource.set(entryId, list)
-  }
+  const byEntry = reportsByEntry(reported)
   const seconds = new Map(tracked.map((row) => [row.entryId, Number(row.seconds) || 0]))
   return new Map(
-    [...new Set([...bySource.keys(), ...seconds.keys()])].map((entryId) => [
+    [...new Set([...byEntry.keys(), ...seconds.keys()])].map((entryId) => [
       entryId,
-      timeFrom(bySource.get(entryId) ?? [], trackedMinutes(seconds.get(entryId) ?? 0)),
+      gameTimeOf(trackedMinutes(seconds.get(entryId) ?? 0), byEntry.get(entryId) ?? []),
     ]),
   )
 }
@@ -941,11 +975,13 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
       .select({
         entryId: playTime.entryId,
         source: playTime.source,
+        platform: copies.platformId,
         minutes: sql<number>`sum(${playTime.minutes})`,
       })
       .from(playTime)
+      .leftJoin(copies, eq(copies.id, playTime.copyId))
       .where(sql`${playTime.entryId} in ${waiting}`)
-      .groupBy(playTime.entryId, playTime.source),
+      .groupBy(playTime.entryId, playTime.source, copies.platformId),
     trackedSeconds(db, waiting),
     db
       .select({
@@ -988,6 +1024,7 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
   const trackedOf = new Map(
     trackedRows.map((row) => [row.entryId, trackedMinutes(Number(row.seconds) || 0)]),
   )
+  const reportsOf = reportsByEntry(timeRows)
   // Every source that feeds a copy says so, played there or not.
   for (const row of playedRows) {
     const played = playedOn(row.entryId, row.source)
@@ -1003,7 +1040,7 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
       addedOn: dayOf(row.addedAt),
       // The shelf's rule (ADR 003).
       minutes: playedMinutes(
-        timeFrom(played, trackedOf.get(row.entryId) ?? 0),
+        gameTimeOf(trackedOf.get(row.entryId) ?? 0, reportsOf.get(row.entryId) ?? []),
         row.idleMinutes ?? 0,
       ),
       platforms: [...new Set(platformsOf.get(row.entryId) ?? [])],

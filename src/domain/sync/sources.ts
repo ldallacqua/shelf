@@ -33,7 +33,10 @@ export type SourceFacts = {
   plays?: Readonly<Partial<Record<number, readonly number[]>>>
   /** The format a copy takes when the source is sure of it. */
   format?: Format
-  /** Its games run on a computer, where Shelf for Windows counts the same play (`playedMinutes`). */
+  /**
+   * Its games run on a computer, where Shelf for Windows counts the same play. Only for hours on no
+   * copy: on a copy, its platform says so (`playTimeOf`, #153).
+   */
   pc?: true
   /** Built and switched on. The others are listed so the data has room for them. */
   ready: boolean

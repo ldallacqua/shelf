@@ -49,7 +49,13 @@ export function Closing() {
                   {t(`faq.${question}.q`)}
                   <PlusIcon aria-hidden="true" className="faq-mark size-5 flex-none text-muted" />
                 </summary>
-                <p className="max-w-[60ch] pb-6 text-pretty text-muted">{t(`faq.${question}.a`)}</p>
+                {/* An address to it (a game's play time links to `#faq-hours`) opens its answer. */}
+                <p
+                  id={`faq-${question}`}
+                  className="max-w-[60ch] scroll-mt-28 pb-6 text-pretty text-muted"
+                >
+                  {t(`faq.${question}.a`)}
+                </p>
               </details>
             ))}
           </div>

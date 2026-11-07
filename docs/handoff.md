@@ -4,6 +4,16 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Play time, redesigned (7 Nov 2026)
+
+Issue 153: a game's hours under "Mine" are one total, the day last played, and a breakdown by the platform
+of the copy the hours are on, with the same play tagged rather than explained. The copy's platform is now
+the rule for what overlaps Shelf for Windows, on the server too, so the library's figures follow it; until
+Xbox and PlayStation are linked (#73, #74) that changes nothing a sync writes today. The design skills
+(`design-critique`, `ux-copy`, `accessibility-review`, `frontend-design`) were not installed: their
+checklists were applied by hand. The browser test that holds the skeleton to the editor's shape
+(`e2e/game.spec.ts`) has not been run, as no Playwright runs until the MVP.
+
 ## Hours to the minute, across computers (7 Nov 2026)
 
 Issue 148: play time reads in minutes and hours everywhere a game's own hours show (`durationOf`), an open
