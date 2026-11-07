@@ -10,6 +10,7 @@ import {
   achievementProgress,
   achievementSets,
   copies,
+  devices,
   entries,
   entryTags,
   entryVersions,
@@ -21,6 +22,7 @@ import {
 } from '@/server/db/schema'
 import {
   readArchived,
+  readDevices,
   readLibrary,
   readOwnerGame,
   readOwnerPlay,
@@ -48,6 +50,7 @@ import {
   setCopyFormat,
   setCopyStores,
   patchEntry,
+  nameDevice,
   recordPlaySessions,
   setPrimary,
   setArchived,
@@ -357,6 +360,73 @@ describe('changing an entry', () => {
     expect((await readLibrary(db, me)).games[0]?.minutes).toBe(4)
     await recordPlaySessions(db, me, [session('a', 60)])
     expect((await readLibrary(db, me)).games[0]?.minutes).toBe(4)
+  })
+
+  it('adds up two computers playing the same game at the same time, sent apart', async () => {
+    const desktop = { ...session('desktop-1', 600), deviceId: 'desktop' }
+    const notebook = {
+      ...session('notebook-1', 300),
+      startedAt: desktop.startedAt + 60_000,
+      deviceId: 'notebook',
+    }
+    expect(notebook.startedAt).toBeLessThan(desktop.endedAt)
+    await recordPlaySessions(db, me, [desktop])
+    await recordPlaySessions(db, me, [notebook])
+    // And each sent again, as an app does when it never heard back: neither writes over the other.
+    await recordPlaySessions(db, me, [notebook])
+    await recordPlaySessions(db, me, [desktop])
+    expect((await readLibrary(db, me)).games[0]?.minutes).toBe(15)
+    expect((await readOwnerGame(db, me, entry))?.tracked).toBe(15)
+  })
+
+  it('keeps which computer played each session, and none for an app too old to say', async () => {
+    await recordPlaySessions(db, me, [
+      { ...session('a', 60), deviceId: 'desktop' },
+      session('b', 60),
+    ])
+    // Sent again without it, as an older page might: what it said stays.
+    await recordPlaySessions(db, me, [session('a', 90)])
+    const rows = await db.select().from(playSessions).orderBy(playSessions.id)
+    expect(rows.map((row) => [row.id, row.deviceId])).toEqual([
+      ['a', 'desktop'],
+      ['b', null],
+    ])
+    expect((await readOwnerGame(db, me, entry))?.tracked).toBe(2.5)
+  })
+
+  it('notes each computer once, from its first session to its latest', async () => {
+    await recordPlaySessions(db, me, [
+      { ...session('a', 60), startedAt: 5_000, endedAt: 9_000, deviceId: 'desktop' },
+    ])
+    await recordPlaySessions(db, me, [
+      { ...session('b', 60), startedAt: 2_000, endedAt: 3_000, deviceId: 'desktop' },
+      { ...session('c', 60), startedAt: 20_000, endedAt: 30_000, deviceId: 'desktop' },
+    ])
+    expect(await readDevices(db, me)).toEqual([
+      { id: 'desktop', number: 1, firstSeenAt: 2_000, lastSeenAt: 30_000 },
+    ])
+  })
+
+  it('names my computers, numbering the rest in the order Shelf heard of them', async () => {
+    await recordPlaySessions(db, me, [{ ...session('a', 60), deviceId: 'desktop' }], 1)
+    await nameDevice(db, me, 'notebook', 'Notebook', 2)
+    await recordPlaySessions(db, me, [{ ...session('b', 60), deviceId: 'notebook' }], 3)
+    expect(
+      (await readDevices(db, me)).map(({ id, name, number }) => ({ id, name, number })),
+    ).toEqual([
+      { id: 'desktop', name: undefined, number: 1 },
+      { id: 'notebook', name: 'Notebook', number: 2 },
+    ])
+    await nameDevice(db, me, 'notebook', null)
+    expect((await readDevices(db, me))[1]?.name).toBeUndefined()
+  })
+
+  it('keeps one library’s computers from another’s', async () => {
+    await nameDevice(db, me, 'desktop', 'Mine')
+    await nameDevice(db, other, 'desktop', 'Theirs')
+    expect((await readDevices(db, me)).map((device) => device.name)).toEqual(['Mine'])
+    expect((await readDevices(db, other)).map((device) => device.name)).toEqual(['Theirs'])
+    expect(await count(devices)).toBe(2)
   })
 
   it('keeps no session of a game not in this library, and says which it kept', async () => {
@@ -790,6 +860,8 @@ describe('removeLibrary', () => {
     })
     await createEntry(db, me, { primaryGameId: hades, status: 'backlog' })
     await createEntry(db, other, { primaryGameId: hades, status: 'completed', tags: ['theirs'] })
+    await nameDevice(db, me, 'desktop', 'Desktop')
+    await nameDevice(db, other, 'desktop', 'Theirs')
 
     await removeLibrary(db, me)
 
@@ -804,6 +876,8 @@ describe('removeLibrary', () => {
         .sort((a, b) => Number(a) - Number(b)),
     ).toEqual([37034, 113112])
     expect((await readLibrary(db, other)).games).toHaveLength(1)
+    expect(await readDevices(db, me)).toEqual([])
+    expect(await readDevices(db, other)).toHaveLength(1)
   })
 })
 

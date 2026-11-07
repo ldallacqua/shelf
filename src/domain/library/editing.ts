@@ -68,7 +68,10 @@ export type OwnerGame = {
   lastPlayedOn?: Day
   notes?: string
   notesPublic: boolean
-  /** Minutes Shelf for Windows counted of it, with no time away in them. */
+  /**
+   * Minutes Shelf for Windows counted of it, with no time away in them: not rounded, so a few
+   * seconds are something.
+   */
   tracked: number
   /**
    * Minutes of what its stores report that I said sat idle, taken off them.

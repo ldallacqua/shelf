@@ -345,11 +345,39 @@ export const playSessions = sqliteTable(
     endedAt: integer().notNull(),
     /** Played, not merely open: in front, and with something touched (`domain/library/hours.ts`). */
     seconds: integer().notNull(),
+    /**
+     * The computer it was played on, one of the library's `devices`. Null from an app older than
+     * computers' ids (0.11.0), and in every session counted before them.
+     */
+    deviceId: text(),
   },
   (table) => [
     index('play_sessions_entry').on(table.entryId),
     check('play_sessions_seconds', sql`${table.seconds} >= 0`),
   ],
+)
+
+/**
+ * My computers with Shelf for Windows (ADR 005, section 12): each makes a random id of its own on
+ * its first start, which says nothing of the machine, and its name is the one I give it. Only ever
+ * answered to its own account, under `/api/v1/me/`: never in a library file or a public answer.
+ */
+export const devices = sqliteTable(
+  'devices',
+  {
+    userId: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** The app's own (`desktop/src/device.rs`). */
+    id: text().notNull(),
+    /** Mine to give. Until I do, the page calls it by its place among my computers. */
+    name: text(),
+    /** The start of its first session Shelf kept, and the end of its latest. */
+    firstSeenAt: integer(),
+    lastSeenAt: integer(),
+    createdAt: integer().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.id] })],
 )
 
 /** A library's own words for its games. Two libraries may each have a "replay someday". */

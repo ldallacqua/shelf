@@ -13,6 +13,7 @@ import { Loading } from '@/ui/ghost'
 import { AppWords } from './app-words'
 import { SourceCardGhost } from './download-sources-ghost'
 import { RealDebrid } from './real-debrid'
+import { ThisComputer } from './this-computer'
 import {
   type ReadingAll,
   type Source,
@@ -428,13 +429,14 @@ function Sources() {
 }
 
 /**
- * Sources and Real-Debrid with their own words, which come with this code and not with the page
+ * This computer's name, sources and Real-Debrid with their own words, which come with this code and not with the page
  * (`app-words.tsx`).
  */
 export default function DownloadSources() {
   return (
     <AppWords>
       <div className="grid gap-10">
+        <ThisComputer />
         <Sources />
         <RealDebrid />
       </div>

@@ -16,6 +16,10 @@ use crate::steam;
 use crate::tracker::{Game, Look, Tracker};
 
 const LOOK_EVERY: Duration = Duration::from_secs(5);
+/// Said to Shelf's page when a session ends, so it sends it at once (`send-played.ts`) rather than
+/// at its next minute. The page needs no permission to hear it, and a page that isn't listening
+/// loses nothing: the session waits in the tracker for the next send.
+const PLAYED: &str = "window.dispatchEvent(new Event('shelf:played'))";
 /// Steam's files are read again at most this often, and only for a program in Steam's folders.
 const READ_STEAM_EVERY: Duration = Duration::from_secs(60);
 
@@ -121,7 +125,7 @@ pub fn start(app: AppHandle) {
             if listening {
                 crate::pads::look_at_xinput();
             }
-            app.state::<Tracker>().look(
+            let ended = app.state::<Tracker>().look(
                 &Look {
                     at: now(),
                     clock: started.elapsed().as_millis() as u64,
@@ -131,6 +135,10 @@ pub fn start(app: AppHandle) {
                 || uuid::Uuid::new_v4().to_string(),
                 processes::alive,
             );
+            // With the window closed to the tray there is no page: the next one sends it.
+            if ended && let Some(main) = app.get_webview_window("main") {
+                let _ = main.eval(PLAYED);
+            }
             std::thread::sleep(LOOK_EVERY);
         }
     });

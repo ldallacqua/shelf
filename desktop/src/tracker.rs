@@ -51,6 +51,10 @@ pub struct Session {
     pub ended_at: u64,
     /// Played, not merely open.
     pub seconds: u64,
+    /// The computer it was played on (`device.rs`). A session kept by an app from before it had
+    /// one has none, and still counts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub device: Option<String>,
 }
 
 /// What one look saw.
@@ -77,13 +81,14 @@ struct Open {
 }
 
 impl Open {
-    fn session(&self, game: &Game) -> Session {
+    fn session(&self, game: &Game, device: &Option<String>) -> Session {
         Session {
             id: self.id.clone(),
             game: game.clone(),
             started_at: self.started_at,
             ended_at: self.ended_at,
             seconds: (self.counted_ms / 1000).min(LONGEST_SESSION_S),
+            device: device.clone(),
         }
     }
 }
@@ -94,6 +99,8 @@ pub struct Counter {
     open: HashMap<Game, Open>,
     finished: Vec<Session>,
     last_clock: Option<u64>,
+    /// This computer's id, given to every session it starts.
+    device: Option<String>,
 }
 
 impl Counter {
@@ -156,7 +163,7 @@ impl Counter {
                 continue;
             };
             open.counted_ms += open.waiting_ms;
-            let session = open.session(&game);
+            let session = open.session(&game, &self.device);
             if session.seconds > 0 {
                 self.finished.push(session);
                 changed = true;
@@ -172,7 +179,7 @@ impl Counter {
         all.extend(
             self.open
                 .iter()
-                .map(|(game, open)| open.session(game))
+                .map(|(game, open)| open.session(game, &self.device))
                 .filter(|session| session.seconds > 0),
         );
         all
@@ -205,8 +212,9 @@ pub struct Tracker {
 }
 
 impl Tracker {
-    /// What was kept in `folder`. A file that cannot be read is put aside, not lost.
-    pub fn open(folder: &Path, now: u64) -> Self {
+    /// What was kept in `folder`, counting on as `device`. A file that cannot be read is put
+    /// aside, not lost.
+    pub fn open(folder: &Path, now: u64, device: Option<String>) -> Self {
         let file = folder.join(FILE);
         let kept: Kept = match fs::read_to_string(&file) {
             Ok(text) => serde_json::from_str(&text).unwrap_or_else(|_| {
@@ -224,18 +232,21 @@ impl Tracker {
             file,
             counter: Mutex::new(Counter {
                 finished,
+                device,
                 ..Counter::default()
             }),
             last_saved: Mutex::new(now),
         }
     }
 
+    /// Takes in what one look saw; says whether a session ended with it, for the page to send
+    /// now rather than at its next minute.
     pub fn look(
         &self,
         look: &Look,
         new_id: impl FnOnce() -> String,
         alive: impl Fn(&Identity) -> bool,
-    ) {
+    ) -> bool {
         let mut counter = self.counter.lock().unwrap();
         let before = counter.finished.len();
         let changed = counter.look(look, new_id, alive);
@@ -247,6 +258,7 @@ impl Tracker {
                 eprintln!("could not keep the hours counted: {error}");
             }
         }
+        ended
     }
 
     pub fn finished(&self) -> Vec<Session> {
@@ -447,11 +459,39 @@ mod tests {
             started_at: 1,
             ended_at: 2,
             seconds: 3,
+            device: Some("d".into()),
+        };
+        assert_eq!(
+            serde_json::to_string(&session).unwrap(),
+            r#"{"id":"a","game":{"steam":"620"},"startedAt":1,"endedAt":2,"seconds":3,"device":"d"}"#
+        );
+    }
+
+    #[test]
+    fn a_session_with_no_computer_is_sent_without_one() {
+        let session = Session {
+            id: "a".into(),
+            game: Game::Steam("620".into()),
+            started_at: 1,
+            ended_at: 2,
+            seconds: 3,
+            device: None,
         };
         assert_eq!(
             serde_json::to_string(&session).unwrap(),
             r#"{"id":"a","game":{"steam":"620"},"startedAt":1,"endedAt":2,"seconds":3}"#
         );
+    }
+
+    #[test]
+    fn every_session_counted_here_carries_this_computer() {
+        let mut play = Play::new();
+        play.counter.device = Some("this-pc".into());
+        play.look(Some(game()), 0);
+        play.run(Some(game()), MINUTE, 0, true);
+        play.seconds();
+        let finished = play.counter.finished();
+        assert_eq!(finished[0].device.as_deref(), Some("this-pc"));
     }
 
     fn folder(name: &str) -> PathBuf {
@@ -478,33 +518,33 @@ mod tests {
     #[test]
     fn what_was_counted_survives_a_crash_and_goes_once_the_server_has_it() {
         let folder = folder("crash");
-        let tracker = Tracker::open(&folder, AT);
+        let tracker = Tracker::open(&folder, AT, None);
         played(&tracker, 0, true);
         for look in 1..=7 {
             played(&tracker, look * LOOK, true);
         }
         // Crashed here: never told the game had ended.
-        let again = Tracker::open(&folder, AT + MINUTE);
+        let again = Tracker::open(&folder, AT + MINUTE, None);
         let sessions = again.finished();
         assert_eq!(sessions.len(), 1);
         assert_eq!(sessions[0].seconds, 30);
 
         again.kept(&["a".to_string()]).unwrap();
-        assert!(Tracker::open(&folder, AT + MINUTE).finished().is_empty());
+        assert!(Tracker::open(&folder, AT + MINUTE, None).finished().is_empty());
         fs::remove_dir_all(&folder).unwrap();
     }
 
     #[test]
     fn what_no_shelf_ever_took_is_let_go_after_a_while() {
         let folder = folder("old");
-        let tracker = Tracker::open(&folder, AT);
+        let tracker = Tracker::open(&folder, AT, None);
         played(&tracker, 0, true);
         played(&tracker, LOOK, true);
         played(&tracker, 2 * LOOK, false);
         assert_eq!(tracker.finished().len(), 1);
-        assert_eq!(Tracker::open(&folder, AT + MINUTE).finished().len(), 1);
+        assert_eq!(Tracker::open(&folder, AT + MINUTE, None).finished().len(), 1);
         assert!(
-            Tracker::open(&folder, AT + KEPT_FOR_MS + MINUTE)
+            Tracker::open(&folder, AT + KEPT_FOR_MS + MINUTE, None)
                 .finished()
                 .is_empty()
         );
@@ -512,10 +552,51 @@ mod tests {
     }
 
     #[test]
+    fn sessions_kept_before_computers_had_ids_still_count_with_none() {
+        let folder = folder("before-devices");
+        fs::write(
+            folder.join(FILE),
+            format!(
+                r#"{{"version":1,"sessions":[{{"id":"old","game":{{"steam":"620"}},"startedAt":{AT},"endedAt":{AT},"seconds":90}}]}}"#
+            ),
+        )
+        .unwrap();
+        let tracker = Tracker::open(&folder, AT + MINUTE, Some("this-pc".into()));
+        let sessions = tracker.finished();
+        assert_eq!(sessions.len(), 1);
+        assert_eq!(sessions[0].seconds, 90);
+        assert_eq!(sessions[0].device, None);
+        fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[test]
+    fn a_look_says_when_a_session_ended_and_only_then() {
+        let folder = folder("ended");
+        let tracker = Tracker::open(&folder, AT, None);
+        let look = |clock: u64, front: bool| {
+            tracker.look(
+                &Look {
+                    at: AT + clock,
+                    clock,
+                    front: front.then(|| (game(), process(1))),
+                    input_age: 0,
+                },
+                || "a".into(),
+                |_| false,
+            )
+        };
+        assert!(!look(0, true));
+        assert!(!look(LOOK, true));
+        assert!(look(2 * LOOK, false));
+        assert!(!look(3 * LOOK, false));
+        fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[test]
     fn a_file_that_cannot_be_read_is_put_aside() {
         let folder = folder("unreadable");
         fs::write(folder.join(FILE), "not json").unwrap();
-        assert!(Tracker::open(&folder, AT).finished().is_empty());
+        assert!(Tracker::open(&folder, AT, None).finished().is_empty());
         assert!(folder.join("play-sessions.unreadable.json").exists());
         fs::remove_dir_all(&folder).unwrap();
     }

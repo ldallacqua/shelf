@@ -27,6 +27,7 @@ import {
   setMyCopyFormat,
 } from '@/server/services/editing'
 import { myTally, myUnsorted, placeMine } from '@/server/services/placing'
+import { myDevices, renameDevice } from '@/server/services/devices'
 import { keepPlaySessions } from '@/server/services/play-sessions'
 import { removeMyShelf, saveMyShelf } from '@/server/services/shelves'
 import {
@@ -117,6 +118,8 @@ const requests: [string, () => Promise<{ ok: boolean; reason?: string }>][] = [
   ['list the games whose stores count far past IGDB', () => myStoreHours()],
   ['take idle time out of a game', () => patchMine('bloodborne', { idle: 60 })],
   ['keep what the desktop app counted', () => keepPlaySessions([])],
+  ['list its computers', () => myDevices()],
+  ['name one of its computers', () => renameDevice(ID, 'Desktop')],
   ['list its unsorted games', () => myUnsorted()],
   ['count its games by status', () => myTally()],
   ['place many games at once', () => placeMine({ entries: [ID], status: 'backlog' })],

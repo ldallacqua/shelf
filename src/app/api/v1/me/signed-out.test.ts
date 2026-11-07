@@ -16,6 +16,8 @@ import { POST as syncStep } from './platforms/[source]/sync/route'
 import { GET as myPlatforms } from './platforms/route'
 import { GET as myKeywords } from './keywords/route'
 import { GET as myLibrary } from './library/route'
+import { PUT as nameDevice } from './devices/[id]/route'
+import { GET as myDevices } from './devices/route'
 import { GET as myPlayable } from './play/route'
 import { GET as me, PATCH as changeMe } from './route'
 import { GET as myShelves } from './shelves/route'
@@ -91,6 +93,14 @@ const reads: [string, () => Promise<Response>][] = [
   ['its unsorted games', () => myUnsorted()],
   ['its games by status', () => myTally()],
   ['its games, to play', () => myPlayable()],
+  ['its computers', () => myDevices()],
+  [
+    'a name for one of its computers',
+    () =>
+      nameDevice(asked('/api/v1/me/devices/x', { ...post({ name: 'Desktop' }), method: 'PUT' }), {
+        params: Promise.resolve({ id: '00000000-0000-4000-a000-000000000000' }),
+      }),
+  ],
   [
     'a sync step',
     () => syncStep(asked('/api/v1/me/platforms/steam/sync', post({ read: true })), steamParams),

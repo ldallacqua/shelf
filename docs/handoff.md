@@ -4,6 +4,17 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Hours to the minute, across computers (7 Nov 2026)
+
+Issue 148: play time reads in minutes and hours everywhere a game's own hours show (`durationOf`), an open
+game's hours change in place when a session arrives, and every session from Shelf for Windows carries its
+computer's random id, named in Settings under **This computer**. The site's part works with today's app;
+the app's part (saying `shelf:played` the moment a game closes, and the computer's id) reaches the owner
+only in a desktop release, **0.11.0, not yet published: it needs the owner's OK**. Until then a session
+still arrives within a minute, with no computer, and This computer stays hidden. **Still unchecked, by the
+owner:** play a game in the installed 0.11.0, close it, and see the hours change with no reload; name the
+computer. No script may start a real game.
+
 ## Scores (2 Nov 2026)
 
 A game's page has a section of scores (spec 7.11). Steam's arrive with the first daily call after this ships (06:00 UTC):

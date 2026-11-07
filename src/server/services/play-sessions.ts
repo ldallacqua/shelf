@@ -5,9 +5,13 @@ import { readVersion, recordPlaySessions, type PlaySession } from '@/server/libr
 import { forAccount } from '@/server/services/for-account'
 import { syncGames } from '@/server/services/sync'
 
-/** A session as the app has it: of a game's file, by its entry, or of a Steam app it saw. */
-export type SentSession = Omit<PlaySession, 'entryId'> & {
+/**
+ * A session as the app has it: of a game's file, by its entry, or of a Steam app it saw, and the
+ * computer it was played on.
+ */
+export type SentSession = Omit<PlaySession, 'entryId' | 'deviceId'> & {
   game: { entry: string } | { steam: string }
+  device?: string
 }
 
 /** Each Steam app's game, the one that owns it winning over one IGDB merely lists it for. */
@@ -30,9 +34,9 @@ export const placeAndKeep = async (db: Db, libraryId: string, sessions: readonly
   const apps = sessions.some((session) => 'steam' in session.game)
     ? gamesBySteamApp(await readOwnerPlay(db, libraryId))
     : new Map<string, string>()
-  const placed = sessions.flatMap(({ game, ...session }): PlaySession[] => {
+  const placed = sessions.flatMap(({ game, device, ...session }): PlaySession[] => {
     const entryId = 'entry' in game ? game.entry : apps.get(game.steam)
-    return entryId ? [{ ...session, entryId }] : []
+    return entryId ? [{ ...session, entryId, ...(device ? { deviceId: device } : {}) }] : []
   })
   return recordPlaySessions(db, libraryId, placed)
 }

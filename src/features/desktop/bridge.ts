@@ -36,9 +36,15 @@ const playSessionSchema = z.object({
   startedAt: z.number(),
   endedAt: z.number(),
   seconds: z.number(),
+  /** The computer it was played on; none from an app older than computers' ids. */
+  device: z.string().optional(),
 })
 
+const infoSchema = z.object({ version: z.string(), device: z.string().optional() })
+
 export const desktop = {
+  /** The app's version, and this computer's id, which an app older than 0.11.0 doesn't give. */
+  info: async () => infoSchema.parse(await call('desktop_info')),
   /** The file chosen for a game on this computer, or null. */
   launcher: async (entry: string): Promise<Launcher | null> =>
     launcherSchema.nullable().parse(await call('launcher', { entry })),

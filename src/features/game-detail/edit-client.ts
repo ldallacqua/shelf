@@ -44,7 +44,8 @@ const fromApi = ({
 }: ApiOwnerGame): OwnerGame => ({
   ...rest,
   ...(rating === undefined ? {} : { rating: Math.round(rating * 10) }),
-  tracked: Math.round(hoursTracked * 60),
+  // Not rounded: a few seconds counted still show as something.
+  tracked: hoursTracked * 60,
   ...(hoursIdle === undefined ? {} : { idle: Math.round(hoursIdle * 60) }),
   copies: copies.map(({ id, platform, format, stores, synced, readFrom }) => ({
     id,

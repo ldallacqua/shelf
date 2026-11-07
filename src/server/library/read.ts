@@ -27,6 +27,7 @@ import type {
   SteamApps,
   StoreHoursGame,
 } from '@/domain/library/editing'
+import type { Device } from '@/domain/library/devices'
 import type { GameExtras, ShelfScore } from '@/domain/library/game-page'
 import { linksOfRecord, mergeStoreLinks, steamStoreLink } from '@/domain/library/store-links'
 import { accountsReading } from '@/server/library/read-from'
@@ -60,6 +61,7 @@ import type { Db, Executor } from '@/server/db/client'
 import {
   achievementProgress,
   copies,
+  devices,
   entries,
   entryTags,
   entryVersions,
@@ -639,7 +641,8 @@ export const readOwnerGame = async (
     soldOn: mergeStoreLinks(versionRows.map(linksOfRecord)).map((link) => link.store),
     private: entry.isPrivate,
     notesPublic: entry.notesPublic,
-    tracked: trackedMinutes(Number(trackedRows[0]?.seconds) || 0),
+    // Not rounded down to whole minutes: a few seconds counted still show as something.
+    tracked: (Number(trackedRows[0]?.seconds) || 0) / 60,
     ...(entry.idleMinutes === null ? {} : { idle: entry.idleMinutes }),
     copies: copyRows.map((copy) => {
       const synced = timeRows.flatMap((row) =>
@@ -699,6 +702,25 @@ export const readOwnerGame = async (
   ])
   if (steam) owned.steam = steam
   return owned
+}
+
+/**
+ * My computers with Shelf for Windows, in the order Shelf first heard of them, which never changes:
+ * an unnamed one is called by its place in it. Only for its library's owner: the caller checks.
+ */
+export const readDevices = async (db: Executor, libraryId: string): Promise<Device[]> => {
+  const rows = await db
+    .select()
+    .from(devices)
+    .where(eq(devices.userId, libraryId))
+    .orderBy(devices.createdAt, devices.id)
+  return rows.map((row, index) => ({
+    id: row.id,
+    number: index + 1,
+    ...(row.name ? { name: row.name } : {}),
+    ...(row.firstSeenAt === null ? {} : { firstSeenAt: row.firstSeenAt }),
+    ...(row.lastSeenAt === null ? {} : { lastSeenAt: row.lastSeenAt }),
+  }))
 }
 
 /** What Shelf for Windows counted, by game, in seconds, of a list of entries or a query for them. */

@@ -1,9 +1,11 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { EditPatch, OwnerGame } from '@/domain/library/editing'
 import { today } from '@/features/owner/fields'
+import type * as LibraryChange from '@/features/owner/library-change'
+import { announceChange } from '@/features/owner/library-change'
 import { renderWithIntl } from '@/test/render'
 
 import { MineEditor } from './mine-editor'
@@ -76,7 +78,11 @@ vi.mock('@/features/shell/notices', () => notices)
 vi.mock('./edit-client', () => ({ editClient: client }))
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 vi.mock('@/features/library/shelf', () => ({ useShelf: () => ({ handle: 'sample' }) }))
-vi.mock('@/features/owner/library-change', () => ({ announceChange: vi.fn() }))
+// Real, so a change from elsewhere on the page reaches the editor; watched, to say what it said.
+vi.mock('@/features/owner/library-change', async (actual) => {
+  const real = await actual<typeof LibraryChange>()
+  return { ...real, announceChange: vi.fn(real.announceChange) }
+})
 
 const SWITCH = { id: 130, key: 'switch', name: 'Nintendo Switch', short: 'Switch' }
 const PS4 = { id: 48, key: 'ps4', name: 'PlayStation 4', short: 'PS4' }
@@ -358,10 +364,53 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     server.games.set('hours', owned('hours'))
     editor('hours')
     expect(await screen.findByText('10 h')).toBeInTheDocument()
-    expect(screen.getByText('Shelf for Windows: 1.5 h')).toBeInTheDocument()
+    expect(screen.getByText('Shelf for Windows: 1 h 30 min')).toBeInTheDocument()
     expect(screen.getAllByText('Steam: 10 h')).not.toHaveLength(0)
     expect(screen.getByText(/the larger of the two counts/)).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Hours played' })).not.toBeInTheDocument()
+  })
+
+  it('says a few minutes as minutes, never 0 h', async () => {
+    server.games.set('minutes', { ...owned('minutes'), tracked: 4.5, copies: [] })
+    editor('minutes')
+    expect(await screen.findByText('4 min')).toBeInTheDocument()
+    expect(screen.getByText('Shelf for Windows: 4 min')).toBeInTheDocument()
+  })
+
+  it('says a few seconds counted as less than a minute, never as none', async () => {
+    server.games.set('seconds', { ...owned('seconds'), tracked: 0.5, copies: [] })
+    editor('seconds')
+    expect(await screen.findByText('Less than a minute')).toBeInTheDocument()
+    expect(screen.queryByText('None counted yet')).not.toBeInTheDocument()
+  })
+
+  it('shows new hours in place when the library changes elsewhere on the page', async () => {
+    server.games.set('closed', { ...owned('closed'), tracked: 0, copies: [] })
+    editor('closed')
+    expect(await screen.findByText('None counted yet')).toBeInTheDocument()
+    // A session sent the moment its game closed.
+    server.games.set('closed', { ...owned('closed'), tracked: 25, copies: [] })
+    act(() => announceChange({ version: 40 }))
+    expect(await screen.findByText('25 min')).toBeInTheDocument()
+  })
+
+  it('keeps an edit on its way when the library changes elsewhere on the page', async () => {
+    server.games.set('editing', { ...owned('editing'), tracked: 0, copies: [] })
+    editor('editing')
+    let finish = () => {}
+    client.update.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          finish = () => done({ ok: true as const, value: { version: 50 } })
+        }),
+    )
+    await userEvent.click(await screen.findByRole('radio', { name: 'Playing' }))
+    server.games.set('editing', { ...owned('editing'), tracked: 25, copies: [] })
+    act(() => announceChange({ version: 41 }))
+    await waitFor(() => expect(client.read).toHaveBeenCalledTimes(2))
+    await act(async () => {})
+    expect(screen.getByRole('radio', { name: 'Playing' })).toBeChecked()
+    await act(async () => finish())
   })
 
   it('explains what counts, and that time away does not', async () => {

@@ -44,6 +44,8 @@ import {
   apiStatusPatch,
   apiPlaySessions,
   apiPlaySessionsKept,
+  apiDeviceName,
+  apiDevices,
   apiStoreHours,
   apiUndoAdditions,
 } from './writes'
@@ -145,6 +147,8 @@ export const openApiDocument = () => {
     apiArchivedGames,
     apiPlaySessions,
     apiPlaySessionsKept,
+    apiDevices,
+    apiDeviceName,
     apiStoreHours,
     apiPlayable,
     apiPastedLines,
@@ -440,6 +444,38 @@ export const openApiDocument = () => {
           requestBody: { required: true, ...json('PlaySessions') },
           responses: {
             200: { description: 'Which were kept', ...json('PlaySessionsKept') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/me/devices': {
+        get: {
+          summary:
+            'The signed-in account’s computers with Shelf for Windows, by the app’s own random ids, and the names the account gave them. Signed in.',
+          security: OWNER,
+          responses: {
+            200: { description: 'Computers', ...json('Devices') },
+            ...REFUSALS,
+          },
+        },
+      },
+      '/me/devices/{id}': {
+        put: {
+          summary:
+            'Names one of the signed-in account’s computers, or takes its name away. Only ever shown to the account itself. Signed in.',
+          security: OWNER,
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              description: 'Shelf for Windows’ own id for the computer',
+              schema: { type: 'string', format: 'uuid' },
+            },
+          ],
+          requestBody: { required: true, ...json('DeviceName') },
+          responses: {
+            200: { description: 'Named', ...json('Changed') },
             ...REFUSALS,
           },
         },

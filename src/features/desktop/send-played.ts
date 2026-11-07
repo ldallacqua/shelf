@@ -3,8 +3,11 @@ import { announceChange } from '@/features/owner/library-change'
 
 import { desktop } from './bridge'
 
-/** How often the page asks the app for what has ended, with the window open. */
+/** How often the page asks the app for what has ended, with the window open: in case it missed a word. */
 const EVERY_MS = 60_000
+
+/** What the app says on the page the moment a session ends (`desktop/src/watch.rs`). */
+export const PLAYED_EVENT = 'shelf:played'
 
 /**
  * Sends Shelf what Shelf for Windows counted (ADR 005, section 12): the app has no way to Shelf
@@ -36,8 +39,10 @@ export const startSendingPlayed = (): (() => void) => {
   look()
   const timer = setInterval(look, EVERY_MS)
   window.addEventListener('focus', look)
+  window.addEventListener(PLAYED_EVENT, look)
   return () => {
     clearInterval(timer)
     window.removeEventListener('focus', look)
+    window.removeEventListener(PLAYED_EVENT, look)
   }
 }

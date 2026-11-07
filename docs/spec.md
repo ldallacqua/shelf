@@ -85,7 +85,7 @@ language the browser asks for.
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
 | `/en/account` | One's name, handle and visibility, the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)), password, sessions, and deleting the account |
 | `/en/downloads` | In Shelf for Windows alone: what is being downloaded on this computer (7.10). A browser goes home |
-| `/en/account/settings` | How Shelf behaves here, in a tab beside Account: experimental views (3.6), adult games, and in Shelf for Windows downloads, their sources and Real-Debrid (7.10). Who I am is the account; this is what I choose. The owner, 2 Nov 2026, on the download sections: they "definitivamente não devem estar na aba de conta" |
+| `/en/account/settings` | How Shelf behaves here, in a tab beside Account: experimental views (3.6), adult games, and in Shelf for Windows the name of this computer (7.3), downloads, their sources and Real-Debrid (7.10). Who I am is the account; this is what I choose. The owner, 2 Nov 2026, on the download sections: they "definitivamente não devem estar na aba de conta" |
 | `/en/account/start` | Setting a new shelf up, where signing up leads: the platforms to bring games in from, and the way to placing them ([section 4.6](#46-setting-a-new-shelf-up)) |
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once, or to archive or remove; Organize's first tab ([section 4.5](#45-placing-what-a-sync-brought-in)) |
 | `/en/account/hours` | The games whose stores report far past IGDB's time, to take idle time out of; Organize's second tab ([section 4.7](#47-hours-a-store-counted)) |
@@ -1329,7 +1329,14 @@ the versions, and archiving or removing.
     sync dates those a platform has only now seen played. Once set the day stays: a later play
     moves nothing, and a day I chose is never replaced.
 - **Hours played** can't be typed (the owner, 31 Oct 2026). It says the game's hours, and under
-  them where they come from: Shelf for Windows, and each store that reports some. Where Shelf for
+  them where they come from: Shelf for Windows, and each store that reports some. Every play time
+  on a game's own page and in the list says minutes under an hour ("45 min"), hours and minutes
+  under a hundred ("1 h 25 min"), whole hours past it ("312 h"), and a few seconds as "Less than a
+  minute", never "0 h" (`durationOf`, #148). The trophy page keeps whole hours: its figures are
+  totals across games, where minutes say nothing. The hours change in place when a game closes
+  in Shelf for Windows, without undoing an edit on its way. Hours from every computer with Shelf
+  for Windows add up, and each session knows which of them it came from; I name each computer in
+  Settings, **This computer**, in the app alone (ADR 005, section 12). Where Shelf for
   Windows and Steam both have hours, a line says they count the same play and the larger counts.
   **How hours are counted** opens what time away is: after 5 minutes with no key, mouse or
   controller, that stretch doesn't count, and a long cutscene can fall into it.

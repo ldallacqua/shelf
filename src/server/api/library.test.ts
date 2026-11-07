@@ -181,6 +181,8 @@ describe('the OpenAPI document', () => {
       '/me/archived',
       '/me/hours',
       '/me/play/sessions',
+      '/me/devices',
+      '/me/devices/{id}',
       '/me/play',
       '/removed/{undo}',
       '/u/{handle}/shelves',
@@ -197,6 +199,8 @@ describe('the OpenAPI document', () => {
       'BroughtBack',
       'Changed',
       'CopyPatch',
+      'DeviceName',
+      'Devices',
       'Error',
       'Facets',
       'Game',
@@ -228,7 +232,14 @@ describe('the OpenAPI document', () => {
       'UndoAdditions',
     ])
     // Every write takes a session; of the reads, only those of one's own do.
-    const ownerReads = ['/igdb/search', '/entries/{id}', '/me/archived', '/me/hours', '/me/play']
+    const ownerReads = [
+      '/igdb/search',
+      '/entries/{id}',
+      '/me/archived',
+      '/me/hours',
+      '/me/devices',
+      '/me/play',
+    ]
     for (const [path, methods] of Object.entries(document.paths)) {
       for (const [method, operation] of Object.entries(methods)) {
         const secured = 'security' in operation

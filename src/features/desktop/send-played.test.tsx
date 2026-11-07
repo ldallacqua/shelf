@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { callApi } from '@/features/owner/call-api'
 
-import { startSendingPlayed } from './send-played'
+import { PLAYED_EVENT, startSendingPlayed } from './send-played'
 import { setBridgeForTests } from './tauri'
 
 /** What Shelf for Windows counted, on its way to Shelf (ADR 005, section 12). */
@@ -74,6 +74,17 @@ describe('sending what the app counted', () => {
     await new Promise((done) => setTimeout(done))
     window.dispatchEvent(new Event('focus'))
     await vi.waitFor(() => expect(app).toHaveBeenCalledTimes(2))
+  })
+
+  it('sends at once when the app says a session has just ended', async () => {
+    sessions = []
+    stop = startSendingPlayed()
+    await vi.waitFor(() => expect(app).toHaveBeenCalledTimes(1))
+    await new Promise((done) => setTimeout(done))
+    sessions = [SESSION]
+    vi.mocked(callApi).mockResolvedValue({ ok: true, value: { kept: [SESSION.id], version: 4 } })
+    window.dispatchEvent(new Event(PLAYED_EVENT))
+    await vi.waitFor(() => expect(kept).toEqual([[SESSION.id]]))
   })
 
   it('does nothing in an app older than the command', async () => {

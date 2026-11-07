@@ -1,10 +1,17 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { buildGamePage } from '@/domain/library/game-page'
+import { answerGame, answerLibrary, libraryParams } from '@/server/api/library'
 import type { Db } from '@/server/db/client'
-import { games } from '@/server/db/schema'
-import { readLibrary, readOwnerGame } from '@/server/library/read'
-import { findEntryIdBySlug, removeEntryForUndo, restoreEntry } from '@/server/library/store'
+import { games, playSessions } from '@/server/db/schema'
+import { readGameExtras, readLibrary, readOwnerGame } from '@/server/library/read'
+import {
+  findEntryIdBySlug,
+  nameDevice,
+  removeEntryForUndo,
+  restoreEntry,
+} from '@/server/library/store'
 import { createTestDatabase, sampleLibraryId } from '@/test/database'
 
 import { appsPlayed, placeAndKeep } from './play-sessions'
@@ -85,6 +92,40 @@ describe('what Shelf for Windows counted', () => {
     const undo = await removeEntryForUndo(db, sample, entryId)
     await restoreEntry(db, sample, undo)
     expect(await tracked()).toBe(before)
+  })
+})
+
+describe('the computer each session came from', () => {
+  const DEVICE = '5d0c6a3e-2f4b-4c8d-9e1a-7b3f6d2c8a90'
+  const NAME = 'Lounge Desktop'
+
+  it('is kept with the session; one from an app too old to say still counts', async () => {
+    const before = (await tracked()) ?? 0
+    await placeAndKeep(db, sample, [
+      { ...sent('a', { entry: entryId }), device: DEVICE },
+      sent('b', { entry: entryId }),
+    ])
+    const rows = await db.select().from(playSessions).where(eq(playSessions.entryId, entryId))
+    expect(Object.fromEntries(rows.map((row) => [row.id, row.deviceId]))).toMatchObject({
+      a: DEVICE,
+      b: null,
+    })
+    expect(await tracked()).toBe(before + 20)
+  })
+
+  it('is in no public file or answer, nor its name', async () => {
+    await placeAndKeep(db, sample, [{ ...sent('a', { entry: entryId }), device: DEVICE }])
+    await nameDevice(db, sample, DEVICE, NAME)
+    const library = await readLibrary(db, sample)
+    const game = library.games.find((each) => each.slug === SLUG)!
+    const page = buildGamePage(library, game, (await readGameExtras(db, sample, SLUG))!)
+    const answers = JSON.stringify([
+      library,
+      answerLibrary(library, libraryParams.parse({ limit: '200' })),
+      answerGame(library, page),
+    ])
+    expect(answers).not.toContain(DEVICE)
+    expect(answers).not.toContain(NAME)
   })
 })
 
