@@ -53,6 +53,7 @@ import {
   type Records,
   type RecordsDeps,
 } from '@/server/services/igdb-records'
+import { askSteamAfterAdding } from '@/server/services/steam-reviews'
 import {
   addFromIgdb,
   findEntryIdBySlug,
@@ -482,7 +483,9 @@ export const addMyGame = (input: unknown) => {
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
   return forAccount(async (account) => {
     await spend(account, 'add')
-    return adding(account).add(parsed.data)
+    const added = await adding(account).add(parsed.data)
+    askSteamAfterAdding()
+    return added
   }, true)
 }
 
@@ -520,7 +523,9 @@ export const addManyOfMine = (inputs: unknown) => {
   if (!parsed.success) return Promise.resolve<Refusal>({ ok: false, reason: 'invalid' })
   return forAccount(async (account) => {
     await spend(account, 'add', parsed.data.length)
-    return adding(account).addMany(parsed.data)
+    const added = await adding(account).addMany(parsed.data)
+    askSteamAfterAdding()
+    return added
   }, true)
 }
 
@@ -534,7 +539,9 @@ export const rematchMine = (id: unknown, body: unknown) => {
   const [entry, { igdbId: picked }] = parsed.data
   return forAccount(async (account) => {
     await spend(account, 'add')
-    return adding(account).rematch(entry, picked)
+    const rematched = await adding(account).rematch(entry, picked)
+    askSteamAfterAdding()
+    return rematched
   }, true)
 }
 

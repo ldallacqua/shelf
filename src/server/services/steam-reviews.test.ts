@@ -94,4 +94,34 @@ describe('reading what Steam says', () => {
     const second = reviews.mock.calls[1]![0]
     expect(second.some((app) => first.includes(app))).toBe(false)
   })
+
+  it('asks about a game whose Steam page is known only from its store links', async () => {
+    const held = await skyrim()
+    await db
+      .update(games)
+      .set({
+        steamAppId: null,
+        storeIds: held.storeIds.filter((store) => store.source !== 'steam'),
+        storeLinks: [{ store: 'steam', url: `https://store.steampowered.com/app/${appOfSkyrim}/` }],
+      })
+      .where(eq(games.id, skyrimId))
+    const said = { app: appOfSkyrim, count: 1000, percent: 94, score: 9 }
+    const reviews = answering({ [appOfSkyrim]: said })
+    await createSteamReviews({ db, reviews })(undefined, NOW)
+    expect(reviews.mock.calls[0]![0]).toContain(appOfSkyrim)
+    expect((await skyrim()).steamReviews).toEqual(said)
+  })
+
+  it('after an add, asks only about games never asked, and marks them asked', async () => {
+    const reviews = answering({})
+    const read = createSteamReviews({ db, reviews })
+    await read(undefined, NOW)
+    await db.update(games).set({ steamReviewsCheckedAt: null }).where(eq(games.id, skyrimId))
+    const { checked } = await read(100, NOW + 1, 'unasked')
+    expect(checked).toBe(1)
+    expect(reviews.mock.calls[1]![0]).toEqual([appOfSkyrim])
+    expect((await skyrim()).steamReviewsCheckedAt).toBe(NOW + 1)
+    await read(100, NOW + 2, 'unasked')
+    expect(reviews).toHaveBeenCalledTimes(2)
+  })
 })

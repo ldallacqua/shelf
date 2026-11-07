@@ -1,8 +1,11 @@
 import 'server-only'
 
-import { and, asc, eq, inArray, isNotNull, like, or, sql } from 'drizzle-orm'
+import { after } from 'next/server'
+import { and, asc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 
+import type { StoreLink } from '@/domain/library/stores'
 import { mostReviewed, reviewsMoved, type SteamReviews } from '@/domain/steam/reviews'
+import { steamAppIdIn } from '@/domain/steam/store-game'
 import { database, type Db } from '@/server/db/client'
 import { entryVersions, games } from '@/server/db/schema'
 import { bumpVersion } from '@/server/library/store'
@@ -17,6 +20,24 @@ import { steam, type Steam } from '@/server/sync/steam'
 
 /** More games than the catalog holds today; past this, the longest unasked go first. */
 export const REVIEWS_COUNT = 5_000
+
+/** Games never asked about yet, asked right after one is added: one request to Steam. */
+export const NEW_REVIEWS_COUNT = 100
+
+/** The Steam apps a game names: its own, IGDB's external ids, and its Steam pages among the store links. */
+export const steamAppsOf = (game: {
+  steamAppId: string | null
+  storeIds: readonly { source: string; uid: string }[]
+  storeLinks: readonly StoreLink[] | null
+}): string[] => [
+  ...new Set([
+    ...(game.steamAppId ? [game.steamAppId] : []),
+    ...game.storeIds.flatMap((store) => (store.source === 'steam' ? [store.uid] : [])),
+    ...(game.storeLinks ?? []).flatMap((link) =>
+      link.store === 'steam' ? (steamAppIdIn(link.url) ?? []) : [],
+    ),
+  ]),
+]
 
 /** How many ids one statement names: well under SQLite's limit on a statement's values. */
 const IDS_PER_QUERY = 200
@@ -37,27 +58,31 @@ export type ReviewsRead = {
 
 export const createSteamReviews =
   ({ db, reviews }: { db: Db; reviews: Steam['reviews'] }) =>
-  async (count = REVIEWS_COUNT, now = Date.now()): Promise<ReviewsRead> => {
+  async (
+    count = REVIEWS_COUNT,
+    now = Date.now(),
+    only: 'all' | 'unasked' = 'all',
+  ): Promise<ReviewsRead> => {
+    const onSteam = or(
+      isNotNull(games.steamAppId),
+      like(games.storeIds, '%"steam"%'),
+      like(games.storeLinks, '%"steam"%'),
+    )
     const rows = await db
       .select({
         id: games.id,
         steamAppId: games.steamAppId,
         storeIds: games.storeIds,
+        storeLinks: games.storeLinks,
         stored: games.steamReviews,
       })
       .from(games)
-      .where(or(isNotNull(games.steamAppId), like(games.storeIds, '%"steam"%')))
+      .where(only === 'unasked' ? and(onSteam, isNull(games.steamReviewsCheckedAt)) : onSteam)
       .orderBy(sql`${games.steamReviewsCheckedAt} is not null`, asc(games.steamReviewsCheckedAt))
       .limit(count)
-    const held = rows.map((row) => ({
-      ...row,
-      apps: [
-        ...new Set([
-          ...(row.steamAppId ? [row.steamAppId] : []),
-          ...row.storeIds.flatMap((store) => (store.source === 'steam' ? [store.uid] : [])),
-        ]),
-      ],
-    }))
+    const held = rows
+      .map((row) => ({ ...row, apps: steamAppsOf(row) }))
+      .filter((game) => game.apps.length > 0)
     if (held.length === 0) return { checked: 0, changed: 0, libraries: [] }
 
     const known = await reviews(held.flatMap((game) => game.apps))
@@ -98,9 +123,24 @@ export const createSteamReviews =
 
 let shared: ReturnType<typeof createSteamReviews> | undefined
 
-/** The reading for this server, against Steam itself (or its test double, under `SHELF_MOCKS`). */
-export const readSteamReviews = (count?: number) =>
+const reader = () =>
   (shared ??= createSteamReviews({
     db: database(),
     reviews: (apps) => steam().reviews(apps),
-  }))(count)
+  }))
+
+/** The reading for this server, against Steam itself (or its test double, under `SHELF_MOCKS`). */
+export const readSteamReviews = (count?: number) => reader()(count)
+
+/**
+ * Once the answer to an add has gone, asks Steam about games never asked yet,
+ * so a game just added shows its score on its next load instead of tomorrow.
+ * It never slows or fails the add: a failure leaves the game for the daily run.
+ */
+export const askSteamAfterAdding = () => {
+  try {
+    after(() => reader()(NEW_REVIEWS_COUNT, Date.now(), 'unasked').catch(() => undefined))
+  } catch {
+    // Outside a request (a script or a test): the daily run asks instead.
+  }
+}

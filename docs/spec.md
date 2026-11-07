@@ -1751,7 +1751,8 @@ game bem bonitinho [...] vamos mostrar notas de varios lugares diferentes".
   there. No color judges a score: a green or red would say what only the words should.
 - **Resting on a few** (under five): the bar dims, and the count says how few in words.
 - **Where they come from.** IGDB's as ever. Steam's from its store, once a day, for every game with a page
-  there, across its editions the most reviewed; a visitor never reaches Steam. A game's name leads to
+  there (named by IGDB's ids or by a Steam link among its stores), and right after a game is added, once
+  the answer has gone; across its editions the most reviewed. A visitor never reaches Steam. A game's name leads to
   where its score came from, in a tab of its own, and neither is a logo. Shelf's is the average of what
   public shelves gave it, from every entry holding any of its versions: no private shelf, no game kept
   private, nothing archived, and only the sum and the count ever leave the database. A page shows it as
