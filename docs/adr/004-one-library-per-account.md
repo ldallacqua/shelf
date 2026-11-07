@@ -63,7 +63,7 @@ library's cache tags (`library:{id}`, `shelves:{id}`, `handle:{handle}`, `key:{k
 
 A handle is 3 to 24 lowercase letters, digits and single hyphens, never one of the site's own
 words (`src/domain/accounts/handle.ts`). It can be changed; the old address then leads
-nowhere, and the account page says so.
+nowhere, and Settings' Profile page says so.
 
 Each shelf's pages are built on their first visit and kept, as game pages already were. A
 page under `/u/{handle}` tells its client components whose shelf it is through

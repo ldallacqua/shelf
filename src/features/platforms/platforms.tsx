@@ -9,6 +9,7 @@ import type { Answer } from '@/domain/library/adding'
 import type { SyncSource } from '@/domain/library/values'
 import type { LinkPage, LinkView, SyncStep } from '@/domain/sync/link'
 import { STEAM_PRIVACY_SETTINGS } from '@/domain/sync/steam'
+import { SettingsSection } from '@/features/settings/settings-section'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Switch } from '@/ui/checkbox'
@@ -535,14 +536,13 @@ export function PlatformCards({
   )
 }
 
-/** The account page's Platforms (ADR 003). */
+/** Settings' Platforms (ADR 003, issue 152): the account's, wherever I sign in. */
 export function Platforms({ handle }: { handle: string }) {
   const t = useTranslations('Sync')
   return (
-    <section id="platforms" className="grid scroll-mt-24 gap-5 border-t border-line pt-8">
-      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+    <SettingsSection id="platforms" title={t('sectionTitle')} scope="account">
       <p className="max-w-xl text-pretty text-muted">{t('intro')}</p>
       <PlatformCards handle={handle} />
-    </section>
+    </SettingsSection>
   )
 }

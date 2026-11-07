@@ -7,7 +7,7 @@ import en from '@messages/en.json'
 import ptBR from '@messages/pt-BR.json'
 
 import DownloadSources from './download-sources'
-import { DownloadSourcesInApp } from './download-sources-later'
+import { AppOnly } from '@/features/settings/app-only'
 import type { Source } from './sources'
 import { setBridgeForTests } from './tauri'
 
@@ -284,15 +284,24 @@ describe('outside the app', () => {
     expect(ptBR).not.toHaveProperty('DownloadSources')
   })
 
-  it('draws nothing', () => {
+  it('says whose page it is, and shows nothing of the app’s', () => {
     setBridgeForTests(null)
-    const { container } = renderWithIntl(<DownloadSourcesInApp />)
-    expect(container).toBeEmptyDOMElement()
+    const { container } = renderWithIntl(<AppOnly page="download-sources" />)
+    expect(screen.getByRole('heading', { name: 'Part of Shelf for Windows' })).toBeInTheDocument()
+    // Alive in a browser, nothing holds the app's place: a page is done when its ghosts are gone.
+    expect(container.querySelector('.ghost')).toBeNull()
+    expect(screen.getByRole('link', { name: 'All settings' })).toHaveAttribute(
+      'href',
+      '/en/settings',
+    )
+    expect(screen.queryByRole('heading', { name: 'Your sources' })).not.toBeInTheDocument()
   })
 
   it('in the app, brings its own words, in the page’s language', async () => {
-    const { container } = renderWithIntl(<DownloadSourcesInApp />, 'pt-BR')
-    await screen.findByRole('heading', { name: 'Fontes de download' })
+    const { container } = renderWithIntl(<AppOnly page="download-sources" />, 'pt-BR')
+    await screen.findByRole('heading', { level: 1, name: 'Fontes de download' })
+    expect(screen.getByRole('heading', { name: 'Suas fontes' })).toBeInTheDocument()
+    expect(screen.getByText('Este aparelho')).toBeInTheDocument()
     expect(container.querySelector('[data-device]')).not.toBeNull()
   })
 })

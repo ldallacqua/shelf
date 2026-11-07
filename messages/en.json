@@ -1258,7 +1258,7 @@
     "menu": "{name}, your account",
     "menuTip": "Your shelf, your account, signing out",
     "myShelf": "My shelf",
-    "settings": "Account",
+    "settings": "Settings",
     "handle": {
       "label": "Handle",
       "prefix": "/u/",
@@ -1307,14 +1307,6 @@
     }
   },
   "AccountPage": {
-    "metaTitle": "Your account",
-    "title": "Your account",
-    "settingsTitle": "Settings",
-    "tabs": {
-      "label": "Your account and settings",
-      "account": "Account",
-      "settings": "Settings"
-    },
     "checking": "Checking who you are…",
     "signInFirst": "Sign in to see your account.",
     "signIn": "Sign in",
@@ -1326,6 +1318,7 @@
     "save": "Save",
     "saving": "Saving…",
     "saved": "Saved.",
+    "visibility": "Visibility",
     "password": "Password",
     "currentPassword": "Current password",
     "newPassword": "New password",
@@ -1335,12 +1328,12 @@
     "experimental": {
       "title": "Experimental views",
       "label": "Offer the 3D shelf and the compact shelf on this device",
-      "body": "Both are unfinished: covers can be hard to make out, and things may look or work wrong. This changes only this browser, as the theme does. Turned off, the shelf goes back to 2D with covers."
+      "body": "Both are unfinished: covers can be hard to make out, and things may look or work wrong. Turned off, the shelf goes back to 2D with covers."
     },
     "adult": {
       "title": "Adult games",
       "label": "Hide adult games on this device",
-      "body": "Games IGDB marks Erotic, and the ones the ESRB rates Adults Only. Hidden, they are not drawn on any shelf seen in this browser, yours or anyone's, and nothing counts them. This changes only this browser, as the theme does."
+      "body": "Games IGDB marks Erotic, and the ones the ESRB rates Adults Only. Hidden, they are not drawn on any shelf seen in this browser, yours or anyone’s, and nothing counts them."
     },
     "devices": "Signed-in devices",
     "devicesBody": "Signs you out here and on every other device and browser, assistants included.",
@@ -1357,6 +1350,55 @@
       "passwordLength": "The new password needs at least {min} characters.",
       "tooMany": "Too many tries. Wait a minute, then try again.",
       "failed": "That did not work. Try again."
+    }
+  },
+  "Settings": {
+    "title": "Settings",
+    "intro": "Your account’s choices hold wherever you sign in. This device’s hold only in this browser.",
+    "loading": "Getting this page ready",
+    "groups": {
+      "account": "Account",
+      "device": "This device"
+    },
+    "scope": {
+      "account": "Account",
+      "device": "This device"
+    },
+    "pages": {
+      "profile": {
+        "title": "Profile",
+        "description": "Your shelf’s name and handle"
+      },
+      "privacy": {
+        "title": "Privacy & content",
+        "description": "Who can see your shelf, and adult games"
+      },
+      "platforms": {
+        "title": "Platforms",
+        "description": "Steam, Nintendo and syncing"
+      },
+      "security": {
+        "title": "Security",
+        "description": "Your password, signed-in devices, and deleting your account"
+      },
+      "appearance": {
+        "title": "Appearance",
+        "description": "Theme, language and experimental views"
+      }
+    },
+    "theme": {
+      "title": "Theme",
+      "body": "Light, dark, or as this device is set. The switch in the header changes it too."
+    },
+    "language": {
+      "title": "Language",
+      "body": "The language Shelf speaks. The switch in the header changes it too.",
+      "current": "(in use)"
+    },
+    "appOnly": {
+      "title": "Part of Shelf for Windows",
+      "body": "This page is in Shelf for Windows, the app that starts your games and counts their hours on a PC. Open Settings there to see it.",
+      "back": "All settings"
     }
   },
   "Placing": {
@@ -1469,6 +1511,7 @@
       "nintendo": "Nintendo"
     },
     "title": "Platforms",
+    "sectionTitle": "Stores and consoles",
     "intro": "Bring the games you own on a platform onto your shelf, and keep them in step.",
     "later": "PlayStation and Xbox come next.",
     "steam": {
@@ -1624,7 +1667,7 @@
         "body": "Steam and the Steam logo are trademarks and/or registered trademarks of Valve Corporation in the U.S. and/or other countries. Nintendo and Nintendo Switch are trademarks of Nintendo. PlayStation is a registered trademark or trademark of Sony Interactive Entertainment Inc. Xbox is a trademark of the Microsoft group of companies. Shelf names them only to say where your games come from, and is not affiliated with, endorsed or sponsored by any of them."
       }
     },
-    "account": "Your account page"
+    "account": "Your settings"
   },
   "Add": {
     "title": "Add a game",

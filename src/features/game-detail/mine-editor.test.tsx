@@ -486,7 +486,7 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     expect(await screen.findByText('No play time yet')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'linked platforms' })).toHaveAttribute(
       'href',
-      expect.stringContaining('#platforms'),
+      '/en/settings/platforms',
     )
     expect(screen.queryByRole('list', { name: 'Play time by platform' })).not.toBeInTheDocument()
   })

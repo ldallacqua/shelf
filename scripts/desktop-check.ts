@@ -62,8 +62,13 @@ const PAGES = [
   '/en/u/sample?view=list',
   '/en/u/sample/game/the-elder-scrolls-v-skyrim',
   '/en/u/sample/trophies',
-  '/en/account',
-  '/en/account/settings',
+  '/en/settings',
+  '/en/settings/profile',
+  '/en/settings/privacy',
+  '/en/settings/platforms',
+  '/en/settings/security',
+  '/en/settings/appearance',
+  '/en/settings/app',
   '/en/account/unsorted',
   '/pt-BR/u/sample?view=list',
 ]
@@ -440,8 +445,27 @@ try {
 
   console.log('\nLinking Steam (the test double)')
   await shelf.goto(`${BASE_URL}/api/v1/me/platforms/steam/connect?locale=en`)
-  await until('coming back from Steam', 20, async () => /\/en\/account/.test(shelf.url()))
+  await until('coming back from Steam', 20, async () =>
+    /\/en\/settings\/platforms/.test(shelf.url()),
+  )
   pass(`came back to ${new URL(shelf.url()).pathname}, in the app`)
+
+  console.log('\nSettings, in the app')
+  // Shelf for Windows' own pages (issue 152): drawn in the app, and only said to be its in a browser.
+  await shelf.goto(`${BASE_URL}/en/settings/app`)
+  const starting = shelf.getByRole('switch', {
+    name: 'Start Shelf for Windows in the tray when Windows starts',
+  })
+  await starting.waitFor({ timeout: 20_000 })
+  // A development build never writes to the registry: the switch is there, and may not be changed.
+  if (await starting.isDisabled())
+    pass('shows starting with Windows, which a debug build may not change')
+  else fail('a debug build offers to change starting with Windows')
+  await shot('settings-app')
+  await browserPage.goto(`${BASE_URL}/en/settings/app`)
+  if (await browserPage.getByRole('heading', { name: 'Part of Shelf for Windows' }).isVisible())
+    pass('a browser is told the page is Shelf for Windows’')
+  else fail('a browser opening the app’s page is not told whose it is')
 
   console.log('\nPlay, from a file')
   await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
@@ -660,7 +684,7 @@ try {
   await new Promise<void>((listening) => source.listen(0, '127.0.0.1', listening))
   try {
     const { port } = source.address() as AddressInfo
-    await shelf.goto(`${BASE_URL}/en/account/settings`)
+    await shelf.goto(`${BASE_URL}/en/settings/download-sources`)
     const field = shelf.getByLabel('Source address')
     await field.waitFor({ timeout: 20_000 })
     const add = shelf.getByRole('button', { name: 'Add source' })
@@ -865,7 +889,7 @@ try {
     else fail('taking it off the list deleted what came out')
 
     console.log('\nThrough Real-Debrid (ADR 007), a stand-in on this computer')
-    await shelf.goto(`${BASE_URL}/en/account/settings`)
+    await shelf.goto(`${BASE_URL}/en/settings/download-services`)
     await shelf.getByRole('button', { name: 'Sign in to Real-Debrid' }).click()
     await shelf.getByText('MADEUP12').waitFor({ timeout: 15_000 })
     const signIn = shelf.getByRole('link', { name: 'Open Real-Debrid’s page' })
@@ -912,7 +936,7 @@ try {
     if (leaked) fail('a page holds the Real-Debrid token')
     else pass('no page holds what the sign-in gave')
 
-    await shelf.goto(`${BASE_URL}/en/account/settings`)
+    await shelf.goto(`${BASE_URL}/en/settings/download-services`)
     await shelf.getByRole('button', { name: 'Sign out of Real-Debrid' }).click()
     await shelf
       .getByRole('alertdialog')

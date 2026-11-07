@@ -1258,7 +1258,7 @@
     "menu": "{name}, sua conta",
     "menuTip": "Sua estante, sua conta e sair",
     "myShelf": "Minha estante",
-    "settings": "Conta",
+    "settings": "Configurações",
     "handle": {
       "label": "Identificador",
       "prefix": "/u/",
@@ -1307,14 +1307,6 @@
     }
   },
   "AccountPage": {
-    "metaTitle": "Sua conta",
-    "title": "Sua conta",
-    "settingsTitle": "Configurações",
-    "tabs": {
-      "label": "Sua conta e configurações",
-      "account": "Conta",
-      "settings": "Configurações"
-    },
     "checking": "Verificando quem é você…",
     "signInFirst": "Entre para ver sua conta.",
     "signIn": "Entrar",
@@ -1326,6 +1318,7 @@
     "save": "Salvar",
     "saving": "Salvando…",
     "saved": "Salvo.",
+    "visibility": "Visibilidade",
     "password": "Senha",
     "currentPassword": "Senha atual",
     "newPassword": "Senha nova",
@@ -1335,12 +1328,12 @@
     "experimental": {
       "title": "Visualizações experimentais",
       "label": "Oferecer a estante 3D e a estante compacta neste aparelho",
-      "body": "As duas ainda não estão prontas: as capas podem ficar difíceis de reconhecer, e coisas podem aparecer ou funcionar errado. Muda só este navegador, como o tema. Desligadas, a estante volta ao 2D com capas."
+      "body": "As duas ainda não estão prontas: as capas podem ficar difíceis de reconhecer, e coisas podem aparecer ou funcionar errado. Desligadas, a estante volta ao 2D com capas."
     },
     "adult": {
       "title": "Jogos adultos",
       "label": "Esconder jogos adultos neste aparelho",
-      "body": "Os jogos que o IGDB marca como Erotic e os que a ESRB classifica como Adults Only. Escondidos, eles não aparecem em nenhuma estante vista neste navegador, a sua ou a de outra pessoa, e nada os conta. Muda só este navegador, como o tema."
+      "body": "Os jogos que o IGDB marca como Erotic e os que a ESRB classifica como Adults Only. Escondidos, eles não aparecem em nenhuma estante vista neste navegador, a sua ou a de outra pessoa, e nada os conta."
     },
     "devices": "Aparelhos conectados",
     "devicesBody": "Sai da conta aqui e em todos os outros aparelhos e navegadores, assistentes incluídos.",
@@ -1357,6 +1350,55 @@
       "passwordLength": "A senha nova precisa de pelo menos {min} caracteres.",
       "tooMany": "Tentativas demais. Espere um minuto e tente de novo.",
       "failed": "Não deu certo. Tente de novo."
+    }
+  },
+  "Settings": {
+    "title": "Configurações",
+    "intro": "As escolhas da sua conta valem onde você entrar. As deste aparelho valem só neste navegador.",
+    "loading": "Preparando esta página",
+    "groups": {
+      "account": "Conta",
+      "device": "Este aparelho"
+    },
+    "scope": {
+      "account": "Conta",
+      "device": "Este aparelho"
+    },
+    "pages": {
+      "profile": {
+        "title": "Perfil",
+        "description": "O nome e o identificador da sua estante"
+      },
+      "privacy": {
+        "title": "Privacidade e conteúdo",
+        "description": "Quem pode ver sua estante, e jogos adultos"
+      },
+      "platforms": {
+        "title": "Plataformas",
+        "description": "Steam, Nintendo e sincronização"
+      },
+      "security": {
+        "title": "Segurança",
+        "description": "Sua senha, os aparelhos conectados e excluir a conta"
+      },
+      "appearance": {
+        "title": "Aparência",
+        "description": "Tema, idioma e visualizações experimentais"
+      }
+    },
+    "theme": {
+      "title": "Tema",
+      "body": "Claro, escuro, ou como este aparelho estiver. O botão no topo também muda."
+    },
+    "language": {
+      "title": "Idioma",
+      "body": "O idioma em que o Shelf fala. O botão no topo também muda.",
+      "current": "(em uso)"
+    },
+    "appOnly": {
+      "title": "Parte do Shelf para Windows",
+      "body": "Esta página fica no Shelf para Windows, o app que abre seus jogos e conta as horas deles num PC. Abra as Configurações por lá para vê-la.",
+      "back": "Todas as configurações"
     }
   },
   "Placing": {
@@ -1469,6 +1511,7 @@
       "nintendo": "Nintendo"
     },
     "title": "Plataformas",
+    "sectionTitle": "Lojas e consoles",
     "intro": "Traga para a sua estante os jogos que você tem numa plataforma, e mantenha tudo em dia.",
     "later": "PlayStation e Xbox vêm a seguir.",
     "steam": {
@@ -1624,7 +1667,7 @@
         "body": "Steam e o logotipo Steam são marcas e/ou marcas registradas da Valve Corporation nos EUA e/ou em outros países. Nintendo e Nintendo Switch são marcas da Nintendo. PlayStation é marca ou marca registrada da Sony Interactive Entertainment Inc. Xbox é marca do grupo de empresas Microsoft. O Shelf só cita esses nomes para dizer de onde vêm os seus jogos, e não tem ligação com nenhuma dessas empresas, nem é endossado ou patrocinado por elas."
       }
     },
-    "account": "A página da sua conta"
+    "account": "Suas configurações"
   },
   "Add": {
     "title": "Adicionar um jogo",

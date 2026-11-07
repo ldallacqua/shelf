@@ -184,9 +184,9 @@ test.describe('signed in', () => {
       await page.getByRole('button', { name: 'Sample, your account' }).click()
       return page.getByRole('menu')
     }
-    await (await menu()).getByRole('menuitem', { name: 'Account' }).click()
-    await expect(page).toHaveURL(/\/en\/account$/)
-    await expect(page.getByRole('heading', { name: 'Your shelf' })).toBeVisible()
+    await (await menu()).getByRole('menuitem', { name: 'Settings' }).click()
+    await expect(page).toHaveURL(/\/en\/settings$/)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Settings')
     await (await menu()).getByRole('menuitem', { name: 'My shelf' }).click()
     await expect(page).toHaveURL(/\/en\/u\/sample$/)
     await (await menu()).getByRole('menuitem', { name: 'Sign out' }).click()

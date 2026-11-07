@@ -34,8 +34,8 @@ export function RealDebridView({
   const until = account?.state === 'in' && account.until ? new Date(account.until) : undefined
 
   return (
-    <section className="grid gap-5 border-t border-line pt-8">
-      <h2 className="title text-xl sm:text-2xl">{t('title')}</h2>
+    <article className="grid gap-5 rounded-panel border border-line bg-surface p-5">
+      <h3 className="title text-lg">{t('title')}</h3>
       <p className="max-w-xl text-pretty text-muted">{t('intro')}</p>
       {said ? (
         <p
@@ -106,7 +106,7 @@ export function RealDebridView({
           </div>
         </div>
       ) : null}
-    </section>
+    </article>
   )
 }
 

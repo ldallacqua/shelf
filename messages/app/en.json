@@ -14,7 +14,7 @@
     "nothingYet": "nothing counted yet"
   },
   "DownloadSources": {
-    "title": "Download sources",
+    "title": "Your sources",
     "intro": "Lists of games to download, in the format Hydra uses. They stay on this computer and are read again once a day while the app is running, and adding one downloads nothing.",
     "address": "Source address",
     "addressHint": "https://…/source.json",
@@ -192,6 +192,35 @@
     "errors": {
       "failed": "That didn’t work. Check your connection and try again.",
       "expired": "That code ran out before it was entered. Ask for a new one."
+    }
+  },
+  "AppSettings": {
+    "group": "Shelf for Windows",
+    "pages": {
+      "app": {
+        "title": "App",
+        "description": "Starting with Windows, and this computer’s name"
+      },
+      "download-sources": {
+        "title": "Download sources",
+        "description": "Lists of downloads, read on this computer"
+      },
+      "download-services": {
+        "title": "Download services",
+        "description": "Real-Debrid, connected on this computer"
+      }
+    },
+    "startWithWindows": {
+      "title": "Start with Windows",
+      "label": "Start Shelf for Windows in the tray when Windows starts",
+      "body": "So a game opened from Steam is counted without opening Shelf first. <link>How hours are counted</link>",
+      "unavailable": "Only an installed Shelf for Windows can start with Windows.",
+      "old": "Update Shelf for Windows to change this here. Until then, it is in the menu of Shelf’s icon in the tray.",
+      "failed": "Windows did not take the change. Try again."
+    },
+    "services": {
+      "title": "Services",
+      "intro": "A service downloads from a source’s links for you. Each is connected on this computer alone, and Shelf is only told who is signed in."
     }
   }
 }

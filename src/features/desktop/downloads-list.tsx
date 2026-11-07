@@ -342,7 +342,7 @@ export function DownloadsView({
           {t.rich('empty', {
             link: (chunks) => (
               <Link
-                href="/account/settings"
+                href="/settings/download-sources"
                 className="rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2"
               >
                 {chunks}

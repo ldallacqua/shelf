@@ -16,7 +16,7 @@ function Words() {
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pt-10 sm:pt-14">
         <h1 className="title text-3xl sm:text-5xl">{t('title')}</h1>
         <Button asChild size="sm" variant="ghost">
-          <Link href="/account/settings">
+          <Link href="/settings/download-sources">
             <SettingsIcon aria-hidden="true" />
             {t('toSettings')}
           </Link>

@@ -381,6 +381,8 @@ pub fn run() {
             commands::force_stop_game,
             commands::play_sessions,
             commands::play_sessions_kept,
+            commands::start_with_windows,
+            commands::set_start_with_windows,
             commands::download_sources,
             commands::add_source,
             commands::add_source_file,
@@ -424,6 +426,8 @@ pub fn run() {
                     .permission("allow-force-stop-game")
                     .permission("allow-play-sessions")
                     .permission("allow-play-sessions-kept")
+                    .permission("allow-start-with-windows")
+                    .permission("allow-set-start-with-windows")
                     .permission("allow-download-sources")
                     .permission("allow-add-source")
                     .permission("allow-add-source-file")

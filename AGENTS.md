@@ -257,7 +257,7 @@ demos, playtests and software are left out by themselves. A source that lists wh
 played (Nintendo) puts nothing on the shelf by itself: each match waits for me to say how I
 own it (`confirm`, one at a time or many at once). A platform account is linked only through
 the platform's own sign-in; Nintendo's page cannot come back, so its button's link is pasted
-into the account page (`server/sync/connect.ts`). What a sign-in gives Shelf to keep (Nintendo's
+into Settings' Platforms page (`server/sync/connect.ts`). What a sign-in gives Shelf to keep (Nintendo's
 session) is stored sealed (`server/sync/sealed.ts`, `PLATFORM_TOKEN_KEY`), opened only to
 read the source, and never sent to a browser. Tests never talk to Steam or Nintendo:
 `fixtures/steam/`, `fixtures/nintendo/` and the doubles in `server/mocks/` answer; with the

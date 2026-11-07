@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import { useId } from 'react'
 
 import { useExperimental } from '@/features/library/use-preference'
+import { SectionHead } from '@/features/settings/settings-section'
 import { Switch } from '@/ui/checkbox'
 
 /**
@@ -19,9 +20,7 @@ export function ExperimentalViews() {
 
   return (
     <section aria-labelledby={`${switchId}-title`} className="grid gap-5 border-t border-line pt-8">
-      <h2 id={`${switchId}-title`} className="title text-xl sm:text-2xl">
-        {t('title')}
-      </h2>
+      <SectionHead id={`${switchId}-title`} title={t('title')} scope="device" />
       <p id={bodyId} className="max-w-xl text-pretty text-muted">
         {t('body')}
       </p>

@@ -61,7 +61,7 @@ describe('downloads', () => {
     expect(await screen.findByText(/Nothing here yet/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute(
       'href',
-      '/en/account/settings',
+      '/en/settings/download-sources',
     )
   })
 

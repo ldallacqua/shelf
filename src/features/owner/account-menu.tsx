@@ -79,7 +79,7 @@ export function AccountMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account">
+          <Link href="/settings">
             <SettingsIcon aria-hidden="true" />
             {t('settings')}
           </Link>

@@ -206,7 +206,7 @@ describe('finding a download', () => {
     expect(magnet).toHaveTextContent(/needs Real-Debrid/)
     expect(within(magnet).getByRole('link', { name: 'Real-Debrid' })).toHaveAttribute(
       'href',
-      '/en/account/settings',
+      '/en/settings/download-services',
     )
     expect(within(magnet).queryByRole('button')).not.toBeInTheDocument()
     const parts = screen.getByText('In parts').closest('li')!

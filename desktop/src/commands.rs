@@ -421,6 +421,35 @@ pub fn play_sessions_kept(ids: Vec<String>, tracker: State<'_, Tracker>) -> Resu
 }
 
 /// The download sources on this computer (ADR 007): what they are, never their links.
+/// Whether Shelf starts with Windows, in the tray (ADR 005, section 12), and whether this build
+/// may change it: a development build never writes to the registry.
+#[derive(Serialize)]
+pub struct Starting {
+    available: bool,
+    on: bool,
+}
+
+fn starting() -> Starting {
+    Starting {
+        available: crate::autostart::available(),
+        on: crate::autostart::enabled(),
+    }
+}
+
+/// Starting with Windows, as Settings shows it beside the tray's own check.
+#[tauri::command]
+pub fn start_with_windows() -> Starting {
+    starting()
+}
+
+/// Turns starting with Windows on or off from Settings; the tray's check follows.
+#[tauri::command]
+pub fn set_start_with_windows(app: AppHandle, on: bool) -> Result<Starting, Refusal> {
+    crate::autostart::set(on).map_err(|_| Refusal::Failed)?;
+    crate::tray::starting_changed(&app);
+    Ok(starting())
+}
+
 #[tauri::command]
 pub fn download_sources(kept: State<'_, Sources>) -> Vec<Source> {
     kept.all()

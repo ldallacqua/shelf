@@ -142,7 +142,7 @@ added again, or a version separated, is a new entry and asks for its file again.
 
 ### 6. The window keeps to Shelf
 
-Shelf's own pages open in the window, and so do the sign-in pages the account page sends to
+Shelf's own pages open in the window, and so do the sign-in pages Settings' Platforms page sends to
 for linking (Steam's OpenID, Nintendo's accounts), whose way back is Shelf. Any other web
 address opens in the default browser. Of the other schemes, only `steam://rungameid/` and
 `steam://install/` are passed to Windows.
@@ -301,7 +301,7 @@ active time, games on a console keeping their platform's hours. So:
 - **Where it runs.** On a thread of the app, not in a page, so it counts with no window open. Closing
   the window leaves the app in the tray, and the window's web view is destroyed, so it costs
   little. The app starts with Windows, in the tray (`--background`), so a game opened from Steam
-  counts without opening Shelf first; the tray's menu turns that off. A development build never
+  counts without opening Shelf first; the tray's menu, or Settings' App page in the app (issue 152), turns that off. A development build never
   writes to the registry.
 - **Sessions.** A game's stretch of play is one session with a random id, written to
   `play-sessions.json` every 30 seconds, so a crash or a power cut loses 30 seconds at most. Time a

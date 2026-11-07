@@ -79,10 +79,10 @@ describe('linking Steam', () => {
     expect(response.headers.get('Set-Cookie')).toContain('HttpOnly')
   })
 
-  it('links the account Steam vouched for, and returns to the account page', async () => {
+  it('links the account Steam vouched for, and returns to Settings’ Platforms', async () => {
     const { returnTo, cookie } = await start()
     const response = await comeBack(returnTo, mockSteamAnswer(returnTo), cookie)
-    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/account?steam=linked#platforms`)
+    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/settings/platforms?steam=linked`)
     expect((await readLink(state.db!, state.signedIn!, 'steam'))?.externalId).toBe(
       MOCK_STEAM.steamId,
     )
@@ -103,7 +103,7 @@ describe('linking Steam', () => {
     const { returnTo, cookie } = await start('&back=https://example.com')
     expect(returnTo).not.toContain('back=')
     const response = await comeBack(returnTo, mockSteamAnswer(returnTo), cookie)
-    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/account?steam=linked#platforms`)
+    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/settings/platforms?steam=linked`)
   })
 
   it('links nothing for an answer whose page to come back to was changed on the way', async () => {
@@ -127,7 +127,7 @@ describe('linking Steam', () => {
   it('links nothing when the answer comes back to a browser that did not ask', async () => {
     const { returnTo } = await start()
     const response = await comeBack(returnTo, mockSteamAnswer(returnTo))
-    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/account?steam=failed#platforms`)
+    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/settings/platforms?steam=failed`)
     expect(await readLink(state.db!, state.signedIn!, 'steam')).toBeUndefined()
   })
 
@@ -135,7 +135,7 @@ describe('linking Steam', () => {
     const { returnTo, cookie } = await start()
     const elsewhere = returnTo.replace('locale=en', 'locale=pt-BR')
     const response = await comeBack(returnTo, mockSteamAnswer(elsewhere), cookie)
-    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/account?steam=failed#platforms`)
+    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/settings/platforms?steam=failed`)
     expect(await readLink(state.db!, state.signedIn!, 'steam')).toBeUndefined()
   })
 
@@ -146,7 +146,7 @@ describe('linking Steam', () => {
     const stranger = await createTestAccount(state.db!, 'stranger')
     state.signedIn = stranger
     const response = await comeBack(returnTo, answer, cookie)
-    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/account?steam=failed#platforms`)
+    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/settings/platforms?steam=failed`)
     expect(await readLink(state.db!, stranger, 'steam')).toBeUndefined()
   })
 
@@ -155,6 +155,6 @@ describe('linking Steam', () => {
     const answer = mockSteamAnswer(returnTo)
     answer.set('openid.mode', 'cancel')
     const response = await comeBack(returnTo, answer, cookie)
-    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/account?steam=failed#platforms`)
+    expect(response.headers.get('Location')).toBe(`${ORIGIN}/en/settings/platforms?steam=failed`)
   })
 })

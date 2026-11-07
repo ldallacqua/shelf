@@ -29,7 +29,7 @@ const linkClass =
 
 /** A link to where Real-Debrid is signed in to, inside the words that say it is needed. */
 const toSettings = (chunks: ReactNode) => (
-  <Link href="/account/settings" className={linkClass}>
+  <Link href="/settings/download-services" className={linkClass}>
     {chunks}
   </Link>
 )

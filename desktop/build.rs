@@ -17,6 +17,8 @@ fn main() {
             "force_stop_game",
             "play_sessions",
             "play_sessions_kept",
+            "start_with_windows",
+            "set_start_with_windows",
             "download_sources",
             "add_source",
             "add_source_file",

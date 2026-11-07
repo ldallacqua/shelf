@@ -77,11 +77,19 @@ for (const theme of themes) {
       await expectAccessible(page, '[role="menu"]')
     })
 
-    test(`the account page passes axe, ${theme}`, async ({ page }) => {
-      await openWithTheme(page, '/en/account', theme)
-      await page.getByRole('heading', { name: 'Your shelf' }).waitFor()
-      await expectAccessible(page)
-    })
+    for (const [path, heading] of [
+      ['/en/settings', 'Settings'],
+      ['/en/settings/profile', 'Your shelf'],
+      ['/en/settings/privacy', 'Visibility'],
+      ['/en/settings/security', 'Password'],
+      ['/en/settings/appearance', 'Theme'],
+    ]) {
+      test(`${path} passes axe, ${theme}`, async ({ page }) => {
+        await openWithTheme(page, path!, theme)
+        await page.getByRole('heading', { name: heading }).first().waitFor()
+        await expectAccessible(page)
+      })
+    }
 
     test(`saving a shelf passes axe, ${theme}`, async ({ page }) => {
       await openWithTheme(page, '/en/u/sample?q=genre%3Arpg', theme)

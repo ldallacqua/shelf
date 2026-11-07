@@ -42,7 +42,17 @@ const playSessionSchema = z.object({
 
 const infoSchema = z.object({ version: z.string(), device: z.string().optional() })
 
+const startingSchema = z.object({ available: z.boolean(), on: z.boolean() })
+
+/** Whether Shelf starts with Windows, and whether this build may change it (a development one may not). */
+export type Starting = z.infer<typeof startingSchema>
+
 export const desktop = {
+  /** Starting with Windows, in the tray. An app older than 0.12.0 has no such command, and refuses. */
+  startWithWindows: async (): Promise<Starting> =>
+    startingSchema.parse(await call('start_with_windows')),
+  setStartWithWindows: async (on: boolean): Promise<Starting> =>
+    startingSchema.parse(await call('set_start_with_windows', { on })),
   /** The app's version, and this computer's id, which an app older than 0.11.0 doesn't give. */
   info: async () => infoSchema.parse(await call('desktop_info')),
   /** The file chosen for a game on this computer, or null. */

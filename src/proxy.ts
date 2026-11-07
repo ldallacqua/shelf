@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { FIRST_HANDLE } from './domain/accounts/handle'
 import { isKnownPath, splitLocale } from './i18n/known-paths'
+import { movedTo } from './i18n/moved'
 import { routing } from './i18n/routing'
 
 // Sends `/` to the visitor's language and keeps every address prefixed.
@@ -31,6 +32,14 @@ export default async function proxy(request: NextRequest) {
 
   if (address && BEFORE_ACCOUNTS.test(address.rest)) {
     return toFirstShelf(request, address.locale, address.rest)
+  }
+
+  // A page that moved, for good, with its query string (issue 152).
+  const moved = address && movedTo(address.rest, request.nextUrl.searchParams)
+  if (address && moved) {
+    const target = request.nextUrl.clone()
+    target.pathname = `/${address.locale}${moved}`
+    return NextResponse.redirect(target, 308)
   }
 
   if (address && !isKnownPath(address.rest)) {

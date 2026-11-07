@@ -43,14 +43,14 @@ steps it is built in.
    program is the game. Stop asks it to close; a game that doesn't answer offers Force stop, with
    a warning. A launcher waiting, or a game Windows won't let the app check, says so instead.
 
-8. **Download sources,** in Settings (a tab of your account), are lists of games to download in the format
+8. **Download sources,** on Settings' Download sources page, are lists of games to download in the format
    Hydra uses (ADR 007, spec 7.10). Paste a source's address; adding one downloads nothing. Add only
    sources you trust: Shelf can't check where their links lead.
 9. **Find a download,** in the ⋯ menu beside Play on a game of your own once you have a source, lists what your
    sources have with every word of the game's name. Choose one and a folder. It goes on with the window
    closed to the tray, and **Downloads**, from the icon in the header, shows how far along it is, with Pause and
    Cancel. Shelf never starts what it downloads.
-10. **Real-Debrid,** in Settings, signs in with a code you enter on its own page, and needs an
+10. **Real-Debrid,** on Settings' Download services page, signs in with a code you enter on its own page, and needs an
     account of your own. Then Find a download also offers **Through Real-Debrid**, for magnets and file
     hosts. It has to fetch a magnet first, which can take a while, and the card shows how far along it is.
 11. **Extract,** on a finished download that brought a `zip`, `7z` or `rar`, unpacks it into a folder beside it.
@@ -233,7 +233,7 @@ What a browser can already do, and what the app builds on.
 
 **Done when,** against `pnpm serve:test`, signed in as the made-up owner, the app shows the
 same as a browser on: the shelf (2D, 3D, wall, list), a game's page and panel with Mine and its
-private notes, a private game, the trophy wall, the placing page and the account page with its
+private notes, a private game, the trophy wall, the placing page and Settings with its
 platforms; linking Steam (the test double) comes back to the app; an outside link opens the
 default browser; and the console has no error. Then the owner installs it and signs in to
 production.
