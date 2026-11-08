@@ -104,8 +104,10 @@ which copy I start. A copy from outside the stores is the case this is for.
   another PC, whose folders put them back. The list also has a hash of all the files' paths, sizes and hashes
   together: two snapshots with the same one hold the same saves, wherever they were made.
 - **Never overwritten.** A snapshot is new files with a name no other can have: its time, the computer's
-  id and its content's hash (`20261107T193000Z-1a2b3c4d-0f1e2d3c4b5a`). A name that is there is never
-  written again. Writing only new files is what lets two PCs share a plain synced folder, with no locking,
+  id, and a hash of its content and its parents (`20261107T193000Z-1a2b3c4d-0f1e2d3c4b5a`). The parents are
+  in it since `pnpm desktop:check` went back to a snapshot in the second it was made: the same saves with
+  other parents took the older one's name, and were never written. A name that is there is never written
+  again. Writing only new files is what lets two PCs share a plain synced folder, with no locking,
   and never destroy each other's work.
 - **Whole or not at all.** The archive is written under a `.partial` name and renamed, then the list. The
   list is what makes a snapshot exist. One counts only when both are there and the archive has the list's

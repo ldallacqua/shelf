@@ -13,8 +13,9 @@ computer, with Back up now and Restore; Settings has a Saves page with the limit
 of it. While building, the ADR gained one rule the owner hasn't seen: going back by hand to an older snapshot
 writes a new one of it, so phase 4's check before Play won't undo it. The real manifest was read once by hand
 (0.35 s, 21,554 games with saves), never by a test. The design skills were not installed: their checklists
-were applied by hand. It reaches the owner only in a desktop release (0.13.0), which needs the owner's OK.
-Phase 3 followed the same day: on Settings' Saves page a folder of the owner's (synced by OneDrive or the
+were applied by hand. It reaches the owner in a desktop release, **0.13.0, published with the owner's OK the
+same day**, after `pnpm desktop:check` passed with its new steps for saves (its first run found two snapshots of
+the same saves sharing a name, now fixed). Phase 3 followed the same day: on Settings' Saves page a folder of the owner's (synced by OneDrive or the
 like) becomes this PC's place, and a game's Saves offers another PC's newer snapshot, or a choice when both
 changed. **Next:** phase 4, by itself after a session and before Play; phase 5 waits for Shelf to be
 registered with Microsoft and Google, which only the owner can do. **Still unchecked, by the owner:** a real
