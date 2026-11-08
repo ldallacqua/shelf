@@ -295,6 +295,27 @@ fn write_archive(path: &Path, here: &Here) -> Result<(), Unmade> {
     Ok(())
 }
 
+/// Copies a snapshot into another folder as new files, the archive first and the list last, each under a
+/// `.partial` name until whole. One already there is left as it is. The folder gets the game's
+/// `game.json` if it has none.
+pub fn copy(from: &Path, to: &Path, list: &List) -> io::Result<()> {
+    fs::create_dir_all(to)?;
+    let game = to.join("game.json");
+    if !game.exists() {
+        let text = serde_json::json!({ "version": 1, "entry": list.entry, "title": list.title });
+        let _ = fs::write(&game, serde_json::to_vec_pretty(&text).unwrap_or_default());
+    }
+    if to.join(format!("{}.json", list.id)).is_file() {
+        return Ok(());
+    }
+    for name in [format!("{}.zip", list.id), format!("{}.json", list.id)] {
+        let partial = to.join(format!("{name}.partial"));
+        fs::copy(from.join(&name), &partial)?;
+        fs::rename(&partial, to.join(&name))?;
+    }
+    Ok(())
+}
+
 fn read_list(path: &Path) -> Option<List> {
     let list: List = serde_json::from_slice(&fs::read(path).ok()?).ok()?;
     let named = path.file_stem().and_then(|stem| stem.to_str()) == Some(list.id.as_str());

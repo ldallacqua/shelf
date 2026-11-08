@@ -1869,8 +1869,19 @@ what comes next (a folder or a cloud of my own, and the same saves on every PC):
   and makes what it put back the latest. The folder button shows the snapshot's zip in Explorer, from which
   a save can be taken by hand.
 - **Never while the game runs:** Back up and Restore say to close it first.
-- **Settings' Saves page** holds the limits, the same for every game and this computer's own: how many
-  snapshots are kept per game (20, never fewer than 3) and the largest one (500 MB).
+- **Another PC's newer snapshot** is offered at the top, with which computer made it and when, and
+  Restore asks first, as any restore does.
+- **Two copies that differ** (changed here and on another PC without a backup between, or backed up from
+  the same snapshot on two) are a choice at the top, never made by itself: a card for this computer's,
+  with when it changed, and one for each latest snapshot, with its computer and date, each with **Keep
+  this one**, as Steam's conflict window offers its two. The other stays in the snapshots, and what was
+  here is backed up first.
+- **Settings' Saves page** says where snapshots go, this computer's choice: this computer alone, until I
+  choose a folder (one OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB
+  drive), the same on each PC. Choosing one copies this computer's snapshots there; going back leaves it
+  as it is. A folder that can't be reached is said there and on each game, and new snapshots wait here.
+  Under it, the limits, the same for every game and this computer's own: how many snapshots are kept per
+  game (20, never fewer than 3) and the largest one (500 MB).
 - **It isn't on the landing page yet,** as nothing of Shelf for Windows is there; it goes with the app's part.
 
 Based on: Steam's Cloud help (a switch per game in its properties, and the window that offers two copies
@@ -1881,6 +1892,8 @@ Galaxy's wasn't looked at. The design skills were not installed: their checklist
 **Done when**
 
 - A game's saves are found, or their folder added, then backed up and restored, on this computer.
+- Played on one PC then opened on another, both pointed at the same folder, the second starts with the
+  first's progress once restored; changes on both are a clear choice, and the copy not chosen is kept.
 - A restore never runs while the game runs, and one cut short is undone at the next start.
 
 ## 8. Data model
@@ -2250,7 +2263,7 @@ Not built now. The design leaves room for each.
 | Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Extracting what is downloaded | Downloads are built ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
-| Saves carried between my PCs | Snapshots are kept on this computer, each naming its parents and its computer ([section 7.12](#712-saves)); a place of my own and the choice between two copies are [ADR 008](adr/008-save-sync.md)'s phases 3 to 5 |
+| Saves carried by themselves, and through a cloud sign-in | Snapshots go through a folder of mine and two copies are a choice ([section 7.12](#712-saves)); backing up after a session, checking before Play, and OneDrive and Google Drive signed in are [ADR 008](adr/008-save-sync.md)'s phases 4 and 5 |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |

@@ -416,6 +416,10 @@ pub fn run() {
             commands::show_save_snapshot,
             commands::save_caps,
             commands::set_save_caps,
+            commands::save_place,
+            commands::choose_save_place,
+            commands::forget_save_place,
+            commands::keep_saves,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -471,6 +475,10 @@ pub fn run() {
                     .permission("allow-show-save-snapshot")
                     .permission("allow-save-caps")
                     .permission("allow-set-save-caps")
+                    .permission("allow-save-place")
+                    .permission("allow-choose-save-place")
+                    .permission("allow-forget-save-place")
+                    .permission("allow-keep-saves")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")

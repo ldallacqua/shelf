@@ -1,6 +1,6 @@
 # ADR 008: Carrying a game's saves between my PCs, through storage I own
 
-- **Status:** accepted by the owner, 7 Nov 2026. Phase 2 is built (below)
+- **Status:** accepted by the owner, 7 Nov 2026. Phases 2 and 3 are built (below)
 - **Date:** 7 Nov 2026
 - **Decides:** how Shelf for Windows finds a game's saves, keeps their history, and carries them between
   my computers through a place of my own, for games no store carries saves for, and what Shelf's server
@@ -180,8 +180,10 @@ Each PC has one place, chosen in Settings' Shelf for Windows group, and every ga
 one is chosen, snapshots stay in the app's own folder (`saves\{entry}\`), with their history, which is all
 phase 2 does. A game's page says where its saves go.
 
-In a place, a game is a folder named by its entry id (the same on every PC of the account), holding
-`game.json` (its title, for a person looking) and its snapshots.
+In a place, Shelf keeps a folder of its own, `Shelf saves`, in the one chosen (unless that is the one
+chosen), and only ever adds files to it. In it a game is a folder named by its entry id (the same on every
+PC of the account), holding `game.json` (its title, for a person looking) and its snapshots. Choosing a
+place copies this PC's snapshots there, as new files; going back to this PC alone leaves the folder as it is.
 
 | Phase | Place | How it connects |
 | --- | --- | --- |
@@ -200,8 +202,10 @@ In a place, a game is a folder named by its entry id (the same on every PC of th
   code for all.
 - **Registering Shelf** with Microsoft and Google, free, is the owner's to do, in their accounts; phase 5
   waits for it. Google's `drive.file` needs only basic verification, to be confirmed when it is done.
-- **A place that is full, gone or signed out** keeps the snapshot on this PC, waiting, and says so; it is
-  sent when the place is back. Nothing here is deleted because a place failed.
+- **A place that is full, gone or signed out** keeps the snapshot on this PC, waiting (`saves-waiting\`),
+  and says so; it is sent when the place is back, the next time anything asks about the game. A waiting
+  snapshot counts in section 5's table as one in the place does. Nothing here is deleted because a place
+  failed.
 
 ### 9. What could go wrong, and what holds
 
@@ -230,8 +234,9 @@ the owner, which needs the owner's OK.
 2. **Find and back up on this PC** (built, 7 Nov 2026). The manifest, matching, the locations shown and
    chosen, snapshots in the app's own folder with history and caps, Restore with the backup and the journal.
    The game's page in the app gets Saves, in Play's menu; Settings gets a Saves page with the caps (spec 7.12).
-3. **Through a folder.** Choosing one, snapshots written there and read from another PC, section 5 by hand
-   (Back up now and a check), and the choice.
+3. **Through a folder** (built, 7 Nov 2026). Choosing one in Settings' Saves page, snapshots written there and
+   read from another PC, waiting here while it can't be reached, section 5 by hand (the game's Saves says
+   when another PC's snapshot is newer, and offers it), and the choice, as two cards with their dates.
 4. **By itself.** After a session, before Play, and notifications.
 5. **Cloud sign-ins.** OneDrive and Google Drive once Shelf is registered with both, then S3-compatible.
 6. **Later.** More places, encryption with issue 150's key, registry saves, other launchers' games.

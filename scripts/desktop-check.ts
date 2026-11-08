@@ -27,8 +27,9 @@
  * is started (ADR 007).
  *
  * Made-up saves beside the made-up game are found in a folder added (a development build takes it from
- * `SHELF_PICK_SAVES`), backed up twice, and the first snapshot restored (ADR 008). The list of where games
- * save is the hand-written one in `fixtures/saves/`, never the real one.
+ * `SHELF_PICK_SAVES`), backed up twice, and the first snapshot restored (ADR 008); then a folder is chosen
+ * as this computer's place (`SHELF_PICK_SAVE_PLACE`), and the history must be copied there. The list of
+ * where games save is the hand-written one in `fixtures/saves/`, never the real one.
  *
  * Start the server first: pnpm build && pnpm serve:test. Never against
  * production: it signs in with the test doubles' made-up password.
@@ -177,6 +178,8 @@ const stubborn = join(game, 'stubborn.txt')
 const played = join(game, 'played.txt')
 /** Made-up saves, beside the made-up game. */
 const saved = join(game, 'saves')
+/** A folder of the owner's, as one a cloud client syncs. */
+const savePlace = mkdtempSync(join(tmpdir(), 'shelf-desktop-place-'))
 copyFileSync(resolve('desktop/target/debug/examples/stand_in.exe'), join(game, STAND_IN))
 writeFileSync(
   join(game, 'start.bat'),
@@ -275,6 +278,7 @@ const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
     SHELF_PICK_FOLDER: downloaded,
     SHELF_PICK_SOURCE: resolve('fixtures/sources/hydra-format.json'),
     SHELF_PICK_SAVES: saved,
+    SHELF_PICK_SAVE_PLACE: savePlace,
     SHELF_SAVE_MANIFEST: `file:${resolve('fixtures/saves/manifest.yaml')}`,
     SHELF_REAL_DEBRID: `http://127.0.0.1:${(debrid.address() as AddressInfo).port}`,
     SHELF_REOPEN_AFTER: '5',
@@ -588,6 +592,17 @@ try {
   await keptField.waitFor({ timeout: 20_000 })
   if ((await keptField.inputValue()) === '20') pass('Settings shows the snapshots kept per game')
   else fail(`Settings shows ${await keptField.inputValue()} snapshots kept per game`)
+  await shelf.getByRole('button', { name: 'Choose a folder' }).click()
+  await shelf
+    .getByText(/Those made on this computer were copied there too/)
+    .waitFor({ timeout: 15_000 })
+  const copied = readdirSync(join(savePlace, 'Shelf saves'), { recursive: true }).filter((name) =>
+    String(name).endsWith('.zip'),
+  )
+  if (copied.length >= 3)
+    pass(`chose a folder, and this computer's ${copied.length} snapshots went there`)
+  else fail(`chose a folder, and ${copied.length} snapshots went there`)
+  await shelf.getByRole('button', { name: 'Keep them on this computer only' }).click()
 
   console.log('\nReady to play')
   // Bloodborne has a file now. What else is ready comes from this computer's own Steam, read,
