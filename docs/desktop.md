@@ -65,15 +65,19 @@ steps it is built in.
     same on each PC, and a game's Saves offers another PC's newer snapshot, or asks which copy to keep when
     both changed. The limits are there too. Once a game's saves are on, they are backed up when it closes,
     and **Play** looks first: it takes another PC's newer snapshot, or stops and asks when two copies
-    differ. A Windows notification says when something needs you after a session.
+    differ. A Windows notification says when something needs you after a session. Where they go can also
+    be your OneDrive or Google Drive: **Sign in** there opens Microsoft's or Google's page in your browser,
+    and Shelf reaches only its own folder in it. Choose the same on each PC.
 
 What the app keeps on this computer is the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`, the sources, in `sources.json` and `sources\` beside it,
 the list of downloads, in `downloads.json`, and the saves: what was decided for each game in `saves.json`,
 the list of where games save in `save-manifest.json`, the snapshots in `saves\{entry}\`, what was there
 before each restore in `save-backups\{entry}\`, those waiting for a folder that can't be reached in
-`saves-waiting\{entry}\`, and while a restore runs, `save-restore.json`. In a folder you chose, Shelf keeps
-its own, `Shelf saves`.
+`saves-waiting\{entry}\`, what was read of OneDrive or Google Drive in `saves-cloud\`, and while a restore
+runs, `save-restore.json`. In a folder you chose, Shelf keeps its own, `Shelf saves`; in OneDrive, `Apps ›
+Shelf`; in Google Drive, `Shelf saves`. A sign-in to either is in Windows' Credential Manager, as
+Real-Debrid's is.
 Uninstalling leaves those, and everything downloaded, in the folders you chose; delete the app's folder
 to forget the rest.
 
@@ -137,7 +141,9 @@ desktop/
     saves/               A game's saves (ADR 008): paths.rs (the manifest's placeholders as this
                          computer's folders, and those too wide refused), manifest.rs (the Ludusavi
                          manifest, read from its address), snapshot.rs (a zip and its list, and which
-                         copy wins), restore.rs (every path checked, then put back), mod.rs (saves.json)
+                         copy wins), restore.rs (every path checked, then put back), mod.rs (saves.json),
+                         remote.rs and cloud.rs (OneDrive and Google Drive, the only code that knows
+                         their addresses), sign_in.rs (their pages, with PKCE and a loopback address)
   examples/stand_in.rs   A stand-in for a game, for the tests, that takes no focus
   tests/fixtures/        Steam's files as Steam writes them, and a shortcut, for the tests
 src/features/desktop/    The site's side: Tauri's global (tauri.ts), the commands that answer
@@ -490,8 +496,51 @@ ADR 008's phase 4; spec 7.12.
 - [ ] By hand, by the owner, on two PCs with an installed version: a game played on one and started with
       Play on the other, taking the first's progress; a choice after playing both; a notification seen.
 
-**Done when** the owner has played on one PC and pressed Play on the other. Next: phase 5, once Shelf is
-registered with Microsoft and Google.
+**Done when** the owner has played on one PC and pressed Play on the other.
+
+### Step 12: Saves through OneDrive and Google Drive
+
+ADR 008's phase 5; spec 7.12.
+
+**Built 8 Nov 2026,** and offered by a release only once Shelf is registered with each service.
+
+- [x] `saves/remote.rs`: a service as a folder of snapshots, read once and kept in `saves-cloud\`, written
+      from `saves-waiting\`, archive first; `saves/cloud.rs`: OneDrive's app folder (Microsoft Graph) and
+      what Shelf made in Google Drive (`drive.file`), sent in pieces, tokens refreshed, refusals read as
+      out of reach, signed out or full; `saves/sign_in.rs`: the service's page in the browser, PKCE, and an
+      address on this computer to come back to.
+- [x] Commands: `sign_in_save_cloud`, `cancel_save_sign_in`, `use_save_cloud`, `sign_out_save_cloud`; and
+      `save_place` names the services this build can sign in to.
+- [x] Settings' Where they go as a list of places, and the game's Saves and Play saying a service signed
+      out of or full. Stories for each.
+- [x] Tests: the sign-in with PKCE checked, sending in pieces, reading, deleting and refreshing, against a
+      stand-in for each service; two made-up PCs through a service; the page with the bridge faked;
+      `pnpm desktop:check` signs in to a stand-in OneDrive, sends this PC's history and Play's snapshot
+      there, and signs out.
+- [ ] **By the owner: registering Shelf with Microsoft.** At [entra.microsoft.com](https://entra.microsoft.com)
+      (or portal.azure.com), signed in with your Microsoft account (if it says you have no directory,
+      the free Azure account it offers makes one; nothing is charged for this): **App registrations ›
+      New registration**. Name it **Shelf**, which names its folder in OneDrive (`Apps › Shelf`); for
+      who can use it choose **Accounts in any organizational directory and personal Microsoft
+      accounts**; for the redirect URI choose **Public client/native (mobile & desktop)** and enter
+      `http://localhost`. Once made, **API permissions › Add a permission › Microsoft Graph › Delegated**:
+      `Files.ReadWrite.AppFolder` (`openid`, `profile` and `offline_access` are asked for at sign-in).
+      Copy the **Application (client) ID** from Overview into `.env.local` as `SHELF_ONEDRIVE_CLIENT_ID`.
+- [ ] **By the owner: registering Shelf with Google.** At
+      [console.cloud.google.com](https://console.cloud.google.com), a new project, **Shelf**. Enable the
+      **Google Drive API** (APIs & Services › Library). In **Google Auth Platform** (the OAuth consent
+      screen): app name **Shelf**, your email, audience **External**; under Data access add the scopes
+      `.../auth/drive.file`, `openid` and `.../auth/userinfo.email`; then under Audience **Publish app**:
+      left in Testing, Google ends each sign-in after seven days, and these scopes need no review to
+      publish. Under **Clients › Create client**, type **Desktop app**, named **Shelf for Windows**; copy
+      its client ID and client secret into `.env.local` as `SHELF_GOOGLE_CLIENT_ID` and
+      `SHELF_GOOGLE_CLIENT_SECRET`.
+- [ ] A release with them (`pnpm desktop:release` reads them, and says which services it built in, never
+      their values), then by hand on two PCs: sign in to the same service on each, play on one and press
+      Play on the other.
+
+**Done when** the owner has carried a game's progress between two PCs through OneDrive or Google Drive.
+Next: S3-compatible storage, an access key pasted for one bucket.
 
 ### Later
 

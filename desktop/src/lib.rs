@@ -22,6 +22,7 @@ mod sources;
 mod steam;
 mod tracker;
 mod tray;
+mod vault;
 mod watch;
 
 use std::net::{TcpStream, ToSocketAddrs};
@@ -100,12 +101,18 @@ fn data_dir() -> Option<PathBuf> {
 
 /// Where the Real-Debrid sign-in is kept: Windows' Credential Manager, or in a development build run with
 /// a profile of its own, a file there, so `pnpm desktop:check` never touches the real one.
-fn vault() -> Box<dyn real_debrid::Vault> {
+fn vault() -> Box<dyn vault::Vault> {
+    vault_named("real-debrid")
+}
+
+/// The vault named `name`: an entry of Windows' Credential Manager, or a file in a development build's
+/// own profile.
+pub(crate) fn vault_named(name: &'static str) -> Box<dyn vault::Vault> {
     #[cfg(debug_assertions)]
     if let Some(dir) = data_dir() {
-        return Box::new(real_debrid::FileVault(dir.join("real-debrid.json")));
+        return Box::new(vault::FileVault(dir.join(format!("{name}.json"))));
     }
-    Box::new(real_debrid::CredentialManager)
+    Box::new(vault::CredentialManager(name))
 }
 
 /// The Shelf this app opens, for the commands that need it.
@@ -422,6 +429,10 @@ pub fn run() {
             commands::choose_save_place,
             commands::forget_save_place,
             commands::keep_saves,
+            commands::sign_in_save_cloud,
+            commands::cancel_save_sign_in,
+            commands::use_save_cloud,
+            commands::sign_out_save_cloud,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -481,6 +492,10 @@ pub fn run() {
                     .permission("allow-choose-save-place")
                     .permission("allow-forget-save-place")
                     .permission("allow-keep-saves")
+                    .permission("allow-sign-in-save-cloud")
+                    .permission("allow-cancel-save-sign-in")
+                    .permission("allow-use-save-cloud")
+                    .permission("allow-sign-out-save-cloud")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")
@@ -523,7 +538,7 @@ pub fn run() {
             std::thread::Builder::new()
                 .name("extracting".into())
                 .spawn(move || downloads::run_extractions(opening))?;
-            tauri::async_runtime::spawn(downloads::run(downloading, debrid, version));
+            tauri::async_runtime::spawn(downloads::run(downloading, debrid, version.clone()));
             app.manage(running::Games::default());
             app.manage(commands::Following::default());
             let device = device::Device::open(&folder, || uuid::Uuid::new_v4().to_string());
@@ -532,14 +547,24 @@ pub fn run() {
                 commands::now(),
                 Some(device.id.clone()),
             ));
-            let saves = saves::Saves::open(
+            let mut saves = saves::Saves::open(
                 &folder,
                 saves::paths::this_computer(Some(folder.clone()), steam::folder()),
                 Some(device.id.clone()),
             );
+            for service in saves::cloud::Service::ALL {
+                saves.add_cloud(std::sync::Arc::new(saves::cloud::Cloud::open(
+                    service,
+                    vault_named(service.vault_name()),
+                    &version,
+                )));
+            }
             // A restore the app ended in the middle of is undone before anything can ask for the game.
             saves.recover();
             app.manage(saves);
+            // What waited for a service or a folder goes once the app is up, off its way.
+            let sending = app.handle().clone();
+            std::thread::spawn(move || sending.state::<saves::Saves>().send_all_waiting());
             app.manage(device);
 
             autostart::first_start(&folder);

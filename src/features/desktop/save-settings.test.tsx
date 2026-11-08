@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -12,11 +12,37 @@ import { setBridgeForTests } from './tauri'
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 
 let caps: { mostMb: number; kept: number } | 'old'
-let place: { folder: string | null; reachable: boolean }
+/** As an app older than the services answers, or with them. */
+let place: Record<string, unknown>
+/** How the browser's sign-in ends, once the test says. */
+let signedIn: { resolve: (value: unknown) => void; reject: (reason: unknown) => void } | undefined
+
+const services = (onedrive: string | null, google: string | null) => [
+  { service: 'onedrive', account: onedrive, signingIn: false },
+  { service: 'google-drive', account: google, signingIn: false },
+]
 
 const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
   if (caps === 'old') throw 'command save_caps not found'
   if (command === 'save_place') return place
+  if (command === 'sign_in_save_cloud')
+    return new Promise((resolve, reject) => {
+      signedIn = { resolve, reject }
+    })
+  if (command === 'cancel_save_sign_in') {
+    signedIn?.reject('cancelled')
+    return null
+  }
+  if (command === 'sign_out_save_cloud') {
+    place = {
+      folder: null,
+      reachable: true,
+      cloud: null,
+      away: null,
+      services: services(null, null),
+    }
+    return place
+  }
   if (command === 'choose_save_place') {
     place = { folder: 'D:\\Synced\\Shelf saves', reachable: true }
     return place
@@ -69,6 +95,107 @@ describe('where games’ snapshots go', () => {
     place = { folder: 'E:\\Shelf saves', reachable: false }
     renderWithIntl(<SaveSettings />)
     expect(await screen.findByText(/Can’t be reached now/)).toBeInTheDocument()
+  })
+})
+
+describe('a service of mine as the place (phase 5)', () => {
+  const offered = () => ({
+    folder: null,
+    reachable: true,
+    cloud: null,
+    away: null,
+    services: services(null, null),
+  })
+
+  it('offers OneDrive and Google Drive, and signs in on the service’s own page', async () => {
+    place = offered()
+    const user = userEvent.setup()
+    renderWithIntl(<SaveSettings />)
+    await user.click(await screen.findByRole('button', { name: 'Sign in to OneDrive' }))
+    expect(app).toHaveBeenCalledWith('sign_in_save_cloud', { service: 'onedrive' })
+    expect(await screen.findByText(/Sign in on Microsoft’s page/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sign in to Google Drive' })).toBeDisabled()
+    place = { ...offered(), cloud: 'onedrive', services: services('someone@example.com', null) }
+    signedIn?.resolve(place)
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Signed in. Snapshots go to OneDrive now',
+    )
+    const inUse = screen.getByText('In use').closest('li')!
+    expect(within(inUse).getByText('OneDrive')).toBeInTheDocument()
+    expect(within(inUse).getByText(/someone@example\.com/)).toBeInTheDocument()
+    expect(within(inUse).getByRole('button', { name: 'Sign out' })).toBeEnabled()
+  })
+
+  it('stops waiting on Cancel, and says nothing', async () => {
+    place = offered()
+    const user = userEvent.setup()
+    renderWithIntl(<SaveSettings />)
+    await user.click(await screen.findByRole('button', { name: 'Sign in to Google Drive' }))
+    await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+    expect(app).toHaveBeenCalledWith('cancel_save_sign_in', { service: 'google-drive' })
+    expect(await screen.findByRole('button', { name: 'Sign in to Google Drive' })).toBeEnabled()
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('says when the service didn’t sign in, or couldn’t be reached', async () => {
+    place = offered()
+    const user = userEvent.setup()
+    renderWithIntl(<SaveSettings />)
+    await user.click(await screen.findByRole('button', { name: 'Sign in to OneDrive' }))
+    signedIn?.reject('refused')
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'OneDrive didn’t sign you in. Try again.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Sign in to OneDrive' }))
+    signedIn?.reject('unreachable')
+    expect(await screen.findByRole('alert')).toHaveTextContent('OneDrive couldn’t be reached.')
+  })
+
+  it('says when the service in use took the sign-in back, and offers it again', async () => {
+    place = {
+      ...offered(),
+      cloud: 'google-drive',
+      reachable: false,
+      away: 'signed-out',
+      services: services(null, 'someone@example.com'),
+    }
+    renderWithIntl(<SaveSettings />)
+    expect(await screen.findByText(/Signed out\. New snapshots wait/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sign in again' })).toBeEnabled()
+  })
+
+  it('signs out of the service in use, leaving what is there', async () => {
+    place = { ...offered(), cloud: 'onedrive', services: services('someone@example.com', null) }
+    const user = userEvent.setup()
+    renderWithIntl(<SaveSettings />)
+    await user.click(await screen.findByRole('button', { name: 'Sign out' }))
+    expect(app).toHaveBeenCalledWith('sign_out_save_cloud', { service: 'onedrive' })
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Signed out of OneDrive. What’s there stays there.',
+    )
+    expect(screen.getByText('In use').closest('li')).toHaveTextContent('This computer only')
+  })
+
+  it('says when the service in use forgot the sign-in, and offers it again', async () => {
+    place = {
+      ...offered(),
+      cloud: 'onedrive',
+      reachable: false,
+      away: 'signed-out',
+      services: services(null, null),
+    }
+    renderWithIntl(<SaveSettings />)
+    const inUse = (await screen.findByText('In use')).closest('li')!
+    expect(inUse).toHaveTextContent('OneDrive')
+    expect(inUse).toHaveTextContent('Signed out. New snapshots wait on this computer')
+    expect(within(inUse).getByRole('button', { name: 'Sign in again' })).toBeEnabled()
+  })
+
+  it('offers no service in an app that can’t sign in to one', async () => {
+    place = { folder: null, reachable: true }
+    renderWithIntl(<SaveSettings />)
+    expect(await screen.findByText('This computer only')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Sign in to/ })).toBeNull()
   })
 })
 

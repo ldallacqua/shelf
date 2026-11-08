@@ -1884,6 +1884,13 @@ what comes next (a folder or a cloud of my own, and the same saves on every PC):
   folder that can't be reached, or a look that fails, starts the game anyway and says so in a notice whose
   action opens Saves. After a session, a Windows notification, headed by the game's title, says only what
   needs me: a choice waiting for the next Play, a backup that failed, a folder that can't be reached.
+- **Where they go, as a list** (ADR 008's phase 5): this computer only, a folder of mine, OneDrive and
+  Google Drive, a row each, the one in use marked **In use**, as Windows' settings list accounts. Each row
+  says what it is and what using it takes: Keep them on this computer only, Choose a folder, or **Sign in
+  to OneDrive**, which opens Microsoft's page in my browser while the row says Shelf is waiting, with
+  Cancel. Signed in, the row names the account and where Shelf keeps them (Apps › Shelf in OneDrive,
+  Shelf saves in Google Drive), with **Use** and **Sign out**. A service that took the sign-in back says
+  so, with Sign in again. A build not registered with a service doesn't list it.
 - **Settings' Saves page** says where snapshots go, this computer's choice: this computer alone, until I
   choose a folder (one OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB
   drive), the same on each PC. Choosing one copies this computer's snapshots there; going back leaves it
@@ -2271,7 +2278,7 @@ Not built now. The design leaves room for each.
 | Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Extracting what is downloaded | Downloads are built ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
-| Saves through a cloud sign-in | Snapshots go through a folder of mine, two copies are a choice, and they are backed up after a session and looked at before Play ([section 7.12](#712-saves)); OneDrive and Google Drive signed in are [ADR 008](adr/008-save-sync.md)'s phase 5 |
+| Saves through OneDrive and Google Drive | Built ([section 7.12](#712-saves), [ADR 008](adr/008-save-sync.md)'s phase 5); offered once Shelf is registered with each, which only the owner can do. S3-compatible storage comes after |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |

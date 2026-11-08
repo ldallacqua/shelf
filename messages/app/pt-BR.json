@@ -321,12 +321,16 @@
       "laterBody": "Jogar com o que está neste computador agora. Nada é mantido nem substituído, e o Shelf pergunta de novo na próxima vez."
     },
     "beforePlay": {
-      "unreachable": "A pasta de saves não pode ser acessada, então {title} abriu com os saves deste computador.",
+      "unreachable": "O lugar dos seus saves não pode ser acessado, então {title} abriu com os saves deste computador.",
       "damaged": "O snapshot mais recente dos saves de {title} está danificado, então o jogo abriu com os saves deste computador.",
       "large": "Os saves de {title} passam do tamanho que um snapshot pode ter, então não foram conferidos antes de ele abrir.",
       "failed": "O Shelf não conseguiu conferir os saves de {title}, então ele abriu com os saves deste computador.",
-      "busy": "Os saves de {title} ainda estão em backup ou sendo restaurados. Aperte Jogar de novo daqui a pouco."
-    }
+      "busy": "Os saves de {title} ainda estão em backup ou sendo restaurados. Aperte Jogar de novo daqui a pouco.",
+      "signedOut": "O Shelf saiu da conta onde ficam seus saves, então {title} abriu com os saves deste computador. Entre de novo nas Configurações, em Saves.",
+      "full": "O lugar dos seus saves está cheio, então {title} abriu com os saves deste computador."
+    },
+    "placeSignedOut": "Guardados no {place}, de cuja conta o Shelf saiu: os snapshots novos esperam neste computador. Entre de novo nas Configurações.",
+    "placeFull": "Guardados no {place}, que está cheio: os snapshots novos esperam neste computador."
   },
   "SaveSettings": {
     "title": "Snapshots",
@@ -358,7 +362,29 @@
       "forgotten": "Os snapshots ficam neste computador agora. O que está na pasta continua lá.",
       "refused": "Escolha uma pasta sua, não uma do Windows ou de um programa.",
       "failed": "Não foi possível usar essa pasta. Tente de novo, ou escolha outra.",
-      "old": "Atualize o Shelf para Windows para guardar os saves dos jogos."
+      "old": "Atualize o Shelf para Windows para guardar os saves dos jogos.",
+      "introServices": "Os snapshots ficam na pasta do app neste computador até você escolher outro lugar: uma pasta sua (que um app de nuvem sincroniza, um drive de rede ou um pen drive), ou seu OneDrive ou Google Drive, com login feito daqui. Escolha o mesmo em cada um dos seus computadores e cada um vê os snapshots dos outros. Os servidores do Shelf nunca os recebem, nem o seu login.",
+      "current": "Em uso",
+      "folder": "Uma pasta sua",
+      "folderHint": "Uma que o OneDrive, o Google Drive para computador ou o Dropbox sincronizam, um drive de rede ou um pen drive.",
+      "onedriveHint": "Entre pela página da Microsoft, no seu navegador. O Shelf só alcança a pasta dele lá, Aplicativos › Shelf.",
+      "googleHint": "Entre pela página do Google, no seu navegador. O Shelf só alcança o que ele mesmo criou lá.",
+      "onedriveWhere": "Em Aplicativos › Shelf, no seu OneDrive.",
+      "googleWhere": "Em Shelf saves, no seu Google Drive.",
+      "signedOut": "Fora da conta. Os snapshots novos esperam neste computador até você entrar de novo.",
+      "full": "Cheio. Os snapshots novos esperam neste computador até haver espaço.",
+      "signIn": "Entrar no {service}",
+      "signInAgain": "Entrar de novo",
+      "use": "Usar o {service}",
+      "signOut": "Sair",
+      "cancel": "Cancelar",
+      "signedIn": "Pronto. Os snapshots vão para o {service} agora, e os feitos neste computador vão em seguida.",
+      "used": "Os snapshots vão para o {service} agora.",
+      "signedOutDone": "Você saiu do {service}. O que está lá continua lá.",
+      "signInRefused": "O {service} não fez o seu login. Tente de novo.",
+      "signInUnreachable": "Não foi possível acessar o {service}. Confira a conexão e tente de novo.",
+      "waitingOnedrive": "Entre pela página da Microsoft, aberta no seu navegador. O Shelf está esperando.",
+      "waitingGoogle": "Entre pela página do Google, aberta no seu navegador. O Shelf está esperando."
     }
   }
 }

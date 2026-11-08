@@ -316,7 +316,9 @@ and made-up games, never the real manifest or a real save. A place (a folder of 
 only ever gets new files, in a folder of Shelf's own (`Shelf saves`); what can't reach it waits on the PC.
 Once on, a game's saves are backed up when its sitting ends (`watch.rs` → `commands::after_session`) and
 looked at before Play (`play`'s `check`); a choice is always the person's, and a Windows notification says
-only what needs them. Spec 7.12.
+only what needs them. A place can also be OneDrive or Google Drive, signed in on the service's own page
+(`saves/sign_in.rs`); `saves/cloud.rs` alone knows their addresses, a sign-in stays in Credential Manager
+(`vault.rs`), and tests and `pnpm desktop:check` use stand-ins, never a real account. Spec 7.12.
 
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in

@@ -21,8 +21,11 @@ changed. Phase 4 came on 8 Nov 2026: once on, a game's saves are backed up when 
 before Play, which takes another PC's newer snapshot or stops for a choice (Keep and play, Decide later);
 a Windows notification says what needs the owner after a session. It reaches the owner in the next desktop
 release, **0.14.0, published with the owner's OK on 8 Nov 2026**, after `pnpm desktop:check` passed with
-its two new steps. **Next:** phase 5 waits for Shelf to be
-registered with Microsoft and Google, which only the owner can do. **Still unchecked, by the owner:** a real
+its two new steps. Phase 5 was built the same day: Settings'
+Where they go lists OneDrive and Google Drive beside a folder, each signed in on the service's own page, and
+the snapshots go through their APIs, with no cloud app installed. **It reaches the owner only once Shelf is
+registered with Microsoft and Google, which only the owner can do** (the desktop guide, step 12), their ids
+put in `.env.local`, and a release made after. **Next:** S3-compatible storage. **Still unchecked, by the owner:** a real
 game from outside the stores, its saves backed up and restored, then carried between two PCs through one
 folder, by Play.
 

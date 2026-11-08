@@ -271,6 +271,92 @@ const debrid = createServer((request, response) => {
   }
 })
 await new Promise<void>((listening) => debrid.listen(0, '127.0.0.1', listening))
+
+/**
+ * A stand-in for OneDrive (ADR 008, phase 5), as far as Shelf uses it: Microsoft's sign-in, which sends
+ * the app straight back with a code, and Graph's app folder. The app's debug build asks for the sign-in
+ * page itself (`SHELF_CLOUD_STAND_IN`), so no browser opens and no real account is touched.
+ */
+const cloudFiles = new Map<string, Buffer>()
+const cloudUploads = new Map<string, { at: string; bytes: Buffer[] }>()
+const cloudToken = 'made-up-cloud-token'
+const cloud = createServer((request, response) => {
+  const { port } = cloud.address() as AddressInfo
+  const base = `http://127.0.0.1:${port}/onedrive`
+  const url = new URL(request.url ?? '/', `http://127.0.0.1:${port}`)
+  const path = decodeURIComponent(url.pathname).replace(/^\/onedrive/, '')
+  const body: Buffer[] = []
+  request.on('data', (chunk: Buffer) => body.push(chunk))
+  request.on('end', () => {
+    const json = (status: number, value: unknown) => {
+      response.statusCode = status
+      response.setHeader('content-type', 'application/json')
+      response.end(JSON.stringify(value))
+    }
+    if (path === '/common/oauth2/v2.0/authorize') {
+      const back = new URL(url.searchParams.get('redirect_uri') ?? '')
+      back.searchParams.set('code', 'made-up-code')
+      back.searchParams.set('state', url.searchParams.get('state') ?? '')
+      response.statusCode = 302
+      response.setHeader('location', back.toString())
+      return response.end()
+    }
+    if (path === '/common/oauth2/v2.0/token') {
+      const claims = Buffer.from(JSON.stringify({ preferred_username: 'someone@example.com' }))
+      return json(200, {
+        access_token: cloudToken,
+        refresh_token: 'made-up-refresh',
+        expires_in: 3600,
+        id_token: `h.${claims.toString('base64url')}.s`,
+      })
+    }
+    const session = path.match(/^\/session\/(.+)$/)?.[1]
+    if (session) {
+      const upload = cloudUploads.get(session)
+      if (!upload) return json(404, {})
+      upload.bytes.push(Buffer.concat(body))
+      const total = Number(request.headers['content-range']?.split('/')[1])
+      const whole = Buffer.concat(upload.bytes)
+      if (whole.length < total) return json(202, {})
+      cloudFiles.set(upload.at, whole)
+      cloudUploads.delete(session)
+      return json(201, {})
+    }
+    if (request.headers.authorization !== `Bearer ${cloudToken}`) return json(401, {})
+    const at = path.match(/^\/v1\.0\/me\/drive\/special\/approot:\/(.+?):?(\/[a-zA-Z]+)?$/)
+    if (!at) return json(404, {})
+    const [, item, action] = at
+    if (action === '/children') {
+      const inIt = [...cloudFiles].filter(([name]) => name.startsWith(`${item}/`))
+      if (inIt.length === 0) return json(404, { error: { code: 'itemNotFound' } })
+      return json(200, {
+        value: inIt.map(([name, bytes]) => ({
+          name: name.slice(item!.length + 1),
+          size: bytes.length,
+          file: {},
+        })),
+      })
+    }
+    if (action === '/createUploadSession') {
+      const id = randomBytes(8).toString('hex')
+      cloudUploads.set(id, { at: item!, bytes: [] })
+      return json(200, { uploadUrl: `${base}/session/${id}` })
+    }
+    if (action === '/content' && cloudFiles.has(item!)) {
+      response.setHeader('content-type', 'application/octet-stream')
+      return response.end(cloudFiles.get(item!))
+    }
+    if (request.method === 'DELETE') {
+      cloudFiles.delete(item!)
+      response.statusCode = 204
+      return response.end()
+    }
+    json(404, { error: { code: 'itemNotFound' } })
+  })
+})
+await new Promise<void>((listening) => cloud.listen(0, '127.0.0.1', listening))
+/** The archives in the stand-in's OneDrive. */
+const inOneDrive = () => [...cloudFiles.keys()].filter((name) => name.endsWith('.zip')).length
 const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
   env: {
     ...process.env,
@@ -283,6 +369,8 @@ const app = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
     SHELF_PICK_SAVE_PLACE: savePlace,
     SHELF_SAVE_MANIFEST: `file:${resolve('fixtures/saves/manifest.yaml')}`,
     SHELF_REAL_DEBRID: `http://127.0.0.1:${(debrid.address() as AddressInfo).port}`,
+    SHELF_CLOUD_STAND_IN: `http://127.0.0.1:${(cloud.address() as AddressInfo).port}`,
+    SHELF_ONEDRIVE_CLIENT_ID: 'made-up-client',
     SHELF_REOPEN_AFTER: '5',
     SHELF_QUIT_ON: quitFile,
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${PORT}`,
@@ -628,8 +716,36 @@ try {
   await until('a snapshot after the session', 30, async () => inPlace() === beforePlay + 2)
     .then(() => pass('backed up the saves once the game had closed'))
     .catch(() => fail(`made ${inPlace() - beforePlay - 1} snapshots after the session`))
+
+  console.log('\nSaves through OneDrive, a stand-in (ADR 008, phase 5)')
   await shelf.goto(`${BASE_URL}/en/settings/saves`)
-  await shelf.getByRole('button', { name: 'Keep them on this computer only' }).click()
+  const inFolder = inPlace()
+  await shelf.getByRole('button', { name: 'Sign in to OneDrive' }).click()
+  await shelf
+    .getByText('Signed in. Snapshots go to OneDrive now', { exact: false })
+    .waitFor({ timeout: 30_000 })
+  if ((await shelf.locator('li[aria-current]').innerText()).includes('someone@example.com'))
+    pass('signed in on the service’s page and came back, OneDrive in use, its account named')
+  else fail('signed in, and OneDrive isn’t the place in use with its account')
+  await until('this computer’s history reaching OneDrive', 30, async () => inOneDrive() >= inFolder)
+    .then(() => pass(`took this computer's ${inOneDrive()} snapshots along to OneDrive`))
+    .catch(() => fail(`${inOneDrive()} of ${inFolder} snapshots reached OneDrive`))
+  // Changed with the game closed: Play backs them up first, into OneDrive.
+  writeFileSync(join(saved, 'slot1.sav'), 'chapter five')
+  const beforeCloudPlay = inOneDrive()
+  await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
+  await button('Play').click()
+  await button('Stop').waitFor({ timeout: 30_000 })
+  if (inOneDrive() === beforeCloudPlay + 1) pass('Play backed up what changed into OneDrive')
+  else fail(`Play sent ${inOneDrive() - beforeCloudPlay} snapshots to OneDrive`)
+  await button('Stop').click()
+  await button('Play').waitFor({ timeout: 15_000 })
+  await shelf.goto(`${BASE_URL}/en/settings/saves`)
+  await shelf.locator('li[aria-current]').getByRole('button', { name: 'Sign out' }).click()
+  await shelf.getByText('Signed out of OneDrive.', { exact: false }).waitFor({ timeout: 15_000 })
+  if ((await shelf.locator('li[aria-current]').innerText()).includes('This computer only'))
+    pass('signing out leaves OneDrive as it is, and this computer alone again')
+  else fail('signed out, and this computer alone isn’t the place in use')
 
   console.log('\nReady to play')
   // Bloodborne has a file now. What else is ready comes from this computer's own Steam, read,

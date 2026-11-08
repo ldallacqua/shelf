@@ -81,6 +81,7 @@ const view = (changes: Partial<SavesView> = {}): SavesView => ({
   caps: { mostMb: 500, kept: 20 },
   place: null,
   reachable: true,
+  away: null,
   ...changes,
 })
 

@@ -3797,6 +3797,7 @@ dependencies = [
 name = "shelf-desktop"
 version = "0.14.0"
 dependencies = [
+ "base64 0.22.1",
  "keyring",
  "reqwest",
  "serde",

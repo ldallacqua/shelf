@@ -321,12 +321,16 @@
       "laterBody": "Play with what’s on this computer now. Nothing is kept or replaced, and Shelf asks again next time."
     },
     "beforePlay": {
-      "unreachable": "Your saves folder can’t be reached, so {title} started with this computer’s saves.",
+      "unreachable": "Where your saves go can’t be reached, so {title} started with this computer’s saves.",
       "damaged": "The latest snapshot of {title}’s saves is damaged, so the game started with this computer’s saves.",
       "large": "{title}’s saves are larger than a snapshot may be, so they weren’t looked at before it started.",
       "failed": "Shelf couldn’t look at {title}’s saves, so it started with this computer’s saves.",
-      "busy": "{title}’s saves are still being backed up or put back. Press Play again in a moment."
-    }
+      "busy": "{title}’s saves are still being backed up or put back. Press Play again in a moment.",
+      "signedOut": "Shelf is signed out of where your saves go, so {title} started with this computer’s saves. Sign in again in Settings, under Saves.",
+      "full": "Where your saves go is full, so {title} started with this computer’s saves."
+    },
+    "placeSignedOut": "Kept in {place}, where Shelf is signed out: new snapshots wait on this computer. Sign in again in Settings.",
+    "placeFull": "Kept in {place}, which is full: new snapshots wait on this computer."
   },
   "SaveSettings": {
     "title": "Snapshots",
@@ -358,7 +362,29 @@
       "forgotten": "Snapshots stay on this computer now. What’s in the folder stays there.",
       "refused": "Choose a folder of your own, not one of Windows’ or a program’s.",
       "failed": "That folder couldn’t be used. Try again, or choose another.",
-      "old": "Update Shelf for Windows to keep games’ saves."
+      "old": "Update Shelf for Windows to keep games’ saves.",
+      "introServices": "Snapshots stay in the app’s folder on this computer until you choose somewhere else: a folder of your own (one a cloud app syncs, a network drive or a USB drive), or your OneDrive or Google Drive, signed in from here. Choose the same on each of your computers and each sees the others’ snapshots. Shelf’s servers never receive them, nor your sign-in.",
+      "current": "In use",
+      "folder": "A folder of your own",
+      "folderHint": "One that OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB drive.",
+      "onedriveHint": "Sign in on Microsoft’s page, in your browser. Shelf can reach only its own folder there, Apps › Shelf.",
+      "googleHint": "Sign in on Google’s page, in your browser. Shelf can reach only what it made there.",
+      "onedriveWhere": "In Apps › Shelf, in your OneDrive.",
+      "googleWhere": "In Shelf saves, in your Google Drive.",
+      "signedOut": "Signed out. New snapshots wait on this computer until you sign in again.",
+      "full": "Full. New snapshots wait on this computer until there’s room.",
+      "signIn": "Sign in to {service}",
+      "signInAgain": "Sign in again",
+      "use": "Use {service}",
+      "signOut": "Sign out",
+      "cancel": "Cancel",
+      "signedIn": "Signed in. Snapshots go to {service} now, and those made on this computer follow.",
+      "used": "Snapshots go to {service} now.",
+      "signedOutDone": "Signed out of {service}. What’s there stays there.",
+      "signInRefused": "{service} didn’t sign you in. Try again.",
+      "signInUnreachable": "{service} couldn’t be reached. Check your connection and try again.",
+      "waitingOnedrive": "Sign in on Microsoft’s page, open in your browser. Shelf is waiting for it.",
+      "waitingGoogle": "Sign in on Google’s page, open in your browser. Shelf is waiting for it."
     }
   }
 }

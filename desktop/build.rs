@@ -55,6 +55,10 @@ fn main() {
             "choose_save_place",
             "forget_save_place",
             "keep_saves",
+            "sign_in_save_cloud",
+            "cancel_save_sign_in",
+            "use_save_cloud",
+            "sign_out_save_cloud",
         ]),
     ))
     .expect("tauri-build failed");

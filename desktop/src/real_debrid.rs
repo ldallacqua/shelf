@@ -76,54 +76,7 @@ fn trouble_of(status: StatusCode, body: &[u8]) -> Trouble {
     }
 }
 
-/// Where the sign-in is kept. Windows' Credential Manager, or in a development build run with a profile
-/// of its own, a file there, so `pnpm desktop:check` never touches the real one.
-pub trait Vault: Send + Sync {
-    fn load(&self) -> Option<String>;
-    fn save(&self, text: &str) -> bool;
-    fn clear(&self);
-}
-
-#[cfg(windows)]
-pub struct CredentialManager;
-
-#[cfg(windows)]
-impl CredentialManager {
-    fn entry() -> Option<keyring::Entry> {
-        keyring::Entry::new("com.ldallacqua.shelf", "real-debrid").ok()
-    }
-}
-
-#[cfg(windows)]
-impl Vault for CredentialManager {
-    fn load(&self) -> Option<String> {
-        Self::entry()?.get_password().ok()
-    }
-    fn save(&self, text: &str) -> bool {
-        Self::entry().is_some_and(|entry| entry.set_password(text).is_ok())
-    }
-    fn clear(&self) {
-        if let Some(entry) = Self::entry() {
-            let _ = entry.delete_credential();
-        }
-    }
-}
-
-#[cfg(debug_assertions)]
-pub struct FileVault(pub std::path::PathBuf);
-
-#[cfg(debug_assertions)]
-impl Vault for FileVault {
-    fn load(&self) -> Option<String> {
-        std::fs::read_to_string(&self.0).ok()
-    }
-    fn save(&self, text: &str) -> bool {
-        std::fs::write(&self.0, text).is_ok()
-    }
-    fn clear(&self) {
-        let _ = std::fs::remove_file(&self.0);
-    }
-}
+pub use crate::vault::Vault;
 
 /// What a sign-in gives, which stays on this side.
 #[derive(Clone, Serialize, Deserialize)]
@@ -668,20 +621,7 @@ pub mod double {
     use std::net::TcpListener;
     use std::sync::Arc;
 
-    pub struct Memory(pub Mutex<Option<String>>);
-
-    impl Vault for Arc<Memory> {
-        fn load(&self) -> Option<String> {
-            self.0.lock().unwrap().clone()
-        }
-        fn save(&self, text: &str) -> bool {
-            *self.0.lock().unwrap() = Some(text.to_string());
-            true
-        }
-        fn clear(&self) {
-            *self.0.lock().unwrap() = None;
-        }
-    }
+    pub use crate::vault::Memory;
 
     pub fn memory(text: Option<&str>) -> Arc<Memory> {
         Arc::new(Memory(Mutex::new(text.map(str::to_string))))

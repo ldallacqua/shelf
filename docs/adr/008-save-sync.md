@@ -1,6 +1,7 @@
 # ADR 008: Carrying a game's saves between my PCs, through storage I own
 
-- **Status:** accepted by the owner, 7 Nov 2026. Phases 2 and 3 are built, and phase 4 (8 Nov 2026) (below)
+- **Status:** accepted by the owner, 7 Nov 2026. Phases 2 and 3 are built, phase 4 and phase 5's OneDrive and
+  Google Drive (8 Nov 2026), the last waiting for Shelf's registrations (below)
 - **Date:** 7 Nov 2026
 - **Decides:** how Shelf for Windows finds a game's saves, keeps their history, and carries them between
   my computers through a place of my own, for games no store carries saves for, and what Shelf's server
@@ -217,7 +218,25 @@ place copies this PC's snapshots there, as new files; going back to this PC alon
   questions (list a game's snapshots, read one, write a new one, delete one), so sections 4 to 7 are the same
   code for all.
 - **Registering Shelf** with Microsoft and Google, free, is the owner's to do, in their accounts; phase 5
-  waits for it. Google's `drive.file` needs only basic verification, to be confirmed when it is done.
+  waits for it. Google's `drive.file` needs only basic verification, to be confirmed when it is done. The
+  registrations' ids (and Google's client secret, which Google says isn't one for an app on a computer)
+  are kept in `.env.local` and built into the app by `pnpm desktop:release`; a build without one doesn't
+  offer that service. The steps are in the desktop guide, step 12.
+- **How it was built** (phase 5, 8 Nov 2026). A service is seen as a folder of snapshots like any other:
+  it answers four questions (`saves/remote.rs`'s `Remote`: a game's files, one read, one written, one
+  deleted), and the rest is the same for every service (`Mirror`). A list or an archive read is kept by
+  name in `saves-cloud\{service}\`, as a snapshot never changes once written; what is no longer there goes
+  from here too. A snapshot for a service is made in `saves-waiting\` and sent from there at once, archive
+  first and list last, so a sending cut short never counts, and the oldest past the caps go there after.
+  Choosing a service takes this PC's history along (the app's own folder and the folder chosen, when one
+  is), waiting here and sent off the page's way. Microsoft's sign-in comes back to `http://localhost` at
+  any port, as Microsoft takes it, listened for on IPv4 and IPv6; Google's to `http://127.0.0.1`, with
+  `access_type=offline` and `prompt=consent` for a refresh token. The account a page is told is the ID
+  token's email or user name. Signing out revokes Google's token; Microsoft has no address for it, so it
+  is forgotten here. Signing out of the service in use goes back to this computer alone.
+- **What a page sees** of a service: its name, the account, whether it is in use, and why it can't be used
+  (out of reach, signed out, full), the same words a folder out of reach has. Before Play, a place
+  signed out of or full says so, as one out of reach does.
 - **A place that is full, gone or signed out** keeps the snapshot on this PC, waiting (`saves-waiting\`),
   and says so; it is sent when the place is back, the next time anything asks about the game. A waiting
   snapshot counts in section 5's table as one in the place does. Nothing here is deleted because a place
@@ -257,15 +276,16 @@ the owner, which needs the owner's OK.
    `play` looks at the saves first and answers what it found, and the tracker says which games' sittings
    ended, for a backup on a thread of its own. The app keeps each game's title and Steam apps from the page's
    last ask, for when no page asks.
-5. **Cloud sign-ins.** OneDrive and Google Drive once Shelf is registered with both, then S3-compatible.
+5. **Cloud sign-ins.** OneDrive and Google Drive (built, 8 Nov 2026, reaching the owner once Shelf is
+   registered with both), then S3-compatible.
 6. **Later.** More places, encryption with issue 150's key, registry saves, other launchers' games.
 
 ## Consequences
 
 - **New dependencies in the app:** a YAML reader (`serde_yaml_ng`, as Hydra) and SHA-256 (`sha2`). Globs are
   Shelf's own few lines (`saves/paths.rs`): the manifest uses only `*`, `?`, `**` and a class. The `zip` crate
-  it has already writes as well as reads. Phase 4 adds Tauri's notification plugin; phase 5 nothing beyond
-  `reqwest`.
+  it has already writes as well as reads. Phase 4 adds Tauri's notification plugin; phase 5 base64 (PKCE
+  and an ID token's claims) and tokio's sockets, for the address the browser comes back to.
 - **A few more commands,** each taking only ids, titles and Steam ids, listed in the desktop guide when
   built, and allowed to Shelf's origin alone (ADR 005 section 3).
 - **What is the computer's stays on the computer** (ADR 005 section 4): `saves.json`, `save-manifest.json`,
