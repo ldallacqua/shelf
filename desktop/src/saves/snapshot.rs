@@ -141,7 +141,22 @@ pub fn modified_of(meta: &fs::Metadata) -> u64 {
         .map_or(0, |since| since.as_millis() as u64)
 }
 
-/// A snapshot's name, which no other can have: when, on which computer, holding what.
+/// What a snapshot is, apart from when and where: what it holds and what it came from. Going back to an
+/// older snapshot writes one holding the same saves with other parents, perhaps in the same second, and
+/// it must not take the older one's name (ADR 008, section 5).
+pub fn identity(content: &str, parents: &[String]) -> String {
+    let mut hash = Sha256::new();
+    hash.update(content.as_bytes());
+    let mut parents: Vec<&str> = parents.iter().map(String::as_str).collect();
+    parents.sort_unstable();
+    for parent in parents {
+        hash.update(b"\n");
+        hash.update(parent.as_bytes());
+    }
+    hex(&hash.finalize())
+}
+
+/// A snapshot's name, which no other can have: when, on which computer, and what it is (`identity`).
 /// `20261107T193000Z-1a2b3c4d-0f1e2d3c4b5a`.
 pub fn name(created_at: u64, device: Option<&str>, content: &str) -> String {
     let device: String = device
@@ -221,7 +236,11 @@ impl From<io::Error> for Unmade {
 /// whole, then the list, which is what makes it exist. A name that is there is never written again.
 pub fn write(folder: &Path, here: &Here, making: Making) -> Result<List, Unmade> {
     fs::create_dir_all(folder)?;
-    let id = name(making.created_at, making.device, &here.content);
+    let id = name(
+        making.created_at,
+        making.device,
+        &identity(&here.content, &making.parents),
+    );
     let list_file = folder.join(format!("{id}.json"));
     if list_file.exists()
         && let Some(list) = read_list(&list_file)
@@ -538,6 +557,30 @@ pub(crate) mod tests {
             "20261107T193000Z-1a2b3c4d-0f1e2d3c4b5a"
         );
         assert!(crate::ids::entry(&name(0, None, &"f".repeat(64))));
+    }
+
+    #[test]
+    fn the_same_saves_with_other_parents_in_the_same_second_are_another_snapshot() {
+        // `pnpm desktop:check` restored the first snapshot in the second it was made: the snapshot that
+        // makes it the latest took its name, was never written, and the page said a newer one waited.
+        let root = folder("snapshot-same-second");
+        let here = here_of(&root.join("live"), &[("<base>/a.sav", "chapter one")]);
+        let place = root.join("place");
+        let making = |parents: Vec<String>| Making {
+            entry: "entry",
+            title: "A Game",
+            device: Some("dev1"),
+            parents,
+            created_at: 5_000,
+        };
+        let first = write(&place, &here, making(vec![])).unwrap();
+        let settled = write(&place, &here, making(vec!["later".into()])).unwrap();
+        assert_ne!(settled.id, first.id);
+        assert_eq!(settled.parents, ["later"]);
+        assert_eq!(whole(&place).len(), 2);
+        // The very same snapshot, written twice, is still one.
+        assert_eq!(write(&place, &here, making(vec![])).unwrap().id, first.id);
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
