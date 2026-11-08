@@ -20,6 +20,15 @@ import { rustEnv } from './lib/rust-env.ts'
 
 const REPOSITORY = 'ldallacqua/shelf'
 const KEYS = ['TAURI_SIGNING_PRIVATE_KEY', 'TAURI_SIGNING_PRIVATE_KEY_PASSWORD'] as const
+/**
+ * Shelf's registrations with OneDrive and Google Drive (ADR 008, phase 5), built into the app: a build
+ * without one doesn't offer that service. Each is the owner's to make (docs/desktop.md, step 12).
+ */
+const REGISTRATIONS = [
+  'SHELF_ONEDRIVE_CLIENT_ID',
+  'SHELF_GOOGLE_CLIENT_ID',
+  'SHELF_GOOGLE_CLIENT_SECRET',
+] as const
 
 const stop = (problem: string): never => {
   console.error(problem)
@@ -55,11 +64,21 @@ if (spawnSync('gh', ['release', 'view', tag, '--repo', REPOSITORY]).status === 0
 // The signing key, from .env.local, into the build's environment only; never printed.
 const local = existsSync('.env.local') ? readFileSync('.env.local', 'utf8') : ''
 const env: NodeJS.ProcessEnv = { ...rustEnv() }
-for (const name of KEYS) {
+for (const name of [...KEYS, ...REGISTRATIONS]) {
   const value = local.match(new RegExp(`^${name}=(.*)$`, 'm'))?.[1]?.trim()
-  if (value !== undefined) env[name] = value
+  if (value) env[name] = value
 }
 if (!env.TAURI_SIGNING_PRIVATE_KEY) stop('No TAURI_SIGNING_PRIVATE_KEY in .env.local.')
+// Which services this build offers, by name only: a value is never printed.
+const offered = [
+  env.SHELF_ONEDRIVE_CLIENT_ID ? 'OneDrive' : undefined,
+  env.SHELF_GOOGLE_CLIENT_ID && env.SHELF_GOOGLE_CLIENT_SECRET ? 'Google Drive' : undefined,
+].filter((name) => name !== undefined)
+console.log(
+  offered.length > 0
+    ? `Saves through ${offered.join(' and ')}: registered.`
+    : 'Saves through OneDrive or Google Drive: not registered, so not offered.',
+)
 
 console.log(`Building ${productName} ${version}, signed…`)
 const built = spawnSync(

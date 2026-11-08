@@ -1336,20 +1336,24 @@ pub async fn choose_game_folder(
     .await
 }
 
-/// Opens the folder of a snapshot in Explorer, its archive selected, for a save to be taken out by hand.
+/// Opens the folder of a snapshot in Explorer, its archive selected, for a save to be taken out by hand. A
+/// service's is read onto this computer first.
 #[tauri::command]
-pub fn show_save_snapshot(
+pub async fn show_save_snapshot(
     app: AppHandle,
     entry: String,
     snapshot: String,
-    saves: State<'_, Saves>,
 ) -> Result<(), SaveRefusal> {
     if !ids::entry(&entry) || !ids::entry(&snapshot) {
         return Err(SaveRefusal::Invalid);
     }
-    let archive = saves
-        .archive(&entry, &snapshot)
-        .ok_or(SaveRefusal::Missing)?;
+    let finding = app.clone();
+    let archive = tauri::async_runtime::spawn_blocking(move || {
+        finding.state::<Saves>().archive(&entry, &snapshot)
+    })
+    .await
+    .map_err(|_| SaveRefusal::Failed)?
+    .ok_or(SaveRefusal::Missing)?;
     app.opener()
         .reveal_item_in_dir(&archive)
         .map_err(|_| SaveRefusal::Failed)
@@ -1393,10 +1397,106 @@ async fn pick_place(window: &WebviewWindow, title: String) -> Result<Option<Path
     Ok(picked.and_then(|folder| folder.into_path().ok()))
 }
 
-/// Back to this computer alone. What is in the folder stays there.
+/// Back to this computer alone. What is in the folder or the service stays there.
 #[tauri::command]
 pub fn forget_save_place(saves: State<'_, Saves>) -> Result<saves::PlaceView, SaveRefusal> {
     saves.forget_place()
+}
+
+/// Sends what waits on this computer to a service just chosen, on a thread of its own.
+fn send_all_waiting(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || app.state::<Saves>().send_all_waiting());
+}
+
+/// Signs in to a service on its own page, in the default browser (ADR 008, phase 5), and makes it this
+/// PC's place once that is done: what waits here goes to it. Answers when the browser comes back, Cancel
+/// is pressed, or the time runs out. Shelf comes forward again after.
+#[tauri::command]
+pub async fn sign_in_save_cloud(
+    app: AppHandle,
+    service: String,
+) -> Result<saves::PlaceView, saves::sign_in::Ended> {
+    use saves::sign_in::Ended;
+    let service = saves::cloud::Service::of(&service).ok_or(Ended::Unavailable)?;
+    let cloud = app
+        .state::<Saves>()
+        .cloud(service)
+        .ok_or(Ended::Unavailable)?;
+    let opener = app.clone();
+    let signed = cloud
+        .sign_in(move |address| open_sign_in(&opener, address))
+        .await;
+    crate::show_shelf(&app);
+    signed?;
+    let choosing = app.clone();
+    let place = tauri::async_runtime::spawn_blocking(move || {
+        choosing.state::<Saves>().choose_cloud(service)
+    })
+    .await
+    .map_err(|_| Ended::Refused)?
+    .map_err(|_| Ended::Refused)?;
+    send_all_waiting(&app);
+    Ok(place)
+}
+
+/// The service's page, in the default browser. A development build pointed at `pnpm desktop:check`'s
+/// stand-in asks for the page itself instead, which answers by sending it straight back with a code, so no
+/// browser opens.
+fn open_sign_in(app: &AppHandle, address: &str) -> bool {
+    #[cfg(debug_assertions)]
+    if std::env::var("SHELF_CLOUD_STAND_IN").is_ok() {
+        let address = address.to_string();
+        tauri::async_runtime::spawn(async move {
+            let _ = reqwest::get(address).await;
+        });
+        return true;
+    }
+    app.opener().open_url(address, None::<&str>).is_ok()
+}
+
+/// Stops waiting for the browser to come back from a service's page.
+#[tauri::command]
+pub fn cancel_save_sign_in(service: String, saves: State<'_, Saves>) {
+    if let Some(cloud) =
+        saves::cloud::Service::of(&service).and_then(|service| saves.cloud(service))
+    {
+        cloud.cancel_sign_in();
+    }
+}
+
+/// Makes a service already signed in to this PC's place again.
+#[tauri::command]
+pub async fn use_save_cloud(
+    app: AppHandle,
+    service: String,
+) -> Result<saves::PlaceView, SaveRefusal> {
+    let service = saves::cloud::Service::of(&service).ok_or(SaveRefusal::Invalid)?;
+    let choosing = app.clone();
+    let place = tauri::async_runtime::spawn_blocking(move || {
+        choosing.state::<Saves>().choose_cloud(service)
+    })
+    .await
+    .map_err(|_| SaveRefusal::Failed)??;
+    send_all_waiting(&app);
+    Ok(place)
+}
+
+/// Signs out of a service: ended there where it can be, forgotten here. When it was this PC's place, this
+/// computer alone is again; what is in the service stays there.
+#[tauri::command]
+pub async fn sign_out_save_cloud(
+    app: AppHandle,
+    service: String,
+) -> Result<saves::PlaceView, SaveRefusal> {
+    let service = saves::cloud::Service::of(&service).ok_or(SaveRefusal::Invalid)?;
+    let saves = app.state::<Saves>();
+    let cloud = saves.cloud(service).ok_or(SaveRefusal::Invalid)?;
+    cloud.sign_out().await;
+    if saves.place_view().cloud == Some(service) {
+        return saves.forget_place();
+    }
+    Ok(saves.place_view())
 }
 
 /// Settles a choice between copies: this PC's (`keep` none) or one of the latest snapshots. Never while

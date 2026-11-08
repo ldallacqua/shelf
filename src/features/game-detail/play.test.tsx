@@ -73,6 +73,7 @@ const differing: SavesView = {
   caps: { mostMb: 500, kept: 20 },
   place: 'D:\\Synced\\Shelf saves',
   reachable: true,
+  away: null,
 }
 const invoke = vi.fn(async (command: string, args: Record<string, unknown> = {}) => {
   const entry = args.entry as string
@@ -240,13 +241,13 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
   it('says when the game started with this computer’s saves, and how to reach them', async () => {
     computer.launchers.set('entry-1', GRIM_DAWN)
     computer.saves = true
-    computer.played = { started: true, saves: { did: 'unreachable' } }
+    computer.played = { started: true, saves: { did: 'unreachable', why: 'unreachable' } }
     play()
     await userEvent.click(await screen.findByRole('button', { name: 'Play' }))
     await waitFor(() =>
       expect(notices.notify).toHaveBeenCalledWith({
         message:
-          'Your saves folder can’t be reached, so Grim Dawn started with this computer’s saves.',
+          'Where your saves go can’t be reached, so Grim Dawn started with this computer’s saves.',
         actions: [expect.objectContaining({ label: 'Saves' })],
       }),
     )

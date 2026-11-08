@@ -2,22 +2,27 @@
 //! entry id, in the app's folder; snapshots go to this PC's place, which until one is chosen is the
 //! app's own `saves\` folder. Shelf's server never sees any of it.
 
+pub mod cloud;
 pub mod manifest;
 pub mod notice;
 pub mod paths;
+pub mod remote;
 pub mod restore;
+pub mod sign_in;
 pub mod snapshot;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
+use cloud::{Cloud, Service};
 use manifest::{Entry, Lookup};
 use paths::{Folders, GameAt, Pattern};
+use remote::{Away, Mirror, Remote};
 use restore::Target;
 use snapshot::{Here, Item, Known, List, Making, Unmade, Verdict};
 
@@ -157,6 +162,9 @@ struct Kept {
     /// The folder chosen as this PC's place, when one is (ADR 008, section 8).
     #[serde(default)]
     place: Option<PathBuf>,
+    /// The service chosen as this PC's place instead, when one is (phase 5).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    cloud: Option<Service>,
 }
 
 /// One of a game's locations on this computer.
@@ -342,9 +350,11 @@ pub struct View {
     pub last: Option<Last>,
     pub busy: bool,
     pub caps: Caps,
-    /// This PC's place: None is this computer alone.
+    /// This PC's place: a folder, or a service by its name; None is this computer alone.
     pub place: Option<String>,
     pub reachable: bool,
+    /// Why the place couldn't be used, when it couldn't.
+    pub away: Option<Away>,
 }
 
 /// What the look at a game's saves before Play did (ADR 008, section 7), as Play's page says it.
@@ -357,8 +367,8 @@ pub enum Checked {
     BackedUp,
     /// Another PC played since: its snapshot is put back, what was here backed up first.
     Restored,
-    /// The place can't be reached: the game starts with what is here.
-    Unreachable,
+    /// The place can't be reached, or is signed out of: the game starts with what is here.
+    Unreachable { why: Away },
     /// Two copies differ: Play waits for the person to choose.
     Choose,
     /// The look went wrong: the game starts with what is here, and the page says why.
@@ -373,15 +383,44 @@ pub enum Needs {
     Choice,
     /// Made on this PC, the place out of reach.
     Waiting,
+    /// Made on this PC: the service the place is no longer takes the sign-in.
+    SignedOut,
+    /// Made on this PC: the place has no room left.
+    Full,
     Failed(Refusal),
 }
 
 /// This PC's place, as Settings shows it.
 #[derive(Debug, Serialize)]
 pub struct PlaceView {
-    /// The folder Shelf keeps there; None is this computer alone.
+    /// The folder Shelf keeps there, when a folder is the place.
     pub folder: Option<String>,
+    /// The service, when one is the place (phase 5).
+    pub cloud: Option<Service>,
     pub reachable: bool,
+    pub away: Option<Away>,
+    /// The services this build can sign in to, and who is signed in to each.
+    pub services: Vec<ServiceView>,
+}
+
+/// A service as Settings offers it.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceView {
+    pub service: Service,
+    /// The account signed in, by its email or the name it signs in with.
+    pub account: Option<String>,
+    /// Waiting for the browser to come back from the service's page.
+    pub signing_in: bool,
+}
+
+/// Where this PC's snapshots go now.
+enum Where {
+    /// The app's own `saves\` folder.
+    Here,
+    /// `Shelf saves` in the folder chosen, and the folder chosen.
+    Folder(PathBuf, PathBuf),
+    Cloud(Service),
 }
 
 #[derive(Debug, Serialize)]
@@ -416,6 +455,12 @@ pub struct Saves {
     pub manifest: manifest::Manifest,
     pub folders: Folders,
     device: Option<String>,
+    /// The services signed in to through Settings, for their sign-ins (phase 5).
+    pub clouds: Vec<Arc<Cloud>>,
+    /// How each service is reached: its `Cloud`, or in a test, a stand-in.
+    remotes: Vec<(Service, Arc<dyn Remote>)>,
+    /// What the place last said, when it was a service that couldn't be used.
+    away: Mutex<Option<Away>>,
 }
 
 impl Saves {
@@ -437,6 +482,43 @@ impl Saves {
             manifest: manifest::Manifest::open(folder),
             folders,
             device,
+            clouds: Vec::new(),
+            remotes: Vec::new(),
+            away: Mutex::new(None),
+        }
+    }
+
+    /// A service Settings can sign in to and choose.
+    pub fn add_cloud(&mut self, cloud: Arc<Cloud>) {
+        self.remotes.push((cloud.service, cloud.clone()));
+        self.clouds.push(cloud);
+    }
+
+    /// A stand-in for a service, signed in, for tests.
+    #[cfg(test)]
+    pub fn add_remote(&mut self, service: Service, remote: Arc<dyn Remote>) {
+        self.remotes.push((service, remote));
+    }
+
+    fn remote(&self, service: Service) -> Option<Arc<dyn Remote>> {
+        self.remotes
+            .iter()
+            .find(|(each, _)| *each == service)
+            .map(|(_, remote)| remote.clone())
+    }
+
+    pub fn cloud(&self, service: Service) -> Option<Arc<Cloud>> {
+        self.clouds
+            .iter()
+            .find(|cloud| cloud.service == service)
+            .cloned()
+    }
+
+    /// Whether a service can be used now: signed in, or a test's stand-in.
+    fn signed_in(&self, service: Service) -> bool {
+        match self.cloud(service) {
+            Some(cloud) => cloud.account().is_some(),
+            None => self.remote(service).is_some(),
         }
     }
 
@@ -448,6 +530,7 @@ impl Saves {
             caps: kept.caps,
             games: kept.games.clone(),
             place: kept.place.clone(),
+            cloud: kept.cloud,
         })
         .map_err(io::Error::other)?;
         fs::write(&next, text)?;
@@ -481,31 +564,63 @@ impl Saves {
         Ok(kept.caps)
     }
 
-    /// This PC's place (ADR 008, section 8): a folder named `Shelf saves` in the one chosen, unless that
-    /// is the one chosen. None until one is.
+    /// This PC's place (ADR 008, section 8): a folder named `Shelf saves` in the folder chosen, unless that
+    /// is the one chosen. None until a folder is.
     pub fn place_root(&self) -> Option<PathBuf> {
         let chosen = self.kept.lock().unwrap().place.clone()?;
-        let named = chosen
-            .file_name()
-            .is_some_and(|name| name.to_string_lossy().eq_ignore_ascii_case(PLACE_NAME));
-        Some(if named {
-            chosen
-        } else {
-            chosen.join(PLACE_NAME)
-        })
+        Some(root_in(&chosen))
     }
 
-    /// Whether the place can be reached now: the folder chosen is there. This computer always can.
-    pub fn reachable(&self) -> bool {
-        self.kept
-            .lock()
-            .unwrap()
-            .place
-            .as_ref()
-            .is_none_or(|chosen| chosen.is_dir())
+    fn place_now(&self) -> Where {
+        let kept = self.kept.lock().unwrap();
+        match (&kept.cloud, &kept.place) {
+            (Some(service), _) => Where::Cloud(*service),
+            (None, Some(chosen)) => Where::Folder(root_in(chosen), chosen.clone()),
+            (None, None) => Where::Here,
+        }
     }
 
-    /// Where this PC's snapshots of a game go: the place, or until one is chosen, the app's own folder.
+    /// Whether a place other than this computer is chosen: what can't reach it waits here.
+    fn chosen(&self) -> bool {
+        !matches!(self.place_now(), Where::Here)
+    }
+
+    /// Why the place can't be used now, as far as is known without asking it: a folder that isn't there, a
+    /// service signed out of, or what the service last said.
+    fn away_now(&self) -> Option<Away> {
+        match self.place_now() {
+            Where::Here => None,
+            Where::Folder(_, chosen) => (!chosen.is_dir()).then_some(Away::Unreachable),
+            Where::Cloud(service) if !self.signed_in(service) => Some(Away::SignedOut),
+            Where::Cloud(_) => *self.away.lock().unwrap(),
+        }
+    }
+
+    /// Notes what a service said, for the next look.
+    fn noted<T>(&self, said: Result<T, Away>) -> Result<T, Away> {
+        *self.away.lock().unwrap() = said.as_ref().err().copied();
+        said
+    }
+
+    fn mirror<'a>(&self, service: Service, remote: &'a dyn Remote) -> Mirror<'a> {
+        Mirror {
+            remote,
+            cache: self.folder.join("saves-cloud").join(service.key()),
+        }
+    }
+
+    /// Where this PC's snapshots of a game are written straight into: this computer's folder, or the folder
+    /// chosen while it can be reached. A service is sent to from what waits here.
+    fn direct(&self, entry: &str) -> Option<PathBuf> {
+        match self.place_now() {
+            Where::Here => Some(self.local(entry)),
+            Where::Folder(root, chosen) => chosen.is_dir().then(|| root.join(entry)),
+            Where::Cloud(_) => None,
+        }
+    }
+
+    /// Where this PC's snapshots of a game go, when that is a folder: the place, or until one is chosen, the
+    /// app's own folder.
     pub fn place(&self, entry: &str) -> PathBuf {
         match self.place_root() {
             Some(root) => root.join(entry),
@@ -517,17 +632,36 @@ impl Saves {
         self.folder.join("saves").join(entry)
     }
 
-    /// Snapshots made while the place couldn't be reached, waiting on this computer to go there.
+    /// Snapshots made while the place couldn't be reached, or on their way to a service, waiting on this
+    /// computer.
     fn waiting(&self, entry: &str) -> PathBuf {
         self.folder.join("saves-waiting").join(entry)
     }
 
-    /// Every snapshot of a game that counts: the place's, and those waiting here for it. Newest first.
-    pub fn lists(&self, entry: &str) -> Vec<List> {
-        let mut lists = if self.reachable() {
-            snapshot::whole(&self.place(entry))
-        } else {
-            Vec::new()
+    /// The place's snapshots of a game, or why it can't be read.
+    fn place_lists(&self, entry: &str) -> Result<Vec<List>, Away> {
+        match self.place_now() {
+            Where::Here => Ok(snapshot::whole(&self.local(entry))),
+            Where::Folder(root, chosen) if chosen.is_dir() => {
+                Ok(snapshot::whole(&root.join(entry)))
+            }
+            Where::Folder(..) => Err(Away::Unreachable),
+            Where::Cloud(service) => {
+                if !self.signed_in(service) {
+                    return Err(Away::SignedOut);
+                }
+                let remote = self.remote(service).ok_or(Away::SignedOut)?;
+                self.noted(self.mirror(service, remote.as_ref()).lists(entry))
+            }
+        }
+    }
+
+    /// Every snapshot of a game that counts: the place's, and those waiting here for it, newest first; and
+    /// why the place couldn't be read, when it couldn't.
+    fn lists_and_away(&self, entry: &str) -> (Vec<List>, Option<Away>) {
+        let (mut lists, away) = match self.place_lists(entry) {
+            Ok(lists) => (lists, None),
+            Err(away) => (Vec::new(), Some(away)),
         };
         for waiting in snapshot::whole(&self.waiting(entry)) {
             if !lists.iter().any(|list| list.id == waiting.id) {
@@ -535,40 +669,155 @@ impl Saves {
             }
         }
         lists.sort_by(|a, b| b.created_at.cmp(&a.created_at).then(b.id.cmp(&a.id)));
-        lists
+        (lists, away)
     }
 
-    /// Where a snapshot's files are: the place, or waiting here.
-    fn folder_of(&self, entry: &str, id: &str) -> Option<PathBuf> {
-        [self.place(entry), self.waiting(entry)]
-            .into_iter()
-            .find(|folder| {
-                folder.join(format!("{id}.json")).is_file()
-                    && folder.join(format!("{id}.zip")).is_file()
-            })
+    /// Every snapshot of a game that counts: the place's, and those waiting here for it. Newest first.
+    pub fn lists(&self, entry: &str) -> Vec<List> {
+        self.lists_and_away(entry).0
     }
 
-    /// Copies what waited here into the place, now it can be reached, and lets go of it here.
+    /// Where a snapshot's files are on this computer: waiting here, or in the place, read from a service
+    /// first when it is one.
+    fn folder_of(&self, entry: &str, list: &List) -> Option<PathBuf> {
+        let both = |folder: &Path| {
+            folder.join(format!("{}.json", list.id)).is_file()
+                && folder.join(format!("{}.zip", list.id)).is_file()
+        };
+        let waiting = self.waiting(entry);
+        if both(&waiting) {
+            return Some(waiting);
+        }
+        match self.place_now() {
+            Where::Cloud(service) => {
+                let remote = self.remote(service)?;
+                self.noted(self.mirror(service, remote.as_ref()).fetch(entry, list))
+                    .ok()
+            }
+            _ => Some(self.place(entry)).filter(|folder| both(folder)),
+        }
+    }
+
+    /// Sends what waited here to the place, now it can be reached, and lets go of it here. To a service,
+    /// the oldest past the caps go there afterwards, as they do in a folder when a snapshot is written.
     pub fn send_waiting(&self, entry: &str) {
-        if self.place_root().is_none() || !self.reachable() {
+        let waiting = self.waiting(entry);
+        let sending = snapshot::whole(&waiting);
+        if sending.is_empty() {
             return;
         }
-        let waiting = self.waiting(entry);
-        let place = self.place(entry);
-        for list in snapshot::whole(&waiting) {
-            if snapshot::copy(&waiting, &place, &list).is_ok() {
-                let _ = fs::remove_file(waiting.join(format!("{}.json", list.id)));
-                let _ = fs::remove_file(waiting.join(format!("{}.zip", list.id)));
+        let let_go = |list: &List| {
+            let _ = fs::remove_file(waiting.join(format!("{}.json", list.id)));
+            let _ = fs::remove_file(waiting.join(format!("{}.zip", list.id)));
+        };
+        match self.place_now() {
+            Where::Here => {}
+            Where::Folder(root, chosen) => {
+                if !chosen.is_dir() {
+                    return;
+                }
+                for list in &sending {
+                    if snapshot::copy(&waiting, &root.join(entry), list).is_ok() {
+                        let_go(list);
+                    }
+                }
+            }
+            Where::Cloud(service) => {
+                let Some(remote) = self.remote(service) else {
+                    return;
+                };
+                if !self.signed_in(service) {
+                    return;
+                }
+                let mirror = self.mirror(service, remote.as_ref());
+                let title = self.game(entry).title;
+                // Oldest first, so a list's parent is there before it.
+                let mut sent = Vec::new();
+                for list in sending.iter().rev() {
+                    if self
+                        .noted(mirror.send(entry, &title, &waiting, list))
+                        .is_err()
+                    {
+                        break;
+                    }
+                    let_go(list);
+                    sent.push(list.id.as_str());
+                }
+                if !sent.is_empty()
+                    && let Ok(there) = self.noted(mirror.lists(entry))
+                {
+                    let kept = self.caps().kept as usize;
+                    let past: Vec<&str> = snapshot::past_the_caps(&there, kept, &sent)
+                        .iter()
+                        .map(|list| list.id.as_str())
+                        .collect();
+                    let _ = self.noted(mirror.remove(entry, &past));
+                }
+            }
+        }
+    }
+
+    /// Sends what waits here for every game, as after a service is chosen: on a thread of its own.
+    pub fn send_all_waiting(&self) {
+        let Ok(games) = fs::read_dir(self.folder.join("saves-waiting")) else {
+            return;
+        };
+        for game in games.filter_map(Result::ok) {
+            let entry = game.file_name().to_string_lossy().into_owned();
+            if crate::ids::entry(&entry) {
+                self.send_waiting(&entry);
             }
         }
     }
 
     /// This PC's place, as Settings shows it.
     pub fn place_view(&self) -> PlaceView {
+        let (folder, cloud) = match self.place_now() {
+            Where::Here => (None, None),
+            Where::Folder(root, _) => (Some(root.display().to_string()), None),
+            Where::Cloud(service) => (None, Some(service)),
+        };
+        let away = self.away_now();
         PlaceView {
-            folder: self.place_root().map(|root| root.display().to_string()),
-            reachable: self.reachable(),
+            folder,
+            cloud,
+            reachable: away.is_none(),
+            away,
+            services: self
+                .clouds
+                .iter()
+                .filter(|cloud| cloud.available())
+                .map(|cloud| ServiceView {
+                    service: cloud.service,
+                    account: cloud.account(),
+                    signing_in: cloud.signing_in(),
+                })
+                .collect(),
         }
+    }
+
+    /// The folders holding this PC's history now: the app's own, and the folder chosen, when it can be
+    /// reached. What a new place takes along.
+    fn history(&self) -> Vec<(String, PathBuf)> {
+        let mut folders = vec![self.folder.join("saves")];
+        if let Where::Folder(root, chosen) = self.place_now()
+            && chosen.is_dir()
+        {
+            folders.push(root);
+        }
+        let mut games = Vec::new();
+        for folder in folders {
+            let Ok(each) = fs::read_dir(&folder) else {
+                continue;
+            };
+            for game in each.filter_map(Result::ok) {
+                let entry = game.file_name().to_string_lossy().into_owned();
+                if crate::ids::entry(&entry) {
+                    games.push((entry, game.path()));
+                }
+            }
+        }
+        games
     }
 
     /// Chooses a folder as this PC's place. This computer's history goes with it, as new files only, so
@@ -583,33 +832,53 @@ impl Saves {
         if refused || !chosen.is_dir() {
             return Err(Refusal::Wide);
         }
+        let history = self.history();
         {
             let mut kept = self.kept.lock().unwrap();
             kept.place = Some(chosen.to_path_buf());
+            kept.cloud = None;
             self.save(&kept).map_err(|_| Refusal::Failed)?;
         }
         let root = self.place_root().ok_or(Refusal::Failed)?;
         fs::create_dir_all(&root).map_err(|_| Refusal::Unreachable)?;
-        if let Ok(games) = fs::read_dir(self.folder.join("saves")) {
-            for game in games.filter_map(Result::ok) {
-                let entry = game.file_name().to_string_lossy().into_owned();
-                if !crate::ids::entry(&entry) {
-                    continue;
-                }
-                for list in snapshot::whole(&game.path()) {
-                    let _ = snapshot::copy(&game.path(), &root.join(&entry), &list);
-                }
+        for (entry, from) in history {
+            for list in snapshot::whole(&from) {
+                let _ = snapshot::copy(&from, &root.join(&entry), &list);
             }
         }
         Ok(self.place_view())
     }
 
-    /// Back to this computer alone. What is in the folder stays there.
+    /// Chooses a service signed in to as this PC's place (phase 5). This computer's history goes with it:
+    /// it waits here, and is sent as each game is next looked at, or by `send_all_waiting`.
+    pub fn choose_cloud(&self, service: Service) -> Result<PlaceView, Refusal> {
+        if !self.signed_in(service) {
+            return Err(Refusal::Unset);
+        }
+        let history = self.history();
+        {
+            let mut kept = self.kept.lock().unwrap();
+            kept.cloud = Some(service);
+            kept.place = None;
+            self.save(&kept).map_err(|_| Refusal::Failed)?;
+        }
+        *self.away.lock().unwrap() = None;
+        for (entry, from) in history {
+            for list in snapshot::whole(&from) {
+                let _ = snapshot::copy(&from, &self.waiting(&entry), &list);
+            }
+        }
+        Ok(self.place_view())
+    }
+
+    /// Back to this computer alone. What is in the folder or the service stays there.
     pub fn forget_place(&self) -> Result<PlaceView, Refusal> {
         let mut kept = self.kept.lock().unwrap();
         kept.place = None;
+        kept.cloud = None;
         self.save(&kept).map_err(|_| Refusal::Failed)?;
         drop(kept);
+        *self.away.lock().unwrap() = None;
         Ok(self.place_view())
     }
 
@@ -781,7 +1050,7 @@ impl Saves {
                 locations.iter().map(|each| each.bytes).sum(),
             ),
         };
-        let lists = self.lists(entry);
+        let (lists, away) = self.lists_and_away(entry);
         let heads: Vec<String> = snapshot::heads(&lists)
             .iter()
             .map(|head| head.id.clone())
@@ -841,8 +1110,13 @@ impl Saves {
             last: kept.last,
             busy: self.is_busy(entry),
             caps: self.caps(),
-            place: self.place_root().map(|root| root.display().to_string()),
-            reachable: self.reachable(),
+            place: match self.place_now() {
+                Where::Here => None,
+                Where::Folder(root, _) => Some(root.display().to_string()),
+                Where::Cloud(service) => Some(service.name().to_string()),
+            },
+            reachable: away.is_none(),
+            away,
         }
     }
 
@@ -1008,22 +1282,29 @@ impl Saves {
             Unmade::Changed => Refusal::Changed,
             Unmade::Io => Refusal::Failed,
         };
-        let place = self.place(entry);
-        let written = if self.reachable() {
-            self.write_game_file(&place, entry, &title);
-            snapshot::write(&place, &here, making())
-        } else {
-            Err(Unmade::Io)
+        let direct = self.direct(entry);
+        let written = match &direct {
+            Some(place) => {
+                self.write_game_file(place, entry, &title);
+                snapshot::write(place, &here, making())
+            }
+            None => Err(Unmade::Io),
         };
         let list = match written {
             Ok(list) => {
-                let kept = self.caps().kept as usize;
-                snapshot::prune(&place, &snapshot::whole(&place), kept, &[&list.id]);
+                if let Some(place) = &direct {
+                    let kept = self.caps().kept as usize;
+                    snapshot::prune(place, &snapshot::whole(place), kept, &[&list.id]);
+                }
                 list
             }
-            // A place gone, full or refusing: it waits on this computer, and nothing is lost.
-            Err(Unmade::Io) if self.place_root().is_some() => {
-                snapshot::write(&self.waiting(entry), &here, making()).map_err(refused)?
+            // A service, or a place gone, full or refusing: it waits on this computer, and nothing is
+            // lost. To a service it is sent at once, when it can be.
+            Err(Unmade::Io) if self.chosen() => {
+                let list =
+                    snapshot::write(&self.waiting(entry), &here, making()).map_err(refused)?;
+                self.send_waiting(entry);
+                list
             }
             Err(unmade) => return Err(refused(unmade)),
         };
@@ -1081,7 +1362,7 @@ impl Saves {
             .find(|list| list.id == id)
             .ok_or(Refusal::Missing)?;
         let archive = self
-            .folder_of(entry, id)
+            .folder_of(entry, &list)
             .ok_or(Refusal::Missing)?
             .join(format!("{id}.zip"));
         let usable: Vec<&Location> = setup
@@ -1214,16 +1495,33 @@ impl Saves {
 
     /// A snapshot's archive, for Explorer to show.
     pub fn archive(&self, entry: &str, id: &str) -> Option<PathBuf> {
-        Some(self.folder_of(entry, id)?.join(format!("{id}.zip")))
+        let list = self.lists(entry).into_iter().find(|list| list.id == id)?;
+        Some(self.folder_of(entry, &list)?.join(format!("{id}.zip")))
     }
 
     /// The look before Play (ADR 008, section 7): section 5's table, done. The caller has checked the game
     /// isn't running, and holds it (`begin`).
     pub fn before_play(&self, entry: &str, setup: &Setup, now: u64) -> Checked {
-        if !self.reachable() {
-            return Checked::Unreachable;
+        // Known without asking: a folder that isn't there, or a service not signed in to. A service that
+        // was out of reach or full is asked again.
+        match self.place_now() {
+            Where::Folder(_, chosen) if !chosen.is_dir() => {
+                return Checked::Unreachable {
+                    why: Away::Unreachable,
+                };
+            }
+            Where::Cloud(service) if !self.signed_in(service) => {
+                return Checked::Unreachable {
+                    why: Away::SignedOut,
+                };
+            }
+            _ => {}
         }
         self.send_waiting(entry);
+        let (lists, away) = self.lists_and_away(entry);
+        if let Some(why) = away {
+            return Checked::Unreachable { why };
+        }
         let here = match self.here(setup) {
             Ok(here) => here,
             Err(why) => return Checked::Failed { why },
@@ -1232,7 +1530,7 @@ impl Saves {
         let verdict = snapshot::decide(
             (!here.is_empty()).then_some(here.content.as_str()),
             kept.known.as_ref(),
-            &self.lists(entry),
+            &lists,
         );
         match verdict {
             Verdict::Nothing | Verdict::InStep(_) => Checked::InStep,
@@ -1263,7 +1561,11 @@ impl Saves {
                     .last
                     .is_some_and(|last| last.did == Did::Waiting) =>
             {
-                Some(Needs::Waiting)
+                Some(match self.away_now() {
+                    Some(Away::SignedOut) => Needs::SignedOut,
+                    Some(Away::Full) => Needs::Full,
+                    _ => Needs::Waiting,
+                })
             }
             Ok(Some(_)) if snapshot::heads(&self.lists(entry)).len() > 1 => Some(Needs::Choice),
             Ok(Some(_)) => None,
@@ -1294,6 +1596,18 @@ impl Saves {
             Some(id) if heads.iter().any(|head| head == id) => self.restore(entry, id, setup, now),
             Some(_) => Err(Refusal::Invalid),
         }
+    }
+}
+
+/// The folder Shelf keeps in a folder chosen: `Shelf saves` in it, unless that is the one chosen.
+fn root_in(chosen: &Path) -> PathBuf {
+    let named = chosen
+        .file_name()
+        .is_some_and(|name| name.to_string_lossy().eq_ignore_ascii_case(PLACE_NAME));
+    if named {
+        chosen.to_path_buf()
+    } else {
+        chosen.join(PLACE_NAME)
     }
 }
 
@@ -1385,6 +1699,7 @@ mod tests {
         assert_eq!(
             keys,
             [
+                "away",
                 "base",
                 "busy",
                 "bytes",
@@ -1595,7 +1910,7 @@ mod tests {
         let drive = folder("saves-away-drive");
         pc.saves.choose_place(&drive).unwrap();
         fs::remove_dir_all(&drive).unwrap();
-        assert!(!pc.saves.reachable());
+        assert!(!pc.saves.place_view().reachable);
         put(&slot(&pc), "made while away");
         let made = pc
             .saves
@@ -1936,7 +2251,12 @@ mod tests {
         put(&slot(&pc), "before");
         after(&pc, 1000);
         fs::remove_dir_all(&drive).unwrap();
-        assert_eq!(before(&pc, 2000), Checked::Unreachable);
+        assert_eq!(
+            before(&pc, 2000),
+            Checked::Unreachable {
+                why: Away::Unreachable
+            }
+        );
         assert_eq!(fs::read_to_string(slot(&pc)).unwrap(), "before");
         put(&slot(&pc), "while away");
         assert_eq!(after(&pc, 3000), Some(Needs::Waiting));
@@ -1990,5 +2310,133 @@ mod tests {
             serde_json::to_value(Checked::InStep).unwrap(),
             serde_json::json!({ "did": "in-step" })
         );
+    }
+
+    // --- Through a service (phase 5) -----------------------------------------------------------------
+
+    use remote::double::InMemory;
+
+    /// Two made-up PCs, each its own folders, signed in to one made-up service.
+    fn two_on_a_service(name: &str) -> (Pc, Pc, Arc<InMemory>) {
+        let service = Arc::new(InMemory::default());
+        let mut one = Pc::new(&format!("{name}-one"), "one", &["<winAppData>/A Game"]);
+        let mut two = Pc::new(&format!("{name}-two"), "two", &["<winAppData>/A Game"]);
+        one.saves.add_remote(Service::OneDrive, service.clone());
+        two.saves.add_remote(Service::OneDrive, service.clone());
+        one.saves.choose_cloud(Service::OneDrive).unwrap();
+        two.saves.choose_cloud(Service::OneDrive).unwrap();
+        (one, two, service)
+    }
+
+    #[test]
+    fn through_a_service_play_takes_another_pc_s_progress_and_nothing_waits_here() {
+        let (one, two, service) = two_on_a_service("saves-cloud");
+        put(&slot(&one), "chapter one");
+        assert_eq!(after(&one, 1000), None);
+        assert_eq!(one.saves.game("entry-1").last.unwrap().did, Did::BackedUp);
+        assert!(snapshot::whole(&one.saves.waiting("entry-1")).is_empty());
+        assert_eq!(service.names("entry-1").len(), 3);
+        assert_eq!(before(&two, 2000), Checked::Restored);
+        assert_eq!(fs::read_to_string(slot(&two)).unwrap(), "chapter one");
+        put(&slot(&two), "chapter two");
+        assert_eq!(after(&two, 3000), None);
+        assert_eq!(before(&one, 4000), Checked::Restored);
+        assert_eq!(fs::read_to_string(slot(&one)).unwrap(), "chapter two");
+        let view = one.saves.view("entry-1", &one.setup(), true);
+        assert_eq!(view.place.as_deref(), Some("OneDrive"));
+        assert!(view.reachable);
+        assert_eq!(view.state, State::InStep);
+    }
+
+    #[test]
+    fn a_service_out_of_reach_keeps_the_snapshot_here_and_sends_it_once_it_answers() {
+        let (one, two, service) = two_on_a_service("saves-cloud-away");
+        put(&slot(&one), "before");
+        after(&one, 1000);
+        *service.away.lock().unwrap() = Some(Away::Unreachable);
+        assert_eq!(
+            before(&one, 2000),
+            Checked::Unreachable {
+                why: Away::Unreachable
+            }
+        );
+        put(&slot(&one), "while away");
+        assert_eq!(after(&one, 3000), Some(Needs::Waiting));
+        assert_eq!(snapshot::whole(&one.saves.waiting("entry-1")).len(), 1);
+        let view = one.saves.view("entry-1", &one.setup(), true);
+        assert_eq!(view.away, Some(Away::Unreachable));
+        // Only what waits here is seen while it is away, as with a folder that isn't there.
+        assert_eq!(view.snapshots.len(), 1);
+        // Back: the next look sends it, and the other PC takes it.
+        *service.away.lock().unwrap() = None;
+        assert_eq!(before(&one, 4000), Checked::InStep);
+        assert!(snapshot::whole(&one.saves.waiting("entry-1")).is_empty());
+        assert_eq!(before(&two, 5000), Checked::Restored);
+        assert_eq!(fs::read_to_string(slot(&two)).unwrap(), "while away");
+    }
+
+    #[test]
+    fn a_service_that_no_longer_takes_the_sign_in_says_so_and_loses_nothing() {
+        let (one, _two, service) = two_on_a_service("saves-cloud-out");
+        *service.away.lock().unwrap() = Some(Away::SignedOut);
+        put(&slot(&one), "made signed out");
+        assert_eq!(after(&one, 1000), Some(Needs::SignedOut));
+        assert_eq!(one.saves.place_view().away, Some(Away::SignedOut));
+        assert_eq!(
+            before(&one, 2000),
+            Checked::Unreachable {
+                why: Away::SignedOut
+            }
+        );
+        *service.away.lock().unwrap() = Some(Away::Full);
+        put(&slot(&one), "made when full");
+        assert_eq!(after(&one, 3000), Some(Needs::Full));
+        assert_eq!(snapshot::whole(&one.saves.waiting("entry-1")).len(), 2);
+        // Room again: the next Play asks, and sends what waited.
+        *service.away.lock().unwrap() = None;
+        assert_eq!(before(&one, 4000), Checked::InStep);
+        assert!(snapshot::whole(&one.saves.waiting("entry-1")).is_empty());
+    }
+
+    #[test]
+    fn choosing_a_service_takes_this_pc_s_history_along_and_the_caps_hold_there() {
+        let service = Arc::new(InMemory::default());
+        let mut pc = Pc::new("saves-cloud-history", "dev1", &["<winAppData>/A Game"]);
+        pc.saves.add_remote(Service::GoogleDrive, service.clone());
+        for (at, text) in [(1000, "one"), (2000, "two"), (3000, "three")] {
+            put(&slot(&pc), text);
+            after(&pc, at);
+        }
+        assert_eq!(pc.saves.lists("entry-1").len(), 3);
+        assert!(service.names("entry-1").is_empty());
+        pc.saves.choose_cloud(Service::GoogleDrive).unwrap();
+        // Waiting here until sent, and counted meanwhile.
+        assert_eq!(pc.saves.lists("entry-1").len(), 3);
+        pc.saves.send_all_waiting();
+        assert_eq!(service.names("entry-1").len(), 7);
+        pc.saves
+            .set_caps(Caps {
+                most_mb: 500,
+                kept: 3,
+            })
+            .unwrap();
+        put(&slot(&pc), "four");
+        after(&pc, 4000);
+        let there = pc.saves.lists("entry-1");
+        assert_eq!(there.len(), 3);
+        assert!(there.iter().all(|list| list.created_at >= 2000));
+        // Back to this computer alone: what is there stays there.
+        pc.saves.forget_place().unwrap();
+        assert_eq!(service.names("entry-1").len(), 7);
+    }
+
+    #[test]
+    fn a_service_not_signed_in_can_t_be_chosen() {
+        let pc = Pc::new("saves-cloud-unset", "dev1", &["<winAppData>/A Game"]);
+        assert_eq!(
+            pc.saves.choose_cloud(Service::OneDrive).map(|_| ()),
+            Err(Refusal::Unset)
+        );
+        assert!(pc.saves.place_view().cloud.is_none());
     }
 }

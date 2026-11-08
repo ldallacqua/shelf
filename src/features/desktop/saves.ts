@@ -33,6 +33,27 @@ export const saveRefusalOf = (error: unknown): SaveRefusal =>
 
 const capsSchema = z.object({ mostMb: z.number(), kept: z.number() })
 
+/** The services a computer's snapshots can go to, signed in from Settings (ADR 008, phase 5). */
+export const saveServices = ['onedrive', 'google-drive'] as const
+const serviceSchema = z.enum(saveServices)
+export type SaveService = z.infer<typeof serviceSchema>
+
+/** Their names, as people know them, in every language. */
+export const serviceNames: Record<SaveService, string> = {
+  onedrive: 'OneDrive',
+  'google-drive': 'Google Drive',
+}
+
+/** Why the place couldn't be used: out of reach, signed out of, or full. */
+const awaySchema = z.enum(['unreachable', 'signed-out', 'full'])
+export type SaveAway = z.infer<typeof awaySchema>
+
+/** Why a sign-in ended without one (`desktop/src/saves/sign_in.rs`). */
+export const signInEnds = ['unavailable', 'cancelled', 'refused', 'unreachable'] as const
+export type SignInEnd = (typeof signInEnds)[number]
+export const signInEndOf = (error: unknown): SignInEnd =>
+  signInEnds.find((end) => end === error) ?? 'refused'
+
 /** How large a snapshot may be, and how many of a game's are kept: the same for every game. */
 export type Caps = z.infer<typeof capsSchema>
 
@@ -90,13 +111,31 @@ const viewSchema = z.object({
     .nullable(),
   busy: z.boolean(),
   caps: capsSchema,
-  /** This computer's place, the folder Shelf keeps there; null is this computer alone. */
+  /** This computer's place: the folder Shelf keeps there, or a service's name; null is this computer alone. */
   place: z.string().nullable(),
-  /** Whether that folder can be reached now. */
+  /** Whether it can be reached now. */
   reachable: z.boolean(),
+  /** Why not, when it can't; none from an app older than 0.15.0. */
+  away: awaySchema.nullable().catch(null),
 })
 
-const placeSchema = z.object({ folder: z.string().nullable(), reachable: z.boolean() })
+const placeSchema = z.object({
+  folder: z.string().nullable(),
+  reachable: z.boolean(),
+  /** The service that is the place, when one is; none from an app older than 0.15.0. */
+  cloud: serviceSchema.nullable().catch(null),
+  away: awaySchema.nullable().catch(null),
+  /** The services this build can sign in to, and who is signed in to each. */
+  services: z
+    .array(
+      z.object({
+        service: serviceSchema,
+        account: z.string().nullable(),
+        signingIn: z.boolean(),
+      }),
+    )
+    .catch([]),
+})
 
 /** Where this computer's snapshots go (ADR 008, section 8). */
 export type SavePlace = z.infer<typeof placeSchema>
@@ -147,5 +186,20 @@ export const saves = {
   choosePlace: async (ask: string): Promise<SavePlace | null> =>
     placeSchema.nullable().parse(await call('choose_save_place', { ask })),
   forgetPlace: async (): Promise<SavePlace> => placeSchema.parse(await call('forget_save_place')),
+  /**
+   * Signs in on the service's own page, in the default browser, and makes it this computer's place.
+   * Answers once the browser comes back; refused with a `SignInEnd` otherwise.
+   */
+  signIn: async (service: SaveService): Promise<SavePlace> =>
+    placeSchema.parse(await call('sign_in_save_cloud', { service })),
+  cancelSignIn: async (service: SaveService): Promise<void> => {
+    await call('cancel_save_sign_in', { service })
+  },
+  /** A service already signed in to, as the place again. */
+  useCloud: async (service: SaveService): Promise<SavePlace> =>
+    placeSchema.parse(await call('use_save_cloud', { service })),
+  /** Signed out there and here; this computer alone again when it was the place. */
+  signOut: async (service: SaveService): Promise<SavePlace> =>
+    placeSchema.parse(await call('sign_out_save_cloud', { service })),
   setCaps: async (caps: Caps): Promise<Caps> => capsSchema.parse(await call('set_save_caps', caps)),
 }

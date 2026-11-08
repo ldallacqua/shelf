@@ -1,8 +1,8 @@
 'use client'
 
-import { FolderIcon, MonitorIcon } from 'lucide-react'
+import { CheckIcon, CloudIcon, FolderIcon, MonitorIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 
 import { SECTIONS, SettingsSection, titleClass } from '@/features/settings/settings-section'
 import { Button } from '@/ui/button'
@@ -11,7 +11,14 @@ import { Ghost, GhostText } from '@/ui/ghost'
 import { NumberField } from '@/ui/number-field'
 
 import { AppWords } from './app-words'
-import { type Caps, type SavePlace, saves } from './saves'
+import {
+  type Caps,
+  type SavePlace,
+  type SaveService,
+  saves,
+  serviceNames,
+  signInEndOf,
+} from './saves'
 
 /** The bounds the app keeps the caps within (`Caps` in `desktop/src/saves/mod.rs`). */
 export const FEWEST_KEPT = 3
@@ -100,64 +107,183 @@ export function SaveCapsView({
 /** What the app said of this computer's place, or that it is too old to keep saves (before 0.13.0). */
 export type PlaceState = SavePlace | 'old' | undefined
 
+type Said = { tone: 'done' | 'trouble'; text: string }
+
+/** One place snapshots can go: what it is, where, and what can be done with it. */
+function PlaceRow({
+  icon: Icon,
+  name,
+  detail,
+  current,
+  children,
+}: {
+  icon: typeof MonitorIcon
+  name: string
+  detail: ReactNode
+  current: boolean
+  children?: ReactNode
+}) {
+  const t = useTranslations('SaveSettings.place')
+  return (
+    <li
+      aria-current={current || undefined}
+      className={cn(
+        'flex items-start gap-3 rounded-control border px-4 py-3',
+        current ? 'border-line-strong' : 'border-line',
+      )}
+    >
+      <Icon aria-hidden="true" className="mt-0.5 size-4 flex-none text-muted" />
+      <div className="grid min-w-0 flex-1 gap-1">
+        <p className="flex flex-wrap items-center gap-x-2 text-sm font-medium">
+          <span className="break-all">{name}</span>
+          {current ? (
+            <span className="flex items-center gap-1 text-xs font-medium text-accent">
+              <CheckIcon aria-hidden="true" className="size-3.5" />
+              {t('current')}
+            </span>
+          ) : null}
+        </p>
+        <div className="text-xs text-pretty text-muted">{detail}</div>
+        {children ? <div className="mt-1 flex flex-wrap gap-2">{children}</div> : null}
+      </div>
+    </li>
+  )
+}
+
 /**
- * Where this computer's snapshots go (ADR 008, section 8): the app's own folder, until a folder of mine is
- * chosen, one a cloud client syncs, a network drive or a USB drive, and the same on each of my computers.
+ * Where this computer's snapshots go (ADR 008, sections 8 and phase 5): the app's own folder, a folder of
+ * mine (one a cloud client syncs, a network drive or a USB drive), or OneDrive or Google Drive signed in
+ * from here, the same on each of my computers. A list of the places, as accounts are listed in Windows'
+ * settings, the one in use marked, each with what it takes to use it: a picker, or a sign-in on the
+ * service's own page.
  */
 export function SavePlaceView({
   place,
   busy = false,
+  signingIn,
   said,
   onChoose,
   onForget,
+  onSignIn,
+  onUseCloud,
+  onSignOut,
+  onCancelSignIn,
 }: {
   place: PlaceState
   busy?: boolean
-  said?: { tone: 'done' | 'trouble'; text: string } | undefined
+  /** The service whose page is open in the browser, waited on. */
+  signingIn?: SaveService | undefined
+  said?: Said | undefined
   onChoose: () => void
   onForget: () => void
+  onSignIn: (service: SaveService) => void
+  onUseCloud: (service: SaveService) => void
+  onSignOut: (service: SaveService) => void
+  onCancelSignIn: (service: SaveService) => void
 }) {
   const t = useTranslations('SaveSettings.place')
+  const ready = typeof place === 'object'
+  const services = ready ? place.services : []
+  const here = ready && place.folder === null && place.cloud === null
+  const away = (why: SavePlace['away']) =>
+    why === 'signed-out' ? t('signedOut') : why === 'full' ? t('full') : t('away')
   return (
     <SettingsSection title={t('title')} scope="device">
-      <p className="max-w-xl text-pretty text-muted">{t('intro')}</p>
+      <p className="max-w-xl text-pretty text-muted">
+        {services.length > 0 ? t('introServices') : t('intro')}
+      </p>
       {place === undefined ? (
-        <div aria-hidden="true" className="grid max-w-xl gap-3">
-          <Ghost className="h-14 rounded-control" />
-          <Ghost className="h-8 w-40 rounded-control" />
+        <div aria-hidden="true" className="grid max-w-xl gap-2">
+          {[0, 1, 2].map((row) => (
+            <Ghost key={row} order={row} className="h-16 rounded-control" />
+          ))}
         </div>
       ) : place === 'old' ? (
         <p className="max-w-xl text-pretty">{t('old')}</p>
       ) : (
-        <>
-          <div className="flex max-w-xl items-start gap-3 rounded-control border border-line px-4 py-3">
-            {place.folder === null ? (
-              <MonitorIcon aria-hidden="true" className="mt-0.5 size-4 flex-none text-muted" />
-            ) : (
-              <FolderIcon aria-hidden="true" className="mt-0.5 size-4 flex-none text-muted" />
-            )}
-            <span className="grid min-w-0 gap-0.5">
-              <span className="text-sm font-medium break-all">{place.folder ?? t('here')}</span>
-              <span className="text-xs text-pretty text-muted">
-                {place.folder === null
-                  ? t('hereHint')
-                  : place.reachable
-                    ? t('thereHint')
-                    : t('away')}
-              </span>
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" disabled={busy} onClick={onChoose}>
-              {place.folder === null ? t('choose') : t('change')}
-            </Button>
-            {place.folder === null ? null : (
-              <Button variant="ghost" size="sm" disabled={busy} onClick={onForget}>
+        <ul className="grid max-w-xl gap-2">
+          <PlaceRow icon={MonitorIcon} name={t('here')} detail={t('hereHint')} current={here}>
+            {here ? null : (
+              <Button variant="secondary" size="sm" disabled={busy} onClick={onForget}>
                 {t('forget')}
               </Button>
             )}
-          </div>
-        </>
+          </PlaceRow>
+          <PlaceRow
+            icon={FolderIcon}
+            name={place.folder ?? t('folder')}
+            detail={
+              place.folder === null
+                ? t('folderHint')
+                : place.reachable
+                  ? t('thereHint')
+                  : away(place.away)
+            }
+            current={place.folder !== null}
+          >
+            <Button variant="secondary" size="sm" disabled={busy} onClick={onChoose}>
+              {place.folder === null ? t('choose') : t('change')}
+            </Button>
+          </PlaceRow>
+          {services.map(({ service, account }) => {
+            const name = serviceNames[service]
+            const current = place.cloud === service
+            const waiting = signingIn === service
+            const detail = waiting
+              ? t(service === 'onedrive' ? 'waitingOnedrive' : 'waitingGoogle')
+              : current && !place.reachable
+                ? // In use, and the sign-in taken back, or the service out of reach or full.
+                  [account, away(place.away)].filter(Boolean).join(' · ')
+                : account === null
+                  ? t(service === 'onedrive' ? 'onedriveHint' : 'googleHint')
+                  : `${account} · ${t(service === 'onedrive' ? 'onedriveWhere' : 'googleWhere')}`
+            return (
+              <PlaceRow
+                key={service}
+                icon={CloudIcon}
+                name={name}
+                detail={<span aria-live="polite">{detail}</span>}
+                current={current}
+              >
+                {waiting ? (
+                  <Button variant="secondary" size="sm" onClick={() => onCancelSignIn(service)}>
+                    {t('cancel')}
+                  </Button>
+                ) : account === null || (current && place.away === 'signed-out') ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => onSignIn(service)}
+                  >
+                    {current ? t('signInAgain', { service: name }) : t('signIn', { service: name })}
+                  </Button>
+                ) : (
+                  <>
+                    {current ? null : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => onUseCloud(service)}
+                      >
+                        {t('use', { service: name })}
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => onSignOut(service)}
+                    >
+                      {t('signOut', { service: name })}
+                    </Button>
+                  </>
+                )}
+              </PlaceRow>
+            )
+          })}
+        </ul>
       )}
       {said ? (
         <p
@@ -179,7 +305,8 @@ function SavePlaceSection() {
   const t = useTranslations('SaveSettings.place')
   const [place, setPlace] = useState<PlaceState>()
   const [busy, setBusy] = useState(false)
-  const [said, setSaid] = useState<{ tone: 'done' | 'trouble'; text: string }>()
+  const [signingIn, setSigningIn] = useState<SaveService>()
+  const [said, setSaid] = useState<Said>()
 
   useEffect(() => {
     let current = true
@@ -199,7 +326,11 @@ function SavePlaceSection() {
     }
   }, [])
 
-  const run = async (work: () => Promise<SavePlace | null>, done: string) => {
+  const run = async (
+    work: () => Promise<SavePlace | null>,
+    done: string,
+    trouble: (error: unknown) => string | undefined,
+  ) => {
     setBusy(true)
     setSaid(undefined)
     try {
@@ -210,18 +341,64 @@ function SavePlaceSection() {
         setSaid({ tone: 'done', text: done })
       }
     } catch (error) {
-      setSaid({ tone: 'trouble', text: error === 'wide' ? t('refused') : t('failed') })
+      const text = trouble(error)
+      if (text) setSaid({ tone: 'trouble', text })
     }
     setBusy(false)
+  }
+
+  const folderTrouble = (error: unknown) => (error === 'wide' ? t('refused') : t('failed'))
+
+  const signIn = async (service: SaveService) => {
+    const name = serviceNames[service]
+    setSigningIn(service)
+    await run(
+      () => saves.signIn(service),
+      t('signedIn', { service: name }),
+      (error) => {
+        const end = signInEndOf(error)
+        // Cancelled, here or on the service's page: nothing to say.
+        if (end === 'cancelled') return undefined
+        return end === 'unreachable'
+          ? t('signInUnreachable', { service: name })
+          : t('signInRefused', { service: name })
+      },
+    )
+    setSigningIn(undefined)
   }
 
   return (
     <SavePlaceView
       place={place}
       busy={busy}
+      signingIn={signingIn}
       said={said}
-      onChoose={() => void run(() => saves.choosePlace(t('pickerTitle')), t('chosen'))}
-      onForget={() => void run(() => saves.forgetPlace(), t('forgotten'))}
+      onChoose={() =>
+        void run(() => saves.choosePlace(t('pickerTitle')), t('chosen'), folderTrouble)
+      }
+      onForget={() =>
+        void run(
+          () => saves.forgetPlace(),
+          t('forgotten'),
+          () => t('failed'),
+        )
+      }
+      onSignIn={(service) => void signIn(service)}
+      onUseCloud={(service) =>
+        void run(
+          () => saves.useCloud(service),
+          t('used', { service: serviceNames[service] }),
+          () => t('signInRefused', { service: serviceNames[service] }),
+        )
+      }
+      onSignOut={(service) =>
+        void run(
+          () => saves.signOut(service),
+          t('signedOutDone', { service: serviceNames[service] }),
+          () => t('failed'),
+        )
+      }
+      onCancelSignIn={(service) => void saves.cancelSignIn(service)}
     />
   )
 }

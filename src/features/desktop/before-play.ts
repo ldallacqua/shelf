@@ -23,7 +23,11 @@ export function beforePlayNotice(locale: Locale, title: string, said: BeforePlay
     said === 'busy'
       ? 'busy'
       : said.did === 'unreachable'
-        ? 'unreachable'
+        ? said.why === 'signed-out'
+          ? 'signedOut'
+          : said.why === 'full'
+            ? 'full'
+            : 'unreachable'
         : said.why === 'damaged' || said.why === 'large'
           ? said.why
           : 'failed'

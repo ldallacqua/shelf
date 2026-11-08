@@ -83,6 +83,7 @@ const view = (over: Partial<SavesView> = {}): SavesView => ({
   caps: { mostMb: 500, kept: 20 },
   place: 'D:\\OneDrive\\Shelf saves',
   reachable: true,
+  away: null,
   ...over,
 })
 

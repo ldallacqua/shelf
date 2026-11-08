@@ -17,10 +17,22 @@ pub fn words(portuguese: bool, needs: Needs) -> &'static str {
             "Os saves diferem entre este computador e outro. O Shelf pergunta qual manter na próxima vez que você apertar Jogar."
         }
         (false, Needs::Waiting) => {
-            "Its saves were backed up on this computer only: the saves folder can’t be reached. They go there once it can."
+            "Its saves were backed up on this computer only: where your saves go can’t be reached. They go there once it can."
         }
         (true, Needs::Waiting) => {
-            "O backup dos saves ficou só neste computador: a pasta de saves não pode ser acessada. Ele vai para lá quando ela puder."
+            "O backup dos saves ficou só neste computador: o lugar dos seus saves não pode ser acessado. Ele vai para lá quando puder."
+        }
+        (false, Needs::SignedOut) => {
+            "Its saves were backed up on this computer only: Shelf is signed out of where your saves go. Sign in again in Shelf’s Settings, under Saves."
+        }
+        (true, Needs::SignedOut) => {
+            "O backup dos saves ficou só neste computador: o Shelf saiu da conta onde ficam seus saves. Entre de novo nas Configurações do Shelf, em Saves."
+        }
+        (false, Needs::Full) => {
+            "Its saves were backed up on this computer only: where your saves go is full. They go there once it has room."
+        }
+        (true, Needs::Full) => {
+            "O backup dos saves ficou só neste computador: o lugar dos seus saves está cheio. Ele vai para lá quando houver espaço."
         }
         (false, Needs::Failed(Refusal::Large)) => {
             "Its saves weren’t backed up: they’re larger than a snapshot may be. Raise the limit in Shelf’s Settings, under Saves."
@@ -65,6 +77,8 @@ mod tests {
         for needs in [
             Needs::Choice,
             Needs::Waiting,
+            Needs::SignedOut,
+            Needs::Full,
             Needs::Failed(Refusal::Large),
             Needs::Failed(Refusal::Changed),
         ] {

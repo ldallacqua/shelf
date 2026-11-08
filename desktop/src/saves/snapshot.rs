@@ -335,7 +335,7 @@ pub fn copy(from: &Path, to: &Path, list: &List) -> io::Result<()> {
     Ok(())
 }
 
-fn read_list(path: &Path) -> Option<List> {
+pub fn read_list(path: &Path) -> Option<List> {
     let list: List = serde_json::from_slice(&fs::read(path).ok()?).ok()?;
     let named = path.file_stem().and_then(|stem| stem.to_str()) == Some(list.id.as_str());
     (list.format <= FORMAT && named).then_some(list)
@@ -473,13 +473,8 @@ pub fn decide(here: Option<&str>, known: Option<&Known>, lists: &[List]) -> Verd
 /// Takes the oldest snapshots past `kept` away: never a head, nor one named in `keep` (what this PC
 /// knows, what a choice waits on). How many went.
 pub fn prune(folder: &Path, lists: &[List], kept: usize, keep: &[&str]) -> usize {
-    let head_ids: HashSet<&str> = heads(lists).iter().map(|head| head.id.as_str()).collect();
-    // `whole` gives them newest first.
     let mut gone = 0;
-    for list in lists.iter().skip(kept) {
-        if head_ids.contains(list.id.as_str()) || keep.contains(&list.id.as_str()) {
-            continue;
-        }
+    for list in past_the_caps(lists, kept, keep) {
         // The list first: without it the archive no longer counts, whatever happens next.
         if fs::remove_file(folder.join(format!("{}.json", list.id))).is_ok() {
             let _ = fs::remove_file(folder.join(format!("{}.zip", list.id)));
@@ -487,6 +482,17 @@ pub fn prune(folder: &Path, lists: &[List], kept: usize, keep: &[&str]) -> usize
         }
     }
     gone
+}
+
+/// The snapshots past the count kept, oldest last as `lists` has them (newest first), never a head nor
+/// one named in `keep`: what pruning takes away, wherever they are.
+pub fn past_the_caps<'a>(lists: &'a [List], kept: usize, keep: &[&str]) -> Vec<&'a List> {
+    let head_ids: HashSet<&str> = heads(lists).iter().map(|head| head.id.as_str()).collect();
+    lists
+        .iter()
+        .skip(kept)
+        .filter(|list| !head_ids.contains(list.id.as_str()) && !keep.contains(&list.id.as_str()))
+        .collect()
 }
 
 #[cfg(test)]

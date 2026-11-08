@@ -376,7 +376,11 @@ function Ready({
             ? t('placeHere')
             : view.reachable
               ? t('placeThere', { place: view.place })
-              : t('placeAway', { place: view.place })}{' '}
+              : view.away === 'signed-out'
+                ? t('placeSignedOut', { place: view.place })
+                : view.away === 'full'
+                  ? t('placeFull', { place: view.place })
+                  : t('placeAway', { place: view.place })}{' '}
           {t.rich('caps', {
             kept: view.caps.kept,
             size: sizeOf(format, view.caps.mostMb * 1024 * 1024),
