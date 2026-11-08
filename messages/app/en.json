@@ -314,7 +314,18 @@
       "backedUp": "Backed up {when} · {files, plural, one {# file} other {# files}} · {size}",
       "keep": "Keep this one",
       "keeping": "Keeping…",
-      "kept": "Kept. Every computer sharing the folder will see it as the latest."
+      "kept": "Kept. Every computer sharing the folder will see it as the latest.",
+      "playTitle": "Choose which saves to play with",
+      "keepAndPlay": "Keep and play",
+      "later": "Decide later",
+      "laterBody": "Play with what’s on this computer now. Nothing is kept or replaced, and Shelf asks again next time."
+    },
+    "beforePlay": {
+      "unreachable": "Your saves folder can’t be reached, so {title} started with this computer’s saves.",
+      "damaged": "The latest snapshot of {title}’s saves is damaged, so the game started with this computer’s saves.",
+      "large": "{title}’s saves are larger than a snapshot may be, so they weren’t looked at before it started.",
+      "failed": "Shelf couldn’t look at {title}’s saves, so it started with this computer’s saves.",
+      "busy": "{title}’s saves are still being backed up or put back. Press Play again in a moment."
     }
   },
   "SaveSettings": {

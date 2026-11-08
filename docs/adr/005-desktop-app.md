@@ -95,7 +95,7 @@ a command line. What the app may do is the list below, nothing more:
 | `choose_launcher` | Opens Windows' own file picker for an entry, titled with words the page gives, and keeps the file chosen |
 | `forget_launcher` | Forgets an entry's file |
 | `show_launcher` | Opens the folder of an entry's file in Explorer, the file selected |
-| `play` | Starts an entry from the file chosen for it |
+| `play` | Starts an entry from the file chosen for it, its saves looked at first when they are kept (ADR 008) |
 | `steam_installed` | Of the Steam app ids a page names, the ones Steam has installed on this computer |
 | `playable` | What is ready to play on this computer: the entries whose chosen file is still there, and every Steam app installed. It takes nothing |
 | `game_state` | Whether a game is running (section 11), for an entry and its Steam apps installed here |

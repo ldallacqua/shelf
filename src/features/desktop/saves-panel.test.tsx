@@ -316,6 +316,63 @@ describe('a game’s saves', () => {
     expect(app).toHaveBeenCalledWith('keep_saves', { ...named, keep: null })
   })
 
+  it('opened by Play, play the copy kept, or what is here when deciding later', async () => {
+    answer = view({
+      state: 'choose',
+      heads: ['20261106T120000Z-deviceot-aaaaaaaaaaaa'],
+      snapshots: view().snapshots.map((snapshot) => ({ ...snapshot, here: false })),
+    })
+    const onPlay = vi.fn()
+    const user = userEvent.setup()
+    renderWithIntl(
+      <SavesPanel
+        {...GAME}
+        open
+        onOpenChange={() => undefined}
+        anchor={{ current: null }}
+        onPlay={onPlay}
+      />,
+    )
+    const panel = await screen.findByRole('dialog', { name: 'Saves for Made-up Game' })
+    const choice = await within(panel).findByRole('region', {
+      name: 'Choose which saves to play with',
+    })
+    const later = within(choice).getByRole('button', { name: 'Decide later' })
+    expect(later).toHaveAccessibleDescription(/Nothing is kept or replaced/)
+    await user.click(later)
+    expect(onPlay).toHaveBeenLastCalledWith(false)
+    expect(app).not.toHaveBeenCalledWith('keep_saves', expect.anything())
+    const cards = within(choice).getAllByRole('listitem')
+    await user.click(within(cards[1]!).getByRole('button', { name: 'Keep and play' }))
+    expect(app).toHaveBeenCalledWith('keep_saves', {
+      ...named,
+      keep: '20261106T120000Z-deviceot-aaaaaaaaaaaa',
+    })
+    await vi.waitFor(() => expect(onPlay).toHaveBeenLastCalledWith(true))
+  })
+
+  it('opened by Play, play nothing when keeping a copy is refused', async () => {
+    answer = view({ state: 'choose', heads: ['20261106T120000Z-deviceot-aaaaaaaaaaaa'] })
+    const onPlay = vi.fn()
+    renderWithIntl(
+      <SavesPanel
+        {...GAME}
+        open
+        onOpenChange={() => undefined}
+        anchor={{ current: null }}
+        onPlay={onPlay}
+      />,
+    )
+    const panel = await screen.findByRole('dialog', { name: 'Saves for Made-up Game' })
+    const choice = await within(panel).findByRole('region', {
+      name: 'Choose which saves to play with',
+    })
+    refusal = 'running'
+    await userEvent.click(within(choice).getAllByRole('button', { name: 'Keep and play' })[0]!)
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('Close Made-up Game first')
+    expect(onPlay).not.toHaveBeenCalled()
+  })
+
   it('say when the folder can’t be reached and the snapshot waits here', async () => {
     answer = view({ place: 'E:\\Shelf saves', reachable: false })
     const { user, panel } = await opened()

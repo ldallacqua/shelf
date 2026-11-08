@@ -37,7 +37,7 @@ export const framelessWindow = (): boolean =>
   inDesktopApp() && document.documentElement.getAttribute('data-window') === 'frameless'
 
 /** Why the app did nothing, in its own words (`desktop/src/commands.rs`). */
-export const refusals = ['invalid', 'unset', 'missing', 'refused', 'failed'] as const
+export const refusals = ['invalid', 'unset', 'missing', 'refused', 'busy', 'failed'] as const
 export type Refusal = (typeof refusals)[number]
 
 /** A command's refusal as a word; anything else it throws is `failed`. */

@@ -1,6 +1,6 @@
 # ADR 008: Carrying a game's saves between my PCs, through storage I own
 
-- **Status:** accepted by the owner, 7 Nov 2026. Phases 2 and 3 are built (below)
+- **Status:** accepted by the owner, 7 Nov 2026. Phases 2 and 3 are built, and phase 4 (8 Nov 2026) (below)
 - **Date:** 7 Nov 2026
 - **Decides:** how Shelf for Windows finds a game's saves, keeps their history, and carries them between
   my computers through a place of my own, for games no store carries saves for, and what Shelf's server
@@ -113,7 +113,9 @@ which copy I start. A copy from outside the stores is the case this is for.
   list is what makes a snapshot exist. One counts only when both are there and the archive has the list's
   size, and is put back only once its SHA-256 is the list's too: a cloud client may still be bringing the
   rest, and until then it doesn't count.
-- **No change, no snapshot:** saves whose content hash is the latest's make none.
+- **No change, no snapshot:** saves whose content hash is the latest's make none, nor saves that are still
+  what this PC last made or put back (added while building phase 4: otherwise a PC that opened the game and
+  played nothing, after another PC had written, copied its old saves again, and made a choice of nothing).
 - **Caps,** set in Settings, the same for every game: the largest snapshot (500 MB to start with), and how
   many are kept per game (20, and never fewer than 3). A snapshot over the size is not made, and the page
   says why. Past the count the oldest go, never a head (section 5) nor one a choice is waiting on. Shelf
@@ -165,16 +167,28 @@ while building phase 2: without it, phase 4's check before Play would undo a res
 ### 7. When
 
 - **By hand, from phase 2:** Back up now, and Restore on any snapshot in the history, with the guards above.
-- **After a session (phase 4):** when the tracker ends a session of the game (`watch.rs`), if what is here
-  isn't known, a snapshot is made. It is made even when another PC has written meanwhile: a new file
-  destroys nothing, and the two heads become a choice.
-- **Before Play (phase 4):** the table of section 5. Play waits for it, a second or two for a folder. A choice
-  stops Play and shows itself; a place that can't be reached starts the game with what is here, and says so.
+- **After a session (phase 4):** when the tracker ends a sitting of the game (`watch.rs`), counted or not,
+  if what is here isn't known, a snapshot is made. It is made even when another PC has written meanwhile: a
+  new file destroys nothing, and the two heads become a choice.
+- **Before Play (phase 4):** the table of section 5. Play waits for it, a second or two for a folder, and
+  says Starting meanwhile; a backup or restore of the game already going is waited for, twenty seconds at
+  most, and a restore cut short that couldn't be undone keeps Play waiting. A choice stops Play and shows
+  itself, in the game's Saves: keeping one plays it, as Steam's conflict window launches the game once a
+  copy is picked, and **Decide later** plays what is here and writes nothing, Steam's "Play anyway". A
+  place that can't be reached starts the game with what is here, and says so; so does a look that fails
+  (a damaged snapshot, saves over the caps), with the reason, since what is played over is never lost: the
+  snapshot after it names the old one as its parent, and the next look is a choice. A page that says to
+  skip the look (`play`'s `check`, false only after Decide later) gets none.
 - **What it can't see:** a game started outside Shelf (a shortcut, the file itself) gets no check before it.
   The snapshot after it, if the place moved meanwhile, makes two heads, so the next look is a choice, not a
   silent overwrite.
-- **A notification** (phase 4) when something needs me: a choice waiting, a backup that failed, a place
-  that is full or gone. Nothing is said when all went well.
+- **A notification** (phase 4) when something needs me after a session: a choice waiting, a backup that
+  failed, a place that is full or gone. Nothing is said when all went well, nor when nothing was found to
+  back up, which the game's Saves says. The window may be closed to the tray, so it is Windows' own,
+  through Tauri's notification plugin, headed by the game's title, in the language Windows is in, as the
+  tray's menu is (`saves/notice.rs`). A click brings Shelf forward; it doesn't open the game's page, which
+  the app can't name from an entry, and the next Play shows what waits. Before Play, the page says it
+  with a notice, whose action opens the game's Saves.
 
 ### 8. Where: one place per PC
 
@@ -239,7 +253,10 @@ the owner, which needs the owner's OK.
 3. **Through a folder** (built, 7 Nov 2026). Choosing one in Settings' Saves page, snapshots written there and
    read from another PC, waiting here while it can't be reached, section 5 by hand (the game's Saves says
    when another PC's snapshot is newer, and offers it), and the choice, as two cards with their dates.
-4. **By itself.** After a session, before Play, and notifications.
+4. **By itself** (built, 8 Nov 2026). After a session, before Play, and notifications, as section 7 says:
+   `play` looks at the saves first and answers what it found, and the tracker says which games' sittings
+   ended, for a backup on a thread of its own. The app keeps each game's title and Steam apps from the page's
+   last ask, for when no page asks.
 5. **Cloud sign-ins.** OneDrive and Google Drive once Shelf is registered with both, then S3-compatible.
 6. **Later.** More places, encryption with issue 150's key, registry saves, other launchers' games.
 

@@ -136,8 +136,16 @@ pub fn start(app: AppHandle) {
                 processes::alive,
             );
             // With the window closed to the tray there is no page: the next one sends it.
-            if ended && let Some(main) = app.get_webview_window("main") {
+            if ended.sent
+                && let Some(main) = app.get_webview_window("main")
+            {
                 let _ = main.eval(PLAYED);
+            }
+            // A game's saves, when kept, are backed up once it has closed (ADR 008, section 7).
+            for game in ended.games {
+                if let Game::Entry(entry) = game {
+                    crate::commands::after_session(&app, entry);
+                }
             }
             std::thread::sleep(LOOK_EVERY);
         }

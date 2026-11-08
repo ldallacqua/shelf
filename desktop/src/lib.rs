@@ -7,6 +7,7 @@ mod device;
 mod downloads;
 mod extract;
 mod ids;
+mod language;
 mod launch;
 mod launchers;
 mod navigation;
@@ -367,6 +368,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             desktop_info,
             start,

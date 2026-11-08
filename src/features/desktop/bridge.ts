@@ -40,6 +40,23 @@ const playSessionSchema = z.object({
   device: z.string().optional(),
 })
 
+const checkedSchema = z.object({
+  did: z.enum(['in-step', 'backed-up', 'restored', 'unreachable', 'choose', 'failed']),
+  /** Why the look failed: one of the saves' refusals (`saves.ts`). */
+  why: z.string().optional(),
+})
+
+/**
+ * What the look at a game's saves before Play found (ADR 008, section 7). `choose`: two copies
+ * differ, and the game waits for the person; `unreachable` and `failed`: it started with what is here.
+ */
+export type Checked = z.infer<typeof checkedSchema>
+
+const playedSchema = z.object({ started: z.boolean(), saves: checkedSchema.nullable() })
+
+/** What Play did: whether the game started, and what the look at its saves found, when they are kept. */
+export type Played = z.infer<typeof playedSchema>
+
 const infoSchema = z.object({ version: z.string(), device: z.string().optional() })
 
 const startingSchema = z.object({ available: z.boolean(), on: z.boolean() })
@@ -74,10 +91,16 @@ export const desktop = {
   show: async (entry: string): Promise<void> => {
     await call('show_launcher', { entry })
   },
-  /** Starts a game from its file. */
-  play: async (entry: string): Promise<void> => {
-    await call('play', { entry })
-  },
+  /**
+   * Starts a game from its file, its saves looked at first when they are kept, unless `check` is
+   * false: the person chose to play with what is here. An app older than 0.14.0 answers nothing, as
+   * it starts the game and looks at no saves.
+   */
+  play: async (entry: string, check = true): Promise<Played> =>
+    playedSchema.nullable().parse(await call('play', { entry, check })) ?? {
+      started: true,
+      saves: null,
+    },
   /** Of these Steam apps, the ones Steam has installed on this computer. */
   steamInstalled: async (apps: readonly string[]): Promise<string[]> =>
     z.array(z.string()).parse(await call('steam_installed', { apps })),

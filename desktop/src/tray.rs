@@ -25,23 +25,12 @@ const PORTUGUESE: Words = Words {
     quit: "Sair e parar de contar horas",
 };
 
-#[cfg(windows)]
 fn words() -> &'static Words {
-    /// Portuguese, in the low bits of a Windows language id.
-    const PORTUGUESE_ID: u16 = 0x16;
-    // SAFETY: takes nothing, and can't fail.
-    let language = unsafe { windows_sys::Win32::Globalization::GetUserDefaultUILanguage() };
-    if language & 0x3ff == PORTUGUESE_ID {
+    if crate::language::portuguese() {
         &PORTUGUESE
     } else {
         &ENGLISH
     }
-}
-
-#[cfg(not(windows))]
-fn words() -> &'static Words {
-    let _ = PORTUGUESE;
-    &ENGLISH
 }
 
 const OPEN: &str = "open";

@@ -20,7 +20,7 @@ use crate::launchers::{Launcher, Launchers};
 use crate::processes::{self, Closing};
 use crate::real_debrid::{self, RealDebrid};
 use crate::running::{self, GameView, Games, Launch, Rules, SteamGame, Target};
-use crate::saves::{self, Caps, Refusal as SaveRefusal, Saves};
+use crate::saves::{self, Caps, Checked, Refusal as SaveRefusal, Saves};
 use crate::shortcut::{self, Pointed};
 use crate::source_window::{self, ReadingAll, SourceWindow};
 use crate::sources::{self, Reading, Source, Sources};
@@ -39,6 +39,8 @@ pub enum Refusal {
     Missing,
     /// Windows refused to start it, or the person said no to its prompt.
     Refused,
+    /// Its saves are being backed up or put back: Play waits for that (ADR 008, section 6).
+    Busy,
     /// This computer could not keep the choice.
     Failed,
 }
@@ -180,30 +182,71 @@ pub fn show_launcher(
 
 /// Starts a game from the file chosen for it, unless it is starting or running
 /// already. A game played through Steam is not started here: its page links to
-/// Steam, which the window hands over.
+/// Steam, which the window hands over. A game whose saves are kept has them looked at
+/// first, unless the page says to skip that (`check` false): the person chose to play
+/// with what is here.
 #[tauri::command]
-pub fn play(
-    app: AppHandle,
-    entry: String,
-    launchers: State<'_, Launchers>,
-    games: State<'_, Games>,
-    following: State<'_, Following>,
-) -> Result<(), Refusal> {
+pub async fn play(app: AppHandle, entry: String, check: Option<bool>) -> Result<Played, Refusal> {
     entry_id(&entry)?;
-    let launcher = launchers.get(&entry).ok_or(Refusal::Unset)?;
-    let at = now();
-    if games.is_starting(&entry, at) {
-        return Ok(());
+    let launcher = app.state::<Launchers>().get(&entry).ok_or(Refusal::Unset)?;
+    // Off a page's thread: the look at its saves reads disks, and may put a snapshot back.
+    tauri::async_runtime::spawn_blocking(move || {
+        start_game(&app, &entry, &launcher, check != Some(false))
+    })
+    .await
+    .map_err(|_| Refusal::Failed)?
+}
+
+/// What Play did (ADR 008, section 7).
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct Played {
+    /// The game was started, or already was. Not while its saves wait for a choice.
+    started: bool,
+    /// What the look at its saves found: none when they aren't kept, or the person said to skip it.
+    saves: Option<Checked>,
+}
+
+/// A backup or a restore of the game's saves is waited for this long before Play gives up.
+const SAVES_WAITED: Duration = Duration::from_secs(20);
+
+fn start_game(
+    app: &AppHandle,
+    entry: &str,
+    launcher: &Launcher,
+    check: bool,
+) -> Result<Played, Refusal> {
+    let games = app.state::<Games>();
+    let already = Played {
+        started: true,
+        saves: None,
+    };
+    if games.is_starting(entry, now()) {
+        return Ok(already);
     }
     let rules = rules_here();
     let target = target_of(Some(&launcher.path), &[]);
     if let Some(running) = processes::snapshot()
         && !games
-            .seen(&entry, &target, &running, &rules)
+            .seen(entry, &target, &running, &rules)
             .confirmed
             .is_empty()
     {
-        return Ok(());
+        return Ok(already);
+    }
+    let saves = if check {
+        look_before_play(app, entry)?
+    } else {
+        None
+    };
+    // Another Play may have waited for the same look, and started the game meanwhile.
+    if games.is_starting(entry, now()) {
+        return Ok(already);
+    }
+    if saves == Some(Checked::Choose) {
+        return Ok(Played {
+            started: false,
+            saves,
+        });
     }
     let root = launch::start(&launcher.path).map_err(|failure| match failure {
         Failure::Missing => Refusal::Missing,
@@ -214,8 +257,9 @@ pub fn play(
         Pointed::Program(program) => program,
         _ => launcher.path.clone(),
     };
+    let at = now();
     games.launched(
-        &entry,
+        entry,
         Launch::new(
             root,
             processes::now_as_windows_counts(at),
@@ -224,8 +268,55 @@ pub fn play(
             &rules,
         ),
     );
-    follow(app, &following);
-    Ok(())
+    follow(app.clone(), &app.state::<Following>());
+    Ok(Played {
+        started: true,
+        saves,
+    })
+}
+
+/// The look at a kept game's saves before it starts (ADR 008, section 7): none for a game whose saves
+/// aren't kept. A backup or restore of it going on is waited for, and a restore cut short that couldn't
+/// be undone keeps Play waiting, as it is never played over.
+fn look_before_play(app: &AppHandle, entry: &str) -> Result<Option<Checked>, Refusal> {
+    let saves = app.state::<Saves>();
+    let kept = saves.game(entry);
+    if !kept.on {
+        return Ok(None);
+    }
+    let waited = std::time::Instant::now();
+    let _busy = loop {
+        match saves.begin(entry) {
+            Ok(busy) => break busy,
+            Err(_) if waited.elapsed() < SAVES_WAITED => {
+                std::thread::sleep(Duration::from_millis(250));
+            }
+            Err(_) => return Err(Refusal::Busy),
+        }
+    };
+    let setup = set_up(app, &saves, entry, &kept.title, &kept.apps);
+    Ok(Some(saves.before_play(entry, &setup, now())))
+}
+
+/// A game's sitting ended (`watch.rs`): its saves, when kept, are backed up unless they are what this PC
+/// knows, and a notification says what needs the person (ADR 008, section 7). On a thread of its own, as
+/// it reads disks. Nothing when the game runs on, or its saves are already being worked on.
+pub fn after_session(app: &AppHandle, entry: String) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let saves = app.state::<Saves>();
+        let kept = saves.game(&entry);
+        if !kept.on || running_now(&app, &entry, &kept.apps) {
+            return;
+        }
+        let Ok(_busy) = saves.begin(&entry) else {
+            return;
+        };
+        let setup = set_up(&app, &saves, &entry, &kept.title, &kept.apps);
+        if let Some(needs) = saves.after_session(&entry, &setup, now()) {
+            saves::notice::show(&app, &kept.title, needs);
+        }
+    });
 }
 
 /// Whether the thread following what Play started is running: one, however many games.
@@ -977,7 +1068,10 @@ async fn with_saves<T: Send + 'static>(
     tauri::async_runtime::spawn_blocking(move || {
         let saves = app.state::<Saves>();
         let setup = set_up(&app, &saves, &entry, &title, &apps);
-        work(&app, &saves, &entry, &title, &apps, setup, read)
+        let done = work(&app, &saves, &entry, &title, &apps, setup, read);
+        // What the game is called and its Steam apps, for when no page asks: after a session, before Play.
+        saves.remember(&entry, &title, &apps);
+        done
     })
     .await
     .map_err(|_| SaveRefusal::Failed)?

@@ -215,6 +215,19 @@ export const Choice: Story = {
   },
 }
 
+/**
+ * Play pressed with two copies differing (ADR 008, section 7): the game waits. Keeping one plays it, as
+ * Steam's conflict window launches the game once a copy is picked; Decide later plays what is here and
+ * writes nothing, Steam's "Play anyway".
+ */
+export const ChoiceBeforePlay: Story = {
+  args: {
+    ...Choice.args,
+    beforePlay: true,
+    onLater: () => undefined,
+  },
+}
+
 /** Two computers backed up from the same snapshot: two latest, and this computer holds one of them. */
 export const TwoLatest: Story = {
   args: {

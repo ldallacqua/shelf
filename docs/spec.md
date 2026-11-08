@@ -1876,6 +1876,14 @@ what comes next (a folder or a cloud of my own, and the same saves on every PC):
   with when it changed, and one for each latest snapshot, with its computer and date, each with **Keep
   this one**, as Steam's conflict window offers its two. The other stays in the snapshots, and what was
   here is backed up first.
+- **By itself, once on** (ADR 008's phase 4). When the game closes, its saves are backed up if they
+  changed, with no one asking. Play looks first, saying Starting meanwhile: it backs up what changed
+  with the game closed, or puts back another PC's newer snapshot, and then starts the game. Two copies that
+  differ stop Play and open the game's Saves on the choice, titled "Choose which saves to play with":
+  **Keep and play** on each card, and **Decide later**, which plays what is here and writes nothing. A
+  folder that can't be reached, or a look that fails, starts the game anyway and says so in a notice whose
+  action opens Saves. After a session, a Windows notification, headed by the game's title, says only what
+  needs me: a choice waiting for the next Play, a backup that failed, a folder that can't be reached.
 - **Settings' Saves page** says where snapshots go, this computer's choice: this computer alone, until I
   choose a folder (one OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB
   drive), the same on each PC. Choosing one copies this computer's snapshots there; going back leaves it
@@ -2263,7 +2271,7 @@ Not built now. The design leaves room for each.
 | Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Extracting what is downloaded | Downloads are built ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
-| Saves carried by themselves, and through a cloud sign-in | Snapshots go through a folder of mine and two copies are a choice ([section 7.12](#712-saves)); backing up after a session, checking before Play, and OneDrive and Google Drive signed in are [ADR 008](adr/008-save-sync.md)'s phases 4 and 5 |
+| Saves through a cloud sign-in | Snapshots go through a folder of mine, two copies are a choice, and they are backed up after a session and looked at before Play ([section 7.12](#712-saves)); OneDrive and Google Drive signed in are [ADR 008](adr/008-save-sync.md)'s phase 5 |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |

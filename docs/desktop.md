@@ -63,7 +63,9 @@ steps it is built in.
     added by hand. Nothing is sent to Shelf. On Settings' Saves page, **Where they go** takes a folder of
     yours (one OneDrive, Google Drive for desktop or Dropbox syncs, a network drive, a USB drive): choose the
     same on each PC, and a game's Saves offers another PC's newer snapshot, or asks which copy to keep when
-    both changed. The limits are there too.
+    both changed. The limits are there too. Once a game's saves are on, they are backed up when it closes,
+    and **Play** looks first: it takes another PC's newer snapshot, or stops and asks when two copies
+    differ. A Windows notification says when something needs you after a session.
 
 What the app keeps on this computer is the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`, the sources, in `sources.json` and `sources\` beside it,
@@ -465,8 +467,31 @@ ADR 008's phase 3; spec 7.12.
 - [ ] By hand, by the owner, on two PCs with an installed version: one folder synced between them, a game
       played on one and opened on the other, and a choice after playing both.
 
-**Done when** the owner has carried a game's progress between two PCs. Next: phase 4, by itself after a
-session and before Play.
+**Done when** the owner has carried a game's progress between two PCs.
+
+### Step 11: Saves by themselves
+
+ADR 008's phase 4; spec 7.12.
+
+**Built 8 Nov 2026.**
+
+- [x] After a session: the tracker says which games' sittings ended (`Ended`), and a game whose saves are
+      on gets a snapshot unless what is here is known, on a thread of its own, never while it runs.
+- [x] Before Play: `play` takes `check` and answers `{ started, saves }`, the look's verdict done (in
+      step, backed up, restored, unreachable, a choice, failed); a choice starts nothing, and a backup or
+      restore going on is waited for, then refused as `busy`.
+- [x] Windows notifications (`tauri-plugin-notification`), in Windows' language, for a choice waiting, a
+      backup that failed and a folder out of reach (`saves/notice.rs`); nothing when all went well.
+- [x] The page: Play says Starting while it looks, opens Saves on a choice (Keep and play, Decide later),
+      and says when the game started with what is here.
+- [x] Tests: two made-up PCs through Play and sessions (taken across, a choice, nothing played, a folder
+      gone, a damaged snapshot); the page with the bridge faked; `pnpm desktop:check` changes the saves
+      with the game closed and while it runs, and finds a snapshot from Play and one after the session.
+- [ ] By hand, by the owner, on two PCs with an installed version: a game played on one and started with
+      Play on the other, taking the first's progress; a choice after playing both; a notification seen.
+
+**Done when** the owner has played on one PC and pressed Play on the other. Next: phase 5, once Shelf is
+registered with Microsoft and Google.
 
 ### Later
 

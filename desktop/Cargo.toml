@@ -17,6 +17,8 @@ tauri-build = { version = "2.7", features = [] }
 [dependencies]
 tauri = { version = "2.12", features = ["tray-icon"] }
 tauri-plugin-dialog = "2.8"
+# Windows' notifications, when a game's saves need the person after a session (ADR 008, section 7).
+tauri-plugin-notification = "2.8"
 tauri-plugin-opener = "2.7"
 tauri-plugin-single-instance = "2.5"
 tauri-plugin-updater = "2.14"

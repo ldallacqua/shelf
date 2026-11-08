@@ -1,11 +1,12 @@
 'use client'
 
 import { EllipsisIcon, PlayIcon, SquareIcon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { SteamApps } from '@/domain/library/editing'
 import { steamInstallLink, steamPlayLink } from '@/domain/sync/steam'
+import type { BeforePlaySaid } from '@/features/desktop/before-play'
 import { desktop, inDesktopApp, refusalOf, type Launcher } from '@/features/desktop/bridge'
 import {
   FindDownloadItem,
@@ -77,8 +78,11 @@ const noApps: readonly string[] = []
 
 function PlayInApp({ entryId, title, steam }: PlayProps) {
   const t = useTranslations('Edit')
+  const locale = useLocale()
   const [here, setHere] = useState<Here>()
   const [busy, setBusy] = useState(false)
+  // Play pressed and not answered yet: the game's saves may be looked at first (ADR 008, section 7).
+  const [playing, setPlaying] = useState(false)
   const hasSources = useHasSources()
   const [finding, setFinding] = useState(false)
   // Fetched only once it is asked for, and kept from then on, for the sheet to slide away.
@@ -86,6 +90,8 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const keepsSaves = useSavesAvailable()
   const [saving, setSaving] = useState(false)
   const [savesAsked, setSavesAsked] = useState(false)
+  // Saves opened by Play, as two copies differ: keeping one, or deciding later, plays.
+  const [choosing, setChoosing] = useState(false)
   const around = useRef<HTMLDivElement>(null)
   const installedApps = here?.installed ?? noApps
   const { state, check, sentGameToSteam } = useGameState(
@@ -164,15 +170,41 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
       if (chosen) setHere({ launcher: chosen, installed })
     })
 
-  const play = () =>
+  const openSaves = (beforePlay: boolean) => {
+    setChoosing(beforePlay)
+    setSavesAsked(true)
+    setSaving(true)
+  }
+
+  // In the app's own words, fetched only when there is something to say.
+  const say = async (said: BeforePlaySaid) => {
+    const { beforePlayNotice } = await import('@/features/desktop/before-play')
+    const { message, open } = beforePlayNotice(locale, title, said)
+    notify({ message, actions: [{ label: open, run: () => openSaves(false) }] })
+  }
+
+  /** `look`: whether the game's saves are looked at first; not when the person chose what is here. */
+  const play = (look = true) =>
     run(async () => {
+      setPlaying(true)
       try {
-        await desktop.play(entryId)
+        const played = await desktop.play(entryId, look)
+        if (!played.started) {
+          // Two copies of its saves differ: the person chooses before it starts.
+          openSaves(true)
+          return
+        }
+        const saves = played.saves
+        // Started with what is here: said, with the way to the game's saves.
+        if (saves?.did === 'unreachable' || saves?.did === 'failed') void say(saves)
         // An app that can't tell has no Starting to show: it says so once.
-        if (state === 'unavailable') notify({ message: t('starting', { title }) })
+        else if (state === 'unavailable') notify({ message: t('starting', { title }) })
         check()
       } catch (error) {
-        failed(error)
+        if (refusalOf(error) === 'busy') void say('busy')
+        else failed(error)
+      } finally {
+        setPlaying(false)
       }
     })
 
@@ -220,7 +252,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const installLink = steam?.owned ? steamInstallLink(steam.owned) : undefined
 
   let primary
-  if (view?.state === 'starting') {
+  if (view?.state === 'starting' || playing) {
     primary = (
       <Button variant="primary" size="sm" aria-disabled="true" className={waiting}>
         <PlayIcon aria-hidden="true" />
@@ -273,7 +305,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     )
   } else if (launcher?.exists) {
     primary = (
-      <Button variant="primary" size="sm" onClick={play} disabled={busy}>
+      <Button variant="primary" size="sm" onClick={() => void play()} disabled={busy}>
         <PlayIcon aria-hidden="true" />
         {t('play')}
       </Button>
@@ -344,12 +376,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
                 {keepsSaves ? (
                   <>
                     <DropdownMenuSeparator />
-                    <SavesItem
-                      onOpen={() => {
-                        setSaving(true)
-                        setSavesAsked(true)
-                      }}
-                    />
+                    <SavesItem onOpen={() => openSaves(false)} />
                   </>
                 ) : null}
               </>
@@ -385,8 +412,20 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
           entryId={entryId}
           apps={steam?.known ?? noApps}
           open={saving}
-          onOpenChange={setSaving}
+          onOpenChange={(open) => {
+            setSaving(open)
+            if (!open) setChoosing(false)
+          }}
           anchor={around}
+          onPlay={
+            choosing
+              ? (look) => {
+                  setSaving(false)
+                  setChoosing(false)
+                  void play(look)
+                }
+              : undefined
+          }
         />
       ) : null}
     </div>
