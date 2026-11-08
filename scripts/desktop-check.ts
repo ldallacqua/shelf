@@ -28,8 +28,10 @@
  *
  * Made-up saves beside the made-up game are found in a folder added (a development build takes it from
  * `SHELF_PICK_SAVES`), backed up twice, and the first snapshot restored (ADR 008); then a folder is chosen
- * as this computer's place (`SHELF_PICK_SAVE_PLACE`), and the history must be copied there. The list of
- * where games save is the hand-written one in `fixtures/saves/`, never the real one.
+ * as this computer's place (`SHELF_PICK_SAVE_PLACE`), and the history must be copied there. Then saves
+ * changed with the game closed must be backed up by Play before it starts, and saves changed while it
+ * runs once it has closed. The list of where games save is the hand-written one in `fixtures/saves/`,
+ * never the real one.
  *
  * Start the server first: pnpm build && pnpm serve:test. Never against
  * production: it signs in with the test doubles' made-up password.
@@ -602,6 +604,31 @@ try {
   if (copied.length >= 3)
     pass(`chose a folder, and this computer's ${copied.length} snapshots went there`)
   else fail(`chose a folder, and ${copied.length} snapshots went there`)
+
+  console.log('\nSaves, by themselves (ADR 008, phase 4)')
+  const inPlace = () =>
+    readdirSync(join(savePlace, 'Shelf saves'), { recursive: true }).filter((name) =>
+      String(name).endsWith('.zip'),
+    ).length
+  // Changed with the game closed, as a game started from a shortcut leaves them: Play backs them up first.
+  writeFileSync(join(saved, 'slot1.sav'), 'chapter three')
+  await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
+  const beforePlay = inPlace()
+  writeFileSync(played, '')
+  await button('Play').click()
+  await button('Stop').waitFor({ timeout: 30_000 })
+  if (inPlace() === beforePlay + 1) pass('Play backed up what changed before the game started')
+  else fail(`Play left ${inPlace() - beforePlay} new snapshots before the game started`)
+  // Changed while it runs, in front: once it has closed, a snapshot is made with no one asking.
+  writeFileSync(join(saved, 'slot1.sav'), 'chapter four')
+  await new Promise((done) => setTimeout(done, 8_000))
+  await button('Stop').click()
+  await button('Play').waitFor({ timeout: 15_000 })
+  rmSync(played)
+  await until('a snapshot after the session', 30, async () => inPlace() === beforePlay + 2)
+    .then(() => pass('backed up the saves once the game had closed'))
+    .catch(() => fail(`made ${inPlace() - beforePlay - 1} snapshots after the session`))
+  await shelf.goto(`${BASE_URL}/en/settings/saves`)
   await shelf.getByRole('button', { name: 'Keep them on this computer only' }).click()
 
   console.log('\nReady to play')

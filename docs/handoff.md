@@ -17,10 +17,13 @@ were applied by hand. It reaches the owner in a desktop release, **0.13.0, publi
 same day**, after `pnpm desktop:check` passed with its new steps for saves (its first run found two snapshots of
 the same saves sharing a name, now fixed). Phase 3 followed the same day: on Settings' Saves page a folder of the owner's (synced by OneDrive or the
 like) becomes this PC's place, and a game's Saves offers another PC's newer snapshot, or a choice when both
-changed. **Next:** phase 4, by itself after a session and before Play; phase 5 waits for Shelf to be
+changed. Phase 4 came on 8 Nov 2026: once on, a game's saves are backed up when it closes and looked at
+before Play, which takes another PC's newer snapshot or stops for a choice (Keep and play, Decide later);
+a Windows notification says what needs the owner after a session. It reaches the owner in the next desktop
+release, **0.14.0, not published yet: it needs the owner's OK**. **Next:** phase 5 waits for Shelf to be
 registered with Microsoft and Google, which only the owner can do. **Still unchecked, by the owner:** a real
 game from outside the stores, its saves backed up and restored, then carried between two PCs through one
-folder.
+folder, by Play.
 
 ## Settings, one area (7 Nov 2026)
 

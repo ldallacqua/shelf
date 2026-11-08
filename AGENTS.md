@@ -314,7 +314,9 @@ entry ids, titles, Steam ids and snapshot ids, never a path; folders come from W
 saves are never read or written while it runs. Tests use `fixtures/saves/manifest.yaml`, temporary folders
 and made-up games, never the real manifest or a real save. A place (a folder of the owner's, chosen per PC)
 only ever gets new files, in a folder of Shelf's own (`Shelf saves`); what can't reach it waits on the PC.
-Spec 7.12.
+Once on, a game's saves are backed up when its sitting ends (`watch.rs` → `commands::after_session`) and
+looked at before Play (`play`'s `check`); a choice is always the person's, and a Windows notification says
+only what needs them. Spec 7.12.
 
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in

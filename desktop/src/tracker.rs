@@ -101,6 +101,8 @@ pub struct Counter {
     last_clock: Option<u64>,
     /// This computer's id, given to every session it starts.
     device: Option<String>,
+    /// The games whose sitting ended at the last look, counted or not: their saves are looked at then.
+    ended: Vec<Game>,
 }
 
 impl Counter {
@@ -158,6 +160,7 @@ impl Counter {
             .filter(|(game, open)| Some(*game) != front && !open.seen.iter().any(&alive))
             .map(|(game, _)| game.clone())
             .collect();
+        self.ended.clear();
         for game in ended {
             let Some(mut open) = self.open.remove(&game) else {
                 continue;
@@ -168,6 +171,7 @@ impl Counter {
                 self.finished.push(session);
                 changed = true;
             }
+            self.ended.push(game);
         }
         changed
     }
@@ -202,6 +206,15 @@ impl Counter {
 struct Kept {
     version: u32,
     sessions: Vec<Session>,
+}
+
+/// What a look ended.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct Ended {
+    /// A session was counted, for Shelf's server.
+    pub sent: bool,
+    /// Every game whose sitting ended, counted or not.
+    pub games: Vec<Game>,
 }
 
 /// The counter, kept on this computer.
@@ -239,26 +252,29 @@ impl Tracker {
         }
     }
 
-    /// Takes in what one look saw; says whether a session ended with it, for the page to send
-    /// now rather than at its next minute.
+    /// Takes in what one look saw; says which games' sittings ended with it, and whether one of
+    /// them was a session to send, for the page to send now rather than at its next minute.
     pub fn look(
         &self,
         look: &Look,
         new_id: impl FnOnce() -> String,
         alive: impl Fn(&Identity) -> bool,
-    ) -> bool {
+    ) -> Ended {
         let mut counter = self.counter.lock().unwrap();
         let before = counter.finished.len();
         let changed = counter.look(look, new_id, alive);
-        let ended = counter.finished.len() != before;
+        let sent = counter.finished.len() != before;
         let mut last_saved = self.last_saved.lock().unwrap();
-        if ended || (changed && look.at.saturating_sub(*last_saved) >= SAVE_EVERY_MS) {
+        if sent || (changed && look.at.saturating_sub(*last_saved) >= SAVE_EVERY_MS) {
             *last_saved = look.at;
             if let Err(error) = self.save(&counter) {
                 eprintln!("could not keep the hours counted: {error}");
             }
         }
-        ended
+        Ended {
+            sent,
+            games: std::mem::take(&mut counter.ended),
+        }
     }
 
     pub fn finished(&self) -> Vec<Session> {
@@ -530,7 +546,11 @@ mod tests {
         assert_eq!(sessions[0].seconds, 30);
 
         again.kept(&["a".to_string()]).unwrap();
-        assert!(Tracker::open(&folder, AT + MINUTE, None).finished().is_empty());
+        assert!(
+            Tracker::open(&folder, AT + MINUTE, None)
+                .finished()
+                .is_empty()
+        );
         fs::remove_dir_all(&folder).unwrap();
     }
 
@@ -542,7 +562,10 @@ mod tests {
         played(&tracker, LOOK, true);
         played(&tracker, 2 * LOOK, false);
         assert_eq!(tracker.finished().len(), 1);
-        assert_eq!(Tracker::open(&folder, AT + MINUTE, None).finished().len(), 1);
+        assert_eq!(
+            Tracker::open(&folder, AT + MINUTE, None).finished().len(),
+            1
+        );
         assert!(
             Tracker::open(&folder, AT + KEPT_FOR_MS + MINUTE, None)
                 .finished()
@@ -585,10 +608,46 @@ mod tests {
                 |_| false,
             )
         };
-        assert!(!look(0, true));
-        assert!(!look(LOOK, true));
-        assert!(look(2 * LOOK, false));
-        assert!(!look(3 * LOOK, false));
+        assert_eq!(look(0, true), Ended::default());
+        assert_eq!(look(LOOK, true), Ended::default());
+        assert_eq!(
+            look(2 * LOOK, false),
+            Ended {
+                sent: true,
+                games: vec![game()]
+            }
+        );
+        assert_eq!(look(3 * LOOK, false), Ended::default());
+        fs::remove_dir_all(&folder).unwrap();
+    }
+
+    #[test]
+    fn a_sitting_with_nothing_counted_still_ends_for_its_saves() {
+        let folder = folder("ended-uncounted");
+        let tracker = Tracker::open(&folder, AT, None);
+        let look = |clock: u64, front: bool| {
+            tracker.look(
+                &Look {
+                    at: AT + clock,
+                    clock,
+                    front: front.then(|| (game(), process(1))),
+                    // Open, and never touched.
+                    input_age: AWAY_AFTER_MS,
+                },
+                || "a".into(),
+                |_| false,
+            )
+        };
+        look(0, true);
+        look(LOOK, true);
+        assert_eq!(
+            look(2 * LOOK, false),
+            Ended {
+                sent: false,
+                games: vec![game()]
+            }
+        );
+        assert!(tracker.finished().is_empty());
         fs::remove_dir_all(&folder).unwrap();
     }
 

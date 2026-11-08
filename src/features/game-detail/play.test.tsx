@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SteamApps } from '@/domain/library/editing'
 import { setBridgeForTests, type GameView, type Launcher } from '@/features/desktop/bridge'
+import type { SavesView } from '@/features/desktop/saves'
 import type * as SavesLater from '@/features/desktop/saves-later'
 import { renderWithIntl } from '@/test/render'
 
@@ -17,11 +18,13 @@ import { Play } from './play'
 const notices = vi.hoisted(() => ({ notify: vi.fn() }))
 vi.mock('@/features/shell/notices', () => notices)
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
-// The menu's Saves item, at once rather than as the app fetches it.
+// The menu's Saves item and the panel, at once rather than as the app fetches them.
 vi.mock('@/features/desktop/saves-later', async (original) => ({
   ...(await original<typeof SavesLater>()),
   SavesItem: (await import('@/features/desktop/saves-panel')).SavesItem,
+  SavesLater: (await import('@/features/desktop/saves-panel')).default,
 }))
+vi.mock('@/features/owner/call-api', () => ({ callApi: vi.fn(async () => ({ ok: false })) }))
 
 const GRIM_DAWN: Launcher = {
   name: 'Grim Dawn.exe',
@@ -41,6 +44,35 @@ const computer = {
   forceAnswer: undefined as string | undefined,
   /** Whether the app keeps saves (ADR 008): one older than them has no such command. */
   saves: false,
+  /** What Play answers: what it did and what the look at the game's saves found; none from an old app. */
+  played: null as unknown,
+}
+
+const HEAD = '20261106T120000Z-deviceot-aaaaaaaaaaaa'
+
+/** A made-up game's saves, two copies differing: this computer's, and another's latest snapshot. */
+const differing: SavesView = {
+  on: true,
+  matched: 'Grim Dawn',
+  others: [],
+  registry: false,
+  cloud: [],
+  manifest: true,
+  base: 'D:\\Games\\Grim Dawn',
+  locations: [],
+  files: 1,
+  bytes: 2048,
+  snapshots: [
+    { id: HEAD, createdAt: 1_794_000_000_000, device: 'other', files: 1, bytes: 1024, here: false },
+  ],
+  heads: [HEAD],
+  changedAt: 1_794_100_000_000,
+  state: 'choose',
+  last: null,
+  busy: false,
+  caps: { mostMb: 500, kept: 20 },
+  place: 'D:\\Synced\\Shelf saves',
+  reachable: true,
 }
 const invoke = vi.fn(async (command: string, args: Record<string, unknown> = {}) => {
   const entry = args.entry as string
@@ -57,7 +89,13 @@ const invoke = vi.fn(async (command: string, args: Record<string, unknown> = {})
       return null
     case 'play':
       if (computer.playAnswer) throw computer.playAnswer
-      return null
+      return computer.played
+    case 'desktop_info':
+      return { version: '0.14.0', device: 'here' }
+    case 'saves':
+      return differing
+    case 'keep_saves':
+      return { ...differing, state: 'in-step', heads: [] }
     case 'game_state':
       // As Tauri answers a command an app doesn't have: not one of the app's own words.
       if (!computer.game) throw 'Command game_state not found'
@@ -89,7 +127,13 @@ beforeEach(() => {
   computer.stopAnswer = undefined
   computer.forceAnswer = undefined
   computer.saves = false
+  computer.played = null
   setBridgeForTests(invoke)
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }))
 })
 
 afterEach(() => setBridgeForTests(undefined))
@@ -116,7 +160,7 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
     computer.installed = ['219990']
     play({ owned: '219990', known: ['219990'] })
     await userEvent.click(await screen.findByRole('button', { name: 'Play' }))
-    expect(invoke).toHaveBeenCalledWith('play', { entry: 'entry-1' })
+    expect(invoke).toHaveBeenCalledWith('play', { entry: 'entry-1', check: true })
     expect(notices.notify).toHaveBeenCalledWith({ message: 'Starting Grim Dawn…' })
     expect(screen.queryByRole('link', { name: 'Play' })).not.toBeInTheDocument()
   })
@@ -191,6 +235,103 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('save_caps', {}))
     await userEvent.click(await screen.findByRole('button', { name: 'Ways to play' }))
     expect(await screen.findByRole('menuitem', { name: 'Saves' })).toBeInTheDocument()
+  })
+
+  it('says when the game started with this computer’s saves, and how to reach them', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.saves = true
+    computer.played = { started: true, saves: { did: 'unreachable' } }
+    play()
+    await userEvent.click(await screen.findByRole('button', { name: 'Play' }))
+    await waitFor(() =>
+      expect(notices.notify).toHaveBeenCalledWith({
+        message:
+          'Your saves folder can’t be reached, so Grim Dawn started with this computer’s saves.',
+        actions: [expect.objectContaining({ label: 'Saves' })],
+      }),
+    )
+    computer.played = { started: true, saves: { did: 'failed', why: 'damaged' } }
+    await userEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await waitFor(() =>
+      expect(notices.notify).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          message:
+            'The latest snapshot of Grim Dawn’s saves is damaged, so the game started with this computer’s saves.',
+        }),
+      ),
+    )
+  })
+
+  it('says nothing more when the saves were in step, brought from another computer or backed up', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.game = { state: 'stopped', unresponsive: false }
+    play()
+    for (const did of ['in-step', 'restored', 'backed-up']) {
+      computer.played = { started: true, saves: { did } }
+      await userEvent.click(await screen.findByRole('button', { name: 'Play' }))
+    }
+    expect(notices.notify).not.toHaveBeenCalled()
+  })
+
+  it('waits for a choice when two copies of the saves differ, and plays the one kept', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.saves = true
+    computer.played = { started: false, saves: { did: 'choose' } }
+    const user = userEvent.setup()
+    play()
+    await user.click(await screen.findByRole('button', { name: 'Play' }))
+    const panel = await screen.findByRole('dialog', { name: 'Saves for Grim Dawn' })
+    const choice = await within(panel).findByRole('region', {
+      name: 'Choose which saves to play with',
+    })
+    computer.played = { started: true, saves: { did: 'in-step' } }
+    const cards = within(choice).getAllByRole('listitem')
+    await user.click(within(cards[1]!).getByRole('button', { name: 'Keep and play' }))
+    expect(invoke).toHaveBeenCalledWith('keep_saves', {
+      entry: 'entry-1',
+      title: 'Grim Dawn',
+      apps: [],
+      keep: HEAD,
+    })
+    await waitFor(() =>
+      expect(invoke.mock.calls.filter(([command]) => command === 'play')).toHaveLength(2),
+    )
+    expect(invoke.mock.calls.filter(([command]) => command === 'play').at(-1)).toEqual([
+      'play',
+      { entry: 'entry-1', check: true },
+    ])
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+  })
+
+  it('plays with this computer’s saves when the choice is left for later', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.saves = true
+    computer.played = { started: false, saves: { did: 'choose' } }
+    const user = userEvent.setup()
+    play()
+    await user.click(await screen.findByRole('button', { name: 'Play' }))
+    const panel = await screen.findByRole('dialog', { name: 'Saves for Grim Dawn' })
+    computer.played = { started: true, saves: null }
+    await user.click(await within(panel).findByRole('button', { name: 'Decide later' }))
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith('play', { entry: 'entry-1', check: false }),
+    )
+    expect(invoke).not.toHaveBeenCalledWith('keep_saves', expect.anything())
+  })
+
+  it('says when the saves are still being backed up or put back, and starts nothing', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.playAnswer = 'busy'
+    play()
+    await userEvent.click(await screen.findByRole('button', { name: 'Play' }))
+    await waitFor(() =>
+      expect(notices.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            'Grim Dawn’s saves are still being backed up or put back. Press Play again in a moment.',
+        }),
+      ),
+    )
   })
 
   it('offers no saves in an app older than them', async () => {

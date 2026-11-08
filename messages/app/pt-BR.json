@@ -314,7 +314,18 @@
       "backedUp": "Backup de {when} · {files, plural, one {# arquivo} other {# arquivos}} · {size}",
       "keep": "Manter esta",
       "keeping": "Mantendo…",
-      "kept": "Mantida. Todo computador que usa a pasta vai vê-la como a mais recente."
+      "kept": "Mantida. Todo computador que usa a pasta vai vê-la como a mais recente.",
+      "playTitle": "Escolha com quais saves jogar",
+      "keepAndPlay": "Manter e jogar",
+      "later": "Decidir depois",
+      "laterBody": "Jogar com o que está neste computador agora. Nada é mantido nem substituído, e o Shelf pergunta de novo na próxima vez."
+    },
+    "beforePlay": {
+      "unreachable": "A pasta de saves não pode ser acessada, então {title} abriu com os saves deste computador.",
+      "damaged": "O snapshot mais recente dos saves de {title} está danificado, então o jogo abriu com os saves deste computador.",
+      "large": "Os saves de {title} passam do tamanho que um snapshot pode ter, então não foram conferidos antes de ele abrir.",
+      "failed": "O Shelf não conseguiu conferir os saves de {title}, então ele abriu com os saves deste computador.",
+      "busy": "Os saves de {title} ainda estão em backup ou sendo restaurados. Aperte Jogar de novo daqui a pouco."
     }
   },
   "SaveSettings": {

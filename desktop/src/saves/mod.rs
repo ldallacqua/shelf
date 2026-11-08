@@ -3,6 +3,7 @@
 //! app's own `saves\` folder. Shelf's server never sees any of it.
 
 pub mod manifest;
+pub mod notice;
 pub mod paths;
 pub mod restore;
 pub mod snapshot;
@@ -123,6 +124,10 @@ pub enum Did {
 pub struct GameSaves {
     pub on: bool,
     pub title: String,
+    /// The Steam apps a page last named it by: what the app looks it up with when no page asks, after a
+    /// session and before Play.
+    #[serde(default)]
+    pub apps: Vec<String>,
     /// The manifest's game, when the person chose among several.
     #[serde(default)]
     pub manifest: Option<String>,
@@ -340,6 +345,35 @@ pub struct View {
     /// This PC's place: None is this computer alone.
     pub place: Option<String>,
     pub reachable: bool,
+}
+
+/// What the look at a game's saves before Play did (ADR 008, section 7), as Play's page says it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(tag = "did", rename_all = "kebab-case")]
+pub enum Checked {
+    /// Nothing to do: the latest snapshot holds what is here, or there is nothing anywhere.
+    InStep,
+    /// This PC played without a snapshot after: one is made now.
+    BackedUp,
+    /// Another PC played since: its snapshot is put back, what was here backed up first.
+    Restored,
+    /// The place can't be reached: the game starts with what is here.
+    Unreachable,
+    /// Two copies differ: Play waits for the person to choose.
+    Choose,
+    /// The look went wrong: the game starts with what is here, and the page says why.
+    Failed { why: Refusal },
+}
+
+/// What a backup after a session found that needs the person, for a notification. Nothing is said when
+/// all went well.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Needs {
+    /// The snapshot just made and another PC's are both the latest: the next Play asks.
+    Choice,
+    /// Made on this PC, the place out of reach.
+    Waiting,
+    Failed(Refusal),
 }
 
 /// This PC's place, as Settings shows it.
@@ -819,6 +853,22 @@ impl Saves {
         })
     }
 
+    /// Keeps what a page named a game by, for when no page asks: after a session, before Play. Only for a
+    /// game already set up here, and written only when it changed.
+    pub fn remember(&self, entry: &str, title: &str, apps: &[String]) {
+        let title = short_title(title);
+        let mut kept = self.kept.lock().unwrap();
+        let Some(game) = kept.games.get_mut(entry) else {
+            return;
+        };
+        if game.title == title && game.apps == apps {
+            return;
+        }
+        game.title = title;
+        game.apps = apps.to_vec();
+        let _ = self.save(&kept);
+    }
+
     pub fn choose_manifest(&self, entry: &str, title: Option<String>) -> Result<(), Refusal> {
         self.change(entry, |game| game.manifest = title)
     }
@@ -933,11 +983,15 @@ impl Saves {
         let lists = self.lists(entry);
         let settling = parents.is_some();
         let known = self.game(entry).known;
-        if !settling
-            && lists
-                .first()
-                .is_some_and(|latest| latest.content == here.content)
-        {
+        // Nothing new: what the latest holds, or what this PC last made or put back. Another PC's newer
+        // snapshot isn't a reason to copy what is here again, which would only make a choice of nothing.
+        let unchanged = lists
+            .first()
+            .is_some_and(|latest| latest.content == here.content)
+            || known.as_ref().is_some_and(|known| {
+                known.content == here.content && lists.iter().any(|list| list.id == known.id)
+            });
+        if !settling && unchanged {
             return Ok(None);
         }
         let parents =
@@ -1161,6 +1215,59 @@ impl Saves {
     /// A snapshot's archive, for Explorer to show.
     pub fn archive(&self, entry: &str, id: &str) -> Option<PathBuf> {
         Some(self.folder_of(entry, id)?.join(format!("{id}.zip")))
+    }
+
+    /// The look before Play (ADR 008, section 7): section 5's table, done. The caller has checked the game
+    /// isn't running, and holds it (`begin`).
+    pub fn before_play(&self, entry: &str, setup: &Setup, now: u64) -> Checked {
+        if !self.reachable() {
+            return Checked::Unreachable;
+        }
+        self.send_waiting(entry);
+        let here = match self.here(setup) {
+            Ok(here) => here,
+            Err(why) => return Checked::Failed { why },
+        };
+        let kept = self.game(entry);
+        let verdict = snapshot::decide(
+            (!here.is_empty()).then_some(here.content.as_str()),
+            kept.known.as_ref(),
+            &self.lists(entry),
+        );
+        match verdict {
+            Verdict::Nothing | Verdict::InStep(_) => Checked::InStep,
+            Verdict::BackUp => match self.back_up(entry, &kept.title, setup, now, None) {
+                Ok(_) => Checked::BackedUp,
+                Err(why) => Checked::Failed { why },
+            },
+            Verdict::Restore(id) => match self.restore(entry, &id, setup, now) {
+                Ok(()) => Checked::Restored,
+                Err(why) => Checked::Failed { why },
+            },
+            Verdict::Choose { .. } => Checked::Choose,
+        }
+    }
+
+    /// The backup after a session (ADR 008, section 7): a snapshot unless what is here is known, made even
+    /// when another PC has written since, as a new file destroys nothing. What needs the person, if
+    /// anything. The caller has checked the game isn't running, and holds it (`begin`).
+    pub fn after_session(&self, entry: &str, setup: &Setup, now: u64) -> Option<Needs> {
+        let title = self.game(entry).title;
+        match self.back_up(entry, &title, setup, now, None) {
+            // Nothing found to back up is the page's to say: the person may never have set it up.
+            Err(Refusal::Empty) | Ok(None) => None,
+            Err(why) => Some(Needs::Failed(why)),
+            Ok(Some(_))
+                if self
+                    .game(entry)
+                    .last
+                    .is_some_and(|last| last.did == Did::Waiting) =>
+            {
+                Some(Needs::Waiting)
+            }
+            Ok(Some(_)) if snapshot::heads(&self.lists(entry)).len() > 1 => Some(Needs::Choice),
+            Ok(Some(_)) => None,
+        }
     }
 
     /// Settles a choice (ADR 008, section 5): keeps this PC's saves (`None`) or one of the latest
@@ -1746,5 +1853,142 @@ mod tests {
             .remove("entry-1", "<winDocuments>/My Games/A Game")
             .unwrap();
         assert!(pc.saves.game("entry-1").added.is_empty());
+    }
+
+    // --- By itself (phase 4): before Play and after a session --------------------------------------
+
+    fn before(pc: &Pc, now: u64) -> Checked {
+        pc.saves.before_play("entry-1", &pc.setup(), now)
+    }
+
+    fn after(pc: &Pc, now: u64) -> Option<Needs> {
+        pc.saves.after_session("entry-1", &pc.setup(), now)
+    }
+
+    #[test]
+    fn play_takes_another_pc_s_progress_and_the_session_after_backs_up_what_changed() {
+        let (one, two, shared) = two_pcs("saves-auto");
+        put(&slot(&one), "chapter one");
+        assert_eq!(after(&one, 1000), None);
+        assert_eq!(one.saves.lists("entry-1").len(), 1);
+        // The second PC has nothing of its own: Play puts the first's here.
+        assert_eq!(before(&two, 2000), Checked::Restored);
+        assert_eq!(fs::read_to_string(slot(&two)).unwrap(), "chapter one");
+        assert_eq!(before(&two, 2100), Checked::InStep);
+        put(&slot(&two), "chapter two");
+        assert_eq!(after(&two, 3000), None);
+        // Back on the first: Play takes the second's.
+        assert_eq!(before(&one, 4000), Checked::Restored);
+        assert_eq!(fs::read_to_string(slot(&one)).unwrap(), "chapter two");
+        // A session that changed nothing makes nothing.
+        assert_eq!(after(&one, 5000), None);
+        assert_eq!(one.saves.lists("entry-1").len(), 2);
+        assert_eq!(state(&one), State::InStep);
+        let _ = fs::remove_dir_all(shared);
+    }
+
+    #[test]
+    fn played_on_both_the_session_after_says_a_choice_waits_and_play_stops_for_it() {
+        let (one, two, shared) = two_pcs("saves-auto-both");
+        put(&slot(&one), "start");
+        after(&one, 1000);
+        assert_eq!(before(&two, 2000), Checked::Restored);
+        put(&slot(&one), "the first's");
+        assert_eq!(after(&one, 3000), None);
+        // The second played without a look first, from a shortcut.
+        put(&slot(&two), "the second's");
+        assert_eq!(after(&two, 4000), Some(Needs::Choice));
+        // Play waits on both, and nothing was put back.
+        assert_eq!(before(&two, 5000), Checked::Choose);
+        assert_eq!(before(&one, 5000), Checked::Choose);
+        assert_eq!(fs::read_to_string(slot(&two)).unwrap(), "the second's");
+        assert_eq!(fs::read_to_string(slot(&one)).unwrap(), "the first's");
+        // Settled on the first: the second's next Play takes it.
+        let _busy = one.saves.begin("entry-1").unwrap();
+        one.saves
+            .keep("entry-1", "A Game", &one.setup(), 6000, None)
+            .unwrap();
+        assert_eq!(before(&two, 7000), Checked::Restored);
+        assert_eq!(fs::read_to_string(slot(&two)).unwrap(), "the first's");
+        let _ = fs::remove_dir_all(shared);
+    }
+
+    #[test]
+    fn another_pc_s_newer_snapshot_is_no_reason_to_copy_what_is_here_again() {
+        let (one, two, shared) = two_pcs("saves-auto-same");
+        put(&slot(&one), "start");
+        after(&one, 1000);
+        before(&two, 2000);
+        put(&slot(&one), "further");
+        after(&one, 3000);
+        // The second opened the game and played nothing: nothing to back up, and no choice made of it.
+        assert_eq!(after(&two, 4000), None);
+        assert_eq!(snapshot::heads(&two.saves.lists("entry-1")).len(), 1);
+        assert_eq!(before(&two, 5000), Checked::Restored);
+        let _ = fs::remove_dir_all(shared);
+    }
+
+    #[test]
+    fn a_place_out_of_reach_starts_the_game_with_what_is_here_and_the_backup_waits() {
+        let pc = Pc::new("saves-auto-away", "dev1", &["<winAppData>/A Game"]);
+        let drive = folder("saves-auto-away-drive");
+        pc.saves.choose_place(&drive).unwrap();
+        put(&slot(&pc), "before");
+        after(&pc, 1000);
+        fs::remove_dir_all(&drive).unwrap();
+        assert_eq!(before(&pc, 2000), Checked::Unreachable);
+        assert_eq!(fs::read_to_string(slot(&pc)).unwrap(), "before");
+        put(&slot(&pc), "while away");
+        assert_eq!(after(&pc, 3000), Some(Needs::Waiting));
+        let _ = fs::remove_dir_all(drive);
+    }
+
+    #[test]
+    fn a_damaged_snapshot_is_never_put_back_and_play_says_why() {
+        let (one, two, shared) = two_pcs("saves-auto-damaged");
+        put(&slot(&one), "chapter one");
+        after(&one, 1000);
+        let id = latest(&one);
+        let archive = shared
+            .join(PLACE_NAME)
+            .join("entry-1")
+            .join(format!("{id}.zip"));
+        // As long as it was, and not what its list says.
+        let length = fs::metadata(&archive).unwrap().len() as usize;
+        fs::write(&archive, vec![b'x'; length]).unwrap();
+        // The second PC has nothing of its own, so it would take the first's.
+        assert_eq!(
+            before(&two, 2000),
+            Checked::Failed {
+                why: Refusal::Damaged
+            }
+        );
+        assert!(!slot(&two).exists());
+        let _ = fs::remove_dir_all(shared);
+    }
+
+    #[test]
+    fn what_a_page_named_a_game_by_is_kept_for_when_no_page_asks() {
+        let pc = Pc::new("saves-remember", "dev1", &["<winAppData>/A Game"]);
+        // Not a game set up here: nothing is written for it.
+        pc.saves.remember("entry-1", "A Game", &["1000001".into()]);
+        assert!(pc.saves.game("entry-1").apps.is_empty());
+        pc.saves.set_on("entry-1", true, "A Game").unwrap();
+        pc.saves
+            .remember("entry-1", "A Game: Remastered", &["1000001".into()]);
+        let kept = pc.saves.game("entry-1");
+        assert_eq!(kept.title, "A Game: Remastered");
+        assert_eq!(kept.apps, ["1000001"]);
+        assert_eq!(
+            serde_json::to_value(Checked::Failed {
+                why: Refusal::Damaged
+            })
+            .unwrap(),
+            serde_json::json!({ "did": "failed", "why": "damaged" })
+        );
+        assert_eq!(
+            serde_json::to_value(Checked::InStep).unwrap(),
+            serde_json::json!({ "did": "in-step" })
+        );
     }
 }

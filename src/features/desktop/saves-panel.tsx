@@ -7,6 +7,7 @@ import {
   FolderPlusIcon,
   HardDriveDownloadIcon,
   MonitorIcon,
+  PlayIcon,
   TriangleAlertIcon,
   XIcon,
 } from 'lucide-react'
@@ -91,6 +92,12 @@ type ViewProps = {
   onChooseBase: () => void
   /** Keeps this computer's copy (null) or one of the latest snapshots, when they differ. */
   onKeep: (snapshot: string | null) => void
+  /**
+   * Play opened it, as two copies differ (ADR 008, section 7): keeping one plays it, and the
+   * person may play with what is here instead, deciding later.
+   */
+  beforePlay?: boolean
+  onLater?: () => void
 }
 
 /**
@@ -152,6 +159,8 @@ function Ready({
   onChooseGame,
   onChooseBase,
   onKeep,
+  beforePlay,
+  onLater,
 }: ViewProps & { view: SavesView }) {
   const t = useTranslations('Saves')
   const format = useFormatter()
@@ -167,7 +176,14 @@ function Ready({
   return (
     <>
       {view.state === 'choose' ? (
-        <Choice view={view} computerOf={computerOf} busy={busy} onKeep={onKeep} />
+        <Choice
+          view={view}
+          computerOf={computerOf}
+          busy={busy}
+          onKeep={onKeep}
+          beforePlay={beforePlay}
+          onLater={onLater}
+        />
       ) : view.state === 'behind' ? (
         <Behind
           title={title}
@@ -382,11 +398,15 @@ function Choice({
   computerOf,
   busy,
   onKeep,
+  beforePlay,
+  onLater,
 }: {
   view: SavesView
   computerOf: (device: string | null) => string
   busy?: SavesBusy | undefined
   onKeep: (snapshot: string | null) => void
+  beforePlay?: boolean | undefined
+  onLater?: (() => void) | undefined
 }) {
   const t = useTranslations('Saves')
   const format = useFormatter()
@@ -396,7 +416,11 @@ function Choice({
   const here = view.files > 0 && !heads.some((snapshot) => snapshot.here)
   const keep = (key: string | null) => (
     <Button variant="secondary" size="sm" disabled={busy !== undefined} onClick={() => onKeep(key)}>
-      {busy === `keep:${key ?? 'here'}` ? t('choice.keeping') : t('choice.keep')}
+      {busy === `keep:${key ?? 'here'}`
+        ? t('choice.keeping')
+        : beforePlay
+          ? t('choice.keepAndPlay')
+          : t('choice.keep')}
     </Button>
   )
   return (
@@ -406,7 +430,7 @@ function Choice({
     >
       <h3 id={`${id}-choice`} className="flex items-center gap-2 text-sm font-medium">
         <TriangleAlertIcon aria-hidden="true" className="size-4 text-accent" />
-        {t('choice.title')}
+        {beforePlay ? t('choice.playTitle') : t('choice.title')}
       </h3>
       <p className="text-sm text-pretty text-muted">{t('choice.body')}</p>
       <ul className="grid gap-2">
@@ -448,6 +472,24 @@ function Choice({
           </li>
         ))}
       </ul>
+      {beforePlay && onLater ? (
+        <div className="grid justify-items-start gap-1 border-t border-line pt-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-mx-3"
+            disabled={busy !== undefined}
+            aria-describedby={`${id}-later`}
+            onClick={onLater}
+          >
+            <PlayIcon aria-hidden="true" />
+            {t('choice.later')}
+          </Button>
+          <p id={`${id}-later`} className="text-xs text-pretty text-muted">
+            {t('choice.laterBody')}
+          </p>
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -602,7 +644,7 @@ function useComputers() {
 }
 
 /** The panel's insides, asking the app: read when it opens, and after everything done. */
-function SavesBody({ game }: { game: SaveGame }) {
+function SavesBody({ game, onPlay }: { game: SaveGame; onPlay?: (check: boolean) => void }) {
   const t = useTranslations('Saves')
   const format = useFormatter()
   const computerOf = useComputers()
@@ -623,6 +665,7 @@ function SavesBody({ game }: { game: SaveGame }) {
     }
   }, [entryId, title, key])
 
+  /** Does one thing; whether it was done. */
   const run = async (
     doing: SavesBusy,
     work: () => Promise<SavesView | null>,
@@ -630,6 +673,7 @@ function SavesBody({ game }: { game: SaveGame }) {
   ) => {
     setBusy(doing)
     setSaid(undefined)
+    let worked = false
     try {
       const view = await work()
       // Null: Windows' picker was closed, which changes nothing.
@@ -637,11 +681,13 @@ function SavesBody({ game }: { game: SaveGame }) {
         setState(view)
         const text = done?.(view)
         if (text) setSaid({ tone: 'done', text })
+        worked = true
       }
     } catch (error) {
       setSaid({ tone: 'trouble', text: t(`refusal.${refusalKey(error)}`, { title }) })
     }
     setBusy(undefined)
+    return worked
   }
 
   return (
@@ -689,8 +735,12 @@ function SavesBody({ game }: { game: SaveGame }) {
           `keep:${snapshot ?? 'here'}`,
           () => saves.keep(game, snapshot),
           () => t('choice.kept'),
-        )
+        ).then((kept) => {
+          // Opened by Play: what was kept is played, looked at once more on the way.
+          if (kept) onPlay?.(true)
+        })
       }
+      {...(onPlay ? { beforePlay: true, onLater: () => onPlay(false) } : {})}
     />
   )
 }
@@ -700,6 +750,11 @@ type SavesPanelProps = SaveGame & {
   onOpenChange: (open: boolean) => void
   /** What it stands beside when it opens in place. */
   anchor: RefObject<HTMLElement | null>
+  /**
+   * Given when Play opened it, as two copies differ: plays the game once one is kept (`check`
+   * true), or with what is here when the person decides later (false).
+   */
+  onPlay?: ((check: boolean) => void) | undefined
 }
 
 function Frame({
@@ -708,7 +763,7 @@ function Frame({
   onOpenChange,
   anchor,
   children,
-}: Omit<SavesPanelProps, 'entryId' | 'apps'> & { children: ReactNode }) {
+}: Omit<SavesPanelProps, 'entryId' | 'apps' | 'onPlay'> & { children: ReactNode }) {
   const t = useTranslations('Saves')
   return (
     <BesidePlay
@@ -727,11 +782,13 @@ function Frame({
  * A game's saves (ADR 008), opened from Play's menu, in the app alone. Read each time it opens, so what
  * another window or the tray changed is there.
  */
-export default function SavesPanel({ entryId, title, apps, ...frame }: SavesPanelProps) {
+export default function SavesPanel({ entryId, title, apps, onPlay, ...frame }: SavesPanelProps) {
   return (
     <AppWords>
       <Frame title={title} {...frame}>
-        {frame.open ? <SavesBody game={{ entryId, title, apps }} /> : null}
+        {frame.open ? (
+          <SavesBody game={{ entryId, title, apps }} {...(onPlay ? { onPlay } : {})} />
+        ) : null}
       </Frame>
     </AppWords>
   )
