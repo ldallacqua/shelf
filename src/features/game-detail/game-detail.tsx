@@ -213,9 +213,9 @@ export function GameDetail({
           <span className="game-wash" style={{ backgroundImage: wash(game.colors) }} />
         ) : null}
       </div>
-      <div className="game-hero-inner mx-auto w-full max-w-360 px-4 sm:px-6 lg:px-10">
+      <div className="game-hero-inner mx-auto w-full max-w-360 px-4 @min-[39rem]:px-6 @min-[63rem]:px-10">
         {above}
-        <div className="flex items-end gap-4 sm:gap-6">
+        <div className="flex items-end gap-4 @min-[39rem]:gap-6">
           <span
             className="game-cover"
             style={{ aspectRatio: String(ratio) }}
@@ -235,7 +235,7 @@ export function GameDetail({
             <PageDrawn />
           </span>
           <div className="min-w-0 flex-1 pb-1">
-            <h1 className="title text-3xl text-balance break-words sm:text-5xl lg:text-6xl">
+            <h1 className="title text-3xl text-balance break-words @min-[39rem]:text-5xl @min-[63rem]:text-6xl">
               {game.title}
             </h1>
             {facts?.versionTitle ? (
@@ -377,7 +377,7 @@ export function GameDetail({
   )
 
   const side = (
-    <div className="grid min-w-0 content-start gap-7 lg:gap-8">
+    <div className="grid min-w-0 content-start gap-7 @min-[63rem]:gap-8">
       <Stores
         game={game}
         links={facts ? (facts.stores ?? []) : undefined}
@@ -574,11 +574,12 @@ export function GameDetail({
   )
 
   return (
-    <article className="game">
+    // Laid out by its own width, not the window's: beside the list of my library it has less.
+    <article className="game @container">
       {hero}
       {game.adult ? <AdultNotice /> : null}
       {/* Positioned to paint over the hero, which would cut off the glow of a button near it. */}
-      <div className="relative mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-10">
+      <div className="relative mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 @min-[39rem]:px-6 @min-[63rem]:grid-cols-[minmax(0,1fr)_22rem] @min-[63rem]:px-10">
         <div className="grid min-w-0 content-start gap-10">
           {scores}
           {about}
@@ -586,7 +587,7 @@ export function GameDetail({
           {achievements}
           {details}
         </div>
-        <aside className="row-start-1 lg:col-start-2">{side}</aside>
+        <aside className="row-start-1 @min-[63rem]:col-start-2">{side}</aside>
       </div>
     </article>
   )

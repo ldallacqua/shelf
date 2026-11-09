@@ -1373,8 +1373,17 @@ opens (its menu's items) stands over the page alone.
   takes its game off the wall puts it back.
 - **The header** is the same on the library and on a game: on a very wide window both use the
   library's width, and the game's own parts keep their measure inside it.
-- **Next and previous**, in the library's current order, come back with the list of my library
-  beside the game (ADR 009, phase 2).
+- **The library beside the game**, from 1024px: a persistent column with small covers, titles,
+  the current game marked, search, and folding groups. It carries the library's filter (one
+  removable chip), grouping and order; its own search and grouping last between games.
+  Only visible rows are drawn. The column is 17rem wide below 1280px, then 19rem; the game
+  uses container queries so its body fits the space left. Below 1024px the page stands alone.
+- **Next and previous** and Left/Right follow this list, each game once even when grouped on
+  multiple platforms. They replace the current history entry; row links add one. The Library
+  link can go back through consecutive games of this shelf to the library. Shortcuts leave
+  typing, menus, dialogs and horizontal screenshot strips alone. Up/Down and Home/End move
+  focus within the virtual list. A direct visit on a phone does not fetch the list; arriving
+  from the library keeps its order available for the step buttons.
 
 ### 7.3 Editing
 

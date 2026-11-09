@@ -191,6 +191,8 @@
       "title": "One game. Every copy.",
       "body": "On disc years ago, again in a sale, once more for the Switch? It stands on your shelf once, with every copy you own in the case it came in. On a PC, it says which store yours is from, and every game's page links to the stores that sell it.",
       "yours": "Your copies",
+      "beside": "Open a game and keep browsing: on a wide screen, your searchable library stays beside its page.",
+      "open": "Try it on the example shelf",
       "onShelf": "On your shelf",
       "physical": "Physical",
       "digital": "Digital",
@@ -462,6 +464,26 @@
       "body": "Something went wrong on the way to the shelf. Your games are safe.",
       "retry": "Try again"
     }
+  },
+  "Beside": {
+    "label": "Games in this library",
+    "search": {
+      "label": "Search this list",
+      "placeholder": "Search titles"
+    },
+    "carried": {
+      "clear": "Show every game, not only: {filter}"
+    },
+    "count": "{count, number}",
+    "group": "{name}, {count, plural, one {one game} other {# games}}",
+    "found": "{count, plural, =0 {No game matches.} one {One game matches.} other {# games match.}}",
+    "empty": "No game here matches.",
+    "failed": "This list could not be read.",
+    "steps": "The games beside this one",
+    "previous": "Previous: {title}",
+    "next": "Next: {title}",
+    "noPrevious": "No game before this one",
+    "noNext": "No game after this one"
   },
   "Game": {
     "metaNotFound": "Game not found",

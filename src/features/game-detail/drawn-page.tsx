@@ -1,8 +1,8 @@
 import type { LibraryGame, LibraryPlatform, LibraryTag } from '@/domain/library/library'
+import { GameAbove } from '@/features/library-beside/steps'
 import { ShelfProvider } from '@/features/library/shelf'
 import type { ShelfInfo } from '@/features/library/shelf-address'
 
-import { LibraryLink } from './back-to-library'
 import { GameDetail } from './game-detail'
 
 export { loadEditor } from './owner-mine'
@@ -31,7 +31,7 @@ export function drawPage({ shelf, game, tags, platforms, placeholder }: DrawnPag
         tags={tags}
         platforms={platforms}
         placeholder={placeholder}
-        above={<LibraryLink handle={shelf.handle} />}
+        above={<GameAbove handle={shelf.handle} slug={game.slug} />}
         editable
       />
     </ShelfProvider>

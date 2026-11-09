@@ -193,7 +193,16 @@ writeFileSync(
   ].join('\r\n'),
 )
 /** Ends the stand-in from outside, as closing a game any other way would. */
-const endStandIn = () => spawnSync('taskkill', ['/F', '/IM', STAND_IN], { stdio: 'ignore' })
+const endStandIn = () =>
+  spawnSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-Command',
+      'Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath -eq $env:SHELF_CHECK_STAND_IN } | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }',
+    ],
+    { stdio: 'ignore', env: { ...process.env, SHELF_CHECK_STAND_IN: join(game, STAND_IN) } },
+  )
 const downloaded = mkdtempSync(join(tmpdir(), 'shelf-desktop-downloads-'))
 /** A stand-in for Real-Debrid, so a check never reaches the real one. */
 const debridFiles = { 'setup.bin': randomBytes(64 * 1024), 'data/more.bin': randomBytes(32 * 1024) }

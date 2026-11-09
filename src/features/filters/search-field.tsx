@@ -21,6 +21,10 @@ type SearchFieldProps = {
    */
   onChange: (text: string, typing: boolean) => void
   className?: string
+  /** Another field than the library's: its own id, and its own words. */
+  id?: string
+  label?: string
+  placeholder?: string
 }
 
 /**
@@ -33,7 +37,14 @@ type SearchFieldProps = {
  * the field is a copy of it, drawn transparent but for those underlines,
  * and kept scrolled with it.
  */
-export function SearchField({ value, onChange, className }: SearchFieldProps) {
+export function SearchField({
+  value,
+  onChange,
+  className,
+  id = SEARCH_ID,
+  label,
+  placeholder,
+}: SearchFieldProps) {
   const t = useTranslations('Filters')
   const input = useRef<HTMLInputElement>(null)
   const mirror = useRef<HTMLSpanElement>(null)
@@ -91,8 +102,8 @@ export function SearchField({ value, onChange, className }: SearchFieldProps) {
 
   return (
     <div role="search" className={cn('relative flex min-w-0 items-center', className)}>
-      <label htmlFor={SEARCH_ID} className="sr-only">
-        {t('search.label')}
+      <label htmlFor={id} className="sr-only">
+        {label ?? t('search.label')}
       </label>
       <SearchIcon
         aria-hidden="true"
@@ -121,13 +132,13 @@ export function SearchField({ value, onChange, className }: SearchFieldProps) {
       ) : null}
       <input
         ref={input}
-        id={SEARCH_ID}
+        id={id}
         type="search"
         enterKeyHint="search"
         autoComplete="off"
         spellCheck={false}
-        placeholder={t('search.placeholder')}
-        aria-describedby={problems.length > 0 ? `${SEARCH_ID}-ignored` : undefined}
+        placeholder={placeholder ?? t('search.placeholder')}
+        aria-describedby={problems.length > 0 ? `${id}-ignored` : undefined}
         value={text}
         onChange={(event) => change(event.target.value)}
         onKeyDown={onKeyDown}
@@ -152,7 +163,7 @@ export function SearchField({ value, onChange, className }: SearchFieldProps) {
         )}
       />
       {problems.length > 0 ? (
-        <span id={`${SEARCH_ID}-ignored`} className="sr-only">
+        <span id={`${id}-ignored`} className="sr-only">
           {t('search.ignored', { count: problems.length })}
         </span>
       ) : null}

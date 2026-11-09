@@ -4,6 +4,14 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## The library beside a game (9 Nov 2026)
+
+ADR 009 phase 2 adds `features/library-beside` in the persistent game layout. The library hands
+over its arrangement in memory: keep game URLs free of query parameters, as phase 1 found on
+Vercel. The list is windowed, searchable and grouped; steps use the same deduplicated order.
+Library returns through consecutive game entries, and direct phone visits do not fetch the list.
+Phases 3 (dialogs) and 4 (simpler Saves) remain separate work.
+
 ## Saves that can't sync, said (9 Nov 2026)
 
 The handheld lost its Google Drive sign-in and kept its saves to itself. Two causes were found in the code:
