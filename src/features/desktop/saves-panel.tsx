@@ -28,12 +28,20 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
 import { Ghost, GhostText, Loading } from '@/ui/ghost'
+import { Progress } from '@/ui/progress'
 import { Tip } from '@/ui/tooltip'
 
 import { AppWords } from './app-words'
 import { BesidePlay } from './beside-play'
 import { desktop } from './bridge'
-import { type SaveGame, type SavesView, type Snapshot, saveRefusalOf, saves } from './saves'
+import {
+  folderRefusalOf,
+  type SaveGame,
+  type SaveProgress,
+  type SavesView,
+  type Snapshot,
+  saves,
+} from './saves'
 import { sizeOf } from './size'
 
 const linkClass =
@@ -63,14 +71,16 @@ const sayable = [
   'empty',
   'large',
   'wide',
+  'game-folder',
   'outside',
   'missing',
   'damaged',
   'changed',
 ] as const
 const refusalKey = (error: unknown) => {
-  const refusal = saveRefusalOf(error)
-  return sayable.find((each) => each === refusal) ?? 'failed'
+  const { why } = folderRefusalOf(error)
+  const refusal = sayable.find((each) => each === why) ?? 'failed'
+  return refusal === 'game-folder' ? 'gameFolder' : refusal
 }
 
 const stores = ['steam', 'gog', 'epic', 'origin', 'uplay'] as const
@@ -81,6 +91,8 @@ type ViewProps = {
   /** A snapshot's computer in words: this one, one of mine by its name, or another. */
   computerOf: (device: string | null) => string
   busy?: SavesBusy | undefined
+  /** How far the backup or restore under way has got, when the app can say. */
+  progress?: SaveProgress | null | undefined
   said?: SavesSaid | undefined
   onTurn: (on: boolean) => void
   onBackUp: () => void
@@ -145,11 +157,52 @@ export function SavesPanelView(props: ViewProps) {
   )
 }
 
+/** Whether a backup or a restore is under way, which has a bar of its own. */
+const moving = (busy: SavesBusy | undefined) =>
+  busy === 'back-up' || busy?.startsWith('restore:') === true || busy?.startsWith('keep:') === true
+
+/** How far a backup or restore has got, said and drawn, in place of a button merely greyed out. */
+function SavingProgress({
+  busy,
+  progress,
+  place,
+}: {
+  busy: SavesBusy | undefined
+  progress: SaveProgress | null | undefined
+  place: string | null
+}) {
+  const t = useTranslations('Saves')
+  const format = useFormatter()
+  const share = progress && progress.total ? Math.min(1, progress.done / progress.total) : undefined
+  // Before the app has said, or an app too old to say: what the button says.
+  const label = progress
+    ? t(`progress.${progress.step}`, { place: place ?? '' })
+    : busy === 'back-up'
+      ? t('backingUp')
+      : t('restoring')
+  return (
+    <div className="grid gap-1.5">
+      <p className="flex items-baseline justify-between gap-3 text-sm text-muted">
+        <span aria-live="polite">{label}</span>
+        {share === undefined ? null : (
+          <span className="tabular-nums">{format.number(share, { style: 'percent' })}</span>
+        )}
+      </p>
+      <Progress
+        aria-label={label}
+        value={share === undefined ? undefined : Math.round(share * 100)}
+        max={share === undefined ? undefined : 100}
+      />
+    </div>
+  )
+}
+
 function Ready({
   title,
   view,
   computerOf,
   busy,
+  progress,
   onTurn,
   onBackUp,
   onRestore,
@@ -294,6 +347,9 @@ function Ready({
             {t('add')}
           </Button>
         </div>
+        {shown.length === 0 ? (
+          <p className="text-xs text-pretty text-muted">{t('hiddenFolders')}</p>
+        ) : null}
         {view.base ? (
           <dl className="grid gap-0.5 text-xs">
             <dt className="text-muted">{t('gameFolder')}</dt>
@@ -351,6 +407,9 @@ function Ready({
             {busy === 'back-up' ? t('backingUp') : t('backUp')}
           </Button>
         </div>
+        {moving(busy) ? (
+          <SavingProgress busy={busy} progress={progress} place={view.place} />
+        ) : null}
         <p className="text-sm text-pretty text-muted" aria-live="polite">
           {t(`state.${view.state}`)}
         </p>
@@ -655,8 +714,39 @@ function SavesBody({ game, onPlay }: { game: SaveGame; onPlay?: (check: boolean)
   const [state, setState] = useState<SavesState>('loading')
   const [busy, setBusy] = useState<SavesBusy>()
   const [said, setSaid] = useState<SavesSaid>()
+  const [progress, setProgress] = useState<SaveProgress | null>(null)
   const { entryId, title, apps } = game
   const key = apps.join(' ')
+  const going = moving(busy)
+
+  // While a backup or restore is under way, the app is asked how far it has got.
+  useEffect(() => {
+    if (!going) return
+    let current = true
+    const look = () =>
+      saves.progress(entryId).then(
+        (now) => current && setProgress(now),
+        // An app too old to say: the bar only moves.
+        () => undefined,
+      )
+    void look()
+    const timer = setInterval(() => void look(), 200)
+    return () => {
+      current = false
+      clearInterval(timer)
+    }
+  }, [going, entryId])
+
+  /** What a refusal says: a folder Windows handed over is named, as it is not always the one meant. */
+  const sentence = (error: unknown, doing?: SavesBusy) => {
+    const { why, folder } = folderRefusalOf(error)
+    if (folder !== undefined && (why === 'wide' || why === 'game-folder' || why === 'outside')) {
+      const named =
+        why === 'game-folder' ? 'gameFolder' : why === 'wide' && doing === 'base' ? 'wideGame' : why
+      return t(`named.${named}`, { folder })
+    }
+    return t(`refusal.${refusalKey(error)}`, { title })
+  }
 
   useEffect(() => {
     let current = true
@@ -677,6 +767,7 @@ function SavesBody({ game, onPlay }: { game: SaveGame; onPlay?: (check: boolean)
   ) => {
     setBusy(doing)
     setSaid(undefined)
+    setProgress(null)
     let worked = false
     try {
       const view = await work()
@@ -688,7 +779,7 @@ function SavesBody({ game, onPlay }: { game: SaveGame; onPlay?: (check: boolean)
         worked = true
       }
     } catch (error) {
-      setSaid({ tone: 'trouble', text: t(`refusal.${refusalKey(error)}`, { title }) })
+      setSaid({ tone: 'trouble', text: sentence(error, doing) })
     }
     setBusy(undefined)
     return worked
@@ -700,6 +791,7 @@ function SavesBody({ game, onPlay }: { game: SaveGame; onPlay?: (check: boolean)
       state={state}
       computerOf={computerOf}
       busy={busy}
+      progress={progress}
       said={said}
       onTurn={(on) => void run('turn', () => saves.turn(game, on))}
       onBackUp={() =>

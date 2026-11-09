@@ -13,13 +13,14 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
 use reqwest::{Client, RequestBuilder, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 
+use super::progress::{Board, Step};
 use super::remote::{Away, Remote, RemoteFile};
 use super::sign_in::{self, Ended};
 use crate::vault::Vault;
@@ -207,6 +208,8 @@ pub struct Cloud {
     /// Google Drive's folders, found once: `Shelf saves`, and each game's in it.
     drive_root: Mutex<Option<String>>,
     drive_games: Mutex<HashMap<String, Vec<String>>>,
+    /// Where a snapshot's bytes sent or read are counted, for the page (`progress.rs`).
+    board: OnceLock<Arc<Board>>,
 }
 
 impl Cloud {
@@ -235,6 +238,18 @@ impl Cloud {
             signing_in: Mutex::new(None),
             drive_root: Mutex::new(None),
             drive_games: Mutex::new(HashMap::new()),
+            board: OnceLock::new(),
+        }
+    }
+
+    /// Counts a snapshot's bytes sent or read on `board`, by the game's entry.
+    pub fn watch(&self, board: Arc<Board>) {
+        let _ = self.board.set(board);
+    }
+
+    fn moved(&self, entry: Option<&str>, step: Step, done: u64, total: Option<u64>) {
+        if let (Some(entry), Some(board)) = (entry, self.board.get()) {
+            board.set(entry, step, done, total);
         }
     }
 
@@ -480,16 +495,26 @@ impl Cloud {
         serde_json::from_slice(&bytes).map_err(|_| Away::Unreachable)
     }
 
-    /// Writes an answer's body into `to` as it comes.
-    async fn save_to(mut response: Response, to: &Path) -> Result<(), Away> {
+    /// Writes an answer's body into `to` as it comes, counted for `watched`, a game's entry.
+    async fn save_to(
+        &self,
+        mut response: Response,
+        to: &Path,
+        watched: Option<&str>,
+    ) -> Result<(), Away> {
         let status = response.status();
         if !status.is_success() {
             let bytes = response.bytes().await.unwrap_or_default();
             return Err(away_of(status, &bytes));
         }
+        let total = response.content_length();
+        let mut done = 0u64;
+        self.moved(watched, Step::Fetching, done, total);
         let mut file = fs::File::create(to).map_err(|_| Away::Unreachable)?;
         while let Some(piece) = response.chunk().await.map_err(|_| Away::Unreachable)? {
             std::io::Write::write_all(&mut file, &piece).map_err(|_| Away::Unreachable)?;
+            done += piece.len() as u64;
+            self.moved(watched, Step::Fetching, done, total);
         }
         std::io::Write::flush(&mut file).map_err(|_| Away::Unreachable)
     }
@@ -501,11 +526,13 @@ impl Cloud {
         session: &str,
         from: &Path,
         token: Option<&str>,
+        watched: Option<&str>,
     ) -> Result<(), Away> {
         let mut file = fs::File::open(from).map_err(|_| Away::Unreachable)?;
         let total = file.metadata().map_err(|_| Away::Unreachable)?.len();
         let mut start = 0u64;
         loop {
+            self.moved(watched, Step::Sending, start, Some(total));
             let mut piece = vec![0u8; PIECE.min((total - start) as usize)];
             file.read_exact(&mut piece).map_err(|_| Away::Unreachable)?;
             let end = start + piece.len() as u64;
@@ -596,7 +623,7 @@ impl Cloud {
         let response = self
             .call(|client, token| client.get(&address).bearer_auth(token))
             .await?;
-        Self::save_to(response, to).await
+        self.save_to(response, to, zip_of(entry, name)).await
     }
 
     async fn onedrive_upload(&self, entry: &str, name: &str, from: &Path) -> Result<(), Away> {
@@ -616,7 +643,8 @@ impl Cloud {
             .await?;
         let session: Session = Self::json(response).await?;
         // The session's address carries its own right to write: no token goes with it.
-        self.send_pieces(&session.upload_url, from, None).await
+        self.send_pieces(&session.upload_url, from, None, zip_of(entry, name))
+            .await
     }
 
     async fn onedrive_delete(&self, entry: &str, name: &str) -> Result<(), Away> {
@@ -773,12 +801,12 @@ impl Cloud {
         Ok(files)
     }
 
-    async fn drive_download(&self, id: &str, to: &Path) -> Result<(), Away> {
+    async fn drive_download(&self, id: &str, to: &Path, watched: Option<&str>) -> Result<(), Away> {
         let address = format!("{}/drive/v3/files/{id}?alt=media", self.api()?);
         let response = self
             .call(|client, token| client.get(&address).bearer_auth(token))
             .await?;
-        Self::save_to(response, to).await
+        self.save_to(response, to, watched).await
     }
 
     async fn drive_upload(&self, entry: &str, name: &str, from: &Path) -> Result<(), Away> {
@@ -814,7 +842,8 @@ impl Cloud {
             return Err(away_of(status, &bytes));
         };
         let token = self.access(None).await?;
-        self.send_pieces(&session, from, Some(&token)).await
+        self.send_pieces(&session, from, Some(&token), zip_of(entry, name))
+            .await
     }
 
     async fn drive_delete(&self, id: &str) -> Result<(), Away> {
@@ -851,6 +880,12 @@ fn away_of(status: StatusCode, body: &[u8]) -> Away {
 }
 
 /// The services' calls are made from threads that read disks, never a page's: each waits for its answer.
+/// The entry whose progress a file sent or read counts for: a snapshot's archive only, as the lists and
+/// the game's file beside it are a moment's.
+fn zip_of<'a>(entry: &'a str, name: &str) -> Option<&'a str> {
+    name.ends_with(".zip").then_some(entry)
+}
+
 impl Remote for Cloud {
     fn files(&self, entry: &str) -> Result<Vec<RemoteFile>, Away> {
         tauri::async_runtime::block_on(async {
@@ -865,7 +900,10 @@ impl Remote for Cloud {
         tauri::async_runtime::block_on(async {
             match self.service {
                 Service::OneDrive => self.onedrive_download(entry, &file.name, to).await,
-                Service::GoogleDrive => self.drive_download(&file.id, to).await,
+                Service::GoogleDrive => {
+                    self.drive_download(&file.id, to, zip_of(entry, &file.name))
+                        .await
+                }
             }
         })
     }
@@ -1402,12 +1440,30 @@ mod tests {
         fs::create_dir_all(&root).unwrap();
         fs::write(root.join("big.zip"), &big).unwrap();
         fs::write(root.join("small.json"), b"{}").unwrap();
+        // An archive's bytes are counted for the page, piece by piece; a list's aren't.
+        let board = Arc::new(crate::saves::progress::Board::default());
+        cloud.watch(board.clone());
+        let counted = || {
+            board
+                .of("entry-1")
+                .map(|progress| (progress.step, progress.done, progress.total))
+        };
         cloud
             .upload("entry-1", "big.zip", &root.join("big.zip"))
             .unwrap();
+        let sending = crate::saves::progress::Step::Sending;
+        let last_piece = 2 * PIECE as u64;
+        assert_eq!(
+            counted(),
+            Some((sending, last_piece, Some(big.len() as u64)))
+        );
         cloud
             .upload("entry-1", "small.json", &root.join("small.json"))
             .unwrap();
+        assert_eq!(
+            counted(),
+            Some((sending, last_piece, Some(big.len() as u64)))
+        );
         assert_eq!(account.names(), ["big.zip", "small.json"]);
         let files = cloud.files("entry-1").unwrap();
         let file = files.iter().find(|file| file.name == "big.zip").unwrap();
@@ -1416,6 +1472,10 @@ mod tests {
             .download("entry-1", file, &root.join("back.zip"))
             .unwrap();
         assert_eq!(fs::read(root.join("back.zip")).unwrap(), big);
+        assert_eq!(
+            counted().map(|(step, done, _)| (step, done)),
+            Some((crate::saves::progress::Step::Fetching, big.len() as u64))
+        );
         // The token is refused: refreshed once, and asked again.
         let refreshed = |account: &Account| *account.refreshed.lock().unwrap();
         *account.access.lock().unwrap() = "taken-back".into();

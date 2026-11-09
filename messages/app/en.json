@@ -255,6 +255,7 @@
     "quiet": "{count, plural, one {# more place} other {# more places}} in the list, with nothing there on this computer.",
     "leaveOut": "Leave out {path}",
     "add": "Add a folder",
+    "hiddenFolders": "Windows’ folder picker hides AppData, where many games save: paste the folder’s address into the bar at its top, then Select Folder.",
     "addTitle": "Choose the folder where {title} saves",
     "gameFolder": "The game’s folder",
     "changeGameFolder": "Change",
@@ -271,6 +272,13 @@
     },
     "backUp": "Back up now",
     "backingUp": "Backing up…",
+    "progress": {
+      "reading": "Reading the saves…",
+      "packing": "Making the snapshot…",
+      "sending": "Sending it to {place}…",
+      "fetching": "Downloading the snapshot from {place}…",
+      "restoring": "Putting the saves back…"
+    },
     "noneYet": "No snapshots yet.",
     "at": "<time>{when}</time><muted> · {ago}</muted>",
     "made": "{files, plural, one {# file} other {# files}} · {size} · {computer}",
@@ -294,11 +302,18 @@
       "empty": "No saves were found to back up. Add the folder this game saves in.",
       "large": "These saves are larger than a snapshot may be. Raise the limit in Settings, or leave a folder out.",
       "wide": "That folder holds more than one game’s saves. Choose the game’s own folder inside it.",
+      "gameFolder": "That folder holds the game itself: restoring a snapshot there could delete it. Choose only the folder it saves in.",
       "outside": "Choose a folder inside the game’s folder or your Windows user’s folders: another computer couldn’t find one anywhere else.",
       "missing": "That snapshot isn’t there any more.",
       "damaged": "That snapshot is damaged, or names a file outside this game’s folders, so nothing was put back.",
       "changed": "A save changed while it was being read. Try again once the game has closed.",
       "failed": "That didn’t work. Try again."
+    },
+    "named": {
+      "wide": "Windows handed over {folder}, which holds more than one game’s saves. Choose the folder this game saves in, inside it.",
+      "wideGame": "Windows handed over {folder}, which can’t be a game’s folder: it is a disk or one of Windows’ own. Choose the folder the game is installed in.",
+      "gameFolder": "{folder} holds the game itself: restoring a snapshot there could delete it. Choose only the folder it saves in.",
+      "outside": "Windows handed over {folder}, outside the game’s folder and your Windows user’s folders: another computer couldn’t find it. Choose a folder inside them."
     },
     "behind": "A newer snapshot than what’s here, made on {computer} on {when}.",
     "restoreNewer": "Restore it",

@@ -235,6 +235,16 @@ impl From<io::Error> for Unmade {
 /// Writes a snapshot of what is here into `folder`: the archive under a `.partial` name, renamed once
 /// whole, then the list, which is what makes it exist. A name that is there is never written again.
 pub fn write(folder: &Path, here: &Here, making: Making) -> Result<List, Unmade> {
+    write_watched(folder, here, making, &|_| {})
+}
+
+/// As `write`, saying how many of the files' bytes are in the archive as it goes.
+pub fn write_watched(
+    folder: &Path,
+    here: &Here,
+    making: Making,
+    packed: &dyn Fn(u64),
+) -> Result<List, Unmade> {
     fs::create_dir_all(folder)?;
     let id = name(
         making.created_at,
@@ -249,7 +259,7 @@ pub fn write(folder: &Path, here: &Here, making: Making) -> Result<List, Unmade>
     }
     let archive_file = folder.join(format!("{id}.zip"));
     let partial = folder.join(format!("{id}.zip.partial"));
-    let written = write_archive(&partial, here);
+    let written = write_archive(&partial, here, packed);
     let (archive_hash, archive_size) = match written {
         Ok(()) => hash_file(&partial)?,
         Err(error) => {
@@ -282,11 +292,13 @@ pub fn write(folder: &Path, here: &Here, making: Making) -> Result<List, Unmade>
     Ok(list)
 }
 
-fn write_archive(path: &Path, here: &Here) -> Result<(), Unmade> {
+fn write_archive(path: &Path, here: &Here, packed: &dyn Fn(u64)) -> Result<(), Unmade> {
     use zip::write::SimpleFileOptions;
 
     let mut zip = zip::ZipWriter::new(BufWriter::new(File::create(path)?));
     let mut buffer = vec![0u8; 64 * 1024];
+    let mut done = 0u64;
+    packed(done);
     for (item, source) in &here.files {
         let options = SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Deflated)
@@ -304,6 +316,8 @@ fn write_archive(path: &Path, here: &Here) -> Result<(), Unmade> {
             hash.update(&buffer[..read]);
             zip.write_all(&buffer[..read])?;
             size += read as u64;
+            done += read as u64;
+            packed(done);
         }
         // What was hashed before is what went in, or the snapshot would lie.
         if size != item.size || hex(&hash.finalize()) != item.sha256 {

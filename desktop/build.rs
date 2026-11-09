@@ -43,6 +43,7 @@ fn main() {
             "saves",
             "turn_saves",
             "back_up_saves",
+            "save_progress",
             "restore_saves",
             "add_save_folder",
             "remove_save_location",

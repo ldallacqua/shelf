@@ -404,6 +404,13 @@ pub fn too_wide(folder: &Path, folders: &Folders, game: &GameAt) -> bool {
             .is_some_and(|base| inside_or_same(&path, &key(base)))
 }
 
+/// Whether a folder is the game's own, or one above it: its saves are somewhere inside, never all of it.
+pub fn holds_the_game(folder: &Path, game: &GameAt) -> bool {
+    game.base
+        .as_ref()
+        .is_some_and(|base| inside_or_same(&key(base), &key(folder)))
+}
+
 /// A folder the person picked, written from the most fitting placeholder: the game's own folder,
 /// then the closest of this PC's folders. None for one outside all of them, which would mean nothing
 /// on another PC.

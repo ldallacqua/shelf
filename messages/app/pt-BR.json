@@ -255,6 +255,7 @@
     "quiet": "{count, plural, one {Mais # lugar} other {Mais # lugares}} na lista, sem nada neste computador.",
     "leaveOut": "Deixar de fora {path}",
     "add": "Adicionar uma pasta",
+    "hiddenFolders": "A janela do Windows esconde a pasta AppData, onde muitos jogos salvam: cole o endereço da pasta na barra do topo dela e clique em Selecionar pasta.",
     "addTitle": "Escolha a pasta em que {title} salva",
     "gameFolder": "A pasta do jogo",
     "changeGameFolder": "Trocar",
@@ -271,6 +272,13 @@
     },
     "backUp": "Fazer backup agora",
     "backingUp": "Fazendo backup…",
+    "progress": {
+      "reading": "Lendo os saves…",
+      "packing": "Fazendo o snapshot…",
+      "sending": "Enviando para {place}…",
+      "fetching": "Baixando o snapshot de {place}…",
+      "restoring": "Pondo os saves de volta…"
+    },
     "noneYet": "Nenhum snapshot ainda.",
     "at": "<time>{when}</time><muted> · {ago}</muted>",
     "made": "{files, plural, one {# arquivo} other {# arquivos}} · {size} · {computer}",
@@ -294,11 +302,18 @@
       "empty": "Nenhum save foi encontrado para o backup. Adicione a pasta em que este jogo salva.",
       "large": "Estes saves passam do tamanho que um snapshot pode ter. Aumente o limite em Configurações, ou deixe uma pasta de fora.",
       "wide": "Essa pasta guarda mais que os saves de um jogo. Escolha a pasta do próprio jogo dentro dela.",
+      "gameFolder": "Essa pasta tem o próprio jogo: restaurar um snapshot ali poderia apagá-lo. Escolha só a pasta onde ele salva.",
       "outside": "Escolha uma pasta dentro da pasta do jogo ou das pastas do seu usuário do Windows: outro computador não encontraria uma em outro lugar.",
       "missing": "Esse snapshot não está mais lá.",
       "damaged": "Esse snapshot está danificado, ou cita um arquivo fora das pastas deste jogo, então nada foi restaurado.",
       "changed": "Um save mudou enquanto era lido. Tente de novo quando o jogo tiver fechado.",
       "failed": "Não deu certo. Tente de novo."
+    },
+    "named": {
+      "wide": "O Windows entregou {folder}, que guarda mais que os saves de um jogo. Escolha a pasta onde este jogo salva, lá dentro.",
+      "wideGame": "O Windows entregou {folder}, que não pode ser a pasta de um jogo: é um disco ou uma pasta do próprio Windows. Escolha a pasta onde o jogo está instalado.",
+      "gameFolder": "{folder} tem o próprio jogo: restaurar um snapshot ali poderia apagá-lo. Escolha só a pasta onde ele salva.",
+      "outside": "O Windows entregou {folder}, fora da pasta do jogo e das pastas do seu usuário do Windows: outro computador não a encontraria. Escolha uma pasta dentro delas."
     },
     "behind": "Há um snapshot mais novo que o que está aqui, feito em {computer} em {when}.",
     "restoreNewer": "Restaurar",

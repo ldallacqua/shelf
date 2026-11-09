@@ -6,6 +6,7 @@ pub mod cloud;
 pub mod manifest;
 pub mod notice;
 pub mod paths;
+pub mod progress;
 pub mod remote;
 pub mod restore;
 pub mod sign_in;
@@ -51,6 +52,9 @@ pub enum Refusal {
     Large,
     /// A folder that holds more than a game's saves.
     Wide,
+    /// The game's own folder, or one above it: a restore there could take the game away.
+    #[serde(rename = "game-folder")]
+    GameFolder,
     /// A folder outside the game's and this PC's folders, which would mean nothing on another PC.
     Outside,
     /// The snapshot isn't there.
@@ -305,6 +309,7 @@ pub struct Busy<'a> {
 
 impl Drop for Busy<'_> {
     fn drop(&mut self) {
+        self.saves.board.clear(&self.entry);
         self.saves.busy.lock().unwrap().remove(&self.entry);
     }
 }
@@ -461,6 +466,8 @@ pub struct Saves {
     remotes: Vec<(Service, Arc<dyn Remote>)>,
     /// What the place last said, when it was a service that couldn't be used.
     away: Mutex<Option<Away>>,
+    /// How far each game's backup or restore has got, for the page (`progress.rs`).
+    pub board: Arc<progress::Board>,
 }
 
 impl Saves {
@@ -485,11 +492,13 @@ impl Saves {
             clouds: Vec::new(),
             remotes: Vec::new(),
             away: Mutex::new(None),
+            board: Arc::default(),
         }
     }
 
     /// A service Settings can sign in to and choose.
     pub fn add_cloud(&mut self, cloud: Arc<Cloud>) {
+        cloud.watch(self.board.clone());
         self.remotes.push((cloud.service, cloud.clone()));
         self.clouds.push(cloud);
     }
@@ -716,6 +725,8 @@ impl Saves {
                 if !chosen.is_dir() {
                     return;
                 }
+                // A folder's copy is a moment's, and only a service's bytes are counted.
+                self.board.set(entry, progress::Step::Sending, 0, None);
                 for list in &sending {
                     if snapshot::copy(&waiting, &root.join(entry), list).is_ok() {
                         let_go(list);
@@ -1155,6 +1166,9 @@ impl Saves {
     /// A folder the person picked for the game's saves, refused if it is too wide or outside every
     /// folder a placeholder names.
     pub fn add(&self, entry: &str, folder: &Path, setup: &Setup) -> Result<(), Refusal> {
+        if paths::holds_the_game(folder, &setup.game) {
+            return Err(Refusal::GameFolder);
+        }
         if paths::too_wide(folder, &self.folders, &setup.game) {
             return Err(Refusal::Wide);
         }
@@ -1254,6 +1268,7 @@ impl Saves {
         now: u64,
         parents: Option<Vec<String>>,
     ) -> Result<Option<List>, Refusal> {
+        self.board.set(entry, progress::Step::Reading, 0, None);
         let here = self.here(setup)?;
         if here.is_empty() {
             return Err(Refusal::Empty);
@@ -1287,11 +1302,16 @@ impl Saves {
             Unmade::Changed => Refusal::Changed,
             Unmade::Io => Refusal::Failed,
         };
+        let total: u64 = here.files.iter().map(|(item, _)| item.size).sum();
+        let packed = |done| {
+            self.board
+                .set(entry, progress::Step::Packing, done, Some(total))
+        };
         let direct = self.direct(entry);
         let written = match &direct {
             Some(place) => {
                 self.write_game_file(place, entry, &title);
-                snapshot::write(place, &here, making())
+                snapshot::write_watched(place, &here, making(), &packed)
             }
             None => Err(Unmade::Io),
         };
@@ -1306,8 +1326,8 @@ impl Saves {
             // A service, or a place gone, full or refusing: it waits on this computer, and nothing is
             // lost. To a service it is sent at once, when it can be.
             Err(Unmade::Io) if self.chosen() => {
-                let list =
-                    snapshot::write(&self.waiting(entry), &here, making()).map_err(refused)?;
+                let list = snapshot::write_watched(&self.waiting(entry), &here, making(), &packed)
+                    .map_err(refused)?;
                 self.send_waiting(entry);
                 list
             }
@@ -1388,6 +1408,7 @@ impl Saves {
         if !restore::archive_whole(&archive, &list) {
             return Err(Refusal::Damaged);
         }
+        self.board.set(entry, progress::Step::Restoring, 0, None);
         // What is here first, as it is: it goes back if anything goes wrong.
         let here = self.here(setup)?;
         let current: Vec<PathBuf> = here.files.iter().map(|(_, at)| at.clone()).collect();
@@ -2030,6 +2051,11 @@ mod tests {
             .back_up("entry-1", "A Game", &setup, 1000, None)
             .unwrap()
             .unwrap();
+        // The page saw the archive written, every byte of the saves counted.
+        let packed = pc.saves.board.of("entry-1").unwrap();
+        assert_eq!(packed.step, progress::Step::Packing);
+        assert_eq!(packed.total, Some("chapter one".len() as u64));
+        assert_eq!(packed.done, "chapter one".len() as u64);
         // Unchanged: no new snapshot.
         assert_eq!(
             pc.saves
@@ -2051,7 +2077,10 @@ mod tests {
         pc.saves
             .restore("entry-1", &first.id, &setup, 4000)
             .unwrap();
+        assert!(pc.saves.board.of("entry-1").is_some());
+        // Letting go of the game clears what the page is shown.
         drop(busy);
+        assert_eq!(pc.saves.board.of("entry-1"), None);
         assert_eq!(fs::read_to_string(&slot).unwrap(), "chapter one");
         assert!(!pc.app_data().join("A Game").join("slot2.sav").exists());
         // Going back to the first made it the latest: a new snapshot of it, after the second.
@@ -2153,6 +2182,17 @@ mod tests {
             pc.saves
                 .add("entry-1", Path::new("Q:\\Elsewhere\\Saves"), &setup),
             Err(Refusal::Outside)
+        );
+        // The game's own folder, and one above it, hold the game: a restore there could take it away.
+        let base = setup.game.base.clone().unwrap();
+        let base = base.as_path();
+        assert_eq!(
+            pc.saves.add("entry-1", base, &setup),
+            Err(Refusal::GameFolder)
+        );
+        assert_eq!(
+            pc.saves.add("entry-1", base.parent().unwrap(), &setup),
+            Err(Refusal::GameFolder)
         );
         let documents = pc
             .saves
