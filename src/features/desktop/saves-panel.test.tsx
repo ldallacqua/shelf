@@ -317,7 +317,7 @@ describe('a game’s saves', () => {
   it('say AppData is hidden when nothing was found', async () => {
     answer = view({ matched: null, locations: [], files: 0, bytes: 0 })
     const { panel } = await opened()
-    expect(within(panel).getByText(/hides the AppData folder/)).toBeInTheDocument()
+    expect(within(panel).getByText(/folder picker hides AppData/)).toBeInTheDocument()
   })
 
   it('say when the list doesn’t know the game, or couldn’t be read', async () => {
