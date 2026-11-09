@@ -357,6 +357,8 @@ pub struct View {
     pub caps: Caps,
     /// This PC's place: a folder, or a service by its name; None is this computer alone.
     pub place: Option<String>,
+    /// Whether the place is a service, OneDrive or Google Drive, rather than a folder.
+    pub service: bool,
     pub reachable: bool,
     /// Why the place couldn't be used, when it couldn't.
     pub away: Option<Away>,
@@ -449,6 +451,8 @@ pub struct SnapshotView {
     pub bytes: u64,
     /// It holds what this PC has now.
     pub here: bool,
+    /// Made here and not yet at the place, which couldn't be reached: it goes as soon as it can.
+    pub waiting: bool,
 }
 
 pub struct Saves {
@@ -1087,12 +1091,14 @@ impl Saves {
             Verdict::Restore(_) => State::Behind,
             Verdict::Choose { .. } => State::Choose,
         };
+        let waiting = self.waiting(entry);
         let snapshots = lists
             .into_iter()
             .map(|list| SnapshotView {
                 here: here
                     .as_ref()
                     .is_some_and(|here| here.content == list.content),
+                waiting: waiting.join(format!("{}.json", list.id)).is_file(),
                 files: list.files.len(),
                 bytes: list.bytes(),
                 id: list.id,
@@ -1131,6 +1137,7 @@ impl Saves {
                 Where::Folder(root, _) => Some(root.display().to_string()),
                 Where::Cloud(service) => Some(service.name().to_string()),
             },
+            service: matches!(self.place_now(), Where::Cloud(_)),
             reachable: away.is_none(),
             away,
         }
@@ -1743,6 +1750,7 @@ mod tests {
                 "place",
                 "reachable",
                 "registry",
+                "service",
                 "snapshots",
                 "state"
             ]
@@ -1765,7 +1773,15 @@ mod tests {
         keys.sort();
         assert_eq!(
             keys,
-            ["bytes", "createdAt", "device", "files", "here", "id"]
+            [
+                "bytes",
+                "createdAt",
+                "device",
+                "files",
+                "here",
+                "id",
+                "waiting"
+            ]
         );
         assert_eq!(snapshot["device"], "dev1");
         assert_eq!(
@@ -1946,10 +1962,14 @@ mod tests {
         assert_eq!(pc.saves.game("entry-1").last.unwrap().did, Did::Waiting);
         let view = pc.saves.view("entry-1", &pc.setup(), true);
         assert!(!view.reachable);
+        assert!(!view.service);
         assert_eq!(view.snapshots.len(), 1);
+        // The page says it isn't there yet.
+        assert!(view.snapshots[0].waiting);
         // The drive is back: what waited goes there.
         fs::create_dir_all(&drive).unwrap();
-        pc.saves.view("entry-1", &pc.setup(), true);
+        let view = pc.saves.view("entry-1", &pc.setup(), true);
+        assert!(!view.snapshots[0].waiting);
         let there = drive.join(PLACE_NAME).join("entry-1");
         assert!(there.join(format!("{}.json", made.id)).is_file());
         assert!(snapshot::whole(&pc.saves.waiting("entry-1")).is_empty());
@@ -2389,8 +2409,12 @@ mod tests {
         assert_eq!(fs::read_to_string(slot(&one)).unwrap(), "chapter two");
         let view = one.saves.view("entry-1", &one.setup(), true);
         assert_eq!(view.place.as_deref(), Some("OneDrive"));
+        assert!(view.service);
         assert!(view.reachable);
         assert_eq!(view.state, State::InStep);
+        // Both PCs' snapshots, every one of them in the service.
+        assert_eq!(view.snapshots.len(), 2);
+        assert!(view.snapshots.iter().all(|snapshot| !snapshot.waiting));
     }
 
     #[test]

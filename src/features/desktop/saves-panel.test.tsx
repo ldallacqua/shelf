@@ -314,6 +314,42 @@ describe('a game’s saves', () => {
     expect(within(panel).queryByRole('progressbar')).toBeNull()
   })
 
+  it('say whether each snapshot is in the service yet', async () => {
+    const [first, second, third] = view().snapshots
+    answer = view({
+      place: 'Google Drive',
+      service: true,
+      snapshots: [
+        { ...first!, waiting: true },
+        { ...second!, waiting: false },
+        { ...third!, waiting: false },
+      ],
+    })
+    const { panel } = await opened()
+    expect(
+      within(panel).getByText('Not in Google Drive yet: it goes as soon as it can'),
+    ).toBeInTheDocument()
+    expect(within(panel).getAllByText('In Google Drive')).toHaveLength(2)
+  })
+
+  it('say whether each snapshot is in the folder yet', async () => {
+    const [first] = view().snapshots
+    answer = view({
+      place: 'D:\\OneDrive\\Shelf saves',
+      service: false,
+      snapshots: [{ ...first!, waiting: false }],
+    })
+    const { panel } = await opened()
+    expect(within(panel).getByText('In the chosen folder')).toBeInTheDocument()
+  })
+
+  it('say nothing of where a snapshot is when it is kept on this computer alone', async () => {
+    const [first] = view().snapshots
+    answer = view({ place: null, service: false, snapshots: [{ ...first!, waiting: false }] })
+    const { panel } = await opened()
+    expect(within(panel).queryByText(/In the chosen folder|In Google Drive/)).toBeNull()
+  })
+
   it('say AppData is hidden when nothing was found', async () => {
     answer = view({ matched: null, locations: [], files: 0, bytes: 0 })
     const { panel } = await opened()

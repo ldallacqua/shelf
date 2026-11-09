@@ -102,6 +102,8 @@ const snapshotSchema = z.object({
   bytes: z.number(),
   /** It holds what this computer has now. */
   here: z.boolean(),
+  /** Made here and not yet at the place: it goes as soon as it can. None from an app older than 0.17.0. */
+  waiting: z.boolean().optional(),
 })
 export type Snapshot = z.infer<typeof snapshotSchema>
 
@@ -136,6 +138,8 @@ const viewSchema = z.object({
   caps: capsSchema,
   /** This computer's place: the folder Shelf keeps there, or a service's name; null is this computer alone. */
   place: z.string().nullable(),
+  /** Whether the place is a service rather than a folder. None from an app older than 0.17.0. */
+  service: z.boolean().optional(),
   /** Whether it can be reached now. */
   reachable: z.boolean(),
   /** Why not, when it can't; none from an app older than 0.15.0. */

@@ -128,7 +128,9 @@ which copy I start. A copy from outside the stores is the case this is for.
 While a backup or restore runs, the panel shows what is being done and how far it has got (9 Nov 2026,
 the owner): reading the saves, writing the archive (its files' bytes counted), sending it to a service
 (the pieces sent counted) or a folder, reading one back from a service, and putting the saves back. The
-page asks the app as it waits (`save_progress`), as it does for downloads.
+page asks the app as it waits (`save_progress`), as it does for downloads. Each snapshot also says
+whether it is at the place yet, a service by its name or the folder, or still waiting on this computer
+for it (the owner, the same day: "mostre se o snapshot já está na nuvem ou não").
 
 ### 5. Which copy wins: parents, not clocks
 
