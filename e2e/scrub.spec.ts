@@ -43,6 +43,6 @@ test.describe('scrubbing a compact shelf', () => {
     await send('touchEnd')
 
     await expect(title).toBeHidden()
-    await expect(page.getByRole('dialog').getByRole('heading', { level: 2 })).toHaveText(chosen)
+    await expect(page.getByRole('heading', { level: 1 }).locator('visible=true')).toHaveText(chosen)
   })
 })

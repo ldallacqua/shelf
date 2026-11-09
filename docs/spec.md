@@ -80,7 +80,7 @@ language the browser asks for.
 | `/en/u/{handle}` | An account's library. Filters, sort, grouping and view live in the query string. |
 | `/en/u/{handle}/shelves/{name}` | A saved smart shelf: the library with a stored filter, sort and grouping |
 | `/en/u/{handle}/trophies` | Trophy wall: completed games and stats |
-| `/en/u/{handle}/game/{slug}` | A game's page. Opened from the library, it appears over the shelf; opened directly, it is a full page. |
+| `/en/u/{handle}/game/{slug}` | A game's page, however it is reached (ADR 009). |
 | `/en/sign-up` | A shelf of one's own: name, handle, email address, password, public or private |
 | `/en/sign-in` | Sign-in, with an email address or handle, and a password |
 | `/en/settings` | Settings ([section 2.1](#21-settings)): every page below, by whose it is, each with what it holds. A phone starts here |
@@ -616,7 +616,7 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | Page Up, Page Down | Previous, next shelf |
 | Home, End | First, last game of the shelf |
 | Enter or Space | Open the focused game |
-| Escape | Close detail, sheet or panel |
+| Escape | Close a sheet or a panel; put back a box pulled from the 3D wall |
 | `/` | Focus search |
 | `F` | Open filters |
 | `G` | Change grouping |
@@ -1349,22 +1349,32 @@ Each value under Details is a link to the library filtered by it.
 IGDB's text stays in English, as IGDB provides it. In the Portuguese interface those passages
 are marked as English, so a screen reader pronounces them correctly.
 
-### 7.2 Opening and closing
+### 7.2 Opening and going back
 
-- **From the shelf**, the cover is the shared element. In 2D the spine turns to its cover and
-  grows into the hero. In 3D the pulled box becomes the hero. Closing reverses it.
-- **From the wall or list**, the thumbnail grows into the hero.
-- **Opened from the library**, detail sits over the shelf: a panel on desktop and tablet, a
-  sheet on a phone. Back closes it and the shelf is where I left it.
-  - **On a very wide window** (from 2400px wide and 720px tall), a panel at the window's edge is
-    too far to read without turning my head. There the game's page stands in a frame up to
-    1280px wide, centered over the dimmed shelf: the hero, then the main column, and Mine at
-    352px on the right. It fades up instead of sliding in. Its height stays put, so stepping
-    through games moves nothing, and resizing past the line keeps the game and what I was typing.
-    In 3D it stays a panel, for the pulled box to stand beside. The full page is still a click away.
-- **Opened directly**, it is a full page with a link back to the library.
-- **Next and previous** follow the library's current order: arrow keys on desktop, a sideways
-  swipe on a phone.
+A game is always its page, at its own address, from a cover on the shelf or the wall, a row in
+the list, or a result anywhere ([ADR 009](adr/009-game-page-and-dialogs.md)), as Steam, Hydra
+and GOG Galaxy open a game. There is no panel, frame or sheet over the shelf: what a game's page
+opens (its menu's items) stands over the page alone.
+
+- **From the shelf, the wall or the list**, the cover is the shared element: the box's cover (a
+  spine's, in compact) grows into the hero as the page changes, 400ms, while the rest crossfades.
+  It does not fly back on Back. Under reduced motion, or without the browser's view transitions,
+  the page simply changes.
+- **At once.** The page is drawn the moment it is chosen, from what the library already knows
+  (cover, title, status, copies, Mine), with the rest as ghosts until the page's own arrives:
+  a game opened from the shelf never waits on the server to show itself.
+- **Back** is the library as I left it: its view, grouping, filter and scroll, and focus on the
+  box I opened. The game's address keeps the library's arrangement, so the page's **Library**
+  link leads to the same shelf from an address shared or opened directly; when the library is
+  the page before it, the link is Back.
+- **In 3D**, a click pulls the box from the wall, as before, and a bar under it says its title,
+  status and platform, with **Open** and **Put it back** (Escape too). Open, or the pulled box
+  chosen again, goes to the page; the pulled box is the cover, so nothing grows. A filter that
+  takes its game off the wall puts it back.
+- **The header** is the same on the library and on a game: on a very wide window both use the
+  library's width, and the game's own parts keep their measure inside it.
+- **Next and previous**, in the library's current order, come back with the list of my library
+  beside the game (ADR 009, phase 2).
 
 ### 7.3 Editing
 
@@ -2087,7 +2097,7 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 | Main controls | Bar at the bottom | Row under the header | Row under the header |
 | Filters | Bottom sheet | Side panel | Side panel; from 1536px, a column beside the library |
 | Sort and group | Bottom sheet | Menus | Menus |
-| Detail | Bottom sheet, two heights | Side panel; sheet in portrait | Side panel; from 2400px wide, centered in two columns (7.2) |
+| Detail | Its page (7.2) | Its page | Its page |
 | Add | Bottom sheet | Side panel | Side panel; from 2400px wide, centered, as a game is |
 | List columns | Four | Six | All |
 
@@ -2096,7 +2106,7 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 | Gesture | Does | Without the gesture |
 | --- | --- | --- |
 | Swipe sideways on the shelf | Next or previous shelf | Shelf tabs |
-| Tap a spine | Select and raise the sheet | |
+| Tap a spine | Open the game's page | |
 | Press and slide along a ledge | Scrub through spines | Tap, or the List view |
 | Drag the sheet up or down | Full detail, or close | Tap the sheet; close button |
 | Swipe the sheet sideways | Next or previous game | Arrow buttons on the sheet |
@@ -2175,14 +2185,15 @@ Only position, scale, rotation and opacity are animated.
 | --- | --- | --- |
 | Shelf loads | Boxes arrive in a stagger | Appear together |
 | Hover or focus | Box comes toward you; the LED glides to its color | Outline; the LED changes color at once |
-| Pull | Slide, turn, camera moves in | 200ms crossfade to detail |
+| Pull | Slide, turn, camera moves in; the bar with Open rises under it | The bar simply appears |
 | Reorder | Lift, slide, settle | 150ms crossfade |
 | 2D and 3D switch | Wall tilts and gains depth | 200ms crossfade |
 | Theme change | Room lights and LEDs trade places over a second | Immediate |
 | Camera travel | Eased glide | Jumps to the destination |
 | Depth on scroll | Layers shift | None |
 | Stat numbers | Count up | Final value shown |
-| Sheets and panels | Slide in; a game's centered frame rises and fades in | Fade in |
+| Sheets and panels | Slide in | Fade in |
+| A game opened from the library | Its cover grows into the page's hero, the rest crossfades | The page simply changes |
 | Images, as they arrive | Fade in, every one of them, over what stood in their place. One the browser already has is simply there | Simply there |
 
 Reduced motion follows the system setting. Smooth scrolling is never applied to touch or under

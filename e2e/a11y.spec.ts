@@ -40,11 +40,11 @@ for (const theme of themes) {
     await expectAccessible(page)
   })
 
-  test(`a game's details pass axe while open, ${theme}`, async ({ page }) => {
+  test(`a game's page passes axe once opened from the shelf, ${theme}`, async ({ page }) => {
     await openWithTheme(page, '/en/u/sample', theme)
     await page.getByRole('button', { name: /^Astro Bot/ }).click()
-    await page.getByRole('dialog').waitFor()
-    await expectAccessible(page, '[role="dialog"]')
+    await page.getByRole('heading', { level: 1, name: 'Astro Bot' }).waitFor()
+    await expectAccessible(page)
   })
 
   test(`the filter panel passes axe while open, ${theme}`, async ({ page }) => {

@@ -1,7 +1,8 @@
 # ADR 009: A game is a page, with my library beside it, and what a menu opens is a dialog
 
-- **Status:** proposed by the owner, 9 Nov 2026; this record is the research and the details, waiting for
-  the owner's word on them and on the open questions at the end
+- **Status:** accepted, 9 Nov 2026: proposed by the owner, this record is the research and the details,
+  which the owner accepted as written, the proposals in the open questions at the end with them. Built in
+  four phases; each says below what it found.
 - **Date:** 9 Nov 2026
 - **Decides:** how a game is opened (always its page), what stands beside it (my library, as a list), how
   anything chosen in a menu is shown (a dialog, never the menu grown), and how a game's Saves says what it
@@ -159,6 +160,32 @@ is for when something is wrong, or for the curious, and moves one step back.
 
 Each phase has its design pass first (AGENTS.md), its stories, and `pnpm desktop:check`'s steps where the
 app is concerned (Play, Ready to play, Saves).
+
+## What each phase found
+
+### Phase 1, a game is a page (9 Nov 2026)
+
+- **The morph stays, as the browser's view transition, not React's.** Next.js 16.4's guide pairs
+  `<ViewTransition name>` on both pages, but that names every box on the shelf, and the browser takes a
+  picture of each named element in every transition. `morph.ts` names the box's cover and the page's
+  cover for the one transition, as it did for the panel. The move is the router's, in its own time, so
+  the transition holds the shelf's picture until the page is drawn, and goes ahead after 600 ms anyway.
+- **The page is drawn at once, from the library.** A move to a page the server builds waits on the
+  server: in development the whole page came in one answer, after about 250 ms, and the screen held
+  still meanwhile. The library knows the game's cover, title, status and copies, so it hands the page
+  a drawing of them (`hand-off.tsx`), which the page's Suspense fallback shows until the server's page
+  replaces it where it stands. The drawing's code is fetched as a game is reached for, as the panel's
+  was, so the game's page carries none of it.
+- **Back needs nothing of ours.** With Cache Components the router keeps the last three pages in the
+  document, hidden (React's Activity), so Back shows the library as it was, scroll and all. Its
+  effects run again as it shows, which puts focus back on the box. The page's Library link is Back
+  when the library is the page before (`window.navigation`), and a link to the library otherwise.
+- **One header.** From 96rem wide the game page takes the library's width, so the header stands
+  the same on both; the game's own parts keep their 90rem measure inside it, centered, until phase 2
+  puts the list at the column's left.
+- **3D** pulls the box as before, with a bar under it (title, status, platform, **Open**, **Put it
+  back**, and Escape); the pulled box chosen again opens the page.
+- **Next and previous** go with the panel, and come back with the list in phase 2.
 
 ## Consequences
 

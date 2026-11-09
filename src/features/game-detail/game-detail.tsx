@@ -1,5 +1,5 @@
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
-import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 import type { Palette } from '@/domain/color/palette'
 import { backdropSources } from '@/domain/igdb/images'
@@ -11,13 +11,14 @@ import { Cover } from '@/features/library/cover'
 import { Duration } from '@/features/library/duration'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
 import { StatusMark } from '@/features/library/status-mark'
-import { gameHref, libraryHref } from '@/features/library/shelf-address'
+import { libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 import { Ghosts } from '@/ui/ghosts'
 
 import { AchievementsLater } from './achievements-later'
-import { GAME_CENTERED, HERO_COVER } from './hero'
+import { PageDrawn } from './hand-off'
+import { HERO_COVER } from './hero'
 import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
 import { AdultNotice } from './adult-notice'
@@ -35,19 +36,14 @@ type GameDetailProps = {
   tags: readonly LibraryTag[]
   /** Names for the platforms its copies are on. */
   platforms: ReadonlyMap<number, LibraryPlatform>
-  /** What only the page shows. Absent while it is on its way: those parts wait as ghosts. */
+  /**
+   * What only the page knows. Absent while it is on its way, drawn from the
+   * library (`hand-off.tsx`): those parts wait as ghosts.
+   */
   facts?: GameFacts
-  /** The facts could not be fetched: say so, and offer the game's own page. */
-  failed?: boolean
-  /** A page of its own, or the panel over the shelf. */
-  layout: 'page' | 'panel'
-  /** Off in 3D, where the box pulled from the wall is the cover (spec 7.2). */
-  cover?: boolean
   /** The file the shelf already shows for this cover: there at once, while a larger one loads. */
   placeholder?: string
-  /** Puts the heading where it belongs: in the panel it is the dialog's title. */
-  heading?: (heading: ReactElement) => ReactElement
-  /** What stands above the heading: on the page, the way back to the library. */
+  /** What stands above the heading: the way back to the library. */
   above?: ReactNode
   /** Editable by its shelf's account, once the browser knows it is theirs (spec 7.3). */
   editable?: boolean
@@ -86,14 +82,11 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 
 function Section({
   title,
-  level: Level,
   children,
   className,
   id,
 }: {
   title: string
-  /** One below the game's title: h2 on the page, h3 in the panel, whose title is an h2. */
-  level: 'h2' | 'h3'
   children: ReactNode
   className?: string
   /** For an address to lead to it: the trophy page's unlocks lead to `#achievements`. */
@@ -101,7 +94,7 @@ function Section({
 }) {
   return (
     <section id={id} className={cn('game-section', className)}>
-      <Level className="readout text-[0.6875rem] text-muted">{title}</Level>
+      <h2 className="readout text-[0.6875rem] text-muted">{title}</h2>
       {children}
     </section>
   )
@@ -160,8 +153,7 @@ function Passage({
 /**
  * A game's page (spec 7.1): the cover over its key art, then what I have
  * recorded about it, what it is about, its screenshots, and what IGDB says
- * about it. The same parts make the page of its own and the panel over the
- * shelf; the panel puts them in one column.
+ * about it.
  *
  * No hooks of its own beyond words and formats, so the page built ahead of
  * time draws it on the server; the screenshots' viewer is the only part
@@ -173,11 +165,7 @@ export function GameDetail({
   tags,
   platforms,
   facts,
-  failed,
-  layout,
-  cover = true,
   placeholder,
-  heading = (node) => node,
   above,
   editable,
   onRemoved,
@@ -189,7 +177,6 @@ export function GameDetail({
   // IGDB writes in English. On the Portuguese site that text is marked as
   // English, so a screen reader pronounces it as English.
   const igdbLang = locale === 'en' ? undefined : 'en'
-  const page = layout === 'page'
 
   const day = (value: string) =>
     format.dateTime(dateOf(value), { dateStyle: 'long', timeZone: 'UTC' })
@@ -203,13 +190,8 @@ export function GameDetail({
   const ratio = game.coverRatio ? game.coverRatio / 100 : 0.75
   const backdrop = facts?.backdrop
 
-  const Heading = page ? 'h1' : 'h2'
-  const level = page ? 'h2' : 'h3'
-  const Minor = page ? 'h3' : 'h4'
-  const titleSize = page ? 'text-3xl sm:text-5xl lg:text-6xl' : 'text-2xl @5xl:text-5xl'
-
   const hero = (
-    <header className="game-hero" data-layout={layout}>
+    <header className="game-hero">
       <div
         className="game-backdrop"
         aria-hidden="true"
@@ -223,54 +205,39 @@ export function GameDetail({
             alt=""
             {...backdropSources(backdrop.id)}
             // A phone takes the smaller file: dimmed as it is, its 569 pixels pass for more.
-            // Without a cover the panel is beside the 3D shelf, narrow on any screen.
-            sizes={
-              page
-                ? '(min-width: 40rem) 100vw, 320px'
-                : cover
-                  ? `${GAME_CENTERED} 80rem, 320px`
-                  : '320px'
-            }
-            fetchPriority={page ? 'high' : undefined}
+            sizes="(min-width: 40rem) 100vw, 320px"
+            fetchPriority="high"
             decoding="async"
           />
         ) : game.colors ? (
           <span className="game-wash" style={{ backgroundImage: wash(game.colors) }} />
         ) : null}
       </div>
-      <div
-        className={cn('game-hero-inner', page && 'mx-auto w-full max-w-360 px-4 sm:px-6 lg:px-10')}
-      >
+      <div className="game-hero-inner mx-auto w-full max-w-360 px-4 sm:px-6 lg:px-10">
         {above}
         <div className="flex items-end gap-4 sm:gap-6">
-          {cover ? (
-            <span
-              className="game-cover"
-              style={{ aspectRatio: String(ratio) }}
-              data-adult-media={game.adult ? '' : undefined}
-              {...{ [HERO_COVER]: '' }}
-            >
-              <Cover
-                cover={game.cover}
-                colors={game.colors}
-                hash={game.hash}
-                title={game.title}
-                sizes={
-                  page
-                    ? '(min-width: 64rem) 256px, (min-width: 40rem) 224px, 160px'
-                    : `${GAME_CENTERED} 224px, 128px`
-                }
-                eager={page}
-                placeholder={placeholder}
-              />
-            </span>
-          ) : null}
+          <span
+            className="game-cover"
+            style={{ aspectRatio: String(ratio) }}
+            data-adult-media={game.adult ? '' : undefined}
+            {...{ [HERO_COVER]: '' }}
+          >
+            <Cover
+              cover={game.cover}
+              colors={game.colors}
+              hash={game.hash}
+              title={game.title}
+              sizes="(min-width: 64rem) 256px, (min-width: 40rem) 224px, 160px"
+              eager
+              placeholder={placeholder}
+            />
+            {/* The cover growing from the shelf lands here (`morph.ts`). */}
+            <PageDrawn />
+          </span>
           <div className="min-w-0 flex-1 pb-1">
-            {heading(
-              <Heading className={cn('title text-balance break-words', titleSize)}>
-                {game.title}
-              </Heading>,
-            )}
+            <h1 className="title text-3xl text-balance break-words sm:text-5xl lg:text-6xl">
+              {game.title}
+            </h1>
             {facts?.versionTitle ? (
               <p className="mt-2 text-sm text-muted" lang={igdbLang}>
                 {facts.versionTitle}
@@ -310,7 +277,7 @@ export function GameDetail({
   )
 
   const readOnlyMine = (
-    <Section title={t('mine')} level={level} className={page ? 'game-mine' : undefined}>
+    <Section title={t('mine')} className="game-mine">
       <dl>
         <Row label={t('status')}>
           <StatusMark status={game.status} label={library(`status.${game.status}`)} />
@@ -382,7 +349,7 @@ export function GameDetail({
       </dl>
       {game.hasNotes ? (
         <div className="mt-4">
-          <Minor className="readout text-[0.625rem] text-muted">{t('notes')}</Minor>
+          <h3 className="readout text-[0.625rem] text-muted">{t('notes')}</h3>
           {facts ? (
             <p className="mt-1.5 text-sm whitespace-pre-line">{facts.notes}</p>
           ) : (
@@ -397,11 +364,11 @@ export function GameDetail({
     <OwnerMine
       handle={handle}
       slug={game.slug}
-      level={level}
-      minor={Minor}
+      level="h2"
+      minor="h3"
       onRemoved={onRemoved}
-      refresh={page}
-      skeleton={<MineSkeleton game={game} tags={tags} platforms={platforms} level={level} />}
+      refresh
+      skeleton={<MineSkeleton game={game} tags={tags} platforms={platforms} level="h2" />}
     >
       {readOnlyMine}
     </OwnerMine>
@@ -411,14 +378,12 @@ export function GameDetail({
 
   const side = (
     <div className="grid min-w-0 content-start gap-7 lg:gap-8">
-      {failed ? null : (
-        <Stores
-          game={game}
-          links={facts ? (facts.stores ?? []) : undefined}
-          platforms={platforms}
-          level={level}
-        />
-      )}
+      <Stores
+        game={game}
+        links={facts ? (facts.stores ?? []) : undefined}
+        platforms={platforms}
+        level="h2"
+      />
       {mine}
     </div>
   )
@@ -433,13 +398,13 @@ export function GameDetail({
       steam={facts?.steamReviews}
       shelf={facts?.shelfScore}
       waiting={!facts}
-      level={level}
+      level="h2"
     />
   )
 
   const about =
     facts && !facts.summary && !facts.storyline ? null : (
-      <Section title={t('about')} level={level}>
+      <Section title={t('about')}>
         {facts ? (
           <div className="game-prose" lang={igdbLang}>
             {facts.summary ? (
@@ -452,12 +417,12 @@ export function GameDetail({
             ) : null}
             {facts.storyline ? (
               <>
-                <Minor
+                <h3
                   className={cn('readout text-[0.625rem] text-muted', facts.summary && 'mt-3')}
                   lang={locale}
                 >
                   {t('storyline')}
-                </Minor>
+                </h3>
                 <Passage
                   text={facts.storyline}
                   more={t('readMore')}
@@ -476,7 +441,7 @@ export function GameDetail({
   const videos = facts?.videos ?? []
   const shots =
     facts && facts.screenshots.length === 0 && videos.length === 0 ? null : (
-      <Section title={videos.length > 0 ? t('media') : t('screenshots')} level={level}>
+      <Section title={videos.length > 0 ? t('media') : t('screenshots')}>
         {facts ? (
           <div data-adult-media={game.adult ? '' : undefined}>
             <Screenshots shots={facts.screenshots} videos={videos} title={game.title} />
@@ -497,11 +462,11 @@ export function GameDetail({
 
   // Asked for as the page opens, only for a game a provider has achievements for (issue 72).
   const achievements = facts?.achievements ? (
-    <Section id="achievements" title={t('achievements.title')} level={level}>
+    <Section id="achievements" title={t('achievements.title')}>
       <AchievementsLater
         slug={game.slug}
         providers={facts.achievements}
-        minor={Minor}
+        minor="h3"
         loading={<Ghosts lines={3} />}
       />
     </Section>
@@ -547,7 +512,7 @@ export function GameDetail({
     : []
 
   const details = (
-    <Section title={t('details')} level={level}>
+    <Section title={t('details')}>
       {facts ? (
         <dl>
           {lists.map(({ key, label, list, ids }) => {
@@ -608,59 +573,20 @@ export function GameDetail({
     </Section>
   )
 
-  if (page) {
-    return (
-      <article className="game" data-layout="page">
-        {hero}
-        {game.adult ? <AdultNotice /> : null}
-        {/* Positioned to paint over the hero, which would cut off the glow of a button near it. */}
-        <div className="relative mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-10">
-          <div className="grid min-w-0 content-start gap-10">
-            {scores}
-            {about}
-            {shots}
-            {achievements}
-            {details}
-          </div>
-          <aside className="row-start-1 lg:col-start-2">{side}</aside>
-        </div>
-      </article>
-    )
-  }
-
   return (
-    <article className="game @container" data-layout="panel">
+    <article className="game">
       {hero}
-      {/*
-        One column, or the page's two where the panel stands centered and is as wide (spec 7.2).
-        Positioned to paint over the hero, which would cut off the glow of a button near it.
-      */}
-      <div className="relative grid gap-7 px-5 pt-5 pb-6 @5xl:grid-cols-[minmax(0,1fr)_22rem] @5xl:gap-x-12 @5xl:px-10 @5xl:pt-6 @5xl:pb-10">
-        <div className="min-w-0 @5xl:col-start-2 @5xl:row-start-1">{side}</div>
-        <div className="grid min-w-0 content-start gap-7 @5xl:row-start-1 @5xl:gap-10">
-          {failed ? (
-            <p role="alert" className="text-sm text-muted">
-              {t.rich('factsFailed', {
-                page: (chunks) => (
-                  <Link
-                    href={gameHref(handle, game.slug)}
-                    className="text-accent underline underline-offset-4"
-                  >
-                    {chunks}
-                  </Link>
-                ),
-              })}
-            </p>
-          ) : (
-            <>
-              {scores}
-              {about}
-              {shots}
-              {achievements}
-              {details}
-            </>
-          )}
+      {game.adult ? <AdultNotice /> : null}
+      {/* Positioned to paint over the hero, which would cut off the glow of a button near it. */}
+      <div className="relative mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-10">
+        <div className="grid min-w-0 content-start gap-10">
+          {scores}
+          {about}
+          {shots}
+          {achievements}
+          {details}
         </div>
+        <aside className="row-start-1 lg:col-start-2">{side}</aside>
       </div>
     </article>
   )

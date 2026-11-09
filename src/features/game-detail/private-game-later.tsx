@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 
 import { GameSkeleton } from './game-skeleton'
+import { FromLibrary } from './hand-off'
 
 /**
  * A game on a private shelf, its code fetched only when one is drawn
@@ -10,5 +11,12 @@ import { GameSkeleton } from './game-skeleton'
  */
 export const PrivateGameLater = dynamic(
   () => import('./private-game').then((module) => module.PrivateGame),
-  { ssr: false, loading: () => <GameSkeleton /> },
+  {
+    ssr: false,
+    loading: () => (
+      <FromLibrary>
+        <GameSkeleton />
+      </FromLibrary>
+    ),
+  },
 )

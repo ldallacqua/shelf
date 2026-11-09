@@ -1,30 +1,25 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { NextIntlClientProvider } from 'next-intl'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { GameFacts } from '@/domain/library/game-page'
-import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
-import { ShelfProvider } from '@/features/library/shelf'
-import type { ShelfInfo } from '@/features/library/shelf-address'
-import { setDevice } from '@/test/device'
-import { messages, renderWithIntl } from '@/test/render'
+import { renderWithIntl } from '@/test/render'
 
+import { BackToLibrary } from './back-to-library'
 import { GameDetail } from './game-detail'
-import { gameSlugIn, historyMoved, leaveGame, replaceGame, showGame } from './game-address'
-import { GamePanel } from './game-panel'
-import { GAME_CENTERED } from './hero'
+import { FromLibrary, handOff, PageDrawn } from './hand-off'
 import { morph } from './morph'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 
-const address = vi.hoisted(() => ({ query: '' }))
+const address = vi.hoisted(() => ({ query: '', params: {} as Record<string, string> }))
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(address.query),
+  useParams: () => address.params,
 }))
 
-/** A game's page (spec 7.1) and the game opened over the shelf (spec 7.2). */
+/** A game's page (spec 7.1), and opening it from the library (spec 7.2). */
 
 const ps4: LibraryPlatform = {
   id: 48,
@@ -97,14 +92,6 @@ const facts = (extra: Partial<GameFacts> = {}): GameFacts => ({
 
 const tags = [{ name: 'replay someday', slug: 'replay-someday' }]
 
-/** The public shelf the panel's game is on, and where its files are. */
-const SHELF: ShelfInfo = {
-  handle: 'sample',
-  name: 'Sample',
-  public: true,
-  files: { kind: 'public', key: 'k3y' },
-}
-
 describe('GameDetail', () => {
   it('writes IGDB’s text in its paragraphs, and keeps the rest of a long one behind Read more', () => {
     const long = Array.from(
@@ -114,7 +101,6 @@ describe('GameDetail', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game()}
         tags={tags}
         platforms={platforms}
@@ -136,7 +122,6 @@ describe('GameDetail', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game()}
         tags={tags}
         platforms={platforms}
@@ -164,7 +149,6 @@ describe('GameDetail', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game({ adult: true })}
         tags={tags}
         platforms={platforms}
@@ -181,7 +165,6 @@ describe('GameDetail', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game()}
         tags={tags}
         platforms={platforms}
@@ -196,7 +179,6 @@ describe('GameDetail', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game()}
         tags={tags}
         platforms={platforms}
@@ -232,7 +214,6 @@ describe('GameDetail', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game()}
         tags={tags}
         platforms={platforms}
@@ -252,7 +233,6 @@ describe('GameDetail', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game()}
         tags={tags}
         platforms={platforms}
@@ -268,10 +248,8 @@ describe('GameDetail', () => {
   })
 
   it('waits with ghosts for what is on its way, and draws what it has at once', () => {
-    renderWithIntl(
-      <GameDetail handle="sample" layout="panel" game={game()} tags={tags} platforms={platforms} />,
-    )
-    expect(screen.getByRole('heading', { level: 2, name: 'Bloodborne' })).toBeInTheDocument()
+    renderWithIntl(<GameDetail handle="sample" game={game()} tags={tags} platforms={platforms} />)
+    expect(screen.getByRole('heading', { level: 1, name: 'Bloodborne' })).toBeInTheDocument()
     expect(screen.getByText('PlayStation 4, Physical')).toBeInTheDocument()
     expect(screen.queryByText('A Hunter wakes in Yharnam.')).not.toBeInTheDocument()
     expect(document.querySelectorAll('.ghost').length).toBeGreaterThan(0)
@@ -281,7 +259,6 @@ describe('GameDetail', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game({ hasNotes: false, rating: undefined, completedOn: undefined })}
         tags={[]}
         platforms={platforms}
@@ -292,21 +269,6 @@ describe('GameDetail', () => {
     expect(screen.queryByRole('heading', { name: 'Story' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Screenshots' })).not.toBeInTheDocument()
     expect(screen.queryByText('My rating')).not.toBeInTheDocument()
-  })
-
-  it('in 3D leaves the cover to the box pulled from the wall', () => {
-    renderWithIntl(
-      <GameDetail
-        handle="sample"
-        layout="panel"
-        game={game()}
-        tags={tags}
-        platforms={platforms}
-        facts={facts()}
-        cover={false}
-      />,
-    )
-    expect(document.querySelector('[data-hero-cover]')).toBeNull()
   })
 })
 
@@ -319,7 +281,6 @@ describe('Screenshots', () => {
       <div onKeyDown={onNext}>
         <GameDetail
           handle="sample"
-          layout="page"
           game={game()}
           tags={tags}
           platforms={platforms}
@@ -345,7 +306,6 @@ describe('Screenshots', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game()}
         tags={tags}
         platforms={platforms}
@@ -381,7 +341,6 @@ describe('Screenshots', () => {
     renderWithIntl(
       <GameDetail
         handle="sample"
-        layout="page"
         game={game()}
         tags={tags}
         platforms={platforms}
@@ -394,309 +353,50 @@ describe('Screenshots', () => {
   })
 })
 
-describe('GamePanel', () => {
-  const item = (extra: Partial<LibraryGame> = {}): ShelfItem => {
-    const entry = game(extra)
-    return { game: entry, copy: entry.copies[0] }
-  }
-
-  const answer = vi.fn<(address: string) => Promise<Response>>()
-  beforeEach(() => {
-    answer.mockImplementation(async () => Response.json(facts()))
-    vi.spyOn(globalThis, 'fetch').mockImplementation((address) => answer(String(address)))
-  })
-  afterEach(() => vi.restoreAllMocks())
-
-  const open = (
-    entry: ShelfItem,
-    handlers: { onPrevious?: () => void; onNext?: () => void; pulled?: boolean } = {},
-  ) =>
-    renderWithIntl(
-      <ShelfProvider shelf={SHELF}>
-        <GamePanel
-          item={entry}
-          version={7}
-          platforms={platforms}
-          tags={tags}
-          onClose={vi.fn()}
-          onReturnFocus={() => false}
-          {...handlers}
-        />
-      </ShelfProvider>,
-    )
-
-  it("is named by the game, and fetches the rest of its page for the library's version", async () => {
-    open(item({ slug: 'bloodborne' }))
-    const panel = screen.getByRole('dialog', { name: 'Bloodborne' })
-    expect(panel).toHaveTextContent('PlayStation 4, Physical')
-    await waitFor(() => expect(panel).toHaveTextContent('A Hunter wakes in Yharnam.'))
-    expect(answer).toHaveBeenCalledWith('/api/v1/libraries/k3y/games/7/bloodborne')
-  })
-
-  it('keeps what it has drawn while a new version of the library fetches it again', async () => {
-    const entry = item({ slug: 'nioh' })
-    const panel = (version: number) => (
-      <NextIntlClientProvider locale="en" messages={messages.en} timeZone="UTC">
-        <ShelfProvider shelf={SHELF}>
-          <GamePanel
-            item={entry}
-            version={version}
-            platforms={platforms}
-            tags={tags}
-            onClose={vi.fn()}
-            onReturnFocus={() => false}
-          />
-        </ShelfProvider>
-      </NextIntlClientProvider>
-    )
-    const { rerender } = render(panel(7))
-    await screen.findByText('A Hunter wakes in Yharnam.')
-
-    // A rating saved: the library moves to version 8, and the facts are fetched for it.
-    let arrive = () => {}
-    answer.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          arrive = () => resolve(Response.json(facts({ summary: 'Fetched for version 8.' })))
-        }),
-    )
-    rerender(panel(8))
-    expect(answer).toHaveBeenCalledWith('/api/v1/libraries/k3y/games/8/nioh')
-    const dialog = screen.getByRole('dialog')
-    expect(dialog).toHaveTextContent('A Hunter wakes in Yharnam.')
-    expect(dialog.querySelector('.ghost')).toBeNull()
-
-    act(() => arrive())
-    await screen.findByText('Fetched for version 8.')
-  })
-
-  it("links to the game's full page, keeping the library's filter and leaving the rest", () => {
-    address.query = 'q=genre:rpg&view=wall&shelf=ignored'
-    open(item({ slug: 'bloodborne' }))
-    expect(screen.getByRole('link', { name: 'Open the full page' })).toHaveAttribute(
-      'href',
-      '/en/u/sample/game/bloodborne?q=genre%3Arpg&view=wall',
-    )
-    address.query = ''
-  })
-
-  it('says so when the rest does not arrive, and offers the game’s own page', async () => {
-    answer.mockImplementation(async () => new Response(null, { status: 500 }))
-    open(item({ slug: 'demons-souls' }))
-    const alert = await screen.findByRole('alert')
-    expect(within(alert).getByRole('link', { name: 'Open its own page' })).toHaveAttribute(
-      'href',
-      '/en/u/sample/game/demons-souls',
-    )
-  })
-
-  it('steps to the game before and after, by button, arrow key or a sideways swipe', async () => {
-    const onPrevious = vi.fn()
-    const onNext = vi.fn()
-    open(item({ slug: 'dark-souls' }), { onPrevious, onNext })
-    await userEvent.click(screen.getByRole('button', { name: 'Next' }))
-    await userEvent.keyboard('{ArrowLeft}')
-    expect(onNext).toHaveBeenCalledOnce()
-    expect(onPrevious).toHaveBeenCalledOnce()
-
-    const panel = screen.getByRole('dialog')
-    const swipe = (from: [number, number], to: [number, number]) => {
-      const start = [{ clientX: from[0], clientY: from[1] }]
-      const end = [{ clientX: to[0], clientY: to[1] }]
-      fireEvent.touchStart(panel, { touches: start, changedTouches: start })
-      fireEvent.touchEnd(panel, { touches: [], changedTouches: end })
-    }
-    swipe([300, 400], [120, 410])
-    expect(onNext).toHaveBeenCalledTimes(2)
-    // Mostly up or down is scrolling, not a step.
-    swipe([120, 400], [200, 200])
-    expect(onPrevious).toHaveBeenCalledOnce()
-  })
-
-  it('disables a step that leads nowhere', () => {
-    open(item({ slug: 'sekiro' }))
-    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
-  })
-
-  it('asks for 32rem on a large window, in a form that beats the sheet’s own width', () => {
-    open(item({ slug: 'bloodborne' }))
-    // jsdom applies no styles, so `e2e/game.spec.ts` measures the result.
-    expect(screen.getByRole('dialog')).toHaveClass('sheet-side:lg:w-[32rem]')
-  })
-
-  describe('on a very wide window (spec 7.2)', () => {
-    it('stands centered by style alone, and asks for art and a cover the size it draws them', async () => {
-      open(item({ slug: 'bloodborne' }))
-      const panel = screen.getByRole('dialog')
-      expect(panel).toHaveClass('game-centered:w-[80rem]')
-      expect(panel.querySelector('[data-hero-cover] img')).toHaveAttribute(
-        'sizes',
-        `${GAME_CENTERED} 224px, 128px`,
-      )
-      await waitFor(() =>
-        expect(panel.querySelector('.game-backdrop img')).toHaveAttribute(
-          'sizes',
-          `${GAME_CENTERED} 80rem, 320px`,
-        ),
-      )
-    })
-
-    it('stays at the side beside the 3D shelf, with art for that width', async () => {
-      open(item({ slug: 'bloodborne' }), { pulled: true })
-      const panel = screen.getByRole('dialog')
-      expect(panel.className).not.toContain('game-centered:')
-      await waitFor(() =>
-        expect(panel.querySelector('.game-backdrop img')).toHaveAttribute('sizes', '320px'),
-      )
-    })
-
-    it('has one query for the styles and the files they ask for', async () => {
-      const { readFileSync } = await import('node:fs')
-      const css = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
-      expect(css('../../app/globals.css')).toContain(
-        `@custom-variant game-centered (@media ${GAME_CENTERED});`,
-      )
-      expect(css('./game-detail.css')).toContain(`@media ${GAME_CENTERED} {`)
-    })
-  })
-
-  describe('on a phone, at two heights (spec 3.4)', () => {
-    beforeEach(() => setDevice({ phone: true }))
-
-    const drag = (from: number, to: number, on = screen.getByRole('dialog')) => {
-      fireEvent.pointerDown(on, { pointerId: 1, button: 0, clientX: 200, clientY: from })
-      fireEvent.pointerMove(on, { pointerId: 1, clientX: 200, clientY: (from + to) / 2 })
-      fireEvent.pointerMove(on, { pointerId: 1, clientX: 200, clientY: to })
-      fireEvent.pointerUp(on, { pointerId: 1, clientX: 200, clientY: to })
-    }
-
-    it('opens short, and its grip shows all of it and then less', async () => {
-      open(item({ slug: 'bloodborne' }))
-      const panel = screen.getByRole('dialog')
-      expect(panel).toHaveAttribute('data-height', 'short')
-      // Focus starts on Close, not on the grip.
-      expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
-
-      await userEvent.click(screen.getByRole('button', { name: 'Show all of this game' }))
-      expect(panel).toHaveAttribute('data-height', 'full')
-      const grip = screen.getByRole('button', { name: 'Show less of this game' })
-      expect(grip).toHaveAttribute('aria-expanded', 'true')
-      await userEvent.click(grip)
-      expect(panel).toHaveAttribute('data-height', 'short')
-    })
-
-    it('shows all of it when the short sheet is tapped, or dragged up', () => {
-      open(item({ slug: 'bloodborne' }))
-      const panel = screen.getByRole('dialog')
-      const heading = screen.getByRole('heading', { level: 2, name: 'Bloodborne' })
-      fireEvent.pointerDown(heading, { pointerId: 1, button: 0, clientX: 100, clientY: 300 })
-      fireEvent.pointerUp(heading, { pointerId: 1, clientX: 101, clientY: 301 })
-      expect(panel).toHaveAttribute('data-height', 'full')
-
-      // Down a little from full is nothing; down from its grip is short again.
-      drag(300, 320, screen.getByRole('button', { name: 'Show less of this game' }))
-      expect(panel).toHaveAttribute('data-height', 'full')
-      drag(300, 420, screen.getByRole('button', { name: 'Show less of this game' }))
-      expect(panel).toHaveAttribute('data-height', 'short')
-      drag(500, 380)
-      expect(panel).toHaveAttribute('data-height', 'full')
-    })
-
-    it('closes when the short sheet is dragged down', () => {
-      const onClose = vi.fn()
-      renderWithIntl(
-        <ShelfProvider shelf={SHELF}>
-          <GamePanel
-            item={item({ slug: 'bloodborne' })}
-            version={7}
-            platforms={platforms}
-            tags={tags}
-            onClose={onClose}
-            onReturnFocus={() => false}
-          />
-        </ShelfProvider>,
-      )
-      drag(400, 520)
-      expect(onClose).toHaveBeenCalledOnce()
-    })
-
-    it('shows all of it when focus moves to what the short sheet hides, and only then', () => {
-      open(item({ slug: 'bloodborne' }))
-      const panel = screen.getByRole('dialog')
-      // Safari focuses the sheet itself on a tap, wherever its edge is.
-      fireEvent.focus(panel)
-      expect(panel).toHaveAttribute('data-height', 'short')
-
-      const footer = panel.querySelector<HTMLElement>('[data-sheet-footer]')!
-      vi.spyOn(footer, 'getBoundingClientRect').mockReturnValue({ top: 600 } as DOMRect)
-      const hidden = within(panel).getAllByRole('link').at(-1)!
-      vi.spyOn(hidden, 'getBoundingClientRect').mockReturnValue({ bottom: 900 } as DOMRect)
-      fireEvent.focus(hidden)
-      expect(panel).toHaveAttribute('data-height', 'full')
-    })
-
-    it('leaves a sideways swipe to the step to the next game', () => {
-      const onNext = vi.fn()
-      open(item({ slug: 'bloodborne' }), { onNext })
-      const panel = screen.getByRole('dialog')
-      fireEvent.pointerDown(panel, { pointerId: 1, button: 0, clientX: 300, clientY: 400 })
-      fireEvent.pointerMove(panel, { pointerId: 1, clientX: 120, clientY: 410 })
-      fireEvent.pointerUp(panel, { pointerId: 1, clientX: 120, clientY: 410 })
-      expect(panel).toHaveAttribute('data-height', 'short')
-    })
-
-    it('is one height where it is a panel down the side', async () => {
-      setDevice({ phone: false })
-      open(item({ slug: 'bloodborne' }))
-      const panel = screen.getByRole('dialog')
-      drag(500, 300)
-      expect(panel).toHaveAttribute('data-height', 'short')
-      // The grip is for a sheet from the bottom only: drawn there, and hidden by style on the side.
-      expect(screen.getByRole('button', { name: 'Show all of this game' })).toHaveClass(
-        'sheet-side:hidden',
-      )
-    })
-  })
-})
-
-describe('the address of an open game', () => {
+describe('a game opened from the library', () => {
   afterEach(() => {
-    act(() => historyMoved())
-    window.history.replaceState(null, '', '/')
+    address.params = {}
+    Reflect.deleteProperty(window, 'navigation')
   })
 
-  it('reads a game’s slug from its address, and nothing from any other', () => {
-    expect(gameSlugIn('/en/u/sample/game/bloodborne')).toBe('bloodborne')
-    expect(gameSlugIn('/pt-BR/u/ana/game/caf%C3%A9/')).toBe('café')
-    expect(gameSlugIn('/en/u/sample')).toBeUndefined()
-    expect(gameSlugIn('/en/game/bloodborne')).toBeUndefined()
-    expect(gameSlugIn('/en/u/sample/game/a/b')).toBeUndefined()
-    expect(gameSlugIn('/en/u/sample/game/%E0%A4%A')).toBeUndefined()
-  })
-
-  it('adds the game to history with the library’s query string, and steps back once to close', () => {
-    window.history.replaceState(null, '', '/pt-BR/u/ana?view=wall&q=genre%3Arpg')
-    const before = window.history.length
-    showGame('bloodborne')
-    expect(window.location.pathname + window.location.search).toBe(
-      '/pt-BR/u/ana/game/bloodborne?view=wall&q=genre%3Arpg',
+  it('is drawn at once from what the library handed off, and only for that game', () => {
+    handOff({ handle: 'sample', slug: 'bloodborne', page: <h1>Handed off</h1> })
+    address.params = { handle: 'sample', slug: 'bloodborne' }
+    const { unmount } = renderWithIntl(
+      <FromLibrary>
+        <p>Ghosts</p>
+      </FromLibrary>,
     )
-    expect(window.history.length).toBe(before + 1)
-    replaceGame('sekiro')
-    expect(window.location.pathname).toBe('/pt-BR/u/ana/game/sekiro')
-    expect(window.history.length).toBe(before + 1)
+    expect(screen.getByRole('heading', { name: 'Handed off' })).toBeInTheDocument()
+    unmount()
 
+    address.params = { handle: 'sample', slug: 'sekiro' }
+    renderWithIntl(
+      <FromLibrary>
+        <p>Ghosts</p>
+      </FromLibrary>,
+    )
+    expect(screen.getByText('Ghosts')).toBeInTheDocument()
+  })
+
+  it('goes back to the library when the library is the page before, and keeps its filter otherwise', async () => {
+    address.query = 'q=genre%3Arpg&view=wall&page=2'
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined)
-    leaveGame()
-    leaveGame()
+    const entries = [{ url: `${window.location.origin}/en/u/sample?view=wall` }, { url: null }]
+    Object.defineProperty(window, 'navigation', {
+      configurable: true,
+      value: { currentEntry: { index: 1 }, entries: () => entries },
+    })
+    renderWithIntl(<BackToLibrary handle="sample" />)
+    const link = screen.getByRole('link', { name: 'Library' })
+    expect(link).toHaveAttribute('href', '/en/u/sample?q=genre%3Arpg&view=wall')
+    await userEvent.click(link)
     expect(back).toHaveBeenCalledOnce()
-    // A game opened before that Back arrives waits for it, then opens after the library.
-    showGame('hades')
-    expect(window.location.pathname).toBe('/pt-BR/u/ana/game/sekiro')
-    window.history.replaceState(null, '', '/pt-BR/u/ana')
-    historyMoved()
-    expect(window.location.pathname).toBe('/pt-BR/u/ana/game/hades')
+
+    // Arrived from elsewhere, or from another shelf: the link leads to the library.
+    entries[0] = { url: `${window.location.origin}/en/u/other` }
+    fireEvent.click(link)
+    expect(back).toHaveBeenCalledOnce()
     back.mockRestore()
   })
 })
@@ -704,81 +404,73 @@ describe('the address of an open game', () => {
 describe('morph', () => {
   afterEach(() => {
     Reflect.deleteProperty(document, 'startViewTransition')
+    vi.useRealTimers()
   })
 
-  it('simply makes the change where the browser cannot carry the cover', () => {
-    const change = vi.fn()
+  /** A browser that runs a transition's update at once, and finishes it when asked. */
+  const transitions = () => {
+    const seen: string[] = []
+    let finish = () => {}
+    let updated: Promise<void> = Promise.resolve()
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: (update: () => Promise<void>) => {
+        updated = update()
+        return {
+          finished: new Promise<void>((resolve) => (finish = resolve)),
+          ready: Promise.resolve(),
+          updateCallbackDone: updated,
+          skipTransition: () => {},
+        }
+      },
+    })
+    return { seen, finish: () => finish(), updated: () => updated }
+  }
+
+  it('simply goes to the page where the browser cannot carry the cover', () => {
+    const go = vi.fn()
     const from = document.createElement('span')
-    morph({ from: () => from, to: () => null, panel: () => null }, change)
-    expect(change).toHaveBeenCalledOnce()
+    morph(from, go)
+    expect(go).toHaveBeenCalledOnce()
     expect(from.style.viewTransitionName).toBe('')
   })
 
-  it('names the cover at each end for the one transition only, and leaves no copy behind', async () => {
+  it('names the cover at each end for the one transition only, landing once the page is drawn', async () => {
+    const browser = transitions()
     const from = document.createElement('span')
-    const to = document.createElement('span')
-    const seen: string[] = []
-    let finish = () => {}
-    Object.defineProperty(document, 'startViewTransition', {
-      configurable: true,
-      value: (update: () => void) => {
-        seen.push(`before: ${from.style.viewTransitionName}`)
-        update()
-        seen.push(`after: ${from.style.viewTransitionName}|${to.style.viewTransitionName}`)
-        return {
-          finished: new Promise<void>((resolve) => (finish = resolve)),
-          ready: Promise.resolve(),
-          updateCallbackDone: Promise.resolve(),
-          skipTransition: () => {},
-        }
-      },
+    document.body.append(from)
+    let seenAtGo = ''
+    morph(from, () => {
+      seenAtGo = from.style.viewTransitionName
+      renderWithIntl(
+        <span data-hero-cover="">
+          <PageDrawn />
+        </span>,
+      )
     })
-    const change = vi.fn()
-    morph({ from: () => from, to: () => to, panel: () => null }, change)
-    expect(change).toHaveBeenCalledOnce()
-    expect(seen).toEqual(['before: game-cover', 'after: |game-cover'])
-    expect(from.style.visibility).toBe('hidden')
-    expect(document.documentElement).toHaveAttribute('data-morph')
-    finish()
-    await waitFor(() => expect(to.style.viewTransitionName).toBe(''))
-    expect(from.style.visibility).toBe('')
-    expect(document.documentElement).not.toHaveAttribute('data-morph')
+    expect(seenAtGo).toBe('')
+    await browser.updated()
+    const hero = document.querySelector<HTMLElement>('[data-hero-cover]')!
+    expect(hero.style.viewTransitionName).toBe('game-cover')
+    browser.finish()
+    await waitFor(() => expect(hero.style.viewTransitionName).toBe(''))
+    expect(from.style.viewTransitionName).toBe('')
+    from.remove()
   })
 
-  it('leaves the sheet it brought in where it landed, so its own entrance does not run again', async () => {
-    let finish = () => {}
-    Object.defineProperty(document, 'startViewTransition', {
-      configurable: true,
-      value: (update: () => void) => {
-        update()
-        return {
-          finished: new Promise<void>((resolve) => (finish = resolve)),
-          ready: Promise.resolve(),
-          updateCallbackDone: Promise.resolve(),
-          skipTransition: () => {},
-        }
-      },
-    })
-    const sheet = document.createElement('div')
-    sheet.dataset.slot = 'sheet'
-    const overlay = document.createElement('div')
-    overlay.dataset.slot = 'sheet-overlay'
-    const leaving = document.createElement('div')
-    leaving.dataset.slot = 'sheet'
-    leaving.dataset.state = 'closed'
-    document.body.append(sheet, overlay, leaving)
-    morph(
-      { from: () => document.createElement('span'), to: () => null, panel: () => sheet },
-      () => {
-        sheet.dataset.state = 'open'
-        overlay.dataset.state = 'open'
-      },
-    )
-    expect(sheet).not.toHaveAttribute('data-settled')
-    finish()
-    await waitFor(() => expect(sheet).toHaveAttribute('data-settled'))
-    expect(overlay).toHaveAttribute('data-settled')
-    expect(leaving).not.toHaveAttribute('data-settled')
-    for (const element of [sheet, overlay, leaving]) element.remove()
+  it('goes ahead without the page when it takes too long', async () => {
+    vi.useFakeTimers()
+    const browser = transitions()
+    const from = document.createElement('span')
+    const go = vi.fn()
+    morph(from, go)
+    expect(go).toHaveBeenCalledOnce()
+    let done = false
+    void browser.updated().then(() => (done = true))
+    await vi.advanceTimersByTimeAsync(599)
+    expect(done).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(done).toBe(true)
+    browser.finish()
   })
 })

@@ -178,21 +178,21 @@ which reads the cookie again each time the page is shown, as the router may keep
 a choice; only a choice in the toolbar writes it, never an address arrived at. Nothing on the shelf fades in: a cover that starts transparent is
 counted as painted late.
 
-**A game's page.** `src/features/game-detail` draws it both as a page of its own
-(`/u/{handle}/game/{slug}`, built on its first visit and kept: a page built ahead answers a browser's move
-to it with a 404 once its tag expires) and as the panel a game opens in over the library. The panel is
-the library's own, not a route: opening a game adds its address to history with the
-library's query string kept (`game-address.ts`), and Back closes it. What the library file
-lacks (summary, screenshots, art, releases) comes from `buildGamePage`; the panel fetches it
-as the game's facts, by library version, and keeps the facts it has while a newer version's
-are fetched, so a change never takes them back to ghosts. While the editor is on its way to
-the shelf's own account, `mine-skeleton.tsx` holds its place in the editor's exact shape: change
-`mine-editor.tsx` and change the skeleton with it (a test in `e2e/game.spec.ts` fails when
-they differ). The cover grows from the box through `morph.ts`,
-which names the two ends for that one view transition only. Past `GAME_CENTERED`, on a very wide
-window, the panel stands centered with the page's two columns. That is style alone (the
-`game-centered` variant, and a container query inside it), so resizing past the line moves the same
-elements and loses nothing; keep it out of React. A private note never leaves the
+**A game's page.** A game is always its page, `/u/{handle}/game/{slug}`, drawn by
+`src/features/game-detail` ([ADR 009](docs/adr/009-game-page-and-dialogs.md)): built on its first
+visit and kept (a page built ahead answers a browser's move to it with a 404 once its tag expires).
+Nothing opens over the shelf. Choosing a game in the library goes to the page with the library's
+query string kept on its address, and hands the page what the library file knows
+(`hand-off.tsx`, drawn by `drawn-page.tsx`, whose code the library fetches as a game is reached
+for): the page's Suspense fallback draws that at once, and the server's page replaces it where it
+stands, so keep `drawPage` the same page the route draws. The router keeps the library hidden
+meanwhile (Activity), so Back is the library as it was left; its effects run again as it shows,
+which is how focus returns to the box. What the library file lacks (summary, screenshots, art,
+releases) comes from `buildGamePage`. While the editor is on its way to the shelf's own account,
+`mine-skeleton.tsx` holds its place in the editor's exact shape: change `mine-editor.tsx` and
+change the skeleton with it (a test in `e2e/game.spec.ts` fails when they differ). The cover grows
+from the box through `morph.ts`, which names the two ends for that one view transition only and
+waits for the page to be drawn (`PageDrawn`, in the page's hero). A private note never leaves the
 server except to its own account, in `GET /api/v1/entries/{id}`, which the editor reads.
 
 **Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
@@ -229,8 +229,7 @@ addresses lead nowhere.
 **Changing the library from the page.** Adding one game and saving shelves are server actions
 (`updateTag`). Editing, adding from a list and Undo of a removal go through the API
 (`edit-client.ts`, `list-client.ts`): a server action that expires the library draws the
-current address again, and with a game's panel open that is the game's own page, which then
-replaces the shelf. After a change, call `announceChange()` with the new version: the
+current address again, which is not always the page the change was made on. After a change, call `announceChange()` with the new version: the
 library fetches its new file and moves to the game. Every write to the library answers with
 its new version for that.
 

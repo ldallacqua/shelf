@@ -37,8 +37,6 @@ type ShelfGridProps = {
   /** Names the list for assistive technology. */
   label: string
   describe: (item: ShelfItem, platform: LibraryPlatform | undefined) => string
-  /** Position of the box whose details are open, if it stands on this shelf. */
-  openIndex?: number
   /** How many of the first covers are fetched ahead of the rest. */
   eager?: number
   /** Boxes arrive in a stagger. Only for the first time a shelf is drawn. */
@@ -71,7 +69,6 @@ export function ShelfGrid({
   tall,
   label,
   describe,
-  openIndex,
   eager = 0,
   enter,
   position,
@@ -105,7 +102,7 @@ export function ShelfGrid({
   const perRow = columns ?? FEWEST_COLUMNS
   const rows = rowWindow?.rows ?? Math.ceil((runs[0]?.to ?? 0) / perRow)
 
-  const active = hot ?? openIndex
+  const active = hot
   const activeItem = active === undefined ? undefined : items[active]
   const activeRow = active === undefined || !columns ? undefined : Math.floor(active / columns)
   const activeLed = activeItem?.game.colors ? ledFrom(activeItem.game.colors[0]) : undefined

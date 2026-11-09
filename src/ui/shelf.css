@@ -778,7 +778,7 @@
     z-index: 2;
   }
 
-  .wall-box:is(:hover, :focus-visible, [data-active]) {
+  .wall-box:is(:hover, :focus-visible) {
     z-index: 1;
     box-shadow:
       0 0 0 1px rgb(0 0 0 / 0.28),
@@ -788,7 +788,7 @@
   }
 
   @media (prefers-reduced-motion: no-preference) and (hover: hover) {
-    .wall-box:is(:hover, :focus-visible, [data-active]) {
+    .wall-box:is(:hover, :focus-visible) {
       scale: 1.04;
     }
   }
@@ -1150,7 +1150,7 @@
     transition: background-color var(--motion-quick) var(--ease-settle);
   }
 
-  .game-table tbody tr[data-cell]:not([data-ghost]):is(:hover, :focus-within, [data-active]) {
+  .game-table tbody tr[data-cell]:not([data-ghost]):is(:hover, :focus-within) {
     background: color-mix(in srgb, var(--text) 6%, transparent);
   }
 

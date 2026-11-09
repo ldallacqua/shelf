@@ -15,6 +15,14 @@ import { LibraryLink } from './back-to-library'
 import { GameDetail } from './game-detail'
 import { GameMissing } from './game-missing'
 import { GameSkeleton } from './game-skeleton'
+import { FromLibrary } from './hand-off'
+
+/** While one's own game is read: as the library handed it off, if it was opened from there. */
+const waiting = (
+  <FromLibrary>
+    <GameSkeleton />
+  </FromLibrary>
+)
 
 /** One's own game, fetched fresh: the library it stands in, and what its page shows beyond it. */
 const loadGame = async (slug: string): Promise<{ library: Library; facts?: GameFacts }> => {
@@ -44,13 +52,12 @@ function MyGame({ slug, handle }: { slug: string; handle: string }) {
   }, [slug, changed])
 
   if (failed) throw new Error('This game could not be read.')
-  if (!own) return <GameSkeleton />
+  if (!own) return waiting
   const game = own.library.games.find((each) => each.slug === slug)
   if (!game || !own.facts) return <GameMissing />
   const platforms = new Map(own.facts.names.platform.map((platform) => [platform.id, platform]))
   return (
     <GameDetail
-      layout="page"
       handle={handle}
       game={game}
       tags={game.tags.flatMap((position) => own.library.names.tag[position] ?? [])}
@@ -70,7 +77,7 @@ function MyGame({ slug, handle }: { slug: string; handle: string }) {
 export function PrivateGame({ slug }: { slug: string }) {
   const account = useAccount()
   const { handle } = useShelf()
-  if (account.status === 'checking') return <GameSkeleton />
+  if (account.status === 'checking') return waiting
   if (account.status !== 'signed-in' || account.handle !== handle) return <PrivateShelf />
   return <MyGame slug={slug} handle={handle} />
 }

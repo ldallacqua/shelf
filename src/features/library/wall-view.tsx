@@ -41,7 +41,6 @@ type WallCellProps = {
   total: number
   platforms: ReadonlyMap<number, LibraryPlatform>
   size: WallSize
-  active: boolean
   enter: boolean
   eager: boolean
   onOpen: (box: OpenBox) => void
@@ -60,7 +59,6 @@ const WallCell = memo(function WallCell({
   total,
   platforms,
   size,
-  active,
   enter,
   eager,
   onOpen,
@@ -87,7 +85,6 @@ const WallCell = memo(function WallCell({
         className="wall-box"
         data-status={game.status}
         data-flip={copy ? `${game.slug}:${copy.platform}` : game.slug}
-        data-active={active ? 'true' : undefined}
         aria-label={describeBox(item, platform, t)}
         onClick={() => onOpen({ key: shelfKey, index })}
         style={{ '--case-led': game.colors ? ledFrom(game.colors[0]) : undefined } as CSSProperties}
@@ -118,7 +115,6 @@ type WallGridProps = {
   label: string
   /** Covers drawn before the layout is measured: this shelf's share of the first screen. */
   unmeasured: number
-  open?: OpenBox
   onOpen: (box: OpenBox) => void
   enter: boolean
   eager: number
@@ -130,7 +126,6 @@ function WallGrid({
   size,
   label,
   unmeasured,
-  open,
   onOpen,
   enter,
   eager,
@@ -174,7 +169,6 @@ function WallGrid({
             total={shelf.total}
             platforms={platforms}
             size={size}
-            active={open?.key === shelf.key && open.index === index}
             enter={enter}
             eager={index < eager}
             onOpen={onOpen}
@@ -249,15 +243,7 @@ function WallSection({ shelf, ...grid }: Omit<WallGridProps, 'label'>) {
  * way. A status mark and platform marks sit on each cover, and each shelf's
  * label stays pinned while its games scroll past (spec 3.8).
  */
-export function WallView({
-  shelves,
-  platforms,
-  open,
-  onOpen,
-  enter,
-  firstBoxes,
-  size,
-}: WallViewProps) {
+export function WallView({ shelves, platforms, onOpen, enter, firstBoxes, size }: WallViewProps) {
   const shares = shareFirstBoxes(
     shelves.map((shelf) => shelf.items.length),
     firstBoxes,
@@ -272,7 +258,6 @@ export function WallView({
           platforms={platforms}
           size={size}
           unmeasured={shares[index] ?? 0}
-          open={open?.key === shelf.key ? open : undefined}
           onOpen={onOpen}
           enter={enter}
           eager={index === 0 ? 6 : 0}

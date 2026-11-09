@@ -374,7 +374,10 @@
         "unsupported": "O 3D não conseguiu abrir neste navegador, então a estante está em 2D.",
         "lost": "A estante 3D parou quando a placa de vídeo reiniciou, então a estante está em 2D.",
         "slow": "O 3D estava lento demais aqui, então a estante está em 2D."
-      }
+      },
+      "open": "Abrir",
+      "openGame": "Abrir {title}",
+      "putBack": "Devolver à estante"
     },
     "wallSize": {
       "label": "Tamanho das capas",
@@ -466,13 +469,6 @@
     "notFound": "Não há jogo neste endereço.",
     "notFoundBody": "Ele pode ter saído da estante, ou o endereço pode ter um erro de digitação.",
     "notFoundAction": "Ir para a biblioteca",
-    "panelHelp": "A página deste jogo. As setas para a esquerda e para a direita vão ao jogo anterior e ao próximo.",
-    "close": "Fechar",
-    "fullPage": "Abrir a página completa",
-    "showAll": "Mostrar tudo deste jogo",
-    "showLess": "Mostrar menos deste jogo",
-    "previous": "Anterior",
-    "next": "Próximo",
     "hours": "{count, plural, one {# hora} other {# horas}}",
     "mine": "Meu",
     "status": "Status",
@@ -594,7 +590,6 @@
       "normally": "Principal e extras",
       "completely": "Tudo"
     },
-    "factsFailed": "O resto da página deste jogo não carregou. <page>Abrir a página dele</page>.",
     "screenshotOpen": "Captura {at} de {total} de {title}: abrir em tela cheia",
     "screenshotAlt": "Captura {at} de {total} de {title}",
     "screenshotAdult": "Captura {at} de {total} de {title}, para adultos, borrada: mostrar as capturas para adultos deste jogo",

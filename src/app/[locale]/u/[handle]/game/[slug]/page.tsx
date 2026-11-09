@@ -9,6 +9,7 @@ import { BackToLibrary, LibraryLink } from '@/features/game-detail/back-to-libra
 import { GameDetail } from '@/features/game-detail/game-detail'
 import { GameMissing } from '@/features/game-detail/game-missing'
 import { GameSkeleton } from '@/features/game-detail/game-skeleton'
+import { FromLibrary } from '@/features/game-detail/hand-off'
 import { PrivateGameLater } from '@/features/game-detail/private-game-later'
 import { NoShelf } from '@/features/library/no-shelf'
 import { ShelfProvider } from '@/features/library/shelf'
@@ -91,7 +92,6 @@ async function GameFrame({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '<') }}
       />
       <GameDetail
-        layout="page"
         handle={library.handle}
         game={page.game}
         tags={page.tags}
@@ -110,15 +110,22 @@ async function GameFrame({
 }
 
 /**
- * A game's own page (spec 7.1), for an address opened directly. Opened from
- * the library, the same page is the panel over the shelf instead.
+ * A game's page (spec 7.1), however it is reached. Opened from the library,
+ * it is drawn at once from what the library knows, until the server's
+ * arrives (`hand-off.tsx`).
  */
 export default function GamePage({ params }: PageProps<'/[locale]/u/[handle]/game/[slug]'>) {
   // Covers and key art come from IGDB's image servers: open the connection while the page arrives.
   preconnect(IMAGE_HOST)
 
   return (
-    <Suspense fallback={<GameSkeleton />}>
+    <Suspense
+      fallback={
+        <FromLibrary>
+          <GameSkeleton />
+        </FromLibrary>
+      }
+    >
       <GameFrame params={params} />
     </Suspense>
   )

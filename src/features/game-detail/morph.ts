@@ -1,31 +1,25 @@
-import { flushSync } from 'react-dom'
+import { HERO_COVER } from './hero'
+import { pageDrawn } from './hand-off'
 
 /**
- * The cover growing from the shelf into the open game (spec 7.2), with the
- * browser's view transitions. It does not fly back when the game closes:
- * WebKit's page crashed under that flight (architecture, section 25).
+ * The cover growing from the shelf into the game's page (spec 7.2), with the
+ * browser's view transitions. It does not fly back on Back: WebKit's page
+ * crashed under that flight (architecture, section 25).
  *
  * The two ends are named for the one transition and unnamed after it: a
- * name left on a box would make every later transition capture it, and the
- * box stays on the shelf behind the game, so the same name would be in the
- * page twice. React's `<ViewTransition>` pairs names by one end leaving and
- * the other arriving, which this is not.
+ * name left on a box would make every later transition capture it. React's
+ * `<ViewTransition>` would pair a name on every box of the shelf with the
+ * page's, and the browser would take a picture of each.
  *
- * Without the browser's support, or under reduced motion, the change simply
- * happens and the panel crossfades in on its own (spec 7.2's calm version).
+ * The page is a move between routes, which the router makes in its own
+ * time: the transition holds the shelf's picture until the game's page is
+ * drawn (`hand-off.tsx`), and goes ahead anyway after `WAIT_MS`. Without the
+ * browser's support, or under reduced motion, the page simply changes.
  */
 
 const COVER = 'game-cover'
-const PANEL = 'game-panel'
-
-type Ends = {
-  /** The cover the transition starts from, in the page as it is. */
-  from: () => HTMLElement | null | undefined
-  /** The cover it lands on, once the change is drawn. */
-  to: () => HTMLElement | null | undefined
-  /** The panel the game is in, which slides in or out under the cover. */
-  panel: () => HTMLElement | null | undefined
-}
+/** The longest the old picture is held for the new page: past it, the page crossfades in late. */
+const WAIT_MS = 600
 
 const canMorph = (): boolean =>
   typeof document !== 'undefined' &&
@@ -37,19 +31,14 @@ const name = (element: HTMLElement | null | undefined, value: string) => {
 }
 
 /**
- * Marks the open sheet as already where it was going. Its own entrance is
- * held off while the transition runs; let go of then, the entrance would
- * start over, and the panel would slide in a second time behind the cover
- * that had just landed. The mark counts only while the sheet stays open, so
- * one closed later without a transition still slides away.
+ * The cover on the game's page now shown: a page visited and left stays in
+ * the document, hidden by the router (`display: none`), with a cover of its
+ * own, and a transition can't land on what isn't drawn.
  */
-const settle = () => {
-  for (const element of document.querySelectorAll<HTMLElement>(
-    '[data-slot="sheet"][data-state="open"], [data-slot="sheet-overlay"][data-state="open"]',
-  )) {
-    element.dataset.settled = ''
-  }
-}
+const heroCover = (): HTMLElement | undefined =>
+  [...document.querySelectorAll<HTMLElement>(`[${HERO_COVER}]`)].find(
+    (cover) => !cover.closest('[style*="display: none"]'),
+  )
 
 let running: ViewTransition | undefined
 
@@ -60,49 +49,29 @@ if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => running?.skipTransition(), { capture: true })
 }
 
-/** Draws `change` at once, with the cover carried across it when it can be. */
-export function morph(ends: Ends, change: () => void): void {
-  // A second change before the first has landed waits for it to land.
-  if (running) {
-    const first = running
-    void first.finished.finally(() => morph(ends, change))
-    return
-  }
-  const source = canMorph() ? ends.from() : undefined
-  if (!source) {
-    change()
+/** Goes to the game's page, with the cover carried from `from` when it can be. */
+export function morph(from: HTMLElement | undefined, go: () => void): void {
+  if (running || !from || !canMorph()) {
+    go()
     return
   }
 
-  const root = document.documentElement
-  name(source, COVER)
-  name(ends.panel(), PANEL)
-  root.dataset.morph = ''
-
-  const transition = document.startViewTransition(() => {
-    name(source, '')
-    name(ends.panel(), '')
-    flushSync(change)
-    const target = ends.to()
-    name(target, COVER)
-    name(ends.panel(), PANEL)
-    // The cover is in flight: it is not also left behind where it started.
-    if (source !== target) source.style.visibility = 'hidden'
+  name(from, COVER)
+  const transition = document.startViewTransition(async () => {
+    name(from, '')
+    const drawn = pageDrawn(WAIT_MS)
+    go()
+    await drawn
+    name(heroCover(), COVER)
   })
   running = transition
-  // A transition cut short by the next one rejects these; nothing is wrong.
+  // A transition cut short rejects these; nothing is wrong.
   transition.ready.catch(() => undefined)
   transition.updateCallbackDone.catch(() => undefined)
   const done = () => {
-    name(ends.to(), '')
-    name(ends.panel(), '')
-    name(source, '')
-    source.style.visibility = ''
-    if (running === transition) {
-      running = undefined
-      settle()
-      delete root.dataset.morph
-    }
+    name(heroCover(), '')
+    name(from, '')
+    running = undefined
   }
   transition.finished.then(done, done)
 }
