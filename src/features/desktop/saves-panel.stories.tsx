@@ -247,6 +247,17 @@ export const FolderAway: Story = {
 /** No folder chosen: this computer alone. */
 export const ThisComputerOnly: Story = { args: { state: view({ place: null }) } }
 
+/** In Google Drive: each snapshot says whether it is there yet, the newest still waiting here. */
+export const InAService: Story = {
+  args: {
+    state: view({
+      place: 'Google Drive',
+      service: true,
+      snapshots: view().snapshots.map((snapshot, at) => ({ ...snapshot, waiting: at === 0 })),
+    }),
+  },
+}
+
 export const Restoring: Story = {
   args: { busy: 'restore:b', progress: { step: 'fetching', done: 3, total: 4 } },
 }

@@ -2,6 +2,10 @@
 
 import {
   CheckIcon,
+  CloudCheckIcon,
+  CloudUploadIcon,
+  FolderCheckIcon,
+  FolderClockIcon,
   FolderIcon,
   FolderOpenIcon,
   FolderPlusIcon,
@@ -423,6 +427,11 @@ function Ready({
                 title={title}
                 snapshot={snapshot}
                 computer={computerOf(snapshot.device)}
+                place={
+                  view.place === null || view.service === undefined
+                    ? null
+                    : { name: view.place, service: view.service }
+                }
                 busy={busy}
                 onRestore={() => onRestore(snapshot)}
                 onShow={() => onShow(snapshot)}
@@ -600,10 +609,43 @@ function Behind({
 export const madeAt = (format: ReturnType<typeof useFormatter>, at: number) =>
   format.dateTime(at, { dateStyle: 'medium', timeStyle: 'short' })
 
+/** This computer's place, as a snapshot's row says whether it is there: a service by its name, or a folder. */
+type RowPlace = { name: string; service: boolean } | null
+
+/** Whether a snapshot is at the place yet, for a place other than this computer alone. */
+function AtPlace({ snapshot, place }: { snapshot: Snapshot; place: RowPlace }) {
+  const t = useTranslations('Saves')
+  // This computer alone, or an app too old to say.
+  if (place === null || snapshot.waiting === undefined) return null
+  const Icon = place.service
+    ? snapshot.waiting
+      ? CloudUploadIcon
+      : CloudCheckIcon
+    : snapshot.waiting
+      ? FolderClockIcon
+      : FolderCheckIcon
+  const text = place.service
+    ? t(snapshot.waiting ? 'notInService' : 'inService', { service: place.name })
+    : t(snapshot.waiting ? 'notInFolder' : 'inFolder')
+  return (
+    <span
+      className={
+        snapshot.waiting
+          ? 'flex items-center gap-1 text-xs font-medium'
+          : 'flex items-center gap-1 text-xs text-muted'
+      }
+    >
+      <Icon aria-hidden="true" className="size-3.5" />
+      {text}
+    </span>
+  )
+}
+
 function SnapshotRow({
   title,
   snapshot,
   computer,
+  place,
   busy,
   onRestore,
   onShow,
@@ -611,6 +653,7 @@ function SnapshotRow({
   title: string
   snapshot: Snapshot
   computer: string
+  place: RowPlace
   busy?: SavesBusy | undefined
   onRestore: () => void
   onShow: () => void
@@ -645,6 +688,7 @@ function SnapshotRow({
             {t('hereNow')}
           </span>
         ) : null}
+        <AtPlace snapshot={snapshot} place={place} />
       </span>
       {snapshot.here ? null : (
         <Confirm
