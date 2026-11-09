@@ -950,6 +950,18 @@ impl Saves {
     }
 
     /// Whether any game's saves are being backed up or put back: an update waits for that.
+    /// Whether a game's saves are being worked on now (backed up after a session, put back, or looked at
+    /// before Play), and how far, for Play to wait on and say so.
+    pub fn syncing(&self, entry: &str) -> Option<progress::Syncing> {
+        self.busy
+            .lock()
+            .unwrap()
+            .contains(entry)
+            .then(|| progress::Syncing {
+                progress: self.board.of(entry),
+            })
+    }
+
     pub fn any_busy(&self) -> bool {
         !self.busy.lock().unwrap().is_empty() || self.journal().is_some()
     }
@@ -2497,6 +2509,27 @@ mod tests {
         *service.away.lock().unwrap() = None;
         assert_eq!(before(&one, 4000), Checked::InStep);
         assert!(snapshot::whole(&one.saves.waiting("entry-1")).is_empty());
+    }
+
+    #[test]
+    fn a_game_is_syncing_while_its_saves_are_held_and_says_how_far() {
+        let pc = Pc::new("saves-syncing", "dev1", &["<winAppData>/A Game"]);
+        assert_eq!(pc.saves.syncing("entry-1"), None);
+        let busy = pc.saves.begin("entry-1").unwrap();
+        assert_eq!(
+            pc.saves.syncing("entry-1"),
+            Some(progress::Syncing { progress: None })
+        );
+        pc.saves
+            .board
+            .set("entry-1", progress::Step::Fetching, 3, Some(4));
+        assert_eq!(
+            pc.saves.syncing("entry-1").unwrap().progress.unwrap().done,
+            3
+        );
+        assert_eq!(pc.saves.syncing("entry-2"), None);
+        drop(busy);
+        assert_eq!(pc.saves.syncing("entry-1"), None);
     }
 
     #[test]

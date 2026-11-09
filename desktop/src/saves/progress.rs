@@ -30,6 +30,13 @@ pub struct Progress {
     pub total: Option<u64>,
 }
 
+/// A game's saves being worked on, for Play to wait on (ADR 008, section 7): how far, once a step has said.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct Syncing {
+    #[serde(flatten)]
+    pub progress: Option<Progress>,
+}
+
 /// Each game's, by its entry, while something is being done to its saves.
 #[derive(Default)]
 pub struct Board(Mutex<HashMap<String, Progress>>);
@@ -54,6 +61,23 @@ impl Board {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn syncing_says_how_far_once_a_step_has_said() {
+        assert_eq!(
+            serde_json::to_value(Syncing { progress: None }).unwrap(),
+            serde_json::json!({})
+        );
+        let progress = Some(Progress {
+            step: Step::Sending,
+            done: 5,
+            total: Some(10),
+        });
+        assert_eq!(
+            serde_json::to_value(Syncing { progress }).unwrap(),
+            serde_json::json!({ "step": "sending", "done": 5, "total": 10 })
+        );
+    }
 
     #[test]
     fn a_game_s_progress_is_its_own_until_cleared() {

@@ -412,6 +412,18 @@ fn target_of(file: Option<&Path>, apps: &[String]) -> Target {
     target
 }
 
+/// A game on this computer, for its Play: whether it runs, and whether its saves are kept and being worked
+/// on now, which Play waits for (ADR 008, section 7).
+#[derive(Debug, Serialize)]
+pub struct GameNow {
+    #[serde(flatten)]
+    view: GameView,
+    /// Its saves are kept: Play looks at them before the game starts.
+    kept: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    syncing: Option<saves::progress::Syncing>,
+}
+
 /// A game's state on this computer. A page names the game: an entry, and its Steam apps
 /// installed here. Which processes are the game is worked out here, and never told.
 #[tauri::command]
@@ -419,15 +431,22 @@ pub async fn game_state(
     app: AppHandle,
     entry: String,
     apps: Vec<String>,
-) -> Result<GameView, Refusal> {
+) -> Result<GameNow, Refusal> {
     entry_id(&entry)?;
     tauri::async_runtime::spawn_blocking(move || {
         let file = app.state::<Launchers>().get(&entry).map(|kept| kept.path);
         let rules = rules_here();
         let target = target_of(file.as_deref(), &apps);
         let running = processes::snapshot();
-        app.state::<Games>()
-            .view(&entry, &target, running.as_deref(), &rules, now())
+        let view = app
+            .state::<Games>()
+            .view(&entry, &target, running.as_deref(), &rules, now());
+        let saves = app.state::<Saves>();
+        GameNow {
+            view,
+            kept: saves.game(&entry).on,
+            syncing: saves.syncing(&entry),
+        }
     })
     .await
     .map_err(|_| Refusal::Failed)

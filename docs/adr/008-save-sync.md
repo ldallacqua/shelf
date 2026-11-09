@@ -182,7 +182,7 @@ while building phase 2: without it, phase 4's check before Play would undo a res
   if what is here isn't known, a snapshot is made. It is made even when another PC has written meanwhile: a
   new file destroys nothing, and the two heads become a choice.
 - **Before Play (phase 4):** the table of section 5. Play waits for it, a second or two for a folder, and
-  says Starting meanwhile; a backup or restore of the game already going is waited for, twenty seconds at
+  says Syncing meanwhile (below); a backup or restore of the game already going is waited for, twenty seconds at
   most, and a restore cut short that couldn't be undone keeps Play waiting. A choice stops Play and shows
   itself, in the game's Saves: keeping one plays it, as Steam's conflict window launches the game once a
   copy is picked, and **Decide later** plays what is here and writes nothing, Steam's "Play anyway". A
@@ -190,6 +190,16 @@ while building phase 2: without it, phase 4's check before Play would undo a res
   (a damaged snapshot, saves over the caps), with the reason, since what is played over is never lost: the
   snapshot after it names the old one as its parent, and the next look is a choice. A page that says to
   skip the look (`play`'s `check`, false only after Decide later) gets none.
+- **Syncing, on Play** (9 Nov 2026). While a game's saves are being worked on (backed up after it
+  closed, put back, or looked at once Play is pressed), Play says **Syncing…**, with a percent where the
+  step can tell, and can't be pressed, as Steam's Play turns to Syncing: the game is never started only to
+  wait, or twice. `game_state` says whether the game's saves are kept and, while the guard holds them, how
+  far (`syncing`). Pressed, Play says Syncing while a kept game's saves are looked at, and Starting once the
+  game is. A sync never holds it for long on a dead line: a call to a service gives up once nothing has
+  moved on it for **30 seconds** (no answer, no byte read, no slice of a piece taken to send), never for
+  its length, so a large snapshot on a slow line is waited for and a quiet one isn't. Given up, what was
+  being sent waits on this PC, and a look before Play starts the game with what is here and says so. The
+  tip on Syncing says the same number.
 - **What it can't see:** a game started outside Shelf (a shortcut, the file itself) gets no check before it.
   The snapshot after it, if the place moved meanwhile, makes two heads, so the next look is a choice, not a
   silent overwrite.

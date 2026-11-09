@@ -36,7 +36,9 @@ const same = (a: GameState | undefined, b: GameState) =>
     typeof b === 'object' &&
     a.state === b.state &&
     a.why === b.why &&
-    a.unresponsive === b.unresponsive)
+    a.unresponsive === b.unresponsive &&
+    a.kept === b.kept &&
+    JSON.stringify(a.syncing) === JSON.stringify(b.syncing))
 
 /** A game just sent to Steam is starting, until Steam or a process shows otherwise. */
 const withSteam = (entry: string, view: GameView): GameView => {
@@ -50,13 +52,15 @@ const withSteam = (entry: string, view: GameView): GameView => {
 
 /**
  * `enabled` holds it back until what the game has here is known; `apps` are its Steam apps
- * installed here. `path` is the game's file, so a change of it looks again at once.
+ * installed here. `path` is the game's file, so a change of it looks again at once. `hurry` asks
+ * as often as while it starts: Play was pressed, and its saves may be synced first.
  */
 export function useGameState(
   entry: string,
   apps: readonly string[],
   path: string | undefined,
   enabled: boolean,
+  hurry = false,
 ) {
   const [state, setState] = useState<GameState>()
   const shown = useRef<GameState | undefined>(undefined)
@@ -111,7 +115,12 @@ export function useGameState(
       }
       doubting = false
       show(view)
-      const busy = view.state === 'starting' || view.state === 'stopping'
+      // Its saves being synced are waited for as a start is, the bar moving with them.
+      const busy =
+        hurry ||
+        view.state === 'starting' ||
+        view.state === 'stopping' ||
+        view.syncing !== undefined
       timer = setTimeout(() => void look(), busy ? BUSY_MS : STEADY_MS)
     }
 
@@ -127,7 +136,7 @@ export function useGameState(
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('focus', onVisible)
     }
-  }, [entry, installed, path, enabled])
+  }, [entry, installed, path, enabled, hurry])
 
   /** Says the game has just been sent to Steam: nobody else can. */
   const sentGameToSteam = useCallback(() => {

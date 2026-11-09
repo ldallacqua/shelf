@@ -33,7 +33,10 @@ serde_yaml_ng = "0.10"
 sha2 = "0.11"
 # PKCE and an ID token's claims, for a cloud's sign-in (ADR 008, phase 5).
 base64 = "0.22"
-tokio = { version = "1", features = ["io-util", "macros", "net", "sync", "time"] }
+tokio = { version = "1", features = ["io-util", "macros", "net", "rt", "sync", "time"] }
+# A save's piece sent a slice at a time, so a line that stops taking it is seen (ADR 008, section 8).
+bytes = "1"
+http-body = "1"
 url = "2"
 uuid = { version = "1", features = ["v4"] }
 zip = { version = "9", default-features = false, features = ["bzip2", "deflate-flate2-zlib-rs", "deflate64", "lzma", "xz"] }

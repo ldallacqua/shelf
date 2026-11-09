@@ -10,13 +10,18 @@
 //! `SHELF_GOOGLE_CLIENT_SECRET`, from `.env.local`), and a build without one doesn't offer that service.
 
 use std::collections::HashMap;
+use std::convert::Infallible;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
+use std::pin::Pin;
 use std::sync::{Arc, Mutex, OnceLock};
-use std::time::Duration;
+use std::task::{Context, Poll};
+use std::time::{Duration, Instant};
 
-use reqwest::{Client, RequestBuilder, Response, StatusCode};
+use bytes::Bytes;
+use http_body::{Frame, SizeHint};
+use reqwest::{Body, Client, RequestBuilder, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 
@@ -184,12 +189,114 @@ const PIECE: usize = if cfg!(test) {
 } else {
     10 * 1024 * 1024
 };
+/// What a call to a service waits for: once nothing has moved on it for this long (no answer, no byte
+/// read, no slice of a piece taken to send) it gives up, and the service is out of reach. A slow line keeps
+/// moving and is waited for however long a large snapshot takes; one gone quiet is given up on, and what
+/// was being sent waits on this PC. Play's tip says the same number (`syncingTip` in `messages/`).
+pub const STALL: Duration = if cfg!(test) {
+    Duration::from_millis(500)
+} else {
+    Duration::from_secs(30)
+};
+/// A piece is handed over this much at a time, each slice counting as movement.
+const SLICE: usize = 64 * 1024;
 /// The folder in Google Drive, in My Drive, that holds a folder per game.
 const DRIVE_FOLDER: &str = "Shelf saves";
 const FOLDER_TYPE: &str = "application/vnd.google-apps.folder";
 
 fn now() -> u64 {
     crate::commands::now()
+}
+
+/// When something last moved on a call to a service (`STALL`).
+#[derive(Clone)]
+struct Moving(Arc<Mutex<Instant>>);
+
+impl Moving {
+    fn new() -> Self {
+        Moving(Arc::new(Mutex::new(Instant::now())))
+    }
+
+    fn moved(&self) {
+        *self.0.lock().unwrap() = Instant::now();
+    }
+
+    /// Ends once nothing has moved for `STALL`.
+    async fn stalled(&self) {
+        loop {
+            let quiet = self.0.lock().unwrap().elapsed();
+            if quiet >= STALL {
+                return;
+            }
+            tokio::time::sleep(STALL - quiet).await;
+        }
+    }
+}
+
+tokio::task_local! {
+    /// The call under way's, for what it awaits to say it moved.
+    static MOVING: Moving;
+}
+
+/// Says the call under way moved: an answer came, or bytes.
+fn moved() {
+    let _ = MOVING.try_with(Moving::moved);
+}
+
+/// The call under way's, for a piece's body, which the connection reads elsewhere.
+fn moving() -> Option<Moving> {
+    MOVING.try_with(Moving::clone).ok()
+}
+
+/// One call to a service, waited for until it ends, or nothing has moved on it for `STALL`: then the
+/// service is out of reach. Dropped where it stood, as a line gone down would leave it.
+fn within<T>(work: impl Future<Output = Result<T, Away>>) -> Result<T, Away> {
+    let moving = Moving::new();
+    tauri::async_runtime::block_on(MOVING.scope(moving.clone(), async move {
+        tokio::select! {
+            done = work => done,
+            () = moving.stalled() => Err(Away::Unreachable),
+        }
+    }))
+}
+
+/// A piece of a file, handed to the connection a slice at a time: each slice taken says the call moved
+/// and counts what has gone, so a line that stops taking it is seen, and the page's bar moves within a piece.
+struct Paced {
+    piece: Bytes,
+    at: usize,
+    moving: Option<Moving>,
+    taken: Box<dyn Fn(usize) + Send + Sync>,
+}
+
+impl http_body::Body for Paced {
+    type Data = Bytes;
+    type Error = Infallible;
+
+    fn poll_frame(
+        mut self: Pin<&mut Self>,
+        _: &mut Context<'_>,
+    ) -> Poll<Option<Result<Frame<Bytes>, Infallible>>> {
+        if self.at >= self.piece.len() {
+            return Poll::Ready(None);
+        }
+        let end = (self.at + SLICE).min(self.piece.len());
+        let slice = self.piece.slice(self.at..end);
+        self.at = end;
+        if let Some(moving) = &self.moving {
+            moving.moved();
+        }
+        (self.taken)(end);
+        Poll::Ready(Some(Ok(Frame::data(slice))))
+    }
+
+    fn is_end_stream(&self) -> bool {
+        self.at >= self.piece.len()
+    }
+
+    fn size_hint(&self) -> SizeHint {
+        SizeHint::with_exact((self.piece.len() - self.at) as u64)
+    }
 }
 
 /// One service, signed in or not.
@@ -218,8 +325,8 @@ impl Cloud {
         let client = Client::builder()
             .user_agent(format!("Shelf/{version}"))
             .connect_timeout(Duration::from_secs(15))
-            // A large piece on a slow line takes a while; nothing waits on it but the snapshot.
-            .timeout(Duration::from_secs(10 * 60))
+            // No time for a whole call: a large snapshot on a slow line takes a while, and keeps moving.
+            // A call gone quiet is given up on instead (`within`).
             .build()
             .unwrap_or_default();
         let tokens = vault
@@ -400,7 +507,7 @@ impl Cloud {
     /// the tray for days learns no other way that it was ended. Nothing when signed out.
     pub fn check(&self) {
         if self.account().is_some() {
-            let _ = tauri::async_runtime::block_on(self.access(None));
+            let _ = within(self.access(None));
         }
     }
 
@@ -439,7 +546,9 @@ impl Cloud {
         if self.service == Service::OneDrive {
             form.push(("scope", setup.scope));
         }
-        match sign_in::tokens(&self.client, &setup.token, &form).await {
+        let answered = sign_in::tokens(&self.client, &setup.token, &form).await;
+        moved();
+        match answered {
             Ok(answer) => {
                 let access = answer.access_token.clone();
                 self.keep(Tokens {
@@ -471,6 +580,7 @@ impl Cloud {
                 .send()
                 .await
                 .map_err(|_| Away::Unreachable)?;
+            moved();
             if response.status() == StatusCode::UNAUTHORIZED && again {
                 again = false;
                 token = self.access(Some(&token)).await?;
@@ -515,6 +625,7 @@ impl Cloud {
         let mut file = fs::File::create(to).map_err(|_| Away::Unreachable)?;
         while let Some(piece) = response.chunk().await.map_err(|_| Away::Unreachable)? {
             std::io::Write::write_all(&mut file, &piece).map_err(|_| Away::Unreachable)?;
+            moved();
             done += piece.len() as u64;
             self.moved(watched, Step::Fetching, done, total);
         }
@@ -538,19 +649,33 @@ impl Cloud {
             let mut piece = vec![0u8; PIECE.min((total - start) as usize)];
             file.read_exact(&mut piece).map_err(|_| Away::Unreachable)?;
             let end = start + piece.len() as u64;
+            let length = piece.len();
+            let board =
+                watched.and_then(|entry| Some((entry.to_string(), self.board.get()?.clone())));
+            let body = Paced {
+                piece: Bytes::from(piece),
+                at: 0,
+                moving: moving(),
+                taken: Box::new(move |taken| {
+                    if let Some((entry, board)) = &board {
+                        board.set(entry, Step::Sending, start + taken as u64, Some(total));
+                    }
+                }),
+            };
             let mut request = self
                 .client
                 .put(session)
-                .header(reqwest::header::CONTENT_LENGTH, piece.len())
+                .header(reqwest::header::CONTENT_LENGTH, length)
                 .header(
                     reqwest::header::CONTENT_RANGE,
                     format!("bytes {start}-{}/{total}", end - 1),
                 )
-                .body(piece);
+                .body(Body::wrap(body));
             if let Some(token) = token {
                 request = request.bearer_auth(token);
             }
             let response = request.send().await.map_err(|_| Away::Unreachable)?;
+            moved();
             let status = response.status();
             let last = end >= total;
             // More is expected: Microsoft says 202, Google 308.
@@ -881,16 +1006,17 @@ fn away_of(status: StatusCode, body: &[u8]) -> Away {
     }
 }
 
-/// The services' calls are made from threads that read disks, never a page's: each waits for its answer.
 /// The entry whose progress a file sent or read counts for: a snapshot's archive only, as the lists and
 /// the game's file beside it are a moment's.
 fn zip_of<'a>(entry: &'a str, name: &str) -> Option<&'a str> {
     name.ends_with(".zip").then_some(entry)
 }
 
+/// The services' calls are made from threads that read disks, never a page's: each waits for its answer,
+/// for as long as it moves (`within`).
 impl Remote for Cloud {
     fn files(&self, entry: &str) -> Result<Vec<RemoteFile>, Away> {
-        tauri::async_runtime::block_on(async {
+        within(async {
             match self.service {
                 Service::OneDrive => self.onedrive_files(entry).await,
                 Service::GoogleDrive => self.drive_files(entry).await,
@@ -899,7 +1025,7 @@ impl Remote for Cloud {
     }
 
     fn download(&self, entry: &str, file: &RemoteFile, to: &Path) -> Result<(), Away> {
-        tauri::async_runtime::block_on(async {
+        within(async {
             match self.service {
                 Service::OneDrive => self.onedrive_download(entry, &file.name, to).await,
                 Service::GoogleDrive => {
@@ -911,7 +1037,7 @@ impl Remote for Cloud {
     }
 
     fn upload(&self, entry: &str, name: &str, from: &Path) -> Result<(), Away> {
-        tauri::async_runtime::block_on(async {
+        within(async {
             match self.service {
                 Service::OneDrive => self.onedrive_upload(entry, name, from).await,
                 Service::GoogleDrive => self.drive_upload(entry, name, from).await,
@@ -920,7 +1046,7 @@ impl Remote for Cloud {
     }
 
     fn delete(&self, entry: &str, file: &RemoteFile) -> Result<(), Away> {
-        tauri::async_runtime::block_on(async {
+        within(async {
             match self.service {
                 Service::OneDrive => self.onedrive_delete(entry, &file.name).await,
                 Service::GoogleDrive => self.drive_delete(&file.id).await,
@@ -1080,6 +1206,8 @@ pub mod double {
         pub revoked: Mutex<Vec<String>>,
         /// A portal in front of the line: the token's address answers with a page of its own.
         pub portal: Mutex<bool>,
+        /// A line gone quiet: nothing is answered for a long while.
+        pub quiet: Mutex<bool>,
         pub next: Mutex<u32>,
     }
 
@@ -1259,6 +1387,9 @@ pub mod double {
 
         /// Google Drive's v3 API, under `/google-drive`: folders by id, files only Shelf made.
         pub fn google(&self, asked: &Asked, base: &str) -> Answer {
+            if *self.quiet.lock().unwrap() {
+                std::thread::sleep(crate::saves::cloud::STALL * 4);
+            }
             let path = asked.path().trim_start_matches("/google-drive");
             match path {
                 "/token" => return self.token_answer(asked, true),
@@ -1463,18 +1594,13 @@ mod tests {
             .upload("entry-1", "big.zip", &root.join("big.zip"))
             .unwrap();
         let sending = crate::saves::progress::Step::Sending;
-        let last_piece = 2 * PIECE as u64;
-        assert_eq!(
-            counted(),
-            Some((sending, last_piece, Some(big.len() as u64)))
-        );
+        // Counted a slice at a time, to the last byte.
+        let all = Some((sending, big.len() as u64, Some(big.len() as u64)));
+        assert_eq!(counted(), all);
         cloud
             .upload("entry-1", "small.json", &root.join("small.json"))
             .unwrap();
-        assert_eq!(
-            counted(),
-            Some((sending, last_piece, Some(big.len() as u64)))
-        );
+        assert_eq!(counted(), all);
         assert_eq!(account.names(), ["big.zip", "small.json"]);
         let files = cloud.files("entry-1").unwrap();
         let file = files.iter().find(|file| file.name == "big.zip").unwrap();
@@ -1588,6 +1714,39 @@ mod tests {
         );
         tauri::async_runtime::block_on(cloud.sign_out());
         assert_eq!(cloud.account(), None);
+    }
+
+    #[test]
+    fn a_call_is_given_up_on_once_nothing_moves_and_waited_for_while_it_does() {
+        let started = Instant::now();
+        let quiet = within(async {
+            tokio::time::sleep(STALL * 4).await;
+            Ok(())
+        });
+        assert_eq!(quiet, Err(Away::Unreachable));
+        assert!(started.elapsed() < STALL * 2);
+        // Twice as long as a stall, moving all the while.
+        let slow = within(async {
+            for _ in 0..6 {
+                tokio::time::sleep(STALL / 3).await;
+                moved();
+            }
+            Ok(7)
+        });
+        assert_eq!(slow, Ok(7));
+        // A service gone quiet: out of reach, and still signed in.
+        let (base, _, google) = both();
+        let cloud = signed_in(
+            Service::GoogleDrive,
+            &base,
+            &google,
+            Arc::new(Memory::default()),
+        );
+        *google.quiet.lock().unwrap() = true;
+        let started = Instant::now();
+        assert_eq!(cloud.files("entry-1"), Err(Away::Unreachable));
+        assert!(started.elapsed() < STALL * 2);
+        assert!(cloud.account().is_some());
     }
 
     #[test]

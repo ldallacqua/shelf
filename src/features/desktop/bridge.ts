@@ -21,12 +21,24 @@ const gameViewSchema = z.object({
   state: z.enum(['stopped', 'starting', 'running', 'stopping', 'unverified']),
   why: z.enum(['steam', 'denied', 'open']).optional(),
   unresponsive: z.boolean(),
+  /** Whether its saves are kept, so Play looks at them first; none from an app older than 0.17.0. */
+  kept: z.boolean().optional(),
+  /** Its saves being worked on now, and how far once a step has said; none from an app older than 0.17.0. */
+  syncing: z
+    .object({
+      step: z.enum(['reading', 'packing', 'sending', 'fetching', 'restoring']).optional(),
+      done: z.number().optional(),
+      total: z.number().nullable().optional(),
+    })
+    .optional()
+    .catch(undefined),
 })
 
 /**
  * What is running of a game on this computer, as the app can tell (ADR 005, section 11).
  * `unverified`: something may be, and the app can't tell or can't touch it, which `why` says;
- * `unresponsive`: asked to close, and still there.
+ * `unresponsive`: asked to close, and still there. `syncing`: its saves are being backed up, put
+ * back or looked at (ADR 008, section 7), which Play waits for.
  */
 export type GameView = z.infer<typeof gameViewSchema>
 
