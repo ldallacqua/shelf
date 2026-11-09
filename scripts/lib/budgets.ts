@@ -31,7 +31,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // the header's buttons on every page and on the page's own icon buttons: the owner asked for
   // the component library's tips in place of the browser's. About 3.3 KB of it is Radix's own
   // tooltip, which no smaller way of loading it saves without losing focus on the button.
-  { path: '/en', name: 'Home', kilobytes: 216 },
+  // A game opened from the shelf (ADR 009, 9 Nov 2026): measured 216.03 KB, from 215.99. The
+  // line across the top, on every page, follows a game chosen on the shelf as it follows a
+  // link (`navigationStarted`): the budget had no room left for its listener.
+  { path: '/en', name: 'Home', kilobytes: 216.5 },
   // Step 3: measured 228.9 KB. The shell (191 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
