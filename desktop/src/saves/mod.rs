@@ -470,6 +470,8 @@ pub struct Saves {
     remotes: Vec<(Service, Arc<dyn Remote>)>,
     /// What the place last said, when it was a service that couldn't be used.
     away: Mutex<Option<Away>>,
+    /// The service's trouble the person was last told of, so it is said once (`to_announce`).
+    told: Mutex<Option<(Service, Away)>>,
     /// How far each game's backup or restore has got, for the page (`progress.rs`).
     pub board: Arc<progress::Board>,
 }
@@ -496,6 +498,7 @@ impl Saves {
             clouds: Vec::new(),
             remotes: Vec::new(),
             away: Mutex::new(None),
+            told: Mutex::new(None),
             board: Arc::default(),
         }
     }
@@ -606,6 +609,33 @@ impl Saves {
             Where::Folder(_, chosen) => (!chosen.is_dir()).then_some(Away::Unreachable),
             Where::Cloud(service) if !self.signed_in(service) => Some(Away::SignedOut),
             Where::Cloud(_) => *self.away.lock().unwrap(),
+        }
+    }
+
+    /// What this PC's service needs from the person that they haven't been told yet: to sign in again, or
+    /// room (ADR 008, section 8). Said once, until it passes. A line down passes by itself and isn't said,
+    /// nor a folder away, which may be a USB drive unplugged on purpose: the header shows both.
+    pub fn to_announce(&self) -> Option<(Service, Away)> {
+        let now = match (self.place_now(), self.away_now()) {
+            (Where::Cloud(service), Some(away @ (Away::SignedOut | Away::Full))) => {
+                Some((service, away))
+            }
+            _ => None,
+        };
+        let mut told = self.told.lock().unwrap();
+        if *told == now {
+            return None;
+        }
+        *told = now;
+        now
+    }
+
+    /// Asks this PC's service whether it still takes the sign-in (`Cloud::check`). Nothing for a folder.
+    pub fn check_sign_in(&self) {
+        if let Where::Cloud(service) = self.place_now()
+            && let Some(cloud) = self.cloud(service)
+        {
+            cloud.check();
         }
     }
 
@@ -920,6 +950,18 @@ impl Saves {
     }
 
     /// Whether any game's saves are being backed up or put back: an update waits for that.
+    /// Whether a game's saves are being worked on now (backed up after a session, put back, or looked at
+    /// before Play), and how far, for Play to wait on and say so.
+    pub fn syncing(&self, entry: &str) -> Option<progress::Syncing> {
+        self.busy
+            .lock()
+            .unwrap()
+            .contains(entry)
+            .then(|| progress::Syncing {
+                progress: self.board.of(entry),
+            })
+    }
+
     pub fn any_busy(&self) -> bool {
         !self.busy.lock().unwrap().is_empty() || self.journal().is_some()
     }
@@ -1594,6 +1636,8 @@ impl Saves {
                     .last
                     .is_some_and(|last| last.did == Did::Waiting) =>
             {
+                // Said with the game: the place's own notification needn't say it again.
+                self.to_announce();
                 Some(match self.away_now() {
                     Some(Away::SignedOut) => Needs::SignedOut,
                     Some(Away::Full) => Needs::Full,
@@ -2465,6 +2509,49 @@ mod tests {
         *service.away.lock().unwrap() = None;
         assert_eq!(before(&one, 4000), Checked::InStep);
         assert!(snapshot::whole(&one.saves.waiting("entry-1")).is_empty());
+    }
+
+    #[test]
+    fn a_game_is_syncing_while_its_saves_are_held_and_says_how_far() {
+        let pc = Pc::new("saves-syncing", "dev1", &["<winAppData>/A Game"]);
+        assert_eq!(pc.saves.syncing("entry-1"), None);
+        let busy = pc.saves.begin("entry-1").unwrap();
+        assert_eq!(
+            pc.saves.syncing("entry-1"),
+            Some(progress::Syncing { progress: None })
+        );
+        pc.saves
+            .board
+            .set("entry-1", progress::Step::Fetching, 3, Some(4));
+        assert_eq!(
+            pc.saves.syncing("entry-1").unwrap().progress.unwrap().done,
+            3
+        );
+        assert_eq!(pc.saves.syncing("entry-2"), None);
+        drop(busy);
+        assert_eq!(pc.saves.syncing("entry-1"), None);
+    }
+
+    #[test]
+    fn what_a_service_needs_of_the_person_is_said_once_until_it_passes() {
+        let (one, _two, service) = two_on_a_service("saves-cloud-told");
+        assert_eq!(one.saves.to_announce(), None);
+        *service.away.lock().unwrap() = Some(Away::SignedOut);
+        before(&one, 1000);
+        assert_eq!(
+            one.saves.to_announce(),
+            Some((Service::OneDrive, Away::SignedOut))
+        );
+        assert_eq!(one.saves.to_announce(), None);
+        // A line down passes by itself, and isn't said; what comes after it is said again.
+        *service.away.lock().unwrap() = Some(Away::Unreachable);
+        before(&one, 2000);
+        assert_eq!(one.saves.to_announce(), None);
+        // Said with a game's backup, it isn't said again by itself.
+        *service.away.lock().unwrap() = Some(Away::Full);
+        put(&slot(&one), "made when full");
+        assert_eq!(after(&one, 3000), Some(Needs::Full));
+        assert_eq!(one.saves.to_announce(), None);
     }
 
     #[test]

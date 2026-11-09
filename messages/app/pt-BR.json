@@ -399,7 +399,7 @@
       "cancel": "Cancelar",
       "signedIn": "Pronto. Os snapshots vão para o {service} agora, e os feitos neste computador vão em seguida.",
       "used": "Os snapshots vão para o {service} agora.",
-      "signedOutDone": "Você saiu do {service}. O que está lá continua lá.",
+      "signedOutDone": "Você saiu do {service} neste computador. Os outros continuam conectados, e o que está lá continua lá.",
       "signInRefused": "O {service} não fez o seu login. Tente de novo.",
       "signInUnreachable": "Não foi possível acessar o {service}. Confira a conexão e tente de novo.",
       "waitingOnedrive": "Entre pela página da Microsoft, aberta no seu navegador. O Shelf está esperando.",
@@ -416,5 +416,25 @@
     "later": "Depois",
     "restart": "Reiniciar e atualizar",
     "restarting": "Reiniciando…"
+  },
+  "PlaceTrouble": {
+    "signed-out": {
+      "button": "{name} desconectado",
+      "title": "O Shelf saiu do {name}",
+      "body": "O {name} deixou de aceitar o login do Shelf. Os saves ficam só neste computador até você entrar de novo, e enquanto isso seus outros computadores não veem o que você jogar aqui."
+    },
+    "full": {
+      "button": "{name} cheio",
+      "title": "O {name} está cheio",
+      "body": "Os saves ficam só neste computador até haver espaço no {name}, e enquanto isso seus outros computadores não veem o que você jogar aqui."
+    },
+    "away": {
+      "button": "Pasta dos saves indisponível",
+      "title": "A pasta dos saves não pode ser alcançada",
+      "body": "{name} não está lá agora: um disco desconectado ou uma rede fora do ar. Os saves ficam neste computador até ela voltar."
+    },
+    "later": "Depois",
+    "signInAgain": "Entrar de novo",
+    "openSettings": "Abrir Configurações"
   }
 }

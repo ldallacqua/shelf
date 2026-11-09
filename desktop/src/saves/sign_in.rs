@@ -26,6 +26,9 @@ pub enum Ended {
     Cancelled,
     /// The service refused, or answered what can't be read.
     Refused,
+    /// The service no longer takes what it gave (OAuth's `invalid_grant`): the sign-in was ended there, or
+    /// ran out. The only refusal that means signing in again.
+    Expired,
     /// No connection to the service.
     Unreachable,
 }
@@ -190,7 +193,8 @@ pub struct Tokens {
     pub id_token: Option<String>,
 }
 
-/// Asks the token address, with a form. A refusal is `Refused`; no answer, `Unreachable`.
+/// Asks the token address, with a form. A grant it no longer takes is `Expired`, any other refusal
+/// `Refused`; no answer, `Unreachable`.
 pub async fn tokens(
     client: &reqwest::Client,
     address: &str,
@@ -215,7 +219,18 @@ pub async fn tokens(
         return Err(Ended::Unreachable);
     }
     if !status.is_success() {
-        return Err(Ended::Refused);
+        #[derive(Deserialize)]
+        struct Said {
+            error: String,
+        }
+        // RFC 6749, section 5.2: what was given is no longer good.
+        let expired =
+            serde_json::from_slice::<Said>(&bytes).is_ok_and(|said| said.error == "invalid_grant");
+        return Err(if expired {
+            Ended::Expired
+        } else {
+            Ended::Refused
+        });
     }
     serde_json::from_slice(&bytes).map_err(|_| Ended::Refused)
 }

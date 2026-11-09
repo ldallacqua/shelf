@@ -182,7 +182,7 @@ while building phase 2: without it, phase 4's check before Play would undo a res
   if what is here isn't known, a snapshot is made. It is made even when another PC has written meanwhile: a
   new file destroys nothing, and the two heads become a choice.
 - **Before Play (phase 4):** the table of section 5. Play waits for it, a second or two for a folder, and
-  says Starting meanwhile; a backup or restore of the game already going is waited for, twenty seconds at
+  says Syncing meanwhile (below); a backup or restore of the game already going is waited for, twenty seconds at
   most, and a restore cut short that couldn't be undone keeps Play waiting. A choice stops Play and shows
   itself, in the game's Saves: keeping one plays it, as Steam's conflict window launches the game once a
   copy is picked, and **Decide later** plays what is here and writes nothing, Steam's "Play anyway". A
@@ -190,6 +190,16 @@ while building phase 2: without it, phase 4's check before Play would undo a res
   (a damaged snapshot, saves over the caps), with the reason, since what is played over is never lost: the
   snapshot after it names the old one as its parent, and the next look is a choice. A page that says to
   skip the look (`play`'s `check`, false only after Decide later) gets none.
+- **Syncing, on Play** (9 Nov 2026). While a game's saves are being worked on (backed up after it
+  closed, put back, or looked at once Play is pressed), Play says **Syncing…**, with a percent where the
+  step can tell, and can't be pressed, as Steam's Play turns to Syncing: the game is never started only to
+  wait, or twice. `game_state` says whether the game's saves are kept and, while the guard holds them, how
+  far (`syncing`). Pressed, Play says Syncing while a kept game's saves are looked at, and Starting once the
+  game is. A sync never holds it for long on a dead line: a call to a service gives up once nothing has
+  moved on it for **30 seconds** (no answer, no byte read, no slice of a piece taken to send), never for
+  its length, so a large snapshot on a slow line is waited for and a quiet one isn't. Given up, what was
+  being sent waits on this PC, and a look before Play starts the game with what is here and says so. The
+  tip on Syncing says the same number.
 - **What it can't see:** a game started outside Shelf (a shortcut, the file itself) gets no check before it.
   The snapshot after it, if the place moved meanwhile, makes two heads, so the next look is a choice, not a
   silent overwrite.
@@ -223,7 +233,9 @@ place copies this PC's snapshots there, as new files; going back to this PC alon
 - **A sign-in** happens on the service's own page, never in a field of Shelf's. What it gives, or a key
   pasted, is kept in Windows' Credential Manager, as Real-Debrid's is, opened only to reach the service,
   and never given to a page, which learns the service and the account's name. Disconnecting removes it
-  here and, where the service allows, revokes it there.
+  here only: Google ends everything it gave Shelf for an account at once, so revoking it there would sign
+  out every PC of the account (9 Nov 2026). Shelf's access is taken back for good in the account's own
+  settings.
 - **One module per service** knows its addresses, as `real_debrid.rs` does. Each place answers the same few
   questions (list a game's snapshots, read one, write a new one, delete one), so sections 4 to 7 are the same
   code for all.
@@ -242,8 +254,10 @@ place copies this PC's snapshots there, as new files; going back to this PC alon
   is), waiting here and sent off the page's way. Microsoft's sign-in comes back to `http://localhost` at
   any port, as Microsoft takes it, listened for on IPv4 and IPv6; Google's to `http://127.0.0.1`, with
   `access_type=offline` and `prompt=consent` for a refresh token. The account a page is told is the ID
-  token's email or user name. Signing out revokes Google's token; Microsoft has no address for it, so it
-  is forgotten here. Signing out of the service in use goes back to this computer alone.
+  token's email or user name. Signing out forgets the sign-in here and revokes nothing (above). Only the
+  service saying it no longer takes the sign-in (OAuth's `invalid_grant`) signs out: any other refusal of
+  a refresh, a portal in front of the line among them, keeps it and counts as out of reach. Signing out
+  of the service in use goes back to this computer alone.
 - **What a page sees** of a service: its name, the account, whether it is in use, and why it can't be used
   (out of reach, signed out, full), the same words a folder out of reach has. Before Play, a place
   signed out of or full says so, as one out of reach does.
@@ -251,13 +265,22 @@ place copies this PC's snapshots there, as new files; going back to this PC alon
   and says so; it is sent when the place is back, the next time anything asks about the game. A waiting
   snapshot counts in section 5's table as one in the place does. Nothing here is deleted because a place
   failed.
+- **Saying it before a game is played** (9 Nov 2026). Left in the tray for days, the app would hear of a
+  sign-in ended at the service only when a game was played, and every PC's saves would part meanwhile. So
+  the service in use is asked a minute after the app starts and each hour after whether it still takes the
+  sign-in, which costs a token's refresh. What needs the person, signed out or full, is said once in a
+  Windows notification, as sync apps do (`saves/notice.rs`), and again only after it has passed; a game's
+  backup that says it already counts. While it lasts, a button in the header of every page in the app says
+  it, as Google Drive for desktop and OneDrive mark their tray icon, and its panel leads to Settings' Saves
+  page (`place-trouble.tsx`); it also names a folder that can't be reached. A line down is neither: it
+  passes by itself, and what waits goes once it has.
 
 ### 9. What could go wrong, and what holds
 
 | Threat | What holds |
 | --- | --- |
 | A page on Shelf's origin goes wrong (a script injected) | Commands take entry ids, snapshot ids (checked like ids), titles and Steam ids, never a path or bytes; a folder comes only from Windows' picker. The worst it can do is restore an old snapshot (what was here is backed up first) or make one. It can't read a save, delete a snapshot, or set a cap below 3 |
-| A sign-in's token is stolen from this PC | It reaches Shelf's folder in that service and nothing else of it (app folder, `drive.file`, one bucket). Disconnecting revokes it |
+| A sign-in's token is stolen from this PC | It reaches Shelf's folder in that service and nothing else of it (app folder, `drive.file`, one bucket). Removing Shelf in the account's settings ends it everywhere |
 | Someone writes a hostile snapshot to my place (a shared folder, a stolen token) | Section 6: paths read first, every file inside the game's locations here, sizes and hashes checked, a size cap; nothing restored ever runs. Restores happen only when I or the rules above ask, and a backup comes first |
 | Two PCs play without syncing between | Two heads: a choice, never an overwrite (section 5) |
 | A cloud client halfway through syncing | A snapshot counts only when its list and archive are both whole (section 4) |

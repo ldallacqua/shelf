@@ -3798,6 +3798,8 @@ name = "shelf-desktop"
 version = "0.16.0"
 dependencies = [
  "base64 0.22.1",
+ "bytes",
+ "http-body",
  "keyring",
  "reqwest",
  "serde",

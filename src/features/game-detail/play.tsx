@@ -1,13 +1,19 @@
 'use client'
 
-import { EllipsisIcon, PlayIcon, SquareIcon } from 'lucide-react'
+import { EllipsisIcon, PlayIcon, RefreshCwIcon, SquareIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { SteamApps } from '@/domain/library/editing'
 import { steamInstallLink, steamPlayLink } from '@/domain/sync/steam'
 import type { BeforePlaySaid } from '@/features/desktop/before-play'
-import { desktop, inDesktopApp, refusalOf, type Launcher } from '@/features/desktop/bridge'
+import {
+  desktop,
+  inDesktopApp,
+  refusalOf,
+  type GameView,
+  type Launcher,
+} from '@/features/desktop/bridge'
 import {
   FindDownloadItem,
   FindDownloadLater,
@@ -34,6 +40,12 @@ import { useGameState } from './use-game-state'
  * focus off the page the moment Play turns to Starting, and hide it from a tip.
  */
 const waiting = 'cursor-default opacity-60 hover:shadow-none motion-safe:active:translate-y-0'
+
+/** How far a game's saves' sync has got, as a whole percent, where the app can tell. */
+const shareOf = (syncing: GameView['syncing']) =>
+  syncing?.total
+    ? Math.min(100, Math.floor(((syncing.done ?? 0) / syncing.total) * 100))
+    : undefined
 
 type PlayProps = {
   entryId: string
@@ -99,6 +111,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     installedApps,
     here?.launcher?.path,
     here !== undefined,
+    playing,
   )
   const view = typeof state === 'object' ? state : undefined
 
@@ -251,12 +264,19 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const playLink = steamApp ? steamPlayLink(steamApp) : undefined
   const installLink = steam?.owned ? steamInstallLink(steam.owned) : undefined
 
+  // Its saves being synced, as Steam's Play turns to Syncing: the game waits, and says how far.
+  const share = shareOf(view?.syncing)
+  const syncing = share === undefined ? t('gameSyncing') : t('gameSyncingShare', { share })
+
   let primary
   if (view?.state === 'starting' || playing) {
+    // Pressed, its saves kept: they are looked at, and another computer's newer ones brought, before
+    // it starts. The same button as Starting, so keyboard focus stays on it.
+    const first = playing && view?.kept === true && view.state !== 'starting'
     primary = (
       <Button variant="primary" size="sm" aria-disabled="true" className={waiting}>
-        <PlayIcon aria-hidden="true" />
-        {t('gameStarting')}
+        {first ? <RefreshCwIcon aria-hidden="true" /> : <PlayIcon aria-hidden="true" />}
+        {first ? syncing : t('gameStarting')}
       </Button>
     )
   } else if (view?.state === 'running' || (view?.state === 'stopping' && view.unresponsive)) {
@@ -300,6 +320,16 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
       <Tip describes label={t(`gameUnverified.${view.why ?? 'denied'}`)}>
         <Button variant="secondary" size="sm" aria-disabled="true" className={waiting}>
           {t(view.why === 'open' ? 'gameOpen' : 'gameRunningShort')}
+        </Button>
+      </Tip>
+    )
+  } else if (view?.syncing) {
+    // Backed up after it closed, or put back: Play comes back once that is done, or the line stalls.
+    primary = (
+      <Tip describes label={t('syncingTip', { title })}>
+        <Button variant="primary" size="sm" aria-disabled="true" className={waiting}>
+          <RefreshCwIcon aria-hidden="true" />
+          {syncing}
         </Button>
       </Tip>
     )

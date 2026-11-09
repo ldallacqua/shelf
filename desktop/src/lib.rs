@@ -572,6 +572,7 @@ pub fn run() {
             // What waited for a service or a folder goes once the app is up, off its way.
             let sending = app.handle().clone();
             std::thread::spawn(move || sending.state::<saves::Saves>().send_all_waiting());
+            commands::watch_place(app.handle());
             app.manage(device);
             // Closed to the tray it may run for days: an update found meanwhile waits for the owner's word.
             app.manage(updates::Updates::default());

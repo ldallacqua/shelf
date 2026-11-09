@@ -410,6 +410,49 @@ describe('Whether the game is running, in Shelf for Windows (issue 102)', () => 
     expect(notices.notify).not.toHaveBeenCalled()
   })
 
+  it('says Syncing while a closed game’s saves are backed up, and starts nothing until Play is back', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.game = { ...stopped, kept: true, syncing: { step: 'sending', done: 1, total: 4 } }
+    play()
+    const syncing = await screen.findByRole('button', { name: 'Syncing… 25%' })
+    expect(syncing).toHaveAttribute('aria-disabled', 'true')
+    await userEvent.tab()
+    expect(syncing).toHaveFocus()
+    // How long it waits, said where it waits.
+    expect((await screen.findAllByRole('tooltip'))[0]).toHaveTextContent(
+      'If the connection stalls for 30 seconds, Shelf stops waiting',
+    )
+    await userEvent.click(syncing)
+    expect(invoke).not.toHaveBeenCalledWith('play', expect.anything())
+    // A step that can't say how far: no percent.
+    computer.game = { ...stopped, kept: true, syncing: { step: 'reading' } }
+    lookAgain()
+    expect(await screen.findByRole('button', { name: 'Syncing…' })).toBeInTheDocument()
+    computer.game = { ...stopped, kept: true }
+    lookAgain()
+    expect(await screen.findByRole('button', { name: 'Play' })).toBeEnabled()
+  })
+
+  it('says Syncing after Play while a kept game’s saves are looked at, then Starting', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.game = { ...stopped, kept: true }
+    let started = () => {}
+    computer.played = new Promise((resolve) => {
+      started = () => resolve({ started: true, saves: { did: 'restored' } })
+    })
+    play()
+    const button = await screen.findByRole('button', { name: 'Play' })
+    computer.game = { ...stopped, kept: true, syncing: { step: 'fetching', done: 3, total: 4 } }
+    await userEvent.click(button)
+    const pressed = await screen.findByRole('button', { name: 'Syncing… 75%' })
+    expect(pressed).toHaveAttribute('aria-disabled', 'true')
+    // The same button: keyboard focus stays on it.
+    expect(pressed).toHaveFocus()
+    computer.game = { ...starting, kept: true }
+    await act(async () => started())
+    expect(await screen.findByRole('button', { name: 'Starting…' })).toBeInTheDocument()
+  })
+
   it('names the game and its Steam apps, and never a process or a path', async () => {
     computer.installed = ['219990']
     computer.game = running
