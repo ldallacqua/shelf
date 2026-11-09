@@ -4,6 +4,20 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Saves that can't sync, said (9 Nov 2026)
+
+The handheld lost its Google Drive sign-in and kept its saves to itself. Two causes were found in the code:
+signing out revoked Google's token, which Google's guide says ends every token Shelf was given for the
+account (so signing out on one PC signed out the others), and any refusal of a refresh, a captive portal's
+page among them, signed out. Now signing out forgets the sign-in here only, and only `invalid_grant` signs
+out. Google's registration is still in Testing, so its sign-ins still end after seven days until Shelf has
+a domain of its own (the desktop guide, step 12). When the place needs the owner, a Windows notification
+says so once and a button in the app's header says so until it is fixed; the sign-in is checked hourly.
+Play says Syncing while a game's saves sync, and a call to a service gives up after 30 seconds with nothing
+moving (ADR 008, sections 7 and 8). None of it was seen against the real Google Drive: the stand-ins and
+`pnpm desktop:check` only. It is in **0.17.0, published with the owner's OK on 9 Nov 2026**, with the
+refused folder named, the backup's progress and each snapshot's place.
+
 ## Updates while the app runs (9 Nov 2026)
 
 The owner asked for an update notice in the app with a button that restarts it, instead of quitting from
