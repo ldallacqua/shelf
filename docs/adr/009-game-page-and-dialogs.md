@@ -169,13 +169,21 @@ app is concerned (Play, Ready to play, Saves).
   `<ViewTransition name>` on both pages, but that names every box on the shelf, and the browser takes a
   picture of each named element in every transition. `morph.ts` names the box's cover and the page's
   cover for the one transition, as it did for the panel. The move is the router's, in its own time, so
-  the transition holds the shelf's picture until the page is drawn, and goes ahead after 600 ms anyway.
+  the transition holds the shelf's picture until the page is drawn; a page not drawn within 300 ms gets
+  no flight, and the line across the top follows it instead.
 - **The page is drawn at once, from the library.** A move to a page the server builds waits on the
   server: in development the whole page came in one answer, after about 250 ms, and the screen held
   still meanwhile. The library knows the game's cover, title, status and copies, so it hands the page
   a drawing of them (`hand-off.tsx`), which the page's Suspense fallback shows until the server's page
   replaces it where it stands. The drawing's code is fetched as a game is reached for, as the panel's
   was, so the game's page carries none of it.
+- **Only once the router knows the page's frame** (found on production, the day phase 1 shipped).
+  Until the router has had one game page, it waits for the server's whole page, and a game page not
+  built yet took 2.5 s there: the owner saw a first game open after one to three seconds, behind a
+  cover that flew toward nothing. The library asks for the frame while it is idle, from the one game
+  page every build makes, which costs the server nothing and carries no game's art; any game page
+  teaches the router the frame for all of them. A game's own prefetch, on the press, would bring its
+  whole page, art and all, and only a moment ahead.
 - **Back needs nothing of ours.** With Cache Components the router keeps the last three pages in the
   document, hidden (React's Activity), so Back shows the library as it was, scroll and all. Its
   effects run again as it shows, which puts focus back on the box. The page's Library link is Back

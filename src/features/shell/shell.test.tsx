@@ -11,7 +11,7 @@ import { Footer } from './footer'
 import { Header } from './header'
 import { MobileNav } from './mobile-nav'
 import { NavLinks } from './nav-links'
-import { NavigationProgress } from './navigation-progress'
+import { NavigationProgress, navigationStarted } from './navigation-progress'
 import { MAIN_ID, SkipLink } from './skip-link'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
@@ -342,6 +342,16 @@ describe('NavigationProgress', () => {
     act(() => vi.advanceTimersByTime(100))
     expect(line().dataset.state).toBe('loading')
     expect(line()).toHaveAttribute('aria-hidden', 'true')
+    arrive()
+    act(() => vi.advanceTimersByTime(50))
+    expect(line().dataset.state).toBe('done')
+  })
+
+  it('follows a move no link makes, as a game chosen on the shelf is', () => {
+    render(page())
+    act(() => navigationStarted())
+    act(() => vi.advanceTimersByTime(200))
+    expect(line().dataset.state).toBe('loading')
     arrive()
     act(() => vi.advanceTimersByTime(50))
     expect(line().dataset.state).toBe('done')

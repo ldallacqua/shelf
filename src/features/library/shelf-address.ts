@@ -33,6 +33,14 @@ export const keywordsAddress = (files: LibraryFiles, version: number): string =>
     ? `/api/v1/libraries/${files.key}/keywords/${version}`
     : '/api/v1/me/keywords'
 
+/**
+ * No shelf's pages are built ahead: each is built on its first visit, from
+ * the frame built for this handle, and kept until its library changes. Cache
+ * Components needs one handle to build that frame from, and `none` is no
+ * shelf's: it is reserved.
+ */
+export const NO_HANDLE = 'none'
+
 /* The addresses inside a shelf, for `Link` and the router. */
 
 type Query = Record<string, string>

@@ -412,6 +412,7 @@ describe('morph', () => {
     const seen: string[] = []
     let finish = () => {}
     let updated: Promise<void> = Promise.resolve()
+    const skipped = vi.fn()
     Object.defineProperty(document, 'startViewTransition', {
       configurable: true,
       value: (update: () => Promise<void>) => {
@@ -420,11 +421,11 @@ describe('morph', () => {
           finished: new Promise<void>((resolve) => (finish = resolve)),
           ready: Promise.resolve(),
           updateCallbackDone: updated,
-          skipTransition: () => {},
+          skipTransition: skipped,
         }
       },
     })
-    return { seen, finish: () => finish(), updated: () => updated }
+    return { seen, skipped, finish: () => finish(), updated: () => updated }
   }
 
   it('simply goes to the page where the browser cannot carry the cover', () => {
@@ -452,13 +453,14 @@ describe('morph', () => {
     await browser.updated()
     const hero = document.querySelector<HTMLElement>('[data-hero-cover]')!
     expect(hero.style.viewTransitionName).toBe('game-cover')
+    expect(browser.skipped).not.toHaveBeenCalled()
     browser.finish()
     await waitFor(() => expect(hero.style.viewTransitionName).toBe(''))
     expect(from.style.viewTransitionName).toBe('')
     from.remove()
   })
 
-  it('goes ahead without the page when it takes too long', async () => {
+  it('does not fly toward a page that is late: the page simply comes when it comes', async () => {
     vi.useFakeTimers()
     const browser = transitions()
     const from = document.createElement('span')
@@ -467,10 +469,11 @@ describe('morph', () => {
     expect(go).toHaveBeenCalledOnce()
     let done = false
     void browser.updated().then(() => (done = true))
-    await vi.advanceTimersByTimeAsync(599)
+    await vi.advanceTimersByTimeAsync(299)
     expect(done).toBe(false)
     await vi.advanceTimersByTimeAsync(1)
     expect(done).toBe(true)
+    expect(browser.skipped).toHaveBeenCalledOnce()
     browser.finish()
   })
 })
