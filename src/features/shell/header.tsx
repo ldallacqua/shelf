@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl'
 
 import type { AddActions } from '@/features/add-game/actions'
 import { AddButton } from '@/features/add-game/add-button'
-import { DownloadsLinkInApp } from '@/features/desktop/downloads-link-later'
+import { InAppHeader } from '@/features/desktop/in-app-header-later'
 import { WindowControls } from '@/features/desktop/window-controls'
 import { WindowFrame } from '@/features/desktop/window-frame'
 import { LanguageSwitch } from '@/features/language/language-switch'
@@ -19,7 +19,8 @@ import { NavLinks } from './nav-links'
  * The header on every page: the name, the links into the shelf in the
  * address (or one's own), search, theme and language, and the account's
  * menu. Signed in, Add, for one's own shelf. In Shelf for Windows it is
- * also the window's bar, with the window's controls at its right end.
+ * also the window's bar, with the window's controls at its right end, and
+ * says when a newer version is ready to go in.
  */
 export function Header({ add }: { add?: AddActions }) {
   const t = useTranslations('Shell')
@@ -48,7 +49,7 @@ export function Header({ add }: { add?: AddActions }) {
         <div className="ml-auto flex items-center gap-0.5">
           {add ? <AddButton actions={add} /> : null}
           <HeaderSearch />
-          <DownloadsLinkInApp />
+          <InAppHeader />
           <ThemeSwitch />
           <LanguageSwitch />
           <AccountMenu />

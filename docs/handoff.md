@@ -4,6 +4,15 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Updates while the app runs (9 Nov 2026)
+
+The owner asked for an update notice in the app with a button that restarts it, instead of quitting from
+the tray. The app now looks every hour while it runs and downloads what it finds; Shelf's header shows
+**Update**, whose Restart and update installs it (ADR 005, section 9). The page asks the app, and an app
+without the commands draws nothing, so **the owner sees the button only from the release after the one
+that brings it**: that one still arrives at a start. It was seen in a development build with
+`SHELF_UPDATE_STAND_IN`, never with a real release; the first real one is the owner's next update after it.
+
 ## Saves, on this computer (7 Nov 2026)
 
 Issue 151: [ADR 008](adr/008-save-sync.md), written from the issue's research and **accepted by the owner the

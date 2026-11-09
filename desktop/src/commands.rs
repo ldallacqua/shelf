@@ -26,6 +26,7 @@ use crate::source_window::{self, ReadingAll, SourceWindow};
 use crate::sources::{self, Reading, Source, Sources};
 use crate::steam;
 use crate::tracker::{Session, Tracker};
+use crate::updates::{ReadyView, Updates};
 
 /// Why a command did nothing, in a word a page has a sentence for.
 #[derive(Debug, Serialize, PartialEq, Eq)]
@@ -1543,6 +1544,25 @@ pub fn set_save_caps(
     saves: State<'_, Saves>,
 ) -> Result<Caps, SaveRefusal> {
     saves.set_caps(Caps { most_mb, kept })
+}
+
+/// A newer version, downloaded while the app ran and waiting for the owner's word (ADR 005, section 9).
+#[tauri::command]
+pub fn update_ready(updates: State<'_, Updates>) -> Option<ReadyView> {
+    updates.ready()
+}
+
+/// Ends the app, installs what is waiting and opens Shelf again: returning means it could not. `busy`
+/// while a game's saves are being backed up or put back, which the installer would cut short.
+#[tauri::command]
+pub fn install_update(updates: State<'_, Updates>, saves: State<'_, Saves>) -> Result<(), Refusal> {
+    if saves.any_busy() {
+        return Err(Refusal::Busy);
+    }
+    updates.install().map_err(|error| {
+        eprintln!("could not install the update: {error}");
+        Refusal::Failed
+    })
 }
 
 #[cfg(test)]

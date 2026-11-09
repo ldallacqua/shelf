@@ -25,7 +25,8 @@ steps it is built in.
    then **Run anyway**. Then it asks nothing: a small window shows while it installs, for this
    Windows account only and without administrator, and Shelf opens.
    **It updates itself:** each time it starts, a small window looks for a newer version and
-   installs it before opening Shelf.
+   installs it before opening Shelf. Left open, or in the tray, it also looks every hour: a
+   version it finds shows **Update** in Shelf's header, and Restart and update installs it.
 2. **Sign in** as on the site. The app remembers it, as a browser does, for seven days after
    the last use.
 3. **On a game of your own,** under Mine:
@@ -368,6 +369,10 @@ the sample's 230 games, Bloodborne and two whose Steam apps this computer has in
 - [x] The installer in one step: a template of our own (`desktop/installer/`), Tauri 2.12.4's
       without its pages. One small window like the splash while it installs, then Shelf opens;
       an update runs the same.
+- [x] While it runs (9 Nov 2026): every hour, from half an hour after it starts, the app looks
+      and downloads; the header shows **Update**, whose Restart and update installs it
+      (`desktop/src/updates.rs`). A development build looks for none: `SHELF_UPDATE_STAND_IN`
+      names a version for a person to see the button, and installing it fails.
 - [x] `pnpm desktop:release`: from a clean `main`, builds the version `tauri.conf.json` names,
       signed, writes `latest.json`, and publishes the release `desktop-v{version}` with the
       installer, its signature and `latest.json`.
