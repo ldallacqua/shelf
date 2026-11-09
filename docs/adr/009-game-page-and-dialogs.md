@@ -184,6 +184,13 @@ app is concerned (Play, Ready to play, Saves).
   page every build makes, which costs the server nothing and carries no game's art; any game page
   teaches the router the frame for all of them. A game's own prefetch, on the press, would bring its
   whole page, art and all, and only a moment ahead.
+- **A game's address is the game's alone.** It kept the library's arrangement (`?view=wall`) for the
+  way back and for phase 2's list. On Vercel a page built ahead answers without the query it was asked
+  with; the router takes that for a wrong guess of the route and stops guessing it for the rest of the
+  visit, so from the second game on every click waited for the server, one to four seconds. Back
+  keeps the arrangement anyway; the Library link from an address opened directly leads to the library
+  as this device last arranged it. **Phase 2's list cannot read the arrangement from the game's
+  address:** the library hands it over, as it hands over the drawn page.
 - **Back needs nothing of ours.** With Cache Components the router keeps the last three pages in the
   document, hidden (React's Activity), so Back shows the library as it was, scroll and all. Its
   effects run again as it shows, which puts focus back on the box. The page's Library link is Back

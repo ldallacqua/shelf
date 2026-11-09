@@ -67,7 +67,6 @@ import { ShortcutsDialog } from '@/features/filters/shortcuts-dialog'
 import { SortControl } from '@/features/filters/sort-control'
 import { StatusRow } from '@/features/filters/status-row'
 import { useKeywords } from '@/features/filters/use-keywords'
-import { keptQuery } from '@/features/game-detail/back-to-library'
 import type * as DrawnPage from '@/features/game-detail/drawn-page'
 import { handOff } from '@/features/game-detail/hand-off'
 import { morph } from '@/features/game-detail/morph'
@@ -578,18 +577,16 @@ export function LibraryView({
   // The box whose game was opened last: focus goes back to it when Back shows the library again.
   const lastOpen = useRef<string | undefined>(undefined)
 
-  /** A game's address, keeping the library's arrangement: for the way back and the list beside it. */
-  const addressOf = (slug: string) =>
-    gameHref(handle, slug, keptQuery(new URLSearchParams(window.location.search)))
-
   /**
-   * A game's page, its cover growing out of its box (spec 7.2). The page is
-   * drawn at once from what the library knows, and the address keeps the
-   * library's arrangement, for the way back and the list beside the game.
+   * A game's page, its cover growing out of its box (spec 7.2), drawn at once
+   * from what the library knows. Its address is the game's alone: on Vercel a
+   * page built ahead answers without the query it was asked with, the router
+   * takes that for a wrong guess of the route, and from then on waits for the
+   * server on every game (ADR 009, phase 1).
    */
   const goToGame = (item: ShelfItem, from?: HTMLElement) => {
     const { game } = item
-    const href = addressOf(game.slug)
+    const href = gameHref(handle, game.slug)
     lastOpen.current = keyOf(item)
     void loadPage(handle).then(({ drawPage }) => {
       handOff({
@@ -625,18 +622,6 @@ export function LibraryView({
     const already = followed?.box.key === box.key && followed.box.index === box.index
     if (already) goToGame(item)
     else setOpen(openGameAt(box, item))
-  }
-
-  /**
-   * A press on a game, before it is let go: its page is asked for then, a
-   * tenth of a second or so ahead of the click. Only the game being chosen:
-   * the router's prefetch of a page built ahead brings all of it, art and
-   * all, so a pointer passing over games asks for none of them.
-   */
-  const press = (target: EventTarget) => {
-    const key = target instanceof Element ? target.closest<HTMLElement>('[data-flip]') : null
-    const slug = key?.dataset.flip?.replace(/:\d+$/, '')
-    if (slug) router.prefetch(addressOf(slug))
   }
 
   // The router shows a game's page at once, drawn from the library (`hand-off.tsx`), only once
@@ -730,7 +715,6 @@ export function LibraryView({
       // Reaching for a game fetches what opening one needs.
       onPointerOver={(event) => onAGame(event.target) && void loadPage(handle)}
       onFocus={(event) => onAGame(event.target) && void loadPage(handle)}
-      onPointerDown={(event) => event.button === 0 && press(event.target)}
     >
       {/*
        * The title, then the filters' column, then the library; on a wide window the title heads
