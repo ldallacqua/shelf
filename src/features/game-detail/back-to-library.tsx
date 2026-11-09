@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import type { MouseEvent } from 'react'
 
-import { handleIn, libraryHref } from '@/features/library/shelf-address'
+import { libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
 
 /** What a game's address may carry over from the library it was opened on. */
@@ -23,8 +23,11 @@ export const keptQuery = (params: Pick<URLSearchParams, 'get'>): Record<string, 
 /** The browser's list of this tab's pages, where it has one (`window.navigation`). */
 type Entries = { currentEntry: { index: number } | null; entries: () => { url: string | null }[] }
 
-/** A shelf's library or one of its smart shelves, in any language: `/en/u/ana`, `/en/u/ana/shelves/rpgs`. */
-const LIBRARY = /^\/[^/]+\/u\/[^/]+(?:\/shelves\/[^/]+)?\/?$/
+/**
+ * A shelf's library or one of its smart shelves, in any language, and whose:
+ * `/en/u/ana`, `/en/u/ana/shelves/rpgs`.
+ */
+const LIBRARY = /^\/[^/]+\/u\/([^/]+)(?:\/shelves\/[^/]+)?\/?$/
 
 /**
  * Whether the page before this one in the tab is this shelf's library. Back
@@ -38,9 +41,7 @@ const backIsLibrary = (handle: string): boolean => {
   const before = navigation.entries()[index - 1]?.url
   if (!before) return false
   const { origin, pathname } = new URL(before)
-  return (
-    origin === window.location.origin && LIBRARY.test(pathname) && handleIn(pathname) === handle
-  )
+  return origin === window.location.origin && LIBRARY.exec(pathname)?.[1] === handle
 }
 
 /** A plain click goes back when it can; one asking for a new tab or window is the link's. */
