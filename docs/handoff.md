@@ -12,6 +12,7 @@ the tray. The app now looks every hour while it runs and downloads what it finds
 without the commands draws nothing, so **the owner sees the button only from the release after the one
 that brings it**: that one still arrives at a start. It was seen in a development build with
 `SHELF_UPDATE_STAND_IN`, never with a real release; the first real one is the owner's next update after it.
+It is in **0.16.0, published with the owner's OK on 9 Nov 2026**, so the button first offers 0.17.0.
 
 ## Saves, on this computer (7 Nov 2026)
 
