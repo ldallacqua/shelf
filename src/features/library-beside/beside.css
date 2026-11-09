@@ -11,6 +11,20 @@
     display: none;
   }
 
+  /* The preference is applied in <head>: no sidebar flashes on a focused page. */
+  @media (width >= 64rem) {
+    html[data-game-list='hidden'] .game-layout:has(.game:not([style*='display: none'] .game)) {
+      grid-template-columns: minmax(0, 1fr);
+
+      & > .library-beside {
+        display: none;
+      }
+      & .game-back {
+        display: inline-flex;
+      }
+    }
+  }
+
   @media (width >= 64rem) {
     .game-layout:has(.game:not([style*='display: none'] .game)) {
       display: grid;

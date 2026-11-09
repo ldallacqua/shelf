@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronDownIcon, CirclePlayIcon, ListFilterIcon, XIcon } from 'lucide-react'
+import { ChevronDownIcon, ListFilterIcon, XIcon } from 'lucide-react'
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import {
   useDeferredValue,
@@ -15,7 +15,6 @@ import {
 } from 'react'
 import { flushSync } from 'react-dom'
 
-import { groupings, type Grouping } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 import { onlyReady } from '@/domain/library/ready'
 import {
@@ -50,17 +49,10 @@ import { navigationStarted } from '@/features/shell/navigation-progress'
 import { Link, useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { cn } from '@/ui/cn'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/ui/dropdown-menu'
 import { Tip } from '@/ui/tooltip'
 
 import { BesideGhostRows } from './beside-ghost'
+import { ListControls } from './list-controls'
 import {
   GAME_REM,
   HEADING_REM,
@@ -443,51 +435,6 @@ export function LibraryListView({
     <>
       <div className="beside-head">
         <LibraryLink handle={handle} />
-        <div className="flex flex-none items-center gap-1">
-          {ready !== null ? (
-            // Shelf for Windows' own, on my own shelf: as Steam's icon beside its list.
-            <Tip label={library('ready.label')}>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={library('ready.label')}
-                aria-pressed={readyChoice === 'ready'}
-                data-play=""
-                className={cn('size-9', readyChoice === 'ready' && 'bg-accent/15 text-accent')}
-                onClick={() => setReadyChoice(readyChoice === 'ready' ? 'all' : 'ready')}
-              >
-                <CirclePlayIcon aria-hidden="true" />
-              </Button>
-            </Tip>
-          ) : null}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="min-w-0 gap-1.5 px-2">
-                {/* The narrower column has room for the choice, not for its name too. */}
-                <span className="readout text-[0.625rem] text-muted max-xl:sr-only">
-                  {library('group.label')}
-                </span>
-                <span className="truncate">{library(`group.${arranged.group}`)}</span>
-                <ChevronDownIcon aria-hidden="true" className="text-muted" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{library('group.menu')}</DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                value={arranged.group}
-                onValueChange={(value) =>
-                  setArranged((current) => ({ ...current, group: value as Grouping }))
-                }
-              >
-                {groupings.map((value) => (
-                  <DropdownMenuRadioItem key={value} value={value}>
-                    {library(`group.${value}`)}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
       <div className="grid flex-none gap-2 px-3 pb-3">
@@ -497,6 +444,12 @@ export function LibraryListView({
           onChange={(text) => setSearch(text)}
           label={t('search.label')}
           placeholder={t('search.placeholder')}
+        />
+        <ListControls
+          group={arranged.group}
+          onGroup={(group) => setArranged((current) => ({ ...current, group }))}
+          ready={ready !== null ? readyChoice === 'ready' : undefined}
+          onReady={() => setReadyChoice(readyChoice === 'ready' ? 'all' : 'ready')}
         />
         {carriedLabel ? (
           <span className="beside-carried" data-slot="carried-filter">

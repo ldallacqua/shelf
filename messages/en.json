@@ -465,6 +465,8 @@
     }
   },
   "Beside": {
+    "hide": "Hide list",
+    "show": "Show list",
     "label": "Games in this library",
     "search": {
       "label": "Search this list",

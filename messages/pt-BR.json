@@ -465,6 +465,8 @@
     }
   },
   "Beside": {
+    "hide": "Esconder lista",
+    "show": "Mostrar lista",
     "label": "Jogos desta biblioteca",
     "search": {
       "label": "Buscar nesta lista",
