@@ -128,7 +128,9 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // screenshots for adults out of the viewer, which the page draws from the server (ADR 006).
   // Play time to the minute (issue 148, 7 Nov 2026): measured 225.1 KB, from 224.5. The same
   // formatter, for a visitor's "Played", and the same split of the panel's chunk.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 225.5 },
+  // ADR 009 phase 2: measured 230.0 KB. The persistent list's loader, shelf handover and
+  // Previous/Next controls add 4.5 KB; the full list stays lazy and is absent on direct phone visits.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 230.5 },
 ]
 
 /**

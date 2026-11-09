@@ -380,7 +380,7 @@ describe('a game opened from the library', () => {
   })
 
   it('goes back to the library when the library is the page before, and leads to it otherwise', async () => {
-    const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined)
+    const back = vi.spyOn(window.history, 'go').mockImplementation(() => undefined)
     const entries = [{ url: `${window.location.origin}/en/u/sample?view=wall` }, { url: null }]
     Object.defineProperty(window, 'navigation', {
       configurable: true,
@@ -391,11 +391,25 @@ describe('a game opened from the library', () => {
     expect(link).toHaveAttribute('href', '/en/u/sample')
     await userEvent.click(link)
     expect(back).toHaveBeenCalledOnce()
+    expect(back).toHaveBeenCalledWith(-1)
+
+    entries.splice(
+      1,
+      0,
+      { url: `${window.location.origin}/en/u/sample/game/ember` },
+      { url: `${window.location.origin}/en/u/sample/game/tide` },
+    )
+    Object.defineProperty(window, 'navigation', {
+      configurable: true,
+      value: { currentEntry: { index: 3 }, entries: () => entries },
+    })
+    fireEvent.click(link)
+    expect(back).toHaveBeenLastCalledWith(-3)
 
     // Arrived from elsewhere, or from another shelf: the link leads to the library.
     entries[0] = { url: `${window.location.origin}/en/u/other` }
     fireEvent.click(link)
-    expect(back).toHaveBeenCalledOnce()
+    expect(back).toHaveBeenCalledTimes(2)
     back.mockRestore()
   })
 })

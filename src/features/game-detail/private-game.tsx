@@ -10,8 +10,8 @@ import { factsAddress } from '@/features/library/shelf-address'
 import { loadMine } from '@/features/library/use-library'
 import { useAccount } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
+import { GameAbove } from '@/features/library-beside/steps'
 
-import { LibraryLink } from './back-to-library'
 import { GameDetail } from './game-detail'
 import { GameMissing } from './game-missing'
 import { GameSkeleton } from './game-skeleton'
@@ -63,7 +63,7 @@ function MyGame({ slug, handle }: { slug: string; handle: string }) {
       tags={game.tags.flatMap((position) => own.library.names.tag[position] ?? [])}
       platforms={platforms}
       facts={own.facts}
-      above={<LibraryLink handle={handle} />}
+      above={<GameAbove handle={handle} slug={game.slug} />}
       editable
     />
   )

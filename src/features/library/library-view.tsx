@@ -70,6 +70,8 @@ import { useKeywords } from '@/features/filters/use-keywords'
 import type * as DrawnPage from '@/features/game-detail/drawn-page'
 import { handOff } from '@/features/game-detail/hand-off'
 import { morph } from '@/features/game-detail/morph'
+import { loadList } from '@/features/library-beside/list-code'
+import { handOverList } from '@/features/library-beside/store'
 import { signedInAccount, useIsMine, waitingChanged } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
 import { navigationStarted } from '@/features/shell/navigation-progress'
@@ -160,13 +162,17 @@ let pageCode: Promise<typeof DrawnPage> | undefined
  * fetched the first time a game is reached for (a pointer or a finger on
  * one, or focus), and in any case before one opens. Not every visit opens a
  * game, so not every visit pays for it. On one's own shelf, the editor's
- * code is fetched then too, so it is there by the click.
+ * code is fetched then too, so it is there by the click; and the list of the
+ * library that stands beside the page (ADR 009, phase 2), so it is drawn
+ * with the page.
  */
-const loadPage = (handle: string) =>
-  (pageCode ??= import('@/features/game-detail/drawn-page')).then((module) => {
+const loadPage = (handle: string) => {
+  void loadList().catch(() => {})
+  return (pageCode ??= import('@/features/game-detail/drawn-page')).then((module) => {
     if (signedInAccount()?.handle === handle) void module.loadEditor()
     return module
   })
+}
 
 /** Whether an event happened on a game: a box, a wall cover, a row's title, or a 3D shelf's button. */
 const onAGame = (target: EventTarget) =>
@@ -588,6 +594,20 @@ export function LibraryView({
     const { game } = item
     const href = gameHref(handle, game.slug)
     lastOpen.current = keyOf(item)
+    // The list beside the page follows the library as it stands: a game's address cannot carry it.
+    handOverList({
+      handle,
+      shelf: shelfInfo,
+      version,
+      library: whole,
+      arrangement: {
+        group,
+        sort,
+        seed,
+        q: query.q,
+        shelfName: shelf && query.q === shelf.query ? shelf.name : undefined,
+      },
+    })
     void loadPage(handle).then(({ drawPage }) => {
       handOff({
         handle,

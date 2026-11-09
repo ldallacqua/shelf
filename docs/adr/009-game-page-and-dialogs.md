@@ -202,6 +202,26 @@ app is concerned (Play, Ready to play, Saves).
   back**, and Escape); the pulled box chosen again opens the page.
 - **Next and previous** go with the panel, and come back with the list in phase 2.
 
+### Phase 2, the library beside the game (9 Nov 2026)
+
+The list lives in `game/layout.tsx`, outside the changing slug. It uses the same library file,
+filter evaluator and arrangement as the library; the library hands its arrangement over in memory,
+never in a game's address. Small covers, folding headings, search and one carried-filter chip follow
+Steam's library list and the list/detail guidance above. No design-review skills were installed;
+keyboard access, focus, narrow layouts and concise labels were reviewed directly.
+
+The column is 17rem at 1024px and 19rem from 1280px. The game uses container queries so the
+remaining width, rather than the whole window, decides its layout. Rows are windowed with overscan;
+Up/Down and Home/End draw the target row before focusing it. The current game has `aria-current`.
+Search, folds and scroll survive game changes. A fresh move from the library starts its arrangement
+again. Ready to play is available only on one's own shelf in the desktop app.
+
+Previous/Next replace the current history entry, while choosing a row adds one. The Library link
+walks back through consecutive games of the same shelf. Below 1024px there is no column; a game
+opened from the library retains stepping, while a direct visit does not fetch the list. Loading,
+failure, empty, filtered and long-list states have stories. Menu dialogs and the simpler Saves
+screen remain phases 3 and 4.
+
 ## Consequences
 
 - One way to show a game, one way to show what a menu opens: less code, and no layer over a layer.

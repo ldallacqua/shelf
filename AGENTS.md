@@ -197,6 +197,12 @@ from the box through `morph.ts`, which names the two ends for that one view tran
 waits for the page to be drawn (`PageDrawn`, in the page's hero). A private note never leaves the
 server except to its own account, in `GET /api/v1/entries/{id}`, which the editor reads.
 
+**The list beside a game.** `features/library-beside` lives in the persistent game layout,
+outside the slug. The library hands it its arrangement in memory, never through game query
+parameters. It windows rows and keeps search and folds between games; shelf identity keys
+reset its file reader when the shelf changes. Direct visits below 1024px do not fetch the list.
+Previous/Next use the list's unique game order and replace history; row links add history.
+
 **Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
 and never throws (what it cannot read becomes a problem with a position), `write.ts` turns a
 tree back into canonical text, `evaluate.ts` runs a tree over one index of bitmaps per library

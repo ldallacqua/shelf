@@ -16,34 +16,47 @@ type Entries = { currentEntry: { index: number } | null; entries: () => { url: s
  */
 const LIBRARY = /^\/[^/]+\/u\/([^/]+)(?:\/shelves\/[^/]+)?\/?$/
 
+/** One of a shelf's games, in any language, and whose: `/en/u/ana/game/hades`. */
+const GAME = /^\/[^/]+\/u\/([^/]+)\/game\/[^/]+\/?$/
+
 /**
- * Whether the page before this one in the tab is this shelf's library. Back
- * then shows it as it was left, kept by the router with its arrangement, its
- * scroll and its focus; a new visit would draw it again from the top.
+ * How many steps back this shelf's library is in the tab, past the shelf's
+ * games opened on the way from it (from the list beside them): none when
+ * anything else stands between. Back then shows it as it was left, kept by
+ * the router with its arrangement, its scroll and its focus; a new visit
+ * would draw it again from the top.
  */
-const backIsLibrary = (handle: string): boolean => {
+const stepsToLibrary = (handle: string): number | undefined => {
   const navigation = (window as { navigation?: Entries }).navigation
   const index = navigation?.currentEntry?.index
-  if (!navigation || index === undefined || index < 1) return false
-  const before = navigation.entries()[index - 1]?.url
-  if (!before) return false
-  const { origin, pathname } = new URL(before)
-  return origin === window.location.origin && LIBRARY.exec(pathname)?.[1] === handle
+  if (!navigation || index === undefined) return undefined
+  const entries = navigation.entries()
+  for (let at = index - 1; at >= 0; at -= 1) {
+    const url = entries[at]?.url
+    if (!url) return undefined
+    const { origin, pathname } = new URL(url)
+    if (origin !== window.location.origin) return undefined
+    if (LIBRARY.exec(pathname)?.[1] === handle) return index - at
+    if (GAME.exec(pathname)?.[1] !== handle) return undefined
+  }
+  return undefined
 }
 
 /** A plain click goes back when it can; one asking for a new tab or window is the link's. */
 const goBack = (handle: string) => (event: MouseEvent<HTMLAnchorElement>) => {
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-  if (!backIsLibrary(handle)) return
+  const steps = stepsToLibrary(handle)
+  if (steps === undefined) return
   event.preventDefault()
-  window.history.back()
+  window.history.go(-steps)
 }
 
 /**
  * The way back to the shelf's library, from a game's page: Back, when the
- * library is the page before; otherwise the library, which draws itself as
- * this device last arranged it (issue 149). A game's address carries none of
- * the library's arrangement (ADR 009, phase 1).
+ * library is where the tab came from, through this shelf's games only;
+ * otherwise the library, which draws itself as this device last arranged it
+ * (issue 149). A game's address carries none of the library's arrangement
+ * (ADR 009, phase 1).
  */
 export function LibraryLink({ handle }: { handle: string }) {
   const t = useTranslations('Game')

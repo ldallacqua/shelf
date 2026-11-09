@@ -5,12 +5,13 @@ import { preconnect } from 'react-dom'
 
 import { imageUrl, IMAGE_HOST } from '@/domain/igdb/images'
 import { videoGameData } from '@/domain/library/game-page'
-import { LibraryLink } from '@/features/game-detail/back-to-library'
 import { GameDetail } from '@/features/game-detail/game-detail'
 import { GameMissing } from '@/features/game-detail/game-missing'
 import { GameSkeleton } from '@/features/game-detail/game-skeleton'
 import { FromLibrary } from '@/features/game-detail/hand-off'
 import { PrivateGameLater } from '@/features/game-detail/private-game-later'
+import { KnowShelf } from '@/features/library-beside/know-shelf'
+import { GameAbove } from '@/features/library-beside/steps'
 import { NoShelf } from '@/features/library/no-shelf'
 import { ShelfProvider } from '@/features/library/shelf'
 import { findLibrary, getGamePage } from '@/server/services/library'
@@ -64,6 +65,8 @@ async function GameFrame({
   if (!library.public) {
     return (
       <ShelfProvider shelf={shelf}>
+        {/* A private shelf's version stays on the server too: its own account reads it fresh. */}
+        <KnowShelf version={0} />
         <PrivateGameLater slug={slug} />
       </ShelfProvider>
     )
@@ -73,6 +76,7 @@ async function GameFrame({
   if (!page) {
     return (
       <ShelfProvider shelf={shelf}>
+        <KnowShelf version={library.version} />
         <GameMissing slug={slug} />
       </ShelfProvider>
     )
@@ -86,6 +90,8 @@ async function GameFrame({
 
   return (
     <ShelfProvider shelf={shelf}>
+      {/* For the list beside the page, when it was not opened from the library. */}
+      <KnowShelf version={library.version} />
       <script
         type="application/ld+json"
         // Our own data, with `<` escaped so no text in it can close the script.
@@ -97,7 +103,7 @@ async function GameFrame({
         tags={page.tags}
         platforms={platforms}
         facts={page.facts}
-        above={<LibraryLink handle={library.handle} />}
+        above={<GameAbove handle={library.handle} slug={page.game.slug} />}
         // For its account, once the browser knows it is theirs; every change is checked on the server.
         editable
       />

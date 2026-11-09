@@ -30,6 +30,7 @@ type LinkProps = Omit<ComponentProps<'a'>, 'href'> & {
   locale?: string
   scroll?: boolean
   replace?: boolean
+  prefetch?: boolean
 }
 
 export function Link({
@@ -37,6 +38,7 @@ export function Link({
   locale,
   scroll: _scroll,
   replace: _replace,
+  prefetch: _prefetch,
   children,
   ...props
 }: LinkProps) {

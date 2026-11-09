@@ -48,13 +48,18 @@
     content: '';
   }
 
+  /*
+   * The page's parts follow the page's own width (`.game` is their container), not the window's:
+   * beside the list of my library (ADR 009, phase 2) the page has less of it. The lines are the
+   * window's 40rem and 64rem less a scrollbar, so a page standing alone is laid out as before.
+   */
   .game-hero-inner {
     display: grid;
     gap: 1.25rem;
     padding-top: 1.5rem;
     padding-bottom: 2rem;
 
-    @media (width >= 40rem) {
+    @container (width >= 39rem) {
       padding-top: 2.5rem;
       padding-bottom: 3rem;
     }
@@ -71,11 +76,11 @@
       0 0 0 1px rgb(0 0 0 / 0.25),
       0 18px 36px -12px rgb(0 0 0 / calc(var(--shadow-depth) + 0.25));
 
-    @media (width >= 40rem) {
+    @container (width >= 39rem) {
       width: 14rem;
     }
 
-    @media (width >= 64rem) {
+    @container (width >= 63rem) {
       width: 16rem;
     }
   }
@@ -95,7 +100,7 @@
     display: grid;
     grid-template-columns: minmax(6.5rem, 34%) minmax(0, 1fr);
 
-    @media (width >= 64rem) {
+    @container (width >= 63rem) {
       grid-template-columns: 10rem minmax(0, 1fr);
     }
     gap: 1rem;
