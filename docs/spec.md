@@ -1364,9 +1364,9 @@ opens (its menu's items) stands over the page alone.
   (cover, title, status, copies, Mine), with the rest as ghosts until the page's own arrives:
   a game opened from the shelf never waits on the server to show itself.
 - **Back** is the library as I left it: its view, grouping, filter and scroll, and focus on the
-  box I opened. The game's address keeps the library's arrangement, so the page's **Library**
-  link leads to the same shelf from an address shared or opened directly; when the library is
-  the page before it, the link is Back.
+  box I opened. The page's **Library** link is Back when the library is the page before it;
+  from a game's address opened directly, it leads to the library as this device last arranged
+  it. A game's address is the game's alone: it carries none of the library's arrangement.
 - **In 3D**, a click pulls the box from the wall, as before, and a bar under it says its title,
   status and platform, with **Open** and **Put it back** (Escape too). Open, or the pulled box
   chosen again, goes to the page; the pulled box is the cover, so nothing grows. A filter that

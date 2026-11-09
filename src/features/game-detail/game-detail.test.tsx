@@ -6,7 +6,7 @@ import type { GameFacts } from '@/domain/library/game-page'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
 import { renderWithIntl } from '@/test/render'
 
-import { BackToLibrary } from './back-to-library'
+import { LibraryLink } from './back-to-library'
 import { GameDetail } from './game-detail'
 import { FromLibrary, handOff, PageDrawn } from './hand-off'
 import { morph } from './morph'
@@ -379,17 +379,16 @@ describe('a game opened from the library', () => {
     expect(screen.getByText('Ghosts')).toBeInTheDocument()
   })
 
-  it('goes back to the library when the library is the page before, and keeps its filter otherwise', async () => {
-    address.query = 'q=genre%3Arpg&view=wall&page=2'
+  it('goes back to the library when the library is the page before, and leads to it otherwise', async () => {
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined)
     const entries = [{ url: `${window.location.origin}/en/u/sample?view=wall` }, { url: null }]
     Object.defineProperty(window, 'navigation', {
       configurable: true,
       value: { currentEntry: { index: 1 }, entries: () => entries },
     })
-    renderWithIntl(<BackToLibrary handle="sample" />)
+    renderWithIntl(<LibraryLink handle="sample" />)
     const link = screen.getByRole('link', { name: 'Library' })
-    expect(link).toHaveAttribute('href', '/en/u/sample?q=genre%3Arpg&view=wall')
+    expect(link).toHaveAttribute('href', '/en/u/sample')
     await userEvent.click(link)
     expect(back).toHaveBeenCalledOnce()
 

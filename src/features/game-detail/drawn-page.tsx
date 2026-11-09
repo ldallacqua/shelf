@@ -1,10 +1,8 @@
-import { Suspense } from 'react'
-
 import type { LibraryGame, LibraryPlatform, LibraryTag } from '@/domain/library/library'
 import { ShelfProvider } from '@/features/library/shelf'
 import type { ShelfInfo } from '@/features/library/shelf-address'
 
-import { BackToLibrary, LibraryLink } from './back-to-library'
+import { LibraryLink } from './back-to-library'
 import { GameDetail } from './game-detail'
 
 export { loadEditor } from './owner-mine'
@@ -33,11 +31,7 @@ export function drawPage({ shelf, game, tags, platforms, placeholder }: DrawnPag
         tags={tags}
         platforms={platforms}
         placeholder={placeholder}
-        above={
-          <Suspense fallback={<LibraryLink handle={shelf.handle} />}>
-            <BackToLibrary handle={shelf.handle} />
-          </Suspense>
-        }
+        above={<LibraryLink handle={shelf.handle} />}
         editable
       />
     </ShelfProvider>

@@ -1,24 +1,11 @@
 'use client'
 
 import { ChevronLeftIcon } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import type { MouseEvent } from 'react'
 
 import { libraryHref } from '@/features/library/shelf-address'
 import { Link } from '@/i18n/navigation'
-
-/** What a game's address may carry over from the library it was opened on. */
-const KEPT = ['q', 'sort', 'group', 'view', 'seed'] as const
-
-/** The library's filter, sort and view in an address, as a query to carry on. */
-export const keptQuery = (params: Pick<URLSearchParams, 'get'>): Record<string, string> =>
-  Object.fromEntries(
-    KEPT.flatMap((name) => {
-      const value = params.get(name)
-      return value ? [[name, value]] : []
-    }),
-  )
 
 /** The browser's list of this tab's pages, where it has one (`window.navigation`). */
 type Entries = { currentEntry: { index: number } | null; entries: () => { url: string | null }[] }
@@ -31,8 +18,8 @@ const LIBRARY = /^\/[^/]+\/u\/([^/]+)(?:\/shelves\/[^/]+)?\/?$/
 
 /**
  * Whether the page before this one in the tab is this shelf's library. Back
- * then shows it as it was left, kept by the router with its scroll and its
- * focus; a new visit would draw it again from the top.
+ * then shows it as it was left, kept by the router with its arrangement, its
+ * scroll and its focus; a new visit would draw it again from the top.
  */
 const backIsLibrary = (handle: string): boolean => {
   const navigation = (window as { navigation?: Entries }).navigation
@@ -52,32 +39,20 @@ const goBack = (handle: string) => (event: MouseEvent<HTMLAnchorElement>) => {
   window.history.back()
 }
 
-const CLASS =
-  'inline-flex min-h-10 items-center gap-1.5 self-start rounded-control text-sm text-muted transition-colors duration-quick ease-settle hover:text-text pointer-coarse:min-h-11'
-
-/** The way back to the shelf's library, from a game's page. */
+/**
+ * The way back to the shelf's library, from a game's page: Back, when the
+ * library is the page before; otherwise the library, which draws itself as
+ * this device last arranged it (issue 149). A game's address carries none of
+ * the library's arrangement (ADR 009, phase 1).
+ */
 export function LibraryLink({ handle }: { handle: string }) {
   const t = useTranslations('Game')
   return (
-    <Link href={libraryHref(handle)} className={CLASS} onClick={goBack(handle)}>
-      <ChevronLeftIcon aria-hidden="true" className="size-4" />
-      {t('backToLibrary')}
-    </Link>
-  )
-}
-
-/**
- * The way back to the library, to the filter, sort and view the game was
- * opened on: Back, when the library is the page before; otherwise the
- * library at the arrangement the game's address kept, so a shared address
- * leads back to the same shelf. It reads the address, so the page built
- * ahead holds `LibraryLink` in its place.
- */
-export function BackToLibrary({ handle }: { handle: string }) {
-  const t = useTranslations('Game')
-  const query = keptQuery(useSearchParams())
-  return (
-    <Link href={libraryHref(handle, query)} className={CLASS} onClick={goBack(handle)}>
+    <Link
+      href={libraryHref(handle)}
+      className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-control text-sm text-muted transition-colors duration-quick ease-settle hover:text-text pointer-coarse:min-h-11"
+      onClick={goBack(handle)}
+    >
       <ChevronLeftIcon aria-hidden="true" className="size-4" />
       {t('backToLibrary')}
     </Link>

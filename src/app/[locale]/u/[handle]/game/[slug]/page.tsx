@@ -5,7 +5,7 @@ import { preconnect } from 'react-dom'
 
 import { imageUrl, IMAGE_HOST } from '@/domain/igdb/images'
 import { videoGameData } from '@/domain/library/game-page'
-import { BackToLibrary, LibraryLink } from '@/features/game-detail/back-to-library'
+import { LibraryLink } from '@/features/game-detail/back-to-library'
 import { GameDetail } from '@/features/game-detail/game-detail'
 import { GameMissing } from '@/features/game-detail/game-missing'
 import { GameSkeleton } from '@/features/game-detail/game-skeleton'
@@ -97,11 +97,7 @@ async function GameFrame({
         tags={page.tags}
         platforms={platforms}
         facts={page.facts}
-        above={
-          <Suspense fallback={<LibraryLink handle={library.handle} />}>
-            <BackToLibrary handle={library.handle} />
-          </Suspense>
-        }
+        above={<LibraryLink handle={library.handle} />}
         // For its account, once the browser knows it is theirs; every change is checked on the server.
         editable
       />

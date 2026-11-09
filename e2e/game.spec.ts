@@ -102,12 +102,10 @@ test.describe("a game's own page", () => {
     )
   })
 
-  test('leads back to the library, to the shelf it was opened on', async ({ page }) => {
+  test('leads back to the library', async ({ page }) => {
     await page.goto('/en/u/sample/game/bloodborne')
-    await expect(page.getByRole('link', { name: 'Library', exact: true }).first()).toBeVisible()
-    await page.goto('/en/u/sample/game/bloodborne?view=wall&q=genre%3Arpg')
     const back = page.getByRole('main').getByRole('link', { name: 'Library' })
-    await expect(back).toHaveAttribute('href', '/en/u/sample?q=genre%3Arpg&view=wall')
+    await expect(back).toHaveAttribute('href', '/en/u/sample')
   })
 
   test('marks IGDB’s English as English on the Portuguese site', async ({ page }) => {
@@ -169,9 +167,8 @@ test.describe('a game opened from the library', () => {
       const name = (await box.getAttribute('aria-label'))!.split(',')[0]!
       await box.click()
 
-      await expect(page).toHaveURL(
-        new RegExp(`/en/u/sample/game/${slug}\\?view=${view}&group=status$`),
-      )
+      // The game's address is its own: the library's arrangement stays with the library.
+      await expect(page).toHaveURL(new RegExp(`/en/u/sample/game/${slug}$`))
       await expect(title(page)).toHaveText(name)
 
       await page.goBack()
@@ -196,10 +193,10 @@ test.describe('a game opened from the library', () => {
     // A step back, not a new one.
     expect(await page.evaluate(() => window.history.length)).toBe(before)
 
-    // Opened at its own address, the link leads to the library it kept.
-    await page.goto('/en/u/sample/game/bloodborne?q=bloodborne')
+    // Opened at its own address, the link leads to the library.
+    await page.goto('/en/u/sample/game/bloodborne')
     await page.getByRole('link', { name: 'Library' }).click()
-    await expect(page).toHaveURL(/\/en\/u\/sample\?q=bloodborne$/)
+    await expect(page).toHaveURL(/\/en\/u\/sample$/)
   })
 
   test('draws what the library knows at once, and the rest when it arrives', async ({ page }) => {
