@@ -97,7 +97,8 @@ language the browser asks for.
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once, or to archive or remove; Organize's first tab ([section 4.5](#45-placing-what-a-sync-brought-in)) |
 | `/en/account/hours` | The games whose stores report far past IGDB's time, to take idle time out of; Organize's second tab ([section 4.7](#47-hours-a-store-counted)) |
 | `/en/account/archived` | One's archived games, to bring back; Organize's third tab ([section 7.4](#74-archiving-a-game)) |
-| `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it; last, whose marks Steam, Nintendo, PlayStation and Xbox are |
+| `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it, Shelf for Windows' saves and downloads included; last, whose marks Steam, Nintendo, PlayStation and Xbox are |
+| `/en/terms` | The terms for using Shelf, its API and Shelf for Windows: one's account and shelf, fair use, other services, downloads, saves, what Shelf can't promise, and changes |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
 
 The addresses from before accounts (`/en/library`, `/en/game/…`, `/en/shelves/…`,

@@ -15,6 +15,7 @@
     "igdbCredit": "Game data and covers from <link>IGDB.com</link>.",
     "dismiss": "Dismiss",
     "privacy": "Privacy",
+    "terms": "Terms",
     "window": {
       "minimize": "Minimize",
       "maximize": "Maximize",
@@ -1654,6 +1655,14 @@
         "title": "Shelf for Windows",
         "body": "To count your hours on a PC, the app looks at which program is in front of you, and at whether a key, the mouse or a controller was touched, never at what was pressed. On your computer it keeps which game each stretch of play was, when it started and ended, and for how long you played, with a random id the app made for that computer, which says nothing of it, not even its name in Windows. To Shelf it sends only that, and only for games on your shelf. Shelf keeps the name you give each computer, and only you are ever shown it, or which computer played what. No other program’s name leaves your computer, and neither does the file chosen for a game. Removing a game deletes what was counted of it."
       },
+      "saves": {
+        "title": "Saves, in Shelf for Windows",
+        "body": "If you turn on backups for a game, the app copies its save files into snapshots on your computer. If you choose a place for them, they go there too, so your other computers can find them: a folder of yours, OneDrive or Google Drive. Shelf’s server never receives a save, or anything from those services. For OneDrive and Google Drive, you sign in on Microsoft’s or Google’s own page, the app on your computer reaches the service itself, and the sign-in is kept in Windows’ Credential Manager on that computer. It asks for the least each one offers: in OneDrive, its own folder (Apps › Shelf) and nothing else; in Google Drive, only the files Shelf itself made, in a folder named Shelf saves, and your email address, to show which account is in use. There it keeps the snapshots (your save files, zipped, with a list of them) and a small file naming the game. What Shelf receives from Google is used for that alone: it is never sold, never shared, never used for ads, and no person reads it. Shelf’s use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. Signing out in Settings forgets the sign-in on that computer, and at Google ends it there too; what is in the folder or the service stays yours, to keep or delete. Where each game keeps its saves is read from Ludusavi’s list on GitHub; nothing of yours is sent there."
+      },
+      "downloads": {
+        "title": "Downloads, in Shelf for Windows",
+        "body": "The download sources you add, the downloads you start and the folders they go to stay on your computer. If you sign in to Real-Debrid, the sign-in is kept in Windows’ Credential Manager, and the app talks to Real-Debrid from your computer. Shelf’s server never sees a source, a link, a download or your Real-Debrid account."
+      },
       "where": {
         "title": "Where it is kept",
         "body": "In a database in São Paulo, Brazil (Turso), reached by Shelf’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there. Pressing one of a game's videos plays it in YouTube's player (youtube-nocookie.com), which then sees your visit as YouTube's own pages would; nothing goes to YouTube before you press one."
@@ -1668,6 +1677,52 @@
       }
     },
     "account": "Your settings"
+  },
+  "Terms": {
+    "metaTitle": "Terms",
+    "metaDescription": "The terms for using Shelf, its API and Shelf for Windows.",
+    "title": "Terms of Service",
+    "updated": "Last changed {date}",
+    "intro": "These are the terms for using Shelf: its site, its API, its MCP server and Shelf for Windows. Using any of them means you accept them. Shelf is free, young and still changing, so they are short, and say plainly what you can count on and what you can’t.",
+    "sections": {
+      "account": {
+        "title": "Your account",
+        "body": "Your account is yours alone: keep your password to yourself, since you answer for what is done with it. You can delete it whenever you want, on your account page, and your shelf goes with it."
+      },
+      "shelf": {
+        "title": "Your shelf",
+        "body": "What you put on Shelf stays yours: your games, notes, ratings, tags and the rest. By putting it there, you let Shelf keep it and show it as you choose: a public shelf to anyone, a private one only to you. Shelf claims none of it and sells none of it. What it keeps, and how, is on the Privacy page."
+      },
+      "use": {
+        "title": "Using it fairly",
+        "body": "Don’t use Shelf to break the law or anyone’s rights, to reach accounts or private shelves that aren’t yours, or to overload it, by hand or with a program. Its API and MCP server are there to be used, within what they allow. An account that does these things may be suspended or deleted."
+      },
+      "services": {
+        "title": "Other services",
+        "body": "Shelf works with services that aren’t its own: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive and Google Drive. Linking or using one is between you and it, under its own terms, and Shelf answers for none of what it does or stops doing."
+      },
+      "desktop": {
+        "title": "Shelf for Windows",
+        "body": "The app is free to install and to use with your account. When it opens, it looks for a newer version on GitHub and installs it. It runs on your computer with your permissions, and does there only what you ask of it: start a game, count your hours, download, back up or restore saves."
+      },
+      "downloads": {
+        "title": "Downloads",
+        "body": "Shelf for Windows can download a game from a source you add, from a link or through your own Real-Debrid account. Shelf ships no source, suggests none, and can’t tell what a link leads to: what you add and download is your choice, and yours to answer for. Download only what you have the right to, and keep to Real-Debrid’s terms when you use it."
+      },
+      "saves": {
+        "title": "Saves",
+        "body": "Backups of your saves are made on your computer and kept where you choose. Shelf takes care to keep them whole, but can’t promise that none will ever be lost: keep a copy of anything you can’t lose. What is in your folder, OneDrive or Google Drive is in your account there, under that service’s terms and limits."
+      },
+      "warranty": {
+        "title": "No promises",
+        "body": "Shelf is offered as it is, for free, with no promise that it will always be there, be free of mistakes, or be right about a game or your hours. As far as the law allows, Shelf is not liable for any loss from using it or from being unable to, lost saves, files and time included."
+      },
+      "changes": {
+        "title": "Changes",
+        "body": "These terms change as Shelf does; the date at the top says when they last did. Using Shelf after a change means you accept the new terms. Shelf may also change or end a feature, or the whole service."
+      }
+    },
+    "privacy": "Privacy"
   },
   "Add": {
     "title": "Add a game",

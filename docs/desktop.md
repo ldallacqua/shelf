@@ -517,7 +517,7 @@ ADR 008's phase 5; spec 7.12.
       stand-in for each service; two made-up PCs through a service; the page with the bridge faked;
       `pnpm desktop:check` signs in to a stand-in OneDrive, sends this PC's history and Play's snapshot
       there, and signs out.
-- [ ] **By the owner: registering Shelf with Microsoft.** At [entra.microsoft.com](https://entra.microsoft.com)
+- [x] **By the owner: registering Shelf with Microsoft.** At [entra.microsoft.com](https://entra.microsoft.com)
       (or portal.azure.com), signed in with your Microsoft account (if it says you have no directory,
       the free Azure account it offers makes one; nothing is charged for this): **App registrations ›
       New registration**. Name it **Shelf**, which names its folder in OneDrive (`Apps › Shelf`); for
@@ -526,21 +526,34 @@ ADR 008's phase 5; spec 7.12.
       `http://localhost`. Once made, **API permissions › Add a permission › Microsoft Graph › Delegated**:
       `Files.ReadWrite.AppFolder` (`openid`, `profile` and `offline_access` are asked for at sign-in).
       Copy the **Application (client) ID** from Overview into `.env.local` as `SHELF_ONEDRIVE_CLIENT_ID`.
-- [ ] **By the owner: registering Shelf with Google.** At
+- [x] **By the owner: registering Shelf with Google.** At
       [console.cloud.google.com](https://console.cloud.google.com), a new project, **Shelf**. Enable the
       **Google Drive API** (APIs & Services › Library). In **Google Auth Platform** (the OAuth consent
       screen): app name **Shelf**, your email, audience **External**; under Data access add the scopes
-      `.../auth/drive.file`, `openid` and `.../auth/userinfo.email`; then under Audience **Publish app**:
-      left in Testing, Google ends each sign-in after seven days, and these scopes need no review to
-      publish. Under **Clients › Create client**, type **Desktop app**, named **Shelf for Windows**; copy
-      its client ID and client secret into `.env.local` as `SHELF_GOOGLE_CLIENT_ID` and
-      `SHELF_GOOGLE_CLIENT_SECRET`.
+      `.../auth/drive.file`, `openid` and `.../auth/userinfo.email`; under Audience, **Test users**: your
+      Google account. Under **Clients › Create client**, type **Desktop app**, named **Shelf for
+      Windows**; copy its client ID and client secret into `.env.local` as `SHELF_GOOGLE_CLIENT_ID` and
+      `SHELF_GOOGLE_CLIENT_SECRET` (Google shows the secret only then).
+- [x] **Checked against the real services** (8 Nov 2026), the owner signing in: a debug build with the
+      registrations, a made-up game's saves and `pnpm serve:test`. On each, this PC's two snapshots went
+      up by themselves after signing in, Back up now sent a third, the game's Saves listed the three read
+      from the service, restoring the first downloaded it, and signing out forgot the sign-in (at Google,
+      ended it there). The check's files were put in each one's recycle bin. On the very first OneDrive
+      sign-in the two snapshots went up only with the next backup, most likely while OneDrive was making
+      `Apps › Shelf`; it didn't happen again.
+- [ ] **By the owner: publishing Shelf at Google.** Left in Testing, only test users can sign in, and
+      Google ends each sign-in after seven days: Shelf then says it is signed out, and Sign in again
+      brings it back. Publishing asks, under **Branding**, for a home page, a privacy policy and terms of
+      service (`/privacy`, `/terms`) on an authorized domain, which Google doesn't take on `vercel.app`:
+      it needs a domain of Shelf's own, added to Vercel. Then **Remove** the logo (a logo makes Google
+      review the app first) and **Publish app** under Audience: these scopes need no review.
 - [ ] A release with them (`pnpm desktop:release` reads them, and says which services it built in, never
       their values), then by hand on two PCs: sign in to the same service on each, play on one and press
       Play on the other.
 
 **Done when** the owner has carried a game's progress between two PCs through OneDrive or Google Drive.
-Next: S3-compatible storage, an access key pasted for one bucket.
+Next: S3-compatible storage, an access key pasted for one bucket; and taking a game's history along when
+the place changes, from a service too ([issue 170](https://github.com/ldallacqua/shelf/issues/170)).
 
 ### Later
 

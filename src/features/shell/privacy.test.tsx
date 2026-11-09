@@ -36,6 +36,19 @@ describe('Privacy', () => {
     ).toHaveTextContent(/is not affiliated with, endorsed or sponsored by any of them/)
   })
 
+  it('says what Shelf for Windows does with saves, and with what Google gives it, as Google asks', async () => {
+    await draw('en')
+    const saves = screen.getByRole('heading', {
+      name: 'Saves, in Shelf for Windows',
+    }).parentElement!
+    expect(saves).toHaveTextContent('Shelf’s server never receives a save')
+    expect(saves).toHaveTextContent('only the files Shelf itself made')
+    expect(saves).toHaveTextContent(
+      'adheres to the Google API Services User Data Policy, including the Limited Use requirements',
+    )
+    expect(screen.getByRole('heading', { name: 'Downloads, in Shelf for Windows' })).toBeVisible()
+  })
+
   it('says so in Portuguese, with Valve’s Portuguese words', async () => {
     await draw('pt-BR')
     expect(screen.getAllByRole('heading', { level: 2 }).at(-1)).toHaveTextContent('Marcas')

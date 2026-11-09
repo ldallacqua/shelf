@@ -42,6 +42,8 @@ export const routing = defineRouting({
     '/consent': '/consent',
     // What Shelf keeps, and how to remove it: Steam's terms ask for one (ADR 003).
     '/privacy': '/privacy',
+    // The terms for using Shelf, beside it: Google asks for both before it publishes an app.
+    '/terms': '/terms',
     // The design foundations, for reference: not linked, not indexed.
     '/foundations': '/foundations',
   },

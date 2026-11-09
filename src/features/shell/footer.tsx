@@ -5,7 +5,7 @@ import { Link } from '@/i18n/navigation'
 
 /**
  * The footer on every page: the credit IGDB's terms ask for wherever its
- * data is shown, what Shelf keeps, and the way to sign in.
+ * data is shown, what Shelf keeps, its terms, and the way to sign in.
  */
 export function Footer() {
   const t = useTranslations('Shell')
@@ -33,6 +33,12 @@ export function Footer() {
             className="inline-flex min-h-6 items-center rounded-[2px] underline decoration-1 underline-offset-4 hover:text-text hover:decoration-2"
           >
             {t('privacy')}
+          </Link>
+          <Link
+            href="/terms"
+            className="inline-flex min-h-6 items-center rounded-[2px] underline decoration-1 underline-offset-4 hover:text-text hover:decoration-2"
+          >
+            {t('terms')}
           </Link>
           <AccountLink />
         </div>
