@@ -742,9 +742,11 @@ try {
   await button('Play').waitFor({ timeout: 15_000 })
   await shelf.goto(`${BASE_URL}/en/settings/saves`)
   await shelf.locator('li[aria-current]').getByRole('button', { name: 'Sign out' }).click()
-  await shelf.getByText('Signed out of OneDrive.', { exact: false }).waitFor({ timeout: 15_000 })
+  await shelf
+    .getByText('Signed out of OneDrive on this computer.', { exact: false })
+    .waitFor({ timeout: 15_000 })
   if ((await shelf.locator('li[aria-current]').innerText()).includes('This computer only'))
-    pass('signing out leaves OneDrive as it is, and this computer alone again')
+    pass('signing out here leaves OneDrive as it is, and this computer alone again')
   else fail('signed out, and this computer alone isn’t the place in use')
 
   console.log('\nReady to play')
