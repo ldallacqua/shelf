@@ -1,4 +1,5 @@
-import { cleanup, renderHook } from '@testing-library/react'
+import { act, cleanup, render, renderHook } from '@testing-library/react'
+import { Activity } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Completion } from '@/domain/library/remembered'
@@ -14,16 +15,36 @@ import { useArrival } from './use-arrival'
 
 type Props = { completion: Completion | undefined; named: boolean }
 
-const arrive = (completion: Completion | undefined, named = false) => {
+/** The address and the cookie as they are when the page is shown, the server's read alike by default. */
+type Here = { named: boolean; completion: Completion | undefined }
+
+/** The address is written a moment after the page settles: what is waiting is written now. */
+const settle = () => {
+  act(() => vi.runAllTimers())
+  act(() => vi.runAllTimers())
+}
+
+const arrive = (completion: Completion | undefined, named = false, here?: Here) => {
   const put = vi.fn()
-  const hook = renderHook(({ completion, named }: Props) => useArrival(completion, named, put), {
-    initialProps: { completion, named },
-  })
-  return { ...hook, put }
+  const hook = renderHook(
+    ({ completion, named }: Props) =>
+      useArrival(completion, named, put, () => here ?? { named, completion }),
+    { initialProps: { completion, named } },
+  )
+  settle()
+  const rerender = (props: Props) => {
+    hook.rerender(props)
+    settle()
+  }
+  return { ...hook, rerender, put }
 }
 
 describe('arriving at a library (issue 149)', () => {
-  afterEach(cleanup)
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
 
   it('takes what is remembered, and puts it into the address once', () => {
     const remembered = { view: 'wall', group: 'status', sort: '-title' } as const
@@ -61,6 +82,60 @@ describe('arriving at a library (issue 149)', () => {
     rerender({ completion: again, named: false })
     expect(result.current).toBe(again)
     expect(put).toHaveBeenLastCalledWith(again)
+  })
+
+  it('takes what the device remembers now over what the server read before', () => {
+    // A page the router kept from a visit before a choice: the server read no cookie then.
+    const now = { view: 'wall', group: 'status' } as const
+    const { result, put } = arrive(undefined, false, { named: false, completion: now })
+    expect(result.current).toBe(now)
+    expect(put).toHaveBeenCalledExactlyOnceWith(now)
+  })
+
+  it('drops what the server read when the device remembers nothing now, and writes none of it', () => {
+    const { result, put } = arrive({ view: 'list' }, false, {
+      named: false,
+      completion: undefined,
+    })
+    expect(result.current).toBeUndefined()
+    expect(put).not.toHaveBeenCalled()
+  })
+
+  it("keeps the server's shuffle, whose first screen was drawn with its seed", () => {
+    const drawn = { sort: 'random', seed: 'abc' } as const
+    const { result, put } = arrive(drawn, false, {
+      named: false,
+      completion: { sort: 'random', seed: 'xyz' },
+    })
+    expect(result.current).toBe(drawn)
+    expect(put).toHaveBeenCalledExactlyOnceWith(drawn)
+  })
+
+  it('asks again each time the page is shown, as the router keeps it hidden between', () => {
+    const put = vi.fn()
+    let here: Here = { named: false, completion: undefined }
+    function Library({ mode }: { mode: 'visible' | 'hidden' }) {
+      return (
+        <Activity mode={mode}>
+          <Arrival />
+        </Activity>
+      )
+    }
+    let shown: Completion | undefined
+    function Arrival() {
+      shown = useArrival(undefined, false, put, () => here)
+      return null
+    }
+    const { rerender } = render(<Library mode="visible" />)
+    expect(shown).toBeUndefined()
+
+    // Hidden by another page, where a choice is made on a library elsewhere, then shown again.
+    act(() => rerender(<Library mode="hidden" />))
+    here = { named: false, completion: { view: 'list' } }
+    act(() => rerender(<Library mode="visible" />))
+    settle()
+    expect(shown).toEqual({ view: 'list' })
+    expect(put).toHaveBeenCalledExactlyOnceWith({ view: 'list' })
   })
 })
 

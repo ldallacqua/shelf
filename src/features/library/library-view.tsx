@@ -16,7 +16,12 @@ import {
 import { groupings, type Grouping } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 import { onlyReady } from '@/domain/library/ready'
-import { namesArrangement, newSeed, type Completion } from '@/domain/library/remembered'
+import {
+  completionOf,
+  namesArrangement,
+  newSeed,
+  type Completion,
+} from '@/domain/library/remembered'
 import type { SmartShelf } from '@/domain/library/shelves'
 import { writeSort, type Sort } from '@/domain/library/sort'
 import { libraryStats } from '@/domain/library/stats'
@@ -83,7 +88,7 @@ import { Button } from '@/ui/button'
 import { GhostShelves } from './ghosts'
 import { GhostList, ListView } from './list-view'
 import { markPageLive } from './live'
-import { rememberArrangement } from './arrangement'
+import { readRememberedHere, rememberArrangement } from './arrangement'
 import { NothingReady } from './nothing-ready'
 import { useArrival } from './use-arrival'
 import type { Dimension } from './preferences'
@@ -249,12 +254,20 @@ export function LibraryView({
   // It goes into the address in the same step of history: a link copied from it opens the same
   // library, and Back still leaves the library rather than undoing what nobody chose here.
   const [named] = useQueryStates(arrangingParams)
-  const arrival = useArrival(completion, namesArrangement(named), (put) => {
-    const replace = { history: 'replace' } as const
-    if (put.view) void setView(put.view, replace)
-    if (put.group) void setGroup(put.group, replace)
-    if (put.sort) void setAddress({ sort: put.sort, seed: put.seed ?? null }, replace)
-  })
+  const arrival = useArrival(
+    completion,
+    namesArrangement(named),
+    (put) => {
+      const replace = { history: 'replace' } as const
+      if (put.view) void setView(put.view, replace)
+      if (put.group) void setGroup(put.group, replace)
+      if (put.sort) void setAddress({ sort: put.sort, seed: put.seed ?? null }, replace)
+    },
+    () => ({
+      named: namesArrangement(Object.fromEntries(new URLSearchParams(window.location.search))),
+      completion: completionOf(readRememberedHere(), { smart: shelf !== undefined }),
+    }),
+  )
   const query = parseLibraryQuery({
     view: arrival?.view ?? addressView,
     group: arrival?.group ?? rawGroup,
