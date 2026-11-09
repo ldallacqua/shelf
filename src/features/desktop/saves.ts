@@ -18,6 +18,7 @@ export const saveRefusals = [
   'empty',
   'large',
   'wide',
+  'game-folder',
   'outside',
   'missing',
   'damaged',
@@ -30,6 +31,28 @@ export type SaveRefusal = (typeof saveRefusals)[number]
 /** A refusal as a word; anything else thrown, or an app too old to know the command, is `failed`. */
 export const saveRefusalOf = (error: unknown): SaveRefusal =>
   saveRefusals.find((refusal) => refusal === error) ?? 'failed'
+
+const namedSchema = z.object({ why: z.string(), folder: z.string() })
+
+/**
+ * A folder Windows' picker handed over and the app refused, with the folder named: since 0.17.0, as
+ * the picker hides some folders and hands over another than the one meant. Otherwise the word alone.
+ */
+export const folderRefusalOf = (error: unknown): { why: SaveRefusal; folder?: string } => {
+  const named = namedSchema.safeParse(error)
+  return named.success
+    ? { why: saveRefusalOf(named.data.why), folder: named.data.folder }
+    : { why: saveRefusalOf(error) }
+}
+
+const progressSchema = z.object({
+  step: z.enum(['reading', 'packing', 'sending', 'fetching', 'restoring']),
+  done: z.number(),
+  total: z.number().nullable(),
+})
+
+/** How far a game's backup or restore has got: the step, and how much of it when that can be told. */
+export type SaveProgress = z.infer<typeof progressSchema>
 
 const capsSchema = z.object({ mostMb: z.number(), kept: z.number() })
 
@@ -162,6 +185,9 @@ export const saves = {
   /** What is here is backed up first. */
   restore: async (game: SaveGame, snapshot: string): Promise<SavesView> =>
     view(await call('restore_saves', { ...named(game), snapshot })),
+  /** How far a backup or restore of the game has got, while one is going. An app older than 0.17.0 refuses. */
+  progress: async (entryId: string): Promise<SaveProgress | null> =>
+    progressSchema.nullable().parse(await call('save_progress', { entry: entryId })),
   /** Windows' folder picker, titled `ask`; null when it is closed. */
   addFolder: async (game: SaveGame, ask: string): Promise<SavesView | null> =>
     maybeView(await call('add_save_folder', { ...named(game), ask })),

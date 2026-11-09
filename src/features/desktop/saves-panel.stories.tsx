@@ -247,7 +247,21 @@ export const FolderAway: Story = {
 /** No folder chosen: this computer alone. */
 export const ThisComputerOnly: Story = { args: { state: view({ place: null }) } }
 
-export const Restoring: Story = { args: { busy: 'restore:b' } }
+export const Restoring: Story = {
+  args: { busy: 'restore:b', progress: { step: 'fetching', done: 3, total: 4 } },
+}
+
+/** A backup under way: what it is doing, and how far it has got, where the app can tell. */
+export const BackingUp: Story = {
+  args: { busy: 'back-up', progress: { step: 'packing', done: 1, total: 4 } },
+}
+export const Sending: Story = {
+  args: {
+    state: view({ place: 'Google Drive' }),
+    busy: 'back-up',
+    progress: { step: 'sending', done: 0, total: null },
+  },
+}
 
 export const Restored: Story = {
   args: { said: { tone: 'done', text: 'Put back the saves from Nov 6, 2026, 4:30 PM.' } },

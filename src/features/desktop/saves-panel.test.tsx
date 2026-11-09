@@ -87,12 +87,22 @@ const view = (changes: Partial<SavesView> = {}): SavesView => ({
 
 let answer: SavesView
 let refusal: string | undefined
+/** What a command throws instead of answering, by its name. */
+let thrownBy: Record<string, unknown>
+/** What the app says of a backup under way, and what holds the backup until it is let go. */
+let progress: unknown
+let backingUp: Promise<void> | undefined
 
 const app = vi.fn(async (command: string) => {
   if (command === 'desktop_info') return { version: '0.13.0', device: HERE }
   if (command === 'save_caps') return { mostMb: 500, kept: 20 }
+  if (command === 'save_progress') return progress
+  if (command in thrownBy) throw thrownBy[command]
   if (refusal && command !== 'saves') throw refusal
-  if (command === 'back_up_saves') return { ...answer, last: { at: 1, did: 'backed-up' } }
+  if (command === 'back_up_saves') {
+    await backingUp
+    return { ...answer, last: { at: 1, did: 'backed-up' } }
+  }
   if (command === 'add_save_folder') return null
   return answer
 })
@@ -100,6 +110,9 @@ const app = vi.fn(async (command: string) => {
 beforeEach(() => {
   answer = view()
   refusal = undefined
+  thrownBy = {}
+  progress = null
+  backingUp = undefined
   app.mockClear()
   setBridgeForTests(app)
   vi.stubGlobal('matchMedia', () => ({
@@ -249,6 +262,62 @@ describe('a game’s saves', () => {
       ask: 'Choose the folder where Made-up Game saves',
     })
     expect(within(panel).queryByRole('alert')).toBeNull()
+  })
+
+  it('name the folder Windows handed over, and why it was refused', async () => {
+    const { user, panel } = await opened()
+    const add = () => user.click(within(panel).getByRole('button', { name: 'Add a folder' }))
+    thrownBy.add_save_folder = { why: 'game-folder', folder: 'D:\\Games\\Made-up Game' }
+    await add()
+    expect(await within(panel).findByRole('alert')).toHaveTextContent(
+      'D:\\Games\\Made-up Game holds the game itself: restoring a snapshot there could delete it.',
+    )
+    thrownBy.add_save_folder = { why: 'wide', folder: 'C:\\Users\\Someone\\AppData\\LocalLow' }
+    await add()
+    expect(await within(panel).findByRole('alert')).toHaveTextContent(
+      'Windows handed over C:\\Users\\Someone\\AppData\\LocalLow, which holds more than one game’s saves.',
+    )
+    // The game's own folder chosen: a disk or Windows' own can't be a game's.
+    thrownBy.choose_game_folder = { why: 'wide', folder: 'C:\\' }
+    await user.click(within(panel).getByRole('button', { name: 'Change' }))
+    expect(await within(panel).findByRole('alert')).toHaveTextContent(
+      'Windows handed over C:\\, which can’t be a game’s folder',
+    )
+    // An app older than the folder named says the word alone.
+    thrownBy.add_save_folder = 'wide'
+    await add()
+    expect(await within(panel).findByRole('alert')).toHaveTextContent(
+      'That folder holds more than one game’s saves.',
+    )
+  })
+
+  it('show how far a backup has got, and what it is doing', async () => {
+    answer = view({ place: 'Google Drive' })
+    let letGo = () => undefined as void
+    backingUp = new Promise((resolve) => {
+      letGo = resolve
+    })
+    progress = { step: 'packing', done: 50, total: 200 }
+    const { user, panel } = await opened()
+    await user.click(within(panel).getByRole('button', { name: 'Back up now' }))
+    const bar = await within(panel).findByRole('progressbar', { name: 'Making the snapshot…' })
+    expect(bar).toHaveAttribute('aria-valuenow', '25')
+    expect(within(panel).getByText('25%')).toBeInTheDocument()
+    // Sending to a service it can say nothing of how far yet: the bar only moves.
+    progress = { step: 'sending', done: 0, total: null }
+    const sending = await within(panel).findByRole('progressbar', {
+      name: 'Sending it to Google Drive…',
+    })
+    expect(sending).not.toHaveAttribute('aria-valuenow')
+    letGo()
+    expect(await within(panel).findByRole('status')).toHaveTextContent('Backed up.')
+    expect(within(panel).queryByRole('progressbar')).toBeNull()
+  })
+
+  it('say AppData is hidden when nothing was found', async () => {
+    answer = view({ matched: null, locations: [], files: 0, bytes: 0 })
+    const { panel } = await opened()
+    expect(within(panel).getByText(/hides the AppData folder/)).toBeInTheDocument()
   })
 
   it('say when the list doesn’t know the game, or couldn’t be read', async () => {

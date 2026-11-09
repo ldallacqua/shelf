@@ -1150,6 +1150,12 @@ pub async fn back_up_saves(
     .await
 }
 
+/// How far a game's backup or restore has got, while one is going: the page asks as it waits.
+#[tauri::command]
+pub fn save_progress(entry: String, saves: State<'_, Saves>) -> Option<saves::progress::Progress> {
+    saves.board.of(&entry)
+}
+
 /// Puts a snapshot back, what is here backed up first. Never while the game runs.
 #[tauri::command]
 pub async fn restore_saves(
@@ -1200,8 +1206,8 @@ async fn pick_save_folder(
 }
 
 /// Asks Windows for a folder that holds the game's saves, and adds it. Nothing, when the picker is
-/// closed. Refused when it holds more than a game's saves, or is outside every folder a placeholder
-/// names.
+/// closed. Refused when it holds the game itself or more than a game's saves, or is outside every
+/// folder a placeholder names, the folder named.
 #[tauri::command]
 pub async fn add_save_folder(
     window: WebviewWindow,
@@ -1209,9 +1215,9 @@ pub async fn add_save_folder(
     title: String,
     apps: Vec<String>,
     ask: String,
-) -> Result<Option<saves::View>, SaveRefusal> {
+) -> Result<Option<saves::View>, FolderRefusal> {
     if !ids::entry(&entry) {
-        return Err(SaveRefusal::Invalid);
+        return Err(SaveRefusal::Invalid.into());
     }
     let start = window
         .app_handle()
@@ -1222,6 +1228,7 @@ pub async fn add_save_folder(
     let Some(folder) = pick_save_folder(&window, short(&ask), start).await? else {
         return Ok(None);
     };
+    let shown = folder.display().to_string();
     let app = window.app_handle().clone();
     with_saves(
         &app,
@@ -1235,6 +1242,34 @@ pub async fn add_save_folder(
         },
     )
     .await
+    .map_err(|why| FolderRefusal::of(why, shown))
+}
+
+/// A folder Windows' picker handed over and the app refused, named for the page to say which: the
+/// picker hides some folders, AppData among them, and what it hands over is not always what was meant.
+/// Any other refusal is its word alone, as every saves command's is.
+#[derive(Debug, PartialEq, Eq, Serialize)]
+#[serde(untagged)]
+pub enum FolderRefusal {
+    Word(SaveRefusal),
+    Named { why: SaveRefusal, folder: String },
+}
+
+impl FolderRefusal {
+    fn of(why: SaveRefusal, folder: String) -> Self {
+        match why {
+            SaveRefusal::Wide | SaveRefusal::GameFolder | SaveRefusal::Outside => {
+                FolderRefusal::Named { why, folder }
+            }
+            other => FolderRefusal::Word(other),
+        }
+    }
+}
+
+impl From<SaveRefusal> for FolderRefusal {
+    fn from(why: SaveRefusal) -> Self {
+        FolderRefusal::Word(why)
+    }
 }
 
 /// Takes a location away: a folder added is forgotten, one the list names is left out from now on.
@@ -1305,15 +1340,16 @@ pub async fn choose_game_folder(
     title: String,
     apps: Vec<String>,
     ask: String,
-) -> Result<Option<saves::View>, SaveRefusal> {
+) -> Result<Option<saves::View>, FolderRefusal> {
     if !ids::entry(&entry) {
-        return Err(SaveRefusal::Invalid);
+        return Err(SaveRefusal::Invalid.into());
     }
     let start = game_file(window.app_handle(), &entry)
         .and_then(|file| file.parent().map(Path::to_path_buf));
     let Some(folder) = pick_save_folder(&window, short(&ask), start).await? else {
         return Ok(None);
     };
+    let shown = folder.display().to_string();
     let app = window.app_handle().clone();
     with_saves(
         &app,
@@ -1335,6 +1371,7 @@ pub async fn choose_game_folder(
         },
     )
     .await
+    .map_err(|why| FolderRefusal::of(why, shown))
 }
 
 /// Opens the folder of a snapshot in Explorer, its archive selected, for a save to be taken out by hand. A
@@ -1584,6 +1621,22 @@ mod tests {
     fn a_page_s_words_are_cut_to_a_dialog_s_length() {
         assert_eq!(short(&"a".repeat(500)).len(), 200);
         assert_eq!(short("Choose Hades’s file"), "Choose Hades’s file");
+    }
+
+    #[test]
+    fn a_refused_folder_is_named_and_anything_else_is_a_word() {
+        assert_eq!(
+            serde_json::to_value(FolderRefusal::of(
+                SaveRefusal::GameFolder,
+                r"C:\Games\A Game".into()
+            ))
+            .unwrap(),
+            serde_json::json!({ "why": "game-folder", "folder": r"C:\Games\A Game" })
+        );
+        assert_eq!(
+            serde_json::to_value(FolderRefusal::of(SaveRefusal::Busy, r"C:\x".into())).unwrap(),
+            serde_json::json!("busy")
+        );
     }
 
     #[test]

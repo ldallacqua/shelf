@@ -93,7 +93,10 @@ which copy I start. A copy from outside the stores is the case this is for.
 - **Never a folder that holds more than a game.** A location can't be, or contain, a disk's top, Windows'
   folder, Program Files, ProgramData itself, the home folder itself, Documents or AppData themselves, a
   store's library, or the app's own folder. A restore makes a location what the snapshot holds (section 6),
-  so a location too wide would be a disaster; such a one is refused, found or picked.
+  so a location too wide would be a disaster; such a one is refused, found or picked. The game's own
+  folder, or one above it, is refused for the same reason, in words of its own. A folder refused is named
+  (9 Nov 2026): Windows' picker hides AppData, and what it hands over is not always what was meant, so
+  the panel says which folder came, and tells how to reach AppData.
 
 ### 4. A snapshot
 
@@ -121,6 +124,11 @@ which copy I start. A copy from outside the stores is the case this is for.
   many are kept per game (20, and never fewer than 3). A snapshot over the size is not made, and the page
   says why. Past the count the oldest go, never a head (section 5) nor one a choice is waiting on. Shelf
   sets no quota of its own: the space is mine, with my service.
+
+While a backup or restore runs, the panel shows what is being done and how far it has got (9 Nov 2026,
+the owner): reading the saves, writing the archive (its files' bytes counted), sending it to a service
+(the pieces sent counted) or a folder, reading one back from a service, and putting the saves back. The
+page asks the app as it waits (`save_progress`), as it does for downloads.
 
 ### 5. Which copy wins: parents, not clocks
 

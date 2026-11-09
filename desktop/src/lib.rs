@@ -418,6 +418,7 @@ pub fn run() {
             commands::saves,
             commands::turn_saves,
             commands::back_up_saves,
+            commands::save_progress,
             commands::restore_saves,
             commands::add_save_folder,
             commands::remove_save_location,
@@ -483,6 +484,7 @@ pub fn run() {
                     .permission("allow-saves")
                     .permission("allow-turn-saves")
                     .permission("allow-back-up-saves")
+                    .permission("allow-save-progress")
                     .permission("allow-restore-saves")
                     .permission("allow-add-save-folder")
                     .permission("allow-remove-save-location")
