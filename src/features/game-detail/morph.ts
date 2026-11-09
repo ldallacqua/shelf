@@ -13,13 +13,15 @@ import { pageDrawn } from './hand-off'
  *
  * The page is a move between routes, which the router makes in its own
  * time: the transition holds the shelf's picture until the game's page is
- * drawn (`hand-off.tsx`), and goes ahead anyway after `WAIT_MS`. Without the
- * browser's support, or under reduced motion, the page simply changes.
+ * drawn (`hand-off.tsx`), which is at once when the router knows the page's
+ * frame. A page later than `WAIT_MS` gets no flight: the cover would fly
+ * toward a page that isn't there yet. Without the browser's support, or under
+ * reduced motion, the page simply changes.
  */
 
 const COVER = 'game-cover'
-/** The longest the old picture is held for the new page: past it, the page crossfades in late. */
-const WAIT_MS = 600
+/** The longest the shelf's picture is held for the page: past it, the page just comes when it comes. */
+const WAIT_MS = 300
 
 const canMorph = (): boolean =>
   typeof document !== 'undefined' &&
@@ -61,8 +63,8 @@ export function morph(from: HTMLElement | undefined, go: () => void): void {
     name(from, '')
     const drawn = pageDrawn(WAIT_MS)
     go()
-    await drawn
-    name(heroCover(), COVER)
+    if (await drawn) name(heroCover(), COVER)
+    else transition.skipTransition()
   })
   running = transition
   // A transition cut short rejects these; nothing is wrong.

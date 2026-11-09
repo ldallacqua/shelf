@@ -8,6 +8,16 @@ const SHOW_AFTER_MS = 150
 /** How long the bar waits for a page before it gives up and goes. */
 const GIVE_UP_MS = 20_000
 
+const STARTED = 'shelf:navigation-start'
+
+/**
+ * A move to another page that no link makes, such as a game chosen on the
+ * shelf, which is a button: the line follows it as it follows a link's.
+ */
+export const navigationStarted = (): void => {
+  window.dispatchEvent(new Event(STARTED))
+}
+
 /**
  * A thin accent line across the top of the window while the page a link
  * leads to is on its way. A page the browser has not been sent ahead of time
@@ -16,8 +26,8 @@ const GIVE_UP_MS = 20_000
  * changed. Until then nothing on screen moved.
  *
  * It follows clicks on the links Next.js opens in place (they prevent the
- * browser's own move), and ends when the address changes, which the router
- * does as it draws the new page. Back and Forward, and a page opened afresh,
+ * browser's own move) and the moves `navigationStarted` announces, and ends
+ * when the address changes, which the router does as it draws the new page. Back and Forward, and a page opened afresh,
  * have the browser's own signs.
  */
 export function NavigationProgress() {
@@ -62,10 +72,13 @@ export function NavigationProgress() {
       if (to.pathname === location.pathname && to.search === location.search) return
       start(location.href)
     }
+    const onStarted = () => start(location.href)
     window.addEventListener('click', onClick)
+    window.addEventListener(STARTED, onStarted)
     return () => {
       stop()
       window.removeEventListener('click', onClick)
+      window.removeEventListener(STARTED, onStarted)
     }
   }, [])
 

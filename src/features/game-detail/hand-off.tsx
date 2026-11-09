@@ -23,7 +23,7 @@ type HandOff = {
 }
 
 let latest: HandOff | undefined
-const landed = new Set<() => void>()
+const landed = new Set<(drawn: boolean) => void>()
 
 /** The library is opening this game: its page is drawn from this until the page's own arrives. */
 export const handOff = (handOff: HandOff): void => {
@@ -35,18 +35,17 @@ export const handedOff = (handle: string | undefined, slug: string | undefined) 
   latest && latest.handle === handle && latest.slug === slug ? latest.page : undefined
 
 /**
- * Resolves once a game's page is drawn, handed off or its own, or after `ms`
- * whatever happened: what the cover's flight waits for before it takes the
- * page's new picture.
+ * Whether a game's page is drawn, handed off or its own, within `ms`: what
+ * the cover's flight waits for before it takes the page's new picture.
  */
-export const pageDrawn = (ms: number): Promise<void> =>
+export const pageDrawn = (ms: number): Promise<boolean> =>
   new Promise((resolve) => {
-    const done = () => {
+    const done = (drawn: boolean) => {
       landed.delete(done)
       clearTimeout(timer)
-      resolve()
+      resolve(drawn)
     }
-    const timer = setTimeout(done, ms)
+    const timer = setTimeout(() => done(false), ms)
     landed.add(done)
   })
 
@@ -57,7 +56,7 @@ export const pageDrawn = (ms: number): Promise<void> =>
  */
 function useLanded(): void {
   useLayoutEffect(() => {
-    for (const done of [...landed]) done()
+    for (const done of [...landed]) done(true)
   }, [])
 }
 

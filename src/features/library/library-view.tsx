@@ -73,6 +73,7 @@ import { handOff } from '@/features/game-detail/hand-off'
 import { morph } from '@/features/game-detail/morph'
 import { signedInAccount, useIsMine, waitingChanged } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
+import { navigationStarted } from '@/features/shell/navigation-progress'
 import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import { useRouter } from '@/i18n/navigation'
@@ -89,7 +90,7 @@ import { anchorIn2d, ShelfStage } from './shelf-stage'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 import { useShelf } from './shelf'
-import { gameHref, libraryHref, smartShelfHref } from './shelf-address'
+import { gameHref, libraryHref, NO_HANDLE, smartShelfHref } from './shelf-address'
 import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
 import { useReadySlugs } from './use-ready'
@@ -602,7 +603,10 @@ export function LibraryView({
           placeholder: from?.querySelector('img')?.currentSrc || undefined,
         }),
       })
-      morph(from, () => router.push(href))
+      morph(from, () => {
+        navigationStarted()
+        router.push(href)
+      })
     })
   }
 
@@ -634,6 +638,20 @@ export function LibraryView({
     const slug = key?.dataset.flip?.replace(/:\d+$/, '')
     if (slug) router.prefetch(addressOf(slug))
   }
+
+  // The router shows a game's page at once, drawn from the library (`hand-off.tsx`), only once
+  // it knows the page's frame; until then a click waits for the server, seconds for a page not
+  // built yet. Asked for while the page is idle, from the one game page every build makes, which
+  // costs the server nothing and carries no game's art.
+  useEffect(() => {
+    const warm = () => router.prefetch(gameHref(NO_HANDLE, 'none'))
+    if (!('requestIdleCallback' in window)) {
+      const timer = setTimeout(warm, 1500)
+      return () => clearTimeout(timer)
+    }
+    const idle = requestIdleCallback(warm, { timeout: 3000 })
+    return () => cancelIdleCallback(idle)
+  }, [router])
 
   // Back from a game's page shows this page again as it was left, kept hidden meanwhile, and
   // runs its effects again: focus goes back to the box that was opened.
