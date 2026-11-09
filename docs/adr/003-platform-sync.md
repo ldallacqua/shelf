@@ -259,7 +259,9 @@ building settled:
 - **Steps.** A sync is steps of at most twenty games put on the shelf, each one request, so a
   large library never outlasts a function; the page asks for steps until none is left. A
   second daily job (`/api/cron/sync`) runs every link that asks for it, longest unsynced
-  first, within four minutes. Asked twice inside a minute, Steam is read once. Each account
+  first, within four minutes: every link read first, which brings each game's hours up to
+  date, then the rest of each link's games, then achievements (`domain/sync/daily.ts`, 9 Nov
+  2026), so one link's achievements never leave another a day behind. Asked twice inside a minute, Steam is read once. Each account
   may put 2,000 games an hour on its shelf by syncing, and read its source 60 times.
 - **Steam's terms** ask a site that keeps Steam data to say what it keeps: the privacy page
   (`/privacy`) says it, and is linked from the footer and from the Steam card. Valve asks for

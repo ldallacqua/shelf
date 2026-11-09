@@ -17,6 +17,7 @@ import {
   type Reported,
   type StoreKindOf,
 } from '@/domain/sync/items'
+import { runDaily, type DailyLink } from '@/domain/sync/daily'
 import { chooseByStoreId } from '@/domain/sync/ladder'
 import {
   itemLists,
@@ -988,36 +989,43 @@ const DAILY_LINKS = 200
 
 /**
  * The daily sync (ADR 003, decision 6), which Vercel starts once a day:
- * every link that asks for it, the longest unsynced first, step after step
- * until each is done or the run's time is spent, then its achievements
- * the same way (issue 72). What is left waits for the next day, or for
- * "Sync now". Returns the libraries whose version moved.
+ * every link that asks for it, the longest unsynced first, in the order
+ * `runDaily` keeps: every link read before any is finished, and
+ * achievements (issue 72) last, so no link waits a day for its hours. What
+ * is left waits for the next day, or for "Sync now". Returns the libraries
+ * whose version moved.
  */
 export const syncDaily = async (budgetMs = 240_000) => {
   const started = Date.now()
   const inTime = () => Date.now() - started < budgetMs
-  const changed: string[] = []
-  let synced = 0
-  for (const link of await dueLinks(database(), DAILY_LINKS)) {
-    if (!inTime()) break
-    if (!SOURCES[link.source].ready) continue
-    const library = syncFor(link.userId)
-    try {
-      const before = await readVersion(database(), link.userId)
-      let step = await library.step(link.source, { read: true })
-      while (step.remaining > 0 && inTime()) step = await library.step(link.source)
-      if (step.version !== before) changed.push(link.userId)
-      synced += 1
-      if (isAchievementProvider(link.source) && step.remaining === 0 && !step.link.problem) {
-        const achievements = achievementsFor(link.userId)
-        let read = await achievements.step(link.source)
-        while (read.remaining > 0 && read.problem !== 'private' && inTime()) {
-          read = await achievements.step(link.source)
-        }
+  const before = new Map<string, number>()
+  const due = (await dueLinks(database(), DAILY_LINKS)).filter((link) => SOURCES[link.source].ready)
+  const synced = await runDaily(
+    due.map(({ userId, source }): DailyLink => {
+      const library = syncFor(userId)
+      const { step: readAchievements } = achievementsFor(userId)
+      return {
+        step: async (first) => {
+          if (!before.has(userId)) before.set(userId, await readVersion(database(), userId))
+          const step = await library.step(source, { read: first })
+          return { remaining: step.remaining, problem: step.link.problem !== null }
+        },
+        ...(isAchievementProvider(source)
+          ? {
+              achievements: async () => {
+                const read = await readAchievements(source)
+                return { remaining: read.remaining, stop: read.problem === 'private' }
+              },
+            }
+          : {}),
+        failed: (error) => console.error('A daily sync failed', source, error),
       }
-    } catch (error) {
-      console.error('A daily sync failed', link.source, error)
-    }
+    }),
+    inTime,
+  )
+  const changed: string[] = []
+  for (const [userId, version] of before) {
+    if ((await readVersion(database(), userId)) !== version) changed.push(userId)
   }
   return { synced, libraries: changed }
 }
