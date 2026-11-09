@@ -3,7 +3,7 @@ import { getFormatter, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 
 /** When this page last changed what it says. */
-const CHANGED = new Date('2026-11-07T00:00:00Z')
+const CHANGED = new Date('2026-11-08T00:00:00Z')
 
 const SECTIONS = [
   'account',
@@ -12,6 +12,8 @@ const SECTIONS = [
   'steam',
   'nintendo',
   'desktop',
+  'saves',
+  'downloads',
   'where',
   'delete',
   'trademarks',
@@ -21,8 +23,10 @@ const SECTIONS = [
  * What Shelf keeps about a person, where, who sees it, and how to remove it.
  * Plain words, the same for everyone. Steam's terms ask a site that keeps
  * what Steam tells it to say so (ADR 003); change this page with what Shelf
- * keeps. It ends with whose names Steam, Nintendo, PlayStation and Xbox are,
- * as Valve asks beside its sign-in button and Microsoft beside its name.
+ * keeps. Google's user data policy asks it to say what is done with what
+ * Google gives Shelf for Windows' saves, Limited Use named (ADR 008). It ends
+ * with whose names Steam, Nintendo, PlayStation and Xbox are, as Valve asks
+ * beside its sign-in button and Microsoft beside its name.
  */
 export async function Privacy() {
   const t = await getTranslations('Privacy')
