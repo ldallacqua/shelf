@@ -171,7 +171,7 @@ describe('a service of mine as the place (phase 5)', () => {
     await user.click(await screen.findByRole('button', { name: 'Sign out' }))
     expect(app).toHaveBeenCalledWith('sign_out_save_cloud', { service: 'onedrive' })
     expect(await screen.findByRole('status')).toHaveTextContent(
-      'Signed out of OneDrive. What’s there stays there.',
+      'Signed out of OneDrive on this computer. Your other computers stay signed in, and what’s there stays there.',
     )
     expect(screen.getByText('In use').closest('li')).toHaveTextContent('This computer only')
   })

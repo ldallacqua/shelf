@@ -5,6 +5,8 @@
 
 use tauri::AppHandle;
 
+use super::cloud::Service;
+use super::remote::Away;
 use super::{Needs, Refusal};
 
 /// What a notification says, after the game's title, which is its heading.
@@ -49,19 +51,53 @@ pub fn words(portuguese: bool, needs: Needs) -> &'static str {
     }
 }
 
+/// What a notification says when this PC's service needs the person, with no game in it (ADR 008, section
+/// 8): its heading, and its words.
+pub fn place_words(portuguese: bool, service: Service, away: Away) -> (String, &'static str) {
+    let name = service.name();
+    match (portuguese, away) {
+        (false, Away::Full) => (
+            format!("{name} is full"),
+            "Saves stay on this computer until it has room, and your other computers won’t see what you play here meanwhile.",
+        ),
+        (true, Away::Full) => (
+            format!("O {name} está cheio"),
+            "Os saves ficam só neste computador até haver espaço nele, e enquanto isso seus outros computadores não veem o que você jogar aqui.",
+        ),
+        (false, _) => (
+            format!("Shelf is signed out of {name}"),
+            "Saves stay on this computer until you sign in again, in Shelf’s Settings under Saves, and your other computers won’t see what you play here meanwhile.",
+        ),
+        (true, _) => (
+            format!("O Shelf saiu do {name}"),
+            "Os saves ficam só neste computador até você entrar de novo, nas Configurações do Shelf, em Saves, e enquanto isso seus outros computadores não veem o que você jogar aqui.",
+        ),
+    }
+}
+
 /// Shows it, headed by the game's title.
 pub fn show(app: &AppHandle, title: &str, needs: Needs) {
-    use tauri_plugin_notification::NotificationExt;
     let heading = if title.trim().is_empty() {
         "Shelf"
     } else {
         title
     };
+    say(app, heading, words(crate::language::portuguese(), needs));
+}
+
+/// Shows what this PC's service needs (`place_words`).
+pub fn place(app: &AppHandle, service: Service, away: Away) {
+    let (heading, body) = place_words(crate::language::portuguese(), service, away);
+    say(app, &heading, body);
+}
+
+fn say(app: &AppHandle, heading: &str, body: &str) {
+    use tauri_plugin_notification::NotificationExt;
     let shown = app
         .notification()
         .builder()
         .title(heading)
-        .body(words(crate::language::portuguese(), needs))
+        .body(body)
         .show();
     if let Err(error) = shown {
         eprintln!("could not show a notification: {error}");
@@ -89,6 +125,24 @@ mod tests {
         assert_eq!(
             words(false, Needs::Failed(Refusal::Failed)),
             words(false, Needs::Failed(Refusal::Damaged))
+        );
+    }
+
+    #[test]
+    fn a_service_s_trouble_names_it_and_says_what_to_do_in_both_languages() {
+        let (heading, body) = place_words(false, Service::GoogleDrive, Away::SignedOut);
+        assert_eq!(heading, "Shelf is signed out of Google Drive");
+        assert!(body.contains("sign in again"));
+        let (heading, body) = place_words(true, Service::GoogleDrive, Away::SignedOut);
+        assert_eq!(heading, "O Shelf saiu do Google Drive");
+        assert!(body.contains("entrar de novo"));
+        assert_eq!(
+            place_words(true, Service::OneDrive, Away::Full).0,
+            "O OneDrive está cheio"
+        );
+        assert_ne!(
+            place_words(false, Service::OneDrive, Away::Full).1,
+            place_words(false, Service::OneDrive, Away::SignedOut).1
         );
     }
 }

@@ -320,6 +320,33 @@ pub fn after_session(app: &AppHandle, entry: String) {
     });
 }
 
+/// How often this PC's place is looked at for what needs the person, which reads nothing but memory.
+const PLACE_LOOKED_AT: Duration = Duration::from_secs(60);
+/// How often its service is asked whether it still takes the sign-in: about as long as a token lasts.
+const SIGN_IN_CHECKED: Duration = Duration::from_secs(60 * 60);
+
+/// Says once, in a Windows notification, when this PC's service needs the person: signed out of it, or
+/// full (ADR 008, section 8). The window may be closed to the tray for days, and the page can't say it then.
+/// The sign-in is checked a minute after the app starts and each hour after, as a sign-in ended at the
+/// service, or run out, is heard of no other way until a game is played.
+pub fn watch_place(app: &AppHandle) {
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let mut checked: Option<std::time::Instant> = None;
+        loop {
+            std::thread::sleep(PLACE_LOOKED_AT);
+            let saves = app.state::<Saves>();
+            if checked.is_none_or(|at| at.elapsed() >= SIGN_IN_CHECKED) {
+                saves.check_sign_in();
+                checked = Some(std::time::Instant::now());
+            }
+            if let Some((service, away)) = saves.to_announce() {
+                saves::notice::place(&app, service, away);
+            }
+        }
+    });
+}
+
 /// Whether the thread following what Play started is running: one, however many games.
 #[derive(Default)]
 pub struct Following(AtomicBool);

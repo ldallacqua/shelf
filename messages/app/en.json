@@ -399,7 +399,7 @@
       "cancel": "Cancel",
       "signedIn": "Signed in. Snapshots go to {service} now, and those made on this computer follow.",
       "used": "Snapshots go to {service} now.",
-      "signedOutDone": "Signed out of {service}. What’s there stays there.",
+      "signedOutDone": "Signed out of {service} on this computer. Your other computers stay signed in, and what’s there stays there.",
       "signInRefused": "{service} didn’t sign you in. Try again.",
       "signInUnreachable": "{service} couldn’t be reached. Check your connection and try again.",
       "waitingOnedrive": "Sign in on Microsoft’s page, open in your browser. Shelf is waiting for it.",
@@ -416,5 +416,25 @@
     "later": "Later",
     "restart": "Restart and update",
     "restarting": "Restarting…"
+  },
+  "PlaceTrouble": {
+    "signed-out": {
+      "button": "{name} disconnected",
+      "title": "Shelf is signed out of {name}",
+      "body": "{name} no longer takes Shelf’s sign-in. Saves stay on this computer until you sign in again, and your other computers won’t see what you play here meanwhile."
+    },
+    "full": {
+      "button": "{name} is full",
+      "title": "{name} is full",
+      "body": "Saves stay on this computer until {name} has room, and your other computers won’t see what you play here meanwhile."
+    },
+    "away": {
+      "button": "Saves folder unavailable",
+      "title": "The saves folder can’t be reached",
+      "body": "{name} isn’t there now: a drive unplugged, or a network that’s down. Saves stay on this computer until it’s back."
+    },
+    "later": "Later",
+    "signInAgain": "Sign in again",
+    "openSettings": "Open Settings"
   }
 }

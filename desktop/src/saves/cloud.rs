@@ -77,7 +77,6 @@ struct Setup {
     authorize: String,
     token: String,
     api: String,
-    revoke: Option<String>,
     /// The address the browser comes back to: Microsoft takes `localhost` at any port, Google `127.0.0.1`.
     host: &'static str,
     scope: &'static str,
@@ -150,7 +149,6 @@ fn setup_with(
                 "/common/oauth2/v2.0/token",
             ),
             api: at("https://graph.microsoft.com", "/v1.0"),
-            revoke: None,
             host: "localhost",
             scope: "openid profile offline_access Files.ReadWrite.AppFolder",
         },
@@ -160,7 +158,6 @@ fn setup_with(
             authorize: at("https://accounts.google.com", "/o/oauth2/v2/auth"),
             token: at("https://oauth2.googleapis.com", "/token"),
             api: at("https://www.googleapis.com", ""),
-            revoke: Some(at("https://oauth2.googleapis.com", "/revoke")),
             host: "127.0.0.1",
             scope: "openid email https://www.googleapis.com/auth/drive.file",
         },
@@ -361,7 +358,13 @@ impl Cloud {
         if self.service == Service::OneDrive {
             form.push(("scope", setup.scope));
         }
-        let answer = sign_in::tokens(&self.client, &setup.token, &form).await?;
+        // A code it won't take is a sign-in that failed: there is nothing to end.
+        let answer = sign_in::tokens(&self.client, &setup.token, &form)
+            .await
+            .map_err(|ended| match ended {
+                Ended::Expired => Ended::Refused,
+                other => other,
+            })?;
         let refresh = answer.refresh_token.ok_or(Ended::Refused)?;
         let account = answer
             .id_token
@@ -385,26 +388,25 @@ impl Cloud {
         }
     }
 
-    /// Ends the sign-in at the service where it can be ended (Google), and forgets it here whether or not.
+    /// Forgets the sign-in here, and only here. Ending it at Google would end it on every computer signed in
+    /// to the same account, as Google ends everything it gave Shelf at once: the person's other computers
+    /// would lose their place. Shelf's access is taken back for good in the account's own settings.
     pub async fn sign_out(&self) {
         self.cancel_sign_in();
-        let refresh = self
-            .tokens
-            .lock()
-            .unwrap()
-            .as_ref()
-            .map(|held| held.refresh.clone());
-        if let (Some(refresh), Some(revoke)) = (
-            refresh,
-            self.setup.as_ref().and_then(|setup| setup.revoke.clone()),
-        ) {
-            let _ = sign_in::tokens(&self.client, &revoke, &[("token", refresh.as_str())]).await;
-        }
         self.forget();
     }
 
-    /// A token good now, refreshed if it is ending or `stale`. Only a refusal signs out: without a
-    /// connection, the sign-in is kept.
+    /// Whether the sign-in is still taken, asked of the service when the token is ending, as an app left in
+    /// the tray for days learns no other way that it was ended. Nothing when signed out.
+    pub fn check(&self) {
+        if self.account().is_some() {
+            let _ = tauri::async_runtime::block_on(self.access(None));
+        }
+    }
+
+    /// A token good now, refreshed if it is ending or `stale`. Only the service saying it no longer takes
+    /// the sign-in signs out: with no connection, a portal in front of the line, or any other refusal,
+    /// which may pass, it is kept and the service is out of reach for now.
     async fn access(&self, stale: Option<&str>) -> Result<String, Away> {
         let fresh = |held: &Tokens| {
             stale != Some(held.access.as_str()) && held.ends_at > now() + ENDS_SOON_MS
@@ -449,11 +451,11 @@ impl Cloud {
                 });
                 Ok(access)
             }
-            Err(Ended::Unreachable) => Err(Away::Unreachable),
-            Err(_) => {
+            Err(Ended::Expired) => {
                 self.forget();
                 Err(Away::SignedOut)
             }
+            Err(_) => Err(Away::Unreachable),
         }
     }
 
@@ -1076,6 +1078,8 @@ pub mod double {
         pub access: Mutex<String>,
         pub refreshed: Mutex<u32>,
         pub revoked: Mutex<Vec<String>>,
+        /// A portal in front of the line: the token's address answers with a page of its own.
+        pub portal: Mutex<bool>,
         pub next: Mutex<u32>,
     }
 
@@ -1100,6 +1104,13 @@ pub mod double {
         }
 
         fn token_answer(&self, asked: &Asked, secret: bool) -> Answer {
+            if *self.portal.lock().unwrap() {
+                return (
+                    200,
+                    vec![("Content-Type".into(), "text/html".into())],
+                    b"<html>Accept the terms to use the Wi-Fi</html>".to_vec(),
+                );
+            }
             let form = asked.form();
             if secret && form.get("client_secret").map(String::as_str) != Some("made-up-secret") {
                 return json(401, serde_json::json!({ "error": "invalid_client" }));
@@ -1552,16 +1563,23 @@ mod tests {
     }
 
     #[test]
-    fn signing_out_ends_the_sign_in_where_it_can_and_forgets_it_here() {
+    fn signing_out_forgets_the_sign_in_here_and_leaves_the_other_computers_signed_in() {
         let (base, onedrive, google) = both();
         let vault = Arc::new(Memory::default());
         let cloud = signed_in(Service::GoogleDrive, &base, &google, vault.clone());
+        let other = signed_in(
+            Service::GoogleDrive,
+            &base,
+            &google,
+            Arc::new(Memory::default()),
+        );
         tauri::async_runtime::block_on(cloud.sign_out());
-        assert_eq!(google.revoked.lock().unwrap().as_slice(), ["refresh-1"]);
         assert_eq!(cloud.account(), None);
         assert!(vault.0.lock().unwrap().is_none());
         assert_eq!(cloud.files("entry-1"), Err(Away::SignedOut));
-        // Microsoft has no address for it: it is forgotten here.
+        // Nothing ended at Google, which would end it on every computer at once.
+        assert!(google.revoked.lock().unwrap().is_empty());
+        assert_eq!(other.files("entry-1"), Ok(Vec::new()));
         let cloud = signed_in(
             Service::OneDrive,
             &base,
@@ -1570,6 +1588,33 @@ mod tests {
         );
         tauri::async_runtime::block_on(cloud.sign_out());
         assert_eq!(cloud.account(), None);
+    }
+
+    #[test]
+    fn only_a_sign_in_the_service_no_longer_takes_signs_out() {
+        let (base, _, google) = both();
+        let cloud = signed_in(
+            Service::GoogleDrive,
+            &base,
+            &google,
+            Arc::new(Memory::default()),
+        );
+        let ending = || cloud.tokens.lock().unwrap().as_mut().unwrap().ends_at = 0;
+        // A portal in front of the line answers with its own page: out of reach, still signed in.
+        *google.portal.lock().unwrap() = true;
+        ending();
+        assert_eq!(cloud.files("entry-1"), Err(Away::Unreachable));
+        cloud.check();
+        assert!(cloud.account().is_some());
+        *google.portal.lock().unwrap() = false;
+        cloud.check();
+        assert_eq!(*google.refreshed.lock().unwrap(), 1);
+        // Ended at Google, or run out: the check finds it, and Shelf is signed out.
+        cloud.tokens.lock().unwrap().as_mut().unwrap().refresh = "ended".into();
+        ending();
+        cloud.check();
+        assert_eq!(cloud.account(), None);
+        assert_eq!(cloud.files("entry-1"), Err(Away::SignedOut));
     }
 
     #[test]
