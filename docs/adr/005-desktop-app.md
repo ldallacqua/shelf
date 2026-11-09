@@ -188,6 +188,14 @@ page as before.
   mode) and starts the new version. Then it opens Shelf: the main window loads the page unseen
   and appears once it is there, and the splash closes. If GitHub does not answer, it goes on to
   Shelf.
+- **While it runs** (9 Nov 2026, the owner: "aparece um botão de atualizar no app que reinicia").
+  Closed to the tray, the app may run for days. So half an hour after it starts, and every hour
+  after, it looks too, downloads what it finds without a word, and Shelf's header shows
+  **Update** beside the downloads. It opens a small panel naming the version, with Restart and
+  update, and Later. The installer, passive as at a start, ends the app, the hours being counted
+  kept first, and opens the new version. It waits while a game's saves are being backed up or
+  put back; downloads under way pause, as at any quit. Like Chrome's Update and VS Code's Restart
+  to Update, nothing installs until the owner says so.
 - **Made by hand:** `pnpm desktop:release`, from `main`, publishes the version
   `tauri.conf.json` names. Nothing on GitHub's side runs by itself.
 

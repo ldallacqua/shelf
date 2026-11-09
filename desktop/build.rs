@@ -59,6 +59,8 @@ fn main() {
             "cancel_save_sign_in",
             "use_save_cloud",
             "sign_out_save_cloud",
+            "update_ready",
+            "install_update",
         ]),
     ))
     .expect("tauri-build failed");

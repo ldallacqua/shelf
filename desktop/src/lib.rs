@@ -22,6 +22,7 @@ mod sources;
 mod steam;
 mod tracker;
 mod tray;
+mod updates;
 mod vault;
 mod watch;
 
@@ -433,6 +434,8 @@ pub fn run() {
             commands::cancel_save_sign_in,
             commands::use_save_cloud,
             commands::sign_out_save_cloud,
+            commands::update_ready,
+            commands::install_update,
         ])
         .setup(|app| {
             let shelf = shelf_url();
@@ -496,6 +499,8 @@ pub fn run() {
                     .permission("allow-cancel-save-sign-in")
                     .permission("allow-use-save-cloud")
                     .permission("allow-sign-out-save-cloud")
+                    .permission("allow-update-ready")
+                    .permission("allow-install-update")
                     // The window's own controls, in Shelf's header: this window only.
                     .permission("core:window:allow-minimize")
                     .permission("core:window:allow-toggle-maximize")
@@ -566,6 +571,9 @@ pub fn run() {
             let sending = app.handle().clone();
             std::thread::spawn(move || sending.state::<saves::Saves>().send_all_waiting());
             app.manage(device);
+            // Closed to the tray it may run for days: an update found meanwhile waits for the owner's word.
+            app.manage(updates::Updates::default());
+            updates::watch(app.handle());
 
             autostart::first_start(&folder);
             tray::add(app.handle())?;

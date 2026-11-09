@@ -386,5 +386,16 @@
       "waitingOnedrive": "Entre pela página da Microsoft, aberta no seu navegador. O Shelf está esperando.",
       "waitingGoogle": "Entre pela página do Google, aberta no seu navegador. O Shelf está esperando."
     }
+  },
+  "AppUpdate": {
+    "button": "Atualizar",
+    "title": "O Shelf {version} está pronto",
+    "body": "O Shelf fecha e abre de novo, atualizado, em alguns segundos. As horas que ele está contando ficam guardadas.",
+    "downloads": "Os downloads em andamento pausam: retome-os em Downloads.",
+    "busy": "O Shelf está fazendo backup dos saves de um jogo. Tente de novo em instantes.",
+    "failed": "Não deu para atualizar agora. O Shelf atualiza na próxima vez que abrir.",
+    "later": "Depois",
+    "restart": "Reiniciar e atualizar",
+    "restarting": "Reiniciando…"
   }
 }

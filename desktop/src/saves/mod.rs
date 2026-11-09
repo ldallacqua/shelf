@@ -904,6 +904,11 @@ impl Saves {
         })
     }
 
+    /// Whether any game's saves are being backed up or put back: an update waits for that.
+    pub fn any_busy(&self) -> bool {
+        !self.busy.lock().unwrap().is_empty() || self.journal().is_some()
+    }
+
     pub fn is_busy(&self, entry: &str) -> bool {
         self.busy.lock().unwrap().contains(entry)
             || self.journal().is_some_and(|journal| journal.entry == entry)
