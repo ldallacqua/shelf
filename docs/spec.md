@@ -1378,6 +1378,11 @@ opens (its menu's items) stands over the page alone.
   removable chip), grouping and order; its own search and grouping last between games.
   Only visible rows are drawn. The column is 17rem wide below 1280px, then 19rem; the game
   uses container queries so its body fits the space left. Below 1024px the page stands alone.
+  Navigation stands above search; grouping and the desktop-only Ready to play filter share a
+  row below it, both 40px high, Ready to play last. A labeled Hide list / Show list button stays
+  in the game's top row. Hiding gives the space to the game, keeps search, folds and scroll,
+  and remembers the device's choice before the next paint. The button keeps keyboard focus;
+  no hover or invisible edge is needed to bring the list back.
 - **Next and previous** and Left/Right follow this list, each game once even when grouped on
   multiple platforms. They replace the current history entry; row links add one. The Library
   link can go back through consecutive games of this shelf to the library. Shortcuts leave

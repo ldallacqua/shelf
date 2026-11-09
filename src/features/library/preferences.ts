@@ -114,6 +114,14 @@ export const readyPreference: Preference<ReadyChoice> = {
   fallback: 'all',
 }
 
+/** The game page can give all its space to the game, without losing the list's place. */
+export const besidePreference: Preference<'shown' | 'hidden'> = {
+  storageKey: 'shelf:game-list',
+  attribute: 'game-list',
+  values: ['shown', 'hidden'],
+  fallback: 'shown',
+}
+
 // Experimental views first: the head script reads them back for the choices they hold.
 const preferences = [
   experimentalPreference,
@@ -122,6 +130,7 @@ const preferences = [
   dimensionPreference,
   adultPreference,
   readyPreference,
+  besidePreference,
 ] as const
 
 const parse = <Value extends string>(preference: Preference<Value>, value: unknown): Value =>

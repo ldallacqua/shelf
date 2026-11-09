@@ -34,6 +34,7 @@ export function BesideGhost({ back }: { back?: ReactNode }) {
         </p>
         <div className="flex-none px-3 pb-3" aria-hidden="true">
           <span className="ghost block h-10 w-full rounded-control pointer-coarse:h-11" />
+          <span className="ghost mt-2 block h-10 w-full rounded-control" />
         </div>
         <div className="beside-rows">
           <BesideGhostRows />
@@ -47,7 +48,7 @@ export function BesideGhost({ back }: { back?: ReactNode }) {
 export function BesideColumn({ children }: { children: ReactNode }) {
   const t = useTranslations('Beside')
   return (
-    <aside className="library-beside" aria-label={t('label')}>
+    <aside id="game-library-list" className="library-beside" aria-label={t('label')}>
       {children}
     </aside>
   )

@@ -222,6 +222,19 @@ opened from the library retains stepping, while a direct visit does not fetch th
 failure, empty, filtered and long-list states have stories. Menu dialogs and the simpler Saves
 screen remain phases 3 and 4.
 
+### Phase 2 follow-up: aligned controls and focus on the game
+
+The owner's desktop screenshots showed navigation, grouping and Ready to play competing in one
+short row. Navigation now stands above search, with grouping and Ready to play aligned beneath
+it; the play filter is last. Spotify's sidebar separates navigation and collection filters
+([illustrated guide](https://community.spotify.com/forum/en/discussion/5571855/new-your-library-sidebar)),
+which was inspected in a browser. Its collapsing behavior is a reference, but Shelf keeps an
+explicit, labeled Hide list / Show list control in the game's top row, outside the column.
+The same button remains focused and available in either state. The list remains mounted so its
+search and folds survive; the existing device-preference script applies visibility before paint.
+No design skills were installed. Controls have browser, desktop, selected and ungrouped stories;
+visibility has interactive shown and hidden stories, using both language/theme toolbar choices.
+
 ## Consequences
 
 - One way to show a game, one way to show what a menu opens: less code, and no layer over a layer.

@@ -1,8 +1,5 @@
 import { useTranslations } from 'next-intl'
 
-import { gameHref } from '@/features/library/shelf-address'
-import { Link } from '@/i18n/navigation'
-
 import { AddDemo } from './add-demo'
 import { AskDemo } from './ask-demo'
 import { Assistant } from './assistant'
@@ -80,17 +77,7 @@ export function Landing() {
         eyebrow={t('copies.eyebrow')}
         title={t('copies.title')}
         body={t('copies.body')}
-        aside={
-          <p className="mt-4 text-sm text-muted">
-            {t('copies.beside')}{' '}
-            <Link
-              href={gameHref('sample', everyCopy()[0]!.slug)}
-              className="rounded-control text-accent underline underline-offset-4"
-            >
-              {t('copies.open')}
-            </Link>
-          </p>
-        }
+        aside={<p className="mt-4 text-sm text-muted">{t('copies.beside')}</p>}
       >
         <EveryCopy copies={everyCopy()} />
       </Section>

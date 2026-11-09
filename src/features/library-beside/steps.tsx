@@ -9,6 +9,7 @@ import { Button } from '@/ui/button'
 import { Tip } from '@/ui/tooltip'
 
 import { stepsOf, useListOrder } from './store'
+import { SidebarToggle } from './sidebar-toggle'
 
 /** Where the arrows are someone else's: typing, a menu or a dialog, a control that moves by them. */
 const ARROWS_TAKEN =
@@ -102,6 +103,9 @@ export function Steps({ handle, slug }: { handle: string; slug: string }) {
 export function GameAbove({ handle, slug }: { handle: string; slug: string }) {
   return (
     <div className="flex min-h-10 items-center gap-3 pointer-coarse:min-h-11">
+      <span className="hidden lg:inline-flex">
+        <SidebarToggle />
+      </span>
       <span className="game-back">
         <LibraryLink handle={handle} />
       </span>

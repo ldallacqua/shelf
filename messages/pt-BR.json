@@ -192,7 +192,6 @@
       "body": "Em disco anos atrás, de novo numa promoção, mais uma vez para o Switch? Ele fica uma vez só na sua estante, com cada cópia que você tem na caixa em que veio. No PC, ele diz de qual loja é a sua, e a página de cada jogo leva às lojas que o vendem.",
       "yours": "Suas cópias",
       "beside": "Abra um jogo e continue explorando: em uma tela larga, sua biblioteca fica ao lado da página, com busca.",
-      "open": "Experimente na estante de exemplo",
       "onShelf": "Na sua estante",
       "physical": "Físico",
       "digital": "Digital",
@@ -466,6 +465,8 @@
     }
   },
   "Beside": {
+    "hide": "Esconder lista",
+    "show": "Mostrar lista",
     "label": "Jogos desta biblioteca",
     "search": {
       "label": "Buscar nesta lista",
