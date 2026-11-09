@@ -283,7 +283,7 @@ separate file, not inside the page:
 | Caching | The address changes when the content does, so the file is cached for a year by the edge and by the browser. A return visit downloads nothing unless the library changed. |
 | Built | On its first request, then kept. Any other version's address is sent on to the current one. A private library has no file here: its own account reads `/api/v1/me/library`, uncached and private. |
 | Contents | Per game: ids, title, status, rating, dates, playtime, year, IGDB rating, time to beat, cover id, three colors, a 25-byte blur hash, copies, and the ids of its genres, themes, modes, perspectives, platforms, franchises, series, studios and tags. Plus one name table per kind. |
-| Left out | Summaries, screenshots and notes. A game opened over the shelf fetches them as its facts, `/api/v1/libraries/{key}/games/{version}/{slug}`, cached the same way; its own page has them inside it. Keywords, which are large, are a second file, `/api/v1/libraries/{key}/keywords/{version}`, fetched the first time a keyword filter is used, and cached the same way. Private notes are never in any public file. |
+| Left out | Summaries, screenshots and notes. A game's page has them inside it; its facts file, `/api/v1/libraries/{key}/games/{version}/{slug}`, cached the same way, is for anyone else who asks. Keywords, which are large, are a second file, `/api/v1/libraries/{key}/keywords/{version}`, fetched the first time a keyword filter is used, and cached the same way. Private notes are never in any public file. |
 | Size target | 122 KB compressed per 1,000 games (120 KB until IGDB's hasty times came, section 25, row "Backlog, as a range"). A test fails the build past that. |
 
 **Address state.** `q`, `sort`, `group`, `view` and `seed` are read and written with nuqs
@@ -569,9 +569,8 @@ One tool per job, so nothing fights:
 | Hover, press, focus, simple state | CSS transitions | Always |
 | Menus and sheets | CSS animations on Radix primitives | With the library |
 | Reordering after a regroup or a change of view | The Web Animations API: each box on screen slides from where it stood (`useFlip`) | With the library |
-| Gestures: dragging a game's sheet between its two heights | Pointer events moving one custom property, `--sheet-drag`, written straight to the sheet; letting go eases it to a height with a CSS transition (`features/game-detail/game-panel.tsx`). Motion is not used. | With the library |
 | Gestures: scrubbing a compact ledge | Touch events: a press that rests 250 ms, then a slide that `preventDefault`s the page's scroll; the spine under the finger is the shelf's box in focus, and its title is written straight into one label (`features/library/scrub.ts`) | With the library |
-| A cover growing into the open game | The browser's view transitions, named for that one change (`features/game-detail/morph.ts`) | Built in |
+| A cover growing into the game's page | The browser's view transitions, named for that one change (`features/game-detail/morph.ts`) | Built in |
 | The landing page's parts rising into view | CSS scroll timelines (`animation-timeline: view()`); where a browser has none, an IntersectionObserver marks each part as it arrives (`features/landing/reveals.tsx`) | Landing page only |
 | The landing page's scenes (lights coming on, filters playing, views turning) | CSS keyframes and transitions, started once a scene is in view; boxes rearrange with `useFlip` | Landing page only |
 | Anything inside the 3D scene | The render loop, with damping | With 3D only |
@@ -585,11 +584,13 @@ their end state and play nothing by themselves; the camera cuts.
 
 **Reordering 1,000 boxes.** Only boxes on screen animate. The rest jump, unseen.
 
-**The cover growing into the open game** names the box's cover and the panel's cover for
-that one transition, and nothing else: the box stays on the shelf behind the panel, so React's
-`<ViewTransition>`, which pairs a name leaving with the same name arriving, does not fit
-([section 25](#25-changes-since-approval)). About 400 ms; the panel slides in under it.
-Browsers without the feature, and reduced motion, get the panel's own short crossfade.
+**The cover growing into the game's page** names the box's cover and the page's cover for
+that one transition, and nothing else. React's `<ViewTransition>` would pair a name on every box
+of the shelf with the page's, and the browser would take a picture of each. The move to the page
+is the router's, in its own time: the transition holds the shelf's picture until the page is
+drawn, which is at once, from what the library hands it (`hand-off.tsx`), and goes ahead anyway
+after 600 ms. About 400 ms; the rest crossfades. Browsers without the feature, and reduced
+motion, simply change page. Nothing flies back on Back (section 25).
 
 ---
 
@@ -609,7 +610,7 @@ baseline.
 | First paint | The server sends the first 48 boxes inside the page, or the first 12 to a phone, and the first six covers are fetched ahead of everything else. The whole library follows as the library file. |
 | Phone | One shelf per screen with sideways scroll snapping, each shelf scrolling by itself; tabs for the same move; controls at the bottom |
 | Wall and List | The same shelves and the same open game through different renderers. List is a real table, one per shelf. |
-| A game picked up | Its page, in a sheet from the bottom on a phone or a tablet held upright (`SHEET_FROM_BOTTOM`) and a panel from the right otherwise, centered on a very wide window (`GAME_CENTERED`), at its own address, with steps to its neighbors and a button to the full page (`features/game-detail`). |
+| A game picked up | Its page, at its own address, from the shelf, the wall or the list (ADR 009): drawn at once from the library file (`hand-off.tsx`, `drawn-page.tsx`) until the server's page arrives, and kept hidden by the router when left, as the library is, so Back is instant (`features/game-detail`). In 3D a box is pulled first, with a bar to open it (`pulled-game.tsx`). |
 
 ---
 
@@ -743,8 +744,8 @@ Every write acts on the session's own library; none names one ([ADR 004](adr/004
 
 These routes are the same services as the interface, with an HTTP face. The interface uses
 server actions for adding one game and saving shelves, and these routes for editing and for
-lists: a server action that expires the library redraws the current address, and with a
-game's panel open over the shelf that address is the game's own page. The reads are built at
+lists: a server action that expires the library redraws the current address, which drew
+a game's page over the shelf when a game was a panel there (before ADR 009). The reads are built at
 step 5, open to any site, and kept by the edge for a minute; `/games/{slug}` comes with the
 game page (step 6) and the writes with sign-in (step 7). The reference for anyone calling it
 is [docs/api.md](api.md).
@@ -1057,6 +1058,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| A game is its page | **Choosing a game anywhere goes to its page; the panel, the centered frame and the phone's sheet over the shelf are gone (ADR 009, phase 1).** The library hands the page what it knows (`hand-off.tsx`): the page's Suspense fallback draws it, so the page shows at once and the cover's flight (`morph.ts`) has somewhere to land; the server's page replaces it where it stands. The router keeps the library hidden while a game is open (Activity, up to three routes), so Back shows it as it was, scroll and all, and the library's effects, run again, put focus back on the box. The page's Library link is Back when the page before is the library (`window.navigation`). The game page is as wide as the library from 96rem, so the header no longer changes size. In 3D a click pulls the box, with a bar to open it. Next and previous go until phase 2's list. | The owner (9 Nov 2026): one way to show a game, nothing over a layer, one header. A page the router renders from the server would have waited on it; drawing it from the library keeps a click from the shelf as quick as the panel was. |
 | Play says Syncing | **While a game's saves are backed up, put back or looked at before Play, Play says Syncing… with a percent where the step can tell, and can't be pressed (ADR 008, section 7).** `game_state` answers `kept` and, while the guard holds the game's saves, `syncing` with the step and how far (`Saves::syncing`); the page asks every second while it syncs or Play was pressed. Pressed, a kept game's Play says Syncing while the look runs, in the same button as Starting so keyboard focus stays; after a session, Syncing comes with a tip that says how long it waits. `saves/cloud.rs` has no time for a whole call any more: `within` runs each of a service's calls until nothing has moved on it for 30 seconds (`STALL`), any answer, byte read or 64 KiB slice of a piece taken to send counting, which `Paced` hands to the connection, so the bar now moves within a 10 MiB piece too. | The owner: "enquanto o save estiver sincronizando, bloqueie o botão de iniciar o jogo e mude o texto pra sincronizando ... Igual a Steam faz ... Adicione um timeout claro". A ten-minute limit for each call would have cut a large snapshot on a slow line and held Play ten minutes on a dead one; what matters is whether it moves. |
 | Saves: a place that needs the person, said | **When this PC's service no longer takes Shelf's sign-in or is full, a Windows notification says so once, and a button in the app's header says so on every page until it is fixed (ADR 008, section 8).** `commands::watch_place` looks each minute at what the app holds and, a minute after the start and each hour after, asks the service in use to refresh its token when it is ending (`Cloud::check`); `Saves::to_announce` gives a trouble once, until it passes, and a game's backup that said it counts. Only `invalid_grant` signs out now (`Ended::Expired`): any other refusal of a refresh, a captive portal's page among them, keeps the sign-in and counts as out of reach. Signing out no longer revokes Google's token, which ended the sign-in on every PC of the account. `PlaceTrouble` in the header (`place-trouble.tsx`, in the file the app alone fetches) asks `save_place` every ten seconds and on each page, and draws a button for a service signed out of or full, or a folder that can't be reached, whose panel leads to Settings' Saves page; a line down draws nothing. | The owner, after the handheld lost its Google Drive sign-in: "se uma conexão tiver caído, saído, perdido por n motivos tenha uma notificação em algum lugar para avisar o usuário a arrumar isso". Google's guide says revoking ends every token Shelf was given for the account, so signing out on one PC signed out the others. Sync apps say it on their tray icon and in a notification; Shelf's window is its pages, so the header. |
 | Saves: whether a snapshot is at the place | **Each snapshot in a game's Saves says whether it is at this PC's place yet: "In Google Drive", "In the chosen folder", or not yet, waiting on this computer to go as soon as it can (ADR 008, section 4).** The view gives each snapshot `waiting` (its list is in `saves-waiting`) and itself `service` (the place is a service, not a folder); nothing is said for this computer alone, or by an app older than 0.17.0. | The owner, after a handheld kept its saves on itself alone while the PC sent its own to Google Drive: "mostre se o snapshot já está na nuvem ou não". |

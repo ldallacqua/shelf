@@ -306,14 +306,16 @@ html:has(.library:not([style*='display: none'] .library)) .site-search {
  * The column every page sits in (features/shell/page.tsx), and the header's and footer's with
  * it. Where the library's filters stand beside it, the library takes more of a wide screen, so
  * from a 1080p screen up the shelves have more room beside the column than they had without it
- * (features/filters/beside.ts).
+ * (features/filters/beside.ts). A game's page is as wide, so the header doesn't change between
+ * the library and a game (ADR 009): the game's own parts keep their measure inside it.
  */
 :root {
   --page-width: 90rem;
 }
 
 @media (width >= 96rem) {
-  html:has(.library:not([style*='display: none'] .library)) {
+  html:has(.library:not([style*='display: none'] .library)),
+  html:has(.game:not([style*='display: none'] .game)) {
     --page-width: 160rem;
   }
 }

@@ -10,11 +10,11 @@ import { cn } from '@/ui/cn'
 export function GameSkeleton() {
   const t = useTranslations('Library')
   return (
-    <div aria-busy="true">
+    <div aria-busy="true" className="game">
       <p className="sr-only" role="status">
         {t('loading')}
       </p>
-      <div aria-hidden="true" className="game-hero" data-layout="page">
+      <div aria-hidden="true" className="game-hero">
         <div className="game-backdrop" />
         <div className="game-hero-inner mx-auto w-full max-w-360 px-4 sm:px-6 lg:px-10">
           <span className="ghost h-4 w-20" />

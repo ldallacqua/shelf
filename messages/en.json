@@ -374,7 +374,10 @@
         "unsupported": "3D could not start in this browser, so the shelf is in 2D.",
         "lost": "The 3D shelf stopped when the graphics card reset, so the shelf is in 2D.",
         "slow": "3D was running too slowly here, so the shelf is in 2D."
-      }
+      },
+      "open": "Open",
+      "openGame": "Open {title}",
+      "putBack": "Put it back"
     },
     "wallSize": {
       "label": "Cover size",
@@ -466,13 +469,6 @@
     "notFound": "There is no game at this address.",
     "notFoundBody": "It may have been taken off the shelf, or the address may be mistyped.",
     "notFoundAction": "Go to the library",
-    "panelHelp": "This game's page. The left and right arrows go to the game before and after.",
-    "close": "Close",
-    "fullPage": "Open the full page",
-    "showAll": "Show all of this game",
-    "showLess": "Show less of this game",
-    "previous": "Previous",
-    "next": "Next",
     "hours": "{count, plural, one {# hour} other {# hours}}",
     "mine": "Mine",
     "status": "Status",
@@ -594,7 +590,6 @@
       "normally": "Main and extras",
       "completely": "Everything"
     },
-    "factsFailed": "The rest of this game's page did not load. <page>Open its own page</page>.",
     "screenshotOpen": "Screenshot {at} of {total} from {title}: open it full screen",
     "screenshotAlt": "Screenshot {at} of {total} from {title}",
     "screenshotAdult": "Screenshot {at} of {total} from {title}, for adults, blurred: show this game's screenshots for adults",

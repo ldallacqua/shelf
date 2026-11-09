@@ -42,7 +42,7 @@ test.describe('editing a game', () => {
     slug = undefined
   })
 
-  test('in its panel, a change is saved as it is made, and the box on the shelf takes it', async ({
+  test('on its page, opened from the shelf, a change is saved as it is made, and the shelf has it on Back', async ({
     page,
   }, info) => {
     const title = gameToAdd(info, 3)
@@ -50,23 +50,13 @@ test.describe('editing a game', () => {
     await openLibrary(page, `/en/u/sample?q=${encodeURIComponent(`"${title}"`)}&group=none`)
     const box = page.locator(`[data-flip^="${slug}"]`).first()
     await expect(box).toHaveAttribute('data-status', 'backlog')
-    // Each save, and each fetch of the game's facts, in the order they were answered.
-    const answered: ('saved' | 'facts')[] = []
-    page.on('response', (response) => {
-      if (/\/api\/v1\/libraries\/[^/]+\/games\//.test(response.url())) answered.push('facts')
-      else if (
-        response.url().includes('/api/v1/entries/') &&
-        response.request().method() === 'PATCH'
-      )
-        answered.push('saved')
-    })
     await box.click()
 
-    const panel = page.getByRole('dialog')
+    const game = page.locator('article.game').locator('visible=true')
+    await expect(game.getByRole('heading', { name: 'Details' })).toBeVisible()
+    await expect(game.locator('.ghost')).toHaveCount(0)
     // Once the game's words and art are in, a change to it never takes them away again.
-    await expect(panel.getByRole('heading', { name: 'Details' })).toBeVisible()
-    await expect(panel.locator('.ghost')).toHaveCount(0)
-    await panel.evaluate((dialog) => {
+    await game.evaluate((article) => {
       const record = window as unknown as { lost: string[] }
       record.lost = []
       new MutationObserver((changes) => {
@@ -75,43 +65,31 @@ test.describe('editing a game', () => {
             if (node instanceof Element && (node.matches('.ghost') || node.querySelector('.ghost')))
               record.lost.push('words')
           }
-          for (const node of change.removedNodes) {
-            if (
-              node instanceof HTMLImageElement &&
-              (change.target as Element).matches('.game-backdrop')
-            )
-              record.lost.push('art')
-          }
         }
-      }).observe(dialog, { childList: true, subtree: true })
+      }).observe(article, { childList: true, subtree: true })
     })
-    const status = panel.getByRole('group', { name: 'Status' })
+    const status = game.getByRole('group', { name: 'Status' })
     await status.getByText('Playing', { exact: true }).click()
-    // On the shelf, at once: a box being played stands differently.
-    await expect(box).toHaveAttribute('data-status', 'playing')
-    await expect(mine(panel)).toHaveAttribute('aria-busy', 'false')
+    await expect(mine(game)).toHaveAttribute('aria-busy', 'false')
 
     // Out to ten and back by half points: saved once it has come to rest, not at each press.
-    const rating = panel.getByRole('slider', { name: 'My rating' })
+    const rating = game.getByRole('slider', { name: 'My rating' })
     await rating.focus()
     await page.keyboard.press('End')
     for (let step = 0; step < 5; step += 1) await page.keyboard.press('ArrowLeft')
     await expect(rating).toHaveAttribute('aria-valuetext', '7.5 out of 10')
-    const game = async () =>
+    const read = async () =>
       (await (await page.request.get(`/api/v1/u/sample/games/${slug}`)).json()) as {
         status: string
         rating: number
       }
-    await expect.poll(game).toMatchObject({ status: 'playing', rating: 7.5 })
-    await expect(mine(panel)).toHaveAttribute('aria-busy', 'false')
-
-    // Each change is a new version of the library, whose facts the panel fetches
-    // again: drawn over the ones it has, never over ghosts.
-    await expect
-      .poll(() => answered.lastIndexOf('facts') > answered.lastIndexOf('saved'))
-      .toBe(true)
-    await expect(panel.locator('.ghost')).toHaveCount(0)
+    await expect.poll(read).toMatchObject({ status: 'playing', rating: 7.5 })
+    await expect(mine(game)).toHaveAttribute('aria-busy', 'false')
     expect(await page.evaluate(() => (window as unknown as { lost: string[] }).lost)).toEqual([])
+
+    // Back on the shelf, its box stands as a game being played.
+    await page.goBack()
+    await expect(box).toHaveAttribute('data-status', 'playing')
 
     // The owner's own read speaks the API's units too: out of ten, in hours.
     const patched = await page.request.patch(`/api/v1/entries/${slug}`, {
@@ -122,7 +100,7 @@ test.describe('editing a game', () => {
     expect(owned).toMatchObject({ status: 'playing', rating: 7.5, hoursPlayed: 2.5 })
     // The public read is cached: one that joins a read already under way, while
     // other tests write too, can answer from just before the change.
-    await expect.poll(game).toMatchObject({ hoursPlayed: 2.5 })
+    await expect.poll(read).toMatchObject({ hoursPlayed: 2.5 })
   })
 
   test('completed sets today’s date, which stays editable, and the page shows it after a reload', async ({

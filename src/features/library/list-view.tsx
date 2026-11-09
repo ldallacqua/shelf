@@ -98,7 +98,6 @@ type ListTableProps = Sorting & {
   caption: string
   /** Rows drawn before the layout is measured: this table's share of the first screen. */
   unmeasured: number
-  open?: OpenBox
   onOpen: (box: OpenBox) => void
 }
 
@@ -107,7 +106,6 @@ function ListTable({
   platforms,
   caption,
   unmeasured,
-  open,
   onOpen,
   sort,
   onSort,
@@ -182,13 +180,11 @@ function ListTable({
           if (!item) return <GhostRow key={`ghost-${index}`} index={offset} />
           const { game, copy } = item
           const platform = platformFor(item, platforms)
-          const isOpen = open?.key === shelf.key && open.index === index
           return (
             <tr
               key={`${game.slug}:${copy?.platform ?? ''}`}
               data-cell=""
               data-adult={game.adult ? '' : undefined}
-              data-active={isOpen ? 'true' : undefined}
               aria-rowindex={index + 2}
             >
               <td>
@@ -341,7 +337,6 @@ export function GhostList() {
 export function ListView({
   shelves,
   platforms,
-  open,
   onOpen,
   firstBoxes,
   sort,
@@ -380,7 +375,6 @@ export function ListView({
                 platforms={platforms}
                 caption={t('shelf.games', { shelf: name })}
                 unmeasured={shares[index] ?? 0}
-                open={open}
                 onOpen={onOpen}
                 sort={sort}
                 onSort={onSort}

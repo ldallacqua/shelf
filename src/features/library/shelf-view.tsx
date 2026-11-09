@@ -33,7 +33,6 @@ type ShelfSectionProps = {
   unmeasured: number
   platforms: ReadonlyMap<number, LibraryPlatform>
   density: Density
-  openIndex?: number
   enter: boolean
   onOpen: (box: OpenBox) => void
   onLeave: (position: number, direction: -1 | 1) => void
@@ -53,7 +52,6 @@ function ShelfSection({
   unmeasured,
   platforms,
   density,
-  openIndex,
   enter,
   onOpen,
   onLeave,
@@ -105,7 +103,6 @@ function ShelfSection({
           {...sizeOf(shelf)}
           label={t('shelf.games', { shelf: name })}
           describe={describe}
-          openIndex={openIndex}
           eager={position === 0 ? EAGER_COVERS : 0}
           enter={enter}
           position={position}
@@ -125,7 +122,6 @@ function ShelfSection({
 export function ShelfView({
   shelves,
   platforms,
-  open,
   onOpen,
   enter,
   firstBoxes,
@@ -217,7 +213,6 @@ export function ShelfView({
             unmeasured={shares[index] ?? 0}
             platforms={platforms}
             density={density}
-            openIndex={open?.key === shelf.key ? open.index : undefined}
             enter={enter}
             onOpen={onOpen}
             onLeave={leave}

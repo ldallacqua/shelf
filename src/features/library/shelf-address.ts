@@ -59,7 +59,3 @@ export const trophiesHref = (handle: string, query?: Query) => ({
   params: { handle },
   ...(query && Object.keys(query).length > 0 ? { query } : {}),
 })
-
-/** The handle of the shelf an address is in, `/u/{handle}/…`, without the language. */
-export const handleIn = (pathname: string | undefined): string | undefined =>
-  pathname?.match(/^(?:\/[a-zA-Z-]+)?\/u\/([^/?#]+)/)?.[1]

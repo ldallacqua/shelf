@@ -43,10 +43,10 @@ test.describe('security headers', () => {
       await page.goto(`/en${path}`)
       await page.waitForLoadState('networkidle')
     }
-    // A game's panel over the shelf, with its covers and screenshots.
+    // A game opened from the shelf, with its covers and screenshots.
     await page.goto('/en/u/sample')
     await page.getByRole('button', { name: /^Astro Bot/ }).click()
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Astro Bot' })).toBeVisible()
     await page.waitForLoadState('networkidle')
     expect(refused).toEqual([])
   })

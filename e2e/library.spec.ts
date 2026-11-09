@@ -126,21 +126,18 @@ test.describe('keyboard (spec 3.11)', () => {
 })
 
 test.describe('a game picked up from the shelf', () => {
-  test('shows what is recorded about it, and steps to its neighbors @smoke', async ({ page }) => {
+  test('is its page, with what is recorded about it, and Back is the shelf @smoke', async ({
+    page,
+  }) => {
     await openLibrary(page)
     await page.getByRole('button', { name: /^Astro Bot/ }).click()
-    const details = page.getByRole('dialog', { name: 'Astro Bot' })
+    await expect(page.getByRole('heading', { level: 1, name: 'Astro Bot' })).toBeVisible()
+    const details = page.locator('article.game').locator('visible=true')
     await expect(details).toContainText('Completed')
     await expect(details).toContainText('PlayStation 5, Physical')
-    await expect(details.getByRole('button', { name: 'Previous' })).toBeDisabled()
 
-    await details.getByRole('button', { name: 'Next' }).click()
-    await expect(page.getByRole('dialog', { name: "Baldur's Gate III" })).toBeVisible()
-    await page.keyboard.press('ArrowLeft')
-    await expect(page.getByRole('dialog', { name: 'Astro Bot' })).toBeVisible()
-
-    await page.getByRole('button', { name: 'Close' }).click()
-    await expect(page.getByRole('dialog')).toBeHidden()
+    await page.goBack()
+    await expect(page.getByRole('button', { name: /^Astro Bot/ })).toBeFocused()
   })
 })
 

@@ -1,6 +1,6 @@
 /*
- * A game's page and the panel over the shelf (spec 7.1), and the cover that
- * grows from the shelf into it (spec 7.2).
+ * A game's page (spec 7.1), and the cover that grows from the shelf into it
+ * (spec 7.2).
  */
 @layer components {
   /* The hero: the cover over the game's key art, dimmed into the page behind. */
@@ -9,10 +9,6 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-  }
-
-  .game-hero[data-layout='panel'] {
-    --hero-ground: var(--surface);
   }
 
   .game-backdrop {
@@ -55,24 +51,6 @@
   .game-hero-inner {
     display: grid;
     gap: 1.25rem;
-    padding-top: 3.5rem;
-    padding-bottom: 1.25rem;
-  }
-
-  .game-hero[data-layout='panel'] .game-hero-inner {
-    padding-inline: 1.25rem;
-    padding-top: 4rem;
-    padding-bottom: 0.25rem;
-
-    /* Asked of the panel, not the window: beside the 3D shelf it stays narrow on any screen. */
-    @container (width >= 64rem) {
-      padding-inline: 2.5rem;
-      padding-top: 2.5rem;
-      padding-bottom: 2rem;
-    }
-  }
-
-  .game-hero[data-layout='page'] .game-hero-inner {
     padding-top: 1.5rem;
     padding-bottom: 2rem;
 
@@ -85,23 +63,13 @@
   .game-cover {
     position: relative;
     display: block;
-    width: 8rem;
+    width: 10rem;
     flex: none;
     overflow: hidden;
     border-radius: var(--radius-case);
     box-shadow:
       0 0 0 1px rgb(0 0 0 / 0.25),
       0 18px 36px -12px rgb(0 0 0 / calc(var(--shadow-depth) + 0.25));
-  }
-
-  .game-hero[data-layout='panel'] .game-cover {
-    @container (width >= 64rem) {
-      width: 14rem;
-    }
-  }
-
-  .game-hero[data-layout='page'] .game-cover {
-    width: 10rem;
 
     @media (width >= 40rem) {
       width: 14rem;
@@ -709,80 +677,12 @@
       will-change: transform;
     }
   }
-
-  /*
-   * The game's sheet from the bottom, on a phone or a tablet held upright, has
-   * two heights (spec 3.4). Short, it rests low, showing the cover, the title,
-   * the status and the platforms; tapped, or dragged up, it is the whole page.
-   * Only its position moves, and the row of buttons at its foot stays at the
-   * screen's edge either way. The query is SHEET_FROM_BOTTOM (`ui/sheet-from-bottom.ts`).
-   */
-  @media (width < 40rem), ((width < 64rem) and (orientation: portrait)) {
-    [data-slot='sheet'][data-height] {
-      --sheet-rest: 0px;
-      translate: 0 calc(var(--sheet-rest) + var(--sheet-drag, 0px));
-      transition: translate var(--motion-base) var(--ease-settle);
-    }
-
-    /* The sheet is 92dvh tall (`game-panel.tsx`); short, this much of it shows. */
-    [data-slot='sheet'][data-height='short'] {
-      --sheet-rest: calc(92dvh - min(62dvh, 32rem));
-    }
-
-    /* Short, the page does not scroll: a drag anywhere on it moves the sheet. */
-    [data-slot='sheet'][data-height='short'] [data-sheet-body] {
-      overflow: hidden;
-      touch-action: none;
-    }
-
-    [data-slot='sheet'][data-height] [data-sheet-footer] {
-      translate: 0 calc(-1 * var(--sheet-rest));
-      transition: translate var(--motion-base) var(--ease-settle);
-    }
-
-    [data-slot='sheet'][data-dragging],
-    [data-slot='sheet'][data-dragging] [data-sheet-footer] {
-      transition: none;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    [data-slot='sheet'][data-height],
-    [data-slot='sheet'][data-height] [data-sheet-footer] {
-      transition: none;
-    }
-  }
-
-  /* The grip: a bar a thumb expects, in a button wide enough to press, or to drag by. */
-  .sheet-grip {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    z-index: 10;
-    display: flex;
-    width: 6rem;
-    height: 1.75rem;
-    translate: -50% 0;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 0.5rem;
-    touch-action: none;
-  }
-
-  .sheet-grip > span {
-    display: block;
-    width: 2.25rem;
-    height: 0.25rem;
-    border-radius: 9999px;
-    background: color-mix(in srgb, var(--text) 45%, transparent);
-  }
 }
 
 /*
- * The cover growing from the shelf into the open game, and back (spec 7.2).
+ * The cover growing from the shelf into the game's page (spec 7.2).
  * `morph.ts` names the two ends for the one transition, so nothing else on
- * the page is ever captured. While it runs, the panel's own slide gives way
- * to the transition's, which knows where the cover will land.
+ * the page is ever captured; the rest of the page crossfades.
  */
 ::view-transition-group(game-cover) {
   z-index: 2;
@@ -802,19 +702,6 @@
   animation-timing-function: var(--ease-glide);
 }
 
-::view-transition-group(game-panel) {
-  z-index: 1;
-  animation-duration: var(--motion-base);
-}
-
-::view-transition-new(game-panel):only-child {
-  animation: game-panel-in var(--motion-base) var(--ease-settle) both;
-}
-
-::view-transition-old(game-panel):only-child {
-  animation: game-panel-out var(--motion-quick) var(--ease-leave) both;
-}
-
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: var(--motion-base);
@@ -823,59 +710,4 @@
 /* The page under a running transition still answers the pointer. */
 ::view-transition {
   pointer-events: none;
-}
-
-/*
- * And after it: a sheet the transition brought in is already in place, and
- * its own entrance, let go of, would start over (`settle` in morph.ts).
- */
-:root[data-morph] [data-slot='sheet'],
-:root[data-morph] [data-slot='sheet-overlay'],
-[data-slot='sheet'][data-settled][data-state='open'],
-[data-slot='sheet-overlay'][data-settled][data-state='open'] {
-  animation: none !important;
-}
-
-/* From the bottom on a phone or a tablet held upright, from the right otherwise, and fading up in the middle of a very wide window: as the sheet itself moves. */
-@keyframes game-panel-in {
-  from {
-    translate: 0 100%;
-  }
-}
-
-@keyframes game-panel-out {
-  to {
-    translate: 0 100%;
-  }
-}
-
-@media (width >= 64rem), ((width >= 40rem) and (orientation: landscape)) {
-  @keyframes game-panel-in {
-    from {
-      translate: 100% 0;
-    }
-  }
-
-  @keyframes game-panel-out {
-    to {
-      translate: 100% 0;
-    }
-  }
-}
-
-/* The query is GAME_CENTERED. The 3D shelf has no cover to carry, so it never gets here. */
-@media (width >= 150rem) and (height >= 45rem) {
-  @keyframes game-panel-in {
-    from {
-      translate: 0 1.5rem;
-      opacity: 0;
-    }
-  }
-
-  @keyframes game-panel-out {
-    to {
-      translate: 0 1.5rem;
-      opacity: 0;
-    }
-  }
 }

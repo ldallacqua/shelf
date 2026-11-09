@@ -80,17 +80,17 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** A game's own page, opened directly. */
+/** A game's page. */
 export const Page: Story = {
-  args: { handle: 'sample', layout: 'page', game, tags, platforms, facts },
+  args: { handle: 'sample', game, tags, platforms, facts },
 }
 
 /**
- * In the panel over the shelf, while its facts are on their way: what the
- * library file knows at once, and ghosts for the rest.
+ * Opened from the library, while the rest of its page is on its way: what
+ * the library file knows at once, and ghosts for the rest (`hand-off.tsx`).
  */
 export const Arriving: Story = {
-  args: { handle: 'sample', layout: 'panel', game, tags, platforms },
+  args: { handle: 'sample', game, tags, platforms },
 }
 
 /**
@@ -99,10 +99,10 @@ export const Arriving: Story = {
  * the editor arrives.
  */
 export const OwnerArriving: Story = {
-  args: { handle: 'sample', layout: 'panel', game, tags, platforms },
+  args: { handle: 'sample', game, tags, platforms },
   render: (args) => (
-    <div className="max-w-[32rem] px-5 py-6">
-      <MineSkeleton game={args.game} tags={args.tags} platforms={args.platforms} level="h3" />
+    <div className="max-w-[22rem] px-5 py-6">
+      <MineSkeleton game={args.game} tags={args.tags} platforms={args.platforms} level="h2" />
     </div>
   ),
 }

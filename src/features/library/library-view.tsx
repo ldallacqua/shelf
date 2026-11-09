@@ -1,7 +1,6 @@
 'use client'
 
 import { BookmarkPlusIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
-import { usePathname } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsString, parseAsStringLiteral, useQueryState, useQueryStates } from 'nuqs'
 import {
@@ -13,7 +12,7 @@ import {
   type ReactNode,
 } from 'react'
 
-import { groupings, type Grouping } from '@/domain/library/group'
+import { groupings, type Grouping, type ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 import { onlyReady } from '@/domain/library/ready'
 import {
@@ -68,15 +67,9 @@ import { ShortcutsDialog } from '@/features/filters/shortcuts-dialog'
 import { SortControl } from '@/features/filters/sort-control'
 import { StatusRow } from '@/features/filters/status-row'
 import { useKeywords } from '@/features/filters/use-keywords'
-import {
-  gameSlugIn,
-  historyMoved,
-  leaveGame,
-  replaceGame,
-  showGame,
-} from '@/features/game-detail/game-address'
-import type { GamePanel as GamePanelType } from '@/features/game-detail/game-panel'
-import { HERO_COVER } from '@/features/game-detail/hero'
+import { keptQuery } from '@/features/game-detail/back-to-library'
+import type * as DrawnPage from '@/features/game-detail/drawn-page'
+import { handOff } from '@/features/game-detail/hand-off'
 import { morph } from '@/features/game-detail/morph'
 import { signedInAccount, useIsMine, waitingChanged } from '@/features/owner/account'
 import { useLibraryChange } from '@/features/owner/library-change'
@@ -96,7 +89,7 @@ import { anchorIn2d, ShelfStage } from './shelf-stage'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 import { useShelf } from './shelf'
-import { libraryHref, smartShelfHref } from './shelf-address'
+import { gameHref, libraryHref, smartShelfHref } from './shelf-address'
 import { useFlip } from './use-flip'
 import { useLibrary } from './use-library'
 import { useReadySlugs } from './use-ready'
@@ -112,7 +105,8 @@ import {
   useTooSmallFor3d,
   useWallSize,
 } from './use-preference'
-import { followOpen, neighborsOf, openGameAt, type OpenGame } from './open-game'
+import { followOpen, openGameAt, type OpenGame } from './open-game'
+import { PulledGame } from './pulled-game'
 import type { DrawnShelf, OpenBox } from './view-props'
 import { GhostWall, WallView } from './wall-view'
 
@@ -159,26 +153,19 @@ const coverOf = (root: HTMLElement | null, key: string): HTMLElement | undefined
   return thumb ?? (target.firstElementChild as HTMLElement | null) ?? undefined
 }
 
-const gamePanel = () => document.querySelector<HTMLElement>('[data-slot="sheet"][data-game]')
-// In the panel, by name: a game's page visited and left stays in the document, hidden, for Back to
-// be quick, with a hero cover of its own, and a transition can't land on what isn't drawn.
-const heroCover = () => gamePanel()?.querySelector<HTMLElement>(`[${HERO_COVER}]`)
-
-type GamePanelComponent = typeof GamePanelType
-
-let panelCode: Promise<{ GamePanel: GamePanelComponent; loadEditor: () => unknown }> | undefined
+let pageCode: Promise<typeof DrawnPage> | undefined
 
 /**
- * The open game's code: fetched the first time a game is reached for (a
- * pointer or a finger on one, or focus), and in any case before one opens.
- * Not every visit opens a game, so not every visit pays for it. On one's
- * own shelf, the editor's code is fetched then too, so it is there by the
- * click.
+ * The code that draws a game's page from the library (`hand-off.tsx`):
+ * fetched the first time a game is reached for (a pointer or a finger on
+ * one, or focus), and in any case before one opens. Not every visit opens a
+ * game, so not every visit pays for it. On one's own shelf, the editor's
+ * code is fetched then too, so it is there by the click.
  */
-const loadPanel = (handle: string): Promise<GamePanelComponent> =>
-  (panelCode ??= import('@/features/game-detail/game-panel')).then((module) => {
+const loadPage = (handle: string) =>
+  (pageCode ??= import('@/features/game-detail/drawn-page')).then((module) => {
     if (signedInAccount()?.handle === handle) void module.loadEditor()
-    return module.GamePanel
+    return module
   })
 
 /** Whether an event happened on a game: a box, a wall cover, a row's title, or a 3D shelf's button. */
@@ -220,7 +207,8 @@ export function LibraryView({
   actions: ownerActions,
   completion,
 }: LibraryViewProps) {
-  const { handle, files, name: ownerName } = useShelf()
+  const shelfInfo = useShelf()
+  const { handle, files, name: ownerName } = shelfInfo
   // Nobody is offered a control on a shelf not their own: they appear once
   // the browser knows the shelf is the signed-in account's.
   const actions = useIsMine(handle) ? ownerActions : undefined
@@ -298,11 +286,8 @@ export function LibraryView({
   // With no WebGL 2 at all, 3D is not even tried: the 3D button says why (spec 3.6).
   const asked: Dimension = noWebGL2 || tooSmall ? '2d' : dimension
   const shown: Dimension = asked === '3d' && !fallback ? '3d' : '2d'
+  /** The box pulled from the 3D wall, with its title and Open. */
   const [open, setOpen] = useState<OpenGame>()
-  /** The cover file the box showed, for the open game's cover to start from. */
-  const [placeholder, setPlaceholder] = useState<string>()
-  /** The open game's panel, once its code has arrived. */
-  const [GamePanel, setGamePanel] = useState<GamePanelComponent>()
   const [panelOpen, setPanelOpen] = useState(false)
   // Wide enough for the filters to stand beside the library: the sheet is not needed, and a
   // sheet open as the window widens is closed, not left to open again as it narrows.
@@ -404,6 +389,8 @@ export function LibraryView({
       // 3D gave way earlier on this page: asking again tries again.
       setFallback(undefined)
     }
+    // A box pulled from the wall goes back with it.
+    setOpen(undefined)
     setDimension(next)
   }
 
@@ -580,117 +567,85 @@ export function LibraryView({
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // The game whose details are open, followed by which game it is, and its neighbors in the
-  // current order: changing its status where the filter is on status leaves it open.
-  const followed = open ? followOpen(shelves, open, whole?.games) : undefined
-  const openItem = followed?.item
-  const { previous, next } = open ? neighborsOf(shelves, open, followed?.box) : {}
+  // The box pulled from the 3D wall, followed by which game it is: grouped by status, a new
+  // status takes it to its new shelf, still pulled. Gone from the wall, it goes back.
+  const followed = open ? followOpen(shelves, open) : undefined
 
   const itemAt = (box: OpenBox) => shelves.find((each) => each.key === box.key)?.items[box.index]
   const pulled = view === 'shelf' && shown === '3d'
 
-  /** Opens a game over the shelf, its cover growing out of its box (spec 7.2). */
-  const openBox = (box: OpenBox) => {
-    const item = itemAt(box)
-    if (!item) return
-    const { slug } = item.game
-    if (open) replaceGame(slug)
-    else showGame(slug)
-    void loadPanel(handle).then((panel) => {
-      // Back before the code arrived: the game is no longer wanted.
-      if (gameSlugIn(window.location.pathname) !== slug) return
-      // In 3D the box pulled from the wall is the cover: there is nothing to grow.
-      const source = pulled ? undefined : coverOf(scope.current, keyOf(item))
-      const shows = source?.querySelector('img')?.currentSrc || undefined
-      morph({ from: () => source, to: heroCover, panel: gamePanel }, () => {
-        setGamePanel(() => panel)
-        setPlaceholder(shows)
-        setOpen(openGameAt(box, item))
+  // The box whose game was opened last: focus goes back to it when Back shows the library again.
+  const lastOpen = useRef<string | undefined>(undefined)
+
+  /** A game's address, keeping the library's arrangement: for the way back and the list beside it. */
+  const addressOf = (slug: string) =>
+    gameHref(handle, slug, keptQuery(new URLSearchParams(window.location.search)))
+
+  /**
+   * A game's page, its cover growing out of its box (spec 7.2). The page is
+   * drawn at once from what the library knows, and the address keeps the
+   * library's arrangement, for the way back and the list beside the game.
+   */
+  const goToGame = (item: ShelfItem, from?: HTMLElement) => {
+    const { game } = item
+    const href = addressOf(game.slug)
+    lastOpen.current = keyOf(item)
+    void loadPage(handle).then(({ drawPage }) => {
+      handOff({
+        handle,
+        slug: game.slug,
+        page: drawPage({
+          shelf: shelfInfo,
+          game,
+          tags: game.tags.flatMap((position) => tags[position] ?? []),
+          platforms,
+          placeholder: from?.querySelector('img')?.currentSrc || undefined,
+        }),
       })
+      morph(from, () => router.push(href))
     })
   }
 
   /**
-   * The close button, Escape or a click outside: a step back out of history,
-   * which closes the game as Back does (below). The panel slides away on its
-   * own; the cover does not fly home, because WebKit's page crashed under
-   * that flight (architecture, section 25).
+   * A box chosen on a shelf, the wall or the list: its game's page. In 3D a
+   * click pulls the box from the wall first, with its title and Open (ADR
+   * 009); the pulled box, chosen again, opens.
    */
-  const closeGame = () => {
-    if (gameSlugIn(window.location.pathname)) leaveGame()
-    else setOpen(undefined)
-  }
-
-  /** Another game in the same panel: the arrows, a swipe, or the buttons. */
-  const stepTo = (box: OpenBox) => {
+  const openBox = (box: OpenBox) => {
     const item = itemAt(box)
     if (!item) return
-    setPlaceholder(
-      coverOf(scope.current, keyOf(item))?.querySelector('img')?.currentSrc || undefined,
-    )
-    setOpen(openGameAt(box, item))
-    replaceGame(item.game.slug)
+    if (!pulled) {
+      goToGame(item, coverOf(scope.current, keyOf(item)))
+      return
+    }
+    const already = followed?.box.key === box.key && followed.box.index === box.index
+    if (already) goToGame(item)
+    else setOpen(openGameAt(box, item))
   }
 
-  // Back closes the game and Forward opens it again; a link out of the open
-  // game to the filtered library closes it too.
-  const latest = useRef({ shelves })
-  useEffect(() => {
-    latest.current = { shelves }
-  })
-  useEffect(() => {
-    const onMove = () => {
-      historyMoved()
-      const slug = gameSlugIn(window.location.pathname)
-      if (!slug) {
-        setOpen(undefined)
-        return
-      }
-      for (const shelf of latest.current.shelves) {
-        const index = shelf.items.findIndex((item) => item.game.slug === slug)
-        const item = shelf.items[index]
-        if (item) {
-          void loadPanel(handle).then((panel) => {
-            setGamePanel(() => panel)
-            setOpen(openGameAt({ key: shelf.key, index }, item))
-          })
-          return
-        }
-      }
-      // A game this page cannot show yet: its own page can.
-      window.location.reload()
-    }
-    window.addEventListener('popstate', onMove)
-    return () => window.removeEventListener('popstate', onMove)
-  }, [handle])
-  const pathname = usePathname()
-  const onGame = gameSlugIn(pathname) !== undefined
-  const [wasOnGame, setWasOnGame] = useState(onGame)
-  if (onGame !== wasOnGame) {
-    setWasOnGame(onGame)
-    if (!onGame) setOpen(undefined)
+  /**
+   * A press on a game, before it is let go: its page is asked for then, a
+   * tenth of a second or so ahead of the click. Only the game being chosen:
+   * the router's prefetch of a page built ahead brings all of it, art and
+   * all, so a pointer passing over games asks for none of them.
+   */
+  const press = (target: EventTarget) => {
+    const key = target instanceof Element ? target.closest<HTMLElement>('[data-flip]') : null
+    const slug = key?.dataset.flip?.replace(/:\d+$/, '')
+    if (slug) router.prefetch(addressOf(slug))
   }
 
-  // When the sheet closes, focus returns to the box of the game last shown
-  // in it: stepping through games moves your place on the shelf with you.
-  const lastOpen = useRef<string | undefined>(undefined)
+  // Back from a game's page shows this page again as it was left, kept hidden meanwhile, and
+  // runs its effects again: focus goes back to the box that was opened.
   useEffect(() => {
-    if (openItem) {
-      const { game, copy } = openItem
-      lastOpen.current = copy ? `${game.slug}:${copy.platform}` : game.slug
-    }
-  })
-  const returnFocus = (): boolean => {
     const key = lastOpen.current
-    if (!key) return false
+    if (!key) return
+    lastOpen.current = undefined
     const name = CSS.escape(key)
-    // A 2D box, or its button beside the 3D scene.
-    const box = scope.current?.querySelector<HTMLElement>(
-      `[data-flip="${name}"], [data-box="${name}"]`,
-    )
-    box?.focus()
-    return Boolean(box)
-  }
+    scope.current
+      ?.querySelector<HTMLElement>(`[data-flip="${name}"], [data-box="${name}"]`)
+      ?.focus({ preventScroll: true })
+  }, [])
 
   // The status row: the one status every group agrees on, All when the filter
   // says nothing about status, and nothing pressed when it says something else.
@@ -740,7 +695,7 @@ export function LibraryView({
   const viewProps = {
     shelves,
     platforms,
-    open,
+    open: followed?.box,
     onOpen: openBox,
     enter: arriving,
     firstBoxes: first.boxes,
@@ -755,8 +710,9 @@ export function LibraryView({
       className="library"
       data-view={view}
       // Reaching for a game fetches what opening one needs.
-      onPointerOver={(event) => onAGame(event.target) && void loadPanel(handle)}
-      onFocus={(event) => onAGame(event.target) && void loadPanel(handle)}
+      onPointerOver={(event) => onAGame(event.target) && void loadPage(handle)}
+      onFocus={(event) => onAGame(event.target) && void loadPage(handle)}
+      onPointerDown={(event) => event.button === 0 && press(event.target)}
     >
       {/*
        * The title, then the filters' column, then the library; on a wide window the title heads
@@ -981,23 +937,17 @@ export function LibraryView({
               ) : null}
             </div>
           )}
+          {/* Under the wall, centered on it, held at the window's foot while the wall is in view. */}
+          {pulled && followed ? (
+            <PulledGame
+              item={followed.item}
+              platforms={platforms}
+              onOpen={() => goToGame(followed.item)}
+              onPutBack={() => setOpen(undefined)}
+            />
+          ) : null}
         </div>
       </div>
-
-      {GamePanel ? (
-        <GamePanel
-          item={openItem}
-          version={library?.version ?? first.version}
-          platforms={platforms}
-          tags={tags}
-          placeholder={placeholder}
-          onClose={() => closeGame()}
-          onReturnFocus={returnFocus}
-          pulled={pulled}
-          onPrevious={previous ? () => stepTo(previous) : undefined}
-          onNext={next ? () => stepTo(next) : undefined}
-        />
-      ) : null}
 
       <ShortcutsDialog open={helpOpen} onOpenChange={setHelpOpen} experimental={experimental} />
 

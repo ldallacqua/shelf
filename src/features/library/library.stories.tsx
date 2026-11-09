@@ -5,6 +5,7 @@ import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
 import type { Status } from '@/domain/library/values'
 
 import { LibrarySkeleton } from './library-skeleton'
+import { PulledGame } from './pulled-game'
 import { ShelfGrid } from './shelf-grid'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
@@ -221,5 +222,41 @@ export const ControlsWithExperimentalViews: Story = {
       onDimension={() => undefined}
       experimental
     />
+  ),
+}
+
+/**
+ * A box pulled from the 3D wall (ADR 009): its title, status and platform in
+ * a bar under it, with Open and Put it back. Escape puts it back too. The bar
+ * floats over the bottom of the window, as it does over the 3D wall.
+ */
+export const PulledFromTheWall: Story = {
+  render: () => (
+    <div className="h-48">
+      <PulledGame
+        item={stand(game(1, 'playing'))}
+        platforms={platforms}
+        onOpen={() => undefined}
+        onPutBack={() => undefined}
+      />
+    </div>
+  ),
+}
+
+/** A long title stops short of the buttons, on a phone's width too. */
+export const PulledWithALongTitle: Story = {
+  render: () => (
+    <div className="h-48">
+      <PulledGame
+        item={stand(
+          game(2, 'completed', {
+            title: 'The Very Long Name of a Remastered Collection: Definitive Anniversary Edition',
+          }),
+        )}
+        platforms={platforms}
+        onOpen={() => undefined}
+        onPutBack={() => undefined}
+      />
+    </div>
   ),
 }
