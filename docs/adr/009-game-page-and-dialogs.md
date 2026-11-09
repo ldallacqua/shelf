@@ -1,0 +1,203 @@
+# ADR 009: A game is a page, with my library beside it, and what a menu opens is a dialog
+
+- **Status:** proposed by the owner, 9 Nov 2026; this record is the research and the details, waiting for
+  the owner's word on them and on the open questions at the end
+- **Date:** 9 Nov 2026
+- **Decides:** how a game is opened (always its page), what stands beside it (my library, as a list), how
+  anything chosen in a menu is shown (a dialog, never the menu grown), and how a game's Saves says what it
+  has to say with less
+- **Replaces:** spec 7.2's panel, frame and sheet over the shelf; the sheets and the beside-Play popover of
+  spec 7.10 and 7.12
+
+## Context
+
+A game is shown three ways today (spec 7.2): a panel at the window's edge, a frame centered over the shelf
+on a very wide window, and a full page when opened directly. What it opens stacks on top: Play's ⋯ menu
+offers Saves and Find a download, and choosing one turns the menu's place into a 36rem panel beside Play
+(on a very wide window) or a second sheet over the first. So a game's Saves is a popover, grown out of a
+menu, over a frame, over the shelf.
+
+The owner, after using Saves on the 4K TV:
+
+- "the game save backup screen might have too much information. It's not too direct, it explains a lot
+  that might not be relevant to most people. They want it to work."
+- "we click the three dots it opens a menu, when you choose one option in the menu it overwrites the menu
+  content basically with a bigger content. and all of this is already inside a modal / frame."
+- Their idea: clicking a cover opens the game's full page; a list of my other games on its left, as
+  Steam's library and Hydra have, with a simpler filter than the library's; ⋯ stays a menu, and choosing
+  an item opens a dialog; drawers go; one header size; "similar to the other stores but ... better.
+  visually speaking and semantic speaking. steam looks very outdated and hydra looks too unbaked."
+
+### What the guidance says
+
+- **A popover is for a little, and never grows another view.** Apple: "Use a popover to expose a small
+  amount of information or functionality", "Never show a cascade or hierarchy of popovers", "Don't show
+  another view over a popover", and "Avoid making a popover too big" ([HIG, Popovers][hig-popovers]).
+  Saves breaks all four.
+- **No modal over a modal.** Stacked modals hide the context they came from, make Back and Escape close
+  several layers, and trap focus; the alternatives are a step inside the same surface, a side panel, an
+  inline reveal or a page, so a person can go "out and back" without losing their place
+  ([Smart Interface Design Patterns][nested]). Design systems allow two levels at most
+  ([Infor][infor]).
+- **A long list beside its detail is list/detail.** Microsoft recommends it "to locate and prioritize a
+  large collection of content": side by side from 641 effective pixels, stacked (one pane at a time, the
+  detail reached and left like a page) below ([Windows, List/details][ms-list]). Android's canonical
+  layouts do the same at its expanded width ([Android, canonical layouts][android]).
+- **Show first what most people need.** "The very fact that something appears on the initial display tells
+  users that it's important"; the rest goes behind a clearly named control, two levels at most
+  ([NN/g, Progressive disclosure][nng-pd]).
+
+### What other launchers do
+
+- **Steam:** a library list on the left, collections that fold, a search and a few filter icons; the
+  game's page beside it; **Cloud status** ("Up to date", "Syncing", "Unable to sync") beside Play; the
+  cloud's switch is one checkbox in a Properties window, apart from the page ([PC Gamer][pcgamer],
+  [Steam Community][steam]).
+- **Hydra** (the owner's screenshot): the same list on the left, a back arrow and the game's title above a
+  wide hero, **Salvamento em nuvem** as a button on the hero that opens a dialog, **Gerenciar** another.
+- **GOG Galaxy 2.0:** a game opens as a page of its own, with back and forward working everywhere
+  ([PCWorld][galaxy], [Neowin][neowin]); per-game settings in a dialog from "More".
+- **Xbox:** before a game starts, one sentence ("Your previous device is still uploading your game
+  save"), one line of advice, where and when it was last played, a progress bar, two buttons
+  ([Windows Central][xbox]). Its Game Saves dialogs each say one thing and offer two or three actions
+  ([Xbox, Game Saves dialogs][xbox-dialogs]).
+- **Nintendo Switch:** two switches for the whole console, automatic backup and automatic download
+  ([Nintendo][nintendo]).
+- **Heroic** shows "Save Sync" status on the game page and puts the save path inside a section of the game's
+  settings that is folded until opened ([Heroic][heroic]).
+
+What none of them puts in front of a person who only wants it to work: where on disk the saves are, which
+database said so, how many snapshots are kept, or a paragraph about what the feature does once it is on.
+
+## Decisions
+
+### 1. A game is always its page
+
+Choosing a game anywhere (a cover on the shelf or the wall, a row in the list, a search result) goes to
+its page, `/u/{handle}/game/{slug}`, with an address of its own. The panel, the centered frame and the
+phone's sheet go. Back returns to the library as I left it: its arrangement, filters and scroll (issue
+149's lesson: the arrangement is read again on arrival).
+
+The cover growing out of the shelf into the hero (spec 7.2) stays where the browser can do it, as a view
+transition between the two pages, the cover as the shared element; where it can't, the page simply
+changes. Phase 1 confirms it in this Next.js and React, and the record says what was found.
+
+### 2. My library beside it
+
+From 1024px wide, the page has a column on its left, about 18rem, with my library as a list, as Steam,
+Hydra and Galaxy have it, so another game is one click away and the shelf is never lost:
+
+- **At its top:** the way back to the library (the shelf, as it was), then a search box.
+- **The list follows the library's arrangement:** its grouping as headings that fold, with their counts (as
+  Steam's collections), its order, and its filters. A filter carried from the library shows as one chip
+  that clears it. The "simpler filter" is that: search, and the grouping, chosen in one menu (none,
+  status, platform); everything else stays in the library's own panel. In the app, Ready to play is a
+  third choice, as Steam has its "ready to play" icon.
+- **A row** is the game's small cover and title; the open one is marked (`aria-current`) and scrolled into
+  view. Arrow keys and the next and previous buttons follow the same list (spec 7.2's order).
+- **It stays put between games:** it lives in the layout around the page, so its scroll and search survive
+  going from one game to the next; only the page beside it changes.
+- **Large libraries:** only the visible rows are drawn, and the list reads the light fields the library
+  already reads (title, cover, status, platform), cached; the page's own data is read beside it, so it
+  never waits for the list.
+- **Narrower than 1024px**, and on a phone, the page stands alone with its way back (list/detail's stacked
+  style). A visitor to someone else's shelf sees the same, with only what they may see.
+
+Visually it is Shelf's, not a file manager's: the covers are the rows' faces, a group's heading reads as a
+shelf's label, the open game as a box pulled forward. The design pass in phase 2 starts from the library's
+own parts.
+
+### 3. A menu's item opens a dialog
+
+⋯ stays a menu of short items. Choosing one closes the menu and opens a **dialog** centered over the page:
+Saves, Find a download, and anything after them. With the game a page, the dialog is the only layer, and
+Escape or its close button goes straight back to the page.
+
+There is one dialog component. On a phone it rises from the bottom and fills the screen, as Apple's
+popovers become sheets in compact widths ([HIG][hig-popovers]); it is the same component, so drawers as a
+separate pattern go: Add a game, Save as a shelf, the shortcuts, the library's filters on a narrow window,
+Saves and Find a download all become it, and `src/ui/sheet.tsx`, `beside-play.tsx` and the centered-frame
+code with them.
+
+### 4. One header
+
+The page has no frame of its own, so the header is the same on every page.
+
+### 5. Saves, simpler
+
+Most people want three answers: is it on, are my saves safe and where, and can I go back. Everything else
+is for when something is wrong, or for the curious, and moves one step back.
+
+- **Beside Play, once it is on:** a small button with the state in a few words, as Steam's Cloud status:
+  "Saves in Google Drive · 11 h ago", "Saves waiting to go", "Choose which saves to keep" (drawn as a
+  warning). It opens the Saves dialog. Off, Saves is only in ⋯, to turn it on.
+- **The dialog, top to bottom:**
+  1. **The state, in one sentence, with where and when, and the one action that fits it:** "In step with
+     Google Drive, backed up 11 hours ago" and Back up now; "Another computer has newer saves" and Use
+     them; the choice's two cards (unchanged). While something is being done, the progress bar stands
+     here instead.
+  2. **The switch,** one line. The paragraph about what it does shows only while it is off.
+  3. **History** (today's Snapshots; "snapshot" is a word most people don't use): the newest three, each
+     one line, when and which computer, with this computer's and the place's marks as icons that say
+     themselves in a tip; Restore on each. "All 12" opens the rest.
+  4. **Where the saves are,** folded into one line ("1 folder · 38 files · 2 MB") with Change. Opened, it is
+     today's section unchanged: the folders, Add a folder, the game's folder, "not this game", the
+     registry's note, and the credit to PCGamingWiki and the Ludusavi manifest, which the list's terms ask
+     for. It opens by itself when nothing is found, as then it is the task.
+- **What leaves the dialog:** the limits ("up to 20 snapshots of up to 500 MB"), which are Settings' and stay
+  there, and the place's line at the bottom, which the first sentence now says.
+- **Nothing is lost:** every action of today is in the dialog or one fold away, never two.
+
+## Phases
+
+1. **A game is a page.** Covers, rows and results go to the page; Back restores the library; the morph as a
+   view transition where it can be; the panel and frame go; one header. Spec 7.2 rewritten.
+2. **My library beside it.** The column, its search and grouping, drawn rows only, keys; stacked below
+   1024px.
+3. **Dialogs.** The one dialog, phones included; ⋯'s items open it; every sheet becomes it.
+4. **Saves, simpler.** The state beside Play and the dialog as section 5 says. Spec 7.12 rewritten.
+
+Each phase has its design pass first (AGENTS.md), its stories, and `pnpm desktop:check`'s steps where the
+app is concerned (Play, Ready to play, Saves).
+
+## Consequences
+
+- One way to show a game, one way to show what a menu opens: less code, and no layer over a layer.
+- Every game has its address whatever opened it, so a link, a bookmark or a back button lands where I was.
+- The shelf is a page I go back to, not a backdrop; the list beside the game is what keeps it close.
+- The game page reads my library's list as well as the game: a cost to watch in the page's JavaScript and
+  Lighthouse budgets, kept small by drawing only the rows in view.
+- `pnpm desktop:check` reads the game as a panel today, and its Play and Saves steps change with each phase.
+
+## Open questions for the owner
+
+1. **The 3D shelf.** Today a box pulled from it stays out, with the game's panel beside it (spec 7.2: "In
+   3D it stays a panel, for the pulled box to stand beside"). Proposed: in 3D, a click pulls the box as now
+   and shows its title with **Open**, which goes to the page; a second click on the pulled box does too.
+2. **The list's width and start:** 18rem from 1024px wide is the proposal; the owner's TV at 2560px wide has
+   room for more, and a wider list could show each game's status and hours, as Steam's doesn't.
+3. **Words:** "History" and "backup" for "snapshot" in the app's words, in both languages.
+
+## Not chosen
+
+- **The game in a panel, with Saves as a step inside it** (back arrow to the game): one layer instead of
+  two, but three ways to show a game stay, and so does the header's second size.
+- **The page over the library as a modal with its own address** (an intercepted route): the same layer
+  over the shelf as today, and every dialog from it a second layer.
+- **A Saves page of its own** (`…/game/{slug}/saves`): a page for what is usually one glance and one
+  button.
+
+[hig-popovers]: https://developer.apple.com/design/human-interface-guidelines/popovers
+[nested]: https://smart-interface-design-patterns.com/articles/the-case-against-nested-modals/
+[infor]: https://design.infor.com/patterns/interactions/dialog/
+[ms-list]: https://learn.microsoft.com/windows/apps/design/controls/list-details
+[android]: https://developer.android.com/design/ui/mobile/guides/layout-and-content/canonical-layouts
+[nng-pd]: https://www.nngroup.com/articles/progressive-disclosure/
+[pcgamer]: https://www.pcgamer.com/download-steam-cloud-saves-sync-issue
+[steam]: https://steamcommunity.com/discussions/forum/1/3271310952924677432
+[galaxy]: https://www.pcworld.com/article/605372/gog-galaxy-2-0-is-a-must-have-app-to-organize-all-your-pc-games.html
+[neowin]: https://www.neowin.net/news/gog-enhances-its-galaxy-20-closed-beta-with-the-euporie-update---heres-whats-new
+[xbox]: https://www.windowscentral.com/gaming/xbox/xbox-more-games-stream-your-own-game-cloud-save-status
+[xbox-dialogs]: https://devdocs.xbox.com/build/core-features/common/game-save/game-saves-dialogues
+[nintendo]: https://nintendo.com/au/support/articles/how-to-enabledisable-automatic-save-data-backups-and-downloads
+[heroic]: https://www.answeroverflow.com/m/1420120237180846110
