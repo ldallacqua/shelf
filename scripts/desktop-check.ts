@@ -668,16 +668,15 @@ try {
   await savesPanel.getByRole('button', { name: 'Add a folder' }).click()
   await savesPanel.getByText(/^1 file · /).waitFor({ timeout: 15_000 })
   await savesPanel.getByRole('switch', { name: 'Back up this game’s saves' }).click()
-  await savesPanel
-    .getByText('The latest snapshot holds what’s on this computer.')
-    .waitFor({ timeout: 15_000 })
-  pass('finds the folder added, and makes a first snapshot once turned on')
+  // Said first, with when and where: on this computer alone, as no place is chosen yet.
+  await savesPanel.getByText(/^Backed up .+, on this computer only\.$/).waitFor({ timeout: 15_000 })
+  pass('finds the folder added, and makes a first backup once turned on')
   writeFileSync(join(saved, 'slot1.sav'), 'chapter two')
   await savesPanel.getByRole('button', { name: 'Back up now' }).click()
   await savesPanel.getByText('Backed up.').waitFor({ timeout: 15_000 })
   const snapshots = savesPanel.locator('ol > li')
   if ((await snapshots.count()) === 2) pass('backs up what changed, keeping the first')
-  else fail(`has ${await snapshots.count()} snapshots after two backups`)
+  else fail(`has ${await snapshots.count()} backups in its history after two`)
   await snapshots.nth(1).getByRole('button', { name: 'Restore' }).click()
   // Asked in the row, as the dialog stays the only layer (ADR 009).
   if ((await shelf.getByRole('alertdialog').count()) > 0) fail('restoring asked in a second dialog')
@@ -688,11 +687,17 @@ try {
   else fail('restored, and the save is not the first snapshot’s')
   await shot('saves')
   await shelf.keyboard.press('Escape')
+  // Once on, their state stands beside Play, as Steam's Cloud status does (ADR 009, decision 5).
+  await shelf
+    .getByRole('button', { name: /^Saves on this computer · / })
+    .waitFor({ timeout: 15_000 })
+    .then(() => pass('beside Play, their state in a few words, once they are on'))
+    .catch(() => fail('nothing beside Play says where the saves are'))
   await shelf.goto(`${BASE_URL}/en/settings/saves`)
-  const keptField = shelf.getByRole('textbox', { name: 'Snapshots kept per game' })
+  const keptField = shelf.getByRole('textbox', { name: 'Backups kept per game' })
   await keptField.waitFor({ timeout: 20_000 })
-  if ((await keptField.inputValue()) === '20') pass('Settings shows the snapshots kept per game')
-  else fail(`Settings shows ${await keptField.inputValue()} snapshots kept per game`)
+  if ((await keptField.inputValue()) === '20') pass('Settings shows the backups kept per game')
+  else fail(`Settings shows ${await keptField.inputValue()} backups kept per game`)
   await shelf.getByRole('button', { name: 'Choose a folder' }).click()
   await shelf
     .getByText(/Those made on this computer were copied there too/)
@@ -733,7 +738,7 @@ try {
   const inFolder = inPlace()
   await shelf.getByRole('button', { name: 'Sign in to OneDrive' }).click()
   await shelf
-    .getByText('Signed in. Snapshots go to OneDrive now', { exact: false })
+    .getByText('Signed in. Backups go to OneDrive now', { exact: false })
     .waitFor({ timeout: 30_000 })
   if ((await shelf.locator('li[aria-current]').innerText()).includes('someone@example.com'))
     pass('signed in on the service’s page and came back, OneDrive in use, its account named')

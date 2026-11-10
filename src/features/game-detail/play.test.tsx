@@ -23,6 +23,7 @@ vi.mock('@/features/desktop/saves-later', async (original) => ({
   ...(await original<typeof SavesLater>()),
   SavesItem: (await import('@/features/desktop/saves-panel')).SavesItem,
   SavesLater: (await import('@/features/desktop/saves-panel')).default,
+  SavesStatusLater: (await import('@/features/desktop/saves-panel')).SavesStatus,
 }))
 vi.mock('@/features/owner/call-api', () => ({ callApi: vi.fn(async () => ({ ok: false })) }))
 
@@ -238,6 +239,39 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
     expect(await screen.findByRole('menuitem', { name: 'Saves' })).toBeInTheDocument()
   })
 
+  it('shows the saves’ state beside Play once they are on, and comes back to it from Saves', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.saves = true
+    computer.game = { state: 'stopped', unresponsive: false, kept: true }
+    const user = userEvent.setup()
+    play()
+    // Two copies differ: said in words, as a warning, beside Play.
+    const status = await screen.findByRole('button', { name: 'Choose which saves to keep' })
+    expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument()
+    await user.click(status)
+    const dialog = await screen.findByRole('dialog', { name: 'Saves for Grim Dawn' })
+    await within(dialog).findByRole('region', { name: 'Two copies differ' })
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(status).toHaveFocus()
+  })
+
+  it('shows no state beside Play while the saves are off, or in an app that can’t say', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.saves = true
+    computer.game = { state: 'stopped', unresponsive: false, kept: false }
+    const { unmount } = play()
+    await screen.findByRole('button', { name: 'Play' })
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('save_caps', {}))
+    expect(screen.queryByRole('button', { name: /saves/i })).toBeNull()
+    unmount()
+    computer.game = { state: 'stopped', unresponsive: false }
+    play()
+    await screen.findByRole('button', { name: 'Play' })
+    expect(screen.queryByRole('button', { name: /saves/i })).toBeNull()
+    expect(invoke).not.toHaveBeenCalledWith('saves', expect.anything())
+  })
+
   it('closes the menu for the Saves dialog, and Escape goes back to the menu’s button', async () => {
     computer.launchers.set('entry-1', GRIM_DAWN)
     computer.saves = true
@@ -276,7 +310,7 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
       expect(notices.notify).toHaveBeenLastCalledWith(
         expect.objectContaining({
           message:
-            'The latest snapshot of Grim Dawn’s saves is damaged, so the game started with this computer’s saves.',
+            'The latest backup of Grim Dawn’s saves is damaged, so the game started with this computer’s saves.',
         }),
       ),
     )

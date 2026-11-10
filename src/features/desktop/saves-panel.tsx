@@ -2,27 +2,46 @@
 
 import {
   CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
   CloudCheckIcon,
+  CloudOffIcon,
   CloudUploadIcon,
   FolderCheckIcon,
   FolderClockIcon,
   FolderIcon,
   FolderOpenIcon,
   FolderPlusIcon,
+  FolderSearchIcon,
+  FolderXIcon,
   HardDriveDownloadIcon,
+  HardDriveIcon,
+  HardDriveUploadIcon,
+  type LucideIcon,
+  MonitorDownIcon,
   MonitorIcon,
   PlayIcon,
+  RefreshCwIcon,
   TriangleAlertIcon,
   XIcon,
 } from 'lucide-react'
 import { useFormatter, useNow, useTranslations } from 'next-intl'
-import { type ComponentProps, type ReactNode, useCallback, useEffect, useId, useState } from 'react'
+import {
+  type ComponentProps,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 
 import type { Device } from '@/domain/library/devices'
 import { callApi } from '@/features/owner/call-api'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Switch } from '@/ui/checkbox'
+import { cn } from '@/ui/cn'
 import { ConfirmInPlace } from '@/ui/confirm'
 import { Dialog, DialogContent } from '@/ui/dialog'
 import {
@@ -46,6 +65,13 @@ import {
   type Snapshot,
   saves,
 } from './saves'
+import {
+  type Destination,
+  destinationOf,
+  needsMe,
+  type Standing,
+  standingOf,
+} from './saves-standing'
 import { sizeOf } from './size'
 
 const linkClass =
@@ -117,8 +143,9 @@ type ViewProps = {
 }
 
 /**
- * A game's saves, in the app (ADR 008, spec 7.12): whether they are backed up, where they were found,
- * and their snapshots, each one restorable. Drawn from what it is given: every state, for Storybook too.
+ * A game's saves, in the app (ADR 008, spec 7.12), with what most people need first (ADR 009, decision
+ * 5): whether they are safe, where, and what needs doing; then the switch, the latest backups, and where
+ * the saves are, folded into one line. Drawn from what it is given: every state, for Storybook too.
  */
 export function SavesPanelView(props: ViewProps) {
   const t = useTranslations('Saves')
@@ -139,15 +166,16 @@ export function SavesPanelView(props: ViewProps) {
       ) : null}
       {state === 'loading' ? (
         <Loading label={t('loading')} className="grid gap-6">
+          <span className={cn(leadBox, 'border-line')}>
+            <GhostText className="w-4/5 text-sm" />
+            <Ghost className="h-8 w-32" />
+          </span>
           <span className="flex items-center gap-3">
             <Ghost className="h-6 w-10 rounded-full" />
             <GhostText className="w-56 text-sm" />
           </span>
           {[0, 1, 2].map((row) => (
-            <span key={row} className="grid gap-1">
-              <GhostText order={row} className="w-4/5 text-sm" />
-              <GhostText order={row} className="w-2/5 text-xs" />
-            </span>
+            <GhostText key={row} order={row} className="w-3/5 text-sm" />
           ))}
         </Loading>
       ) : state === 'failed' ? (
@@ -164,6 +192,20 @@ export function SavesPanelView(props: ViewProps) {
 /** Whether a backup or a restore is under way, which has a bar of its own. */
 const moving = (busy: SavesBusy | undefined) =>
   busy === 'back-up' || busy?.startsWith('restore:') === true || busy?.startsWith('keep:') === true
+
+/** The box the first answer stands in. */
+const leadBox = 'grid justify-items-start gap-3 rounded-panel border p-4'
+
+/** How long ago, as a person says it, in a sentence or, `narrow`, beside Play; a moment is "just now". */
+function useAgo() {
+  const t = useTranslations('Saves')
+  const format = useFormatter()
+  const now = useNow({ updateInterval: 60_000 })
+  return (at: number, style: 'long' | 'narrow' = 'long') =>
+    now.getTime() - at < 60_000
+      ? t('justNow')
+      : format.relativeTime(Math.min(at, now.getTime()), { now, style })
+}
 
 /** How far a backup or restore has got, said and drawn, in place of a button merely greyed out. */
 function SavingProgress({
@@ -185,7 +227,7 @@ function SavingProgress({
       ? t('backingUp')
       : t('restoring')
   return (
-    <div className="grid gap-1.5">
+    <div className="grid gap-1.5 rounded-panel border border-line p-4">
       <p className="flex items-baseline justify-between gap-3 text-sm text-muted">
         <span aria-live="polite">{label}</span>
         {share === undefined ? null : (
@@ -201,24 +243,8 @@ function SavingProgress({
   )
 }
 
-function Ready({
-  title,
-  view,
-  computerOf,
-  busy,
-  progress,
-  onTurn,
-  onBackUp,
-  onRestore,
-  onShow,
-  onAdd,
-  onRemove,
-  onChooseGame,
-  onChooseBase,
-  onKeep,
-  beforePlay,
-  onLater,
-}: ViewProps & { view: SavesView }) {
+function Ready(props: ViewProps & { view: SavesView }) {
+  const { view, busy, onTurn } = props
   const t = useTranslations('Saves')
   const format = useFormatter()
   const id = useId()
@@ -226,241 +252,621 @@ function Ready({
     .map((store) => stores.find((each) => each === store))
     .filter((store) => store !== undefined)
     .map((store) => t(`stores.${store}`))
-  // A place the list names with nothing there now is counted, not listed: most games name several.
-  const shown = view.locations.filter((each) => each.added || each.files > 0 || each.refused)
-  const quiet = view.locations.length - shown.length
 
   return (
     <>
-      {view.state === 'choose' ? (
-        <Choice
-          view={view}
-          computerOf={computerOf}
-          busy={busy}
-          onKeep={onKeep}
-          beforePlay={beforePlay}
-          onLater={onLater}
-        />
-      ) : view.state === 'behind' ? (
-        <Behind
-          title={title}
-          view={view}
-          computerOf={computerOf}
-          busy={busy}
-          onRestore={onRestore}
-        />
-      ) : null}
+      <Lead {...props} standing={standingOf(view)} />
       <div className="grid gap-2">
         <div className="flex items-center gap-3">
           <Switch
             id={id}
             checked={view.on}
             disabled={busy !== undefined}
-            aria-describedby={`${id}-intro`}
+            {...(view.on ? {} : { 'aria-describedby': `${id}-intro` })}
             onChange={(event) => onTurn(event.target.checked)}
           />
           <label htmlFor={id} className="text-sm font-medium">
             {t('switch')}
           </label>
         </div>
-        <p id={`${id}-intro`} className="text-sm text-pretty text-muted">
-          {t('intro')}
-        </p>
-        {carried.length > 0 ? (
-          <p className="text-sm text-pretty text-muted">
-            {t('cloud', { stores: format.list(carried, { type: 'conjunction' }) })}
-          </p>
-        ) : null}
-      </div>
-
-      <section aria-labelledby={`${id}-where`} className="grid gap-3">
-        <h3 id={`${id}-where`} className="text-sm font-medium">
-          {t('where')}
-        </h3>
-        {!view.manifest ? (
-          <p className="text-sm text-pretty text-muted">{t('noList')}</p>
-        ) : view.matched === null ? (
-          <p className="text-sm text-pretty text-muted">{t('unknownGame')}</p>
-        ) : (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-sm text-pretty text-muted">{t('foundAs', { name: view.matched })}</p>
-            {view.others.length > 0 ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" disabled={busy !== undefined}>
-                    {t('notThis')}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="max-w-80">
-                  {view.others.map((other) => (
-                    <DropdownMenuItem key={other} onSelect={() => onChooseGame(other)}>
-                      {other}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => onChooseGame(null)}>
-                    {t('firstFound')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+        {/* What it does is said while it is off: once on, the answer above says it. */}
+        {view.on ? null : (
+          <>
+            <p id={`${id}-intro`} className="text-sm text-pretty text-muted">
+              {t('intro')}
+            </p>
+            {carried.length > 0 ? (
+              <p className="text-sm text-pretty text-muted">
+                {t('cloud', { stores: format.list(carried, { type: 'conjunction' }) })}
+              </p>
             ) : null}
-          </div>
+          </>
         )}
-        {shown.length > 0 ? (
-          <ul className="grid gap-2">
-            {shown.map((location) => (
-              <li
-                key={location.text}
-                className="flex items-start gap-3 rounded-control border border-line px-3 py-2"
-              >
-                <FolderIcon aria-hidden="true" className="mt-0.5 size-4 flex-none text-muted" />
-                <span className="grid min-w-0 flex-1 gap-0.5">
-                  <span className="text-sm break-all">{location.shown}</span>
-                  <span className="text-xs text-muted">
-                    {location.refused
-                      ? t('refused')
-                      : location.files === 0
-                        ? t('nothingThere')
-                        : t('files', {
-                            files: location.files,
-                            size: sizeOf(format, location.bytes),
-                          })}
-                  </span>
-                </span>
-                <Tip label={t('leaveOut', { path: location.shown })}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="-my-1 px-2"
-                    aria-label={t('leaveOut', { path: location.shown })}
-                    disabled={busy !== undefined}
-                    onClick={() => onRemove(location.text)}
-                  >
-                    <XIcon aria-hidden="true" />
-                  </Button>
-                </Tip>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {quiet > 0 ? <p className="text-xs text-muted">{t('quiet', { count: quiet })}</p> : null}
-        {view.registry ? <p className="text-sm text-pretty text-muted">{t('registry')}</p> : null}
-        <div>
-          <Button variant="secondary" size="sm" disabled={busy !== undefined} onClick={onAdd}>
-            <FolderPlusIcon aria-hidden="true" />
-            {t('add')}
-          </Button>
-        </div>
-        {shown.length === 0 ? (
-          <p className="text-xs text-pretty text-muted">{t('hiddenFolders')}</p>
-        ) : null}
-        {view.base ? (
-          <dl className="grid gap-0.5 text-xs">
-            <dt className="text-muted">{t('gameFolder')}</dt>
-            <dd className="flex flex-wrap items-baseline gap-x-2">
-              <span className="break-all">{view.base}</span>
-              <button
-                type="button"
-                className={linkClass}
-                disabled={busy !== undefined}
-                onClick={onChooseBase}
-              >
-                {t('changeGameFolder')}
-              </button>
-            </dd>
-          </dl>
-        ) : null}
-        <p className="text-xs text-pretty text-muted">
-          {t.rich('credit', {
-            wiki: (chunks) => (
-              <a
-                href="https://www.pcgamingwiki.com/"
-                target="_blank"
-                rel="noreferrer"
-                className={linkClass}
-              >
-                {chunks}
-              </a>
-            ),
-            manifest: (chunks) => (
-              <a
-                href="https://github.com/mtkennerly/ludusavi-manifest"
-                target="_blank"
-                rel="noreferrer"
-                className={linkClass}
-              >
-                {chunks}
-              </a>
-            ),
-          })}
-        </p>
-      </section>
-
-      <section aria-labelledby={`${id}-history`} className="grid gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 id={`${id}-history`} className="text-sm font-medium">
-            {t('history')}
-          </h3>
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={busy !== undefined || view.files === 0}
-            onClick={onBackUp}
-          >
-            <HardDriveDownloadIcon aria-hidden="true" />
-            {busy === 'back-up' ? t('backingUp') : t('backUp')}
-          </Button>
-        </div>
-        {moving(busy) ? (
-          <SavingProgress busy={busy} progress={progress} place={view.place} />
-        ) : null}
-        <p className="text-sm text-pretty text-muted" aria-live="polite">
-          {t(`state.${view.state}`)}
-        </p>
-        {view.snapshots.length === 0 ? (
-          <p className="text-sm text-muted">{t('noneYet')}</p>
-        ) : (
-          <ol className="grid gap-2">
-            {view.snapshots.map((snapshot) => (
-              <SnapshotRow
-                key={snapshot.id}
-                title={title}
-                snapshot={snapshot}
-                computer={computerOf(snapshot.device)}
-                place={
-                  view.place === null || view.service === undefined
-                    ? null
-                    : { name: view.place, service: view.service }
-                }
-                busy={busy}
-                onRestore={() => onRestore(snapshot)}
-                onShow={() => onShow(snapshot)}
-              />
-            ))}
-          </ol>
-        )}
-        <p className="text-xs text-pretty text-muted">
-          {view.place === null
-            ? t('placeHere')
-            : view.reachable
-              ? t('placeThere', { place: view.place })
-              : view.away === 'signed-out'
-                ? t('placeSignedOut', { place: view.place })
-                : view.away === 'full'
-                  ? t('placeFull', { place: view.place })
-                  : t('placeAway', { place: view.place })}{' '}
-          {t.rich('caps', {
-            kept: view.caps.kept,
-            size: sizeOf(format, view.caps.mostMb * 1024 * 1024),
-            link: (chunks) => (
-              <Link href="/settings/saves" className={linkClass}>
-                {chunks}
-              </Link>
-            ),
-          })}
-        </p>
-      </section>
+      </div>
+      {view.on || view.snapshots.length > 0 ? <History {...props} /> : null}
+      <Where {...props} />
     </>
+  )
+}
+
+/**
+ * The first answer: one sentence with where and when, and the one action that fits it. A choice and
+ * newer saves have their own; while a backup or restore runs, its bar stands here instead.
+ */
+/** A standing's mark: where the saves are, or a warning when it needs the person. */
+function markOf(standing: Standing, className?: string) {
+  const props = { 'aria-hidden': true, className }
+  switch (standing.kind) {
+    case 'setup':
+      return <FolderSearchIcon {...props} />
+    case 'choose':
+    case 'signed-out':
+    case 'full':
+      return <TriangleAlertIcon {...props} />
+    case 'behind':
+      return <MonitorDownIcon {...props} />
+    case 'kept':
+      return standing.to.kind === 'here' ? (
+        <HardDriveIcon {...props} />
+      ) : standing.to.kind === 'folder' ? (
+        <FolderCheckIcon {...props} />
+      ) : (
+        <CloudCheckIcon {...props} />
+      )
+    case 'waiting':
+      return standing.to.kind === 'folder' ? (
+        <FolderClockIcon {...props} />
+      ) : (
+        <CloudUploadIcon {...props} />
+      )
+    case 'unreachable':
+      return standing.to.kind === 'folder' ? (
+        <FolderXIcon {...props} />
+      ) : (
+        <CloudOffIcon {...props} />
+      )
+    default:
+      return <HardDriveIcon {...props} />
+  }
+}
+
+function Lead({
+  title,
+  view,
+  standing,
+  computerOf,
+  busy,
+  progress,
+  onBackUp,
+  onRestore,
+  onKeep,
+  beforePlay,
+  onLater,
+}: ViewProps & { view: SavesView; standing: Standing }) {
+  const t = useTranslations('Saves')
+  const ago = useAgo()
+  if (moving(busy)) return <SavingProgress busy={busy} progress={progress} place={view.place} />
+  if (standing.kind === 'off') return null
+  if (standing.kind === 'choose') {
+    return (
+      <Choice
+        view={view}
+        computerOf={computerOf}
+        busy={busy}
+        onKeep={onKeep}
+        beforePlay={beforePlay}
+        onLater={onLater}
+      />
+    )
+  }
+  if (standing.kind === 'behind') {
+    return (
+      <Behind
+        title={title}
+        newer={standing.newer}
+        computerOf={computerOf}
+        busy={busy}
+        onRestore={onRestore}
+      />
+    )
+  }
+
+  const backUp = (primary = false) => (
+    <Button
+      variant={primary ? 'primary' : 'secondary'}
+      size="sm"
+      disabled={busy !== undefined || view.files === 0}
+      onClick={onBackUp}
+    >
+      <HardDriveUploadIcon aria-hidden="true" />
+      {busy === 'back-up' ? t('backingUp') : t('backUp')}
+    </Button>
+  )
+  const toSettings = (words: string) => (
+    <Button asChild variant="secondary" size="sm">
+      <Link href="/settings/saves">{words}</Link>
+    </Button>
+  )
+  const to = standing.kind === 'setup' ? undefined : standing.to
+  const place = to?.kind === 'service' ? to.name : to?.kind === 'folder' ? to.path : ''
+  const folder = to?.kind === 'folder'
+
+  let sentence: string
+  let actions: ReactNode = backUp()
+  switch (standing.kind) {
+    case 'setup':
+      sentence = t('lead.setup')
+      // Its folder is the task, and "Where they are" is open below, with Add a folder.
+      actions = null
+      break
+    case 'kept':
+      if (standing.to.kind === 'here') {
+        sentence = t('lead.keptHere', { ago: ago(standing.at) })
+        actions = (
+          <>
+            {backUp()}
+            <Link href="/settings/saves" className={linkClass}>
+              {t('lead.onlyHere')}
+            </Link>
+          </>
+        )
+      } else {
+        sentence = folder
+          ? t('lead.keptFolder', { ago: ago(standing.at) })
+          : t('lead.kept', { place, ago: ago(standing.at) })
+      }
+      break
+    case 'waiting':
+      sentence = folder
+        ? t('lead.waitingFolder', { ago: ago(standing.at) })
+        : t('lead.waiting', { place, ago: ago(standing.at) })
+      break
+    case 'changed':
+      sentence =
+        standing.at === undefined
+          ? t('lead.changedFirst')
+          : t('lead.changed', { ago: ago(standing.at) })
+      actions = backUp(true)
+      break
+    case 'unreachable':
+      sentence = folder ? t('lead.unreachableFolder') : t('lead.unreachable', { place })
+      break
+    case 'signed-out':
+      sentence = t('lead.signedOut', { place })
+      actions = (
+        <>
+          {toSettings(t('lead.signIn'))}
+          {backUp()}
+        </>
+      )
+      break
+    case 'full':
+      sentence = t('lead.full', { place })
+      actions = (
+        <>
+          {toSettings(t('lead.elsewhere'))}
+          {backUp()}
+        </>
+      )
+      break
+  }
+  const warning = needsMe(standing)
+  return (
+    <div className={cn(leadBox, warning ? 'border-line-strong' : 'border-line')}>
+      <p className="flex items-start gap-2.5 text-sm text-pretty">
+        {markOf(standing, cn('mt-0.5 size-4 flex-none', warning ? 'text-accent' : 'text-muted'))}
+        <span className="grid min-w-0 gap-0.5">
+          <span aria-live="polite" className={warning ? 'font-medium' : undefined}>
+            {sentence}
+          </span>
+          {/* The folder itself, where its name is the destination. */}
+          {folder ? <span className="text-xs break-all text-muted">{place}</span> : null}
+        </span>
+      </p>
+      {actions ? (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">{actions}</div>
+      ) : null}
+    </div>
+  )
+}
+
+/** Saves newer than these: another computer's, or from before the saves here went. */
+function Behind({
+  title,
+  newer,
+  computerOf,
+  busy,
+  onRestore,
+}: {
+  title: string
+  newer: Snapshot
+  computerOf: (device: string | null) => string
+  busy?: SavesBusy | undefined
+  onRestore: (snapshot: Snapshot) => void
+}) {
+  const t = useTranslations('Saves')
+  const format = useFormatter()
+  const when = madeAt(format, newer.createdAt)
+  return (
+    <div className={cn(leadBox, 'border-line-strong')}>
+      <p className="flex items-start gap-2.5 text-sm text-pretty">
+        <MonitorDownIcon aria-hidden="true" className="mt-0.5 size-4 flex-none text-accent" />
+        <span aria-live="polite" className="font-medium">
+          {t('behind', { computer: computerOf(newer.device), when })}
+        </span>
+      </p>
+      <ConfirmInPlace
+        title={t('restoreTitle', { when })}
+        description={t('restoreBody', { title })}
+        confirm={t('restore')}
+        cancel={t('cancel')}
+        onConfirm={() => onRestore(newer)}
+        className="justify-self-stretch"
+      >
+        <Button variant="primary" size="sm" disabled={busy !== undefined}>
+          {busy === `restore:${newer.id}` ? t('restoring') : t('restoreNewer')}
+        </Button>
+      </ConfirmInPlace>
+    </div>
+  )
+}
+
+/** When a backup was made, as a person says it: the day and the time. */
+export const madeAt = (format: ReturnType<typeof useFormatter>, at: number) =>
+  format.dateTime(at, { dateStyle: 'medium', timeStyle: 'short' })
+
+/** The newest backups shown before "All": as many as a glance takes in. */
+const LATEST = 3
+
+/** The backups, newest first: the latest few, the rest one press away. */
+function History({
+  title,
+  view,
+  computerOf,
+  busy,
+  onRestore,
+  onShow,
+}: ViewProps & { view: SavesView }) {
+  const t = useTranslations('Saves')
+  const id = useId()
+  const [all, setAll] = useState(false)
+  const shown = all ? view.snapshots : view.snapshots.slice(0, LATEST)
+  const to = destinationOf(view)
+  return (
+    <section aria-labelledby={`${id}-history`} className="grid gap-3">
+      <h3 id={`${id}-history`} className="text-sm font-medium">
+        {t('history')}
+      </h3>
+      {view.snapshots.length === 0 ? (
+        <p className="text-sm text-muted">{t('noneYet')}</p>
+      ) : (
+        <ol id={`${id}-list`} className="grid gap-2">
+          {shown.map((snapshot) => (
+            <SnapshotRow
+              key={snapshot.id}
+              title={title}
+              snapshot={snapshot}
+              computer={computerOf(snapshot.device)}
+              to={to}
+              busy={busy}
+              onRestore={() => onRestore(snapshot)}
+              onShow={() => onShow(snapshot)}
+            />
+          ))}
+        </ol>
+      )}
+      {view.snapshots.length > LATEST ? (
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-mx-3"
+            aria-expanded={all}
+            aria-controls={`${id}-list`}
+            onClick={() => setAll(!all)}
+          >
+            <ChevronDownIcon
+              aria-hidden="true"
+              className={cn('transition-transform duration-quick ease-settle', all && 'rotate-180')}
+            />
+            {t('all', { count: view.snapshots.length })}
+          </Button>
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+/** A mark on a backup's row: an icon whose words are a tip, and what a screen reader hears. */
+function Mark({ icon: Icon, label, words }: { icon: LucideIcon; label: string; words?: string }) {
+  return (
+    <Tip label={label}>
+      <span className="flex items-center gap-1 text-xs text-muted">
+        <Icon aria-hidden="true" className="size-3.5" />
+        {/* Waiting is said in words too: it is the one that may need something. */}
+        {words ? (
+          <span aria-hidden="true" className="font-medium text-text">
+            {words}
+          </span>
+        ) : null}
+        <span className="sr-only">{label}</span>
+      </span>
+    </Tip>
+  )
+}
+
+/** Whether a backup is on this computer now, and whether it is at the place yet or waiting here. */
+function Marks({ snapshot, to }: { snapshot: Snapshot; to: Destination }) {
+  const t = useTranslations('Saves')
+  const there =
+    // This computer alone, or an app too old to say.
+    to.kind === 'here' || snapshot.waiting === undefined ? null : to.kind === 'service' ? (
+      snapshot.waiting ? (
+        <Mark
+          icon={CloudUploadIcon}
+          label={t('notInService', { service: to.name })}
+          words={t('waitingMark')}
+        />
+      ) : (
+        <Mark icon={CloudCheckIcon} label={t('inService', { service: to.name })} />
+      )
+    ) : snapshot.waiting ? (
+      <Mark icon={FolderClockIcon} label={t('notInFolder')} words={t('waitingMark')} />
+    ) : (
+      <Mark icon={FolderCheckIcon} label={t('inFolder')} />
+    )
+  return (
+    <span className="flex flex-none items-center gap-2">
+      {snapshot.here ? <Mark icon={CheckIcon} label={t('hereNow')} /> : null}
+      {there}
+    </span>
+  )
+}
+
+function SnapshotRow({
+  title,
+  snapshot,
+  computer,
+  to,
+  busy,
+  onRestore,
+  onShow,
+}: {
+  title: string
+  snapshot: Snapshot
+  computer: string
+  to: Destination
+  busy?: SavesBusy | undefined
+  onRestore: () => void
+  onShow: () => void
+}) {
+  const t = useTranslations('Saves')
+  const format = useFormatter()
+  const when = madeAt(format, snapshot.createdAt)
+  return (
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-control border border-line px-3 py-2">
+      <span className="min-w-0 flex-1 text-sm">
+        {t.rich('row', {
+          when,
+          computer,
+          time: (chunks) => (
+            <time dateTime={new Date(snapshot.createdAt).toISOString()}>{chunks}</time>
+          ),
+          muted: (chunks) => <span className="text-muted">{chunks}</span>,
+        })}
+      </span>
+      <Marks snapshot={snapshot} to={to} />
+      <Tip label={t('show', { when })}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="px-2"
+          aria-label={t('show', { when })}
+          onClick={onShow}
+        >
+          <FolderOpenIcon aria-hidden="true" />
+        </Button>
+      </Tip>
+      {/* Last in the row, so its question opens under the row, in the order focus takes. */}
+      {snapshot.here ? null : (
+        <ConfirmInPlace
+          title={t('restoreTitle', { when })}
+          description={t('restoreBody', { title })}
+          confirm={t('restore')}
+          cancel={t('cancel')}
+          onConfirm={onRestore}
+          className="basis-full"
+        >
+          <Button variant="secondary" size="sm" disabled={busy !== undefined}>
+            {busy === `restore:${snapshot.id}` ? t('restoring') : t('restore')}
+          </Button>
+        </ConfirmInPlace>
+      )}
+    </li>
+  )
+}
+
+/**
+ * Where the saves are, folded into one line: how many folders, files and bytes. Opened, everything to
+ * find them, change them and credit the list. It opens by itself when nothing usable is found, as then
+ * finding them is the task.
+ */
+function Where({
+  view,
+  busy,
+  onAdd,
+  onRemove,
+  onChooseGame,
+  onChooseBase,
+}: ViewProps & { view: SavesView }) {
+  const t = useTranslations('Saves')
+  const format = useFormatter()
+  // A place the list names with nothing there now is counted, not listed: most games name several.
+  const shown = view.locations.filter((each) => each.added || each.files > 0 || each.refused)
+  const quiet = view.locations.length - shown.length
+  const usable = view.locations.filter((each) => !each.refused && each.files > 0)
+  const found = usable.length > 0
+  const [open, setOpen] = useState(!found)
+  const [wasFound, setWasFound] = useState(found)
+  if (wasFound !== found) {
+    setWasFound(found)
+    if (!found) setOpen(true)
+  }
+
+  return (
+    <details
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      className="group/where border-t border-line pt-1"
+    >
+      <summary
+        className={cn(
+          'flex min-h-11 cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-0.5 py-2 text-sm',
+          '[&::-webkit-details-marker]:hidden',
+        )}
+      >
+        <ChevronRightIcon
+          aria-hidden="true"
+          className="size-4 flex-none text-muted transition-transform duration-quick ease-settle group-open/where:rotate-90"
+        />
+        <span className="font-medium">{t('where')}</span>
+        <span className="text-muted">
+          {found
+            ? t('whereSummary', {
+                folders: usable.length,
+                files: view.files,
+                size: sizeOf(format, view.bytes),
+              })
+            : t('whereNone')}
+        </span>
+        <span aria-hidden="true" className={cn(linkClass, 'ml-auto group-open/where:hidden')}>
+          {t('whereChange')}
+        </span>
+      </summary>
+      {open ? (
+        <div className="grid gap-3 pt-1 pb-1 pl-6">
+          {!view.manifest ? (
+            <p className="text-sm text-pretty text-muted">{t('noList')}</p>
+          ) : view.matched === null ? (
+            <p className="text-sm text-pretty text-muted">{t('unknownGame')}</p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-sm text-pretty text-muted">
+                {t('foundAs', { name: view.matched })}
+              </p>
+              {view.others.length > 0 ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" disabled={busy !== undefined}>
+                      {t('notThis')}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="max-w-80">
+                    {view.others.map((other) => (
+                      <DropdownMenuItem key={other} onSelect={() => onChooseGame(other)}>
+                        {other}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => onChooseGame(null)}>
+                      {t('firstFound')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+            </div>
+          )}
+          {shown.length > 0 ? (
+            <ul className="grid gap-2">
+              {shown.map((location) => (
+                <li
+                  key={location.text}
+                  className="flex items-start gap-3 rounded-control border border-line px-3 py-2"
+                >
+                  <FolderIcon aria-hidden="true" className="mt-0.5 size-4 flex-none text-muted" />
+                  <span className="grid min-w-0 flex-1 gap-0.5">
+                    <span className="text-sm break-all">{location.shown}</span>
+                    <span className="text-xs text-muted">
+                      {location.refused
+                        ? t('refused')
+                        : location.files === 0
+                          ? t('nothingThere')
+                          : t('files', {
+                              files: location.files,
+                              size: sizeOf(format, location.bytes),
+                            })}
+                    </span>
+                  </span>
+                  <Tip label={t('leaveOut', { path: location.shown })}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="-my-1 px-2"
+                      aria-label={t('leaveOut', { path: location.shown })}
+                      disabled={busy !== undefined}
+                      onClick={() => onRemove(location.text)}
+                    >
+                      <XIcon aria-hidden="true" />
+                    </Button>
+                  </Tip>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {quiet > 0 ? <p className="text-xs text-muted">{t('quiet', { count: quiet })}</p> : null}
+          {view.registry ? <p className="text-sm text-pretty text-muted">{t('registry')}</p> : null}
+          <div>
+            <Button variant="secondary" size="sm" disabled={busy !== undefined} onClick={onAdd}>
+              <FolderPlusIcon aria-hidden="true" />
+              {t('add')}
+            </Button>
+          </div>
+          {shown.length === 0 ? (
+            <p className="text-xs text-pretty text-muted">{t('hiddenFolders')}</p>
+          ) : null}
+          {view.base ? (
+            <dl className="grid gap-0.5 text-xs">
+              <dt className="text-muted">{t('gameFolder')}</dt>
+              <dd className="flex flex-wrap items-baseline gap-x-2">
+                <span className="break-all">{view.base}</span>
+                <button
+                  type="button"
+                  className={linkClass}
+                  disabled={busy !== undefined}
+                  onClick={onChooseBase}
+                >
+                  {t('changeGameFolder')}
+                </button>
+              </dd>
+            </dl>
+          ) : null}
+          <p className="text-xs text-pretty text-muted">
+            {t.rich('credit', {
+              wiki: (chunks) => (
+                <a
+                  href="https://www.pcgamingwiki.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={linkClass}
+                >
+                  {chunks}
+                </a>
+              ),
+              manifest: (chunks) => (
+                <a
+                  href="https://github.com/mtkennerly/ludusavi-manifest"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={linkClass}
+                >
+                  {chunks}
+                </a>
+              ),
+            })}
+          </p>
+        </div>
+      ) : null}
+    </details>
   )
 }
 
@@ -566,161 +972,6 @@ function Choice({
   )
 }
 
-/** A snapshot newer than what is here, from another computer or from before the saves here went. */
-function Behind({
-  title,
-  view,
-  computerOf,
-  busy,
-  onRestore,
-}: {
-  title: string
-  view: SavesView
-  computerOf: (device: string | null) => string
-  busy?: SavesBusy | undefined
-  onRestore: (snapshot: Snapshot) => void
-}) {
-  const t = useTranslations('Saves')
-  const format = useFormatter()
-  const newer = view.snapshots.find((snapshot) => view.heads.includes(snapshot.id))
-  if (!newer) return null
-  const when = madeAt(format, newer.createdAt)
-  return (
-    <section className="grid justify-items-start gap-3 rounded-panel border border-line-strong p-4">
-      <p className="text-sm text-pretty">
-        {t('behind', { computer: computerOf(newer.device), when })}
-      </p>
-      <ConfirmInPlace
-        title={t('restoreTitle', { when })}
-        description={t('restoreBody', { title })}
-        confirm={t('restore')}
-        cancel={t('cancel')}
-        onConfirm={() => onRestore(newer)}
-        className="justify-self-stretch"
-      >
-        <Button variant="primary" size="sm" disabled={busy !== undefined}>
-          {busy === `restore:${newer.id}` ? t('restoring') : t('restoreNewer')}
-        </Button>
-      </ConfirmInPlace>
-    </section>
-  )
-}
-
-/** When a snapshot was made, as a person says it: the day and the time. */
-export const madeAt = (format: ReturnType<typeof useFormatter>, at: number) =>
-  format.dateTime(at, { dateStyle: 'medium', timeStyle: 'short' })
-
-/** This computer's place, as a snapshot's row says whether it is there: a service by its name, or a folder. */
-type RowPlace = { name: string; service: boolean } | null
-
-/** Whether a snapshot is at the place yet, for a place other than this computer alone. */
-function AtPlace({ snapshot, place }: { snapshot: Snapshot; place: RowPlace }) {
-  const t = useTranslations('Saves')
-  // This computer alone, or an app too old to say.
-  if (place === null || snapshot.waiting === undefined) return null
-  const Icon = place.service
-    ? snapshot.waiting
-      ? CloudUploadIcon
-      : CloudCheckIcon
-    : snapshot.waiting
-      ? FolderClockIcon
-      : FolderCheckIcon
-  const text = place.service
-    ? t(snapshot.waiting ? 'notInService' : 'inService', { service: place.name })
-    : t(snapshot.waiting ? 'notInFolder' : 'inFolder')
-  return (
-    <span
-      className={
-        snapshot.waiting
-          ? 'flex items-center gap-1 text-xs font-medium'
-          : 'flex items-center gap-1 text-xs text-muted'
-      }
-    >
-      <Icon aria-hidden="true" className="size-3.5" />
-      {text}
-    </span>
-  )
-}
-
-function SnapshotRow({
-  title,
-  snapshot,
-  computer,
-  place,
-  busy,
-  onRestore,
-  onShow,
-}: {
-  title: string
-  snapshot: Snapshot
-  computer: string
-  place: RowPlace
-  busy?: SavesBusy | undefined
-  onRestore: () => void
-  onShow: () => void
-}) {
-  const t = useTranslations('Saves')
-  const format = useFormatter()
-  const now = useNow({ updateInterval: 60_000 })
-  const when = madeAt(format, snapshot.createdAt)
-  return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-control border border-line px-3 py-2">
-      <span className="grid min-w-0 flex-1 gap-0.5">
-        <span className="text-sm">
-          {t.rich('at', {
-            when,
-            ago: format.relativeTime(snapshot.createdAt, now),
-            time: (chunks) => (
-              <time dateTime={new Date(snapshot.createdAt).toISOString()}>{chunks}</time>
-            ),
-            muted: (chunks) => <span className="text-muted">{chunks}</span>,
-          })}
-        </span>
-        <span className="text-xs text-muted">
-          {t('made', {
-            files: snapshot.files,
-            size: sizeOf(format, snapshot.bytes),
-            computer,
-          })}
-        </span>
-        {snapshot.here ? (
-          <span className="flex items-center gap-1 text-xs font-medium">
-            <CheckIcon aria-hidden="true" className="size-3.5 text-accent" />
-            {t('hereNow')}
-          </span>
-        ) : null}
-        <AtPlace snapshot={snapshot} place={place} />
-      </span>
-      <Tip label={t('show', { when })}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="px-2"
-          aria-label={t('show', { when })}
-          onClick={onShow}
-        >
-          <FolderOpenIcon aria-hidden="true" />
-        </Button>
-      </Tip>
-      {/* Last in the row, so its question opens under the row, in the order focus takes. */}
-      {snapshot.here ? null : (
-        <ConfirmInPlace
-          title={t('restoreTitle', { when })}
-          description={t('restoreBody', { title })}
-          confirm={t('restore')}
-          cancel={t('cancel')}
-          onConfirm={onRestore}
-          className="basis-full"
-        >
-          <Button variant="secondary" size="sm" disabled={busy !== undefined}>
-            {busy === `restore:${snapshot.id}` ? t('restoring') : t('restore')}
-          </Button>
-        </ConfirmInPlace>
-      )}
-    </li>
-  )
-}
-
 /** My computers, as Shelf names them, and which one this is. */
 function useComputers() {
   const tComputer = useTranslations('ThisComputer')
@@ -753,16 +1004,37 @@ function useComputers() {
   )
 }
 
-/** The panel's insides, asking the app: read when it opens, and after everything done. */
+/**
+ * The latest answer about each game's saves, whoever asked: the dialog, or the status beside Play. Each
+ * shows what the other last read, so the status follows what was done in the dialog without asking again.
+ */
+const latest = new Map<string, SavesView | 'failed'>()
+const listeners = new Set<() => void>()
+const publish = (entryId: string, view: SavesView | 'failed') => {
+  latest.set(entryId, view)
+  for (const listener of listeners) listener()
+}
+const subscribe = (listener: () => void) => {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
+/** The dialog's insides, asking the app: read when it opens, and after everything done. */
 function SavesBody({ game, onPlay }: { game: SaveGame; onPlay?: (check: boolean) => void }) {
+  const { entryId, title, apps } = game
   const t = useTranslations('Saves')
   const format = useFormatter()
   const computerOf = useComputers()
-  const [state, setState] = useState<SavesState>('loading')
+  const [state, setShown] = useState<SavesState>('loading')
+  const setState = (next: SavesView | 'failed') => {
+    setShown(next)
+    publish(entryId, next)
+  }
   const [busy, setBusy] = useState<SavesBusy>()
   const [said, setSaid] = useState<SavesSaid>()
   const [progress, setProgress] = useState<SaveProgress | null>(null)
-  const { entryId, title, apps } = game
   const key = apps.join(' ')
   const going = moving(busy)
 
@@ -799,8 +1071,12 @@ function SavesBody({ game, onPlay }: { game: SaveGame; onPlay?: (check: boolean)
     let current = true
     saves
       .view({ entryId, title, apps: key === '' ? [] : key.split(' ') })
-      .then((view) => current && setState(view))
-      .catch(() => current && setState('failed'))
+      .catch((): 'failed' => 'failed')
+      .then((view) => {
+        if (!current) return
+        setShown(view)
+        publish(entryId, view)
+      })
     return () => {
       current = false
     }
@@ -953,5 +1229,111 @@ function ItemWords({ onOpen }: { onOpen: () => void }) {
       <HardDriveDownloadIcon aria-hidden="true" />
       {t('open')}
     </DropdownMenuItem>
+  )
+}
+
+type StatusProps = SaveGame & {
+  /** Its saves are being synced now: Play says so, and the answer is read again once it is done. */
+  syncing: boolean
+  /** Opens the Saves dialog, handing it the button, for focus to come back to. */
+  onOpen: (from: HTMLElement) => void
+}
+
+/**
+ * Beside Play, once a game's saves are on (ADR 009, decision 5): their state in a few words, as Steam's
+ * Cloud status, opening the Saves dialog. Read once when the page shows it and again after each sync,
+ * never on a timer: reading lists the place's backups, which may be a service's.
+ */
+export function SavesStatus(props: StatusProps) {
+  return (
+    <AppWords>
+      <Status {...props} />
+    </AppWords>
+  )
+}
+
+function Status({ entryId, title, apps, syncing, onOpen }: StatusProps) {
+  const view = useSyncExternalStore(
+    subscribe,
+    () => latest.get(entryId),
+    () => undefined,
+  )
+  const key = apps.join(' ')
+  useEffect(() => {
+    if (syncing) return
+    let current = true
+    saves.view({ entryId, title, apps: key === '' ? [] : key.split(' ') }).then(
+      (answer) => current && publish(entryId, answer),
+      () => current && publish(entryId, 'failed'),
+    )
+    return () => {
+      current = false
+    }
+  }, [entryId, title, key, syncing])
+
+  return <SavesStatusView view={view} syncing={syncing} onOpen={onOpen} />
+}
+
+/**
+ * The status's button, drawn from what it is given: the latest answer (none yet, or a failed read), and
+ * whether a sync runs. Every state, for Storybook too.
+ */
+export function SavesStatusView({
+  view,
+  syncing,
+  onOpen,
+}: {
+  view: SavesView | 'failed' | undefined
+  syncing: boolean
+  onOpen: (from: HTMLElement) => void
+}) {
+  const t = useTranslations('Saves')
+  const ago = useAgo()
+  if (view === undefined) {
+    return (
+      <Loading label={t('status.loading')}>
+        <Ghost className="h-8 w-44" />
+      </Loading>
+    )
+  }
+  const standing = view === 'failed' ? undefined : standingOf(view)
+  if (standing?.kind === 'off') return null
+  const warning = standing === undefined || needsMe(standing)
+  const place = (to: Destination) =>
+    to.kind === 'service' ? to.name : to.kind === 'folder' ? to.path : ''
+  const words = syncing
+    ? t('status.syncing')
+    : standing === undefined
+      ? t('status.failed')
+      : standing.kind === 'kept'
+        ? standing.to.kind === 'here'
+          ? t('status.keptHere', { ago: ago(standing.at, 'narrow') })
+          : standing.to.kind === 'folder'
+            ? t('status.keptFolder', { ago: ago(standing.at, 'narrow') })
+            : t('status.kept', { place: place(standing.to), ago: ago(standing.at, 'narrow') })
+        : standing.kind === 'signed-out'
+          ? t('status.signedOut', { place: place(standing.to) })
+          : standing.kind === 'full'
+            ? t('status.full', { place: place(standing.to) })
+            : standing.kind === 'unreachable'
+              ? t('status.waiting')
+              : t(`status.${standing.kind}`)
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      aria-haspopup="dialog"
+      className={cn('max-w-72 min-w-0', warning ? 'text-text' : 'text-muted')}
+      onClick={(event) => onOpen(event.currentTarget)}
+    >
+      {syncing ? (
+        <RefreshCwIcon aria-hidden="true" />
+      ) : standing ? (
+        markOf(standing, warning ? 'text-accent' : undefined)
+      ) : (
+        <TriangleAlertIcon aria-hidden="true" className="text-accent" />
+      )}
+      <span className="truncate">{words}</span>
+    </Button>
   )
 }

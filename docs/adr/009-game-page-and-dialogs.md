@@ -258,6 +258,31 @@ reader, a phone's own keyboard on a device, and Android's Back, which leaves the
 closing a dialog. Material's guidelines could not be read: the browser pane was hidden, and that page
 draws only with script.
 
+### Phase 4, Saves with the important first (10 Nov 2026)
+
+`saves-standing.ts` turns the app's answer into one standing, in the order that matters: a choice
+waiting, newer saves, a place that can't take them (signed out, full, out of reach), backups waiting on
+this computer, nothing found, changed, kept. The dialog's first sentence and the words beside Play are both
+drawn from it, so they never disagree, and neither says a backup reached a place it is still waiting to go
+to. The switch is one line, its explanation only while off; History shows three, then All; where the saves
+are is one line that opens by itself when nothing usable was found. The limits and the place's line left
+for Settings. "Snapshot" is "backup" and "history" in both languages' words, Settings included, as the
+third open question proposed; the app's own Windows notifications keep the old word until a desktop
+release, which this phase didn't make.
+
+The status beside Play needs no new command: the app's `game_state`, read every few seconds already, says
+whether a game's saves are on, and an app too old to say shows nothing. Reading the saves themselves lists
+the place's backups, which may mean asking Google Drive, so it is done once as the page shows the button
+and again after each sync, never on a timer. The dialog and the button share the latest answer in the
+dialog's module, so what is done in the dialog shows beside Play without another read; the button's code
+comes with the dialog's, fetched only in the app.
+
+Steam's Cloud status beside Play and Xbox's one-sentence save dialogs were the models; the states (off,
+first setup, this computer only, in step with a service or a folder, waiting, newer elsewhere, a choice,
+signed out, full, out of reach, loading, a failed read, progress, a restore's question and a long history)
+each have a story and the meaningful ones a test. Not checked: a real Google Drive or OneDrive, and the
+owner's own saves, which no check may touch.
+
 ## Consequences
 
 - One way to show a game, one way to show what a menu opens: less code, and no layer over a layer.

@@ -69,14 +69,14 @@ afterEach(() => {
   setBridgeForTests(undefined)
 })
 
-describe('where games’ snapshots go', () => {
+describe('where games’ backups go', () => {
   it('start on this computer alone, and go to a folder once one is chosen', async () => {
     const user = userEvent.setup()
     renderWithIntl(<SaveSettings />)
     expect(await screen.findByText('This computer only')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Choose a folder' }))
     expect(app).toHaveBeenCalledWith('choose_save_place', {
-      ask: 'Choose where your games’ snapshots go',
+      ask: 'Choose where your games’ backups go',
     })
     expect(await screen.findByText('D:\\Synced\\Shelf saves')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('copied there too')
@@ -118,7 +118,7 @@ describe('a service of mine as the place (phase 5)', () => {
     place = { ...offered(), cloud: 'onedrive', services: services('someone@example.com', null) }
     signedIn?.resolve(place)
     expect(await screen.findByRole('status')).toHaveTextContent(
-      'Signed in. Snapshots go to OneDrive now',
+      'Signed in. Backups go to OneDrive now',
     )
     const inUse = screen.getByText('In use').closest('li')!
     expect(within(inUse).getByText('OneDrive')).toBeInTheDocument()
@@ -160,7 +160,7 @@ describe('a service of mine as the place (phase 5)', () => {
       services: services(null, 'someone@example.com'),
     }
     renderWithIntl(<SaveSettings />)
-    expect(await screen.findByText(/Signed out\. New snapshots wait/)).toBeInTheDocument()
+    expect(await screen.findByText(/Signed out\. New backups wait/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign in again' })).toBeEnabled()
   })
 
@@ -187,7 +187,7 @@ describe('a service of mine as the place (phase 5)', () => {
     renderWithIntl(<SaveSettings />)
     const inUse = (await screen.findByText('In use')).closest('li')!
     expect(inUse).toHaveTextContent('OneDrive')
-    expect(inUse).toHaveTextContent('Signed out. New snapshots wait on this computer')
+    expect(inUse).toHaveTextContent('Signed out. New backups wait on this computer')
     expect(within(inUse).getByRole('button', { name: 'Sign in again' })).toBeEnabled()
   })
 
@@ -199,19 +199,17 @@ describe('a service of mine as the place (phase 5)', () => {
   })
 })
 
-describe('the limits on games’ snapshots', () => {
+describe('the limits on games’ backups', () => {
   it('show what the app keeps', async () => {
     renderWithIntl(<SaveSettings />)
-    expect(await screen.findByRole('textbox', { name: 'Snapshots kept per game' })).toHaveValue(
-      '20',
-    )
-    expect(screen.getByRole('textbox', { name: 'Largest snapshot' })).toHaveValue('500')
+    expect(await screen.findByRole('textbox', { name: 'Backups kept per game' })).toHaveValue('20')
+    expect(screen.getByRole('textbox', { name: 'Largest backup' })).toHaveValue('500')
   })
 
   it('save a change, and say so', async () => {
     const user = userEvent.setup()
     renderWithIntl(<SaveSettings />)
-    const kept = await screen.findByRole('textbox', { name: 'Snapshots kept per game' })
+    const kept = await screen.findByRole('textbox', { name: 'Backups kept per game' })
     await user.clear(kept)
     await user.type(kept, '30{Enter}')
     await vi.waitFor(() =>
@@ -223,7 +221,7 @@ describe('the limits on games’ snapshots', () => {
   it('never ask for fewer than three', async () => {
     const user = userEvent.setup()
     renderWithIntl(<SaveSettings />)
-    const kept = await screen.findByRole('textbox', { name: 'Snapshots kept per game' })
+    const kept = await screen.findByRole('textbox', { name: 'Backups kept per game' })
     await user.clear(kept)
     await user.type(kept, '1{Enter}')
     await vi.waitFor(() =>

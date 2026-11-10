@@ -1871,61 +1871,89 @@ game bem bonitinho [...] vamos mostrar notas de varios lugares diferentes".
 
 In Shelf for Windows alone, for a game whose file is chosen on this computer. Why it is built this way, and
 what comes next (a folder or a cloud of my own, and the same saves on every PC): [ADR 008](adr/008-save-sync.md).
+What it shows first, and what moved one step back: [ADR 009](adr/009-game-page-and-dialogs.md), decision 5.
 
 - **Where it is.** **Saves** in the ⋯ menu beside Play, under the file's own items: a game's saves belong
   with how it is started here, and the row that holds Play has room for one button and a menu. Choosing it
-  closes the menu and opens a dialog over the page, as Find a download does; Restore asks in its own row,
-  never in a second dialog. A game played through Steam has no file chosen and no Saves: Steam Cloud carries it.
-- **Off until I turn it on.** One switch first, as Steam puts its cloud's switch first in a game's
-  properties, with what it does under it: snapshots on this computer, with their history, and nothing sent to
-  Shelf. Turned on, a first one is made at once, unless the game is running. When the list says stores carry
-  the game's saves, it names them, for a copy bought there.
-- **Where they are** shows before it is on: each place found, with how many files and how large, as Ludusavi
-  lists them, credited to PCGamingWiki and the Ludusavi manifest by name, with links. Places the list names
-  with nothing there are counted, not listed. A place can be left out, a folder added through Windows'
-  picker, and the game's own folder changed. A folder that holds more than a game's saves, or that another PC
-  couldn't find, is refused, and says why. A game the list doesn't know says so; when other games in the list
-  have the same name, I can choose one.
-- **Snapshots,** newest first: when, how long ago, how many files, how large, and which of my computers made
-  it, by the name I gave it in Settings. The one that holds what is on this computer now says so in words.
-  **Back up now** makes one, unless nothing changed. **Restore** asks first, keeps what is here as a backup,
-  and makes what it put back the latest. The folder button shows the snapshot's zip in Explorer, from which
-  a save can be taken by hand.
+  closes the menu and opens a dialog over the page, as Find a download does. A game played through Steam
+  has no file chosen and no Saves: Steam Cloud carries it.
+- **Beside Play, once on,** their state in a few words, as Steam's Cloud status stands beside its Play:
+  "Saves in Google Drive · 11h ago", "Saves in your folder", "Saves on this computer", "Saves waiting to
+  go", "Saves not backed up", "Newer saves found", and, as a warning with a mark, "Choose which saves to
+  keep", "Saves: signed out of OneDrive", "Saves: Google Drive is full", "Saves: add their folder", "Saves
+  couldn't be read". "Syncing saves…" while Play says Syncing. Pressing it opens the dialog, and closing
+  the dialog comes back to it. It is read once as the page shows it and again after each sync, never on a
+  timer, and follows what is done in the dialog without asking again. Off, it isn't there; an app too old
+  to say whether a game's saves are on shows none.
+- **The dialog, top to bottom.** First the answer, one sentence with where and when, and the action that
+  fits it: "In step with Google Drive, backed up 11 hours ago" or "In step with your folder" with the folder
+  under it, and **Back up now**; "Backed up 2 hours ago, on this computer only", with **Choose where they
+  go**; "Backed up on this computer 1 hour ago. It goes to Google Drive as soon as it can"; "Changed since
+  the last backup" or "Not backed up yet", with Back up now first; "Google Drive can't be reached now, so
+  new backups wait on this computer"; "Shelf is signed out of OneDrive" with **Sign in again in Settings**;
+  "OneDrive is full" with **Choose another place in Settings**; "No saves found for this game yet" when
+  finding them is the task. While a backup or a restore runs, its bar stands there instead. It never says a
+  backup reached a place it is still waiting to go to.
+- **Off until I turn it on.** The switch, on one line. While it is off, what it does is said under it:
+  backups on this computer, with their history, and nothing sent to Shelf. Turned on, a first backup is
+  made at once, unless the game is running. When the list says stores carry the game's saves, it names
+  them, for a copy bought there, while it is off.
+- **History,** newest first, the newest three, and **All 12** for the rest: each on one line, when and which
+  of my computers made it, by the name I gave it in Settings. Marks say whether it is on this computer now
+  and whether it is at the place yet, as icons whose words are a tip and are read aloud; one still waiting
+  here says **Waiting to go** in words. **Restore** asks in its row, never in a second dialog, keeps what is
+  here as a backup, and makes what it put back the latest. The folder button shows the backup's zip in
+  Explorer, from which a save can be taken by hand.
+- **Where they are,** folded into one line: "1 folder · 38 files · 2 MB", with Change. It opens by itself when
+  nothing usable was found, as then it is the task. Opened: each place found, with how many files and how
+  large, as Ludusavi lists them, credited to PCGamingWiki and the Ludusavi manifest by name, with links.
+  Places the list names with nothing there are counted, not listed. A place can be left out, a folder added
+  through Windows' picker, and the game's own folder changed. A folder that holds more than a game's saves,
+  or that another PC couldn't find, is refused, and says why. A game the list doesn't know says so; when
+  other games in the list have the same name, I can choose one; saves in Windows' registry are said not to
+  be copied yet.
+- **What left the dialog:** the limits and where backups go, which are Settings' and stay there; the
+  sentence at the top says the place and its trouble.
 - **Never while the game runs:** Back up and Restore say to close it first.
-- **Another PC's newer snapshot** is offered at the top, with which computer made it and when, and
-  Restore asks first, as any restore does.
+- **Another PC's newer saves** are offered at the top, with which computer made them and when, and **Use
+  them** asks first, as any restore does.
 - **Two copies that differ** (changed here and on another PC without a backup between, or backed up from
-  the same snapshot on two) are a choice at the top, never made by itself: a card for this computer's,
-  with when it changed, and one for each latest snapshot, with its computer and date, each with **Keep
-  this one**, as Steam's conflict window offers its two. The other stays in the snapshots, and what was
+  the same backup on two) are a choice at the top, never made by itself: a card for this computer's,
+  with when it changed, and one for each latest backup, with its computer and date, each with **Keep
+  this one**, as Steam's conflict window offers its two. The other stays in the history, and what was
   here is backed up first.
 - **By itself, once on** (ADR 008's phase 4). When the game closes, its saves are backed up if they
-  changed, with no one asking. Play looks first, saying Starting meanwhile: it backs up what changed
-  with the game closed, or puts back another PC's newer snapshot, and then starts the game. Two copies that
-  differ stop Play and open the game's Saves on the choice, titled "Choose which saves to play with":
-  **Keep and play** on each card, and **Decide later**, which plays what is here and writes nothing. A
-  folder that can't be reached, or a look that fails, starts the game anyway and says so in a notice whose
-  action opens Saves. After a session, a Windows notification, headed by the game's title, says only what
-  needs me: a choice waiting for the next Play, a backup that failed, a folder that can't be reached.
+  changed, with no one asking. Play looks first, saying Syncing meanwhile, and gives up only after 30
+  seconds with nothing moving: it backs up what changed with the game closed, or puts back another PC's
+  newer backup, and then starts the game. Two copies that differ stop Play and open the game's Saves on
+  the choice, titled "Choose which saves to play with": **Keep and play** on each card, and **Decide
+  later**, which plays what is here and writes nothing. A place that can't be reached, or a look that
+  fails, starts the game anyway and says so in a notice whose action opens Saves. After a session, a
+  Windows notification, headed by the game's title, says only what needs me: a choice waiting for the next
+  Play, a backup that failed, a place that can't be reached.
 - **Where they go, as a list** (ADR 008's phase 5): this computer only, a folder of mine, OneDrive and
   Google Drive, a row each, the one in use marked **In use**, as Windows' settings list accounts. Each row
   says what it is and what using it takes: Keep them on this computer only, Choose a folder, or **Sign in
   to OneDrive**, which opens Microsoft's page in my browser while the row says Shelf is waiting, with
   Cancel. Signed in, the row names the account and where Shelf keeps them (Apps › Shelf in OneDrive,
   Shelf saves in Google Drive), with **Use** and **Sign out**. A service that took the sign-in back says
-  so, with Sign in again. A build not registered with a service doesn't list it.
-- **Settings' Saves page** says where snapshots go, this computer's choice: this computer alone, until I
+  so, with Sign in again, and so does a button in the app's header until it is fixed. A build not
+  registered with a service doesn't list it.
+- **Settings' Saves page** says where backups go, this computer's choice: this computer alone, until I
   choose a folder (one OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB
-  drive), the same on each PC. Choosing one copies this computer's snapshots there; going back leaves it
-  as it is. A folder that can't be reached is said there and on each game, and new snapshots wait here.
-  Under it, the limits, the same for every game and this computer's own: how many snapshots are kept per
+  drive), the same on each PC. Choosing one copies this computer's backups there; going back leaves it
+  as it is. A folder that can't be reached is said there and on each game, and new backups wait here.
+  Under it, the limits, the same for every game and this computer's own: how many backups are kept per
   game (20, never fewer than 3) and the largest one (500 MB).
+- **Words.** "Backup" and "history", in both languages, for what the app and its files call a snapshot. A
+  Windows notification written by the app itself still says snapshot until the next desktop release.
 - **It isn't on the landing page yet,** as nothing of Shelf for Windows is there; it goes with the app's part.
 
-Based on: Steam's Cloud help (a switch per game in its properties, and the window that offers two copies
-with their dates, which phase 3 follows), Ludusavi's window (each game's places with their size, the backups
-by date), and Shelf's own Find a download, whose frame it shares. Heroic's wiki has no page on it, and GOG
-Galaxy's wasn't looked at. The design skills were not installed: their checklists were applied by hand.
+Based on: Steam's Cloud help (a switch per game in its properties, a Cloud status beside Play, and the
+window that offers two copies with their dates), Xbox's save dialogs (one sentence, then two or three
+actions), Heroic's save path folded into the game's settings, Ludusavi's window (each game's places with
+their size, the backups by date), and NN/g on progressive disclosure. The accessibility-review skill's
+WCAG checklist was run on the dialog's states by hand.
 
 **Done when**
 
@@ -1933,6 +1961,9 @@ Galaxy's wasn't looked at. The design skills were not installed: their checklist
 - Played on one PC then opened on another, both pointed at the same folder, the second starts with the
   first's progress once restored; changes on both are a clear choice, and the copy not chosen is kept.
 - A restore never runs while the game runs, and one cut short is undone at the next start.
+- Once on, the words beside Play and the dialog's first sentence say whether a game's saves are safe, where
+  and since when, and what needs doing, with no section to open; every action of before is in the dialog or
+  one fold away.
 
 ## 8. Data model
 

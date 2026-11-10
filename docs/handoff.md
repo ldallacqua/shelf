@@ -4,6 +4,17 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Dialogs, and Saves with the important first (10 Nov 2026)
+
+ADR 009's last two phases. Phase 3 (PR 186, merged): everything a menu's item, a button or a key opens is
+one dialog, `src/ui/dialog.tsx`, the whole screen on a phone; the sheet and the beside-Play popover are
+gone, and a question inside a dialog is asked in place (`ConfirmInPlace`). Phase 4: the Saves dialog
+leads with one sentence of where and when, the switch is a line, History shows three, where the saves
+are is folded, and once on, their state stands beside Play. "Backup" and "history" replace "snapshot" in
+the words; the app's own Windows notifications still say snapshot until the next desktop release, which
+nobody has authorized. Neither phase was seen against a real Google Drive or OneDrive: stand-ins and
+`pnpm desktop:check` only.
+
 ## The library beside a game (9 Nov 2026)
 
 **Next two phases:** [ADR 009 phases 3 and 4 handoff](handoff-adr009-phases3-4.md) records
