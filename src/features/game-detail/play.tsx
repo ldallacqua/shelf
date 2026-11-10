@@ -314,7 +314,6 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
         ) : null}
         <Button
           variant="primary"
-
           onClick={busy ? undefined : stop}
           aria-disabled={busy || undefined}
           className={busy ? waiting : undefined}

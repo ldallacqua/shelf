@@ -331,7 +331,6 @@ function markOf(standing: Standing, className?: string) {
 }
 
 function Lead({
-  title,
   view,
   standing,
   computerOf,
@@ -1335,7 +1334,7 @@ export function SavesStatusView({
       {/* Read as "Saves: Google Drive · 19h ago", the label and the state as one. */}
       <span className={statLabel}>
         {t('status.label')}
-        <span className="sr-only">:</span>
+        <span className="sr-only">{':'}</span>
       </span>{' '}
       <span
         className={cn(
