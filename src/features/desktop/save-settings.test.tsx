@@ -202,9 +202,7 @@ describe('a service of mine as the place (phase 5)', () => {
 describe('the limits on games’ backups', () => {
   it('show what the app keeps', async () => {
     renderWithIntl(<SaveSettings />)
-    expect(await screen.findByRole('textbox', { name: 'Backups kept per game' })).toHaveValue(
-      '20',
-    )
+    expect(await screen.findByRole('textbox', { name: 'Backups kept per game' })).toHaveValue('20')
     expect(screen.getByRole('textbox', { name: 'Largest backup' })).toHaveValue('500')
   })
 
