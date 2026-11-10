@@ -2,7 +2,7 @@
 
 import { CheckIcon } from 'lucide-react'
 import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui'
-import type { ComponentProps } from 'react'
+import { useRef, type ComponentProps } from 'react'
 
 import { cn } from '@/ui/cn'
 
@@ -21,18 +21,29 @@ const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 const DropdownMenuGroup = DropdownMenuPrimitive.Group
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
 
+/**
+ * The menu. Radix opens it on the press, so it can come up under the pointer before the pointer is let
+ * go, and the release would choose the item there: in the app, a click on Play's ⋯ opened Saves. A
+ * release chooses an item only when the press was in the menu too, as a click of its own.
+ */
 function DropdownMenuContent({
   className,
   sideOffset = 6,
   align = 'end',
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const pressed = useRef(false)
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         align={align}
+        onPointerDownCapture={() => (pressed.current = true)}
+        onPointerUpCapture={(event) => {
+          if (!pressed.current) event.preventDefault()
+          pressed.current = false
+        }}
         className={cn(
           'z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-40 overflow-y-auto',
           'origin-(--radix-dropdown-menu-content-transform-origin)',

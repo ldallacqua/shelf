@@ -27,6 +27,7 @@ import {
 } from '@/features/desktop/saves-later'
 import { notify } from '@/features/shell/notices'
 import { Button } from '@/ui/button'
+import { cn } from '@/ui/cn'
 import { Confirm } from '@/ui/confirm'
 import {
   DropdownMenu,
@@ -38,6 +39,7 @@ import {
 } from '@/ui/dropdown-menu'
 import { Tip } from '@/ui/tooltip'
 
+import { minePlay } from './mine-layout'
 import { useGameState } from './use-game-state'
 
 /**
@@ -79,12 +81,14 @@ function PlayOnSteam({ steam }: { steam?: SteamApps }) {
   const link = steam?.owned ? steamPlayLink(steam.owned) : undefined
   if (!link) return null
   return (
-    <Button asChild variant="primary" size="sm" className="pointer-coarse:hidden">
-      <a href={link} data-play="">
-        <PlayIcon aria-hidden="true" />
-        {t('playOnSteam')}
-      </a>
-    </Button>
+    <div className={cn(minePlay, 'pointer-coarse:hidden')}>
+      <Button asChild variant="primary">
+        <a href={link} data-play="">
+          <PlayIcon aria-hidden="true" />
+          {t('playOnSteam')}
+        </a>
+      </Button>
+    </div>
   )
 }
 
@@ -160,8 +164,10 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     }
   }, [entryId, known])
 
-  // Nothing until both are known, so Play never shows for a moment on a game that is running.
-  if (!here || state === undefined) return null
+  // Nothing until both are known, so Play never shows for a moment on a game that is running: only
+  // its line, kept from the start as the skeleton keeps it.
+  if (!here || state === undefined) return <div className={minePlay} />
+
   const { launcher, installed } = here
 
   const failed = (error: unknown, name = launcher?.name ?? title) => {
@@ -286,7 +292,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     // it starts. The same button as Starting, so keyboard focus stays on it.
     const first = playing && view?.kept === true && view.state !== 'starting'
     primary = (
-      <Button variant="primary" size="sm" aria-disabled="true" className={waiting}>
+      <Button variant="primary" aria-disabled="true" className={waiting}>
         {first ? <RefreshCwIcon aria-hidden="true" /> : <PlayIcon aria-hidden="true" />}
         {first ? syncing : t('gameStarting')}
       </Button>
@@ -303,14 +309,11 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
             cancel={t('forceCancel')}
             onConfirm={forceStop}
           >
-            <Button variant="secondary" size="sm">
-              {t('gameForceStop')}
-            </Button>
+            <Button variant="secondary">{t('gameForceStop')}</Button>
           </Confirm>
         ) : null}
         <Button
           variant="primary"
-          size="sm"
           onClick={busy ? undefined : stop}
           aria-disabled={busy || undefined}
           className={busy ? waiting : undefined}
@@ -322,7 +325,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     )
   } else if (view?.state === 'stopping') {
     primary = (
-      <Button variant="primary" size="sm" aria-disabled="true" className={waiting}>
+      <Button variant="primary" aria-disabled="true" className={waiting}>
         <SquareIcon aria-hidden="true" />
         {t('gameStopping')}
       </Button>
@@ -330,7 +333,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   } else if (view?.state === 'unverified') {
     primary = (
       <Tip describes label={t(`gameUnverified.${view.why ?? 'denied'}`)}>
-        <Button variant="secondary" size="sm" aria-disabled="true" className={waiting}>
+        <Button variant="secondary" aria-disabled="true" className={waiting}>
           {t(view.why === 'open' ? 'gameOpen' : 'gameRunningShort')}
         </Button>
       </Tip>
@@ -339,7 +342,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     // Backed up after it closed, or put back: Play comes back once that is done, or the line stalls.
     primary = (
       <Tip describes label={t('syncingTip', { title })}>
-        <Button variant="primary" size="sm" aria-disabled="true" className={waiting}>
+        <Button variant="primary" aria-disabled="true" className={waiting}>
           <RefreshCwIcon aria-hidden="true" />
           {syncing}
         </Button>
@@ -347,14 +350,14 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     )
   } else if (launcher?.exists) {
     primary = (
-      <Button variant="primary" size="sm" onClick={() => void play()} disabled={busy}>
+      <Button variant="primary" onClick={() => void play()} disabled={busy}>
         <PlayIcon aria-hidden="true" />
         {t('play')}
       </Button>
     )
   } else if (!launcher && playLink) {
     primary = (
-      <Button asChild variant="primary" size="sm">
+      <Button asChild variant="primary">
         <a href={playLink} onClick={state === 'unavailable' ? undefined : sentGameToSteam}>
           <PlayIcon aria-hidden="true" />
           {t('play')}
@@ -363,103 +366,97 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
     )
   } else if (!launcher && installLink) {
     primary = (
-      <Button asChild variant="secondary" size="sm">
+      <Button asChild variant="secondary">
         <a href={installLink}>{t('installOnSteam')}</a>
       </Button>
     )
   } else {
     primary = (
-      <Button variant="secondary" size="sm" onClick={choose} disabled={busy}>
+      <Button variant="secondary" onClick={choose} disabled={busy}>
         {launcher ? t('chooseAgain') : t('chooseFile')}
       </Button>
     )
   }
 
   // The menu holds what the primary button is not: the file's name and what can be done
-  // with it, choosing one in place of Steam, or looking for a download. One button in this row and
+  // with it, choosing one in place of Steam, or looking for a download. One button on this line and
   // the rest behind it, as a panel's column has room for no more.
   const menu = launcher || playLink || installLink
   return (
-    <div
-      ref={around}
-      className="flex min-w-0 flex-wrap items-center justify-end gap-1"
-      data-play=""
-    >
+    <div ref={around} className={minePlay} data-play="">
       <span role="status" className="sr-only">
         {spoken}
       </span>
-      {/* Once its saves are on: their state, as Steam's Cloud status stands beside its Play. */}
+      {/* Play's button keeps one width through Play, Starting…, Stop and Stopping…, so the menu
+          beside it never moves under a pointer or a finger. */}
+      <div className="flex items-center gap-1 [&>[data-slot=button]:first-child]:min-w-32">
+        {primary}
+        {menu || hasSources ? (
+          <DropdownMenu>
+            <Tip label={t('playOptions')}>
+              <DropdownMenuTrigger asChild>
+                <Button ref={more} variant="ghost" size="icon" aria-label={t('playOptions')}>
+                  <EllipsisIcon aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+            </Tip>
+            <DropdownMenuContent
+              align="start"
+              className="min-w-56"
+              // Focus goes to what just opened, not back to this button.
+              onCloseAutoFocus={(event) => {
+                if (finding || saving) event.preventDefault()
+              }}
+            >
+              {launcher ? (
+                <>
+                  {/* The whole path, wrapped: a menu's label takes no focus, so a tip could not show it. */}
+                  <DropdownMenuLabel className="grid max-w-72 gap-0.5">
+                    <span className="truncate">{launcher.name}</span>
+                    <span className="text-xs font-normal break-all text-muted">
+                      {launcher.path}
+                    </span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={choose}>{t('changeFile')}</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={show} disabled={!launcher.exists}>
+                    {t('showFile')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={forget}>{t('forgetFile')}</DropdownMenuItem>
+                  {keepsSaves ? (
+                    <>
+                      <DropdownMenuSeparator />
+                      <SavesItem onOpen={() => openSaves(false)} />
+                    </>
+                  ) : null}
+                </>
+              ) : menu ? (
+                <DropdownMenuItem onSelect={choose}>{t('chooseFileInstead')}</DropdownMenuItem>
+              ) : null}
+              {hasSources ? (
+                <>
+                  {menu ? <DropdownMenuSeparator /> : null}
+                  <FindDownloadItem
+                    onOpen={() => {
+                      setFinding(true)
+                      setAsked(true)
+                    }}
+                  />
+                </>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+      </div>
+      {/* Once its saves are on: their state, after Play as Steam's Cloud status is in its play bar. */}
       {launcher && keepsSaves && view?.kept ? (
-        <span className="mr-2 flex min-w-0">
-          <SavesStatusLater
-            entryId={entryId}
-            title={title}
-            apps={steam?.known ?? noApps}
-            syncing={view.syncing !== undefined}
-            onOpen={(from) => openSaves(false, from)}
-          />
-        </span>
-      ) : null}
-      {primary}
-      {menu || hasSources ? (
-        <DropdownMenu>
-          <Tip label={t('playOptions')}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                ref={more}
-                variant="ghost"
-                size="sm"
-                className="px-2"
-                aria-label={t('playOptions')}
-              >
-                <EllipsisIcon aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-          </Tip>
-          <DropdownMenuContent
-            align="end"
-            className="min-w-56"
-            // Focus goes to what just opened, not back to this button.
-            onCloseAutoFocus={(event) => {
-              if (finding || saving) event.preventDefault()
-            }}
-          >
-            {launcher ? (
-              <>
-                {/* The whole path, wrapped: a menu's label takes no focus, so a tip could not show it. */}
-                <DropdownMenuLabel className="grid max-w-72 gap-0.5">
-                  <span className="truncate">{launcher.name}</span>
-                  <span className="text-xs font-normal break-all text-muted">{launcher.path}</span>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={choose}>{t('changeFile')}</DropdownMenuItem>
-                <DropdownMenuItem onSelect={show} disabled={!launcher.exists}>
-                  {t('showFile')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={forget}>{t('forgetFile')}</DropdownMenuItem>
-                {keepsSaves ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <SavesItem onOpen={() => openSaves(false)} />
-                  </>
-                ) : null}
-              </>
-            ) : menu ? (
-              <DropdownMenuItem onSelect={choose}>{t('chooseFileInstead')}</DropdownMenuItem>
-            ) : null}
-            {hasSources ? (
-              <>
-                {menu ? <DropdownMenuSeparator /> : null}
-                <FindDownloadItem
-                  onOpen={() => {
-                    setFinding(true)
-                    setAsked(true)
-                  }}
-                />
-              </>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <SavesStatusLater
+          entryId={entryId}
+          title={title}
+          apps={steam?.known ?? noApps}
+          syncing={view.syncing !== undefined}
+          onOpen={(from) => openSaves(false, from)}
+        />
       ) : null}
       {asked ? (
         <FindDownloadLater

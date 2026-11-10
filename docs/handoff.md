@@ -4,6 +4,17 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## One way of labelling, and newer saves taken without asking (10 Nov 2026)
+
+After phase 4 the owner found Mine's headings each in a face of their own, and its title sharing a line
+with Play. Mine's labels are the page's small mono capitals now, Play has its own line under the heading,
+and the saves' state is a labelled figure after it ("Saves" over "Google Drive · 11h ago"). In Portuguese
+notes are Anotações and tags Tags. The owner also asked why Shelf asked about newer saves from another
+computer when Steam almost never does: the rule was Steam's already (newer is taken at Play when nothing
+changed here), but the words made it a question; they no longer do. A real false choice was fixed in the
+app's Rust (`snapshot::decide`): after more backups on one computer than it keeps, the other was asked to
+choose. That fix reaches people only with a desktop release, which needs the owner's go-ahead.
+
 ## Dialogs, and Saves with the important first (10 Nov 2026)
 
 ADR 009's last two phases. Phase 3 (PR 186, merged): everything a menu's item, a button or a key opens is

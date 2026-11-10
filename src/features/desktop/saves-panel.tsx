@@ -331,7 +331,6 @@ function markOf(standing: Standing, className?: string) {
 }
 
 function Lead({
-  title,
   view,
   standing,
   computerOf,
@@ -361,13 +360,7 @@ function Lead({
   }
   if (standing.kind === 'behind') {
     return (
-      <Behind
-        title={title}
-        newer={standing.newer}
-        computerOf={computerOf}
-        busy={busy}
-        onRestore={onRestore}
-      />
+      <Behind newer={standing.newer} computerOf={computerOf} busy={busy} onRestore={onRestore} />
     )
   }
 
@@ -472,13 +465,11 @@ function Lead({
 
 /** Saves newer than these: another computer's, or from before the saves here went. */
 function Behind({
-  title,
   newer,
   computerOf,
   busy,
   onRestore,
 }: {
-  title: string
   newer: Snapshot
   computerOf: (device: string | null) => string
   busy?: SavesBusy | undefined
@@ -487,6 +478,9 @@ function Behind({
   const t = useTranslations('Saves')
   const format = useFormatter()
   const when = madeAt(format, newer.createdAt)
+  // What is here is what this computer last backed up or brought, unchanged since: taking the newer
+  // one loses nothing, so it is never asked, as Steam takes the cloud's newer files before a game
+  // starts. Play does it by itself; the button is for a game started from somewhere else.
   return (
     <div className={cn(leadBox, 'border-line-strong')}>
       <p className="flex items-start gap-2.5 text-sm text-pretty">
@@ -495,18 +489,15 @@ function Behind({
           {t('behind', { computer: computerOf(newer.device), when })}
         </span>
       </p>
-      <ConfirmInPlace
-        title={t('restoreTitle', { when })}
-        description={t('restoreBody', { title })}
-        confirm={t('restore')}
-        cancel={t('cancel')}
-        onConfirm={() => onRestore(newer)}
-        className="justify-self-stretch"
+      <Button
+        variant="secondary"
+        size="sm"
+        className="justify-self-start"
+        disabled={busy !== undefined}
+        onClick={() => onRestore(newer)}
       >
-        <Button variant="primary" size="sm" disabled={busy !== undefined}>
-          {busy === `restore:${newer.id}` ? t('restoring') : t('restoreNewer')}
-        </Button>
-      </ConfirmInPlace>
+        {busy === `restore:${newer.id}` ? t('restoring') : t('restoreNewer')}
+      </Button>
     </div>
   )
 }
@@ -1274,9 +1265,13 @@ function Status({ entryId, title, apps, syncing, onOpen }: StatusProps) {
   return <SavesStatusView view={view} syncing={syncing} onOpen={onOpen} />
 }
 
+/** The status's two lines: "Saves" as the page writes a label, and the state under it. */
+const statLabel = 'readout text-[0.625rem] text-muted'
+
 /**
  * The status's button, drawn from what it is given: the latest answer (none yet, or a failed read), and
- * whether a sync runs. Every state, for Storybook too.
+ * whether a sync runs. Every state, for Storybook too. It reads as one of Steam's play bar figures,
+ * "Cloud status" over "Up to date": a label in the page's small capitals, and the state in words.
  */
 export function SavesStatusView({
   view,
@@ -1292,7 +1287,10 @@ export function SavesStatusView({
   if (view === undefined) {
     return (
       <Loading label={t('status.loading')}>
-        <Ghost className="h-8 w-44" />
+        <span className="grid gap-1 px-2">
+          <span className={statLabel}>{t('status.label')}</span>
+          <Ghost className="h-4 w-40" />
+        </span>
       </Loading>
     )
   }
@@ -1311,29 +1309,46 @@ export function SavesStatusView({
           : standing.to.kind === 'folder'
             ? t('status.keptFolder', { ago: ago(standing.at, 'narrow') })
             : t('status.kept', { place: place(standing.to), ago: ago(standing.at, 'narrow') })
-        : standing.kind === 'signed-out'
-          ? t('status.signedOut', { place: place(standing.to) })
-          : standing.kind === 'full'
-            ? t('status.full', { place: place(standing.to) })
-            : standing.kind === 'unreachable'
-              ? t('status.waiting')
-              : t(`status.${standing.kind}`)
+        : standing.kind === 'behind'
+          ? standing.to.kind === 'service'
+            ? t('status.behind', {
+                place: place(standing.to),
+                ago: ago(standing.newer.createdAt, 'narrow'),
+              })
+            : t('status.behindFolder', { ago: ago(standing.newer.createdAt, 'narrow') })
+          : standing.kind === 'signed-out'
+            ? t('status.signedOut', { place: place(standing.to) })
+            : standing.kind === 'full'
+              ? t('status.full', { place: place(standing.to) })
+              : standing.kind === 'unreachable'
+                ? t('status.waiting')
+                : t(`status.${standing.kind}`)
   return (
     <Button
       variant="ghost"
-      size="sm"
       aria-haspopup="dialog"
-      className={cn('max-w-72 min-w-0', warning ? 'text-text' : 'text-muted')}
+      // Read as one, "Saves: Google Drive · 19h ago": browsers join two lines' words each their own way.
+      aria-label={t('status.named', { state: words })}
+      // Two lines as tall as Play beside it, the label over the state, as far left as Play's words.
+      className="h-auto min-h-10 max-w-72 min-w-0 flex-col items-start gap-0.5 px-2 py-1 text-left pointer-coarse:h-auto pointer-coarse:min-h-11"
       onClick={(event) => onOpen(event.currentTarget)}
     >
-      {syncing ? (
-        <RefreshCwIcon aria-hidden="true" />
-      ) : standing ? (
-        markOf(standing, warning ? 'text-accent' : undefined)
-      ) : (
-        <TriangleAlertIcon aria-hidden="true" className="text-accent" />
-      )}
-      <span className="truncate">{words}</span>
+      <span className={statLabel}>{t('status.label')}</span>
+      <span
+        className={cn(
+          'flex max-w-full min-w-0 items-center gap-1.5 font-normal',
+          warning ? 'text-text' : 'text-muted',
+        )}
+      >
+        {syncing ? (
+          <RefreshCwIcon aria-hidden="true" />
+        ) : standing ? (
+          markOf(standing, warning ? 'text-accent' : undefined)
+        ) : (
+          <TriangleAlertIcon aria-hidden="true" className="text-accent" />
+        )}
+        <span className="truncate">{words}</span>
+      </span>
     </Button>
   )
 }

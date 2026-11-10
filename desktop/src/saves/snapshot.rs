@@ -477,6 +477,12 @@ pub fn decide(here: Option<&str>, known: Option<&Known>, lists: &[List]) -> Verd
             }
             match line(lists, &head.id, &known.id) {
                 Line::Reached if here_is_known => Verdict::Restore(head.id.clone()),
+                // What this PC knew was pruned by another that kept backing up past its caps, which
+                // never sees what this one knows. With one head, every snapshot that was there leads
+                // to it, so it came after what is here; and nothing here changed since, so taking it
+                // loses nothing (and what is here is backed up first). Asking would be a choice of
+                // nothing, after every long stretch on another PC.
+                Line::Broken if here_is_known => Verdict::Restore(head.id.clone()),
                 _ => choose(&heads),
             }
         }
@@ -764,10 +770,15 @@ pub(crate) mod tests {
                 here: false
             }
         );
-        // A parent gone: not guessed past.
+        // A parent gone, as another PC pruned what this one knew: with nothing changed here the one
+        // head is taken, as nothing is lost by it; changed here too, it is a choice, never guessed past.
         let broken = [list("z", &["y"], "5")];
         assert_eq!(
             decide(Some("1"), Some(&known("a", "1")), &broken),
+            Verdict::Restore("z".into())
+        );
+        assert_eq!(
+            decide(Some("9"), Some(&known("a", "1")), &broken),
             Verdict::Choose {
                 heads: vec!["z".into()],
                 here: true

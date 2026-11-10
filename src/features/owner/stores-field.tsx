@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { cleanStores, pcStores, storeChoices } from '@/domain/library/store-choices'
 import type { StoreName } from '@/domain/library/stores'
 import { ChoiceChip, ToggleChip } from '@/ui/chip'
+import { cn } from '@/ui/cn'
 
 /**
  * Which stores a download on a PC is from, or would be bought from: first what
@@ -19,6 +20,7 @@ export function StoresField({
   value,
   fixed = [],
   onChange,
+  labelClassName = 'text-sm font-medium',
 }: {
   /** What it is known to be sold on. */
   soldOn?: readonly StoreName[]
@@ -26,6 +28,8 @@ export function StoresField({
   /** What a linked account says it is from. */
   fixed?: readonly StoreName[]
   onChange: (stores: StoreName[]) => void
+  /** The question's look, where a page writes its labels its own way, as "Mine" does. */
+  labelClassName?: string
 }) {
   const t = useTranslations('Stores')
   const library = useTranslations('Library')
@@ -42,7 +46,7 @@ export function StoresField({
 
   return (
     <fieldset className="grid gap-2">
-      <legend className="mb-2 text-sm font-medium">{t('which')}</legend>
+      <legend className={cn('mb-2', labelClassName)}>{t('which')}</legend>
       <div className="flex flex-wrap gap-2">
         {(more ? pcStores : offered).map((store) => {
           const held = fixed.includes(store)

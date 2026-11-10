@@ -15,6 +15,7 @@ import {
   mineGroupRuled,
   mineGroups,
   mineHeading,
+  minePlay,
   mineTop,
 } from './mine-layout'
 
@@ -60,7 +61,7 @@ function Ghost({
  * tags. A row of stores may wrap where its ghost does not, as the editor knows
  * which they are. Not known there, and so drawn only by the editor: the day it
  * was last played, the hours by platform under the total, the time left idle
- * once there is any, the menu beside the heading, and the versions.
+ * once there is any, Play in a browser, which only a game Steam can start has, and the versions.
  */
 export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkeletonProps) {
   const t = useTranslations('Edit')
@@ -79,12 +80,12 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
     formats.some((format) => !owned.has(`${platform.id}:${format}`)),
   )
   const wishlist = game.status === 'wishlist'
-  const label = 'text-sm font-medium'
+  const label = mineHeading
   const field = 'block h-10 rounded-control pointer-coarse:h-11'
   // The stores' chips, on the one line they nearly always take: which ones waits for the editor.
   const storesGhost = (index: number) => (
     <div className="grid gap-2">
-      <span className="mb-2 text-sm font-medium">{stores('which')}</span>
+      <span className={cn('mb-2', mineHeading)}>{stores('which')}</span>
       <Ghost index={index} className="block h-10 rounded-full pointer-coarse:h-11" />
     </div>
   )
@@ -94,6 +95,8 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
       <div className={mineTop}>
         <Level className="readout text-[0.6875rem] text-muted">{words('mine')}</Level>
       </div>
+      {/* Play's line: always there in the app, where it comes a moment after the editor. */}
+      <div aria-hidden="true" className={cn(minePlay, 'hidden frameless:flex')} />
       <div aria-hidden="true" inert className={mineGroups}>
         <div className={mineGroup}>
           <fieldset className="grid gap-2">

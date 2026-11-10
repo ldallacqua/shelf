@@ -366,13 +366,11 @@ export function MineEditor({
     <section className="game-section" aria-busy={saving > 0 || drawing}>
       <div className={mineTop}>
         <Level className="readout text-[0.6875rem] text-muted">{game('mine')}</Level>
-        <div className="flex min-w-0 items-center gap-3">
-          <p className="text-xs text-muted" aria-live="polite">
-            {saving > 0 ? t('saving') : ''}
-          </p>
-          <Play entryId={owned.entryId} title={owned.title} steam={owned.steam} />
-        </div>
+        <p className="text-xs text-muted" aria-live="polite">
+          {saving > 0 ? t('saving') : ''}
+        </p>
       </div>
+      <Play entryId={owned.entryId} title={owned.title} steam={owned.steam} />
       {problem ? (
         <p
           role="alert"
@@ -402,6 +400,7 @@ export function MineEditor({
           </fieldset>
 
           <SavedRating
+            labelClassName={mineHeading}
             score={owned.rating}
             onSave={(score) =>
               void update({ rating: score }, { rating: score === null ? undefined : score })
@@ -440,6 +439,7 @@ export function MineEditor({
 
           {owned.status === 'completed' || owned.completedOn ? (
             <DayField
+              labelClassName={mineHeading}
               label={t('completedOn')}
               value={owned.completedOn}
               clearable
@@ -481,6 +481,7 @@ export function MineEditor({
             </div>
             {owned.wanted.some(isPcPlatform) ? (
               <StoresField
+                labelClassName={mineHeading}
                 soldOn={owned.soldOn}
                 value={owned.wantedStores ?? []}
                 onChange={(wantedStores) => void update({ wantedStores }, { wantedStores })}
@@ -547,7 +548,11 @@ export function MineEditor({
         ) : null}
 
         <div className={mineGroupRuled}>
-          <TagsField value={owned.tags} onChange={(tags) => void update({ tags }, { tags })} />
+          <TagsField
+            labelClassName={mineHeading}
+            value={owned.tags}
+            onChange={(tags) => void update({ tags }, { tags })}
+          />
           <div className="grid gap-2">
             <SavedField
               label={game('notes')}
@@ -741,8 +746,8 @@ function SavedField({
     setText(value)
   }
   return (
-    <label className="grid gap-1.5 text-sm font-medium">
-      {label}
+    <label className="grid gap-1.5">
+      <span className={mineHeading}>{label}</span>
       <Textarea
         grow
         value={text}
@@ -751,7 +756,6 @@ function SavedField({
         onBlur={() => {
           if (text !== value) onSave(text)
         }}
-        className="font-normal"
       />
     </label>
   )
@@ -878,6 +882,7 @@ export function Copies({
                   </Segmented>
                   {takesStore(copy.platformId, copy.format) ? (
                     <StoresField
+                      labelClassName={mineHeading}
                       soldOn={owned.soldOn}
                       value={copy.stores ?? []}
                       fixed={readFrom.flatMap((source) => storeOfSource(source) ?? [])}
@@ -893,9 +898,9 @@ export function Copies({
         {open.length > 0 && chosen !== undefined ? (
           adding ? (
             <div role="group" aria-label={t('newCopy')} className={mineNewCard}>
-              <p className={mineHeading}>{t('newCopy')}</p>
+              <p className="text-sm font-semibold">{t('newCopy')}</p>
               <div className="grid gap-1.5">
-                <label htmlFor={`${id}-platform`} className="text-sm font-medium">
+                <label htmlFor={`${id}-platform`} className={mineHeading}>
                   {t('copyPlatform')}
                 </label>
                 <Select
@@ -915,7 +920,7 @@ export function Copies({
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <span aria-hidden="true" className="text-sm font-medium">
+                <span aria-hidden="true" className={mineHeading}>
                   {t('copyFormat')}
                 </span>
                 <Segmented
@@ -932,7 +937,12 @@ export function Copies({
                 </Segmented>
               </div>
               {takesStore(chosen, format) ? (
-                <StoresField soldOn={owned.soldOn} value={stores} onChange={setStores} />
+                <StoresField
+                  labelClassName={mineHeading}
+                  soldOn={owned.soldOn}
+                  value={stores}
+                  onChange={setStores}
+                />
               ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
