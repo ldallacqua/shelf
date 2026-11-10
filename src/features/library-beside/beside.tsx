@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useEffect, useState, useSyncExternalStore } from 'react'
 
 import { LibraryLink } from '@/features/game-detail/back-to-library'
+import { useArriving } from '@/features/game-detail/hand-off'
 import { useIsMine } from '@/features/owner/account'
 import { Button } from '@/ui/button'
 
@@ -57,7 +58,8 @@ export function LibraryBeside() {
   const library = useTranslations('Library')
   const params = useParams<{ handle?: string; slug?: string }>()
   const handle = decoded(params.handle)
-  const slug = decoded(params.slug)
+  // The game being drawn while the router fetches it is the one the list marks.
+  const slug = useArriving(handle) ?? decoded(params.slug)
   const handed = useHandedOver(handle)
   const known = useKnownShelf(handle)
   const wide = useWide()

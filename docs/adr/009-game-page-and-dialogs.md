@@ -235,6 +235,30 @@ search and folds survive; the existing device-preference script applies visibili
 No design skills were installed. Controls have browser, desktop, selected and ungrouped stories;
 visibility has interactive shown and hidden stories, using both language/theme toolbar choices.
 
+### Phase 2 follow-up: a row never waits for the router (10 Nov 2026)
+
+The owner saw a click in the list wait for the whole next page, twice, at what seemed random: the
+stall phase 1 fixed, back. Next.js 16.4's router draws a page it has not fetched only by guessing
+its route from one it has (`optimistic-routes.js`), and it keeps what it learned for
+`staleTimes.static`, five minutes from the moment it learned it, with nothing that renews it
+early. A server action that changes the library (adding a game from the header) throws it away
+too. After that, the next game the router hasn't seen is a route it doesn't know: it asks the
+server for the whole page and holds the one shown until that comes, one to four seconds on
+production. The next click is quick again, as that answer taught the route afresh. Reproduced
+against `pnpm serve:test` with the page's answer held 2.5 s: at once, then 2.6 s six minutes
+later, both from the library and on a game's address opened directly; the shelf itself behaves the
+same way after five idle minutes.
+
+Asking for the frame again on a timer cannot close the gap, since the router keeps a guess it still
+has and only learns again once it has expired. So the list no longer depends on it: when the router
+hasn't drawn the game within 100 ms (`SOON_MS`, well inside the cover's 300 ms), the layout around
+the games draws the handed-off page itself (`Arriving`, in `hand-off.tsx`), keeps the page being left
+hidden as the router keeps a page behind (Activity), puts the top in view, and marks the row, until
+the router lands anywhere, history moves, or the games are left. A router that knows the route
+draws the page first, and the layout draws nothing. The address follows when the server answers.
+`Arriving` reads the address only while a game is on its way, so the layout is still built ahead
+whole.
+
 ### Phase 3, one dialog (10 Nov 2026)
 
 `src/ui/dialog.tsx` is the one dialog, on Radix's, which already held focus for the sheets: centered from

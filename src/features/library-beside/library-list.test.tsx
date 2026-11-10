@@ -1,9 +1,10 @@
-﻿import { fireEvent, screen, waitFor } from '@testing-library/react'
+﻿import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NextIntlClientProvider } from 'next-intl'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { testGame, testLibrary } from '@/domain/library/testing'
+import { Arriving, PageDrawn, SOON_MS } from '@/features/game-detail/hand-off'
 import type { ShelfInfo } from '@/features/library/shelf-address'
 import { messages, renderWithIntl } from '@/test/render'
 
@@ -14,6 +15,11 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
   state: {} as Record<string, unknown>,
+  params: {} as Record<string, string>,
+}))
+vi.mock('next/navigation', async (actual) => ({
+  ...(await actual<object>()),
+  useParams: () => mocks.params,
 }))
 vi.mock('@/i18n/navigation', async () => ({
   ...(await import('@/test/navigation')),
@@ -22,7 +28,10 @@ vi.mock('@/i18n/navigation', async () => ({
 vi.mock('@/features/library/use-library', () => ({ useLibrary: () => mocks.state }))
 vi.mock('@/features/owner/account', () => ({ useIsMine: () => false }))
 vi.mock('@/features/library/use-ready', () => ({ useReadySlugs: () => null }))
-vi.mock('@/features/game-detail/drawn-page', () => ({ drawPage: () => null, loadEditor: vi.fn() }))
+vi.mock('@/features/game-detail/drawn-page', () => ({
+  drawPage: ({ game }: { game: { title: string } }) => <h1>{`${game.title}, drawn`}</h1>,
+  loadEditor: vi.fn(),
+}))
 
 const shelf: ShelfInfo = {
   handle: 'sample',
@@ -45,7 +54,8 @@ const list = (handed = hand(), slug = 'ember') => (
 
 beforeEach(() => {
   mocks.state = { status: 'ready', library: whole }
-  mocks.push.mockClear()
+  mocks.params = { handle: 'sample', slug: 'ember' }
+  mocks.push.mockReset()
 })
 afterEach(forgetAll)
 
@@ -120,5 +130,52 @@ describe('the list beside the page', () => {
       </NextIntlClientProvider>,
     )
     expect(screen.getByRole('searchbox')).toHaveValue('')
+  })
+})
+
+/** The layout around the games: the list beside the page the router shows. */
+const layout = (slug: string, page: string, drawn?: boolean) => (
+  <NextIntlClientProvider locale="en" messages={messages.en} timeZone="UTC">
+    {list(hand(), slug)}
+    <Arriving>
+      <h1>{page}</h1>
+      {drawn ? <PageDrawn /> : null}
+    </Arriving>
+  </NextIntlClientProvider>
+)
+
+describe('a game opened from the list', () => {
+  it('is drawn at once while the router waits for the server, until the router lands', async () => {
+    const { rerender } = renderWithIntl(layout('ember', 'Ember, from the server'))
+    // The router has forgotten what a game's page looks like: it waits for the whole page.
+    fireEvent.click(screen.getByRole('link', { name: 'Tide' }))
+    expect(await screen.findByRole('heading', { name: 'Tide, drawn' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Ember, from the server' })).toBeNull()
+
+    mocks.params = { handle: 'sample', slug: 'tide' }
+    rerender(layout('tide', 'Tide, from the server'))
+    expect(screen.getByRole('heading', { name: 'Tide, from the server' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Tide, drawn' })).toBeNull()
+  })
+
+  it('leaves the page to the router when the router draws it in time', async () => {
+    const { rerender } = renderWithIntl(layout('ember', 'Ember, from the server'))
+    fireEvent.click(screen.getByRole('link', { name: 'Tide' }))
+    mocks.params = { handle: 'sample', slug: 'tide' }
+    rerender(layout('tide', 'Tide, from the library', true))
+    await act(() => new Promise((done) => setTimeout(done, SOON_MS * 2)))
+    expect(screen.getByRole('heading', { name: 'Tide, from the library' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Tide, drawn' })).toBeNull()
+  })
+
+  it('gives the page back when Back cancels the move', async () => {
+    renderWithIntl(layout('ember', 'Ember, from the server'))
+    fireEvent.click(screen.getByRole('link', { name: 'Tide' }))
+    expect(await screen.findByRole('heading', { name: 'Tide, drawn' })).toBeVisible()
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+    expect(screen.getByRole('heading', { name: 'Ember, from the server' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Tide, drawn' })).toBeNull()
   })
 })

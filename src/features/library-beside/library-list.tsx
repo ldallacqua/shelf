@@ -34,7 +34,7 @@ import { SearchField } from '@/features/filters/search-field'
 import { useKeywords } from '@/features/filters/use-keywords'
 import { LibraryLink } from '@/features/game-detail/back-to-library'
 import { drawPage, loadEditor } from '@/features/game-detail/drawn-page'
-import { handOff } from '@/features/game-detail/hand-off'
+import { arriveSoon, handOff } from '@/features/game-detail/hand-off'
 import { morph } from '@/features/game-detail/morph'
 import { readRememberedHere } from '@/features/library/arrangement'
 import { Cover } from '@/features/library/cover'
@@ -194,11 +194,14 @@ export function LibraryListView({
   const rows = shelves ? listRows(shelves, folded) : NO_ROWS
   const order = shelves ? orderOf(shelves) : undefined
 
-  /** A game's page, drawn at once from the library, as the shelf opens one (`hand-off.tsx`). */
+  /**
+   * A game's page, drawn at once from the library, as the shelf opens one (`hand-off.tsx`); by
+   * the layout around the games, should the router wait for the server.
+   */
   const open = (target: string, options: { replace?: boolean; from?: HTMLElement } = {}) => {
     const game = whole?.games.find((each) => each.slug === target)
     if (!game || !whole || target === slug) return
-    handOff({
+    const handed = {
       handle,
       slug: target,
       page: drawPage({
@@ -208,10 +211,12 @@ export function LibraryListView({
         platforms,
         placeholder: options.from?.querySelector('img')?.currentSrc || undefined,
       }),
-    })
+    }
+    handOff(handed)
     const href = gameHref(handle, target)
     morph(options.from, () => {
       navigationStarted()
+      arriveSoon(handed)
       if (options.replace) router.replace(href)
       else router.push(href)
     })

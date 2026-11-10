@@ -1360,7 +1360,9 @@ opens (its menu's items) stands over the page alone.
   the page simply changes.
 - **At once.** The page is drawn the moment it is chosen, from what the library already knows
   (cover, title, status, copies, Mine), with the rest as ghosts until the page's own arrives:
-  a game opened from the shelf never waits on the server to show itself.
+  a game opened from the shelf never waits on the server to show itself. From the list beside a
+  game, or its steps, this holds even when the router has to ask the server for the page: the
+  layout draws it within 100 ms, and the address follows when the server answers.
 - **Back** is the library as I left it: its view, grouping, filter and scroll, and focus on the
   box I opened. The page's **Library** link is Back when the library is the page before it;
   from a game's address opened directly, it leads to the library as this device last arranged
