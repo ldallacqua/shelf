@@ -79,7 +79,7 @@ export const unlink = async (source: SyncSource): Promise<Answer<true>> => {
   }
 }
 
-/** IGDB's games for a title, as the Add sheet finds them. */
+/** IGDB's games for a title, as Add a game finds them. */
 export type Found = { igdbId: number; title: string; year: number | null; cover: string | null }
 
 export const searchIgdb = async (text: string, signal?: AbortSignal) => {

@@ -47,7 +47,7 @@ type Search =
 
 type AddOneProps = {
   actions: AddActions
-  /** After an add: what was added, and whether to keep the sheet open for the next. */
+  /** After an add: what was added, and whether to keep the dialog open for the next. */
   onAdded: (added: AddedGame, again: boolean) => void
   /** A result already on the shelf was picked: its page opens instead. */
   onOpenOwned: () => void
@@ -443,7 +443,7 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
     })
   }
 
-  // Command or Control and Enter, wherever focus is in the sheet: add, and
+  // Command or Control and Enter, wherever focus is in the dialog: add, and
   // stay for the next game. Not the form's own key: Safari leaves focus on the
   // page when a choice is clicked, and a choice can hide what had it.
   const latest = useRef(submit)
@@ -453,8 +453,8 @@ function AddForm({ candidate, answer, labels, actions, onBack, onAdded }: AddFor
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey)) return
-      const inSheet = event.target instanceof Element && event.target.closest('[role="dialog"]')
-      if (!inSheet && event.target !== document.body) return
+      const inDialog = event.target instanceof Element && event.target.closest('[role="dialog"]')
+      if (!inDialog && event.target !== document.body) return
       // Not while the list's tab is the one shown.
       if (form.current?.closest('[data-state="inactive"]')) return
       event.preventDefault()

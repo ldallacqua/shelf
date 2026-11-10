@@ -11,7 +11,7 @@ import {
 import { addMyGame } from '@/server/services/adding'
 import { placeMine } from '@/server/services/placing'
 
-/** `POST /api/v1/entries`: adds a game from IGDB to your library, as the Add sheet does. */
+/** `POST /api/v1/entries`: adds a game from IGDB to your library, as Add a game does. */
 export async function POST(request: Request) {
   const parsed = apiNewGame.safeParse(await bodyOf(request))
   if (!parsed.success) return refused({ ok: false, reason: 'invalid' })

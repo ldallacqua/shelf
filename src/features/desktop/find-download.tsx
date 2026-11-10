@@ -3,9 +3,9 @@
 import { CloudDownloadIcon, DownloadIcon, SearchIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
 import {
+  type ComponentProps,
   type FormEvent,
   type ReactNode,
-  type RefObject,
   useCallback,
   useEffect,
   useState,
@@ -13,12 +13,12 @@ import {
 
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { Dialog, DialogContent } from '@/ui/dialog'
 import { DropdownMenuItem } from '@/ui/dropdown-menu'
 import { Input } from '@/ui/field'
 import { GhostText, Loading } from '@/ui/ghost'
 
 import { AppWords } from './app-words'
-import { BesidePlay } from './beside-play'
 import { type Download, type Found, downloads, realDebrid, sources } from './sources'
 
 const linkClass =
@@ -120,7 +120,7 @@ function FoundRow({
   )
 }
 
-/** The sheet's insides, drawn from what they are given: every state of them, for Storybook too. */
+/** The dialog's insides, drawn from what they are given: every state of them, for Storybook too. */
 export function FindDownloadView({
   words,
   results,
@@ -287,26 +287,25 @@ type FindDownloadProps = {
   entryId: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** What it stands beside when it opens in place. */
-  anchor: RefObject<HTMLElement | null>
+  /** Where focus goes when it closes: the menu's item that opened it has gone by then. */
+  returnFocus: ComponentProps<typeof DialogContent>['returnFocus']
 }
 
 /**
  * Looking for a game in the sources on this computer (ADR 007, spec 7.10), from its page, in the app
- * alone. A list to read and choose from: nothing is matched or started by itself. A sheet, as anything
- * opened from a game is; but where the game stands in the middle of a very wide window, a sheet would be a
- * second frame at the far edge of the screen, so it opens beside the button, over the game and not apart.
+ * alone. A list to read and choose from: nothing is matched or started by itself. A dialog over the
+ * game, as anything Play's menu opens is (ADR 009).
  */
 export default function FindDownload({
   title,
   entryId,
   open,
   onOpenChange,
-  anchor,
+  returnFocus,
 }: FindDownloadProps) {
   return (
     <AppWords>
-      <Frame title={title} open={open} onOpenChange={onOpenChange} anchor={anchor}>
+      <Frame title={title} open={open} onOpenChange={onOpenChange} returnFocus={returnFocus}>
         <Finder title={title} entryId={entryId} />
       </Frame>
     </AppWords>
@@ -317,20 +316,20 @@ function Frame({
   title,
   open,
   onOpenChange,
-  anchor,
+  returnFocus,
   children,
 }: Omit<FindDownloadProps, 'entryId'> & { children: ReactNode }) {
   const t = useTranslations('FindDownload')
   return (
-    <BesidePlay
-      heading={t('title', { title })}
-      closeLabel={t('close')}
-      open={open}
-      onOpenChange={onOpenChange}
-      anchor={anchor}
-    >
-      {children}
-    </BesidePlay>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        title={t('title', { title })}
+        closeLabel={t('close')}
+        returnFocus={returnFocus}
+      >
+        {children}
+      </DialogContent>
+    </Dialog>
   )
 }
 

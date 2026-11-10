@@ -14,12 +14,12 @@ import type { AddGame as AddGameType } from './add-game'
 
 let code: Promise<typeof AddGameType> | undefined
 
-/** The sheet's code, fetched when one first reaches for it. */
-const loadSheet = () => (code ??= import('./add-game').then((module) => module.AddGame))
+/** The dialog's code, fetched when one first reaches for it. */
+const loadDialog = () => (code ??= import('./add-game').then((module) => module.AddGame))
 
 const wanted = new Set<() => void>()
 
-/** Opens the sheet from anywhere: the empty library's "Add your first game". */
+/** Opens the dialog from anywhere: the empty library's "Add your first game". */
 export const openAddGame = () => {
   for (const open of wanted) open()
 }
@@ -42,8 +42,8 @@ function AddToShelf({ actions }: { actions: AddActions }) {
   useEffect(() => {
     if (!owner) return
     const show = () =>
-      void loadSheet().then((sheet) => {
-        setAddGame(() => sheet)
+      void loadDialog().then((dialog) => {
+        setAddGame(() => dialog)
         setOpen(true)
       })
     // `A` adds a game (spec 3.11), as long as single letters are on.
@@ -69,8 +69,8 @@ function AddToShelf({ actions }: { actions: AddActions }) {
         variant="primary"
         size="sm"
         className="mr-1 max-sm:px-2.5"
-        onPointerEnter={() => void loadSheet()}
-        onFocus={() => void loadSheet()}
+        onPointerEnter={() => void loadDialog()}
+        onFocus={() => void loadDialog()}
         onClick={openAddGame}
       >
         <PlusIcon aria-hidden="true" />

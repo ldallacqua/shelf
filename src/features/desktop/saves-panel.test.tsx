@@ -141,7 +141,7 @@ const named = { entry: GAME.entryId, title: GAME.title, apps: GAME.apps }
 const opened = async () => {
   const user = userEvent.setup()
   renderWithIntl(
-    <SavesPanel {...GAME} open onOpenChange={() => undefined} anchor={{ current: null }} />,
+    <SavesPanel {...GAME} open onOpenChange={() => undefined} returnFocus={{ current: null }} />,
   )
   const panel = await screen.findByRole('dialog', { name: 'Saves for Made-up Game' })
   await within(panel).findByText('Snapshots')
@@ -166,7 +166,7 @@ describe('a game’s saves', () => {
   it('draw nothing outside the app, and ask nothing', () => {
     setBridgeForTests(null)
     const { container } = renderWithIntl(
-      <SavesLater {...GAME} open onOpenChange={() => undefined} anchor={{ current: null }} />,
+      <SavesLater {...GAME} open onOpenChange={() => undefined} returnFocus={{ current: null }} />,
     )
     expect(container).toBeEmptyDOMElement()
     expect(app).not.toHaveBeenCalled()
@@ -230,8 +230,11 @@ describe('a game’s saves', () => {
       .getAllByRole('listitem')
       .filter((each) => each.closest('ol'))[1]!
     await user.click(within(row).getByRole('button', { name: 'Restore' }))
-    const question = await screen.findByRole('alertdialog')
+    // Asked in the row, as the dialog stays the only layer.
+    const question = within(row).getByRole('group', { name: /^Restore the saves from/ })
     expect(question).toHaveTextContent('kept as a backup first')
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect(within(question).getByRole('button', { name: 'Cancel' })).toHaveFocus()
     expect(app).not.toHaveBeenCalledWith('restore_saves', expect.anything())
     await user.click(within(question).getByRole('button', { name: 'Restore' }))
     expect(app).toHaveBeenCalledWith('restore_saves', {
@@ -379,7 +382,7 @@ describe('a game’s saves', () => {
     )
     await user.click(within(panel).getByRole('button', { name: 'Restore it' }))
     await user.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Restore' }),
+      within(within(panel).getByRole('group')).getByRole('button', { name: 'Restore' }),
     )
     expect(app).toHaveBeenCalledWith('restore_saves', {
       ...named,
@@ -435,7 +438,7 @@ describe('a game’s saves', () => {
         {...GAME}
         open
         onOpenChange={() => undefined}
-        anchor={{ current: null }}
+        returnFocus={{ current: null }}
         onPlay={onPlay}
       />,
     )
@@ -465,7 +468,7 @@ describe('a game’s saves', () => {
         {...GAME}
         open
         onOpenChange={() => undefined}
-        anchor={{ current: null }}
+        returnFocus={{ current: null }}
         onPlay={onPlay}
       />,
     )

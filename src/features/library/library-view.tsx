@@ -295,8 +295,8 @@ export function LibraryView({
   /** The box pulled from the 3D wall, with its title and Open. */
   const [open, setOpen] = useState<OpenGame>()
   const [panelOpen, setPanelOpen] = useState(false)
-  // Wide enough for the filters to stand beside the library: the sheet is not needed, and a
-  // sheet open as the window widens is closed, not left to open again as it narrows.
+  // Wide enough for the filters to stand beside the library: the dialog is not needed, and a
+  // dialog open as the window widens is closed, not left to open again as it narrows.
   const beside = useFiltersBeside()
   if (beside && panelOpen) setPanelOpen(false)
   const [groupMenu, setGroupMenu] = useState(false)

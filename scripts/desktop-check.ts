@@ -546,7 +546,7 @@ try {
     const column = shelf.locator('#library-filters')
     const drawn = (await column.isVisible()) && (await column.locator('details').count()) > 0
     if (wide.beside === drawn)
-      pass(drawn ? 'its filters stand beside it' : 'its filters stay in their sheet')
+      pass(drawn ? 'its filters stand beside it' : 'its filters stay in their dialog')
     else fail(`its filters ${drawn ? 'stand' : 'do not stand'} beside it at ${wide.width} pixels`)
     await shot(`maximized${path}`)
   }
@@ -679,7 +679,9 @@ try {
   if ((await snapshots.count()) === 2) pass('backs up what changed, keeping the first')
   else fail(`has ${await snapshots.count()} snapshots after two backups`)
   await snapshots.nth(1).getByRole('button', { name: 'Restore' }).click()
-  await shelf.getByRole('alertdialog').getByRole('button', { name: 'Restore' }).click()
+  // Asked in the row, as the dialog stays the only layer (ADR 009).
+  if ((await shelf.getByRole('alertdialog').count()) > 0) fail('restoring asked in a second dialog')
+  await snapshots.nth(1).getByRole('group').getByRole('button', { name: 'Restore' }).click()
   await savesPanel.getByText(/Put back the saves from/).waitFor({ timeout: 15_000 })
   if (readFileSync(join(saved, 'slot1.sav'), 'utf8') === 'chapter one')
     pass('restores the first, and it becomes the latest')
@@ -975,31 +977,40 @@ try {
     await add.click()
     await shelf.locator('article').filter({ hasText: 'Made-up files' }).waitFor({ timeout: 15_000 })
     await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
-    // On a very wide window the game stands in the middle, and this opens beside its button.
+    // Maximized, as on the owner's TV: one dialog in the middle, and the menu gone (ADR 009).
     await control('Maximize').click()
     await control('Restore').waitFor({ timeout: 5_000 })
-    if (await shelf.evaluate(() => matchMedia('(width >= 150rem) and (height >= 45rem)').matches)) {
-      await findADownload()
-      const beside = shelf.locator('[data-slot="popover-content"]')
-      await beside.getByText('Bloodborne, a made-up file').waitFor({ timeout: 15_000 })
-      if ((await shelf.locator('[data-slot="sheet"]').count()) === 0)
-        pass('on a very wide window it opens beside the button, not as a second frame')
-      else fail('on a very wide window it opened a sheet')
-      await shot('find-download-wide')
-      await shelf.keyboard.press('Escape')
-      await beside.waitFor({ state: 'detached', timeout: 5_000 })
-    } else console.log('  (This screen is too narrow for that.)')
+    await findADownload()
+    const wide = shelf.getByRole('dialog', { name: 'Find a download for Bloodborne' })
+    await wide.getByText('Bloodborne, a made-up file').waitFor({ timeout: 15_000 })
+    const centered = await wide.evaluate((dialog) => {
+      const box = dialog.getBoundingClientRect()
+      return Math.abs(box.left + box.width / 2 - innerWidth / 2) <= 2
+    })
+    if (centered && (await shelf.getByRole('menu').count()) === 0)
+      pass('maximized, it opens as one dialog in the middle, and the menu closes')
+    else fail('maximized, it did not open as one centered dialog')
+    await shot('find-download-wide')
+    await shelf.keyboard.press('Escape')
+    await wide.waitFor({ state: 'detached', timeout: 5_000 })
+    if (
+      await shelf
+        .getByRole('button', { name: 'Ways to play' })
+        .evaluate((more) => more === document.activeElement)
+    )
+      pass('Escape closes it and hands focus back to the menu’s button')
+    else fail('closing it lost the focus')
     await control('Restore').click()
     await control('Maximize').waitFor({ timeout: 5_000 })
 
     await findADownload()
     const made = shelf.getByRole('button', { name: 'Download Bloodborne, a made-up file' })
     await made.waitFor({ timeout: 15_000 })
-    const sheet = (await shelf.getByRole('dialog').innerText()).replace(/\s+/g, ' ')
-    if (/Only by magnet link/.test(sheet) && !sheet.includes('Something else'))
+    const found = (await shelf.getByRole('dialog').innerText()).replace(/\s+/g, ' ')
+    if (/Only by magnet link/.test(found) && !found.includes('Something else'))
       pass('lists what has every word of the game’s name, and says what it can’t download')
-    else fail(`finding a download said: ${sheet}`)
-    // Past the sheet's sliding in, so the picture is of it and not of what is behind.
+    else fail(`finding a download said: ${found}`)
+    // Past the dialog's coming in, so the picture is of it and not of what is behind.
     await shelf.waitForTimeout(600)
     await shot('find-download')
     await made.click()
@@ -1010,7 +1021,7 @@ try {
       .waitFor({ timeout: 15_000 })
     pass('puts two in line, in the folder chosen')
 
-    // Past the sheet: it holds focus, and covers the header.
+    // Past the dialog: it holds focus, and covers the header.
     await shelf.keyboard.press('Escape')
     const toDownloads = shelf.getByRole('banner').getByRole('link', { name: /^Downloads/ })
     await toDownloads.waitFor({ timeout: 15_000 })

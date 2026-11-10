@@ -48,9 +48,9 @@ const MOVING_KEYS = new Set([
 ])
 
 /**
- * Whether focus last moved by the keys that move it. Focus a sheet, a menu or
- * a click put on a button shows no tip: the sheet's close button would greet
- * every opening with one, and Escape would close the tip, not the sheet.
+ * Whether focus last moved by the keys that move it. Focus a dialog, a menu or
+ * a click put on a button shows no tip: the dialog's close button would greet
+ * every opening with one, and Escape would close the tip, not the dialog.
  */
 let movedByKeys = false
 let listening = false

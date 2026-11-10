@@ -126,7 +126,7 @@
         },
         "base": {
           "name": "Base",
-          "use": "Panels, sheets, menus"
+          "use": "Dialogs, panels, menus"
         },
         "slow": {
           "name": "Slow",
@@ -1238,7 +1238,7 @@
       "shelves": "Previous or next shelf",
       "ends": "First or last game of the shelf",
       "open": "Open the game in focus",
-      "close": "Close a game, a sheet or a panel",
+      "close": "Close a dialog, a menu or a pulled box",
       "search": "Search",
       "filters": "Open the filters",
       "group": "Change the grouping",

@@ -6,6 +6,11 @@ step 3. This note is what the next session needs and cannot get from the code. R
 
 ## The library beside a game (9 Nov 2026)
 
+**Next two phases:** [ADR 009 phases 3 and 4 handoff](handoff-adr009-phases3-4.md) records
+the shipped state, migration inventory, design requirements, regression risks and checks
+for shared dialogs and the simpler Saves screen. Phase 2 and its hide-list/aligned-controls
+follow-up are merged and deployed in PRs 184 and 185.
+
 ADR 009 phase 2 adds `features/library-beside` in the persistent game layout. The library hands
 over its arrangement in memory: keep game URLs free of query parameters, as phase 1 found on
 Vercel. The list is windowed, searchable and grouped; steps use the same deduplicated order.

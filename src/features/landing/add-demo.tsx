@@ -29,7 +29,7 @@ function Thumb({ game }: { game: DemoGame }) {
 /**
  * Adding, played out: a few letters typed, and the games they find; then a
  * pasted list, a game a line, and each line matched to its game. Both are
- * pictures of the real sheet, with the example shelf's covers.
+ * pictures of the real dialog, with the example shelf's covers.
  */
 export function AddDemo({
   query,

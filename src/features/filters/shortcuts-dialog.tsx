@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl'
 import { useId } from 'react'
 
 import { Switch } from '@/ui/checkbox'
-import { Sheet, SheetContent } from '@/ui/sheet'
+import { Dialog, DialogContent } from '@/ui/dialog'
 
 import { setShortcutsOn, useShortcutsOn } from './shortcuts'
 
@@ -43,8 +43,13 @@ export function ShortcutsDialog({
   const switchId = useId()
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent title={t('title')} description={t('description')} closeLabel={t('close')}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        title={t('title')}
+        description={t('description')}
+        closeLabel={t('close')}
+        size="sm"
+      >
         <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm">
           {KEYS.filter(([name]) => experimental || name !== 'dimension').map(([name, keys]) => (
             <div key={name} className="contents">
@@ -68,7 +73,7 @@ export function ShortcutsDialog({
           </label>
         </div>
         <p className="mt-2 text-xs text-muted">{t('lettersHint')}</p>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }

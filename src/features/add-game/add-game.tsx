@@ -8,8 +8,7 @@ import { MAX_ADDITIONS } from '@/domain/library/bulk'
 import { announceChange } from '@/features/owner/library-change'
 import { notify } from '@/features/shell/notices'
 import { useRouter } from '@/i18n/navigation'
-import { cn } from '@/ui/cn'
-import { Sheet, SHEET_CENTERED, SheetContent } from '@/ui/sheet'
+import { Dialog, DialogContent } from '@/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/tabs'
 
 import type { AddActions } from './actions'
@@ -26,7 +25,7 @@ type AddGameProps = {
 type Tab = 'one' | 'list'
 
 /**
- * Adding games (spec 4), for the owner: the sheet the Add button, `A` and
+ * Adding games (spec 4), for the owner: the dialog the Add button, `A` and
  * the empty library open. One game, or a pasted list. After an add the
  * library moves to the new game, and a notice offers Undo.
  */
@@ -79,19 +78,15 @@ export function AddGame({ open, onOpenChange, actions }: AddGameProps) {
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
         title={t('title')}
         description={t('help')}
         closeLabel={t('close')}
-        // A list's review needs the room: a row is a game and three choices.
-        className={cn(
-          tab === 'list' ? 'sm:w-[44rem] lg:w-[56rem]' : 'lg:w-[34rem]',
-          // In the middle of a very wide window, as a game is. One size for both tabs, so changing tab
-          // moves nothing, and as wide as a list's review needs: a search needs less than a game's page.
-          SHEET_CENTERED,
-          'game-centered:h-[min(94dvh,60rem)] game-centered:w-[56rem]',
-        )}
+        // As wide as a list's review needs, a row being a game and three choices, and one height for
+        // both tabs, so changing tab or typing a search moves nothing.
+        size="xl"
+        className="sm:h-[min(calc(100dvh-2rem),60rem)]"
         onOpenAutoFocus={(event) => {
           // Straight to the field: typing is the first thing to do.
           const field = (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(
@@ -116,7 +111,7 @@ export function AddGame({ open, onOpenChange, actions }: AddGameProps) {
             <AddList onAdded={onAddedMany} />
           </TabsContent>
         </Tabs>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }

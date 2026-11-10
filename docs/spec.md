@@ -310,9 +310,7 @@ Built to feel best on a phone and on modest hardware. It is a design of its own,
 - **Hover or focus (desktop).** The box lifts toward you and its neighbors move aside a few pixels.
 - **Pull (desktop).** Click or Enter. The box comes forward and its cover grows into the
   detail view.
-- **Tap (phone).** The box lifts and a sheet rises from the bottom with the cover, title,
-  status and platforms. Drag the sheet up, or tap it, for the full detail. Swipe the sheet
-  sideways for the next or previous game.
+- **Tap (phone).** The box lifts and the game's page opens (7.2).
 - **Scrub (phone, compact option).** Press and slide a finger along a ledge. Each spine tips
   out as the finger passes, with its title shown above. Lift to select. This is how a narrow
   spine is chosen precisely.
@@ -616,7 +614,7 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | Page Up, Page Down | Previous, next shelf |
 | Home, End | First, last game of the shelf |
 | Enter or Space | Open the focused game |
-| Escape | Close a sheet or a panel; put back a box pulled from the 3D wall |
+| Escape | Close a dialog or a menu; put back a box pulled from the 3D wall |
 | `/` | Focus search |
 | `F` | Open filters |
 | `G` | Change grouping |
@@ -1196,7 +1194,7 @@ Three levels, each a superset of the one before.
 On a desktop, clicking a value cycles through them. On touch, each value has explicit include
 and exclude buttons, because a hidden cycle is not discoverable. On a window 1536px wide or
 more the panel is a column left of the library, always open and in view as the shelves scroll;
-narrower, it is a sheet the Filters button opens. The two are one panel: a section open in one
+narrower, it is a dialog the Filters button opens (13, Dialogs). The two are one panel: a section open in one
 is open in the other, and the filter is the same either way.
 
 - Several included values in one filter mean **any of** them. A switch on the filter changes
@@ -1782,8 +1780,8 @@ In Shelf for Windows alone, on Settings' Download sources page. Why it is built 
 - **It isn't on the landing page,** by decision ([ADR 007](adr/007-download-sources.md), decision 4).
 - **Find a download** is in the ⋯ menu beside Play on my own game, once I have a source. Without one, it isn't
   there. A row that also holds Play has room for one button and a menu, and I look for a game once, not every
-  time I open it. It opens a sheet, or beside the button where the game stands in the middle of a very wide
-  window, so as not to be a second frame at the far edge of the screen. It has the game's name in a field and what my sources have with every one of
+  time I open it. Choosing it closes the menu and opens a dialog over the game's page (13, Dialogs), on every
+  width. It has the game's name in a field and what my sources have with every one of
   those words, closest first: title, size, source and date, and Download. Nothing is chosen for me.
 - **Downloading** asks Windows for a folder, then waits in line: one at a time. A link that leads to a web
   page isn't a file, so the next is tried, and if all of them are it says so. What has only magnet links,
@@ -1875,9 +1873,9 @@ In Shelf for Windows alone, for a game whose file is chosen on this computer. Wh
 what comes next (a folder or a cloud of my own, and the same saves on every PC): [ADR 008](adr/008-save-sync.md).
 
 - **Where it is.** **Saves** in the ⋯ menu beside Play, under the file's own items: a game's saves belong
-  with how it is started here, and the row that holds Play has room for one button and a menu. It opens a
-  sheet, or beside the button where the game stands in the middle of a very wide window, as Find a download
-  does. A game played through Steam has no file chosen and no Saves: Steam Cloud carries it.
+  with how it is started here, and the row that holds Play has room for one button and a menu. Choosing it
+  closes the menu and opens a dialog over the page, as Find a download does; Restore asks in its own row,
+  never in a second dialog. A game played through Steam has no file chosen and no Saves: Steam Cloud carries it.
 - **Off until I turn it on.** One switch first, as Steam puts its cloud's switch first in a game's
   properties, with what it does under it: snapshots on this computer, with their history, and nothing sent to
   Shelf. Turned on, a first one is made at once, unless the game is running. When the list says stores carry
@@ -2109,10 +2107,10 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 | Shelf default | 2D | 2D | 2D; 3D is experimental (3.6) |
 | Shelf layout | One shelf per screen, swipe between | Shelves stacked, ledges wrap | 2D: stacked. 3D: bays along a wall. |
 | Main controls | Bar at the bottom | Row under the header | Row under the header |
-| Filters | Bottom sheet | Side panel | Side panel; from 1536px, a column beside the library |
-| Sort and group | Bottom sheet | Menus | Menus |
+| Filters | Dialog, the whole screen | Dialog | Dialog; from 1536px, a column beside the library |
+| Sort and group | Menus | Menus | Menus |
 | Detail | Its page (7.2) | Its page | Its page |
-| Add | Bottom sheet | Side panel | Side panel; from 2400px wide, centered, as a game is |
+| Add | Dialog, the whole screen | Dialog | Dialog |
 | List columns | Four | Six | All |
 
 **Touch, designed on purpose**
@@ -2122,11 +2120,10 @@ privado. Ou seja, so eu vejo ele no meu shelf."
 | Swipe sideways on the shelf | Next or previous shelf | Shelf tabs |
 | Tap a spine | Open the game's page | |
 | Press and slide along a ledge | Scrub through spines | Tap, or the List view |
-| Drag the sheet up or down | Full detail, or close | Tap the sheet; close button |
-| Swipe the sheet sideways | Next or previous game | Arrow buttons on the sheet |
 | Pinch a screenshot | Zoom | Zoom buttons |
 
-Every gesture has a plain tap equivalent. Sheets close with Back.
+Every gesture has a plain tap equivalent. A dialog closes with its close button, Escape or a tap
+outside it; the browser's Back leaves the page, as it does anywhere.
 
 **Wide screens.** From 1536px the library's filters stand in a column of their own, 304px wide,
 left of the shelves, and the library's page widens from 1440px to as much as 2560px, the header
@@ -2156,13 +2153,14 @@ The target is WCAG 2.2 level AA in both themes.
 
 | Area | Requirement |
 | --- | --- |
-| **Keyboard** | Everything in 3.11. Focus is always visible: a 2px ring in the accent color, with an offset. Focus is never trapped except inside an open dialog or sheet, and returns to where it was on close. |
+| **Keyboard** | Everything in 3.11. Focus is always visible: a 2px ring in the accent color, with an offset. Focus is never trapped except inside an open dialog, and returns on close to where it was, or to the control that survives it (a menu's button, when the dialog came from its item). |
 | **Shelf structure** | Each shelf is a labeled list under a heading. Each game is one item named with title, platforms, status and my rating. One Tab stop per shelf; arrows move within it. |
 | **3D** | The canvas is hidden from assistive technology. The same labeled lists exist alongside it and drive it: moving focus moves the camera. A screen-reader user gets the same shelf, in the same order, in both views. |
 | **Announcements** | Filter and sort changes announce the result: "42 games, sorted by my rating". Adding, removing and undo are announced. |
 | **Targets** | At least 24 by 24 pixels, including spines |
 | **Ghosts** | Where something is on its way, a quiet bar or block in its size and shape, pulsing in a wave down the page, and still under reduced motion. Never words saying it loads, and never a spinner ([section 3.10](#310-empty-loading-and-failure)). |
-| **Tips** | A control that shows only an icon or a mark (S, M, L) has a tip: its words beside it, on hover and when the keyboard reaches it, saying what it does. Never the browser's own `title`. A touch opens none, Escape hides one, and focus a sheet or a menu puts on a button shows none. A control whose words are on screen has none, unless it says why it cannot be used (3D without WebGL 2). |
+| **Tips** | A control that shows only an icon or a mark (S, M, L) has a tip: its words beside it, on hover and when the keyboard reaches it, saying what it does. Never the browser's own `title`. A touch opens none, Escape hides one, and focus a dialog or a menu puts on a button shows none. A control whose words are on screen has none, unless it says why it cannot be used (3D without WebGL 2). |
+| **Dialogs** | What a menu's item, a button or a key opens is one dialog over the page ([ADR 009](adr/009-game-page-and-dialogs.md)), never a menu grown into a panel: centered, with the page's margin round it, as tall as its content up to the window's height and as wide as its task (a form, a list to read, a list's review); on a phone, the whole screen, risen from the bottom, so a keyboard and a long list have the room. Its title and close button are always there, at the top; the body scrolls between them and any row of buttons at its foot. One at a time: a question asked inside one (Restore) opens in place, under what it asks about, with Cancel first and Escape as its answer. While it is open the page behind is inert and Tab stays inside; Escape, the close button or a press outside closes it. |
 | **Contrast** | Text 4.5:1, large text and control boundaries 3:1, in both themes. Text over art sits on a scrim. |
 | **State** | Never by color alone ([3.2](#32-words-used-below)) |
 | **Motion** | Everything has a calm version ([section 14](#14-motion)). Nothing flashes more than three times a second. |
@@ -2187,7 +2185,7 @@ Nothing bounces.
 | --- | --- | --- |
 | Instant | 100ms | Press feedback |
 | Quick | 180ms | Hover, focus, chips |
-| Base | 280ms | Panels, sheets, menus |
+| Base | 280ms | Dialogs, panels, menus |
 | Slow | 480ms | A box lifting, sliding, turning; the LED changing color |
 | Cinematic | 800ms | Camera moves, the 2D and 3D switch, theme change |
 
@@ -2206,7 +2204,7 @@ Only position, scale, rotation and opacity are animated.
 | Camera travel | Eased glide | Jumps to the destination |
 | Depth on scroll | Layers shift | None |
 | Stat numbers | Count up | Final value shown |
-| Sheets and panels | Slide in | Fade in |
+| Dialogs | Rise a little and fade in; on a phone, rise from the bottom | Fade in |
 | A game opened from the library | Its cover grows into the page's hero, the rest crossfades | The page simply changes |
 | Images, as they arrive | Fade in, every one of them, over what stood in their place. One the browser already has is simply there | Simply there |
 

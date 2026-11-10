@@ -68,8 +68,8 @@ function TagInput({
   const open = focused && !dismissed && offered.length > 0
 
   // Escape with the suggestions open puts them away, and nothing else: a
-  // sheet around the field listens for Escape on the document, before the
-  // field hears it, so this listens on the window, before the sheet.
+  // dialog around the field listens for Escape on the document, before the
+  // field hears it, so this listens on the window, before the dialog.
   useEffect(() => {
     if (!open) return
     const onKey = (event: globalThis.KeyboardEvent) => {

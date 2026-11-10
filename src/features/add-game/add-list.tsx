@@ -133,7 +133,7 @@ export function AddList({ onAdded }: AddListProps) {
   const [notice, setNotice] = useState<string>()
   const running = useRef<AbortController | undefined>(undefined)
 
-  // Leaving the sheet stops a match on its way.
+  // Leaving the dialog stops a match on its way.
   useEffect(() => () => running.current?.abort(), [])
 
   const lines = parseList(text)
@@ -456,7 +456,7 @@ export function AddList({ onAdded }: AddListProps) {
         ))}
       </ol>
 
-      {/* Down over the sheet's own bottom padding, so no row shows beneath it. */}
+      {/* Down over the dialog's own bottom padding, so no row shows beneath it. */}
       <div className="sticky -bottom-6 -mx-5 -mb-6 grid gap-2 border-t border-line bg-surface px-5 pt-3 pb-6">
         {adding ? (
           <>

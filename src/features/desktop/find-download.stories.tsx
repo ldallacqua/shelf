@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
+import { Dialog, DialogContent } from '@/ui/dialog'
+
 import { FindDownloadView } from './find-download'
 import type { Found } from './sources'
 
@@ -51,6 +53,19 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Results: Story = {}
+
+/** As Play's menu opens it: a dialog over the game (ADR 009), the whole screen on a phone. */
+export const InItsDialog: Story = {
+  decorators: [
+    (Story) => (
+      <Dialog open>
+        <DialogContent title="Find a download for Made-up Game" closeLabel="Close">
+          <Story />
+        </DialogContent>
+      </Dialog>
+    ),
+  ],
+}
 
 /** Signed in: Real-Debrid first, since what it opens is likelier to be a file. */
 export const WithRealDebrid: Story = { args: { debrid: true } }

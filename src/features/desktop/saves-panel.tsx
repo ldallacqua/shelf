@@ -16,14 +16,15 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useFormatter, useNow, useTranslations } from 'next-intl'
-import { type ReactNode, type RefObject, useCallback, useEffect, useId, useState } from 'react'
+import { type ComponentProps, type ReactNode, useCallback, useEffect, useId, useState } from 'react'
 
 import type { Device } from '@/domain/library/devices'
 import { callApi } from '@/features/owner/call-api'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
 import { Switch } from '@/ui/checkbox'
-import { Confirm } from '@/ui/confirm'
+import { ConfirmInPlace } from '@/ui/confirm'
+import { Dialog, DialogContent } from '@/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +37,6 @@ import { Progress } from '@/ui/progress'
 import { Tip } from '@/ui/tooltip'
 
 import { AppWords } from './app-words'
-import { BesidePlay } from './beside-play'
 import { desktop } from './bridge'
 import {
   folderRefusalOf,
@@ -590,17 +590,18 @@ function Behind({
       <p className="text-sm text-pretty">
         {t('behind', { computer: computerOf(newer.device), when })}
       </p>
-      <Confirm
+      <ConfirmInPlace
         title={t('restoreTitle', { when })}
         description={t('restoreBody', { title })}
         confirm={t('restore')}
         cancel={t('cancel')}
         onConfirm={() => onRestore(newer)}
+        className="justify-self-stretch"
       >
         <Button variant="primary" size="sm" disabled={busy !== undefined}>
           {busy === `restore:${newer.id}` ? t('restoring') : t('restoreNewer')}
         </Button>
-      </Confirm>
+      </ConfirmInPlace>
     </section>
   )
 }
@@ -663,7 +664,7 @@ function SnapshotRow({
   const now = useNow({ updateInterval: 60_000 })
   const when = madeAt(format, snapshot.createdAt)
   return (
-    <li className="flex items-center gap-3 rounded-control border border-line px-3 py-2">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-control border border-line px-3 py-2">
       <span className="grid min-w-0 flex-1 gap-0.5">
         <span className="text-sm">
           {t.rich('at', {
@@ -690,19 +691,6 @@ function SnapshotRow({
         ) : null}
         <AtPlace snapshot={snapshot} place={place} />
       </span>
-      {snapshot.here ? null : (
-        <Confirm
-          title={t('restoreTitle', { when })}
-          description={t('restoreBody', { title })}
-          confirm={t('restore')}
-          cancel={t('cancel')}
-          onConfirm={onRestore}
-        >
-          <Button variant="secondary" size="sm" disabled={busy !== undefined}>
-            {busy === `restore:${snapshot.id}` ? t('restoring') : t('restore')}
-          </Button>
-        </Confirm>
-      )}
       <Tip label={t('show', { when })}>
         <Button
           variant="ghost"
@@ -714,6 +702,21 @@ function SnapshotRow({
           <FolderOpenIcon aria-hidden="true" />
         </Button>
       </Tip>
+      {/* Last in the row, so its question opens under the row, in the order focus takes. */}
+      {snapshot.here ? null : (
+        <ConfirmInPlace
+          title={t('restoreTitle', { when })}
+          description={t('restoreBody', { title })}
+          confirm={t('restore')}
+          cancel={t('cancel')}
+          onConfirm={onRestore}
+          className="basis-full"
+        >
+          <Button variant="secondary" size="sm" disabled={busy !== undefined}>
+            {busy === `restore:${snapshot.id}` ? t('restoring') : t('restore')}
+          </Button>
+        </ConfirmInPlace>
+      )}
     </li>
   )
 }
@@ -888,8 +891,8 @@ function SavesBody({ game, onPlay }: { game: SaveGame; onPlay?: (check: boolean)
 type SavesPanelProps = SaveGame & {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** What it stands beside when it opens in place. */
-  anchor: RefObject<HTMLElement | null>
+  /** Where focus goes when it closes: the menu's item, or the notice, that opened it may have gone. */
+  returnFocus: ComponentProps<typeof DialogContent>['returnFocus']
   /**
    * Given when Play opened it, as two copies differ: plays the game once one is kept (`check`
    * true), or with what is here when the person decides later (false).
@@ -901,20 +904,20 @@ function Frame({
   title,
   open,
   onOpenChange,
-  anchor,
+  returnFocus,
   children,
 }: Omit<SavesPanelProps, 'entryId' | 'apps' | 'onPlay'> & { children: ReactNode }) {
   const t = useTranslations('Saves')
   return (
-    <BesidePlay
-      heading={t('title', { title })}
-      closeLabel={t('close')}
-      open={open}
-      onOpenChange={onOpenChange}
-      anchor={anchor}
-    >
-      {children}
-    </BesidePlay>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        title={t('title', { title })}
+        closeLabel={t('close')}
+        returnFocus={returnFocus}
+      >
+        {children}
+      </DialogContent>
+    </Dialog>
   )
 }
 

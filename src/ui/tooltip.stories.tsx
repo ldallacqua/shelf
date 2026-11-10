@@ -14,7 +14,7 @@ type Story = StoryObj
 
 /**
  * Hover or Tab along the row: after the first, each opens at once. A click,
- * or focus put there by a sheet, shows none.
+ * or focus put there by a dialog, shows none.
  */
 export const IconButtons: Story = {
   render: () => (

@@ -5,9 +5,9 @@ import { useId, useState, useTransition } from 'react'
 
 import { MAX_SHELF_NAME, type SmartShelf } from '@/domain/library/shelves'
 import { Button } from '@/ui/button'
+import { Dialog, DialogContent } from '@/ui/dialog'
 import { Input } from '@/ui/field'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
-import { Sheet, SheetContent } from '@/ui/sheet'
 
 import type { ShelfActions, ShelfWrite } from './shelf-controls'
 
@@ -49,7 +49,7 @@ export function SaveShelf({ open, onOpenChange, shelf, view, actions, onDone }: 
     })
 
   return (
-    <Sheet
+    <Dialog
       open={open}
       onOpenChange={(next) => {
         if (next) {
@@ -59,10 +59,11 @@ export function SaveShelf({ open, onOpenChange, shelf, view, actions, onDone }: 
         onOpenChange(next)
       }}
     >
-      <SheetContent
+      <DialogContent
         title={shelf && !asNew ? t('saveTitle', { name: shelf.name }) : t('newTitle')}
         description={t('saveDescription')}
         closeLabel={t('close')}
+        size="sm"
       >
         <form
           className="grid gap-4"
@@ -127,7 +128,7 @@ export function SaveShelf({ open, onOpenChange, shelf, view, actions, onDone }: 
             ) : null}
           </div>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }

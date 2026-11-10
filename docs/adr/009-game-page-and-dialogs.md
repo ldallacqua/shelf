@@ -235,6 +235,29 @@ search and folds survive; the existing device-preference script applies visibili
 No design skills were installed. Controls have browser, desktop, selected and ungrouped stories;
 visibility has interactive shown and hidden stories, using both language/theme toolbar choices.
 
+### Phase 3, one dialog (10 Nov 2026)
+
+`src/ui/dialog.tsx` is the one dialog, on Radix's, which already held focus for the sheets: centered from
+640px, as tall as its content up to the window less 2rem, at one of four widths; below 640px the whole
+screen, risen from the bottom. Primer's dialog guidance, read for this phase, is the model: a safe area
+round a centered dialog, a title and a close button that are always there, a body that scrolls between
+them and a foot with a rule, and on a narrow viewport the full screen for anything with a field
+([Primer, Dialog][primer]). Apple's sheets add "Display only one sheet at a time" ([HIG, Sheets][hig-sheets]),
+so a restore's question inside Saves is asked in its row (`ConfirmInPlace`), Cancel first and Escape its
+answer, and no longer as an alert dialog over the dialog. Nothing drags it, so it has no grabber.
+
+Saves, Find a download, Add a game, Save as a shelf, the shortcuts and the library's filters under
+1536px are dialogs now; the filters' column beside a wide library stays. The sheet, the beside-Play
+popover and the centered frame's variants and constants are gone. A menu's item closes the menu as the
+dialog opens; the menu does not take focus back, and closing the dialog puts focus on the menu's ⋯
+button, as the item has gone. The accessibility-review skill's WCAG checklist was run on the primitive
+and its stories, seen at 375, 1280 and 2560px wide in both themes and languages: its text pairs are
+already in the token contrast test, focus order, Tab and Escape have tests, its buttons are 40px (44 by
+touch), and at 200% zoom a laptop crosses into the phone layout at 640px. Not checked: a real screen
+reader, a phone's own keyboard on a device, and Android's Back, which leaves the page rather than
+closing a dialog. Material's guidelines could not be read: the browser pane was hidden, and that page
+draws only with script.
+
 ## Consequences
 
 - One way to show a game, one way to show what a menu opens: less code, and no layer over a layer.
@@ -276,3 +299,5 @@ visibility has interactive shown and hidden stories, using both language/theme t
 [xbox-dialogs]: https://devdocs.xbox.com/build/core-features/common/game-save/game-saves-dialogues
 [nintendo]: https://nintendo.com/au/support/articles/how-to-enabledisable-automatic-save-data-backups-and-downloads
 [heroic]: https://www.answeroverflow.com/m/1420120237180846110
+[primer]: https://primer.style/product/components/dialog/guidelines/
+[hig-sheets]: https://developer.apple.com/design/human-interface-guidelines/sheets

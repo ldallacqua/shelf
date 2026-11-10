@@ -42,7 +42,7 @@ function SelectTrigger({
       <Primitive.Icon asChild>
         <ChevronDownIcon
           aria-hidden="true"
-          // The trigger's own state: a sheet around it is "open" too.
+          // The trigger's own state: a dialog around it is "open" too.
           className="size-4 flex-none text-muted duration-quick ease-settle group-data-[state=open]/select:rotate-180 motion-safe:transition-transform"
         />
       </Primitive.Icon>
