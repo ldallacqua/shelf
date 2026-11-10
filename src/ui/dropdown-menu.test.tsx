@@ -24,16 +24,16 @@ function Menu({ onSaves }: { onSaves: () => void }) {
 }
 
 describe('a menu', () => {
-  it('opens on the click, so the press alone chooses nothing under the pointer', () => {
+  it('chooses nothing when the click that opened it is let go over an item', () => {
     const onSaves = vi.fn()
     render(<Menu onSaves={onSaves} />)
     const trigger = screen.getByRole('button', { name: 'Ways to play' })
     fireEvent.pointerDown(trigger, { button: 0, pointerType: 'mouse' })
-    expect(screen.queryByRole('menu')).toBeNull()
-    fireEvent.click(trigger, { detail: 1 })
     expect(screen.getByRole('menu')).toBeVisible()
-    // Let go over an item that came up under the pointer: the click that opened it chose nothing.
+    // The menu came up under the pointer, which is let go there, as in the app.
+    fireEvent.pointerUp(screen.getByRole('menuitem', { name: 'Saves' }), { pointerType: 'mouse' })
     expect(onSaves).not.toHaveBeenCalled()
+    expect(screen.getByRole('menu')).toBeVisible()
   })
 
   it('closes on a second click, and opens from the keys as before', async () => {

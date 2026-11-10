@@ -301,8 +301,8 @@ They say now that Play brings them, and the button asks nothing.
 
 `pnpm desktop:check` then caught a click on Play's ⋯ opening Saves: Radix opens a dropdown on the
 press, the menu came up under the pointer before it was let go, and the release chose the item there,
-as a person's click could. Every menu (`src/ui/dropdown-menu.tsx`) opens on the click now, as a menu
-button does; the keys open it as before. And a real case asked when it shouldn't:
+as a person's click could. In every menu (`src/ui/dropdown-menu.tsx`) a release chooses an item now only
+when the press was in the menu too; it still opens on the press, and from the keys as before. And a real case asked when it shouldn't:
 after more backups on one computer than it keeps, the other's last snapshot was pruned, and the cut line
 was a choice. ADR 008's section 5 takes the one head then, when nothing changed here.
 

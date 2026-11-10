@@ -2,12 +2,9 @@
 
 import { CheckIcon } from 'lucide-react'
 import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui'
-import { createContext, useContext, useRef, useState, type ComponentProps } from 'react'
+import { useRef, type ComponentProps } from 'react'
 
 import { cn } from '@/ui/cn'
-
-/** What the trigger needs of its menu: whether it is open, and how to open or close it. */
-const Opening = createContext<{ open: boolean; change: (open: boolean) => void } | null>(null)
 
 /**
  * A menu that opens from a button. It does not lock the page behind it: the
@@ -15,73 +12,38 @@ const Opening = createContext<{ open: boolean; change: (open: boolean) => void }
  */
 function DropdownMenu({
   modal = false,
-  open: given,
-  defaultOpen = false,
-  onOpenChange,
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  const [own, setOwn] = useState(defaultOpen)
-  const open = given ?? own
-  const change = (next: boolean) => {
-    if (given === undefined) setOwn(next)
-    onOpenChange?.(next)
-  }
-  return (
-    <Opening value={{ open, change }}>
-      <DropdownMenuPrimitive.Root modal={modal} open={open} onOpenChange={change} {...props} />
-    </Opening>
-  )
+  return <DropdownMenuPrimitive.Root modal={modal} {...props} />
 }
 
-/**
- * The menu's button. It opens on the click, as a menu button does, not on the press as Radix's own:
- * opened on the press, the menu could come up under the pointer before it is let go, and the
- * release chose the item there. Seen in the app, where a click on Play's ⋯ opened Saves. The keys
- * still open it as Radix does: a key's click has no detail, and is left alone.
- */
-function DropdownMenuTrigger({
-  onPointerDown,
-  onClick,
-  ...props
-}: ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-  const menu = useContext(Opening)
-  // Whether it was open as the pointer went down on it: a press outside the menu may close it first.
-  const pressed = useRef<boolean | null>(null)
-  return (
-    <DropdownMenuPrimitive.Trigger
-      onPointerDown={(event) => {
-        onPointerDown?.(event)
-        if (!menu || event.defaultPrevented || event.button !== 0 || event.ctrlKey) return
-        pressed.current = menu.open
-        // Radix's own opening is passed by; the focus stays where it was, as Radix leaves it.
-        event.preventDefault()
-      }}
-      onClick={(event) => {
-        onClick?.(event)
-        if (!menu || event.defaultPrevented || event.detail === 0) return
-        const wasOpen = pressed.current ?? menu.open
-        pressed.current = null
-        menu.change(!wasOpen)
-      }}
-      {...props}
-    />
-  )
-}
+const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 const DropdownMenuGroup = DropdownMenuPrimitive.Group
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
 
+/**
+ * The menu. Radix opens it on the press, so it can come up under the pointer before the pointer is let
+ * go, and the release would choose the item there: in the app, a click on Play's ⋯ opened Saves. A
+ * release chooses an item only when the press was in the menu too, as a click of its own.
+ */
 function DropdownMenuContent({
   className,
   sideOffset = 6,
   align = 'end',
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const pressed = useRef(false)
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         align={align}
+        onPointerDownCapture={() => (pressed.current = true)}
+        onPointerUpCapture={(event) => {
+          if (!pressed.current) event.preventDefault()
+          pressed.current = false
+        }}
         className={cn(
           'z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-40 overflow-y-auto',
           'origin-(--radix-dropdown-menu-content-transform-origin)',
