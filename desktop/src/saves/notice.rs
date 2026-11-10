@@ -37,10 +37,10 @@ pub fn words(portuguese: bool, needs: Needs) -> &'static str {
             "O backup dos saves ficou só neste computador: o lugar dos seus saves está cheio. Ele vai para lá quando houver espaço."
         }
         (false, Needs::Failed(Refusal::Large)) => {
-            "Its saves weren’t backed up: they’re larger than a snapshot may be. Raise the limit in Shelf’s Settings, under Saves."
+            "Its saves weren’t backed up: they’re larger than a backup may be. Raise the limit in Shelf’s Settings, under Saves."
         }
         (true, Needs::Failed(Refusal::Large)) => {
-            "O backup dos saves não foi feito: eles passam do tamanho que um snapshot pode ter. Aumente o limite nas Configurações do Shelf, em Saves."
+            "O backup dos saves não foi feito: eles passam do tamanho que um backup pode ter. Aumente o limite nas Configurações do Shelf, em Saves."
         }
         (false, Needs::Failed(_)) => {
             "Its saves weren’t backed up. Open Saves in Play’s menu on its page to try again."

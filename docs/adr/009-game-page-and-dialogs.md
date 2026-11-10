@@ -267,8 +267,8 @@ drawn from it, so they never disagree, and neither says a backup reached a place
 to. The switch is one line, its explanation only while off; History shows three, then All; where the saves
 are is one line that opens by itself when nothing usable was found. The limits and the place's line left
 for Settings. "Snapshot" is "backup" and "history" in both languages' words, Settings included, as the
-third open question proposed; the app's own Windows notifications keep the old word until a desktop
-release, which this phase didn't make.
+third open question proposed; the app's own Windows notifications kept the old word until a desktop
+release, which this phase didn't make (0.18.0 did, 10 Nov 2026).
 
 The status beside Play needs no new command: the app's `game_state`, read every few seconds already, says
 whether a game's saves are on, and an app too old to say shows nothing. Reading the saves themselves lists

@@ -1965,8 +1965,8 @@ What it shows first, and what moved one step back: [ADR 009](adr/009-game-page-a
   as it is. A folder that can't be reached is said there and on each game, and new backups wait here.
   Under it, the limits, the same for every game and this computer's own: how many backups are kept per
   game (20, never fewer than 3) and the largest one (500 MB).
-- **Words.** "Backup" and "history", in both languages, for what the app and its files call a snapshot. A
-  Windows notification written by the app itself still says snapshot until the next desktop release.
+- **Words.** "Backup" and "history", in both languages, for what the app and its files call a snapshot, the
+  Windows notifications the app writes itself included (from 0.18.0).
 - **It isn't on the landing page yet,** as nothing of Shelf for Windows is there; it goes with the app's part.
 
 Based on: Steam's Cloud help (a switch per game in its properties, a Cloud status beside Play, and the
