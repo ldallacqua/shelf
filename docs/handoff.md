@@ -13,7 +13,8 @@ notes are Anotações and tags Tags. The owner also asked why Shelf asked about 
 computer when Steam almost never does: the rule was Steam's already (newer is taken at Play when nothing
 changed here), but the words made it a question; they no longer do. A real false choice was fixed in the
 app's Rust (`snapshot::decide`): after more backups on one computer than it keeps, the other was asked to
-choose. That fix reaches people only with a desktop release, which needs the owner's go-ahead.
+choose. It is in **0.18.0, published with the owner's OK on 10 Nov 2026**, with the app's own
+notifications saying backup, not snapshot.
 
 ## Dialogs, and Saves with the important first (10 Nov 2026)
 
