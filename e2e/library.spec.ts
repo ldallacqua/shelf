@@ -301,22 +301,25 @@ test.describe('on a phone (spec 3.4)', () => {
     expect(edges.footer).toBeGreaterThanOrEqual(edges.controls.bottom - 1)
   })
 
-  test('a tap opens the game as a sheet from the bottom', async ({ page, size }) => {
-    test.skip(size !== 'phone', 'the bottom sheet is the phone layout')
+  test('on a phone the filters fill the screen, their count at the foot', async ({
+    page,
+    size,
+  }) => {
+    test.skip(size !== 'phone', 'the dialog fills the screen only at phone width')
     await openLibrary(page)
-    await page.getByRole('button', { name: /^Astro Bot/ }).tap()
-    const sheet = page.getByRole('dialog', { name: 'Astro Bot' })
-    await expect(sheet).toBeVisible()
-    const height = page.viewportSize()?.height ?? 0
-    // Once it has slid in, its buttons sit on the bottom edge, and it leaves the top of the shelf in view.
-    const footer = sheet.locator('[data-sheet-footer]')
+    await page.getByRole('button', { name: 'Filters', exact: true }).tap()
+    const dialog = page.getByRole('dialog', { name: 'Filters', exact: true })
+    await expect(dialog).toBeVisible()
+    const { width = 0, height = 0 } = page.viewportSize() ?? {}
+    // Once it has risen, it is the whole screen, and its count and Clear sit on the bottom edge.
     await expect
       .poll(async () => {
-        const box = await footer.boundingBox()
-        return Math.round((box?.y ?? 0) + (box?.height ?? 0))
+        const box = await dialog.boundingBox()
+        return [Math.round(box?.y ?? -1), Math.round(box?.width ?? 0), Math.round(box?.height ?? 0)]
       })
-      .toBe(height)
-    expect((await sheet.boundingBox())?.y ?? 0).toBeGreaterThan(40)
+      .toEqual([0, width, height])
+    const footer = await dialog.locator('[data-dialog-footer]').boundingBox()
+    expect(Math.round((footer?.y ?? 0) + (footer?.height ?? 0))).toBe(height)
   })
 })
 

@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
+import { Dialog, DialogContent } from '@/ui/dialog'
+
 import type { SavesView } from './saves'
 import { SavesPanelView } from './saves-panel'
 
@@ -120,6 +122,28 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const InStep: Story = {}
+
+/**
+ * As Play's menu opens it: a dialog over the game (ADR 009), centered and as tall as it needs, the whole
+ * screen on a phone. Its restore questions are asked in their row, never as a second dialog.
+ */
+export const InItsDialog: Story = {
+  decorators: [
+    (Story) => (
+      <Dialog open>
+        <DialogContent title="Saves for Made-up Game" closeLabel="Close">
+          <Story />
+        </DialogContent>
+      </Dialog>
+    ),
+  ],
+}
+
+/** The same, on a phone. */
+export const InItsDialogOnAPhone: Story = {
+  ...InItsDialog,
+  globals: { viewport: { value: 'mobile1', isRotated: false } },
+}
 
 /** Played since the latest snapshot. */
 export const Changed: Story = {

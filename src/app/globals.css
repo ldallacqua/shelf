@@ -7,7 +7,6 @@
 @import '../ui/tokens/motion.css';
 @import '../ui/room.css';
 @import '../ui/shelf.css';
-@import '../ui/sheet.css';
 
 /*
  * Martian Mono's stand-in while it loads (`ui/fonts`). Every Martian Mono
@@ -43,21 +42,8 @@
     @slot;
   }
 }
-/* Where a game's sheet rises from the bottom, and where it stands down the right: SHEET_FROM_BOTTOM in ui/sheet-from-bottom.ts. */
-@custom-variant sheet-bottom {
-  @media (width < 40rem), ((width < 64rem) and (orientation: portrait)) {
-    @slot;
-  }
-}
-@custom-variant sheet-side {
-  @media (width >= 64rem), ((width >= 40rem) and (orientation: landscape)) {
-    @slot;
-  }
-}
 /* Where the library's filters stand in a column beside it: FILTERS_BESIDE in features/filters/beside.ts. */
 @custom-variant filters-beside (@media (width >= 96rem));
-/* Where a game opened over the shelf stands in the middle of the window: GAME_CENTERED in features/game-detail/hero.ts. */
-@custom-variant game-centered (@media (width >= 150rem) and (height >= 45rem));
 
 @theme inline {
   --color-wall: var(--wall);
@@ -109,11 +95,12 @@
   --animate-fade-in: fade-in var(--motion-quick) var(--ease-settle);
   --animate-menu-in: menu-in var(--motion-quick) var(--ease-settle);
   --animate-tip-in: tip-in var(--motion-quick) var(--ease-settle);
-  /* A sheet slides in from the edge named by --sheet-from: the bottom on a phone, the right otherwise. One that does not stand at an edge also fades, by --sheet-fade. */
-  --animate-sheet-in: sheet-in var(--motion-base) var(--ease-settle);
+  /* A dialog moves by --dialog-from as it comes and goes: up from the bottom on a phone, a little way up
+     in the middle otherwise, where it also fades, by --dialog-fade. */
+  --animate-dialog-in: dialog-in var(--motion-base) var(--ease-settle);
   --animate-progress-slide: progress-slide 1.6s var(--ease-settle) infinite;
-  --animate-sheet-out: sheet-out var(--motion-quick) var(--ease-leave) forwards;
-  --animate-sheet-fade-out: sheet-fade-out var(--motion-quick) var(--ease-leave) forwards;
+  --animate-dialog-out: dialog-out var(--motion-quick) var(--ease-leave) forwards;
+  --animate-dialog-fade-out: dialog-fade-out var(--motion-quick) var(--ease-leave) forwards;
 
   @keyframes fade-in {
     from {
@@ -144,21 +131,21 @@
       translate: 300% 0;
     }
   }
-  @keyframes sheet-in {
+  @keyframes dialog-in {
     from {
-      translate: var(--sheet-from, 0 100%);
-      opacity: var(--sheet-fade, 1);
+      translate: var(--dialog-from, 0 100%);
+      opacity: var(--dialog-fade, 1);
     }
   }
 
-  @keyframes sheet-out {
+  @keyframes dialog-out {
     to {
-      translate: var(--sheet-from, 0 100%);
-      opacity: var(--sheet-fade, 1);
+      translate: var(--dialog-from, 0 100%);
+      opacity: var(--dialog-fade, 1);
     }
   }
 
-  @keyframes sheet-fade-out {
+  @keyframes dialog-fade-out {
     to {
       opacity: 0;
     }

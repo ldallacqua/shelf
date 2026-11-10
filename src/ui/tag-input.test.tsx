@@ -96,7 +96,7 @@ describe('TagInput', () => {
 
     it('puts the suggestions away, and goes no further while they are open', async () => {
       render(<Tags suggestions={['couch co-op']} />)
-      // As a sheet around the field listens.
+      // As a dialog around the field listens.
       document.addEventListener('keydown', heard, true)
       await userEvent.type(field(), 'cou')
 
@@ -104,7 +104,7 @@ describe('TagInput', () => {
       expect(screen.getByRole('listbox', { hidden: true })).not.toBeVisible()
       expect(heard.mock.calls.filter(([event]) => event.key === 'Escape')).toHaveLength(0)
 
-      // Closed, Escape is the sheet's again.
+      // Closed, Escape is the dialog's again.
       fireEvent.keyDown(field(), { key: 'Escape' })
       expect(heard.mock.calls.filter(([event]) => event.key === 'Escape')).toHaveLength(1)
     })

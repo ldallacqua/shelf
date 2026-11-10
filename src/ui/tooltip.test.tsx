@@ -47,7 +47,7 @@ describe('Tip', () => {
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
   })
 
-  it('stays hidden for focus a sheet or a menu puts on the control', async () => {
+  it('stays hidden for focus a dialog or a menu puts on the control', async () => {
     render(<Shuffle />)
     await userEvent.click(screen.getByRole('button', { name: 'Before' }))
     act(() => screen.getByRole('button', { name: 'Shuffle again' }).focus())

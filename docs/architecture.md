@@ -207,7 +207,7 @@ src/
   domain/      Rules and types. No React, no Next.js, no database.
   server/      Runs only on the server: database, IGDB, sign-in, services.
   features/    The interface, by feature.
-  ui/          Design-system parts: buttons, sheets, menus, tokens.
+  ui/          Design-system parts: buttons, dialogs, menus, tokens.
   app/         Routes. Thin: they compose features and call services.
   i18n/        Language setup.
 messages/      en.json, pt-BR.json
@@ -530,7 +530,7 @@ contrast requirement, including text on a wall washed by an LED of any color.
 
 **Components.** shadcn/ui copies component source into `src/ui`, built on Radix primitives
 for focus handling, keyboard support and screen-reader roles. Every one is restyled with the
-tokens; none keeps its stock look. Sheets, dialogs, menus, tooltips, tabs, the command
+tokens; none keeps its stock look. The dialog, menus, tooltips, tabs, the command
 palette and toasts come from this set, and so do the form's controls: a select, a rating
 slider, a calendar, a tag field, chips, checkboxes and switches, and one text field they
 all look like. No form control is the browser's own drawing. The checkbox, radio button
@@ -567,7 +567,7 @@ One tool per job, so nothing fights:
 | Job | Tool | Loaded |
 | --- | --- | --- |
 | Hover, press, focus, simple state | CSS transitions | Always |
-| Menus and sheets | CSS animations on Radix primitives | With the library |
+| Menus and dialogs | CSS animations on Radix primitives | With the library |
 | Reordering after a regroup or a change of view | The Web Animations API: each box on screen slides from where it stood (`useFlip`) | With the library |
 | Gestures: scrubbing a compact ledge | Touch events: a press that rests 250 ms, then a slide that `preventDefault`s the page's scroll; the spine under the finger is the shelf's box in focus, and its title is written straight into one label (`features/library/scrub.ts`) | With the library |
 | A cover growing into the game's page | The browser's view transitions, named for that one change (`features/game-detail/morph.ts`) | Built in |
@@ -653,7 +653,7 @@ and the address does not change. `D` switches, as the pair of buttons does.
 | Resolution | Capped at 1.75× and lowered automatically if frames run slow |
 | Picking | By arithmetic: boxes sit on known ledges, so a pointer ray meets the shelf plane and a search finds the box. No per-box hit testing. |
 | Camera | Our own rig: walks sideways along the wall, damped, driven by the wheel, a drag, the keys, the shelf index and focus |
-| Pulled box | Comes out of the wall and turns to the camera, with `cover_big_2x`, while the detail opens beside it. The sheet has no scrim in 3D: the scene dims the wall itself, so the pulled box stays lit. |
+| Pulled box | Comes out of the wall and turns to the camera, with `cover_big_2x`, while a bar under it offers Open, which goes to the game's page (ADR 009). The scene dims the wall itself, so the pulled box stays lit. |
 
 **Accessibility.** The canvas is hidden from assistive technology. Beside it sits the same
 library as a labeled list with the same order and selection. Focus in the list moves the
@@ -790,11 +790,11 @@ as JSON text and structured content.
 | --- | --- | --- | --- |
 | Unit | Vitest, Node | All of `domain`: parser, evaluator, sort, group, facets, grouping rules, spine colors, IGDB mapping. Services against an in-memory SQLite. The IGDB client against MSW. | Locally, in seconds |
 | Property | fast-check in Vitest | The filter language round trip; sorting is a total order | With unit |
-| Component | Vitest with jsdom and Testing Library | Components with real logic: filter panel, add-game form, sort menu, sheets. Keyboard paths and labels, in both languages. | With unit |
+| Component | Vitest with jsdom and Testing Library | Components with real logic: filter panel, add-game form, sort menu, the dialog. Keyboard paths and labels, in both languages. | With unit |
 | End to end | Playwright | Every "Done when" line in the spec that a browser can check | Affected files while working; all nine projects in `pnpm verify` |
 | Parity | Playwright | The same shelves and games in the same order in 2D and 3D; the switch keeping the address and the game in focus, both ways; in 3D, the keyboard paths, picking, a regroup, the budgets and the fallbacks (`e2e/shelf-3d.spec.ts`). The rest of the library tests run in 2D. | `pnpm verify` |
 | Visual | Playwright screenshots | Key screens × light and dark × English and Portuguese × phone and desktop | `pnpm verify`, in Docker on Linux |
-| Accessibility | axe inside Playwright | Every page and every open sheet or dialog, both themes | `pnpm verify` |
+| Accessibility | axe inside Playwright | Every page and every open dialog, both themes | `pnpm verify` |
 | Speed | Lighthouse 13, scripted, with its throttling applied for real | Landing and library on the mobile profile: 90 or more, and the Core Web Vitals in spec section 16 | `pnpm verify` |
 
 **Browser matrix:** Chromium, Firefox and WebKit, each at phone (390), tablet (820) and
@@ -1061,6 +1061,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| One dialog | **What a menu's item, a button or a key opens is `src/ui/dialog.tsx`, one Radix dialog: centered from 640px, as tall as its content up to the window less 2rem, at one of four widths (28, 36, 44, 56rem); below 640px the whole screen, risen from the bottom (ADR 009, phase 3).** Saves, Find a download, Add a game, Save as a shelf, the shortcuts and the library's filters on a window under 1536px use it; `ui/sheet.tsx`, `features/desktop/beside-play.tsx`, `SHEET_FROM_BOTTOM`, `GAME_CENTERED` and the `sheet-bottom`, `sheet-side` and `game-centered` variants are gone. Its close button is first, where focus starts. On closing it focuses `returnFocus` when given, else the control focused as it opened if that is still on the page: Play's menu gives its ⋯ button, since the item that opened the dialog has gone, and keeps the menu from taking focus back as it closes. `ConfirmInPlace` (`ui/confirm.tsx`) asks a question inside a dialog where its control stands, marked `data-confirming`, which the dialog leaves Escape to; `Confirm`, an alert dialog of its own, stays for questions on a page. | The owner found Saves to be a menu grown into a panel inside a frame over the shelf. Primer's dialog guidance (centered with a safe area, the whole screen on a narrow viewport for anything with a field, a body that scrolls between a fixed title and foot) and Apple's rule that one sheet shows at a time decided the shape. Swiping to close, a grabber and Back closing a dialog were left out: nothing drags it, and Back is the page's. |
 | Library beside the game | **ADR 009 phase 2: `game/layout.tsx` keeps a lazy library column outside the slug, with an in-memory arrangement handover and windowed rows.** Previous/Next use its unique order; the page uses container queries. Shelf identity keys reset the list when file scope changes. | Games remain plain routes, preserving optimistic navigation on Vercel. Search and scroll survive game changes without drawing an entire large library; direct narrow visits avoid the list's code and data. |
 | A game's address, the game's alone | **A game opened from the library goes to `/u/{handle}/game/{slug}` with no query; the library's arrangement no longer rides on it, and the Library link reads no address (`LibraryLink`). The prefetch on a press goes.** | Still slow on production after the warm-up, from the second game on. Vercel answers a page built ahead without the query it was asked with, the router counts that as a wrong guess of the route (`dispatchRetryDueToTreeMismatch`), marks the route as rewritten, and from then on waits for the server's whole page. Without the query every game opened at once; the press prefetch only ever asked for anything once the router had stopped guessing. |
 | A game's page at once, on production | **The library asks the router for the game page's frame while it is idle, from `/u/none/game/none`, the one game page every build makes; a flight whose page is not drawn within 300 ms is skipped, and the line across the top follows a game chosen on the shelf (`navigationStarted`).** | Seen by the owner after phase 1 (9 Nov 2026): a game chosen from the wall opened after one to three seconds, behind a cover that flew toward nothing. A router that doesn't know a page's frame waits for the server's whole page, and a game page not yet built took 2.5 s on production; the drawing handed from the library showed only once the frame was known, from the second game on. |

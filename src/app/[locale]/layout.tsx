@@ -94,7 +94,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
             </main>
             <Footer />
             <Notices />
-            {/* Over everything, sheets too: a link in one can lead to a page that takes a while. */}
+            {/* Over everything, dialogs too: a link in one can lead to a page that takes a while. */}
             <NavigationProgress />
           </TipProvider>
         </NextIntlClientProvider>

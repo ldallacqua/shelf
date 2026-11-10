@@ -97,7 +97,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const [playing, setPlaying] = useState(false)
   const hasSources = useHasSources()
   const [finding, setFinding] = useState(false)
-  // Fetched only once it is asked for, and kept from then on, for the sheet to slide away.
+  // Fetched only once it is asked for, and kept from then on, for the dialog to leave as it came.
   const [asked, setAsked] = useState(false)
   const keepsSaves = useSavesAvailable()
   const [saving, setSaving] = useState(false)
@@ -105,6 +105,9 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   // Saves opened by Play, as two copies differ: keeping one, or deciding later, plays.
   const [choosing, setChoosing] = useState(false)
   const around = useRef<HTMLDivElement>(null)
+  const more = useRef<HTMLButtonElement>(null)
+  // What Play's menu opens hands focus back to the menu's button: the item that opened it has gone.
+  const back = () => more.current ?? around.current?.querySelector('button')
   const installedApps = here?.installed ?? noApps
   const { state, check, sentGameToSteam } = useGameState(
     entryId,
@@ -377,7 +380,13 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
         <DropdownMenu>
           <Tip label={t('playOptions')}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="px-2" aria-label={t('playOptions')}>
+              <Button
+                ref={more}
+                variant="ghost"
+                size="sm"
+                className="px-2"
+                aria-label={t('playOptions')}
+              >
                 <EllipsisIcon aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
@@ -433,7 +442,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
           entryId={entryId}
           open={finding}
           onOpenChange={setFinding}
-          anchor={around}
+          returnFocus={back}
         />
       ) : null}
       {savesAsked ? (
@@ -446,7 +455,7 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
             setSaving(open)
             if (!open) setChoosing(false)
           }}
-          anchor={around}
+          returnFocus={back}
           onPlay={
             choosing
               ? (look) => {

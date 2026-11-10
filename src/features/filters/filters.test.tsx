@@ -346,7 +346,7 @@ describe('ListSection', () => {
   })
 })
 
-describe('FilterPanel: beside the library, or in a sheet (issue #62)', () => {
+describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
   const panel = (
     beside: boolean | undefined,
     open: boolean,
@@ -367,7 +367,7 @@ describe('FilterPanel: beside the library, or in a sheet (issue #62)', () => {
   )
   const column = () => screen.getByRole('complementary', { name: 'Filters' })
 
-  it('on a wide window is a column of its own, counting, and never a sheet', () => {
+  it('on a wide window is a column of its own, counting, and never a dialog', () => {
     renderWithIntl(panel(true, true))
     expect(within(column()).getByText('1 game matches')).toBeInTheDocument()
     expect(within(column()).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
@@ -386,15 +386,17 @@ describe('FilterPanel: beside the library, or in a sheet (issue #62)', () => {
     expect(column().querySelector('.ghost')).toBeInTheDocument()
   })
 
-  it('on a narrower window leaves the hidden column empty, and opens as a sheet', () => {
+  it('on a narrower window leaves the hidden column empty, and opens as a dialog', () => {
     renderWithIntl(panel(false, true))
-    // The sheet is modal: everything else, the column too, is hidden from assistive technology.
+    // The dialog is modal: everything else, the column too, is hidden from assistive technology.
     const hidden = screen.getByRole('complementary', { name: 'Filters', hidden: true })
     expect(hidden.querySelector('details')).not.toBeInTheDocument()
     // Nothing is on its way, so no ghost says so: a page settles once its ghosts are gone.
     expect(hidden.querySelector('.ghost')).not.toBeInTheDocument()
-    const sheet = screen.getByRole('dialog', { name: 'Filters' })
-    expect(within(sheet).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: 'Filters' })
+    expect(within(dialog).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
+    // Its count and Clear stay at its foot, outside what scrolls.
+    expect(dialog.querySelector('[data-dialog-footer]')).toHaveTextContent('1 game matches')
   })
 
   it('changes the filter from the column, and clears it', async () => {
@@ -408,10 +410,10 @@ describe('FilterPanel: beside the library, or in a sheet (issue #62)', () => {
     expect(onClear).toHaveBeenCalled()
   })
 
-  it('keeps the sections opened in the sheet open in the column when the window widens', async () => {
+  it('keeps the sections opened in the dialog open in the column when the window widens', async () => {
     const { rerender } = render(intl(panel(false, true)))
-    const sheet = screen.getByRole('dialog', { name: 'Filters' })
-    await userEvent.click(within(sheet).getByText('Theme'))
+    const dialog = screen.getByRole('dialog', { name: 'Filters' })
+    await userEvent.click(within(dialog).getByText('Theme'))
     rerender(intl(panel(true, false)))
     expect(column().querySelector('details[data-filter="theme"]')).toHaveAttribute('open')
     expect(within(column()).getByRole('button', { name: 'Horror, 1 game' })).toBeInTheDocument()

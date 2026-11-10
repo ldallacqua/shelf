@@ -23,8 +23,8 @@ import type { QueryNode } from '@/domain/query/tree'
 import { writeQuery } from '@/domain/query/write'
 import { Button } from '@/ui/button'
 import { cn } from '@/ui/cn'
+import { Dialog, DialogContent } from '@/ui/dialog'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
-import { Sheet, SheetContent } from '@/ui/sheet'
 import { GhostText, Loading } from '@/ui/ghost'
 import { Ghosts } from '@/ui/ghosts'
 
@@ -75,7 +75,7 @@ const IGDB: readonly FilterKey[] = [
 const OPEN_AT_FIRST: readonly FilterKey[] = ['status', 'owned', 'genre']
 
 type FilterPanelProps = {
-  /** The sheet's state. It never opens while the filters stand beside the library. */
+  /** The dialog's state. It never opens while the filters stand beside the library. */
   open: boolean
   onOpenChange: (open: boolean) => void
   /** The window is wide enough for the filters to stand beside the library (`beside.ts`); undefined until known. */
@@ -99,7 +99,7 @@ type FilterPanelProps = {
  * match.
  *
  * On a wide window the panel is a column beside the library, always there
- * (issue #62); narrower, it is a sheet the Filters button opens. Both are
+ * (issue #62); narrower, it is a dialog the Filters button opens. Both are
  * drawn from here, so which sections are open carries over when the window
  * changes width. The column is in every page, as the server cannot tell a
  * window's width, and hidden by CSS where it does not fit. Its sections are
@@ -258,7 +258,7 @@ export function FilterPanel({
     )
   }
 
-  /** Everything but the title, the count and Clear: the same in the column and in the sheet. */
+  /** Everything but the title, the count and Clear: the same in the column and in the dialog. */
   const controls = (at: LibraryIndex | undefined) => (
     <>
       {count > 1 ? (
@@ -368,13 +368,14 @@ export function FilterPanel({
         </div>
       </aside>
 
-      <Sheet open={open && !beside} onOpenChange={onOpenChange}>
-        <SheetContent
+      <Dialog open={open && !beside} onOpenChange={onOpenChange}>
+        <DialogContent
           title={t('panel.title')}
           description={t('panel.description')}
           closeLabel={t('panel.close')}
-          className="sm:w-[28rem]"
-          data-slot="filter-panel"
+          // As tall as the window allows, so opening a section never moves the dialog's top.
+          className="sm:h-[calc(100dvh-2rem)]"
+          data-filter-panel=""
           footer={
             <>
               <p role="status" className="text-sm">
@@ -385,8 +386,8 @@ export function FilterPanel({
           }
         >
           {controls(index)}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

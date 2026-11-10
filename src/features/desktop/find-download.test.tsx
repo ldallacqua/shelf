@@ -2,7 +2,6 @@ import { renderHook, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { GAME_CENTERED } from '@/features/game-detail/hero'
 import { renderWithIntl } from '@/test/render'
 
 import FindDownload from './find-download'
@@ -59,7 +58,6 @@ beforeEach(() => {
   found = [FOUND]
   started = true
   account = { state: 'out' }
-  wide(false)
   app.mockClear()
   setBridgeForTests(app)
 })
@@ -68,14 +66,14 @@ afterEach(() => {
   setBridgeForTests(undefined)
 })
 
-const anchor = { current: null }
+const returnFocus = { current: null }
 const finder = (
   <FindDownload
     title="Made-up Game"
     entryId="made-up-entry"
     open
     onOpenChange={() => undefined}
-    anchor={anchor}
+    returnFocus={returnFocus}
   />
 )
 
@@ -84,13 +82,6 @@ const opened = async () => {
   renderWithIntl(finder)
   return user
 }
-
-const wide = (matches: boolean) =>
-  vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: matches && query === GAME_CENTERED,
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
-  }))
 
 describe('finding a download', () => {
   it('has nothing to offer with no source to search', async () => {
@@ -120,24 +111,17 @@ describe('finding a download', () => {
         entryId="made-up-entry"
         open
         onOpenChange={() => undefined}
-        anchor={anchor}
+        returnFocus={returnFocus}
       />,
     )
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('is a sheet, as anything opened from a game is', async () => {
-    wide(false)
+  it('is a dialog over the game, as anything Play’s menu opens is', async () => {
     await opened()
-    expect(await screen.findByRole('dialog')).toHaveAttribute('data-slot', 'sheet')
-  })
-
-  it('opens in place where the game stands in the middle of a very wide window', async () => {
-    wide(true)
-    await opened()
-    const inPlace = await screen.findByRole('dialog', { name: 'Find a download for Made-up Game' })
-    expect(inPlace).toHaveAttribute('data-slot', 'popover-content')
-    expect(await within(inPlace).findByText('Made-up Game v1.2')).toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', { name: 'Find a download for Made-up Game' })
+    expect(dialog).toHaveAttribute('data-slot', 'dialog')
+    expect(await within(dialog).findByText('Made-up Game v1.2')).toBeInTheDocument()
   })
 
   it('searches for the game’s name, and says what a person chooses by', async () => {

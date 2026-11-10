@@ -238,6 +238,25 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
     expect(await screen.findByRole('menuitem', { name: 'Saves' })).toBeInTheDocument()
   })
 
+  it('closes the menu for the Saves dialog, and Escape goes back to the menu’s button', async () => {
+    computer.launchers.set('entry-1', GRIM_DAWN)
+    computer.saves = true
+    const user = userEvent.setup()
+    play()
+    const more = await screen.findByRole('button', { name: 'Ways to play' })
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('save_caps', {}))
+    await user.click(more)
+    await user.click(await screen.findByRole('menuitem', { name: 'Saves' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Saves for Grim Dawn' })
+    expect(screen.queryByRole('menu')).toBeNull()
+    // The menu, closing, neither took focus back nor closed what it opened.
+    await waitFor(() => expect(dialog).toContainElement(document.activeElement as HTMLElement))
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(more).toHaveFocus()
+  })
+
   it('says when the game started with this computer’s saves, and how to reach them', async () => {
     computer.launchers.set('entry-1', GRIM_DAWN)
     computer.saves = true

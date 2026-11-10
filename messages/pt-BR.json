@@ -126,7 +126,7 @@
         },
         "base": {
           "name": "Base",
-          "use": "Painéis, folhas, menus"
+          "use": "Diálogos, painéis, menus"
         },
         "slow": {
           "name": "Lento",
@@ -1238,7 +1238,7 @@
       "shelves": "Prateleira anterior ou próxima",
       "ends": "Primeiro ou último jogo da prateleira",
       "open": "Abrir o jogo em foco",
-      "close": "Fechar um jogo, uma folha ou um painel",
+      "close": "Fechar um diálogo, um menu ou uma caixa puxada",
       "search": "Buscar",
       "filters": "Abrir os filtros",
       "group": "Mudar o agrupamento",
