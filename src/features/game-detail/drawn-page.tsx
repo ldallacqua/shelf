@@ -1,5 +1,8 @@
+import type { ReactElement } from 'react'
+
 import type { LibraryGame, LibraryPlatform, LibraryTag } from '@/domain/library/library'
 import { GameAbove } from '@/features/library-beside/steps'
+import { WithList } from '@/features/library-beside/with-list'
 import { ShelfProvider } from '@/features/library/shelf'
 import type { ShelfInfo } from '@/features/library/shelf-address'
 
@@ -36,4 +39,13 @@ export function drawPage({ shelf, game, tags, platforms, placeholder }: DrawnPag
       />
     </ShelfProvider>
   )
+}
+
+/**
+ * The drawn page with the library beside it, as the layout around a shelf's
+ * games draws the page: what a shelf's page draws in its place while the
+ * router fetches the game (`Arriving`, in `hand-off.tsx`).
+ */
+export function withList(page: ReactElement) {
+  return <WithList>{page}</WithList>
 }

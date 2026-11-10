@@ -6,6 +6,7 @@ import { preconnect } from 'react-dom'
 import { removeShelfAction, saveShelfAction } from '@/app/actions/shelves'
 import { IMAGE_HOST } from '@/domain/igdb/images'
 import { ShelfMissing } from '@/features/filters/shelf-missing'
+import { Arriving } from '@/features/game-detail/hand-off'
 import { LibrarySkeleton } from '@/features/library/library-skeleton'
 import { NoShelf } from '@/features/library/no-shelf'
 import { PrivateLibraryLater } from '@/features/library/private-later'
@@ -87,10 +88,13 @@ export default function ShelfPage({
   preconnect(IMAGE_HOST)
 
   return (
-    <Page>
-      <Suspense fallback={<LibrarySkeleton />}>
-        <ShelfFrame params={params} searchParams={searchParams} />
-      </Suspense>
-    </Page>
+    // A game chosen here that the router is still fetching is drawn in the shelf's place.
+    <Arriving around="shelf">
+      <Page>
+        <Suspense fallback={<LibrarySkeleton />}>
+          <ShelfFrame params={params} searchParams={searchParams} />
+        </Suspense>
+      </Page>
+    </Arriving>
   )
 }

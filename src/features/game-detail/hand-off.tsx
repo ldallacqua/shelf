@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation'
 import {
   Activity,
+  useEffect,
   useLayoutEffect,
   useSyncExternalStore,
   type ReactElement,
@@ -26,6 +27,11 @@ type HandOff = {
   slug: string
   /** The game's page as the library can draw it, without what only the page knows. */
   page: ReactElement
+  /**
+   * The same page with the library beside it, as the layout around a shelf's games draws it:
+   * what a shelf's page draws in its place for a game the router is still fetching.
+   */
+  withList: ReactElement
 }
 
 let latest: HandOff | undefined
@@ -96,22 +102,35 @@ export function FromLibrary({ children }: { children: ReactNode }) {
 }
 
 /*
- * A game opened beside another, from the list or its steps (ADR 009, phase 2),
- * that the router has not drawn. The router draws a game's page at once only
- * while it knows the frame of one, and it forgets it: five minutes after it
- * learned it (Next.js's `staleTimes.static`, which nothing renews early), and
- * whenever a server action changes the library. Then it asks the server for
- * the whole page and holds the one it leaves until that comes, one to four
- * seconds. So the layout around the games draws the handed-off page itself
- * when the router hasn't within `SOON_MS`, over the page being left, until the
- * router lands anywhere.
+ * A game opened on a shelf or the wall, or beside another from the list or its
+ * steps (ADR 009), that the router has not drawn. The router draws a game's
+ * page at once only while it knows the frame of one, and it forgets it: five
+ * minutes after it learned it (Next.js's `staleTimes.static`, which nothing
+ * renews early), and whenever a server action changes the library. Then it
+ * asks the server for the whole page and holds the one it leaves until that
+ * comes, one to four seconds. So the page it is opened from draws the
+ * handed-off page itself when the router hasn't within `SOON_MS`, until the
+ * router lands anywhere: the layout around the games, in place of the game
+ * being left, or a shelf's page, in the shelf's place, with the list beside
+ * it as the router would draw it.
  */
 
-/** How long the router has to draw the game before the layout does: well inside the cover's 300 ms. */
+/** How long the router has to draw the game before the page left does: well inside the cover's 300 ms. */
 export const SOON_MS = 100
 
+/** Where a game on its way is drawn: in the layout around the games, or in a shelf's page. */
+type Around = 'games' | 'shelf'
+
+/**
+ * A game drawn while the router fetches it: where, and how far down the window
+ * stood as it was drawn.
+ */
+type Arrival = { handOff: HandOff; around: Around; scrolled: number }
+
 let waiting: HandOff | undefined
-let arriving: HandOff | undefined
+let arriving: Arrival | undefined
+/** How many layouts around the games are on screen: one while a game is, none on a shelf. */
+let gamesShown = 0
 const arrivals = new Set<() => void>()
 
 const told = () => {
@@ -126,9 +145,9 @@ const listen = (listener: () => void) => {
 }
 
 /** This game is no longer on its way: the router landed, went elsewhere, or history moved. */
-const arrived = (handOff: HandOff | undefined = arriving) => {
+const arrived = (handOff: HandOff | undefined = arriving?.handOff) => {
   if (waiting === handOff) waiting = undefined
-  if (!handOff || arriving !== handOff) return
+  if (!handOff || arriving?.handOff !== handOff) return
   arriving = undefined
   told()
 }
@@ -143,50 +162,73 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * The list is opening this game beside the one shown: called as the router is
- * asked for it. If no page is drawn within `SOON_MS`, `Arriving` draws this one.
+ * A shelf or the list is opening this game: called as the router is asked for
+ * it. If no page is drawn within `SOON_MS`, `Arriving` draws this one: around
+ * the games while a game is on screen, else in the shelf's place.
  */
 export const arriveSoon = (handOff: HandOff): void => {
   waiting = handOff
   void pageDrawn(SOON_MS).then((drawn) => {
     if (drawn || waiting !== handOff) return
-    arriving = handOff
+    // Read while the page left still stands, before hiding it shortens the document.
+    arriving = { handOff, around: gamesShown > 0 ? 'games' : 'shelf', scrolled: window.scrollY }
     told()
   })
 }
 
-/** The game the layout is drawing while the router fetches it, if it is on this shelf. */
+/** The game drawn while the router fetches it, if it is on this shelf: the one the list marks. */
 export const useArriving = (handle: string | undefined): string | undefined =>
   useSyncExternalStore(
     listen,
-    () => (arriving && arriving.handle === handle ? arriving.slug : undefined),
+    () => (arriving && arriving.handOff.handle === handle ? arriving.handOff.slug : undefined),
     () => undefined,
   )
 
 /**
- * Around every game's page on a shelf, in the layout the list stands in: the
- * page the router shows, or, while it waits for the server, the game being
- * opened, drawn from the hand-off. The page being left is kept as it was,
- * hidden, as the router keeps a page left behind, and comes back if Back
- * cancels the move. It reads no address until a game is on its way, so the
- * layout is built ahead whole.
+ * Around the page a game is opened from: the page the router shows, or, while
+ * it waits for the server, the game being opened, drawn from the hand-off. In
+ * the layout around a shelf's games (`around="games"`, the default), that is
+ * the page beside the list; around a shelf's page (`around="shelf"`), the page
+ * with the list beside it, in the shelf's place, as the router would draw it.
+ * The page being left is kept as it was, hidden, as the router keeps a page
+ * left behind, and comes back if Back cancels the move. It reads no address
+ * until a game is on its way, so the page around it is built ahead whole.
  */
-export function Arriving({ children }: { children: ReactNode }) {
+export function Arriving({ around = 'games', children }: { around?: Around; children: ReactNode }) {
   const shown = useSyncExternalStore(
     listen,
-    () => arriving,
+    () => (arriving?.around === around ? arriving : undefined),
     () => undefined,
   )
+  // A layout around the games that the router keeps hidden behind a shelf no longer counts.
+  useLayoutEffect(() => {
+    if (around !== 'games') return
+    gamesShown += 1
+    return () => {
+      gamesShown -= 1
+    }
+  }, [around])
+
+  let drawn: ReactNode = null
+  if (shown?.around === 'games') drawn = <BesideTheList handOff={shown.handOff} />
+  if (shown?.around === 'shelf') drawn = <InTheShelfsPlace handOff={shown.handOff} />
   return (
     <>
-      {shown ? <OnItsWay key={shown.slug} handOff={shown} /> : null}
+      {shown ? (
+        // Drawn where the window stands rather than scrolled to: the browser records how far
+        // down the page left was as the router puts the game's address up, which is where Back
+        // finds it again. The router puts the game's top in view as it lands.
+        <div key={shown.handOff.slug} style={{ marginTop: shown.scrolled }}>
+          {drawn}
+        </div>
+      ) : null}
       <Activity mode={shown ? 'hidden' : 'visible'}>{children}</Activity>
     </>
   )
 }
 
-/** The game on its way, until the router shows any page here: this game's, or another. */
-function OnItsWay({ handOff }: { handOff: HandOff }) {
+/** The game on its way beside the list, until the router shows any page here: this game's, or another. */
+function BesideTheList({ handOff }: { handOff: HandOff }) {
   const params = useParams<{ handle?: string; slug?: string }>()
   const handle = decoded(params.handle)
   const slug = decoded(params.slug)
@@ -198,10 +240,41 @@ function OnItsWay({ handOff }: { handOff: HandOff }) {
     return () => arrived(handOff)
   }, [handle, slug, handOff])
 
-  // The router puts a new page's top in view as it lands; the drawing stands in for it.
-  useLayoutEffect(() => {
-    if (window.scrollY > 0) window.scrollTo(0, 0)
-  }, [])
-
+  useOnItsWay(handOff)
   return handOff.page
+}
+
+/**
+ * The game on its way in a shelf's place, until the router shows any page:
+ * it hides the shelf's page as it lands, which ends the wait.
+ */
+function InTheShelfsPlace({ handOff }: { handOff: HandOff }) {
+  useLayoutEffect(() => () => arrived(handOff), [handOff])
+  useOnItsWay(handOff)
+  return handOff.withList
+}
+
+/** Whether a link leads to the game on its way: following it changes nothing. */
+const leadsTo = (link: HTMLAnchorElement, { handle, slug }: HandOff) =>
+  link.pathname.endsWith(`/u/${encodeURIComponent(handle)}/game/${encodeURIComponent(slug)}`)
+
+/** What a game drawn on its way does, wherever it stands. */
+function useOnItsWay(handOff: HandOff) {
+  // A link followed meanwhile goes where it leads, as it would from the page left: the router
+  // drops the game's move, and may land on the very page left, which would not end the wait.
+  // After React's own listener, so a link Next.js took is known by its prevented default.
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      // The click handed off another game, from the list beside this one: that one is on its way.
+      if (latest !== handOff) return
+      if (!event.defaultPrevented || event.button !== 0) return
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      const link = event.target instanceof Element ? event.target.closest('a[href]') : null
+      if (!(link instanceof HTMLAnchorElement) || (link.target && link.target !== '_self')) return
+      if (link.origin !== location.origin || leadsTo(link, handOff)) return
+      arrived(handOff)
+    }
+    window.addEventListener('click', onClick)
+    return () => window.removeEventListener('click', onClick)
+  }, [handOff])
 }

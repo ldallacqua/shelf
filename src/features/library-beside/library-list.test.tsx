@@ -1,6 +1,7 @@
 ﻿import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NextIntlClientProvider } from 'next-intl'
+import type { ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { testGame, testLibrary } from '@/domain/library/testing'
@@ -30,6 +31,7 @@ vi.mock('@/features/owner/account', () => ({ useIsMine: () => false }))
 vi.mock('@/features/library/use-ready', () => ({ useReadySlugs: () => null }))
 vi.mock('@/features/game-detail/drawn-page', () => ({
   drawPage: ({ game }: { game: { title: string } }) => <h1>{`${game.title}, drawn`}</h1>,
+  withList: (page: ReactElement) => <div className="game-layout">{page}</div>,
   loadEditor: vi.fn(),
 }))
 
