@@ -7,12 +7,7 @@ import { createContext, useContext, useRef, useState, type ComponentProps } from
 import { cn } from '@/ui/cn'
 
 /** What the trigger needs of its menu: whether it is open, and how to open or close it. */
-const Opening = createContext<{
-  open: boolean
-  change: (open: boolean) => void
-  /** Whether it was open as the pointer went down on the trigger, which may have closed it since. */
-  pressed: { current: boolean | null }
-} | null>(null)
+const Opening = createContext<{ open: boolean; change: (open: boolean) => void } | null>(null)
 
 /**
  * A menu that opens from a button. It does not lock the page behind it: the
@@ -26,14 +21,13 @@ function DropdownMenu({
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   const [own, setOwn] = useState(defaultOpen)
-  const pressed = useRef<boolean | null>(null)
   const open = given ?? own
   const change = (next: boolean) => {
     if (given === undefined) setOwn(next)
     onOpenChange?.(next)
   }
   return (
-    <Opening value={{ open, change, pressed }}>
+    <Opening value={{ open, change }}>
       <DropdownMenuPrimitive.Root modal={modal} open={open} onOpenChange={change} {...props} />
     </Opening>
   )
@@ -51,20 +45,22 @@ function DropdownMenuTrigger({
   ...props
 }: ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
   const menu = useContext(Opening)
+  // Whether it was open as the pointer went down on it: a press outside the menu may close it first.
+  const pressed = useRef<boolean | null>(null)
   return (
     <DropdownMenuPrimitive.Trigger
       onPointerDown={(event) => {
         onPointerDown?.(event)
         if (!menu || event.defaultPrevented || event.button !== 0 || event.ctrlKey) return
-        menu.pressed.current = menu.open
+        pressed.current = menu.open
         // Radix's own opening is passed by; the focus stays where it was, as Radix leaves it.
         event.preventDefault()
       }}
       onClick={(event) => {
         onClick?.(event)
         if (!menu || event.defaultPrevented || event.detail === 0) return
-        const wasOpen = menu.pressed.current ?? menu.open
-        menu.pressed.current = null
+        const wasOpen = pressed.current ?? menu.open
+        pressed.current = null
         menu.change(!wasOpen)
       }}
       {...props}
