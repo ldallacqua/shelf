@@ -1327,15 +1327,13 @@ export function SavesStatusView({
     <Button
       variant="ghost"
       aria-haspopup="dialog"
+      // Read as one, "Saves: Google Drive · 19h ago": browsers join two lines' words each their own way.
+      aria-label={t('status.named', { state: words })}
       // Two lines as tall as Play beside it, the label over the state, as far left as Play's words.
       className="h-auto min-h-10 max-w-72 min-w-0 flex-col items-start gap-0.5 px-2 py-1 text-left pointer-coarse:h-auto pointer-coarse:min-h-11"
       onClick={(event) => onOpen(event.currentTarget)}
     >
-      {/* Read as "Saves: Google Drive · 19h ago", the label and the state as one. */}
-      <span className={statLabel}>
-        {t('status.label')}
-        <span className="sr-only">{':'}</span>
-      </span>{' '}
+      <span className={statLabel}>{t('status.label')}</span>
       <span
         className={cn(
           'flex max-w-full min-w-0 items-center gap-1.5 font-normal',

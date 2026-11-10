@@ -343,6 +343,7 @@
     "waitingMark": "Waiting to go",
     "status": {
       "label": "Saves",
+      "named": "Saves: {state}",
       "kept": "{place} · {ago}",
       "keptFolder": "Your folder · {ago}",
       "keptHere": "This computer · {ago}",

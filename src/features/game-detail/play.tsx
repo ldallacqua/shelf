@@ -387,7 +387,9 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
       <span role="status" className="sr-only">
         {spoken}
       </span>
-      <div className="flex items-center gap-1">
+      {/* Play's button keeps one width through Play, Starting…, Stop and Stopping…, so the menu
+          beside it never moves under a pointer or a finger. */}
+      <div className="flex items-center gap-1 [&>[data-slot=button]:first-child]:min-w-32">
         {primary}
         {menu || hasSources ? (
           <DropdownMenu>

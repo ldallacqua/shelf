@@ -796,7 +796,13 @@ try {
 
   await shelf.goto(`${BASE_URL}/en/u/sample/game/bloodborne`)
   await shelf.getByRole('button', { name: 'Ways to play' }).click()
-  await shelf.getByRole('menuitem', { name: 'Forget the file' }).click()
+  await shelf
+    .getByRole('menuitem', { name: 'Forget the file' })
+    .click()
+    .catch(async (error: unknown) => {
+      await shot('ways-to-play')
+      throw error
+    })
   await shelf.getByRole('button', { name: 'Choose the game’s file' }).waitFor({ timeout: 10_000 })
   pass('forgot it, and asks for the file again')
 
