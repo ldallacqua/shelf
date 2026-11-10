@@ -202,6 +202,11 @@ outside the slug. The library hands it its arrangement in memory, never through 
 parameters. It windows rows and keeps search and folds between games; shelf identity keys
 reset its file reader when the shelf changes. Direct visits below 1024px do not fetch the list.
 Previous/Next use the list's unique game order and replace history; row links add history.
+The router forgets what a game's page looks like five minutes after learning it (and after a
+server action that changes the library), and then waits for the server's whole page: a game the
+list opens that the router hasn't drawn within 100 ms is drawn by the layout (`Arriving` in
+`hand-off.tsx`) until the router lands. `Arriving` reads the address only while a game is on its
+way, so the layout is still built ahead whole.
 
 **Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
 and never throws (what it cannot read becomes a problem with a position), `write.ts` turns a

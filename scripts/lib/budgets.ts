@@ -130,7 +130,9 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // formatter, for a visitor's "Played", and the same split of the panel's chunk.
   // ADR 009 phase 2: measured 230.0 KB. The persistent list's loader, shelf handover and
   // Previous/Next controls add 4.5 KB; the full list stays lazy and is absent on direct phone visits.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 230.5 },
+  // A row never waits (10 Nov 2026): measured 230.7 KB, from 230.3. The layout draws a game the
+  // router has to fetch (`Arriving`, in `hand-off.tsx`) and the list marks it while it does.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 231.0 },
 ]
 
 /**
