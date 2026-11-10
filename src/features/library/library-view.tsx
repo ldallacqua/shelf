@@ -68,7 +68,7 @@ import { SortControl } from '@/features/filters/sort-control'
 import { StatusRow } from '@/features/filters/status-row'
 import { useKeywords } from '@/features/filters/use-keywords'
 import type * as DrawnPage from '@/features/game-detail/drawn-page'
-import { handOff } from '@/features/game-detail/hand-off'
+import { arriveSoon, handOff } from '@/features/game-detail/hand-off'
 import { morph } from '@/features/game-detail/morph'
 import { loadList } from '@/features/library-beside/list-code'
 import { handOverList } from '@/features/library-beside/store'
@@ -608,20 +608,21 @@ export function LibraryView({
         shelfName: shelf && query.q === shelf.query ? shelf.name : undefined,
       },
     })
-    void loadPage(handle).then(({ drawPage }) => {
-      handOff({
-        handle,
-        slug: game.slug,
-        page: drawPage({
-          shelf: shelfInfo,
-          game,
-          tags: game.tags.flatMap((position) => tags[position] ?? []),
-          platforms,
-          placeholder: from?.querySelector('img')?.currentSrc || undefined,
-        }),
+    void loadPage(handle).then(({ drawPage, withList }) => {
+      const page = drawPage({
+        shelf: shelfInfo,
+        game,
+        tags: game.tags.flatMap((position) => tags[position] ?? []),
+        platforms,
+        placeholder: from?.querySelector('img')?.currentSrc || undefined,
       })
+      const handed = { handle, slug: game.slug, page, withList: withList(page) }
+      handOff(handed)
       morph(from, () => {
         navigationStarted()
+        // Should the router have forgotten the game page's route, this page draws the game in
+        // the shelf's place until the server's arrives (`Arriving`, around the page).
+        arriveSoon(handed)
         router.push(href)
       })
     })
@@ -644,10 +645,17 @@ export function LibraryView({
     else setOpen(openGameAt(box, item))
   }
 
-  // The router shows a game's page at once, drawn from the library (`hand-off.tsx`), only once
-  // it knows the page's frame; until then a click waits for the server, seconds for a page not
-  // built yet. Asked for while the page is idle, from the one game page every build makes, which
-  // costs the server nothing and carries no game's art.
+  // The router shows a game's page at once, drawn from the library (`hand-off.tsx`), only while
+  // it knows the page's frame, and puts the game's address up with it; it forgets the frame five
+  // minutes after learning it, and when a server action changes the library, and then the page is
+  // drawn here (`Arriving`) while the address waits for the server. Asked for from the one game
+  // page every build makes, which costs the server nothing and carries no game's art: while the
+  // page is idle, and again as a game is reached for (`reachFor`), which teaches the router afresh
+  // once it has forgotten. A frame it still knows is not asked for again.
+  const reachFor = () => {
+    void loadPage(handle)
+    router.prefetch(gameHref(NO_HANDLE, 'none'))
+  }
   useEffect(() => {
     const warm = () => router.prefetch(gameHref(NO_HANDLE, 'none'))
     if (!('requestIdleCallback' in window)) {
@@ -733,8 +741,8 @@ export function LibraryView({
       className="library"
       data-view={view}
       // Reaching for a game fetches what opening one needs.
-      onPointerOver={(event) => onAGame(event.target) && void loadPage(handle)}
-      onFocus={(event) => onAGame(event.target) && void loadPage(handle)}
+      onPointerOver={(event) => onAGame(event.target) && reachFor()}
+      onFocus={(event) => onAGame(event.target) && reachFor()}
     >
       {/*
        * The title, then the filters' column, then the library; on a wide window the title heads

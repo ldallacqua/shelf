@@ -257,7 +257,47 @@ hidden as the router keeps a page behind (Activity), puts the top in view, and m
 the router lands anywhere, history moves, or the games are left. A router that knows the route
 draws the page first, and the layout draws nothing. The address follows when the server answers.
 `Arriving` reads the address only while a game is on its way, so the layout is still built ahead
-whole.
+whole. (The drawing no longer puts the top in view: see the next section.)
+
+### Follow-up: a box on the shelf never waits either (10 Nov 2026)
+
+The shelf and the wall waited the same way. A game chosen on them after five idle minutes, or
+after adding a game from the header, took 2.7 s with the page's answer held 2.5 s; 0.13 s while
+the router still knew the route. The layout around the games can't help there: it isn't on screen.
+So `Arriving` also stands around the library's page and a smart shelf's (`around="shelf"`). When
+the router hasn't drawn the game within `SOON_MS`, the page draws the hand-off in the shelf's place,
+with the list beside it as the layout around the games draws it (`WithList`, which that layout now
+draws too, so nothing moves as the router lands), and keeps the shelf hidden behind it, as the
+router does. Nothing is drawn over the shelf: it gives way to the game, as it does when the router
+draws it. Where a game on its way is drawn is decided as it is drawn: beside the list while a game
+is on screen, else in the shelf's place, so a row chosen in the list drawn on a shelf's page is
+drawn there too.
+
+What it had to keep:
+
+- **Back is the shelf as I left it, scroll included.** Scrolling to the top to show the drawing
+  made the browser record the shelf at its top as the router put the game's address up. The
+  drawing now stands where the window is, pushed down by as far as the page was scrolled, so the
+  browser records the shelf's place, and the router puts the game's top in view as it lands. The
+  list's drawing does the same, for the game being left.
+- **A link followed while a game is on its way goes where it leads.** The header's Library link,
+  back to the very address shown, drops the game's move without the router landing anywhere new,
+  which would have left the drawing up. Any link Next.js takes ends the drawing, unless the same
+  click handed off another game.
+- **The address follows the server's answer**, as from the list: Back during those seconds leaves
+  the shelf, as the address says.
+
+The library also asks for the frame as a game is reached for (a pointer over a box, or focus), not
+only while idle. A frame the router still knows is not asked for again; one it has forgotten is
+learned afresh, usually before the click, and then the router draws the game and puts its address
+up at once. The drawing is what holds when that comes too late: a finger, or a click with no pause.
+
+Measured against `pnpm serve:test` with every game page's answer held 2.5 s, and the frame's too,
+so that only the drawing could help: six idle minutes, then a box on the shelf, the wall or a smart
+shelf, drawn in 202 to 206 ms (2,671 ms before); after adding a game, 179 ms (2,702 before); at
+900px, 196 ms. The drawing's title stands where the server's lands, and Back after landing finds the
+shelf where the router's own landing leaves it. With the frame not held, reaching for the box taught
+the router again, and the address changed at once (119 ms).
 
 ### Phase 3, one dialog (10 Nov 2026)
 

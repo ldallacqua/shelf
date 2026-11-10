@@ -360,7 +360,8 @@ describe('a game opened from the library', () => {
   })
 
   it('is drawn at once from what the library handed off, and only for that game', () => {
-    handOff({ handle: 'sample', slug: 'bloodborne', page: <h1>Handed off</h1> })
+    const page = <h1>Handed off</h1>
+    handOff({ handle: 'sample', slug: 'bloodborne', page, withList: page })
     address.params = { handle: 'sample', slug: 'bloodborne' }
     const { unmount } = renderWithIntl(
       <FromLibrary>

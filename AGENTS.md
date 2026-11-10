@@ -204,9 +204,13 @@ reset its file reader when the shelf changes. Direct visits below 1024px do not 
 Previous/Next use the list's unique game order and replace history; row links add history.
 The router forgets what a game's page looks like five minutes after learning it (and after a
 server action that changes the library), and then waits for the server's whole page: a game the
-list opens that the router hasn't drawn within 100 ms is drawn by the layout (`Arriving` in
-`hand-off.tsx`) until the router lands. `Arriving` reads the address only while a game is on its
-way, so the layout is still built ahead whole.
+shelf or the list opens that the router hasn't drawn within 100 ms is drawn by the page it was
+opened from (`Arriving` in `hand-off.tsx`) until the router lands. The library's and a smart
+shelf's pages stand in `<Arriving around="shelf">`, which draws the game in the shelf's place with
+the list beside it (`WithList`, the game layout's own frame: change one, and the drawing follows);
+the game layout's `Arriving` draws it beside the list. The drawing stands where the window is, never
+scrolled to, so the browser records the page left at its place for Back. `Arriving` reads the
+address only while a game is on its way, so the pages around it are still built ahead whole.
 
 **Filters.** The filter language is `src/domain/query/`: `parse.ts` turns text into a tree
 and never throws (what it cannot read becomes a problem with a position), `write.ts` turns a

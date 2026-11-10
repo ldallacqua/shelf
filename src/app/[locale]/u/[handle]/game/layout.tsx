@@ -1,35 +1,16 @@
-import { Suspense } from 'react'
-
 import { Arriving } from '@/features/game-detail/hand-off'
-import { LibraryBeside } from '@/features/library-beside/beside'
-import { BesideColumn, BesideGhost } from '@/features/library-beside/beside-ghost'
+import { WithList } from '@/features/library-beside/with-list'
 
 /**
  * Around every game's page on a shelf: my library beside it, as a list
  * (ADR 009, phase 2). A layout, so the list stays put from one game to the
- * next and only the page beside it changes.
- *
- * Nothing here is read on the server, so its frame is the same for every
- * shelf and the router draws it at once wherever a game is opened from. The
- * list reads its shelf from the address in the browser, which a page built
- * ahead without one cannot: there it is the list's ghost. A game opened from
- * the list is drawn here while the router waits for it (`Arriving`).
+ * next and only the page beside it changes. A game opened from the list is
+ * drawn here while the router waits for it (`Arriving`).
  */
 export default function GameLayout({ children }: LayoutProps<'/[locale]/u/[handle]/game'>) {
   return (
-    <div className="game-layout">
-      <Suspense
-        fallback={
-          <BesideColumn>
-            <BesideGhost />
-          </BesideColumn>
-        }
-      >
-        <LibraryBeside />
-      </Suspense>
-      <div className="min-w-0">
-        <Arriving>{children}</Arriving>
-      </div>
-    </div>
+    <WithList>
+      <Arriving>{children}</Arriving>
+    </WithList>
   )
 }

@@ -88,7 +88,14 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // address, and the library view's handlers that remember each choice, which the React Compiler
   // memoizes: 3.9 KB more in the view's chunk before compression. The first screen arrives already
   // arranged, so nothing is redrawn for it.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 289.5 },
+  // A box never waits (10 Nov 2026): measured 289.7 KB, from 287.7 (main measured the same day).
+  // The page draws a game the router is still fetching in the shelf's place, where the window
+  // stands, and gives the shelf back when a link is followed (`Arriving`, in `hand-off.tsx`): 1.2 KB
+  // more of that module before compression, about 0.5 KB after. The rest is Turbopack splitting the
+  // chunk it shares with the library's view in two as it grew: the same modules as before, in one
+  // more file, with less for compression to share. The two pages' wraps were taken out to check:
+  // the chunks came out the same, so it is the module's size that splits it.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 290.0 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
@@ -132,7 +139,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Previous/Next controls add 4.5 KB; the full list stays lazy and is absent on direct phone visits.
   // A row never waits (10 Nov 2026): measured 230.7 KB, from 230.3. The layout draws a game the
   // router has to fetch (`Arriving`, in `hand-off.tsx`) and the list marks it while it does.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 231.0 },
+  // A box never waits (10 Nov 2026): measured 231.3 KB, from 230.8 (main the same day). The same
+  // module, grown by 1.2 KB before compression: a drawing that stands where the window is and
+  // ends when a link is followed, which the list's drawing uses too, and the shelf's own.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 231.5 },
 ]
 
 /**
