@@ -283,7 +283,24 @@ signed out, full, out of reach, loading, a failed read, progress, a restore's qu
 each have a story and the meaningful ones a test. Not checked: a real Google Drive or OneDrive, and the
 owner's own saves, which no check may touch.
 
-## Consequences
+### After phase 4: one way of labelling, and Play's own line (10 Nov 2026)
+
+The owner, looking at a game in the app: each section's heading had a face of its own, and Mine was the one
+section whose title shared its line, with Play, which the saves' state then made wrap. Measured, the page
+had three: the sections' small mono capitals, and inside Mine bold Archivo for groups and medium Archivo
+for fields, both louder than "Mine" above them, while a visitor's Mine and Details used the capitals.
+Foundations already said it: Martian Mono does numbers and labels. Mine's labels are the page's now, and a
+property panel's quiet labels are what Linear's and Steam's sidebars use, so the chips, the number and the
+hours are what stands out. Play has a line of its own under the heading, as Steam's play bar is under its
+art: Play and its menu, then the saves' state as one of that bar's figures, "Saves" over "Google Drive ·
+11h ago". In the app the line is kept from the first paint.
+
+The same day, why Steam almost never asks about saves: another computer's newer backup is no question,
+and never was one Play asked, but the words said "Newer saves found" with **Use them** behind a question.
+They say now that Play brings them, and the button asks nothing. And a real case asked when it shouldn't:
+after more backups on one computer than it keeps, the other's last snapshot was pruned, and the cut line
+was a choice. ADR 008's section 5 takes the one head then, when nothing changed here.
+
 
 - One way to show a game, one way to show what a menu opens: less code, and no layer over a layer.
 - Every game has its address whatever opened it, so a link, a bookmark or a back button lands where I was.

@@ -100,12 +100,12 @@
     },
     "type": {
       "title": "Tipografia",
-      "body": "Duas famílias. A Archivo faz títulos e interface: um corte largo e pesado para títulos, o normal para todo o resto. A Martian Mono faz números e etiquetas.",
+      "body": "Duas famílias. A Archivo faz títulos e interface: um corte largo e pesado para títulos, o normal para todo o resto. A Martian Mono faz números e rótulos.",
       "display": "Archivo, larga e pesada, para títulos",
       "displaySample": "Todos os jogos, de frente",
       "sans": "Archivo, para a interface",
       "sansSample": "Adicione jogos do IGDB e encontre qualquer um deles com filtros que você pode combinar, salvar e compartilhar.",
-      "mono": "Martian Mono, para números e etiquetas",
+      "mono": "Martian Mono, para números e rótulos",
       "monoSample": "214 jogos / 61 terminados / 2.340 h"
     },
     "motion": {
@@ -122,7 +122,7 @@
         },
         "quick": {
           "name": "Rápido",
-          "use": "Passar o cursor, foco, etiquetas"
+          "use": "Passar o cursor, foco, rótulos"
         },
         "base": {
           "name": "Base",
@@ -251,7 +251,7 @@
         "title": "Privada",
         "body": "Só você vê: nem outras pessoas, nem mecanismos de busca."
       },
-      "notes": "As notas que você escreve sobre um jogo continuam privadas, mesmo numa estante pública, a menos que você as marque como públicas. E qualquer jogo pode ser só seu: numa estante pública, ninguém mais o vê."
+      "notes": "As anotações que você escreve sobre um jogo continuam privadas, mesmo numa estante pública, a menos que você as marque como públicas. E qualquer jogo pode ser só seu: numa estante pública, ninguém mais o vê."
     },
     "assistant": {
       "eyebrow": "Assistentes de IA",
@@ -289,7 +289,7 @@
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
-        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As notas continuam privadas a menos que você as marque como públicas, jogo por jogo, e qualquer jogo pode ser marcado como privado, para que só você o veja."
+        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As anotações continuam privadas a menos que você as marque como públicas, jogo por jogo, e qualquer jogo pode ser marcado como privado, para que só você o veja."
       },
       "export": {
         "q": "Posso levar meus jogos comigo?",
@@ -506,7 +506,7 @@
     "added": "Adicionado",
     "completed": "Zerado em",
     "tags": "Tags",
-    "notes": "Notas",
+    "notes": "Anotações",
     "about": "Sobre",
     "storyline": "História",
     "readMore": "Ler mais",
@@ -1071,7 +1071,7 @@
         "other": "Outro"
       },
       "has": {
-        "notes": "Notas",
+        "notes": "Anotações",
         "rating": "Minha nota",
         "playtime": "Tempo jogado",
         "cover": "Uma capa"
@@ -1294,7 +1294,7 @@
     "visibility": {
       "label": "Quem pode ver sua estante",
       "public": "Pública",
-      "publicBody": "Qualquer pessoa vê seus jogos, e mecanismos de busca podem listá-los. Suas notas privadas continuam só suas.",
+      "publicBody": "Qualquer pessoa vê seus jogos, e mecanismos de busca podem listá-los. Suas anotações privadas continuam só suas.",
       "private": "Privada",
       "privateBody": "Só você, depois de entrar. Os outros veem que a estante é privada."
     }
@@ -1918,7 +1918,7 @@
     "cancel": "Cancelar",
     "syncedHours": "{source}: {time}",
     "fromAccount": "Da sua conta {source}: {time}",
-    "notesPublic": "Os visitantes podem ler estas notas",
+    "notesPublic": "Os visitantes podem ler estas anotações",
     "versions": "Versões",
     "relations": {
       "primary": "Versão principal",
@@ -1931,13 +1931,13 @@
     },
     "makeMain": "Tornar a versão principal",
     "separate": "Separar em outro jogo",
-    "confirmSeparate": "Fazer de {title} um jogo à parte? As cópias dele e as horas que as lojas contam para ele vão junto, e ele fica em A definir. O status, a sua nota, as notas e as etiquetas ficam com {main}.",
+    "confirmSeparate": "Fazer de {title} um jogo à parte? As cópias dele e as horas que as lojas contam para ele vão junto, e ele fica em A definir. O status, a sua nota, as anotações e as tags ficam com {main}.",
     "separateConfirm": "Separar",
     "keepTogether": "Manter juntos",
     "separated": "{title} agora é um jogo à parte, em A definir.",
     "open": "Abrir",
     "remove": "Tirar da biblioteca",
-    "confirmRemove": "Tirar {title} da biblioteca? As cópias, o tempo de jogo e as notas vão junto.",
+    "confirmRemove": "Tirar {title} da biblioteca? As cópias, o tempo de jogo e as anotações vão junto.",
     "orArchive": "Ou arquive: fora de vista, com tudo guardado, até você trazer de volta.",
     "archive": "Arquivar",
     "archived": "{title} foi arquivado.",
@@ -1963,11 +1963,11 @@
     "clearRating": "Tirar a nota",
     "outOf": "/10",
     "ratingValue": "{value} de 10",
-    "tags": "Etiquetas",
-    "tagsHint": "Aperte Enter ou vírgula depois de cada etiqueta.",
-    "tagsPlaceholder": "Adicionar uma etiqueta",
-    "removeTag": "Tirar a etiqueta {tag}",
-    "tagSuggestions": "Etiquetas que você já usou",
+    "tags": "Tags",
+    "tagsHint": "Aperte Enter ou vírgula depois de cada tag.",
+    "tagsPlaceholder": "Adicionar uma tag",
+    "removeTag": "Tirar a tag {tag}",
+    "tagSuggestions": "Tags que você já usou",
     "pickDay": "Escolha um dia",
     "previousMonth": "Mês anterior",
     "nextMonth": "Próximo mês",
@@ -1982,7 +1982,7 @@
     "signInFirst": "Entre primeiro: o assistente entra na sua própria estante.",
     "asks": "{name} pede para usar sua biblioteca como você.",
     "from": "Ele é de {host}.",
-    "read": "Ler a biblioteca, inclusive suas notas privadas.",
+    "read": "Ler a biblioteca, inclusive suas anotações privadas.",
     "change": "Adicionar jogos e mudar o que é seu neles.",
     "stay": "Continuar conectado, se renovando sozinho, até você desconectá-lo.",
     "signedInAs": "Conectado como {name}.",

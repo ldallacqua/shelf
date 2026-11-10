@@ -36,6 +36,8 @@ type RatingProps = {
    */
   compact?: boolean
   className?: string
+  /** The label's look, where a page writes its labels its own way; a form's, by default. */
+  labelClassName?: string
 }
 
 const TICKS = Array.from({ length: 11 }, (_, at) => at)
@@ -61,6 +63,7 @@ function Rating({
   tabIndex,
   compact = false,
   className,
+  labelClassName = 'text-sm font-medium',
 }: RatingProps) {
   const labelId = useId()
   const rated = value !== undefined
@@ -153,7 +156,7 @@ function Rating({
       className={cn('grid gap-1', className)}
     >
       <div className="flex min-h-10 items-center justify-between gap-3">
-        <span id={labelId} className="text-sm font-medium">
+        <span id={labelId} className={labelClassName}>
           {label}
         </span>
         {/* Read through the slider's own value; this is for the eye. */}

@@ -32,6 +32,8 @@ type RatingFieldProps = {
   /** On one line, for a list of many. */
   compact?: boolean
   className?: string
+  /** The label's look, where a page writes its labels its own way, as "Mine" does. */
+  labelClassName?: string
 }
 
 export function RatingField({
@@ -42,6 +44,7 @@ export function RatingField({
   tabIndex,
   compact,
   className,
+  labelClassName,
 }: RatingFieldProps) {
   const t = useTranslations('Fields')
   const format = useFormatter()
@@ -65,6 +68,7 @@ export function RatingField({
       tabIndex={tabIndex}
       compact={compact}
       className={className}
+      {...(labelClassName ? { labelClassName } : {})}
     />
   )
 }
@@ -82,6 +86,7 @@ export function SavedRating({
   tabIndex,
   compact,
   className,
+  labelClassName,
 }: {
   /** Out of a hundred, as stored. */
   score: number | undefined
@@ -90,6 +95,7 @@ export function SavedRating({
   /** On one line, for a list of many. */
   compact?: boolean
   className?: string
+  labelClassName?: string
 }) {
   // While it moves, the field shows where it is, not what was saved.
   const [moving, setMoving] = useState<{ value: number | undefined }>()
@@ -125,6 +131,7 @@ export function SavedRating({
       tabIndex={tabIndex}
       compact={compact}
       className={className}
+      labelClassName={labelClassName}
     />
   )
 }
@@ -161,15 +168,22 @@ type TagsFieldProps = {
   value: readonly string[]
   onChange: (tags: string[]) => void
   disabled?: boolean
+  /** The label's look, where a page writes its labels its own way, as "Mine" does. */
+  labelClassName?: string
 }
 
-export function TagsField({ value, onChange, disabled }: TagsFieldProps) {
+export function TagsField({
+  value,
+  onChange,
+  disabled,
+  labelClassName = 'text-sm font-medium',
+}: TagsFieldProps) {
   const t = useTranslations('Fields')
   const id = useId()
   const suggestions = useTagSuggestions()
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+      <label htmlFor={id} className={labelClassName}>
         {t('tags')}
       </label>
       <TagInput
@@ -202,6 +216,8 @@ type DayFieldProps = {
   hint?: string
   disabled?: boolean
   className?: string
+  /** The label's look, where a page writes its labels its own way, as "Mine" does. */
+  labelClassName?: string
 }
 
 /** A day up to today, from a calendar. */
@@ -213,6 +229,7 @@ export function DayField({
   hint,
   disabled,
   className,
+  labelClassName = 'text-sm font-medium',
 }: DayFieldProps) {
   const t = useTranslations('Fields')
   const locale = useLocale()
@@ -221,7 +238,7 @@ export function DayField({
   const now = today()
   return (
     <div className={className ?? 'grid gap-1.5'}>
-      <span id={labelId} className="text-sm font-medium">
+      <span id={labelId} className={labelClassName}>
         {label}
       </span>
       <DatePicker

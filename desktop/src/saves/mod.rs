@@ -2312,6 +2312,36 @@ mod tests {
     }
 
     #[test]
+    fn many_backups_on_another_pc_since_are_still_taken_without_asking() {
+        let (one, two, shared) = two_pcs("saves-pruned");
+        one.saves
+            .set_caps(Caps {
+                most_mb: 500,
+                kept: 3,
+            })
+            .unwrap();
+        put(&slot(&one), "chapter 0");
+        after(&one, 1000);
+        assert_eq!(before(&two, 2000), Checked::Restored);
+        // Played on the first more times than it keeps: the backup the second last took is pruned.
+        for chapter in 1..=5u64 {
+            put(&slot(&one), &format!("chapter {chapter}"));
+            after(&one, 2000 + chapter * 1000);
+        }
+        assert_eq!(one.saves.lists("entry-1").len(), 3);
+        // Nothing changed on the second since: the newest is taken, never asked, as Steam takes it.
+        assert_eq!(state(&two), State::Behind);
+        assert_eq!(before(&two, 10_000), Checked::Restored);
+        assert_eq!(fs::read_to_string(slot(&two)).unwrap(), "chapter 5");
+        // Played on both without a backup between: that is still a choice.
+        put(&slot(&one), "the first's");
+        after(&one, 11_000);
+        put(&slot(&two), "the second's");
+        assert_eq!(before(&two, 12_000), Checked::Choose);
+        let _ = fs::remove_dir_all(shared);
+    }
+
+    #[test]
     fn played_on_both_the_session_after_says_a_choice_waits_and_play_stops_for_it() {
         let (one, two, shared) = two_pcs("saves-auto-both");
         put(&slot(&one), "start");

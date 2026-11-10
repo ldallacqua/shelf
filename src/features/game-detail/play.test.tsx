@@ -246,7 +246,7 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
     const user = userEvent.setup()
     play()
     // Two copies differ: said in words, as a warning, beside Play.
-    const status = await screen.findByRole('button', { name: 'Choose which saves to keep' })
+    const status = await screen.findByRole('button', { name: 'Saves: Choose which to keep' })
     expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument()
     await user.click(status)
     const dialog = await screen.findByRole('dialog', { name: 'Saves for Grim Dawn' })

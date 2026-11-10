@@ -389,7 +389,7 @@ describe('a game’s saves', () => {
     expect(within(panel).getByRole('button', { name: 'Back up now' })).toBeDisabled()
   })
 
-  it('offer the newer saves another computer made, and restore them once asked', async () => {
+  it('says Play brings the newer saves another computer made, and brings them at once when asked', async () => {
     answer = view({
       state: 'behind',
       heads: ['20261106T120000Z-deviceot-aaaaaaaaaaaa'],
@@ -399,16 +399,14 @@ describe('a game’s saves', () => {
     const { user, panel } = await opened()
     await vi.waitFor(() =>
       expect(
-        within(panel).getByText(/Newer saves than what’s here, from Living room/),
+        within(panel).getByText(
+          /^Newer saves, from Living room on .+\. Play brings them here before the game starts\.$/,
+        ),
       ).toBeVisible(),
     )
-    await user.click(within(panel).getByRole('button', { name: 'Use them' }))
-    await user.click(
-      within(within(panel).getByRole('group', { name: /^Restore the saves from/ })).getByRole(
-        'button',
-        { name: 'Restore' },
-      ),
-    )
+    // What is here is unchanged since this computer's last backup: nothing is lost, so nothing is asked.
+    await user.click(within(panel).getByRole('button', { name: 'Bring them now' }))
+    expect(within(panel).queryByRole('group', { name: /^Restore the saves from/ })).toBeNull()
     expect(app).toHaveBeenCalledWith('restore_saves', {
       ...named,
       snapshot: '20261106T120000Z-deviceot-aaaaaaaaaaaa',
@@ -637,7 +635,7 @@ describe('the saves’ state beside Play', () => {
   it('says where they are kept and when, read once, and opens the dialog', async () => {
     answer = view({ place: 'Google Drive', service: true })
     const { onOpen } = status('status-kept')
-    const button = await screen.findByRole('button', { name: /^Saves in Google Drive · / })
+    const button = await screen.findByRole('button', { name: /^Saves: Google Drive · / })
     expect(button).toHaveAttribute('aria-haspopup', 'dialog')
     await userEvent.click(button)
     expect(onOpen).toHaveBeenCalledWith(button)
@@ -646,13 +644,13 @@ describe('the saves’ state beside Play', () => {
 
   it('says only this computer has them, never a place', async () => {
     status('status-here')
-    expect(await screen.findByRole('button', { name: /^Saves on this computer · / })).toBeVisible()
+    expect(await screen.findByRole('button', { name: /^Saves: This computer · / })).toBeVisible()
   })
 
   it('warns, in words, when a choice waits', async () => {
     answer = view({ state: 'choose' })
     status('status-choose')
-    expect(await screen.findByRole('button', { name: 'Choose which saves to keep' })).toBeVisible()
+    expect(await screen.findByRole('button', { name: 'Saves: Choose which to keep' })).toBeVisible()
   })
 
   it('says a backup waits rather than that it arrived', async () => {
@@ -666,13 +664,13 @@ describe('the saves’ state beside Play', () => {
       ],
     })
     status('status-waiting')
-    expect(await screen.findByRole('button', { name: 'Saves waiting to go' })).toBeVisible()
+    expect(await screen.findByRole('button', { name: 'Saves: Waiting to go' })).toBeVisible()
   })
 
   it('says when they couldn’t be read', async () => {
     thrownBy.saves = 'failed'
     status('status-failed')
-    expect(await screen.findByRole('button', { name: 'Saves couldn’t be read' })).toBeVisible()
+    expect(await screen.findByRole('button', { name: 'Saves: Couldn’t be read' })).toBeVisible()
   })
 
   it('draws nothing while they are off', async () => {
@@ -685,7 +683,7 @@ describe('the saves’ state beside Play', () => {
 
   it('reads again once a sync ends, and never while it runs', async () => {
     const { rerender } = status('status-sync')
-    await screen.findByRole('button', { name: /^Saves on this computer/ })
+    await screen.findByRole('button', { name: /^Saves: This computer/ })
     const again = (syncing: boolean) =>
       rerender(
         <NextIntlClientProvider locale="en" messages={messages.en} timeZone="UTC">
@@ -693,7 +691,7 @@ describe('the saves’ state beside Play', () => {
         </NextIntlClientProvider>,
       )
     again(true)
-    expect(await screen.findByRole('button', { name: 'Syncing saves…' })).toBeVisible()
+    expect(await screen.findByRole('button', { name: 'Saves: Syncing…' })).toBeVisible()
     expect(reads()).toBe(1)
     again(false)
     await vi.waitFor(() => expect(reads()).toBe(2))
@@ -715,7 +713,7 @@ describe('the saves’ state beside Play', () => {
     const panel = await screen.findByRole('dialog', { name: 'Saves for Made-up Game' })
     const turn = await within(panel).findByRole('switch')
     const shown = () =>
-      screen.queryByRole('button', { name: /^Saves on this computer/, hidden: true })
+      screen.queryByRole('button', { name: /^Saves: This computer/, hidden: true })
     await vi.waitFor(() => expect(shown()).not.toBeNull())
     const before = reads()
     answer = view({ on: false })

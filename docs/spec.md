@@ -1395,6 +1395,16 @@ immediately; if saving fails it reverts and says why. Mine is in groups set apar
 how I play it (status, rating, hours, completion date), what I own, tags and notes, privacy,
 the versions, and archiving or removing.
 
+- **Labelled as the page is** (the owner, 10 Nov 2026: "cada sub titulo de cada sessão tem uma fonte /
+  estilos diferentes"). Every group's and field's label in Mine (Status, My rating, Play time, Completed
+  on, Owned on, Which store?, Tags, Notes, Versions, and a new copy's Platform and Format) is written as
+  every label on the page: small mono capitals, muted, as Story under About, each row of Details and a
+  visitor's Mine are. Martian Mono does numbers and labels and Archivo names and values (Foundations,
+  Type), so what I chose stands out, and the word above it doesn't. A card's name (PC, a version's title,
+  New copy) is Archivo semibold; the words beside a switch are an option's, in Archivo. Forms elsewhere,
+  as Add a game's, keep a form's labels. In Portuguese my notes are **Anotações**, as Scores are Notas on
+  the same page, and tags are **Tags** everywhere, as a visitor and the filters already said.
+
 - **Status** changes take effect on the shelf at once: the box changes posture.
 - **Completed** sets the completion date to the day a linked platform (Steam, Nintendo, any
   that syncs) or Shelf for Windows last saw the game played, editable. The owner, 28 Oct 2026: "I
@@ -1597,7 +1607,11 @@ clicando setup setup, next, next. E sim aparecesse uma splashzinha."
 - **Shelf for Windows** ([ADR 005](adr/005-desktop-app.md)) is the same Shelf in a window of
   its own: the same pages, the same sign-in, the same data, served by the same server. What it
   adds is Play.
-- **Play** (Jogar) is the first thing under Mine, on my own shelf only, never to a visitor.
+- **Play** (Jogar) is the first thing under Mine, on my own shelf only, never to a visitor: on a line
+  of its own under Mine's heading, as Steam's play bar is under its game's art, Play and its menu first and
+  then, once a game's saves are on, their state (7.12). The heading stands alone, as every section's does
+  (the owner, 10 Nov 2026: Mine was the one section whose title shared its line, and the saves' state made
+  it wrap). In the app the line is kept from the start, so nothing under it moves when Play comes.
 - **In a browser,** on a computer: **Play on Steam** (Jogar na Steam), for a game the Steam
   sync brought in. It opens Steam on that game; the browser asks once whether it may open
   Steam. Nothing else: a browser cannot start a file. Not on a phone.
@@ -1877,12 +1891,13 @@ What it shows first, and what moved one step back: [ADR 009](adr/009-game-page-a
   with how it is started here, and the row that holds Play has room for one button and a menu. Choosing it
   closes the menu and opens a dialog over the page, as Find a download does. A game played through Steam
   has no file chosen and no Saves: Steam Cloud carries it.
-- **Beside Play, once on,** their state in a few words, as Steam's Cloud status stands beside its Play:
-  "Saves in Google Drive · 11h ago", "Saves in your folder", "Saves on this computer", "Saves waiting to
-  go", "Saves not backed up", "Newer saves found", and, as a warning with a mark, "Choose which saves to
-  keep", "Saves: signed out of OneDrive", "Saves: Google Drive is full", "Saves: add their folder", "Saves
-  couldn't be read". "Syncing saves…" while Play says Syncing. Pressing it opens the dialog, and closing
-  the dialog comes back to it. It is read once as the page shows it and again after each sync, never on a
+- **Beside Play, once on,** their state, as Steam's play bar has **Cloud status** over "Up to date"
+  after its Play: **Saves** in the page's small capitals, and under it "Google Drive · 11h ago", "Your
+  folder · 11h ago", "This computer · 2h ago", "Waiting to go", "Not backed up", "Newer in Google Drive ·
+  2h ago", and, as a warning with a mark, "Choose which to keep", "Signed out of OneDrive", "Google Drive
+  is full", "Add their folder", "Couldn't be read". "Syncing…" while Play says Syncing. It is read as one,
+  "Saves: Google Drive · 11h ago". After Play and its menu on their line, and under them when the column
+  is too narrow. Pressing it opens the dialog, and closing the dialog comes back to it. It is read once as the page shows it and again after each sync, never on a
   timer, and follows what is done in the dialog without asking again. Off, it isn't there; an app too old
   to say whether a game's saves are on shows none.
 - **The dialog, top to bottom.** First the answer, one sentence with where and when, and the action that
@@ -1915,8 +1930,13 @@ What it shows first, and what moved one step back: [ADR 009](adr/009-game-page-a
 - **What left the dialog:** the limits and where backups go, which are Settings' and stay there; the
   sentence at the top says the place and its trouble.
 - **Never while the game runs:** Back up and Restore say to close it first.
-- **Another PC's newer saves** are offered at the top, with which computer made them and when, and **Use
-  them** asks first, as any restore does.
+- **Another PC's newer saves are never a question** (the owner, 10 Nov 2026, back from a handheld: "tem
+  que ser meio seamless"). What is here is what this computer last backed up or brought, unchanged since,
+  so taking them loses nothing: Play brings them before the game starts, as Steam brings the cloud's newer
+  files before a launch. Beside Play they are "Newer in Google Drive · 2h ago", with no warning; at the top
+  of the dialog, which computer made them and when, that Play brings them, and **Bring them now**, which
+  asks nothing, for a game started from somewhere else. A question waits only when both changed, as
+  below: Steam asks then too, after a game played offline on two computers.
 - **Two copies that differ** (changed here and on another PC without a backup between, or backed up from
   the same backup on two) are a choice at the top, never made by itself: a card for this computer's,
   with when it changed, and one for each latest backup, with its computer and date, each with **Keep

@@ -146,14 +146,23 @@ Each snapshot names the one it came from. So the app can tell, with no server an
 | One head, and it holds what is here | Nothing: in step |
 | One head that descends from known, and here is still known | Restores the head: another PC played since |
 | One head that is known, and here has changed | Makes a snapshot: this PC played without one |
-| Anything else: here changed and the head moved, two heads, a head whose parents never reach known, or a PC that never synced finding saves of its own that differ | **A choice.** Nothing is restored or replaced |
+| One head whose line is cut before it reaches known (pruned), and here is still known | Restores the head: nothing here is lost (added 10 Nov 2026, below) |
+| Anything else: here changed and the head moved, two heads, a head whose whole line never reaches known, or a PC that never synced finding saves of its own that differ | **A choice.** Nothing is restored or replaced |
 
 **The choice** shows each copy (this PC's and each head) with its date, computer and size, and three answers:
 keep one of them, or decide later. Keeping one writes a new snapshot of it whose parents are every head, so
 every PC sees it settled; a head not chosen stays in the history, restorable. Deciding later starts the game
 with what is here and writes nothing. Time is only ever shown, never used to decide.
 
-A parent that is gone (pruned, or not yet arrived) is not guessed past: it is a choice.
+A parent that is gone (pruned, or not yet arrived) is not guessed past once this PC has changed anything:
+it is a choice. With nothing changed here and one head, the head is restored (10 Nov 2026). A PC prunes
+past its own caps and never sees what another knows, so after a long run on one PC (more backups than it
+keeps) the snapshot the other last knew was gone, and coming back to it asked to choose with nothing to
+choose between. One head means every snapshot that was there leads to it, so it came after what is here;
+and taking it loses nothing, as what is here is backed up first (section 6) and is still what this PC last
+had. The owner's question that day was why Steam almost never asks: it brings the cloud's newer files
+before a game starts, as Play does, and asks only after both computers played without a sync between, as
+the table does.
 
 **Going back by hand** to an older snapshot is choosing it: the app writes a new snapshot of it whose
 parents are every head, as a choice does, so the next check doesn't take this PC forward again. (Added

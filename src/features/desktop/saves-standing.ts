@@ -15,7 +15,8 @@ export type Standing =
   /** On, and nothing found to back up: the folder is the task. */
   | { kind: 'setup' }
   | { kind: 'choose' }
-  | { kind: 'behind'; newer: Snapshot }
+  /** Another computer's newer backup, which Play puts here first: nothing of these is lost by it. */
+  | { kind: 'behind'; newer: Snapshot; to: Destination }
   | { kind: 'signed-out' | 'full' | 'unreachable'; to: Destination }
   | { kind: 'waiting'; to: Destination; at: number }
   /** Changed since the last backup, made `at`, or never backed up. */
@@ -34,7 +35,7 @@ export function standingOf(view: SavesView): Standing {
   const to = destinationOf(view)
   if (view.state === 'choose') return { kind: 'choose' }
   const newer = view.snapshots.find((snapshot) => view.heads.includes(snapshot.id))
-  if (view.state === 'behind' && newer) return { kind: 'behind', newer }
+  if (view.state === 'behind' && newer) return { kind: 'behind', newer, to }
   if (to.kind !== 'here' && !view.reachable) return { kind: view.away ?? 'unreachable', to }
   const latest = view.snapshots[0]
   const waiting = view.snapshots.find((snapshot) => snapshot.waiting === true)

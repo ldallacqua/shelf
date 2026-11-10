@@ -689,7 +689,7 @@ try {
   await shelf.keyboard.press('Escape')
   // Once on, their state stands beside Play, as Steam's Cloud status does (ADR 009, decision 5).
   await shelf
-    .getByRole('button', { name: /^Saves on this computer · / })
+    .getByRole('button', { name: /^Saves: This computer · / })
     .waitFor({ timeout: 15_000 })
     .then(() => pass('beside Play, their state in a few words, once they are on'))
     .catch(() => fail('nothing beside Play says where the saves are'))
