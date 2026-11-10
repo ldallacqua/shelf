@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import { expect, userEvent, within } from 'storybook/test'
 
 import { Dialog, DialogContent } from '@/ui/dialog'
 
@@ -6,10 +7,11 @@ import type { SavesView } from './saves'
 import { SavesPanelView } from './saves-panel'
 
 /**
- * A game's saves, opened from Play's menu (ADR 008, spec 7.12). Steam's game properties put one switch
- * for its cloud above everything else, and Ludusavi lists each place with its size: so the switch first,
- * then where the saves are, then the snapshots, newest first, each restorable after a question, as
- * Steam asks before choosing between two copies. Made-up games and paths.
+ * A game's saves, opened from Play's menu or the status beside Play (ADR 008, spec 7.12; ADR 009,
+ * decision 5). What most people need first, as Xbox's save dialogs say one thing with two or three
+ * actions: one sentence with where and when, and the action that fits it. Then Steam's one switch, the
+ * newest three backups with their marks as icons and tips, and where the saves are, folded into one line
+ * as Heroic folds its save path into the game's settings. Made-up games and paths.
  */
 
 const HOUR = 60 * 60 * 1000
@@ -145,7 +147,7 @@ export const InItsDialogOnAPhone: Story = {
   globals: { viewport: { value: 'mobile1', isRotated: false } },
 }
 
-/** Played since the latest snapshot. */
+/** Played since the last backup: backing up is the one thing to do. */
 export const Changed: Story = {
   args: {
     state: view({
@@ -155,10 +157,10 @@ export const Changed: Story = {
   },
 }
 
-/** Before it is turned on: where the saves are, shown first, and no history yet. */
+/** Before it is turned on: the switch and what it does, and no history yet. */
 export const Off: Story = { args: { state: view({ on: false, snapshots: [], state: 'changed' }) } }
 
-/** The list doesn't know the game: its folder is added by hand. */
+/** First setup: the list doesn't know the game, so where they are opens by itself, to add its folder. */
 export const UnknownGame: Story = {
   args: {
     state: view({
@@ -210,7 +212,7 @@ export const AddedAndRefused: Story = {
   },
 }
 
-/** Another computer played since: its snapshot is offered, as Steam offers the cloud's before a game starts. */
+/** Another computer played since: its saves are offered, as Steam offers the cloud's before a game starts. */
 export const Behind: Story = {
   args: {
     state: view({
@@ -253,7 +255,7 @@ export const ChoiceBeforePlay: Story = {
   },
 }
 
-/** Two computers backed up from the same snapshot: two latest, and this computer holds one of them. */
+/** Two computers backed up from the same backup: two latest, and this computer holds one of them. */
 export const TwoLatest: Story = {
   args: {
     state: view({
@@ -271,7 +273,7 @@ export const FolderAway: Story = {
 /** No folder chosen: this computer alone. */
 export const ThisComputerOnly: Story = { args: { state: view({ place: null }) } }
 
-/** In Google Drive: each snapshot says whether it is there yet, the newest still waiting here. */
+/** Google Drive, the newest backup still waiting here: said so first, and marked in its row in words. */
 export const InAService: Story = {
   args: {
     state: view({
@@ -319,3 +321,58 @@ export const NoList: Story = {
 export const Looking: Story = { args: { state: 'loading' } }
 
 export const Failed: Story = { args: { state: 'failed' } }
+
+/** Cloud up to date: in step with Google Drive, every backup there. */
+export const InGoogleDrive: Story = {
+  args: {
+    state: view({
+      place: 'Google Drive',
+      service: true,
+      snapshots: view().snapshots.map((snapshot) => ({ ...snapshot, waiting: false })),
+    }),
+  },
+}
+
+/** Google Drive took the sign-in back: the way to fix it is in Settings, backups wait here meanwhile. */
+export const SignedOut: Story = {
+  args: {
+    state: view({ place: 'Google Drive', service: true, reachable: false, away: 'signed-out' }),
+  },
+}
+
+/** The service is full. */
+export const Full: Story = {
+  args: { state: view({ place: 'OneDrive', service: true, reachable: false, away: 'full' }) },
+}
+
+/** On, saves found, and nothing backed up yet. */
+export const NeverBackedUp: Story = {
+  args: { state: view({ state: 'changed', snapshots: [], heads: [] }) },
+}
+
+/** A long history: the newest three, and All for the rest. */
+export const LongHistory: Story = {
+  args: {
+    state: view({
+      snapshots: Array.from({ length: 14 }, (_, at) => ({
+        id: `backup-${at}`,
+        createdAt: now - (2 + at * 20) * HOUR,
+        device: at % 3 === 1 ? 'living-room' : 'here',
+        files: 4,
+        bytes: 3_400_000,
+        here: at === 0,
+      })),
+      heads: ['backup-0'],
+    }),
+  },
+}
+
+/** Restore asks in its row, never in a second dialog: Cancel first, Escape its answer. */
+export const AskingToRestore: Story = {
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement)
+    const [restore] = await page.findAllByRole('button', { name: 'Restore' })
+    await userEvent.click(restore!)
+    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveFocus()
+  },
+}

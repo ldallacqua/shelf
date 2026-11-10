@@ -72,7 +72,7 @@ export const PlaceChosen: StoryObj<typeof SavePlaceView> = {
     place: place({ folder: 'D:\\OneDrive\\Shelf saves' }),
     said: {
       tone: 'done',
-      text: 'Snapshots go there now. Those made on this computer were copied there too.',
+      text: 'Backups go there now. Those made on this computer were copied there too.',
     },
   },
 }
@@ -119,7 +119,7 @@ export const InOneDrive: StoryObj<typeof SavePlaceView> = {
     }),
     said: {
       tone: 'done',
-      text: 'Signed in. Snapshots go to OneDrive now, and those made on this computer follow.',
+      text: 'Signed in. Backups go to OneDrive now, and those made on this computer follow.',
     },
   },
 }

@@ -90,6 +90,11 @@ about the container and interactions; phase 4 changes the information inside Sav
 
 ## Phase 4: Saves with the important information first
 
+**Built 10 Nov 2026** on branch `saves-simpler` (ADR 009, "Phase 4"): `saves-standing.ts`, the status
+beside Play and the dialog's new order. Not in this phase: a desktop release, so the app's own Windows
+notifications still say snapshot; cloud history migration (#170).
+
+
 **Outcome:** answer whether saves are protected, where they are and what needs action,
 without making the user read a technical explanation. Simpler must not mean hiding an
 error, losing an action or implying that a local backup has reached the cloud.

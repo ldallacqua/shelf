@@ -1,12 +1,14 @@
 import { renderHook, screen, within } from '@testing-library/react'
+import { NextIntlClientProvider } from 'next-intl'
+import type { ComponentProps } from 'react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { callApi } from '@/features/owner/call-api'
-import { renderWithIntl } from '@/test/render'
+import { messages, renderWithIntl } from '@/test/render'
 
 import type { SavesView } from './saves'
-import SavesPanel from './saves-panel'
+import SavesPanel, { SavesStatus } from './saves-panel'
 import { SavesLater, useSavesAvailable } from './saves-later'
 import { setBridgeForTests } from './tauri'
 
@@ -144,8 +146,15 @@ const opened = async () => {
     <SavesPanel {...GAME} open onOpenChange={() => undefined} returnFocus={{ current: null }} />,
   )
   const panel = await screen.findByRole('dialog', { name: 'Saves for Made-up Game' })
-  await within(panel).findByText('Snapshots')
+  await within(panel).findByRole('switch', { name: 'Back up this game’s saves' })
   return { user, panel }
+}
+
+/** Opens "Where they are", folded into one line once something was found there. */
+const where = async (user: ReturnType<typeof userEvent.setup>, panel: HTMLElement) => {
+  const fold = within(panel).getByText('Where they are').closest('details')!
+  if (!fold.open) await user.click(within(panel).getByText('Where they are'))
+  return fold
 }
 
 describe('a game’s saves', () => {
@@ -173,8 +182,13 @@ describe('a game’s saves', () => {
   })
 
   it('say where they were found, and count the places with nothing there', async () => {
-    const { panel } = await opened()
+    const { user, panel } = await opened()
     expect(app).toHaveBeenCalledWith('saves', named)
+    // Folded into one line, once something was found.
+    const fold = within(panel).getByText('Where they are').closest('details')!
+    expect(fold.open).toBe(false)
+    expect(fold).toHaveTextContent('1 folder · 2 files · 2 kB')
+    await where(user, panel)
     expect(
       within(panel).getByText('C:\\Users\\Someone\\AppData\\Roaming\\Made-up Game\\saves'),
     ).toBeInTheDocument()
@@ -187,7 +201,7 @@ describe('a game’s saves', () => {
     )
   })
 
-  it('name the computer each snapshot was made on', async () => {
+  it('name the computer each backup was made on', async () => {
     const { panel } = await opened()
     const rows = within(panel)
       .getAllByRole('listitem')
@@ -246,6 +260,7 @@ describe('a game’s saves', () => {
 
   it('leave a place out', async () => {
     const { user, panel } = await opened()
+    await where(user, panel)
     await user.click(
       within(panel).getByRole('button', {
         name: 'Leave out C:\\Users\\Someone\\AppData\\Roaming\\Made-up Game\\saves',
@@ -259,6 +274,7 @@ describe('a game’s saves', () => {
 
   it('change nothing when the folder picker is closed', async () => {
     const { user, panel } = await opened()
+    await where(user, panel)
     await user.click(within(panel).getByRole('button', { name: 'Add a folder' }))
     expect(app).toHaveBeenCalledWith('add_save_folder', {
       ...named,
@@ -269,11 +285,12 @@ describe('a game’s saves', () => {
 
   it('name the folder Windows handed over, and why it was refused', async () => {
     const { user, panel } = await opened()
+    await where(user, panel)
     const add = () => user.click(within(panel).getByRole('button', { name: 'Add a folder' }))
     thrownBy.add_save_folder = { why: 'game-folder', folder: 'D:\\Games\\Made-up Game' }
     await add()
     expect(await within(panel).findByRole('alert')).toHaveTextContent(
-      'D:\\Games\\Made-up Game holds the game itself: restoring a snapshot there could delete it.',
+      'D:\\Games\\Made-up Game holds the game itself: restoring a backup there could delete it.',
     )
     thrownBy.add_save_folder = { why: 'wide', folder: 'C:\\Users\\Someone\\AppData\\LocalLow' }
     await add()
@@ -303,7 +320,7 @@ describe('a game’s saves', () => {
     progress = { step: 'packing', done: 50, total: 200 }
     const { user, panel } = await opened()
     await user.click(within(panel).getByRole('button', { name: 'Back up now' }))
-    const bar = await within(panel).findByRole('progressbar', { name: 'Making the snapshot…' })
+    const bar = await within(panel).findByRole('progressbar', { name: 'Making the backup…' })
     expect(bar).toHaveAttribute('aria-valuenow', '25')
     expect(within(panel).getByText('25%')).toBeInTheDocument()
     // Sending to a service it can say nothing of how far yet: the bar only moves.
@@ -317,7 +334,7 @@ describe('a game’s saves', () => {
     expect(within(panel).queryByRole('progressbar')).toBeNull()
   })
 
-  it('say whether each snapshot is in the service yet', async () => {
+  it('say whether each backup is in the service yet, the waiting one in words', async () => {
     const [first, second, third] = view().snapshots
     answer = view({
       place: 'Google Drive',
@@ -333,9 +350,13 @@ describe('a game’s saves', () => {
       within(panel).getByText('Not in Google Drive yet: it goes as soon as it can'),
     ).toBeInTheDocument()
     expect(within(panel).getAllByText('In Google Drive')).toHaveLength(2)
+    expect(within(panel).getByText('Waiting to go')).toBeVisible()
+    // Never said to be there while it waits here.
+    expect(within(panel).getByText(/It goes to Google Drive as soon as it can/)).toBeVisible()
+    expect(within(panel).queryByText(/In step with/)).toBeNull()
   })
 
-  it('say whether each snapshot is in the folder yet', async () => {
+  it('say whether each backup is in the folder yet', async () => {
     const [first] = view().snapshots
     answer = view({
       place: 'D:\\OneDrive\\Shelf saves',
@@ -346,16 +367,17 @@ describe('a game’s saves', () => {
     expect(within(panel).getByText('In the chosen folder')).toBeInTheDocument()
   })
 
-  it('say nothing of where a snapshot is when it is kept on this computer alone', async () => {
+  it('say nothing of where a backup is when it is kept on this computer alone', async () => {
     const [first] = view().snapshots
     answer = view({ place: null, service: false, snapshots: [{ ...first!, waiting: false }] })
     const { panel } = await opened()
     expect(within(panel).queryByText(/In the chosen folder|In Google Drive/)).toBeNull()
   })
 
-  it('say AppData is hidden when nothing was found', async () => {
+  it('open where they are by itself when nothing was found, and say AppData is hidden', async () => {
     answer = view({ matched: null, locations: [], files: 0, bytes: 0 })
     const { panel } = await opened()
+    expect(within(panel).getByText('Where they are').closest('details')!.open).toBe(true)
     expect(within(panel).getByText(/folder picker hides AppData/)).toBeInTheDocument()
   })
 
@@ -367,7 +389,7 @@ describe('a game’s saves', () => {
     expect(within(panel).getByRole('button', { name: 'Back up now' })).toBeDisabled()
   })
 
-  it('offer the newer snapshot another computer made, and restore it once asked', async () => {
+  it('offer the newer saves another computer made, and restore them once asked', async () => {
     answer = view({
       state: 'behind',
       heads: ['20261106T120000Z-deviceot-aaaaaaaaaaaa'],
@@ -377,20 +399,21 @@ describe('a game’s saves', () => {
     const { user, panel } = await opened()
     await vi.waitFor(() =>
       expect(
-        within(panel).getByText(/A newer snapshot than what’s here, made on Living room/),
+        within(panel).getByText(/Newer saves than what’s here, from Living room/),
       ).toBeVisible(),
     )
-    await user.click(within(panel).getByRole('button', { name: 'Restore it' }))
+    await user.click(within(panel).getByRole('button', { name: 'Use them' }))
     await user.click(
-      within(within(panel).getByRole('group')).getByRole('button', { name: 'Restore' }),
+      within(within(panel).getByRole('group', { name: /^Restore the saves from/ })).getByRole(
+        'button',
+        { name: 'Restore' },
+      ),
     )
     expect(app).toHaveBeenCalledWith('restore_saves', {
       ...named,
       snapshot: '20261106T120000Z-deviceot-aaaaaaaaaaaa',
     })
-    expect(
-      within(panel).getByText('Kept in D:\\Synced\\Shelf saves.', { exact: false }),
-    ).toBeVisible()
+    expect(await within(panel).findByRole('status')).toHaveTextContent('Put back the saves from')
   })
 
   it('ask which copy to keep when two differ, and never choose by itself', async () => {
@@ -482,10 +505,15 @@ describe('a game’s saves', () => {
     expect(onPlay).not.toHaveBeenCalled()
   })
 
-  it('say when the folder can’t be reached and the snapshot waits here', async () => {
+  it('say when the folder can’t be reached and the backup waits here', async () => {
     answer = view({ place: 'E:\\Shelf saves', reachable: false })
     const { user, panel } = await opened()
-    expect(within(panel).getByText(/which can’t be reached now/)).toBeVisible()
+    expect(
+      within(panel).getByText(
+        'Your folder can’t be reached now, so new backups wait on this computer.',
+      ),
+    ).toBeVisible()
+    expect(within(panel).getByText('E:\\Shelf saves')).toBeVisible()
     app.mockImplementationOnce(async () => ({ ...answer, last: { at: 1, did: 'waiting' } }))
     await user.click(within(panel).getByRole('button', { name: 'Back up now' }))
     expect(await within(panel).findByRole('status')).toHaveTextContent(
@@ -493,9 +521,206 @@ describe('a game’s saves', () => {
     )
   })
 
-  it('say which stores carry the game’s saves themselves', async () => {
-    answer = view({ cloud: ['steam', 'gog', 'somewhere-new'] })
+  it('say which stores carry the game’s saves themselves, while it is off', async () => {
+    answer = view({ on: false, cloud: ['steam', 'gog', 'somewhere-new'] })
     const { panel } = await opened()
     expect(within(panel).getByText(/Steam and GOG keep this game’s saves/)).toBeInTheDocument()
+  })
+})
+
+describe('a game’s saves, the important first (ADR 009, decision 5)', () => {
+  it('lead with where they are kept and when, and back up from there', async () => {
+    answer = view({ place: 'Google Drive', service: true })
+    const { panel } = await opened()
+    expect(within(panel).getByText('In step with Google Drive, backed up 1 day ago.')).toBeVisible()
+    expect(within(panel).getByRole('button', { name: 'Back up now' })).toBeEnabled()
+    // The limits and the place's line are Settings' now.
+    expect(within(panel).queryByText(/Up to 20/)).toBeNull()
+  })
+
+  it('name the folder they are kept in', async () => {
+    answer = view({ place: 'D:\\Synced\\Shelf saves', service: false })
+    const { panel } = await opened()
+    expect(within(panel).getByText('In step with your folder, backed up 1 day ago.')).toBeVisible()
+    expect(within(panel).getByText('D:\\Synced\\Shelf saves')).toBeVisible()
+  })
+
+  it('say when only this computer has them, and where to choose more', async () => {
+    const { panel } = await opened()
+    expect(within(panel).getByText('Backed up 1 day ago, on this computer only.')).toBeVisible()
+    expect(within(panel).getByRole('link', { name: 'Choose where they go' })).toHaveAttribute(
+      'href',
+      '/en/settings/saves',
+    )
+  })
+
+  it('say nothing was backed up yet, with backing up as the one thing to do', async () => {
+    answer = view({ state: 'changed', snapshots: [], heads: [] })
+    const { panel } = await opened()
+    expect(within(panel).getByText('Not backed up yet.')).toBeVisible()
+    expect(within(panel).getByText('No backups yet.')).toBeVisible()
+    expect(within(panel).getByRole('button', { name: 'Back up now' })).toBeEnabled()
+  })
+
+  it('say when the service took its sign-in back, and lead to Settings', async () => {
+    answer = view({ place: 'OneDrive', service: true, reachable: false, away: 'signed-out' })
+    const { panel } = await opened()
+    expect(
+      within(panel).getByText(
+        'Shelf is signed out of OneDrive, so new backups wait on this computer.',
+      ),
+    ).toBeVisible()
+    expect(within(panel).getByRole('link', { name: 'Sign in again in Settings' })).toHaveAttribute(
+      'href',
+      '/en/settings/saves',
+    )
+    expect(within(panel).getByRole('button', { name: 'Back up now' })).toBeEnabled()
+  })
+
+  it('say when the service is full', async () => {
+    answer = view({ place: 'Google Drive', service: true, reachable: false, away: 'full' })
+    const { panel } = await opened()
+    expect(
+      within(panel).getByText('Google Drive is full, so new backups wait on this computer.'),
+    ).toBeVisible()
+    expect(
+      within(panel).getByRole('link', { name: 'Choose another place in Settings' }),
+    ).toBeInTheDocument()
+  })
+
+  it('explain what it does only while it is off', async () => {
+    answer = view({ on: false })
+    const { panel } = await opened()
+    const intro = within(panel).getByText(/backs them up on this computer/)
+    expect(within(panel).getByRole('switch')).toHaveAccessibleDescription(intro.textContent!)
+  })
+
+  it('say nothing of what it does once it is on', async () => {
+    const { panel } = await opened()
+    expect(within(panel).queryByText(/backs them up on this computer/)).toBeNull()
+  })
+
+  it('show the newest three backups, and all of them once asked', async () => {
+    const [first] = view().snapshots
+    answer = view({
+      snapshots: Array.from({ length: 12 }, (_, index) => ({
+        ...first!,
+        id: `backup-${index}`,
+        createdAt: first!.createdAt - index * DAY,
+        here: index === 0,
+      })),
+    })
+    const { user, panel } = await opened()
+    const rows = () =>
+      within(panel)
+        .getAllByRole('listitem')
+        .filter((row) => row.closest('ol'))
+    expect(rows()).toHaveLength(3)
+    const all = within(panel).getByRole('button', { name: 'All 12' })
+    expect(all).toHaveAttribute('aria-expanded', 'false')
+    await user.click(all)
+    expect(all).toHaveAttribute('aria-expanded', 'true')
+    expect(rows()).toHaveLength(12)
+  })
+})
+
+describe('the saves’ state beside Play', () => {
+  const status = (entryId: string, props: Partial<ComponentProps<typeof SavesStatus>> = {}) => {
+    const onOpen = vi.fn()
+    const drawn = renderWithIntl(
+      <SavesStatus {...GAME} entryId={entryId} syncing={false} onOpen={onOpen} {...props} />,
+    )
+    return { onOpen, ...drawn }
+  }
+  const reads = () => app.mock.calls.filter(([command]) => command === 'saves').length
+
+  it('says where they are kept and when, read once, and opens the dialog', async () => {
+    answer = view({ place: 'Google Drive', service: true })
+    const { onOpen } = status('status-kept')
+    const button = await screen.findByRole('button', { name: /^Saves in Google Drive · / })
+    expect(button).toHaveAttribute('aria-haspopup', 'dialog')
+    await userEvent.click(button)
+    expect(onOpen).toHaveBeenCalledWith(button)
+    expect(reads()).toBe(1)
+  })
+
+  it('says only this computer has them, never a place', async () => {
+    status('status-here')
+    expect(await screen.findByRole('button', { name: /^Saves on this computer · / })).toBeVisible()
+  })
+
+  it('warns, in words, when a choice waits', async () => {
+    answer = view({ state: 'choose' })
+    status('status-choose')
+    expect(await screen.findByRole('button', { name: 'Choose which saves to keep' })).toBeVisible()
+  })
+
+  it('says a backup waits rather than that it arrived', async () => {
+    const [first, second] = view().snapshots
+    answer = view({
+      place: 'Google Drive',
+      service: true,
+      snapshots: [
+        { ...first!, waiting: true },
+        { ...second!, waiting: false },
+      ],
+    })
+    status('status-waiting')
+    expect(await screen.findByRole('button', { name: 'Saves waiting to go' })).toBeVisible()
+  })
+
+  it('says when they couldn’t be read', async () => {
+    thrownBy.saves = 'failed'
+    status('status-failed')
+    expect(await screen.findByRole('button', { name: 'Saves couldn’t be read' })).toBeVisible()
+  })
+
+  it('draws nothing while they are off', async () => {
+    answer = view({ on: false })
+    const { container } = status('status-off')
+    await vi.waitFor(() => expect(reads()).toBe(1))
+    await new Promise((settle) => setTimeout(settle, 10))
+    expect(container.querySelector('button')).toBeNull()
+  })
+
+  it('reads again once a sync ends, and never while it runs', async () => {
+    const { rerender } = status('status-sync')
+    await screen.findByRole('button', { name: /^Saves on this computer/ })
+    const again = (syncing: boolean) =>
+      rerender(
+        <NextIntlClientProvider locale="en" messages={messages.en} timeZone="UTC">
+          <SavesStatus {...GAME} entryId="status-sync" syncing={syncing} onOpen={() => undefined} />
+        </NextIntlClientProvider>,
+      )
+    again(true)
+    expect(await screen.findByRole('button', { name: 'Syncing saves…' })).toBeVisible()
+    expect(reads()).toBe(1)
+    again(false)
+    await vi.waitFor(() => expect(reads()).toBe(2))
+  })
+
+  it('follows what is done in the dialog without asking again', async () => {
+    renderWithIntl(
+      <>
+        <SavesStatus {...GAME} entryId="status-dialog" syncing={false} onOpen={() => undefined} />
+        <SavesPanel
+          {...GAME}
+          entryId="status-dialog"
+          open
+          onOpenChange={() => undefined}
+          returnFocus={{ current: null }}
+        />
+      </>,
+    )
+    const panel = await screen.findByRole('dialog', { name: 'Saves for Made-up Game' })
+    const turn = await within(panel).findByRole('switch')
+    const shown = () =>
+      screen.queryByRole('button', { name: /^Saves on this computer/, hidden: true })
+    await vi.waitFor(() => expect(shown()).not.toBeNull())
+    const before = reads()
+    answer = view({ on: false })
+    await userEvent.click(turn)
+    await vi.waitFor(() => expect(shown()).toBeNull())
+    expect(reads()).toBe(before)
   })
 })

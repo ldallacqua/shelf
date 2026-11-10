@@ -14,6 +14,12 @@ export const SavesItem = dynamic(() => import('./saves-panel').then((module) => 
   ssr: false,
 })
 
+/** The state of a game's saves beside Play, once they are on (ADR 009, decision 5). In the app alone. */
+export const SavesStatusLater = dynamic(
+  () => import('./saves-panel').then((module) => module.SavesStatus),
+  { ssr: false },
+)
+
 /**
  * A game's saves (ADR 008), in Shelf for Windows alone. Its code and words are fetched only there, and
  * only once it is asked for.

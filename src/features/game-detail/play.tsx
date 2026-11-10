@@ -19,7 +19,12 @@ import {
   FindDownloadLater,
   useHasSources,
 } from '@/features/desktop/find-download-later'
-import { SavesItem, SavesLater, useSavesAvailable } from '@/features/desktop/saves-later'
+import {
+  SavesItem,
+  SavesLater,
+  SavesStatusLater,
+  useSavesAvailable,
+} from '@/features/desktop/saves-later'
 import { notify } from '@/features/shell/notices'
 import { Button } from '@/ui/button'
 import { Confirm } from '@/ui/confirm'
@@ -106,8 +111,11 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   const [choosing, setChoosing] = useState(false)
   const around = useRef<HTMLDivElement>(null)
   const more = useRef<HTMLButtonElement>(null)
-  // What Play's menu opens hands focus back to the menu's button: the item that opened it has gone.
-  const back = () => more.current ?? around.current?.querySelector('button')
+  // The status beside Play, when it opened Saves; otherwise the menu's button, as the item has gone.
+  const opener = useRef<HTMLElement | null>(null)
+  const back = () =>
+    (opener.current?.isConnected ? opener.current : more.current) ??
+    around.current?.querySelector('button')
   const installedApps = here?.installed ?? noApps
   const { state, check, sentGameToSteam } = useGameState(
     entryId,
@@ -186,7 +194,8 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
       if (chosen) setHere({ launcher: chosen, installed })
     })
 
-  const openSaves = (beforePlay: boolean) => {
+  const openSaves = (beforePlay: boolean, from: HTMLElement | null = null) => {
+    opener.current = from
     setChoosing(beforePlay)
     setSavesAsked(true)
     setSaving(true)
@@ -371,10 +380,26 @@ function PlayInApp({ entryId, title, steam }: PlayProps) {
   // the rest behind it, as a panel's column has room for no more.
   const menu = launcher || playLink || installLink
   return (
-    <div ref={around} className="flex items-center gap-1" data-play="">
+    <div
+      ref={around}
+      className="flex min-w-0 flex-wrap items-center justify-end gap-1"
+      data-play=""
+    >
       <span role="status" className="sr-only">
         {spoken}
       </span>
+      {/* Once its saves are on: their state, as Steam's Cloud status stands beside its Play. */}
+      {launcher && keepsSaves && view?.kept ? (
+        <span className="mr-2 flex min-w-0">
+          <SavesStatusLater
+            entryId={entryId}
+            title={title}
+            apps={steam?.known ?? noApps}
+            syncing={view.syncing !== undefined}
+            onOpen={(from) => openSaves(false, from)}
+          />
+        </span>
+      ) : null}
       {primary}
       {menu || hasSources ? (
         <DropdownMenu>

@@ -366,7 +366,7 @@ export function MineEditor({
     <section className="game-section" aria-busy={saving > 0 || drawing}>
       <div className={mineTop}>
         <Level className="readout text-[0.6875rem] text-muted">{game('mine')}</Level>
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <p className="text-xs text-muted" aria-live="polite">
             {saving > 0 ? t('saving') : ''}
           </p>
