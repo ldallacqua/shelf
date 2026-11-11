@@ -2373,6 +2373,24 @@ sign-in as the interface, and act on that account's own shelf.
 
 ---
 
+## 17a. The admin page
+
+**Built 10 Nov 2026.** The owner, on 10 Nov 2026: "create [...] admin dashboard that will run admin commands [...]
+Add a password to it only I will know [...] So I don't have to trigger a vercel flow and pick up only 2 minutes. Our
+server will do it."
+
+- `/admin`, in both languages, linked from nowhere and not indexed. It asks for a password once; right, it stays
+  open on that browser for twelve hours, with **Lock** to close it sooner.
+- **Jobs:** Steam pages of new games, every Steam page, Steam scores, IGDB records, the daily sync, and everything
+  (IGDB, then scores, then every page). Each says what it does and what it would read now ("312 pages never read"),
+  with **Run**. A job running can't be started twice.
+- **Runs:** the latest twenty, newest first: how each went in words beside its mark (Running, Done, Failed, Stopped,
+  Not answering), when it started, how long it took, its steps, and how many games it read and changed. A failure
+  says why. **Stop** ends a running one after the step under way. The list reads itself again every five seconds
+  while a run is going, and says aloud when one ends.
+- A job runs **on the server**, a few minutes a step, each step asking for the next, until it's done: closing the
+  page stops nothing. A run with no step for ten minutes is shown as not answering.
+
 ## 18. Out of scope
 
 Not built now. The design leaves room for each.

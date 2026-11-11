@@ -2,6 +2,8 @@ import type { Decorator, Preview } from '@storybook/nextjs-vite'
 import { NextIntlClientProvider } from 'next-intl'
 import { useEffect, type ReactNode } from 'react'
 
+import adminEn from '../messages/admin/en.json'
+import adminPtBR from '../messages/admin/pt-BR.json'
 import appEn from '../messages/app/en.json'
 import appPtBR from '../messages/app/pt-BR.json'
 import en from '../messages/en.json'
@@ -10,7 +12,10 @@ import { fontVariables } from '../src/ui/fonts'
 
 import '../src/app/globals.css'
 
-const messages = { en: { ...en, ...appEn }, 'pt-BR': { ...ptBR, ...appPtBR } } as const
+const messages = {
+  en: { ...en, ...appEn, ...adminEn },
+  'pt-BR': { ...ptBR, ...appPtBR, ...adminPtBR },
+} as const
 type Locale = keyof typeof messages
 
 /**

@@ -6,7 +6,12 @@ import { dirname, join, resolve } from 'node:path'
 
 import { z } from 'zod'
 
-import { MOCK_CRON_SECRET, MOCK_STEAM, MOCK_TOKEN_KEY } from '@/server/mocks/owner'
+import {
+  MOCK_ADMIN_PASSWORD,
+  MOCK_CRON_SECRET,
+  MOCK_STEAM,
+  MOCK_TOKEN_KEY,
+} from '@/server/mocks/owner'
 
 /**
  * Settings, read from the environment and checked before use. A missing
@@ -78,6 +83,17 @@ export const cronSecret = (): string | undefined => {
   if (mocksRequested() && !onVercel()) return MOCK_CRON_SECRET
   const value = process.env.CRON_SECRET?.trim()
   return value && value.length >= 16 ? value : undefined
+}
+
+/**
+ * What opens the admin page, where jobs are started by hand. Only the owner knows it; it lives in
+ * `.env.local` and in Vercel's settings, nowhere else. Without one, or one too short to be safe,
+ * the page lets nobody in. While the test doubles answer, it is their made-up one.
+ */
+export const adminPassword = (): string | undefined => {
+  if (mocksRequested() && !onVercel()) return MOCK_ADMIN_PASSWORD
+  const value = process.env.ADMIN_PASSWORD?.trim()
+  return value && value.length >= 24 ? value : undefined
 }
 
 /**

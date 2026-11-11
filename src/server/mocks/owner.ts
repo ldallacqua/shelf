@@ -20,6 +20,9 @@ export const MOCK_OWNER = {
 /** What the browser tests start the daily refresh with, only while the test doubles answer. */
 export const MOCK_CRON_SECRET = 'test-doubles-only-cron-secret'
 
+/** What opens the admin page, only while the test doubles answer. */
+export const MOCK_ADMIN_PASSWORD = 'test-doubles-only-admin-password'
+
 /**
  * A made-up Steam account and key, only while the test doubles answer
  * (`server/mocks/steam.ts`). Seventeen digits, as a SteamID64 is, but in a

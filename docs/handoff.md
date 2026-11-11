@@ -4,6 +4,17 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## The admin page (10 Nov 2026)
+
+`/admin` starts the server's jobs by hand: Steam pages (new, or every one again), Steam scores, IGDB records, the daily
+sync, or everything, each run in steps of four minutes that carry on by themselves until done (spec 17a, architecture
+section 20). It needs `ADMIN_PASSWORD`: one was made for the owner into `.env.local`, and **the owner pastes the same
+value into Vercel's Production settings and redeploys**; until then production's page says it is off. It was run here
+against the test doubles (a job done in one step, a stage's failure shown in words, the step route refusing without
+the password); the hand-off from one step to the next over HTTP is covered by a unit test and by calling the step
+route by hand, not yet by a long run on production. The design skills ran (`design-critique` on the cover change,
+`accessibility-review` here: announcements of a run that ends, focus after unlocking, jobs as headings).
+
 ## Every cover whole on the wall (10 Nov 2026)
 
 Issue 193: the wall's frames are 2:3, the shape of Steam's capsules and of most covers since ADR 010. A cover of

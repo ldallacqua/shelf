@@ -1,0 +1,78 @@
+{
+  "Admin": {
+    "metaTitle": "Admin",
+    "title": "Admin",
+    "intro": "Rode as tarefas do Shelf agora, no servidor, em vez de esperar a rodada da noite. Uma tarefa longa segue sozinha, alguns minutos por vez, até terminar.",
+    "checking": "Abrindo a página de admin",
+    "lock": "Trancar",
+    "locked": {
+      "label": "Senha",
+      "unlock": "Destrancar",
+      "unlocking": "Destrancando…",
+      "wrong": "Essa não é a senha.",
+      "failed": "O servidor não respondeu. Tente de novo."
+    },
+    "off": "A página de admin está desligada neste servidor: ele não tem ADMIN_PASSWORD.",
+    "jobs": {
+      "title": "Tarefas",
+      "run": "Rodar",
+      "starting": "Começando…",
+      "running": "Rodando",
+      "failed": "Não começou: o servidor não respondeu."
+    },
+    "job": {
+      "steam-pages-new": {
+        "name": "Páginas da Steam de jogos novos",
+        "what": "Lê a página da loja de cada jogo na Steam que nunca foi lida: capa, arte, capturas de tela e descrição."
+      },
+      "steam-pages": {
+        "name": "Todas as páginas da Steam",
+        "what": "Lê de novo a página de cada jogo na loja da Steam, para capas ou capturas de tela que mudaram lá."
+      },
+      "steam-reviews": {
+        "name": "Notas da Steam",
+        "what": "Lê o que os jogadores da Steam dizem de cada jogo vendido lá."
+      },
+      "igdb": {
+        "name": "Registros do IGDB",
+        "what": "Pergunta de novo ao IGDB sobre cada jogo e guarda o que mudou."
+      },
+      "sync": {
+        "name": "Sincronização diária",
+        "what": "Sincroniza cada conta da Steam e da Nintendo que sincroniza todo dia, como a rodada da noite."
+      },
+      "everything": {
+        "name": "Tudo",
+        "what": "Registros do IGDB, depois notas da Steam, depois todas as páginas da Steam."
+      }
+    },
+    "facts": {
+      "neverRead": "{count, plural, =0 {Todas as páginas lidas} one {# página nunca lida} other {# páginas nunca lidas}}",
+      "onSteam": "{count, plural, one {# jogo na Steam} other {# jogos na Steam}}",
+      "records": "{count, plural, one {# registro} other {# registros}}, o mais antigo perguntado {when}",
+      "noRecords": "Nenhum registro ainda",
+      "linked": "{count, plural, =0 {Nenhuma conta sincroniza todo dia} one {# conta sincroniza todo dia} other {# contas sincronizam todo dia}}"
+    },
+    "runs": {
+      "title": "Rodadas",
+      "empty": "Nada rodou daqui ainda.",
+      "stop": "Parar",
+      "stopping": "Parando…",
+      "started": "Começou {when}",
+      "took": "levou {duration}",
+      "sofar": "{duration} até agora",
+      "counts": "{checked, number} lidos · {changed, number} mudaram",
+      "steps": "{count, plural, one {# passo} other {# passos}}",
+      "state": {
+        "running": "Rodando",
+        "done": "Pronto",
+        "failed": "Falhou",
+        "stopped": "Parado",
+        "stale": "Sem resposta"
+      },
+      "stale": "Nenhum passo deu notícia em dez minutos, então uma requisição pode ter morrido. Rode de novo.",
+      "ended": "{job}: {state}"
+    },
+    "duration": "{minutes, plural, =0 {menos de um minuto} one {# minuto} other {# minutos}}"
+  }
+}
