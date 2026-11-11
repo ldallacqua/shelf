@@ -52,6 +52,11 @@ export type LibraryGame = {
   /** A ThumbHash of the cover, base64: about 25 bytes that become a blurred preview. */
   hash?: string
   /**
+   * IGDB's cover, where `cover` is Steam's: what a row's thumbnail draws (`thumbnailOf`). Steam
+   * keeps a cover at 300 pixels wide and larger, about 65 KB, where IGDB's 90-pixel file is 6.
+   */
+  smallCover?: string
+  /**
    * The wide image the banner view shows: the header of its store page on Steam, the name drawn
    * in, or IGDB's art, or a screenshot for anyone. An image id, IGDB's or Steam's.
    */
@@ -120,6 +125,14 @@ export type Library = {
   games: LibraryGame[]
   names: LibraryNames
 }
+
+/**
+ * The cover a row's thumbnail draws, a few dozen pixels wide (a list's rows, Organize, the trophy
+ * page's facts): IGDB's where the game also has Steam's, which has no file that small. A cover
+ * drawn as a cover (the shelf, the wall, a game's page) stays Steam's (ADR 010).
+ */
+export const thumbnailOf = (game: Pick<LibraryGame, 'cover' | 'smallCover'>): string | undefined =>
+  game.smallCover ?? game.cover
 
 export const emptyNames = (): LibraryNames => ({
   genre: [],

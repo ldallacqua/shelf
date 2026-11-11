@@ -22,7 +22,6 @@ import {
   type Status,
   type SyncSource,
 } from '@/domain/library/values'
-import { coverFit, ratioOfCover } from '@/domain/library/cover-fit'
 import { Cover } from '@/features/library/cover'
 import { useDuration } from '@/features/library/duration'
 import { useShelf } from '@/features/library/shelf'
@@ -610,7 +609,7 @@ export function MineEditor({
                       <span
                         aria-hidden="true"
                         className="relative block w-12 flex-none overflow-hidden rounded-[3px] bg-text/8"
-                        style={{ aspectRatio: '2 / 3' }}
+                        style={{ aspectRatio: '3 / 4' }}
                       >
                         <Cover
                           cover={version.cover}
@@ -618,7 +617,6 @@ export function MineEditor({
                           hash={version.hash}
                           title={version.title}
                           sizes="48px"
-                          fit={coverFit(ratioOfCover(version.cover))}
                         />
                       </span>
                       <div className="grid min-w-0 flex-1 content-start gap-1.5">

@@ -4,6 +4,18 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Lighter images from Steam (11 Nov 2026)
+
+Steam's image servers resize nothing and send JPEG, two and a half to three times the bytes of IGDB's WebP for the
+same cover. Two changes followed, measured on production on a screen 2560 wide at 150%. Steam's files are named in
+a `srcset` at their own widths, 300 and 600, so a wall's large cover takes the smaller (the large wall's first
+screen went from 8.0 to 3.9 MB), and every library page connects to Steam's servers early. Then a row's thumbnail
+(the list, the list beside a game, Organize, the versions in Mine, the trophy page's facts) draws IGDB's cover where
+the game has one: Steam has no cover narrower than 300 pixels (ADR 010, decision 2, amended). Those thumbnails' frames
+are 3:4 again, as the list's always were. Still heavy, not changed: a game page's backdrop, Steam's 1920-pixel hero
+of about 300 KB, and IGDB's covers on the large wall, fetched at the medium size first because the server draws the
+wall before it knows the size this device chose.
+
 ## Banners, and covers Steam made up (11 Nov 2026)
 
 The library has a fourth view, **Banners** (spec 3.8): each game a wide card, Steam's header or IGDB's art, with

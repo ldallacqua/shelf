@@ -6,7 +6,6 @@ import { useEffect, useId, useState } from 'react'
 import type { ArchivedGame } from '@/domain/library/editing'
 import { fold } from '@/domain/query/evaluate'
 import { BringBack } from '@/features/add-game/bring-back'
-import { coverFit, ratioOfCover } from '@/domain/library/cover-fit'
 import { Cover } from '@/features/library/cover'
 import { libraryHref } from '@/features/library/shelf-address'
 import { useAccount } from '@/features/owner/account'
@@ -72,7 +71,7 @@ function ArchivedGhosts() {
       <Loading label={t('loading')} className="mt-6 grid max-w-2xl gap-3">
         {Array.from({ length: GHOST_ROWS }, (_, row) => (
           <div key={row} className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Ghost order={row} className="aspect-[2/3] w-10 flex-none rounded-[3px]" />
+            <Ghost order={row} className="aspect-[3/4] w-10 flex-none rounded-[3px]" />
             <span className="grid min-w-0 flex-1 gap-0.5">
               <GhostText order={row} className="w-1/2" />
               <span className="text-sm">
@@ -199,7 +198,7 @@ function ArchivedList({ handle }: { handle: string }) {
               <span
                 aria-hidden="true"
                 className="relative block w-10 flex-none overflow-hidden rounded-[3px] bg-text/8"
-                style={{ aspectRatio: '2 / 3' }}
+                style={{ aspectRatio: '3 / 4' }}
               >
                 <Cover
                   cover={game.cover}
@@ -207,7 +206,6 @@ function ArchivedList({ handle }: { handle: string }) {
                   hash={game.hash}
                   title={game.title}
                   sizes="40px"
-                  fit={coverFit(ratioOfCover(game.cover))}
                 />
               </span>
               <span className="grid min-w-0 flex-1 gap-0.5">

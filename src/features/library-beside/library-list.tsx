@@ -15,7 +15,7 @@ import {
 } from 'react'
 import { flushSync } from 'react-dom'
 
-import type { LibraryPlatform } from '@/domain/library/library'
+import { thumbnailOf, type LibraryPlatform } from '@/domain/library/library'
 import { onlyReady } from '@/domain/library/ready'
 import {
   arrangeOnce,
@@ -419,7 +419,7 @@ export function LibraryListView({
       >
         <span className="beside-thumb" aria-hidden="true">
           <Cover
-            cover={copy?.cover ?? game.cover}
+            cover={copy?.cover ?? thumbnailOf(game)}
             colors={game.colors}
             hash={game.hash}
             title=""

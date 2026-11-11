@@ -124,6 +124,30 @@ const drawnCover = {
     ) as SQL<string | null>,
 }
 
+/** IGDB's cover where the drawn one is Steam's: the library file's `smallCover`, for thumbnails. */
+const smallCover =
+  sql`case when ${games.steamCover} is null then null else ${games.cover} end`.mapWith(
+    games.cover,
+  ) as SQL<GameImage | null>
+
+/**
+ * A game's cover where only a row's thumbnail draws it (`thumbnailOf`): IGDB's, then its store
+ * page's on Steam, which has no file that small. Its colors and blur are read from the same image.
+ */
+const thumbnailCover = {
+  cover: sql`coalesce(${games.cover}, ${games.steamCover})`.mapWith(
+    games.cover,
+  ) as SQL<GameImage | null>,
+  colors:
+    sql`case when ${games.cover} is null then ${games.steamColors} else ${games.colors} end`.mapWith(
+      games.colors,
+    ) as SQL<Palette | null>,
+  thumbhash:
+    sql`case when ${games.cover} is null then ${games.steamThumbhash} else ${games.thumbhash} end`.mapWith(
+      games.thumbhash,
+    ) as SQL<string | null>,
+}
+
 export const readLibrary = async (
   db: Db,
   libraryId: string,
@@ -164,6 +188,7 @@ export const readLibrary = async (
         releasedOn: games.releasedOn,
         year: games.year,
         ...drawnCover,
+        smallCover,
         igdbRating: games.igdbRating,
         igdbRatingCount: games.igdbRatingCount,
         adultsOnly: games.adultsOnly,
@@ -337,6 +362,8 @@ export const readLibrary = async (
       game.cover = primary.cover.id
       game.coverRatio = Math.round((primary.cover.width / primary.cover.height) * 100)
     }
+    if (primary.smallCover && primary.smallCover.id !== game.cover)
+      game.smallCover = primary.smallCover.id
     if (primary.steamBanner) {
       game.banner = primary.steamBanner.id
       game.bannerTitled = true
@@ -626,7 +653,7 @@ export const readOwnerGame = async (
         kind: games.kind,
         year: games.year,
         platforms: games.platforms,
-        ...drawnCover,
+        ...thumbnailCover,
       })
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
@@ -996,7 +1023,7 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
         slug: games.slug,
         title: games.title,
         year: games.year,
-        ...drawnCover,
+        ...thumbnailCover,
         themes: games.themes,
         adultsOnly: games.adultsOnly,
         adultOnSteam,
@@ -1144,7 +1171,7 @@ export const readArchived = async (db: Executor, libraryId: string): Promise<Arc
       slug: games.slug,
       title: games.title,
       year: games.year,
-      ...drawnCover,
+      ...thumbnailCover,
     })
     .from(entries)
     .innerJoin(
@@ -1198,7 +1225,7 @@ export const readStoreHours = async (
       slug: games.slug,
       title: games.title,
       year: games.year,
-      ...drawnCover,
+      ...thumbnailCover,
       length: games.length,
     })
     .from(entries)

@@ -171,6 +171,16 @@ describe('the library file', () => {
     expect(file.games[2]).toHaveLength(28)
   })
 
+  it('carries IGDB’s cover for thumbnails last, after the banner or an empty place for it', () => {
+    const steam = 'steam/apps/10/ab/library_capsule.jpg@2x'
+    const both = { ...bare, cover: steam, smallCover: 'co1abc', banner: 'steam/apps/10/header.jpg' }
+    const noBanner = { ...bare, slug: 'no-banner', cover: steam, smallCover: 'co2def' }
+    const file = encodeLibrary({ ...library, games: [both, noBanner] })
+    expect(decodeLibrary(file).games).toEqual([both, noBanner])
+    expect(file.games[0]?.slice(32)).toEqual(['steam/apps/10/header.jpg', 'co1abc'])
+    expect(file.games[1]?.slice(28)).toEqual([[], [], 0, [], '', 'co2def'])
+  })
+
   it('carries that a game is for adults (spec 3.13)', () => {
     const adult = { ...bare, adult: true as const }
     expect(decodeLibrary(encodeLibrary({ ...library, games: [adult, bare] })).games).toEqual([

@@ -168,7 +168,8 @@ export const games = sqliteTable(
     steamReviewsCheckedAt: integer(),
     /**
      * A game IGDB has, as its page on Steam's store shows it (ADR 010): its cover, and what is
-     * read with it, come before IGDB's wherever a cover is drawn but search. Null when the store
+     * read with it, come before IGDB's wherever a cover is drawn but search and a row's thumbnail
+     * (`thumbnailCover` in `server/library/read.ts`). Null when the store
      * has no page for it, or none was read yet. A game IGDB doesn't have keeps its page in the
      * columns above instead.
      */

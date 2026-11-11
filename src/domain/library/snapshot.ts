@@ -70,6 +70,8 @@ type GameRow = [
   wantedStores?: number[],
   /** The banner view's image id; with it, the four before are there, empty if need be. */
   banner?: string,
+  /** IGDB's cover where `cover` is Steam's, for thumbnails; with it, the five before are there. */
+  smallCover?: string,
 ]
 
 type NamedRow = [id: number, name: string, slug: string]
@@ -179,11 +181,14 @@ const encodeGame = (game: LibraryGame): GameRow => {
   const hasty = game.hastyShare
   const stores = game.wantedStores?.length ? packStores(game.wantedStores) : undefined
   const banner = game.banner
-  if (game.wanted?.length || ages?.length || hasty || stores || banner) row.push(game.wanted ?? [])
-  if (ages?.length || hasty || stores || banner) row.push(ages ?? [])
-  if (hasty || stores || banner) row.push(hasty ?? 0)
-  if (stores || banner) row.push(stores ?? [])
-  if (banner) row.push(banner)
+  const small = game.smallCover
+  if (game.wanted?.length || ages?.length || hasty || stores || banner || small)
+    row.push(game.wanted ?? [])
+  if (ages?.length || hasty || stores || banner || small) row.push(ages ?? [])
+  if (hasty || stores || banner || small) row.push(hasty ?? 0)
+  if (stores || banner || small) row.push(stores ?? [])
+  if (banner || small) row.push(banner ?? '')
+  if (small) row.push(small)
   return row
 }
 
@@ -234,6 +239,7 @@ const decodeGame = (row: GameRow): LibraryGame => {
   if (row[30]) game.hastyShare = row[30]
   if (row[31]?.length) game.wantedStores = unpackStores(row[31])
   if (row[32]) game.banner = row[32]
+  if (row[33]) game.smallCover = row[33]
   if (row[16] & BANNER_TITLED) game.bannerTitled = true
   if (row[16] & PRIVATE) game.private = true
   if (row[16] & ADULT) game.adult = true

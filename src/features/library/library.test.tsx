@@ -544,6 +544,29 @@ describe('ListView', () => {
     expect(cell).toHaveTextContent('PS5FísicoSwitchFísicoPCDigital')
     expect(cell).not.toHaveTextContent('Disco')
   })
+
+  it('draws a row’s thumbnail from IGDB’s small file where the cover is Steam’s', () => {
+    const entry = item({
+      cover: 'steam/apps/10/aa/library_capsule.jpg@2x',
+      smallCover: 'co1abc',
+      copies: [{ platform: 6, format: 'digital' }],
+    })
+    const { container } = renderWithIntl(
+      <ListView
+        shelves={[{ kind: 'all', key: 'all', items: [entry], total: 1 }]}
+        platforms={platforms}
+        onOpen={vi.fn()}
+        enter={false}
+        firstBoxes={12}
+      />,
+    )
+    const thumb = container.querySelector('.game-thumb img')!
+    expect(thumb.getAttribute('src')).toBe(
+      'https://images.igdb.com/igdb/image/upload/t_cover_big/co1abc.webp',
+    )
+    expect(thumb.getAttribute('srcset')).toContain('t_cover_small/co1abc.webp 90w')
+    expect(thumb.getAttribute('srcset')).not.toContain('steamstatic')
+  })
 })
 
 describe('format', () => {

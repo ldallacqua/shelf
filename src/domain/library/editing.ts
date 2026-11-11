@@ -42,7 +42,10 @@ export type OwnedVersion = {
   kind: Kind
   year?: number
   platforms: number[]
-  /** Its own cover, to tell the versions apart at a glance: an image id, IGDB's or Steam's. */
+  /**
+   * Its own cover, to tell the versions apart at a glance: an image id, IGDB's, or Steam's when
+   * IGDB has none. A thumbnail, so IGDB's small file first (`thumbnailOf`).
+   */
   cover?: string
   colors?: Palette
   hash?: string
@@ -113,7 +116,7 @@ export type ArchivedGame = {
   slug: string
   title: string
   year?: number
-  /** An image id, IGDB's or Steam's (`imageUrl` reads both). */
+  /** An image id, IGDB's, or Steam's when IGDB has none: a thumbnail (`thumbnailOf`). */
   cover?: string
   colors?: Palette
   hash?: string
@@ -131,7 +134,7 @@ export type StoreHoursGame = {
   slug: string
   title: string
   year?: number
-  /** An image id, IGDB's or Steam's (`imageUrl` reads both). */
+  /** An image id, IGDB's, or Steam's when IGDB has none: a thumbnail (`thumbnailOf`). */
   cover?: string
   colors?: Palette
   hash?: string
