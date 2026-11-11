@@ -221,11 +221,12 @@ function Gallery({
   useEffect(() => {
     const element = strip.current
     if (!element) return
-    const measure = () =>
-      setEdges({
-        before: element.scrollLeft > 4,
-        after: element.scrollLeft + element.clientWidth < element.scrollWidth - 4,
-      })
+    // Kept when unchanged, so scrolling the strip draws the gallery again only at its ends.
+    const measure = () => {
+      const before = element.scrollLeft > 4
+      const after = element.scrollLeft + element.clientWidth < element.scrollWidth - 4
+      setEdges((now) => (now.before === before && now.after === after ? now : { before, after }))
+    }
     measure()
     element.addEventListener('scroll', measure, { passive: true })
     const observer = new ResizeObserver(measure)
