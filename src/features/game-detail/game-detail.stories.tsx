@@ -85,6 +85,23 @@ export const Page: Story = {
   args: { handle: 'sample', game, tags, platforms, facts },
 }
 
+/** A large selected screenshot, after the scores and ahead of About; the same shape without media is Page. */
+export const WithMedia: Story = {
+  args: {
+    handle: 'sample',
+    game,
+    tags,
+    platforms,
+    facts: {
+      ...facts,
+      screenshots: [
+        { id: 'game_one', width: 1920, height: 1080 },
+        { id: 'game_two', width: 1920, height: 1080 },
+      ],
+    },
+  },
+}
+
 /**
  * Opened from the library, while the rest of its page is on its way: what
  * the library file knows at once, and ghosts for the rest (`hand-off.tsx`).

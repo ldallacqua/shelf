@@ -9,6 +9,7 @@ import type { DemoGame } from './demo-case'
 import { EveryCopy } from './every-copy'
 import { FinishedWall } from './finished-wall'
 import { Hero } from './hero'
+import { MediaDemo } from './media-demo'
 import { Privacy } from './privacy'
 import { Reveals } from './reveals'
 import { Section } from './section'
@@ -100,6 +101,15 @@ export function Landing() {
         body={t('views.body')}
       >
         <ViewsDemo games={rated} />
+      </Section>
+      <Section
+        id="media"
+        flip
+        eyebrow={t('media.eyebrow')}
+        title={t('media.title')}
+        body={t('media.body')}
+      >
+        <MediaDemo />
       </Section>
       <Section
         id="finished"

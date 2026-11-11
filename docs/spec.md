@@ -1370,12 +1370,41 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
 | **Scores** | What others think of it, a place to a column: IGDB, Steam, and people on Shelf (section 7.11) |
 | **About** | The long description of its page on Steam's store, its headings, lists, pictures and clips drawn by Shelf; without one, Steam's short description or IGDB's summary, and IGDB's storyline, in their paragraphs. A long one shows its first paragraph and about a screen's worth, and the rest behind **Read more**, opened in place |
-| **Videos and screenshots** | One strip, videos first: each video on one of the game's own pictures with a play button and what it is ("Launch Trailer"), then the screenshots. No scrollbar: an edge with more past it fades, and on a pointer that can hover an arrow there moves the strip. A screenshot opens a full-screen viewer (arrow keys, swipe, pinch to zoom); a video plays over the page, from YouTube, which nothing reaches before it is pressed |
+| **Videos and screenshots** | Immediately after Scores, a large 16:9 selected frame with thumbnails beneath, ahead of About. Named gameplay comes first; at most two videos precede the screenshots, with the remaining videos after them. A thumbnail selects in place; pressing the large screenshot opens the full-screen viewer (arrow keys, swipe, pinch to zoom). Videos play inline from YouTube with its controls; public video posters are fetched through Shelf's image service. A numbered label distinguishes similarly named trailers |
 | **Achievements** | For a game a sync brought in from Steam: how many are unlocked, and each one (section 7.8) |
 | **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat |
 | **Versions** | The editions and ports linked to this entry (signed in) |
 
 Each value under Details is a link to the library filtered by it.
+
+**Media gallery (11 Nov 2026).** The short description introduces the game in the hero, at most four
+lines; it is not repeated under About unless it is longer than 300 characters or has several paragraphs,
+in which case About keeps it whole. The scores keep their place and their meters. The gallery's stage and
+rail have matching skeletons during the library's navigation handoff; an empty gallery is omitted, and
+a game without videos leads with its screenshots. Mature media waits blurred until explicitly revealed,
+and a hidden mature video never autoplays. Selecting a thumbnail does not force full-screen playback.
+
+Videos wait for a press by default. **Autoplay muted videos** is an explicit, remembered device choice
+in the gallery, through `preferences.ts`. It only starts a selected video when at least 60% of its stage
+is visible, on a fine-pointer device at least 40rem wide, with reduced motion and data saving off.
+Turning that preference on allows YouTube contact without pressing each video; the gallery and privacy
+page say so. Public posters are proxied through Next's image service, so a visitor's browser does not
+contact YouTube for a thumbnail. Playback is always initially muted; sound and captions use YouTube's
+own controls. Scrolling away, hiding the tab or leaving a retained page pauses playback; a manual pause
+survives scrolling and redraws. Videos do not advance on their own. Description clips yield while the
+gallery plays. A refused or unavailable player returns to its poster with a retry explanation.
+
+In a single column, Mine keeps Play outside **Edit your game**, with its full fields folded behind that
+control; the visitor's record uses **Your record**. Beside a wide page the fields remain open. The editor
+and its skeleton share this wrapper, so a long record cannot push all discovery content several screens
+down on a narrow page. The same page is still drawn by the server and the library during navigation.
+
+Basis: the owner's Steam/Hydra examples, live Shelf pages (Hollow Knight and Tears of the Kingdom),
+Steam and GOG's pages, [Steamworks trailer guidance](https://partner.steamgames.com/doc/store/trailer),
+[WCAG Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide),
+[YouTube's player API](https://developers.google.com/youtube/iframe_api_reference) and
+[autoplay visibility requirements](https://developers.google.com/youtube/terms/required-minimum-functionality).
+The named design skills were not installed; layout, keyboard behavior, motion and copy were reviewed manually.
 
 **Steam first** (built 10 Nov 2026, [ADR 010](adr/010-steam-first-on-a-game-page.md)). The owner, on
 10 Nov 2026: "I want steam to be the main source of truth for everything we show up in the page up to the
@@ -2343,6 +2372,7 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
 | **5. Bring your Steam library** | Games arriving from Steam one by one, each with its hours, then the count, and "Again tomorrow, by itself". |
 | **6. Shelf, wall or list** | The same games three ways, turning by itself until the visitor picks one; covers travel between the shelf and the wall. |
 | **7. How far you got** | A glimpse of the trophy wall: its stats counting up (finished, this year, hours, the average rating), over the example shelf's latest year of trophies, each under its own light. |
+| **A closer look** | The game page's real screenshot gallery, using Hollow Knight from the example shelf: select a thumbnail, open full screen and zoom, then open the example game's page. Its words describe scores, trailers and the full description, and the FAQ explains the optional muted autoplay. |
 | **8. Yours to show, or to keep** | Public or private, as sign-up offers them, and that notes stay private unless marked public. |
 | **9. Your AI assistant** | A conversation: asked for something short, not started, on the Switch, it answers from the shelf (section 17). |
 | **10. The close** | An empty lit shelf, "Your shelf is waiting.", the call to action again, and five questions: free, where game data comes from, bringing in games one already owns, who can see a shelf, taking the games away. |

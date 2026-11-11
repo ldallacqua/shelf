@@ -76,10 +76,20 @@ in the game details such as videos. I don't think we should change search and th
     marked, and drawn blurred until asked for, as decision 7 says. It is kept in a column of its own,
     `steam_description`, as reading a library looks into `steam_page` for every game; `steam_page` holds only a
     fingerprint of it (`described`), so a change to it alone is a change to the page without reading it back.
-    Where there is one, About shows it, and neither the summary nor IGDB's storyline: the summary stays for
+    Where there is one, About shows it, and neither the summary nor IGDB's storyline: the summary introduces the game in its hero and stays for
     everything else (a link's preview, structured data, the public API), which never carry the description.
 
 ## Consequences
+
+**Amended 11 Nov 2026: the media gallery.** Videos remain IGDB's YouTube records. They now play inline,
+after Scores and ahead of About, with a selected frame and a thumbnail rail. Next's image service proxies
+their public posters so the browser reaches no YouTube host for thumbnails. Playback waits for a press by
+default; an explicit remembered desktop autoplay choice permits player contact when the selected frame
+comes into view. It stays muted, honors reduced motion and data saving, and pauses offscreen. Spec 7.1
+records the lifecycle and the narrower editor layout. No new catalog field or backfill is needed, so no
+admin job needs to run. Direct Steam trailers remain outside this change: their formats and durable
+addresses were not validated; the local manual API request was blocked by network DNS, and no test
+contacted Steam. Any future trailer ingestion must extend **Every Steam page** on `/admin` in the same change.
 
 - Most covers on a shelf synced from Steam are now 2:3, where IGDB's are 3:4. The wall cropped every cover to 3:4
   until issue #193, which made its frame 2:3 and draws any other cover whole inside it (spec 3.8).

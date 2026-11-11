@@ -9,6 +9,19 @@ const themes = { light: readTheme('light'), dark: readTheme('dark') }
 const themeNames = ['light', 'dark'] as const
 
 describe('contrast', () => {
+  it('keeps the cinema captions readable over the selected media', async () => {
+    const { readFileSync } = await import('node:fs')
+    const css = readFileSync(new URL('../../app/globals.css', import.meta.url), 'utf8')
+    const token = (name: string) => {
+      const value = new RegExp(`${name}:\\s*(#[a-f0-9]+)`, 'i').exec(css)![1]!
+      return value.length === 4
+        ? '#' + [...value.slice(1)].map((digit) => digit + digit).join('')
+        : value
+    }
+    expect(contrast(token('--color-cinema'), token('--color-on-cinema'))).toBeGreaterThanOrEqual(
+      4.5,
+    )
+  })
   it('matches known values', () => {
     expect(contrast('#000000', '#ffffff')).toBeCloseTo(21, 5)
     expect(contrast('#777777', '#ffffff')).toBeCloseTo(4.48, 2)

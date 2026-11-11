@@ -15,6 +15,8 @@ import {
 import { steamFileUrl } from '@/domain/igdb/images'
 import type { DescriptionPicture } from '@/domain/steam/description'
 
+import { isGalleryPlaying, subscribeToGallery } from './media-focus'
+
 /** Whether a description's pictures for adults were asked for, and how to ask. */
 const AdultShown = createContext<{ shown: boolean; show: () => void }>({
   shown: false,
@@ -73,6 +75,7 @@ export function DescriptionMedia({
   const t = useTranslations('Game')
   const { shown, show } = use(AdultShown)
   const calm = useCalm()
+  const gallery = useSyncExternalStore(subscribeToGallery, isGalleryPlaying, () => false)
   const frame = useRef<HTMLButtonElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const [near, setNear] = useState(false)
@@ -82,7 +85,7 @@ export function DescriptionMedia({
 
   const hidden = picture.mature === true && !shown
   const loop = picture.loop
-  const play = loop !== undefined && !hidden && near && (chosen ?? !calm)
+  const play = loop !== undefined && !hidden && near && !gallery && (chosen ?? !calm)
 
   useEffect(() => {
     const element = frame.current

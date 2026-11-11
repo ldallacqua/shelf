@@ -41,7 +41,7 @@ export type GameFacts = {
   /** Behind the cover: key art, or a screenshot when there is none. Without either, the cover's colors. */
   backdrop?: GameImage
   screenshots: GameImage[]
-  /** Trailers and gameplay, played from YouTube only when pressed. Absent when IGDB lists none. */
+  /** IGDB's YouTube trailers: a press, or a remembered desktop autoplay choice, starts the player. */
   videos?: GameVideo[]
   /** The first release on each platform, across every version folded into the entry. */
   releases: Release[]

@@ -1,5 +1,5 @@
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 import type { Palette } from '@/domain/color/palette'
 import { backdropSources } from '@/domain/igdb/images'
@@ -20,11 +20,12 @@ import { AchievementsLater } from './achievements-later'
 import { PageDrawn } from './hand-off'
 import { HERO_COVER } from './hero'
 import { MineSkeleton } from './mine-skeleton'
+import { MineFields } from './mine-fields'
 import { OwnerMine } from './owner-mine'
 import { AdultNotice } from './adult-notice'
 import { GameDescription, HIDDEN_CHARS, ReadMore, SHOWN_CHARS } from './description'
 import { Scores } from './scores'
-import { Screenshots } from './screenshots'
+import { MediaSkeleton, Screenshots } from './screenshots'
 import { Stores } from './stores'
 
 import './game-detail.css'
@@ -200,7 +201,7 @@ export function GameDetail({
       </div>
       <div className="game-hero-inner mx-auto w-full max-w-360 px-4 @min-[39rem]:px-6 @min-[63rem]:px-10">
         {above}
-        <div className="flex items-end gap-4 @min-[39rem]:gap-6">
+        <div className="game-identity">
           <span
             className="game-cover"
             style={{ aspectRatio: String(ratio) }}
@@ -219,7 +220,7 @@ export function GameDetail({
             {/* The cover growing from the shelf lands here (`morph.ts`). */}
             <PageDrawn />
           </span>
-          <div className="min-w-0 flex-1 pb-1">
+          <div className="game-name min-w-0 pb-1">
             <h1 className="title text-3xl text-balance break-words @min-[39rem]:text-5xl @min-[63rem]:text-6xl">
               {game.title}
             </h1>
@@ -242,6 +243,16 @@ export function GameDetail({
               ) : null}
             </p>
           </div>
+          {facts?.summary ? (
+            <p className="game-intro" lang={igdbLang}>
+              {facts.summary}
+            </p>
+          ) : !facts ? (
+            <div className="game-intro" aria-hidden="true">
+              <span className="ghost block h-4 w-full rounded-control" />
+              <span className="ghost mt-2 block h-4 w-4/5 rounded-control" />
+            </div>
+          ) : null}
         </div>
       </div>
     </header>
@@ -263,85 +274,87 @@ export function GameDetail({
 
   const readOnlyMine = (
     <Section title={t('mine')} className="game-mine">
-      <dl>
-        <Row label={t('status')}>
-          <StatusMark status={game.status} label={library(`status.${game.status}`)} />
-        </Row>
-        {game.rating === undefined ? null : (
-          <Row label={t('rating')}>
-            <span className="title text-xl">
-              {format.number(outOfTen(game.rating), { maximumFractionDigits: 1 })}
-            </span>
-            <span className="ml-1.5 readout text-[0.625rem] text-muted">{t('outOfTen')}</span>
+      <MineFields label={t('recordDetails')}>
+        <dl>
+          <Row label={t('status')}>
+            <StatusMark status={game.status} label={library(`status.${game.status}`)} />
           </Row>
-        )}
-        <Row label={t('owned')}>
-          {owned.length > 0 ? (
-            <ul className="flex flex-wrap gap-1.5">
-              {owned.map(({ copy, platform }) => (
-                <li key={`${copy.platform}:${copy.format}`}>
-                  <FilterLink
-                    handle={handle}
-                    filter={`owned:${platform.key} format:${copy.format}`}
-                  >
-                    {t('copy', {
-                      platform: platform.name,
-                      format: library(`format.${copy.format}`),
-                    })}
-                  </FilterLink>
-                </li>
-              ))}
-              {[...new Set(owned.flatMap(({ copy }) => copy.stores ?? []))].map(storePill)}
-            </ul>
-          ) : (
-            <span className="text-muted">{library('shelf.notOwned')}</span>
+          {game.rating === undefined ? null : (
+            <Row label={t('rating')}>
+              <span className="title text-xl">
+                {format.number(outOfTen(game.rating), { maximumFractionDigits: 1 })}
+              </span>
+              <span className="ml-1.5 readout text-[0.625rem] text-muted">{t('outOfTen')}</span>
+            </Row>
           )}
-        </Row>
-        {wanted.length > 0 ? (
-          <Row label={t('wanted')}>
-            <ul className="flex flex-wrap gap-1.5">
-              {wanted.map((platform) => (
-                <li key={platform.id}>
-                  <FilterLink handle={handle} filter={`wanted:${platform.key}`}>
-                    {platform.name}
-                  </FilterLink>
-                </li>
-              ))}
-              {(game.wantedStores ?? []).map(storePill)}
-            </ul>
+          <Row label={t('owned')}>
+            {owned.length > 0 ? (
+              <ul className="flex flex-wrap gap-1.5">
+                {owned.map(({ copy, platform }) => (
+                  <li key={`${copy.platform}:${copy.format}`}>
+                    <FilterLink
+                      handle={handle}
+                      filter={`owned:${platform.key} format:${copy.format}`}
+                    >
+                      {t('copy', {
+                        platform: platform.name,
+                        format: library(`format.${copy.format}`),
+                      })}
+                    </FilterLink>
+                  </li>
+                ))}
+                {[...new Set(owned.flatMap(({ copy }) => copy.stores ?? []))].map(storePill)}
+              </ul>
+            ) : (
+              <span className="text-muted">{library('shelf.notOwned')}</span>
+            )}
           </Row>
+          {wanted.length > 0 ? (
+            <Row label={t('wanted')}>
+              <ul className="flex flex-wrap gap-1.5">
+                {wanted.map((platform) => (
+                  <li key={platform.id}>
+                    <FilterLink handle={handle} filter={`wanted:${platform.key}`}>
+                      {platform.name}
+                    </FilterLink>
+                  </li>
+                ))}
+                {(game.wantedStores ?? []).map(storePill)}
+              </ul>
+            </Row>
+          ) : null}
+          {game.minutes > 0 ? (
+            <Row label={t('played')}>
+              <Duration minutes={game.minutes} />
+            </Row>
+          ) : null}
+          <Row label={t('added')}>{day(game.addedOn)}</Row>
+          {game.completedOn ? <Row label={t('completed')}>{day(game.completedOn)}</Row> : null}
+          {tags.length > 0 ? (
+            <Row label={t('tags')}>
+              <ul className="flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
+                  <li key={tag.slug}>
+                    <FilterLink handle={handle} filter={`tag:${tag.slug}`}>
+                      {tag.name}
+                    </FilterLink>
+                  </li>
+                ))}
+              </ul>
+            </Row>
+          ) : null}
+        </dl>
+        {game.hasNotes ? (
+          <div className="mt-4">
+            <h3 className="readout text-[0.625rem] text-muted">{t('notes')}</h3>
+            {facts ? (
+              <p className="mt-1.5 text-sm whitespace-pre-line">{facts.notes}</p>
+            ) : (
+              <Ghosts lines={2} />
+            )}
+          </div>
         ) : null}
-        {game.minutes > 0 ? (
-          <Row label={t('played')}>
-            <Duration minutes={game.minutes} />
-          </Row>
-        ) : null}
-        <Row label={t('added')}>{day(game.addedOn)}</Row>
-        {game.completedOn ? <Row label={t('completed')}>{day(game.completedOn)}</Row> : null}
-        {tags.length > 0 ? (
-          <Row label={t('tags')}>
-            <ul className="flex flex-wrap gap-1.5">
-              {tags.map((tag) => (
-                <li key={tag.slug}>
-                  <FilterLink handle={handle} filter={`tag:${tag.slug}`}>
-                    {tag.name}
-                  </FilterLink>
-                </li>
-              ))}
-            </ul>
-          </Row>
-        ) : null}
-      </dl>
-      {game.hasNotes ? (
-        <div className="mt-4">
-          <h3 className="readout text-[0.625rem] text-muted">{t('notes')}</h3>
-          {facts ? (
-            <p className="mt-1.5 text-sm whitespace-pre-line">{facts.notes}</p>
-          ) : (
-            <Ghosts lines={2} />
-          )}
-        </div>
-      ) : null}
+      </MineFields>
     </Section>
   )
 
@@ -389,13 +402,13 @@ export function GameDetail({
   )
 
   // Its store page's long description where it has one (ADR 010, decision 11), and IGDB's words where not.
+  const longSummary = facts?.summary && (facts.summary.length > 300 || facts.summary.includes('\n'))
   const about =
-    facts && !facts.description && !facts.summary && !facts.storyline ? null : (
+    facts && !facts.description && !facts.storyline && !longSummary ? null : (
       <Section title={t('about')}>
         {facts?.description ? (
           <GameDescription
             blocks={facts.description}
-            summary={facts.summary}
             title={game.title}
             slug={game.slug}
             lang={locale}
@@ -403,7 +416,7 @@ export function GameDetail({
           />
         ) : facts ? (
           <div className="game-prose" lang={igdbLang}>
-            {facts.summary ? <Passage text={facts.summary} lang={locale} /> : null}
+            {longSummary && facts.summary ? <Passage text={facts.summary} lang={locale} /> : null}
             {facts.storyline ? (
               <>
                 <h3
@@ -428,18 +441,16 @@ export function GameDetail({
       <Section title={videos.length > 0 ? t('media') : t('screenshots')}>
         {facts ? (
           <div data-adult-media={game.adult ? '' : undefined}>
-            <Screenshots shots={facts.screenshots} videos={videos} title={game.title} />
+            <Screenshots
+              game={game.slug}
+              shots={facts.screenshots}
+              videos={videos}
+              title={game.title}
+              adult={game.adult}
+            />
           </div>
         ) : (
-          <div aria-hidden="true" className="flex gap-2 overflow-hidden">
-            {[0, 1, 2].map((index) => (
-              <span
-                key={index}
-                className="ghost aspect-video h-24 flex-none rounded-case"
-                style={{ '--i': index } as CSSProperties}
-              />
-            ))}
-          </div>
+          <MediaSkeleton />
         )}
       </Section>
     )
@@ -566,8 +577,8 @@ export function GameDetail({
       <div className="relative mx-auto grid w-full max-w-360 gap-x-12 gap-y-10 px-4 pt-6 pb-16 @min-[39rem]:px-6 @min-[63rem]:grid-cols-[minmax(0,1fr)_22rem] @min-[63rem]:px-10">
         <div className="grid min-w-0 content-start gap-10">
           {scores}
-          {about}
           {shots}
+          {about}
           {achievements}
           {details}
         </div>

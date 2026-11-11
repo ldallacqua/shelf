@@ -254,6 +254,12 @@
       },
       "notes": "As anotações que você escreve sobre um jogo continuam privadas, mesmo numa estante pública, a menos que você as marque como públicas. E qualquer jogo pode ser só seu: numa estante pública, ninguém mais o vê."
     },
+    "media": {
+      "eyebrow": "Olhe mais de perto",
+      "title": "Veja o que vai jogar.",
+      "body": "Abra um jogo para ver notas, trailers e capturas, com a descrição completa logo abaixo. Suas cópias, horas e anotações ficam ao lado. Experimente as capturas da estante de exemplo.",
+      "open": "Abrir este jogo na estante de exemplo"
+    },
     "assistant": {
       "eyebrow": "Assistentes de IA",
       "title": "Pergunte ao seu assistente o que jogar.",
@@ -279,6 +285,10 @@
       "data": {
         "q": "De onde vêm as informações dos jogos?",
         "a": "Do IGDB.com: títulos, datas de lançamento e quanto tempo os jogos levam para zerar. Capas, capturas de tela e descrições vêm da loja da Steam para um jogo vendido lá, e do IGDB.com para o resto. O que é seu, você adiciona: onde você tem o jogo, até onde chegou, o que achou."
+      },
+      "media": {
+        "q": "Os vídeos dos jogos tocam sozinhos?",
+        "a": "Os vídeos esperam você apertar Play. No computador, você pode ligar a reprodução automática sem som; o Shelf lembra a escolha nesse dispositivo. No celular, com movimento reduzido ou economia de dados, os vídeos ficam parados até um toque. Os trailers tocam pelo YouTube."
       },
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",
@@ -515,6 +525,18 @@
     "readLess": "Ler menos",
     "screenshots": "Capturas de tela",
     "media": "Vídeos e capturas de tela",
+    "editDetails": "Editar meu jogo",
+    "recordDetails": "Meu registro",
+    "galleryVideoName": "{name} · {number}",
+    "galleryShotName": "Captura {number}",
+    "gallerySelect": "Mostrar {name} de {title}",
+    "galleryPlay": "Tocar {name} de {title}, sem som",
+    "galleryAdult": "Mídia de {title}, para adultos, desfocada: mostrar",
+    "galleryFullscreen": "Tela cheia",
+    "galleryFailed": "Não foi possível tocar o vídeo. Toque na imagem para tentar de novo ou escolha outro item.",
+    "galleryAutoplay": "Tocar vídeos automaticamente, sem som",
+    "galleryAutoplayHint": "Lembrado neste dispositivo. Usa o YouTube quando um vídeo entra na tela.",
+    "galleryCalmHint": "No celular, com movimento reduzido ou economia de dados, os vídeos esperam um toque.",
     "achievements": {
       "title": "Conquistas",
       "setTitle": "{title} na {source}",
@@ -1688,7 +1710,7 @@
       },
       "where": {
         "title": "Onde fica guardado",
-        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Shelf, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá. Ao apertar um vídeo de um jogo, ele toca no player do YouTube (youtube-nocookie.com), que então vê a sua visita como as páginas do próprio YouTube veriam; nada vai para o YouTube antes de você apertar."
+        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Shelf, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá. As imagens dos vídeos são buscadas pelo serviço de imagens do Shelf; seu navegador não entra em contato com o YouTube para isso. Ao apertar Play, o vídeo usa o player do YouTube (youtube-nocookie.com), que então vê sua visita como as próprias páginas dele veriam. Se você escolher a reprodução automática sem som no computador, o YouTube é acessado quando um vídeo entra na tela. A escolha fica neste dispositivo; começa desligada e, no celular, com movimento reduzido ou economia de dados, o vídeo ainda espera um toque."
       },
       "delete": {
         "title": "Apagar",

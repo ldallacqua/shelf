@@ -122,6 +122,14 @@ export const besidePreference: Preference<'shown' | 'hidden'> = {
   fallback: 'shown',
 }
 
+/** Muted trailers may play on this desktop only after its owner chooses it in a game's gallery. */
+export const autoplayPreference: Preference<'off' | 'on'> = {
+  storageKey: 'shelf:media-autoplay',
+  attribute: 'media-autoplay',
+  values: ['off', 'on'],
+  fallback: 'off',
+}
+
 // Experimental views first: the head script reads them back for the choices they hold.
 const preferences = [
   experimentalPreference,
@@ -131,6 +139,7 @@ const preferences = [
   adultPreference,
   readyPreference,
   besidePreference,
+  autoplayPreference,
 ] as const
 
 const parse = <Value extends string>(preference: Preference<Value>, value: unknown): Value =>

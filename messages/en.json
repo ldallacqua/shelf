@@ -254,6 +254,12 @@
       },
       "notes": "Notes you write about a game stay private, on a public shelf too, unless you mark them public. And any one game can be yours alone: on a public shelf, nobody else sees it."
     },
+    "media": {
+      "eyebrow": "A closer look",
+      "title": "See what you’ll play.",
+      "body": "Open a game for its scores, trailers and screenshots, with the full description below. Keep your copies, hours and notes beside it. Try the screenshots from the example shelf.",
+      "open": "Open this game on the example shelf"
+    },
     "assistant": {
       "eyebrow": "AI assistants",
       "title": "Ask your assistant what to play.",
@@ -279,6 +285,10 @@
       "data": {
         "q": "Where does the information about games come from?",
         "a": "From IGDB.com: titles, release dates, and how long games take to finish. Covers, screenshots and descriptions come from Steam's store for a game sold there, and from IGDB.com for the rest. What is yours you add: where you own a game, how far you got, what you thought of it."
+      },
+      "media": {
+        "q": "Do game videos play automatically?",
+        "a": "Videos wait for you to press Play. You can turn on muted autoplay on a desktop; Shelf remembers that device’s choice. Phones, reduced motion and data saving keep videos still until pressed. Trailers play through YouTube."
       },
       "sync": {
         "q": "Can it bring in the games I already own?",
@@ -515,6 +525,18 @@
     "readLess": "Show less",
     "screenshots": "Screenshots",
     "media": "Videos and screenshots",
+    "editDetails": "Edit your game",
+    "recordDetails": "Your record",
+    "galleryVideoName": "{name} · {number}",
+    "galleryShotName": "Screenshot {number}",
+    "gallerySelect": "Show {name} from {title}",
+    "galleryPlay": "Play {name} from {title}, muted",
+    "galleryAdult": "Media from {title}, for adults, blurred: show it",
+    "galleryFullscreen": "Full screen",
+    "galleryFailed": "The video could not play. Press the poster to try again, or choose another item.",
+    "galleryAutoplay": "Autoplay muted videos",
+    "galleryAutoplayHint": "Remembered on this device. Uses YouTube when a video comes into view.",
+    "galleryCalmHint": "Videos wait for a press on phones, with reduced motion or with data saving on.",
     "achievements": {
       "title": "Achievements",
       "setTitle": "{title} on {source}",
@@ -1688,7 +1710,7 @@
       },
       "where": {
         "title": "Where it is kept",
-        "body": "In a database in São Paulo, Brazil (Turso), reached by Shelf’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there. Pressing one of a game's videos plays it in YouTube's player (youtube-nocookie.com), which then sees your visit as YouTube's own pages would; nothing goes to YouTube before you press one."
+        "body": "In a database in São Paulo, Brazil (Turso), reached by Shelf’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there. Public video posters are fetched by Shelf’s image service; your browser does not contact YouTube for them. Pressing Play uses YouTube’s player (youtube-nocookie.com), which then sees your visit as its own pages would. If you choose muted autoplay on a desktop, YouTube is contacted when a video comes into view instead. That choice stays on this device; it is off by default, and phones, reduced motion and data saving still wait for a press."
       },
       "delete": {
         "title": "Removing it",
