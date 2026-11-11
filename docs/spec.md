@@ -1370,7 +1370,7 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
 | **Scores** | What others think of it, a place to a column: IGDB, Steam, and people on Shelf (section 7.11) |
 | **About** | The long description of its page on Steam's store, its headings, lists, pictures and clips drawn by Shelf; without one, Steam's short description or IGDB's summary, and IGDB's storyline, in their paragraphs. A long one shows its first paragraph and about a screen's worth, and the rest behind **Read more**, opened in place |
-| **Videos and screenshots** | Immediately after Scores, a large 16:9 selected frame with thumbnails beneath, ahead of About. Named gameplay comes first; at most two videos precede the screenshots, with the remaining videos after them. A thumbnail selects in place; pressing the large screenshot opens the full-screen viewer (arrow keys, swipe, pinch to zoom). Videos play inline from YouTube with its controls; public video posters are fetched through Shelf's image service. A numbered label distinguishes similarly named trailers |
+| **Videos and screenshots** | Immediately after Scores, a large 16:9 selected frame with thumbnails beneath, ahead of About. Named gameplay comes first; at most two videos precede the screenshots, with the remaining videos after them. A thumbnail selects in place; pressing the large screenshot opens the full-screen viewer (arrow keys, swipe, pinch to zoom). Videos play inline from YouTube with its controls; public video posters are fetched through Shelf's image service. Thumbnails carry no words, as on Steam's store page: a video's is marked by a play icon, and its name, numbered to tell similarly named trailers apart, is on its poster on the stage; a screenshot shows no name, its number is for screen readers alone (the owner's call, 11 Nov 2026) |
 | **Achievements** | For a game a sync brought in from Steam: how many are unlocked, and each one (section 7.8) |
 | **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat |
 | **Versions** | The editions and ports linked to this entry (signed in) |
@@ -1395,7 +1395,8 @@ survives scrolling and redraws. Videos do not advance on their own. Description 
 gallery plays. A refused or unavailable player returns to its poster with a retry explanation.
 
 In a single column, Mine keeps Play outside **Edit your game**, with its full fields folded behind that
-control; the visitor's record uses **Your record**. Beside a wide page the fields remain open. The editor
+control; the visitor's record uses **Your record**. The fields slide open and shut under it, its plus
+folding into a minus, and simply appear under reduced motion. Beside a wide page the fields remain open. The editor
 and its skeleton share this wrapper, so a long record cannot push all discovery content several screens
 down on a narrow page. The same page is still drawn by the server and the library during navigation.
 
@@ -1423,8 +1424,10 @@ point where we don't have the data." A game with a page on Steam's store takes f
   only when it is a file on Steam's own servers, and drawn at its own size, never wider than the column; it
   has no words of its own, so a description that is only pictures is led by the summary. A clip that stands
   in for a GIF plays, silent and looping, while it is near the window: pressing it pauses it (WCAG 2.2.2),
-  and under reduced motion it stands still until pressed. A game the store keeps for adults has its
-  description's pictures blurred under the eye until one is pressed, which shows them all. With a long
+  and under reduced motion it stands still until pressed. Its VP9 WebM is offered before its MP4, as on
+  Steam's page: Steam's MP4s are HEVC, which Edge and WebView2 take and then cannot decode. A game the
+  store keeps for adults has its description's pictures blurred under the eye until one is pressed, which
+  shows them all. With a long
   description, About shows neither the summary nor the storyline: it already tells both. Looked at for it:
   Steam's own store page and Hydra (the owner's screenshots), and GOG's.
 
