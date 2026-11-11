@@ -95,7 +95,11 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // chunk it shares with the library's view in two as it grew: the same modules as before, in one
   // more file, with less for compression to share. The two pages' wraps were taken out to check:
   // the chunks came out the same, so it is the module's size that splits it.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 290.0 },
+  // Banners (11 Nov 2026): measured 291.1 KB, from 290.0 (main measured the same day). The view's
+  // button and icon in the toolbar, its ghosts drawn while its code arrives, and the banner read
+  // from the library file. The view itself is fetched only when it is drawn (`banner-later.tsx`):
+  // imported directly, it was 293.0.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 291.5 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
