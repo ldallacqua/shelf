@@ -60,15 +60,52 @@
     & > summary::-webkit-details-marker {
       display: none;
     }
+    /*
+     * A plus that folds into a minus as the fields open: two bars, drawn rather than typed, so no
+     * file's encoding can turn the mark into other characters. Its stroke is Read more's chevron's.
+     */
     & > summary::after {
-      content: '+';
-      font-size: 1.25rem;
+      content: '';
+      flex: none;
+      width: 0.75rem;
+      height: 0.75rem;
+      background:
+        linear-gradient(currentColor 0 0) center / 100% 2px no-repeat,
+        linear-gradient(currentColor 0 0) center / 2px 100% no-repeat;
     }
     &[open] > summary::after {
-      content: 'âˆ’';
+      background-size:
+        100% 2px,
+        2px 0;
     }
     &[open] > summary {
       margin-bottom: 1rem;
+    }
+    /*
+     * In one column the fields slide open and shut under their summary, as a panel does. With
+     * reduced motion, or in a browser that cannot size to `auto`, they are simply there or not.
+     */
+    @container (width < 63rem) {
+      @media (prefers-reduced-motion: no-preference) {
+        interpolate-size: allow-keywords;
+
+        &::details-content {
+          block-size: 0;
+          overflow-y: clip;
+          transition:
+            block-size var(--motion-base) var(--ease-glide),
+            content-visibility var(--motion-base) allow-discrete;
+        }
+        &[open]::details-content {
+          block-size: auto;
+        }
+        & > summary {
+          transition: margin-bottom var(--motion-base) var(--ease-glide);
+        }
+        & > summary::after {
+          transition: background-size var(--motion-base) var(--ease-glide);
+        }
+      }
     }
     @container (width >= 63rem) {
       & > summary {
