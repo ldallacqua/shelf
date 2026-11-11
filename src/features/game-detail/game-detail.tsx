@@ -175,6 +175,11 @@ export function GameDetail({
 
   const ratio = game.coverRatio ? game.coverRatio / 100 : 0.75
   const backdrop = facts?.backdrop
+  const longSummary = facts?.summary && (facts.summary.length > 300 || facts.summary.includes('\n'))
+  // About tells a long summary whole where the store gives no description, so the hero shows only
+  // its start. Any other summary is told only in the hero, so it is drawn whole there, as Steam's
+  // page draws its short description: cut, its end could not be read anywhere.
+  const summaryInAbout = Boolean(longSummary && !facts?.description)
 
   const hero = (
     <header className="game-hero">
@@ -244,7 +249,11 @@ export function GameDetail({
             </p>
           </div>
           {facts?.summary ? (
-            <p className="game-intro" lang={igdbLang}>
+            <p
+              className="game-intro"
+              data-clamped={summaryInAbout ? '' : undefined}
+              lang={igdbLang}
+            >
               {facts.summary}
             </p>
           ) : !facts ? (
@@ -402,7 +411,6 @@ export function GameDetail({
   )
 
   // Its store page's long description where it has one (ADR 010, decision 11), and IGDB's words where not.
-  const longSummary = facts?.summary && (facts.summary.length > 300 || facts.summary.includes('\n'))
   const about =
     facts && !facts.description && !facts.storyline && !longSummary ? null : (
       <Section title={t('about')}>

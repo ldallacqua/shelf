@@ -91,6 +91,15 @@ describe('the landing page', () => {
     }
   })
 
+  it('links to no shelf: its example shelf is drawn here alone, with none in production', () => {
+    renderWithIntl(<Landing />)
+    const shelves = screen
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href'))
+      .filter((href) => href?.includes('/u/'))
+    expect(shelves).toEqual([])
+  })
+
   it('is fully translated', () => {
     renderWithIntl(<Landing />, 'pt-BR')
     expect(

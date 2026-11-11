@@ -1370,16 +1370,18 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
 | **Scores** | What others think of it, a place to a column: IGDB, Steam, and people on Shelf (section 7.11) |
 | **About** | The long description of its page on Steam's store, its headings, lists, pictures and clips drawn by Shelf; without one, Steam's short description or IGDB's summary, and IGDB's storyline, in their paragraphs. A long one shows its first paragraph and about a screen's worth, and the rest behind **Read more**, opened in place |
-| **Videos and screenshots** | Immediately after Scores, a large 16:9 selected frame with thumbnails beneath, ahead of About. Named gameplay comes first; at most two videos precede the screenshots, with the remaining videos after them. A thumbnail selects in place; pressing the large screenshot opens the full-screen viewer (arrow keys, swipe, pinch to zoom). Videos play inline from YouTube with its controls; public video posters are fetched through Shelf's image service. A numbered label distinguishes similarly named trailers |
+| **Videos and screenshots** | Immediately after Scores, a large 16:9 selected frame with thumbnails beneath, ahead of About. Named gameplay comes first; at most two videos precede the screenshots, with the remaining videos after them. A thumbnail selects in place; pressing the large screenshot opens the full-screen viewer (arrow keys, swipe, pinch to zoom). Videos play inline from YouTube with its controls; public video posters are fetched through Shelf's image service. Thumbnails carry no words, as on Steam's store page: a video's is marked by a play icon, and its name, numbered to tell similarly named trailers apart, is on its poster on the stage; a screenshot shows no name, its number is for screen readers alone (the owner's call, 11 Nov 2026) |
 | **Achievements** | For a game a sync brought in from Steam: how many are unlocked, and each one (section 7.8) |
 | **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat |
 | **Versions** | The editions and ports linked to this entry (signed in) |
 
 Each value under Details is a link to the library filtered by it.
 
-**Media gallery (11 Nov 2026).** The short description introduces the game in the hero, at most four
-lines; it is not repeated under About unless it is longer than 300 characters or has several paragraphs,
-in which case About keeps it whole. The scores keep their place and their meters. The gallery's stage and
+**Media gallery (11 Nov 2026).** The short description introduces the game in the hero; it is not
+repeated under About unless it is longer than 300 characters or has several paragraphs and the store
+gives no long description, in which case About keeps it whole and the hero shows its first four lines.
+Any other summary is whole in the hero, as Steam's page draws its short description: cut there, its end
+would be nowhere on the page. The scores keep their place and their meters. The gallery's stage and
 rail have matching skeletons during the library's navigation handoff; an empty gallery is omitted, and
 a game without videos leads with its screenshots. Mature media waits blurred until explicitly revealed,
 and a hidden mature video never autoplays. Selecting a thumbnail does not force full-screen playback.
@@ -1395,11 +1397,12 @@ survives scrolling and redraws. Videos do not advance on their own. Description 
 gallery plays. A refused or unavailable player returns to its poster with a retry explanation.
 
 In a single column, Mine keeps Play outside **Edit your game**, with its full fields folded behind that
-control; the visitor's record uses **Your record**. Beside a wide page the fields remain open. The editor
+control; the visitor's record uses **Your record**. The fields slide open and shut under it, its plus
+folding into a minus, and simply appear under reduced motion. Beside a wide page the fields remain open. The editor
 and its skeleton share this wrapper, so a long record cannot push all discovery content several screens
 down on a narrow page. The same page is still drawn by the server and the library during navigation.
 
-Basis: the owner's Steam/Hydra examples, live Shelf pages (Hollow Knight and Tears of the Kingdom),
+Basis: the owner's Steam/Hydra examples, live Shelf game pages,
 Steam and GOG's pages, [Steamworks trailer guidance](https://partner.steamgames.com/doc/store/trailer),
 [WCAG Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide),
 [YouTube's player API](https://developers.google.com/youtube/iframe_api_reference) and
@@ -1423,14 +1426,16 @@ point where we don't have the data." A game with a page on Steam's store takes f
   only when it is a file on Steam's own servers, and drawn at its own size, never wider than the column; it
   has no words of its own, so a description that is only pictures is led by the summary. A clip that stands
   in for a GIF plays, silent and looping, while it is near the window: pressing it pauses it (WCAG 2.2.2),
-  and under reduced motion it stands still until pressed. A game the store keeps for adults has its
-  description's pictures blurred under the eye until one is pressed, which shows them all. With a long
+  and under reduced motion it stands still until pressed. Its VP9 WebM is offered before its MP4, as on
+  Steam's page: Steam's MP4s are HEVC, which Edge and WebView2 take and then cannot decode. A game the
+  store keeps for adults has its description's pictures blurred under the eye until one is pressed, which
+  shows them all. With a long
   description, About shows neither the summary nor the storyline: it already tells both. Looked at for it:
   Steam's own store page and Hydra (the owner's screenshots), and GOG's.
 
 **About's width (11 Nov 2026).** Its text fills the same main column as the gallery, including the rest
 opened by Read more. The page's 90rem outer cap, padding and separate sidebar bound the column; About
-has no additional character-width cap. This follows the owner's No Man's Sky example and request to use
+has no additional character-width cap. This follows the owner's example of a game page and request to use
 the available space, and Steam's description filling its own main column. Line spacing and natural
 wrapping remain, with the narrower-line trade-off reviewed against [W3C's visual presentation guidance](https://www.w3.org/WAI/WCAG22/Understanding/visual-presentation.html).
 
@@ -2378,7 +2383,7 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
 | **5. Bring your Steam library** | Games arriving from Steam one by one, each with its hours, then the count, and "Again tomorrow, by itself". |
 | **6. Shelf, wall or list** | The same games three ways, turning by itself until the visitor picks one; covers travel between the shelf and the wall. |
 | **7. How far you got** | A glimpse of the trophy wall: its stats counting up (finished, this year, hours, the average rating), over the example shelf's latest year of trophies, each under its own light. |
-| **A closer look** | The game page's real screenshot gallery, using Hollow Knight from the example shelf: select a thumbnail, open full screen and zoom, then open the example game's page. Its words describe scores, trailers and the full description, and the FAQ explains the optional muted autoplay. |
+| **A closer look** | The game page's real screenshot gallery, using a game from the example shelf: select a thumbnail, open full screen and zoom. It links nowhere: the example shelf is drawn on this page alone, with no shelf of its own in production to open the game on. Its words describe scores, trailers and the full description, and the FAQ explains the optional muted autoplay. |
 | **8. Yours to show, or to keep** | Public or private, as sign-up offers them, and that notes stay private unless marked public. |
 | **9. Your AI assistant** | A conversation: asked for something short, not started, on the Switch, it answers from the shelf (section 17). |
 | **10. The close** | An empty lit shelf, "Your shelf is waiting.", the call to action again, and five questions: free, where game data comes from, bringing in games one already owns, who can see a shelf, taking the games away. |

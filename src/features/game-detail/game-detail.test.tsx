@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import type { GameFacts } from '@/domain/library/game-page'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
@@ -115,6 +115,41 @@ describe('GameDetail', () => {
     expect(more).not.toHaveTextContent('Paragraph 1.')
     // A short passage hides nothing.
     expect(screen.getAllByText('Read more')).toHaveLength(1)
+  })
+
+  it('cuts the hero’s summary only where About tells it whole', () => {
+    const draw = (extra: Partial<GameFacts>) =>
+      renderWithIntl(
+        <GameDetail
+          handle="sample"
+          game={game()}
+          tags={tags}
+          platforms={platforms}
+          facts={facts({ storyline: undefined, ...extra })}
+        />,
+      )
+    const intro = () => document.querySelector('.game-intro')!
+
+    // Too short for About, so the hero is its only place: whole there, however narrow.
+    const middling = `A Hunter wakes in Yharnam. ${'The night is long. '.repeat(12)}`.trim()
+    const { unmount } = draw({ summary: middling })
+    expect(intro()).toHaveTextContent(middling)
+    expect(intro()).not.toHaveAttribute('data-clamped')
+    unmount()
+
+    const long = `A Hunter wakes in Yharnam. ${'The night is long. '.repeat(20)}`.trim()
+    const second = draw({ summary: long })
+    expect(intro()).toHaveAttribute('data-clamped')
+    expect(screen.getAllByText(long)).toHaveLength(2)
+    second.unmount()
+
+    // Beside a store description About does not tell it, so it is whole in the hero.
+    draw({
+      summary: long,
+      description: [{ kind: 'paragraph', runs: [{ text: 'From the store.' }] }],
+    })
+    expect(intro()).not.toHaveAttribute('data-clamped')
+    expect(screen.getAllByText(long)).toHaveLength(1)
   })
 
   it('lists the platforms a game came out on by date, one line a date', () => {
@@ -273,6 +308,8 @@ describe('GameDetail', () => {
 })
 
 describe('Screenshots', () => {
+  // The viewer is lazy: loaded first, it arrives within findByRole's second while the suite runs.
+  beforeAll(() => import('./screenshot-viewer'))
   it('opens the viewer at the screenshot chosen, and its arrows stay its own', async () => {
     const onNext = vi.fn()
     renderWithIntl(

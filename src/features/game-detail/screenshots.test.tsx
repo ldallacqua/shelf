@@ -1,6 +1,6 @@
 import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextIntlClientProvider } from 'next-intl'
 import type { ComponentProps } from 'react'
 import type VideoPlayer from './video-player'
@@ -23,6 +23,9 @@ vi.mock('./video-player', () => ({
     </div>
   ),
 }))
+// The viewer is lazy: loaded here first, it arrives at once when pressed. Fetched on the press,
+// it could miss findByRole's second while the whole suite runs.
+beforeAll(() => import('./screenshot-viewer'))
 let visibility: IntersectionObserverCallback
 beforeEach(() => {
   vi.stubGlobal(
@@ -74,6 +77,23 @@ describe('the selected gallery frame', () => {
       'src',
       expect.stringContaining('/_next/image?'),
     )
+  })
+  it('writes no names on the tiles or under a screenshot, and keeps them for screen readers', async () => {
+    draw()
+    const tiles = rail().getAllByRole('button')
+    // A video is told from a screenshot by its play mark alone, as on Steam. A tile for adults
+    // keeps its mark.
+    for (const tile of tiles.filter((each) => !each.hasAttribute('data-adult')))
+      expect(tile).toHaveTextContent(/^$/)
+    expect(tiles[3]).toHaveTextContent(/^\+18$/)
+    expect(tiles[0]!.querySelector('.gallery-thumb-play')).not.toBeNull()
+    expect(tiles[2]!.querySelector('.gallery-thumb-play')).toBeNull()
+
+    await userEvent.click(rail().getByRole('button', { name: 'Show Screenshot 1 from A Game' }))
+    const stage = screen.getByRole('button', {
+      name: 'Screenshot 1 of 3 from A Game: open it full screen',
+    })
+    expect(stage).toHaveTextContent(/^Full screen$/)
   })
   it('selects an image in place, and opens full screen only when the large image is pressed', async () => {
     draw()

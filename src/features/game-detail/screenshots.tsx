@@ -221,11 +221,12 @@ function Gallery({
   useEffect(() => {
     const element = strip.current
     if (!element) return
-    const measure = () =>
-      setEdges({
-        before: element.scrollLeft > 4,
-        after: element.scrollLeft + element.clientWidth < element.scrollWidth - 4,
-      })
+    // Kept when unchanged, so scrolling the strip draws the gallery again only at its ends.
+    const measure = () => {
+      const before = element.scrollLeft > 4
+      const after = element.scrollLeft + element.clientWidth < element.scrollWidth - 4
+      setEdges((now) => (now.before === before && now.after === after ? now : { before, after }))
+    }
     measure()
     element.addEventListener('scroll', measure, { passive: true })
     const observer = new ResizeObserver(measure)
@@ -283,8 +284,8 @@ function Gallery({
               }
             }}
           >
+            {/* A screenshot has no name to show, as on Steam: its number is for screen readers. */}
             <Picture item={selected} large />
-            <span className="gallery-caption">{label(selected)}</span>
             <span className="gallery-expand" aria-hidden="true">
               {hidden ? <EyeIcon /> : <MaximizeIcon />}
               {hidden ? t('adultMark') : t('galleryFullscreen')}
@@ -346,11 +347,12 @@ function Gallery({
                     select(index)
                   }}
                 >
+                  {/* No words on a tile, as on Steam: a video is told by its play mark, and its
+                      name is said on the stage and in the button's name. */}
                   <Picture item={item} fallback={shots.find((shot) => !shot.mature)} />
                   {item.kind === 'video' ? (
                     <PlayIcon className="gallery-thumb-play" aria-hidden="true" />
                   ) : null}
-                  <span className="gallery-thumb-name">{label(item)}</span>
                   {mature ? (
                     <span className="shot-adult" aria-hidden="true">
                       {blurred ? <EyeIcon className="size-4" /> : null}
