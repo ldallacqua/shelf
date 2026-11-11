@@ -4,6 +4,14 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Storybook three weeks behind, and two rules (11 Nov 2026)
+
+The owner found https://shelf-storybook.vercel.app far out of date. Every build Git started for it since 21 Oct 2026
+had been skipped by its own skip check (`deploy/storybook/vercel.json`), `main` included: the two that went live that
+day were deployed by hand. The check now builds unless Vercel says the build is for another branch, and prints what
+it was told. Two rules of the owner's went into AGENTS.md: Storybook's build of every merge must go live, and every
+admin action a feature needs is a job on the admin page in the same change.
+
 ## A game's whole store description (11 Nov 2026)
 
 The owner asked for a game's full description from Steam, with its pictures, as Steam and Hydra show it, and IGDB's

@@ -4,5 +4,5 @@
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "buildCommand": "cd ../.. && pnpm storybook:build --quiet --output-dir deploy/storybook/dist",
   "outputDirectory": "dist",
-  "ignoreCommand": "[ \"$VERCEL_ENV\" != production ]"
+  "ignoreCommand": "echo \"Storybook: env '$VERCEL_ENV', branch '$VERCEL_GIT_COMMIT_REF'\"; [ -n \"$VERCEL_GIT_COMMIT_REF\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != main ] && [ \"$VERCEL_ENV\" != production ]"
 }

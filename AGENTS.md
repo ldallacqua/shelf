@@ -361,6 +361,13 @@ field it now keeps, filling a new column, running a sync or a reading out of tur
 on `/admin`, or says which job already does it and makes that job's words say so. Never only a script, a terminal
 command or a note in a handoff. The pull request names the job to run after merging.
 
+**Storybook is deployed with every change to it** (the owner's rule, 11 Nov 2026). `shelf-storybook` builds `main` at
+https://shelf-storybook.vercel.app (`deploy/storybook/`). After merging anything that changes a story, a component a
+story draws or Storybook's setup, check the merge commit's `Vercel – shelf-storybook` status: a deployment that went
+live, not "Canceled by Ignored Build Step" and not failed. If it did not go live, find out why and deploy it, or ask
+the owner to; never leave the workshop behind `main`. From 21 Oct to 11 Nov 2026 its skip check skipped every build,
+and nobody looked.
+
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in
 button (architecture, section 11). Name them in words. An icon beside words is `aria-hidden`.
@@ -394,6 +401,8 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 - Reference screenshots are updated if the look changed on purpose
   ([how](docs/testing.md#reference-screenshots)).
 - One commit per build step, with a message that says what changed and why.
+- After merging: Storybook's build of the merge went live, and the pull request named any admin job to run
+  ([the two rules above](#how-things-are-done-here)).
 
 <!-- BEGIN:nextjs-agent-rules -->
 
