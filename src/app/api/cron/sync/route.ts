@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 import { revalidateTag } from 'next/cache'
 
 import { cronSecret } from '@/server/env'
+import { askSteamAfterAdding } from '@/server/services/steam-pages'
 import { syncDaily } from '@/server/services/sync'
 import { libraryTag } from '@/server/services/tags'
 
@@ -30,5 +31,7 @@ export async function GET(request: Request) {
   }
   const { synced, libraries } = await syncDaily()
   for (const libraryId of libraries) revalidateTag(libraryTag(libraryId), { expire: 0 })
+  // Games a sync added: their scores and store pages (ADR 010), once the answer has gone.
+  askSteamAfterAdding()
   return Response.json({ synced, libraries: libraries.length })
 }

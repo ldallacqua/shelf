@@ -254,7 +254,7 @@ describe('Footer', () => {
     renderWithIntl(<Footer />)
     const footer = screen.getByRole('contentinfo')
 
-    expect(footer).toHaveTextContent('Game data and covers from IGDB.com.')
+    expect(footer).toHaveTextContent('Game data and covers from IGDB.com and Steam.')
     expect(within(footer).getByRole('link', { name: 'IGDB.com' })).toHaveAttribute(
       'href',
       'https://www.igdb.com',
@@ -263,7 +263,9 @@ describe('Footer', () => {
 
   it('credits IGDB in Portuguese too', () => {
     renderWithIntl(<Footer />, 'pt-BR')
-    expect(screen.getByRole('contentinfo')).toHaveTextContent('Dados e capas dos jogos: IGDB.com.')
+    expect(screen.getByRole('contentinfo')).toHaveTextContent(
+      'Dados e capas dos jogos: IGDB.com e Steam.',
+    )
   })
 
   it('offers a visitor the way to sign in, and back to this page afterwards', () => {

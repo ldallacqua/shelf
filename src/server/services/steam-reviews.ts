@@ -1,6 +1,5 @@
 import 'server-only'
 
-import { after } from 'next/server'
 import { and, asc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
 
 import type { StoreLink } from '@/domain/library/stores'
@@ -130,17 +129,5 @@ const reader = () =>
   }))
 
 /** The reading for this server, against Steam itself (or its test double, under `SHELF_MOCKS`). */
-export const readSteamReviews = (count?: number) => reader()(count)
-
-/**
- * Once the answer to an add has gone, asks Steam about games never asked yet,
- * so a game just added shows its score on its next load instead of tomorrow.
- * It never slows or fails the add: a failure leaves the game for the daily run.
- */
-export const askSteamAfterAdding = () => {
-  try {
-    after(() => reader()(NEW_REVIEWS_COUNT, Date.now(), 'unasked').catch(() => undefined))
-  } catch {
-    // Outside a request (a script or a test): the daily run asks instead.
-  }
-}
+export const readSteamReviews = (count?: number, now?: number, only?: 'all' | 'unasked') =>
+  reader()(count, now, only)

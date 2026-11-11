@@ -11,6 +11,7 @@ import {
   isNull,
   ne,
   sql,
+  type SQL,
   type SQLWrapper,
 } from 'drizzle-orm'
 
@@ -19,7 +20,8 @@ import {
   isAchievementProvider,
   type AchievementProvider,
 } from '@/domain/achievements/achievements'
-import { EROTIC, lengthMinutes, type StoreId } from '@/domain/igdb/game'
+import type { Palette } from '@/domain/color/palette'
+import { EROTIC, lengthMinutes, type GameImage, type StoreId } from '@/domain/igdb/game'
 import type {
   ArchivedGame,
   OwnerGame,
@@ -28,7 +30,7 @@ import type {
   StoreHoursGame,
 } from '@/domain/library/editing'
 import type { Device } from '@/domain/library/devices'
-import type { GameExtras, ShelfScore } from '@/domain/library/game-page'
+import { steamFirst, type GameExtras, type ShelfScore } from '@/domain/library/game-page'
 import { linksOfRecord, mergeStoreLinks, steamStoreLink } from '@/domain/library/store-links'
 import { accountsReading } from '@/server/library/read-from'
 import {
@@ -89,6 +91,27 @@ const union = <T>(lists: readonly (readonly T[])[]): T[] => [...new Set(lists.fl
 
 const byId = <T extends { id: number }>(a: T, b: T) => a.id - b.id
 
+/** The store page on Steam says it is for adults (ADR 010): so it is on a shelf, whatever IGDB says. */
+const adultOnSteam = sql<number | null>`json_extract(${games.steamPage}, '$.adult')`
+
+/**
+ * A game's cover wherever a shelf draws one (ADR 010): its store page on Steam's, then IGDB's.
+ * Its colors and blur are read from the same image; IGDB's stand in when Steam's could not be read.
+ */
+const drawnCover = {
+  cover: sql`coalesce(${games.steamCover}, ${games.cover})`.mapWith(
+    games.cover,
+  ) as SQL<GameImage | null>,
+  colors:
+    sql`case when ${games.steamCover} is null then ${games.colors} else coalesce(${games.steamColors}, ${games.colors}) end`.mapWith(
+      games.colors,
+    ) as SQL<Palette | null>,
+  thumbhash:
+    sql`case when ${games.steamCover} is null then ${games.thumbhash} else coalesce(${games.steamThumbhash}, ${games.thumbhash}) end`.mapWith(
+      games.thumbhash,
+    ) as SQL<string | null>,
+}
+
 export const readLibrary = async (
   db: Db,
   libraryId: string,
@@ -128,12 +151,11 @@ export const readLibrary = async (
         kind: games.kind,
         releasedOn: games.releasedOn,
         year: games.year,
-        cover: games.cover,
-        colors: games.colors,
-        thumbhash: games.thumbhash,
+        ...drawnCover,
         igdbRating: games.igdbRating,
         igdbRatingCount: games.igdbRatingCount,
         adultsOnly: games.adultsOnly,
+        adultOnSteam,
         ages: games.ages,
         length: games.length,
         genres: games.genres,
@@ -284,7 +306,8 @@ export const readLibrary = async (
       game.wantedStores = entry.wantedStores
     }
     if (entry.isPrivate) game.private = true
-    if (primary.adultsOnly || primary.themes.includes(EROTIC)) game.adult = true
+    if (primary.adultsOnly || primary.themes.includes(EROTIC) || primary.adultOnSteam)
+      game.adult = true
     if (primary.ages?.length) game.ages = primary.ages
     if (primary.releasedOn) {
       game.releasedOn = primary.releasedOn
@@ -404,6 +427,7 @@ export const readGameExtras = async (
         storeIds: games.storeIds,
         storeLinks: games.storeLinks,
         steamReviews: games.steamReviews,
+        steamPage: games.steamPage,
       })
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
@@ -444,16 +468,25 @@ export const readGameExtras = async (
     if (isAchievementProvider(provider)) providers.add(provider)
   }
 
+  // Its store page on Steam first, and IGDB's record for what the store leaves empty (ADR 010).
+  const shown = steamFirst(
+    {
+      artworks: main.artworks,
+      screenshots: main.screenshots,
+      ...(main.summary ? { summary: main.summary } : {}),
+    },
+    main.steamPage ?? undefined,
+  )
   const extras: GameExtras = {
-    artworks: main.artworks,
-    screenshots: main.screenshots,
+    artworks: shown.artworks,
+    screenshots: shown.screenshots,
     videos: main.videos ?? [],
     // The primary's releases first, then each version's.
     releases: [main, ...versionRows.filter((row) => row !== main)].map((row) => row.releases),
     notesPublic: entry.notesPublic,
   }
   if (main.versionTitle) extras.versionTitle = main.versionTitle
-  if (main.summary) extras.summary = main.summary
+  if (shown.summary) extras.summary = shown.summary
   if (main.storyline) extras.storyline = main.storyline
   if (main.length) extras.length = main.length
   if (main.igdbUrl) extras.igdbUrl = main.igdbUrl
@@ -575,9 +608,7 @@ export const readOwnerGame = async (
         kind: games.kind,
         year: games.year,
         platforms: games.platforms,
-        cover: games.cover,
-        colors: games.colors,
-        thumbhash: games.thumbhash,
+        ...drawnCover,
       })
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
@@ -947,11 +978,10 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
         slug: games.slug,
         title: games.title,
         year: games.year,
-        cover: games.cover,
-        colors: games.colors,
-        thumbhash: games.thumbhash,
+        ...drawnCover,
         themes: games.themes,
         adultsOnly: games.adultsOnly,
+        adultOnSteam,
       })
       .from(entries)
       .innerJoin(
@@ -1051,7 +1081,7 @@ export const readUnsorted = async (db: Db, libraryId: string): Promise<Placing> 
     if (row.cover) game.cover = row.cover.id
     if (row.colors) game.colors = row.colors
     if (row.thumbhash) game.hash = row.thumbhash
-    if (row.adultsOnly || row.themes.includes(EROTIC)) game.adult = true
+    if (row.adultsOnly || row.themes.includes(EROTIC) || row.adultOnSteam) game.adult = true
     return game
   })
 
@@ -1096,9 +1126,7 @@ export const readArchived = async (db: Executor, libraryId: string): Promise<Arc
       slug: games.slug,
       title: games.title,
       year: games.year,
-      cover: games.cover,
-      colors: games.colors,
-      thumbhash: games.thumbhash,
+      ...drawnCover,
     })
     .from(entries)
     .innerJoin(
@@ -1152,9 +1180,7 @@ export const readStoreHours = async (
       slug: games.slug,
       title: games.title,
       year: games.year,
-      cover: games.cover,
-      colors: games.colors,
-      thumbhash: games.thumbhash,
+      ...drawnCover,
       length: games.length,
     })
     .from(entries)

@@ -4,6 +4,17 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Steam first on a game's page (10 Nov 2026)
+
+Issue 192, [ADR 010](adr/010-steam-first-on-a-game-page.md): a game IGDB has with a page on Steam's store takes
+its cover (everywhere but search and Add a game), hero, screenshots and short description from that page, and
+IGDB's record fills the rest. The store's answer sits in its own columns beside IGDB's, so neither reading
+overwrites the other; a game the store marks for adults is now adult on a shelf too. It was checked once by hand
+against the real store, on a scratch copy of the sample shelf: sixty games read in under nine seconds, every one
+on Steam drawn with its capsule, hero, screenshots and words. **Production's catalog is read by the daily refresh
+(06:00 UTC), at most two minutes a day, games never read first**, and by each add and sync after that. **Still
+unchecked, by the owner:** a game for adults on both IGDB and Steam showing Steam's screenshots after that run.
+
 ## One way of labelling, and newer saves taken without asking (10 Nov 2026)
 
 After phase 4 the owner found Mine's headings each in a face of their own, and its title sharing a line

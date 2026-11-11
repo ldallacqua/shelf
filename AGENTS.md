@@ -20,8 +20,9 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 2. **No secret leaves `.env.local`.** Never print one, commit one, or paste one into a
    message. `.env.example` holds names only. Production values are pasted into Vercel by the
    owner.
-3. **Never generate game cover art.** Covers and screenshots come from IGDB, or from Steam's
-   store for a game IGDB does not have ([ADR 006](docs/adr/006-games-from-steam.md)). A placeholder
+3. **Never generate game cover art.** Covers and screenshots come from Steam's store for a game
+   with a page there ([ADR 010](docs/adr/010-steam-first-on-a-game-page.md)), and from IGDB for the
+   rest ([ADR 006](docs/adr/006-games-from-steam.md) for a game IGDB does not have). A placeholder
    is a blur of color, never a drawing of a cover. Prompts for every generated image go in
    [`design/assets/PROMPTS.md`](design/assets/PROMPTS.md).
 4. **It must read as games, not books.** Covers face out. No serif type. See
@@ -275,6 +276,15 @@ test doubles on, "Sign in through Steam" comes straight back with the made-up ac
 **IGDB.** Only `src/server/igdb` knows IGDB's address. It owns the token, the rate limit and
 the checking. Nothing a visitor can reach may call it. Covers and screenshots are used
 straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
+
+**Steam first on a game's page.** A game IGDB has that has a page on Steam's store is drawn from that page
+first ([ADR 010](docs/adr/010-steam-first-on-a-game-page.md)): its cover wherever a cover is drawn but search
+and Add a game, and its art, screenshots and summary on its page. IGDB fills what the store leaves empty, and
+stays the only source of videos, length, storyline, releases and filter values. The store's answer is kept
+apart from IGDB's record (`steam_cover`, `steam_page` and their kin on `games`), read by
+`services/steam-pages.ts` after an add and daily, and laid over IGDB's as it is read: `drawnCover` in
+`server/library/read.ts` for anything that selects a cover to draw (never `games.cover` alone), and
+`steamFirst` for the page. A game the store marks for adults is adult on a shelf, whatever IGDB says.
 
 **A game IGDB does not have.** A sync reads one Steam lists for an account from its store, by itself
 (ADR 006, decision 13). For any other, a moderator (`users.moderator`, set only by `pnpm account:moderator`)

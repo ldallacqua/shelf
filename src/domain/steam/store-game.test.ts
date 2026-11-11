@@ -8,6 +8,7 @@ import {
   isStoreGame,
   steamAppIdIn,
   toSteamGame,
+  toSteamPage,
   wordsOf,
   type StoreGame,
 } from './store-game'
@@ -190,5 +191,29 @@ describe('a game for adults (spec 3.13)', () => {
       { id: 'steam/apps/2000001/ss_ab12.jpg', width: 1920, height: 1080 },
       { id: 'steam/apps/2000001/ss_cd34.jpg', width: 1920, height: 1080, mature: true },
     ])
+  })
+})
+
+describe('a store page before IGDB’s record (ADR 010)', () => {
+  it('takes the cover, the summary, the screenshots and the hero, as a game from Steam has them', () => {
+    const page = toSteamPage(item({ content_descriptorids: [3] }))
+    const whole = toSteamGame(item({ content_descriptorids: [3] }))
+    expect(page).toEqual({
+      app: '2000001',
+      cover: whole.cover,
+      summary: 'Made up.',
+      screenshots: whole.screenshots,
+      artworks: whole.artworks,
+      adult: true,
+    })
+    expect(page.artworks[0]).toHaveProperty('mature', true)
+    expect(toSteamPage(item())).not.toHaveProperty('adult')
+  })
+
+  it('leaves out what the store leaves empty, so IGDB’s can stand in', () => {
+    const page = toSteamPage(
+      item({ assets: undefined, basic_info: undefined, screenshots: undefined }),
+    )
+    expect(page).toEqual({ app: '2000001', screenshots: [], artworks: [] })
   })
 })

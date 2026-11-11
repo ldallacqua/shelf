@@ -400,6 +400,13 @@ with a page there, the longest unasked first. A game with its request failed kee
 a page shows (its share, its words, a count a twentieth larger) is stored, and only that gives the shelves holding
 it a new version. The call answers even if Steam fails: IGDB's refresh does not depend on it.
 
+**Games' store pages on Steam** are read by the same call, after the scores ([ADR 010](adr/010-steam-first-on-a-game-page.md)):
+`services/steam-pages.ts` asks `GetItems` for the cover, hero, screenshots and short description of every game IGDB has with a
+page there, those never read first, then the longest unread, a hundred apps to a request, for at most two minutes. They are
+kept in `steam_cover`, `steam_colors`, `steam_thumbhash` and `steam_page`, beside IGDB's columns, and laid over them as they
+are read (`drawnCover`, `steamFirst`), so neither reading overwrites the other. A new cover's colors and ThumbHash are read
+from it, eight at a time. Games just added are read once the answer to the add has gone (`askSteamAfterAdding`).
+
 One module, `server/igdb`, is the only code that knows IGDB's address.
 
 | Concern | Design |
@@ -416,7 +423,9 @@ One module, `server/igdb`, is the only code that knows IGDB's address.
 | Validation | Every IGDB response passes a Zod schema before anything else touches it. A record that fails is logged and skipped, not half-stored. |
 | Terms | Non-commercial use under the Twitch Developer Service Agreement. "IGDB.com" is credited in the footer of every page. |
 
-**Images** come straight from `images.igdb.com`:
+**Images** come straight from `images.igdb.com`, or from Steam's image servers for a game with a page on its store
+(ADR 006, ADR 010), which resize nothing: a cover there is its library capsule, 300 × 450 and 600 × 900, and a
+screenshot 600 × 338 and 1920 × 1080.
 
 | Use | IGDB size | Pixels |
 | --- | --- | --- |

@@ -91,7 +91,12 @@ export const apiGame = z
     genres: z.array(z.string()).describe('As `genre:` takes them'),
     themes: z.array(z.string()),
     tags: z.array(z.string()),
-    cover: z.url().nullable().describe('From IGDB’s image servers, 264 pixels wide'),
+    cover: z
+      .url()
+      .nullable()
+      .describe(
+        'Its store page’s on Steam when it has one, else IGDB’s: from their image servers, about 264 pixels wide',
+      ),
   })
   .meta({ id: 'Game' })
 
