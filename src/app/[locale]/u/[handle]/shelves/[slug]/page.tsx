@@ -4,7 +4,7 @@ import { Suspense } from 'react'
 import { preconnect } from 'react-dom'
 
 import { removeShelfAction, saveShelfAction } from '@/app/actions/shelves'
-import { IMAGE_HOST } from '@/domain/igdb/images'
+import { IMAGE_HOSTS } from '@/domain/igdb/images'
 import { ShelfMissing } from '@/features/filters/shelf-missing'
 import { Arriving } from '@/features/game-detail/hand-off'
 import { LibrarySkeleton } from '@/features/library/library-skeleton'
@@ -85,7 +85,7 @@ export default function ShelfPage({
   params,
   searchParams,
 }: PageProps<'/[locale]/u/[handle]/shelves/[slug]'>) {
-  preconnect(IMAGE_HOST)
+  for (const host of IMAGE_HOSTS) preconnect(host)
 
   return (
     // A game chosen here that the router is still fetching is drawn in the shelf's place.

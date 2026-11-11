@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 import { preconnect } from 'react-dom'
 
-import { imageUrl, IMAGE_HOST } from '@/domain/igdb/images'
+import { imageUrl, IMAGE_HOSTS } from '@/domain/igdb/images'
 import { videoGameData } from '@/domain/library/game-page'
 import { GameDetail } from '@/features/game-detail/game-detail'
 import { GameMissing } from '@/features/game-detail/game-missing'
@@ -117,8 +117,9 @@ async function GameFrame({
  * arrives (`hand-off.tsx`).
  */
 export default function GamePage({ params }: PageProps<'/[locale]/u/[handle]/game/[slug]'>) {
-  // Covers and key art come from IGDB's image servers: open the connection while the page arrives.
-  preconnect(IMAGE_HOST)
+  // Covers and art come from Steam's and IGDB's image servers: open the connections while the
+  // page arrives.
+  for (const host of IMAGE_HOSTS) preconnect(host)
 
   return (
     <Suspense

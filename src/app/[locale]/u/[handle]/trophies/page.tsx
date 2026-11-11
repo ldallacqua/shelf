@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 import { preconnect } from 'react-dom'
 
 import type { AchievementLanguage } from '@/domain/achievements/achievements'
-import { IMAGE_HOST } from '@/domain/igdb/images'
+import { IMAGE_HOSTS } from '@/domain/igdb/images'
 import { NoShelf } from '@/features/library/no-shelf'
 import { ShelfProvider } from '@/features/library/shelf'
 import { Page } from '@/features/shell/page'
@@ -160,8 +160,9 @@ export default function TrophiesPage({
   params,
   searchParams,
 }: PageProps<'/[locale]/u/[handle]/trophies'>) {
-  // Covers come from IGDB's image servers: open the connection while the page arrives.
-  preconnect(IMAGE_HOST)
+  // Covers and achievements' art come from Steam's and IGDB's image servers: open the
+  // connections while the page arrives.
+  for (const host of IMAGE_HOSTS) preconnect(host)
 
   return (
     <Page>

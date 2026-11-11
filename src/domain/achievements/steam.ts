@@ -8,6 +8,7 @@ import type {
   ProgressTotal,
   Unlock,
 } from '@/domain/achievements/achievements'
+import { STEAM_IMAGE_HOST } from '@/domain/igdb/images'
 
 /**
  * What Steam sends about achievements (issue 72), for the three questions
@@ -67,15 +68,11 @@ export const steamGameAchievementsSchema = z.object({
 export type SteamGameAchievements = z.infer<typeof steamGameAchievementsSchema>
 
 /**
- * Steam's image servers for achievements' artwork. Checked on 29 Oct 2026:
- * the older `cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/`
- * answers 404 for a game out this year, where this one has every game's.
- */
-export const STEAM_IMAGE_HOST = 'https://shared.akamai.steamstatic.com'
-
-/**
  * An achievement's artwork: Steam names a file in the game's folder on its
  * image servers. Anything that is not a plain image file name is not kept.
+ * Checked on 29 Oct 2026: the older
+ * `cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/` answers 404
+ * for a game out this year, where this folder has every game's.
  */
 export const steamImage = (appId: string, file: string | undefined): string | undefined => {
   const name = file?.trim()

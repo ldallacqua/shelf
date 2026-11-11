@@ -70,5 +70,9 @@ in the game details such as videos. I don't think we should change search and th
 - A cover read from Steam has its path as its id, so the library file grows by about fifty bytes a game.
 - Visitors' browsers fetch more from Steam's image servers. ADR 006 decision 7's note on Valve's licence applies to
   more of the site.
+- Those servers send JPEG at fixed sizes, where IGDB's resize and send WebP: the same game's cover is two and a half
+  to three times the bytes (64 KB against 25 at the smaller size, 205 against 70 at the larger, medians measured on
+  11 Nov 2026). Each file is offered at its own width, so a browser takes the smaller wherever it is enough, and pages
+  connect to Steam's servers early. Making them lighter still would mean converting them somewhere of Shelf's own.
 - The scores and the pages are two `GetItems` readings a day, where one question could ask for both. They are kept
   apart so that each fails alone, and each can be asked about games the other wasn't.
