@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { thumbHashToDataURL } from 'thumbhash'
 import { createTranslator } from 'next-intl'
 import { type ReactNode, useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
@@ -37,6 +37,7 @@ import {
 import { ShelfProvider } from './shelf'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
+import { WallView } from './wall-view'
 
 // The empty shelf links to the account page.
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
@@ -701,6 +702,51 @@ describe('experimental views on this device (issue 63)', () => {
   })
 })
 
+describe('the wall (issue 193)', () => {
+  // The window of rows measures the wall as it is drawn: jsdom measures nothing.
+  beforeEach(() => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('fills a frame with a 2:3 cover, and draws a 3:4 one or a version’s unknown one whole', () => {
+    const items = [
+      item({
+        slug: 'capsule',
+        title: 'From Steam',
+        cover: 'steam/apps/10/aa/library_capsule.jpg',
+        coverRatio: 67,
+      }),
+      item({ slug: 'igdb', title: 'From IGDB', cover: 'co1abc', coverRatio: 75 }),
+      {
+        ...item({ slug: 'port', title: 'A port', cover: 'co1abc', coverRatio: 67 }),
+        copy: { platform: ps5.id, format: 'digital' as const, cover: 'co2def' },
+      },
+    ]
+    const { container } = renderWithIntl(
+      <WallView
+        shelves={[{ kind: 'all', key: 'all', items, total: items.length }]}
+        platforms={platforms}
+        onOpen={vi.fn()}
+        enter={false}
+        firstBoxes={items.length}
+        size="medium"
+      />,
+    )
+    const fits = [...container.querySelectorAll('.wall-cell .cover')].map(
+      (cover) => cover.getAttribute('data-fit') ?? 'fill',
+    )
+    expect(fits).toEqual(['fill', 'whole', 'whole'])
+  })
+})
+
 // The decoder is counted, not run: what matters here is when a blur is worked out.
 vi.mock('thumbhash', () => ({
   thumbHashToDataURL: vi.fn(() => 'data:image/png;base64,AAAA'),
@@ -758,5 +804,20 @@ describe('a cover, by when it joined the page', () => {
     fireEvent.load(screen.getByRole('img', { name: 'Hades' }))
     await new Promise((resolve) => setTimeout(resolve, 80))
     expect(thumbHashToDataURL).not.toHaveBeenCalled()
+  })
+  it('drawn whole in a frame of another shape, keeps its blur around it once it arrives', async () => {
+    const { container } = renderWithIntl(<Cover {...cover} hash="FFFF" fit="whole" />)
+    const drawn = container.querySelector<HTMLElement>('.cover')!
+    expect(drawn).toHaveAttribute('data-fit', 'whole')
+    // As the server drew it first: the wash, so both draw the same page.
+    expect(drawn.style.backgroundImage).toBe('')
+    fireEvent.load(screen.getByRole('img', { name: 'Hades' }))
+    await waitFor(() => expect(drawn.style.backgroundImage).toContain('data:image/png'))
+    expect(thumbHashToDataURL).toHaveBeenCalledTimes(1)
+  })
+
+  it('filling its frame, says nothing of it', () => {
+    const { container } = renderWithIntl(<Cover {...cover} fit="fill" />)
+    expect(container.querySelector('.cover')).not.toHaveAttribute('data-fit')
   })
 })

@@ -44,7 +44,7 @@ export type LibraryGame = {
    */
   hastyShare?: number
   kind: Kind
-  /** IGDB image id. */
+  /** An image id, IGDB's or Steam's (`imageUrl` reads both): Steam's first (ADR 010). */
   cover?: string
   /** Width over height of the cover, times 100: 75 is a 3:4 cover. */
   coverRatio?: number

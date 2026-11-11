@@ -9,6 +9,7 @@ import { PulledGame } from './pulled-game'
 import { ShelfGrid } from './shelf-grid'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
+import { WallView } from './wall-view'
 
 /**
  * The parts of the library, on their own. The games here are made up, with a
@@ -135,6 +136,24 @@ export const BoxStates: Story = {
       position={0}
       onOpen={() => undefined}
       onLeave={() => undefined}
+    />
+  ),
+}
+
+/**
+ * The wall (spec 3.8): every cover in a 2:3 frame, the shape of most covers (issue 193). A cover
+ * of that shape fills its frame, and one of another, such as IGDB's 3:4, stands whole inside it
+ * over its own colors, darker in the bands. Made up as everywhere here, so each frame shows its wash.
+ */
+export const Wall: Story = {
+  render: () => (
+    <WallView
+      shelves={[{ kind: 'all', key: 'all', items: states, total: states.length }]}
+      platforms={platforms}
+      onOpen={() => undefined}
+      enter={false}
+      firstBoxes={states.length}
+      size="medium"
     />
   ),
 }

@@ -24,7 +24,7 @@ export type UnsortedGame = {
   slug: string
   title: string
   year?: number
-  /** IGDB image id. */
+  /** An image id, IGDB's or Steam's (`imageUrl` reads both). */
   cover?: string
   colors?: Palette
   hash?: string

@@ -413,6 +413,18 @@
     object-fit: cover;
   }
 
+  /*
+   * A cover of another shape than its frame (issue 193): whole, over its own colors,
+   * which stand a little darker in the bands so its edge reads as its edge.
+   */
+  .cover[data-fit='whole']:has(> img):not([data-failed]) {
+    box-shadow: inset 0 0 0 100vmax rgb(0 0 0 / 0.22);
+  }
+
+  .cover[data-fit='whole'] img {
+    object-fit: contain;
+  }
+
   /* Only covers that arrive after the page is live fade in; the first ones are simply there. */
   /*
    * A cover that could not be loaded, or a game that has none: its colors,
@@ -751,10 +763,11 @@
     }
   }
 
+  /* 2:3, the shape of most covers: a cover of another shape stands whole inside (`coverFit`). */
   .wall-cell {
     position: relative;
     display: block;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 2 / 3;
     min-width: 0;
   }
 

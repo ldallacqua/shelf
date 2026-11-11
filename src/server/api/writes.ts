@@ -347,7 +347,10 @@ export const apiOwnerGame = z
         kind: z.enum(kinds),
         year: z.int().optional(),
         platforms: z.array(z.int()),
-        cover: z.string().optional().describe('An IGDB image id'),
+        cover: z
+          .string()
+          .optional()
+          .describe('An image id: IGDB’s, or its path on Steam’s image servers'),
         colors: z.array(z.string()).readonly().optional(),
         hash: z.string().optional(),
       }),
@@ -428,7 +431,10 @@ export const apiArchivedGames = z
         slug: z.string(),
         title: z.string(),
         year: z.int().optional(),
-        cover: z.string().optional().describe('An IGDB image id'),
+        cover: z
+          .string()
+          .optional()
+          .describe('An image id: IGDB’s, or its path on Steam’s image servers'),
         colors: z.array(z.string()).optional(),
         hash: z.string().optional(),
         platforms: z.array(z.string()).describe('Its copies’ platforms, by their short names'),
@@ -519,7 +525,10 @@ export const apiStoreHours = z
         slug: z.string(),
         title: z.string(),
         year: z.int().optional(),
-        cover: z.string().optional().describe('An IGDB image id'),
+        cover: z
+          .string()
+          .optional()
+          .describe('An image id: IGDB’s, or its path on Steam’s image servers'),
         colors: z.array(z.string()).optional(),
         hash: z.string().optional(),
         hoursReported: z.number().min(0).describe('What its stores report together'),
