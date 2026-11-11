@@ -157,7 +157,12 @@ describe('a store description', () => {
     })
     const video = about().querySelector('video')!
     expect(video.muted).toBe(true)
-    expect(video.querySelector('source')).toHaveAttribute('src', `${STEAM}/${FILES}/c.mp4`)
+    // The VP9 WebM before Steam's HEVC MP4, which Edge and WebView2 take and cannot decode.
+    const sources = [...video.querySelectorAll('source')]
+    expect(sources.map((source) => [source.getAttribute('src'), source.type])).toEqual([
+      [`${STEAM}/${FILES}/c.webm`, 'video/webm; codecs=vp9'],
+      [`${STEAM}/${FILES}/c.mp4`, 'video/mp4'],
+    ])
     expect(play).toHaveBeenCalled()
     // Its still stands under it until the clip's first frame.
     expect(about().querySelector('img')).toHaveAttribute('src', `${STEAM}/${FILES}/c.poster.avif`)
