@@ -14,7 +14,7 @@ import {
 import { messages, renderWithIntl } from '@/test/render'
 import { caseShapes, plastics } from '@/ui/game-case'
 
-import { Cover, forgetArrivedCovers } from './cover'
+import { Cover } from './cover'
 import { describeBox, shelfName } from './describe'
 import { EmptyLibrary } from './empty-library'
 import { dateOf, hoursOf, outOfTen } from './format'
@@ -832,7 +832,6 @@ describe('a cover, by when it joined the page', () => {
   afterEach(() => {
     resetPageLive()
     resetPreviews()
-    forgetArrivedCovers()
     vi.mocked(thumbHashToDataURL).mockClear()
   })
 
@@ -882,22 +881,23 @@ describe('a cover, by when it joined the page', () => {
   })
   it('drawn again on the device, has a file of it already on the page underneath, not a blur', async () => {
     markPageLive()
-    const first = renderWithIntl(<Cover {...cover} hash="GGGG" />)
+    // A cover of its own: the files that arrived are the page's, for as long as it is open.
+    const own = { ...cover, cover: 'co9own' }
+    const first = renderWithIntl(<Cover {...own} hash="GGGG" />)
     const arrived = screen.getByRole('img', { name: 'Hades' })
     Object.defineProperty(arrived, 'currentSrc', { value: 'https://images.igdb.com/a.webp' })
-    Object.defineProperty(arrived, 'naturalWidth', { value: 264 })
     fireEvent.load(arrived)
     first.unmount()
 
     // The game's page as the server draws it, in the place of the one the library drew.
-    const { container } = renderWithIntl(<Cover {...cover} hash="GGGG" />)
+    const { container } = renderWithIntl(<Cover {...own} hash="GGGG" />)
     const again = container.querySelector<HTMLElement>('.cover')!
     expect(again.style.backgroundImage).toBe('url("https://images.igdb.com/a.webp")')
     await new Promise((resolve) => setTimeout(resolve, 80))
     expect(thumbHashToDataURL).not.toHaveBeenCalled()
 
     // A cover drawn whole keeps its blur in its bands instead.
-    const whole = renderWithIntl(<Cover {...cover} fit="whole" />)
+    const whole = renderWithIntl(<Cover {...own} fit="whole" />)
     expect(whole.container.querySelector<HTMLElement>('.cover')!.style.backgroundImage).toBe('')
   })
 

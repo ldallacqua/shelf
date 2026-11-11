@@ -36,19 +36,12 @@ type CoverProps = {
 }
 
 /**
- * The largest file of each cover that has arrived on this page, by the cover's id. A cover drawn
- * again on the device, such as a game's page as the server draws it after the one the library
- * drew, has it underneath at once, as a cover opened from the shelf has the shelf's file, and
- * never drops back to a blur while its own file comes.
+ * A file of each cover already on this page, by the cover's id: the last to arrive, or the
+ * shelf's under one opened from it. A cover drawn again on the device, such as a game's page as
+ * the server draws it after the one the library drew, has it underneath at once, and never drops
+ * back to a blur while its own file comes.
  */
-const arrivedFiles = new Map<string, { src: string; width: number }>()
-
-const noteArrived = (cover: string, src: string, width: number) => {
-  if (src && width >= (arrivedFiles.get(cover)?.width ?? 0)) arrivedFiles.set(cover, { src, width })
-}
-
-/** For tests: a page on which no cover has arrived yet. */
-export const forgetArrivedCovers = (): void => arrivedFiles.clear()
+const arrivedFiles = new Map<string, string>()
 
 const noChange = () => () => {}
 const onDevice = () => true
@@ -86,7 +79,7 @@ export function Cover({
   // A file of it already on this page, for a cover drawn again. Not under one drawn whole, whose
   // bands keep its blur.
   const [arrived] = useState(() =>
-    drawnOnDevice && cover && !placeholder && !whole ? arrivedFiles.get(cover)?.src : undefined,
+    drawnOnDevice && cover && !placeholder && !whole ? arrivedFiles.get(cover) : undefined,
   )
   const underneath = placeholder ?? arrived
   // The blur is worked out when the browser is idle, and only while the
@@ -95,13 +88,7 @@ export function Cover({
   const image = useRef<HTMLImageElement>(null)
   const forget = useRef<(() => void) | undefined>(undefined)
   useEffect(() => {
-    if (!cover) return
-    // The shelf's file, under a cover opened from it, is on the page; so is one that arrived
-    // before the page came to life, which says nothing as it does.
-    if (placeholder) noteArrived(cover, placeholder, 0)
-    const shown = image.current
-    if (shown?.complete && shown.naturalWidth > 0)
-      noteArrived(cover, shown.currentSrc, shown.naturalWidth)
+    if (cover && placeholder && !arrivedFiles.has(cover)) arrivedFiles.set(cover, placeholder)
   }, [cover, placeholder])
   useEffect(() => {
     // With a file of it already underneath, a blur would only be worse.
@@ -143,8 +130,8 @@ export function Cover({
           ref={image}
           onLoad={(event) => {
             forget.current?.()
-            const shown = event.currentTarget
-            if (cover) noteArrived(cover, shown.currentSrc, shown.naturalWidth)
+            const file = event.currentTarget.currentSrc
+            if (cover && file) arrivedFiles.set(cover, file)
           }}
           onError={(event) => {
             // Leave the wash and say the title in type instead.
