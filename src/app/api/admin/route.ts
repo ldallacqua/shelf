@@ -1,3 +1,5 @@
+import { connection } from 'next/server'
+
 import type { AdminAccess } from '@/domain/admin/jobs'
 import { admin } from '@/server/admin/admin'
 import { adminAnswer, isAdmin } from '@/server/admin/auth'
@@ -8,6 +10,8 @@ import { adminPassword } from '@/server/env'
  * job, and the latest runs. Locked or off is a plain answer, not a refusal: the page asks first.
  */
 export async function GET(request: Request) {
+  // Asked at every visit, never built ahead: built without a password, it answered "off" for good.
+  await connection()
   const password = adminPassword()
   const access: AdminAccess = !password
     ? { access: 'off' }
