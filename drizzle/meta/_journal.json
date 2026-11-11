@@ -239,6 +239,13 @@
       "when": 1794365665255,
       "tag": "0033_steam-banners",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1794420076684,
+      "tag": "0034_steam-descriptions",
+      "breakpoints": true
     }
   ]
 }

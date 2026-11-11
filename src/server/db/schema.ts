@@ -21,6 +21,7 @@ import {
 import { runStates, type AdminJob, type RunState } from '@/domain/admin/jobs'
 import type { Palette } from '@/domain/color/palette'
 import type { SteamReviews } from '@/domain/steam/reviews'
+import type { Description } from '@/domain/steam/description'
 import type { SteamPage } from '@/domain/steam/store-game'
 import type {
   GameArtwork,
@@ -88,6 +89,15 @@ const ids = () =>
     .default(sql`'[]'`)
 
 /** The local copy of IGDB records. The library never waits on IGDB. */
+/**
+ * A store page as `games.steam_page` keeps it (ADR 010): its cover, banner and description have
+ * columns of their own, and `described` is a fingerprint of the description, so the daily reading
+ * sees it change without reading it back.
+ */
+export type StoredSteamPage = Omit<SteamPage, 'cover' | 'banner' | 'description'> & {
+  described?: string
+}
+
 export const games = sqliteTable(
   'games',
   {
@@ -178,8 +188,14 @@ export const games = sqliteTable(
     steamThumbhash: text(),
     /** Its store page's wide header, the game's name drawn in: the banner view's image. */
     steamBanner: text({ mode: 'json' }).$type<GameImage>(),
-    /** What its page on the game's own page takes before IGDB's: summary, screenshots, art. */
-    steamPage: text({ mode: 'json' }).$type<Omit<SteamPage, 'cover' | 'banner'>>(),
+    /**
+     * What its page on the game's own page takes before IGDB's: summary, screenshots, art. Its
+     * long description is in `steamDescription`, and only a fingerprint of it here (`described`),
+     * so that reading a library, which looks in here for `adult`, never reads the description.
+     */
+    steamPage: text({ mode: 'json' }).$type<StoredSteamPage>(),
+    /** Its store page's long description, as blocks (ADR 010, decision 11): only its own page reads it. */
+    steamDescription: text({ mode: 'json' }).$type<Description>(),
     /** When its store page was last read. The daily reading takes those never read, then the oldest. */
     steamPageCheckedAt: integer(),
     /** When Shelf last stored this record. */

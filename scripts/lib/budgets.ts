@@ -156,7 +156,13 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // shown, where it filled again as the server's page took the library's place; the cover keeps
   // a file of it already on the page underneath. The owner saw the IGDB score blink as a game
   // changed.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 232.4 },
+  // A game's whole store description (11 Nov 2026): measured 233.6 KB, from 232.1 (main the same
+  // day). About draws the description's blocks and folds them (`description.tsx`), and its clips
+  // play near the window and pause when pressed, with an adult game's pictures blurred until asked
+  // for (`description-media.tsx`). The reader of the store's BBCode stays on the server
+  // (`read-description.ts`), and the clips ask the motion query themselves rather than bring every
+  // preference: 0.3 KB less than the first measure. ADR 010, decision 11.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 234.0 },
 ]
 
 /**

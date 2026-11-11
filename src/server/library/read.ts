@@ -473,6 +473,7 @@ export const readGameExtras = async (
         storeLinks: games.storeLinks,
         steamReviews: games.steamReviews,
         steamPage: games.steamPage,
+        steamDescription: games.steamDescription,
       })
       .from(entryVersions)
       .innerJoin(games, eq(games.id, entryVersions.gameId))
@@ -532,6 +533,7 @@ export const readGameExtras = async (
   }
   if (main.versionTitle) extras.versionTitle = main.versionTitle
   if (shown.summary) extras.summary = shown.summary
+  if (main.steamDescription) extras.description = main.steamDescription
   if (main.storyline) extras.storyline = main.storyline
   if (main.length) extras.length = main.length
   if (main.igdbUrl) extras.igdbUrl = main.igdbUrl

@@ -43,6 +43,22 @@ const STEAM_IMAGE = /^steam\/apps\/\d+(\/\w[\w.-]*)+\.(jpe?g|png)(@2x)?$/i
 
 export const isSteamImage = (imageId: string): boolean => STEAM_IMAGE.test(imageId)
 
+/**
+ * A file a store page's description shows (ADR 010, decision 11): a picture, or a clip that loops in
+ * its place as a GIF would. Kept apart from `isSteamImage`, which the covers and screenshots answer to.
+ */
+const STEAM_PICTURE = /^steam\/apps\/\d+(\/\w[\w.-]*)+\.(avif|webp|gif|png|jpe?g)$/i
+const STEAM_CLIP = /^steam\/apps\/\d+(\/\w[\w.-]*)+\.(mp4|webm)$/i
+
+export const isSteamPicture = (path: string): boolean => STEAM_PICTURE.test(path)
+export const isSteamClip = (path: string): boolean => STEAM_CLIP.test(path)
+
+/** The address of a description's file on Steam's servers. Anything but such a file is refused. */
+export const steamFileUrl = (path: string): string => {
+  if (!isSteamPicture(path) && !isSteamClip(path)) throw new Error('Not a file on Steam')
+  return `${STEAM_IMAGES}/${path}`
+}
+
 type ImageFile = { url: string; width: number }
 
 /**

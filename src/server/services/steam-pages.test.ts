@@ -137,6 +137,56 @@ describe('reading a game’s store page (ADR 010)', () => {
     expect(extras.length).toEqual(igdb.length)
   })
 
+  it('shows the store’s long description on the game’s page, apart from what a shelf reads', async () => {
+    const bbcode =
+      '[h2]STORY[/h2]\r\nA tale.[img src="{STEAM_APP_IMAGE}/extras/a.avif" width="600" height="300" fromclient=1][/img]'
+    await reader({
+      storeGames: store([storePage(app, { full_description_bbcode: bbcode })]),
+    })(undefined, NOW)
+    const extras = (await readGameExtras(db, sample, slug))!
+    expect(extras.description).toEqual([
+      { kind: 'heading', text: 'STORY' },
+      { kind: 'paragraph', runs: [{ text: 'A tale.' }] },
+      { kind: 'picture', id: `steam/apps/${app}/extras/a.avif`, width: 600, height: 300 },
+    ])
+    expect(extras.summary).toBe('The store’s words.')
+    // A library reads `steam_page` for every game: the description is in a column of its own.
+    const row = await skyrim()
+    expect(row.steamPage).not.toHaveProperty('description')
+    expect(row.steamPage?.described).toMatch(/^[\w-]{16}$/)
+  })
+
+  it('gives the shelves a new version when only the description changed', async () => {
+    const page = (words: string) => storePage(app, { full_description_bbcode: words })
+    await reader({ storeGames: store([page('One.')]) })(undefined, NOW)
+    const version = await readVersion(db, sample)
+    const same = await reader({ storeGames: store([page('One.')]) })(undefined, NOW + 1)
+    expect(same.changed).toBe(0)
+    const again = await reader({ storeGames: store([page('Two.')]) })(undefined, NOW + 2)
+    expect(again.changed).toBe(1)
+    expect(await readVersion(db, sample)).not.toBe(version)
+    expect((await readGameExtras(db, sample, slug))!.description).toEqual([
+      { kind: 'paragraph', runs: [{ text: 'Two.' }] },
+    ])
+  })
+
+  it('marks the description’s pictures of a game the store keeps for adults', async () => {
+    await reader({
+      storeGames: store([
+        storePage(app, {
+          content_descriptorids: [3],
+          full_description_bbcode: 'Words.[img src="{STEAM_APP_IMAGE}/extras/a.jpg"][/img]',
+        }),
+      ]),
+    })(undefined, NOW)
+    const { description } = (await readGameExtras(db, sample, slug))!
+    expect(description?.[1]).toEqual({
+      kind: 'picture',
+      id: `steam/apps/${app}/extras/a.jpg`,
+      mature: true,
+    })
+  })
+
   it('keeps IGDB’s for each field the store leaves empty', async () => {
     const igdb = (await readGameExtras(db, sample, slug))!
     const shelfBefore = await onTheShelf()
@@ -152,8 +202,11 @@ describe('reading a game’s store page (ADR 010)', () => {
 
   it('puts the game back on IGDB’s record when the store no longer has its page', async () => {
     const igdb = await onTheShelf()
-    const read = reader({ storeGames: store([storePage(app)]) })
+    const read = reader({
+      storeGames: store([storePage(app, { full_description_bbcode: 'Words.' })]),
+    })
     await read(undefined, NOW)
+    expect((await skyrim()).steamDescription).not.toBeNull()
     const gone = await reader({ storeGames: store([]) })(undefined, NOW + 1)
     expect(gone.libraries).toEqual([sample])
     const game = await onTheShelf()
@@ -161,6 +214,8 @@ describe('reading a game’s store page (ADR 010)', () => {
     expect(game.colors).toEqual(igdb.colors)
     expect(game.hash).toBe(igdb.hash)
     expect((await skyrim()).steamPage).toBeNull()
+    expect((await skyrim()).steamDescription).toBeNull()
+    expect((await readGameExtras(db, sample, slug))!.description).toBeUndefined()
   })
 
   it('gives the shelves holding it a new version only when what it shows has changed', async () => {

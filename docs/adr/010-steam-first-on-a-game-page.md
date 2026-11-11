@@ -63,9 +63,21 @@ in the game details such as videos. I don't think we should change search and th
 10. **The banner** (amended 11 Nov 2026): a game's store header, 460 by 215 with its name drawn in, kept in
     `steam_banner` and carried in the library file for the banner view (spec 3.8). A game not on Steam takes IGDB's
     key art, then any art, then a screenshot for anyone, never one kept for adults.
-9. **Not taken:** the store's long description, which is HTML and often a sales pitch, and would need making
-   plain first; its trailers; and its pages in Brazilian Portuguese (`brazilian`), which would give the summary in
-   the visitor's language. Each can follow on its own.
+9. **Not taken:** its trailers, and its pages in Brazilian Portuguese (`brazilian`), which would give the summary
+   in the visitor's language. Each can follow on its own. The long description was not taken at first either; it
+   is decision 11.
+11. **The long description** (amended 11 Nov 2026, with the owner: "just fallback to igdb in case we can't grab from
+    steam the full description"). The same `GetItems` question asks for it (`include_full_description`), so it
+    costs no request: the store's `appdetails`, which gives it as HTML, answers one app at a time and refuses after a
+    couple of hundred. It comes as BBCode, read by `domain/steam/description.ts` into headings, paragraphs, lists
+    and pictures, never kept or drawn as markup. A link keeps its words and loses its address; a picture is kept
+    only when it is a file on Steam's own servers (`{STEAM_APP_IMAGE}`, or an address there), and a clip that
+    loops in a picture's place keeps its MP4 and WebM files. A game the store keeps for adults has every picture
+    marked, and drawn blurred until asked for, as decision 7 says. It is kept in a column of its own,
+    `steam_description`, as reading a library looks into `steam_page` for every game; `steam_page` holds only a
+    fingerprint of it (`described`), so a change to it alone is a change to the page without reading it back.
+    Where there is one, About shows it, and neither the summary nor IGDB's storyline: the summary stays for
+    everything else (a link's preview, structured data, the public API), which never carry the description.
 
 ## Consequences
 
@@ -78,5 +90,9 @@ in the game details such as videos. I don't think we should change search and th
   to three times the bytes (64 KB against 25 at the smaller size, 205 against 70 at the larger, medians measured on
   11 Nov 2026). Each file is offered at its own width, so a browser takes the smaller wherever it is enough, and pages
   connect to Steam's servers early. Making them lighter still would mean converting them somewhere of Shelf's own.
+- A store description's clips are a few megabytes each (2.8 MB of MP4 for one of 4.5 MB of WebM, measured on
+  11 Nov 2026), so none loads until it is about to be seen and allowed to move; its still, a lazy picture of some
+  40 KB, stands until then. The page's policy lets media come from Steam's image servers (`media-src`). A
+  description adds about 2.7 KB to a game's row (the sample shelf's mean; the longest 9 KB), read only by its page.
 - The scores and the pages are two `GetItems` readings a day, where one question could ask for both. They are kept
   apart so that each fails alone, and each can be asked about games the other wasn't.

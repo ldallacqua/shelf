@@ -22,6 +22,7 @@ import { HERO_COVER } from './hero'
 import { MineSkeleton } from './mine-skeleton'
 import { OwnerMine } from './owner-mine'
 import { AdultNotice } from './adult-notice'
+import { GameDescription, HIDDEN_CHARS, ReadMore, SHOWN_CHARS } from './description'
 import { Scores } from './scores'
 import { Screenshots } from './screenshots'
 import { Stores } from './stores'
@@ -100,26 +101,16 @@ function Section({
   )
 }
 
-/** About this much of a passage is shown before "Read more". */
-const SHOWN_CHARS = 420
-/** Less than this left over is shown too: hiding a sliver is worse than showing it. */
-const HIDDEN_CHARS = 200
-
 /**
  * A passage of IGDB's text in its paragraphs, one to each line break it
  * has. A long one shows its first paragraphs, about a screen's worth, and
- * the rest behind "Read more", with no script: a closed `details` is still
- * found by the browser's search.
+ * the rest behind "Read more".
  */
 function Passage({
   text,
-  more,
-  less,
   lang,
 }: {
   text: string
-  more: string
-  less: string
   /** The page's language, for the button: the passage is IGDB's English. */
   lang: string
 }) {
@@ -139,13 +130,7 @@ function Passage({
   return (
     <>
       {all(paragraphs.slice(0, shown))}
-      <details className="game-more">
-        <summary lang={lang}>
-          <span className="game-more-closed">{more}</span>
-          <span className="game-more-open">{less}</span>
-        </summary>
-        <div className="game-prose">{all(rest)}</div>
-      </details>
+      <ReadMore lang={lang}>{all(rest)}</ReadMore>
     </>
   )
 }
@@ -403,19 +388,22 @@ export function GameDetail({
     />
   )
 
+  // Its store page's long description where it has one (ADR 010, decision 11), and IGDB's words where not.
   const about =
-    facts && !facts.summary && !facts.storyline ? null : (
+    facts && !facts.description && !facts.summary && !facts.storyline ? null : (
       <Section title={t('about')}>
-        {facts ? (
+        {facts?.description ? (
+          <GameDescription
+            blocks={facts.description}
+            summary={facts.summary}
+            title={game.title}
+            slug={game.slug}
+            lang={locale}
+            textLang={igdbLang}
+          />
+        ) : facts ? (
           <div className="game-prose" lang={igdbLang}>
-            {facts.summary ? (
-              <Passage
-                text={facts.summary}
-                more={t('readMore')}
-                less={t('readLess')}
-                lang={locale}
-              />
-            ) : null}
+            {facts.summary ? <Passage text={facts.summary} lang={locale} /> : null}
             {facts.storyline ? (
               <>
                 <h3
@@ -424,12 +412,7 @@ export function GameDetail({
                 >
                   {t('storyline')}
                 </h3>
-                <Passage
-                  text={facts.storyline}
-                  more={t('readMore')}
-                  less={t('readLess')}
-                  lang={locale}
-                />
+                <Passage text={facts.storyline} lang={locale} />
               </>
             ) : null}
           </div>
