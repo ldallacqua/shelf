@@ -8,6 +8,7 @@ import { cn } from '@/ui/cn'
 import { Textarea } from '@/ui/field'
 
 import { useDuration } from '@/features/library/duration'
+import { MineFields } from './mine-fields'
 
 import {
   mineCard,
@@ -97,199 +98,201 @@ export function MineSkeleton({ game, tags, platforms, level: Level }: MineSkelet
       </div>
       {/* Play's line: always there in the app, where it comes a moment after the editor. */}
       <div aria-hidden="true" className={cn(minePlay, 'hidden frameless:flex')} />
-      <div aria-hidden="true" inert className={mineGroups}>
-        <div className={mineGroup}>
-          <fieldset className="grid gap-2">
-            <legend className={cn(mineHeading, 'mb-2')}>{words('status')}</legend>
-            <div className="flex flex-wrap gap-2">
-              {statuses.map((each, index) => (
-                <Ghost
-                  key={each}
-                  index={index}
-                  className={cn(
-                    'inline-flex min-h-10 items-center gap-1.5 rounded-full border border-transparent px-3.5 text-sm pointer-coarse:min-h-11',
-                    each === game.status && 'font-semibold',
-                  )}
-                >
-                  {each === game.status ? <span className="-ml-0.5 size-4 flex-none" /> : null}
-                  {library(`status.${each}`)}
-                </Ghost>
-              ))}
-            </div>
-          </fieldset>
-
-          <div className="grid gap-1">
-            <div className="flex min-h-10 items-center justify-between gap-3">
-              <span className={label}>{fields('rating')}</span>
-              <Ghost index={5} className="h-6 w-16" />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-10 flex-1 items-center">
-                <Ghost index={6} className="h-1.5 w-full rounded-full" />
-              </span>
-              <span className="size-8 flex-none pointer-coarse:size-10" />
-            </div>
-            <span className="-mt-2 h-2" />
-            <span className="h-3" />
-          </div>
-
-          {/* The total is the library file's, so it is drawn for real (`PlayTimeView`). */}
-          <div className="grid gap-1">
-            <div className="flex min-h-8 items-center justify-between gap-3">
-              <span className={mineHeading}>{playTime('heading')}</span>
-              <div className="-mr-1 flex items-center">
-                <Ghost index={7} className="size-8 rounded-control pointer-coarse:size-10" />
-              </div>
-            </div>
-            {game.minutes > 0 ? (
-              <p className="text-xl font-semibold tabular-nums">{duration(game.minutes)}</p>
-            ) : (
-              <>
-                <p className="text-sm text-muted">{playTime('empty')}</p>
-                <p className="text-xs text-pretty text-muted">
-                  {playTime.rich('emptyHint', { link: (chunks) => <span>{chunks}</span> })}
-                </p>
-              </>
-            )}
-          </div>
-
-          {game.status === 'completed' || game.completedOn ? (
-            <div className="grid gap-1.5">
-              <span className={label}>{t('completedOn')}</span>
-              <Ghost index={8} className={field} />
-            </div>
-          ) : null}
-        </div>
-
-        {wishlist && choices.length > 0 ? (
-          <fieldset className={mineGroupRuled}>
-            <legend className={cn(mineHeading, 'float-left mb-2')}>{t('wanted')}</legend>
-            <div className="clear-left flex flex-wrap gap-2">
-              {choices.map((platform, index) => {
-                const wanted = game.wanted?.includes(platform.id)
-                return (
+      <MineFields label={words('editDetails')}>
+        <div aria-hidden="true" inert className={mineGroups}>
+          <div className={mineGroup}>
+            <fieldset className="grid gap-2">
+              <legend className={cn(mineHeading, 'mb-2')}>{words('status')}</legend>
+              <div className="flex flex-wrap gap-2">
+                {statuses.map((each, index) => (
                   <Ghost
-                    key={platform.id}
-                    index={9 + index}
+                    key={each}
+                    index={index}
                     className={cn(
                       'inline-flex min-h-10 items-center gap-1.5 rounded-full border border-transparent px-3.5 text-sm pointer-coarse:min-h-11',
-                      wanted && 'font-semibold',
+                      each === game.status && 'font-semibold',
                     )}
                   >
-                    {wanted ? <span className="-ml-0.5 size-4 flex-none" /> : null}
-                    {platform.name}
+                    {each === game.status ? <span className="-ml-0.5 size-4 flex-none" /> : null}
+                    {library(`status.${each}`)}
                   </Ghost>
-                )
-              })}
-            </div>
-            {game.wanted?.some(isPcPlatform) ? storesGhost(11) : null}
-          </fieldset>
-        ) : null}
+                ))}
+              </div>
+            </fieldset>
 
-        {wishlist && game.copies.length === 0 ? null : (
-          <fieldset className={mineGroupRuled}>
-            <legend className={cn(mineHeading, 'float-left')}>{words('owned')}</legend>
-            <div className="clear-left grid gap-2">
-              {game.copies.length === 0 ? (
-                <p className="text-sm">{t('noCopies')}</p>
-              ) : (
-                <ul className="grid gap-2">
-                  {game.copies.map((copy, index) => (
-                    <li key={`${copy.platform}:${copy.format}`} className={mineCard}>
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="pt-1 text-sm font-semibold">
-                          {platforms.get(copy.platform)?.name}
-                        </span>
-                        <span className="-mt-1 -mr-1 size-10 flex-none pointer-coarse:size-11" />
-                      </div>
-                      <Ghost
-                        index={9 + index}
-                        className="grid w-full grid-cols-2 gap-0.5 rounded-control border border-transparent p-0.5"
-                      >
-                        <span className="h-9 pointer-coarse:h-10" />
-                      </Ghost>
-                      {takesStore(copy.platform, copy.format) ? storesGhost(10 + index) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {addable ? (
-                <Ghost
-                  index={12}
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-control border border-transparent px-4 text-sm font-medium whitespace-nowrap pointer-coarse:h-11"
-                >
-                  <span className="size-4 flex-none" />
-                  {t('addCopy')}
-                </Ghost>
-              ) : null}
-            </div>
-          </fieldset>
-        )}
-
-        <div className={mineGroupRuled}>
-          <div className="grid gap-1.5">
-            <span className={label}>{fields('tags')}</span>
-            <Ghost
-              index={13}
-              className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-control border border-transparent p-1.5 pointer-coarse:min-h-11"
-            >
-              {tags.map((tag) => (
-                <span
-                  key={tag.slug}
-                  className="inline-flex h-7 max-w-full items-center gap-0.5 pr-0.5 pl-2.5 text-sm"
-                >
-                  <span className="truncate">{tag.name}</span>
-                  <span className="size-6 flex-none" />
+            <div className="grid gap-1">
+              <div className="flex min-h-10 items-center justify-between gap-3">
+                <span className={label}>{fields('rating')}</span>
+                <Ghost index={5} className="h-6 w-16" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-10 flex-1 items-center">
+                  <Ghost index={6} className="h-1.5 w-full rounded-full" />
                 </span>
-              ))}
-              <span className="h-7 min-w-24 flex-1" />
-            </Ghost>
-            <p className="text-xs text-muted">{fields('tagsHint')}</p>
+                <span className="size-8 flex-none pointer-coarse:size-10" />
+              </div>
+              <span className="-mt-2 h-2" />
+              <span className="h-3" />
+            </div>
+
+            {/* The total is the library file's, so it is drawn for real (`PlayTimeView`). */}
+            <div className="grid gap-1">
+              <div className="flex min-h-8 items-center justify-between gap-3">
+                <span className={mineHeading}>{playTime('heading')}</span>
+                <div className="-mr-1 flex items-center">
+                  <Ghost index={7} className="size-8 rounded-control pointer-coarse:size-10" />
+                </div>
+              </div>
+              {game.minutes > 0 ? (
+                <p className="text-xl font-semibold tabular-nums">{duration(game.minutes)}</p>
+              ) : (
+                <>
+                  <p className="text-sm text-muted">{playTime('empty')}</p>
+                  <p className="text-xs text-pretty text-muted">
+                    {playTime.rich('emptyHint', { link: (chunks) => <span>{chunks}</span> })}
+                  </p>
+                </>
+              )}
+            </div>
+
+            {game.status === 'completed' || game.completedOn ? (
+              <div className="grid gap-1.5">
+                <span className={label}>{t('completedOn')}</span>
+                <Ghost index={8} className={field} />
+              </div>
+            ) : null}
           </div>
 
-          <div className="grid gap-2">
+          {wishlist && choices.length > 0 ? (
+            <fieldset className={mineGroupRuled}>
+              <legend className={cn(mineHeading, 'float-left mb-2')}>{t('wanted')}</legend>
+              <div className="clear-left flex flex-wrap gap-2">
+                {choices.map((platform, index) => {
+                  const wanted = game.wanted?.includes(platform.id)
+                  return (
+                    <Ghost
+                      key={platform.id}
+                      index={9 + index}
+                      className={cn(
+                        'inline-flex min-h-10 items-center gap-1.5 rounded-full border border-transparent px-3.5 text-sm pointer-coarse:min-h-11',
+                        wanted && 'font-semibold',
+                      )}
+                    >
+                      {wanted ? <span className="-ml-0.5 size-4 flex-none" /> : null}
+                      {platform.name}
+                    </Ghost>
+                  )
+                })}
+              </div>
+              {game.wanted?.some(isPcPlatform) ? storesGhost(11) : null}
+            </fieldset>
+          ) : null}
+
+          {wishlist && game.copies.length === 0 ? null : (
+            <fieldset className={mineGroupRuled}>
+              <legend className={cn(mineHeading, 'float-left')}>{words('owned')}</legend>
+              <div className="clear-left grid gap-2">
+                {game.copies.length === 0 ? (
+                  <p className="text-sm">{t('noCopies')}</p>
+                ) : (
+                  <ul className="grid gap-2">
+                    {game.copies.map((copy, index) => (
+                      <li key={`${copy.platform}:${copy.format}`} className={mineCard}>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="pt-1 text-sm font-semibold">
+                            {platforms.get(copy.platform)?.name}
+                          </span>
+                          <span className="-mt-1 -mr-1 size-10 flex-none pointer-coarse:size-11" />
+                        </div>
+                        <Ghost
+                          index={9 + index}
+                          className="grid w-full grid-cols-2 gap-0.5 rounded-control border border-transparent p-0.5"
+                        >
+                          <span className="h-9 pointer-coarse:h-10" />
+                        </Ghost>
+                        {takesStore(copy.platform, copy.format) ? storesGhost(10 + index) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {addable ? (
+                  <Ghost
+                    index={12}
+                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-control border border-transparent px-4 text-sm font-medium whitespace-nowrap pointer-coarse:h-11"
+                  >
+                    <span className="size-4 flex-none" />
+                    {t('addCopy')}
+                  </Ghost>
+                ) : null}
+              </div>
+            </fieldset>
+          )}
+
+          <div className={mineGroupRuled}>
             <div className="grid gap-1.5">
-              <span className={label}>{words('notes')}</span>
-              {/* The editor's own box, so it takes the same four lines in every browser. */}
-              <Textarea
-                grow
-                rows={4}
-                readOnly
-                tabIndex={-1}
-                className="ghost border-transparent bg-text/8 read-only:opacity-100"
-                style={{ '--i': 14 } as CSSProperties}
-              />
+              <span className={label}>{fields('tags')}</span>
+              <Ghost
+                index={13}
+                className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-control border border-transparent p-1.5 pointer-coarse:min-h-11"
+              >
+                {tags.map((tag) => (
+                  <span
+                    key={tag.slug}
+                    className="inline-flex h-7 max-w-full items-center gap-0.5 pr-0.5 pl-2.5 text-sm"
+                  >
+                    <span className="truncate">{tag.name}</span>
+                    <span className="size-6 flex-none" />
+                  </span>
+                ))}
+                <span className="h-7 min-w-24 flex-1" />
+              </Ghost>
+              <p className="text-xs text-muted">{fields('tagsHint')}</p>
             </div>
-            <div className="flex min-h-10 items-center gap-3 text-sm">
-              <Ghost index={15} className="h-6 w-10 flex-none rounded-full" />
-              {t('notesPublic')}
+
+            <div className="grid gap-2">
+              <div className="grid gap-1.5">
+                <span className={label}>{words('notes')}</span>
+                {/* The editor's own box, so it takes the same four lines in every browser. */}
+                <Textarea
+                  grow
+                  rows={4}
+                  readOnly
+                  tabIndex={-1}
+                  className="ghost border-transparent bg-text/8 read-only:opacity-100"
+                  style={{ '--i': 14 } as CSSProperties}
+                />
+              </div>
+              <div className="flex min-h-10 items-center gap-3 text-sm">
+                <Ghost index={15} className="h-6 w-10 flex-none rounded-full" />
+                {t('notesPublic')}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className={mineGroupRuled}>
-          <div className="flex items-start gap-3 text-sm">
-            <Ghost index={16} className="mt-0.5 h-6 w-10 flex-none rounded-full" />
-            <span className="grid gap-0.5">
-              <span className="font-medium">{t('privateTitle')}</span>
-              <span className="text-pretty text-muted">{t('privateHint')}</span>
-            </span>
+          <div className={mineGroupRuled}>
+            <div className="flex items-start gap-3 text-sm">
+              <Ghost index={16} className="mt-0.5 h-6 w-10 flex-none rounded-full" />
+              <span className="grid gap-0.5">
+                <span className="font-medium">{t('privateTitle')}</span>
+                <span className="text-pretty text-muted">{t('privateHint')}</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t border-line pt-6">
+            {(['archive', 'remove'] as const).map((each, index) => (
+              <Ghost
+                key={each}
+                index={17 + index}
+                className="inline-flex h-10 items-center gap-2 rounded-control px-4 text-sm font-medium whitespace-nowrap pointer-coarse:h-11"
+              >
+                <span className="size-4 flex-none" />
+                {t(each)}
+              </Ghost>
+            ))}
           </div>
         </div>
-
-        <div className="flex flex-wrap gap-2 border-t border-line pt-6">
-          {(['archive', 'remove'] as const).map((each, index) => (
-            <Ghost
-              key={each}
-              index={17 + index}
-              className="inline-flex h-10 items-center gap-2 rounded-control px-4 text-sm font-medium whitespace-nowrap pointer-coarse:h-11"
-            >
-              <span className="size-4 flex-none" />
-              {t(each)}
-            </Ghost>
-          ))}
-        </div>
-      </div>
+      </MineFields>
     </section>
   )
 }

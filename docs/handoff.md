@@ -1,5 +1,40 @@
 # Handoff: 27 October 2026
 
+## Game media gallery (11 Nov 2026)
+
+The game page keeps Scores first, then a large inline gallery, then About. Named gameplay and at most
+one other video precede screenshots; the other videos follow them. The hero carries the short introduction.
+The selected image still opens the existing full-screen viewer and zoom. YouTube players and their API
+load only after a press or an explicit remembered desktop autoplay choice; posters use Next's image proxy.
+Autoplay stays muted, pauses offscreen and with hidden pages, respects a manual pause and is withheld on
+phones, for reduced motion, data saving and hidden mature media. Description clips yield to a playing gallery.
+Mine's full fields fold in a single column while Play stays visible, with the same wrapper in its skeleton.
+The landing page demonstrates screenshot selection. No migration or admin backfill is required. Steam's
+direct trailer data was not validated (the manual local API request could not resolve its host); it stays a
+future source rather than silently replacing IGDB. Spec 7.1 and ADR 010 describe the new behavior.
+
+The design research was completed before code: the owner's examples, live Shelf, Steam and GOG; named
+design skills were not installed. Browser regression tests remain skipped under the MVP rule. The existing
+`.claude/` directory was left alone. Deployment follows the usual pull request and full verification;
+Storybook's deployment must go live with it. No admin job needs to run after merging.
+
+**Checked in this working copy:** format, lint, types, translations, 2,221 unit/component tests, the
+production build, Storybook's build, and every JavaScript budget. After deferring the full-screen viewer
+and keeping Next's interactive Image component out of the gallery, the game page is 231.7 KB within its
+unchanged 234 KB limit. The landing page's working gallery adds about 5 KB: 221.2 KB, its budget now 222 KB
+with the reason recorded in `scripts/lib/budgets.ts`. Lighthouse at the documented Windows slowdown of
+5.5 passed: home 96, library 93, wall 94, game page 98; accessibility 100 and layout shift zero throughout.
+The automatic slowdown of 19.2 was too harsh, as `docs/testing.md` documents for Windows. No Playwright
+browser regression tests ran under the MVP rule, and their reference screenshots were not changed.
+
+Looked at by hand in English and Portuguese, dark and light, at 390 and 1,440 pixels: selected screenshots,
+the full-screen viewer, the stacked record, the landing demo, and actual inline YouTube playback, including
+the saved muted-autoplay choice. The 390-pixel page has no horizontal overflow. A scratch database held a
+public Hollow Knight trailer for that manual check; `.data/shelf.db` and production were not changed.
+Reloading after a local rebuild cleared the old chunk addresses in the preview; no new console error
+appeared during the final review. The local preview was left on port 3330 with test doubles and the scratch
+database, and desktop/phone preview pictures were saved with this chat.
+
 Work moved from the Mac mini to another computer partway through the review pass after
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.

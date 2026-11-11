@@ -41,6 +41,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tip } from '@/ui/tooltip'
 
 import { editClient as actions } from './edit-client'
+import { MineFields } from './mine-fields'
 import {
   mineCard,
   mineGroup,
@@ -380,350 +381,355 @@ export function MineEditor({
         </p>
       ) : null}
 
-      <div className={mineGroups}>
-        <div className={mineGroup}>
-          <fieldset className="grid gap-2">
-            <legend className={cn(mineHeading, 'mb-2')}>{game('status')}</legend>
-            <div className="flex flex-wrap gap-2">
-              {statuses.map((each) => (
-                <ChoiceChip
-                  key={each}
-                  type="radio"
-                  name={`${id}-status`}
-                  checked={owned.status === each}
-                  onChange={() => setStatus(each)}
-                >
-                  {library(`status.${each}`)}
-                </ChoiceChip>
-              ))}
-            </div>
-          </fieldset>
+      <MineFields label={game('editDetails')}>
+        <div className={mineGroups}>
+          <div className={mineGroup}>
+            <fieldset className="grid gap-2">
+              <legend className={cn(mineHeading, 'mb-2')}>{game('status')}</legend>
+              <div className="flex flex-wrap gap-2">
+                {statuses.map((each) => (
+                  <ChoiceChip
+                    key={each}
+                    type="radio"
+                    name={`${id}-status`}
+                    checked={owned.status === each}
+                    onChange={() => setStatus(each)}
+                  >
+                    {library(`status.${each}`)}
+                  </ChoiceChip>
+                ))}
+              </div>
+            </fieldset>
 
-          <SavedRating
-            labelClassName={mineHeading}
-            score={owned.rating}
-            onSave={(score) =>
-              void update({ rating: score }, { rating: score === null ? undefined : score })
-            }
-          />
-
-          <PlayTimeView
-            heading={Minor}
-            total={time.total}
-            lastPlayed={owned.lastPlayedOn ? dayText(owned.lastPlayedOn) : undefined}
-            platforms={time.platforms.map((platform) => {
-              const counted = platform.sources.filter((source) => !source.overlaps)
-              return {
-                name:
-                  platform.platform === 'pc'
-                    ? playTime('pc')
-                    : (labels.get(platform.platform)?.name ?? playTime('pc')),
-                minutes: platform.minutes,
-                sources: platform.sources.map((source) => ({
-                  name: sourceName(source.source),
-                  minutes: source.minutes,
-                  ...(source.overlaps
-                    ? { sameAs: list.format(counted.map((each) => sourceName(each.source))) }
-                    : {}),
-                  ...(source.source !== TRACKED && owned.behind?.includes(source.source)
-                    ? { behind: true }
-                    : {}),
-                })),
-              }
-            })}
-            idle={idle}
-            reported={reported}
-            stores={storeSources.map((source) => sync(`source.${source}`))}
-            onIdle={(minutes) => void update({ idle: minutes }, { idle: minutes })}
-          />
-
-          {owned.status === 'completed' || owned.completedOn ? (
-            <DayField
+            <SavedRating
               labelClassName={mineHeading}
-              label={t('completedOn')}
-              value={owned.completedOn}
-              clearable
-              // The day itself is under the play time now, for every status.
-              hint={
-                owned.lastPlayedOn && owned.status === 'completed' ? t('completedHint') : undefined
+              score={owned.rating}
+              onSave={(score) =>
+                void update({ rating: score }, { rating: score === null ? undefined : score })
               }
-              onChange={(day) => {
-                // Taken away, a completed game's day is its last play's again: the server does
-                // the same.
-                const shown = day ?? (owned.status === 'completed' ? owned.lastPlayedOn : undefined)
-                void update({ completedOn: day ?? null }, { completedOn: shown })
-              }}
             />
-          ) : null}
-        </div>
 
-        {owned.status === 'wishlist' && owned.platforms.length > 0 ? (
-          <fieldset className={mineGroupRuled}>
-            <legend className={cn(mineHeading, 'float-left mb-2')}>{t('wanted')}</legend>
-            <div className="clear-left flex flex-wrap gap-2">
-              {owned.platforms.map((platform) => (
-                <ChoiceChip
-                  key={platform.id}
-                  type="checkbox"
-                  checked={owned.wanted.includes(platform.id)}
-                  onChange={(event) => {
-                    const wanted = event.target.checked
-                      ? [...owned.wanted, platform.id]
-                      : owned.wanted.filter((each) => each !== platform.id)
-                    // Off a PC, its stores go with it: the server does the same.
-                    const stores = wanted.some(isPcPlatform) ? {} : { wantedStores: [] }
-                    void update({ wanted }, { wanted, ...stores })
-                  }}
-                >
-                  {platform.name}
-                </ChoiceChip>
-              ))}
-            </div>
-            {owned.wanted.some(isPcPlatform) ? (
-              <StoresField
+            <PlayTimeView
+              heading={Minor}
+              total={time.total}
+              lastPlayed={owned.lastPlayedOn ? dayText(owned.lastPlayedOn) : undefined}
+              platforms={time.platforms.map((platform) => {
+                const counted = platform.sources.filter((source) => !source.overlaps)
+                return {
+                  name:
+                    platform.platform === 'pc'
+                      ? playTime('pc')
+                      : (labels.get(platform.platform)?.name ?? playTime('pc')),
+                  minutes: platform.minutes,
+                  sources: platform.sources.map((source) => ({
+                    name: sourceName(source.source),
+                    minutes: source.minutes,
+                    ...(source.overlaps
+                      ? { sameAs: list.format(counted.map((each) => sourceName(each.source))) }
+                      : {}),
+                    ...(source.source !== TRACKED && owned.behind?.includes(source.source)
+                      ? { behind: true }
+                      : {}),
+                  })),
+                }
+              })}
+              idle={idle}
+              reported={reported}
+              stores={storeSources.map((source) => sync(`source.${source}`))}
+              onIdle={(minutes) => void update({ idle: minutes }, { idle: minutes })}
+            />
+
+            {owned.status === 'completed' || owned.completedOn ? (
+              <DayField
                 labelClassName={mineHeading}
-                soldOn={owned.soldOn}
-                value={owned.wantedStores ?? []}
-                onChange={(wantedStores) => void update({ wantedStores }, { wantedStores })}
+                label={t('completedOn')}
+                value={owned.completedOn}
+                clearable
+                // The day itself is under the play time now, for every status.
+                hint={
+                  owned.lastPlayedOn && owned.status === 'completed'
+                    ? t('completedHint')
+                    : undefined
+                }
+                onChange={(day) => {
+                  // Taken away, a completed game's day is its last play's again: the server does
+                  // the same.
+                  const shown =
+                    day ?? (owned.status === 'completed' ? owned.lastPlayedOn : undefined)
+                  void update({ completedOn: day ?? null }, { completedOn: shown })
+                }}
               />
             ) : null}
-          </fieldset>
-        ) : null}
-
-        {/* On the wishlist, what I want takes the place of what I own, unless a copy is there already. */}
-        {owned.status !== 'wishlist' || owned.copies.length > 0 ? (
-          <Copies
-            owned={owned}
-            labels={labels}
-            platforms={owned.platforms}
-            preset={wasWanted}
-            presetStores={wasWantedStores}
-            onFormat={(copy, format) =>
-              save(
-                {
-                  ...owned,
-                  copies: owned.copies.map((each) =>
-                    each.id === copy.id
-                      ? { ...each, format, ...(format === 'digital' ? {} : { stores: [] }) }
-                      : each,
-                  ),
-                },
-                () => actions.setFormat(owned.entryId, copy.id, format),
-              )
-            }
-            onStores={(copy, stores) =>
-              save(
-                {
-                  ...owned,
-                  copies: owned.copies.map((each) =>
-                    each.id === copy.id ? { ...each, stores } : each,
-                  ),
-                },
-                () => actions.setStores(owned.entryId, copy.id, stores),
-              )
-            }
-            onRemove={(copy) =>
-              save({ ...owned, copies: owned.copies.filter((each) => each.id !== copy.id) }, () =>
-                actions.removeCopy(owned.entryId, copy.id),
-              )
-            }
-            onAdd={(platformId, format, stores) =>
-              save(
-                {
-                  ...owned,
-                  copies: [
-                    ...owned.copies,
-                    { id: `new-${platformId}-${format}`, platformId, format, stores },
-                  ],
-                },
-                () =>
-                  actions.addCopy(owned.entryId, {
-                    platformId,
-                    format,
-                    ...(stores.length > 0 ? { stores } : {}),
-                  }),
-              )
-            }
-          />
-        ) : null}
-
-        <div className={mineGroupRuled}>
-          <TagsField
-            labelClassName={mineHeading}
-            value={owned.tags}
-            onChange={(tags) => void update({ tags }, { tags })}
-          />
-          <div className="grid gap-2">
-            <SavedField
-              label={game('notes')}
-              value={owned.notes ?? ''}
-              onSave={(text) => {
-                const notes = text.trim()
-                void update({ notes: notes || null }, { notes: notes || undefined })
-              }}
-            />
-            <label className="flex min-h-10 cursor-pointer items-center gap-3 text-sm">
-              <Switch
-                checked={owned.notesPublic}
-                onChange={(event) =>
-                  update(
-                    { notesPublic: event.target.checked },
-                    { notesPublic: event.target.checked },
-                  )
-                }
-              />
-              {t('notesPublic')}
-            </label>
           </div>
-        </div>
 
-        {/* Only I see it (spec 11.1); on a private shelf every game already is, and this waits for it to go public. */}
-        <div className={mineGroupRuled}>
-          <label className="flex cursor-pointer items-start gap-3 text-sm">
-            <Switch
-              className="mt-0.5"
-              checked={owned.private}
-              onChange={(event) =>
-                update({ private: event.target.checked }, { private: event.target.checked })
+          {owned.status === 'wishlist' && owned.platforms.length > 0 ? (
+            <fieldset className={mineGroupRuled}>
+              <legend className={cn(mineHeading, 'float-left mb-2')}>{t('wanted')}</legend>
+              <div className="clear-left flex flex-wrap gap-2">
+                {owned.platforms.map((platform) => (
+                  <ChoiceChip
+                    key={platform.id}
+                    type="checkbox"
+                    checked={owned.wanted.includes(platform.id)}
+                    onChange={(event) => {
+                      const wanted = event.target.checked
+                        ? [...owned.wanted, platform.id]
+                        : owned.wanted.filter((each) => each !== platform.id)
+                      // Off a PC, its stores go with it: the server does the same.
+                      const stores = wanted.some(isPcPlatform) ? {} : { wantedStores: [] }
+                      void update({ wanted }, { wanted, ...stores })
+                    }}
+                  >
+                    {platform.name}
+                  </ChoiceChip>
+                ))}
+              </div>
+              {owned.wanted.some(isPcPlatform) ? (
+                <StoresField
+                  labelClassName={mineHeading}
+                  soldOn={owned.soldOn}
+                  value={owned.wantedStores ?? []}
+                  onChange={(wantedStores) => void update({ wantedStores }, { wantedStores })}
+                />
+              ) : null}
+            </fieldset>
+          ) : null}
+
+          {/* On the wishlist, what I want takes the place of what I own, unless a copy is there already. */}
+          {owned.status !== 'wishlist' || owned.copies.length > 0 ? (
+            <Copies
+              owned={owned}
+              labels={labels}
+              platforms={owned.platforms}
+              preset={wasWanted}
+              presetStores={wasWantedStores}
+              onFormat={(copy, format) =>
+                save(
+                  {
+                    ...owned,
+                    copies: owned.copies.map((each) =>
+                      each.id === copy.id
+                        ? { ...each, format, ...(format === 'digital' ? {} : { stores: [] }) }
+                        : each,
+                    ),
+                  },
+                  () => actions.setFormat(owned.entryId, copy.id, format),
+                )
+              }
+              onStores={(copy, stores) =>
+                save(
+                  {
+                    ...owned,
+                    copies: owned.copies.map((each) =>
+                      each.id === copy.id ? { ...each, stores } : each,
+                    ),
+                  },
+                  () => actions.setStores(owned.entryId, copy.id, stores),
+                )
+              }
+              onRemove={(copy) =>
+                save({ ...owned, copies: owned.copies.filter((each) => each.id !== copy.id) }, () =>
+                  actions.removeCopy(owned.entryId, copy.id),
+                )
+              }
+              onAdd={(platformId, format, stores) =>
+                save(
+                  {
+                    ...owned,
+                    copies: [
+                      ...owned.copies,
+                      { id: `new-${platformId}-${format}`, platformId, format, stores },
+                    ],
+                  },
+                  () =>
+                    actions.addCopy(owned.entryId, {
+                      platformId,
+                      format,
+                      ...(stores.length > 0 ? { stores } : {}),
+                    }),
+                )
               }
             />
-            <span className="grid gap-0.5">
-              <span className="font-medium">{t('privateTitle')}</span>
-              <span className="text-pretty text-muted">{t('privateHint')}</span>
-            </span>
-          </label>
-        </div>
+          ) : null}
 
-        {owned.versions.length > 1 ? (
           <div className={mineGroupRuled}>
-            <Minor className={mineHeading}>{t('versions')}</Minor>
-            <ul className="grid gap-2">
-              {owned.versions.map((version) => {
-                const main = version.relation === 'primary'
-                const on = version.platforms.flatMap(
-                  (platform) => labels.get(platform)?.short ?? [],
-                )
-                return (
-                  <li key={version.gameId} className={mineCard}>
-                    <div className="flex items-start gap-3">
-                      <span
-                        aria-hidden="true"
-                        className="relative block w-12 flex-none overflow-hidden rounded-[3px] bg-text/8"
-                        style={{ aspectRatio: '3 / 4' }}
-                      >
-                        <Cover
-                          cover={version.cover}
-                          colors={version.colors}
-                          hash={version.hash}
-                          title={version.title}
-                          sizes="48px"
-                        />
-                      </span>
-                      <div className="grid min-w-0 flex-1 content-start gap-1.5">
-                        <p className="text-sm font-semibold text-pretty">{version.title}</p>
-                        <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                          <span
-                            className={cn(
-                              'rounded-full border px-2 py-0.5 font-medium',
-                              main ? 'border-accent text-accent' : 'border-line-strong',
-                            )}
-                          >
-                            {t(`relations.${version.relation}`)}
-                          </span>
-                          {version.year ? (
-                            <span className="readout text-[0.6875rem]">{version.year}</span>
+            <TagsField
+              labelClassName={mineHeading}
+              value={owned.tags}
+              onChange={(tags) => void update({ tags }, { tags })}
+            />
+            <div className="grid gap-2">
+              <SavedField
+                label={game('notes')}
+                value={owned.notes ?? ''}
+                onSave={(text) => {
+                  const notes = text.trim()
+                  void update({ notes: notes || null }, { notes: notes || undefined })
+                }}
+              />
+              <label className="flex min-h-10 cursor-pointer items-center gap-3 text-sm">
+                <Switch
+                  checked={owned.notesPublic}
+                  onChange={(event) =>
+                    update(
+                      { notesPublic: event.target.checked },
+                      { notesPublic: event.target.checked },
+                    )
+                  }
+                />
+                {t('notesPublic')}
+              </label>
+            </div>
+          </div>
+
+          {/* Only I see it (spec 11.1); on a private shelf every game already is, and this waits for it to go public. */}
+          <div className={mineGroupRuled}>
+            <label className="flex cursor-pointer items-start gap-3 text-sm">
+              <Switch
+                className="mt-0.5"
+                checked={owned.private}
+                onChange={(event) =>
+                  update({ private: event.target.checked }, { private: event.target.checked })
+                }
+              />
+              <span className="grid gap-0.5">
+                <span className="font-medium">{t('privateTitle')}</span>
+                <span className="text-pretty text-muted">{t('privateHint')}</span>
+              </span>
+            </label>
+          </div>
+
+          {owned.versions.length > 1 ? (
+            <div className={mineGroupRuled}>
+              <Minor className={mineHeading}>{t('versions')}</Minor>
+              <ul className="grid gap-2">
+                {owned.versions.map((version) => {
+                  const main = version.relation === 'primary'
+                  const on = version.platforms.flatMap(
+                    (platform) => labels.get(platform)?.short ?? [],
+                  )
+                  return (
+                    <li key={version.gameId} className={mineCard}>
+                      <div className="flex items-start gap-3">
+                        <span
+                          aria-hidden="true"
+                          className="relative block w-12 flex-none overflow-hidden rounded-[3px] bg-text/8"
+                          style={{ aspectRatio: '3 / 4' }}
+                        >
+                          <Cover
+                            cover={version.cover}
+                            colors={version.colors}
+                            hash={version.hash}
+                            title={version.title}
+                            sizes="48px"
+                          />
+                        </span>
+                        <div className="grid min-w-0 flex-1 content-start gap-1.5">
+                          <p className="text-sm font-semibold text-pretty">{version.title}</p>
+                          <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                            <span
+                              className={cn(
+                                'rounded-full border px-2 py-0.5 font-medium',
+                                main ? 'border-accent text-accent' : 'border-line-strong',
+                              )}
+                            >
+                              {t(`relations.${version.relation}`)}
+                            </span>
+                            {version.year ? (
+                              <span className="readout text-[0.6875rem]">{version.year}</span>
+                            ) : null}
+                          </p>
+                          {on.length > 0 ? (
+                            <p className="text-xs text-pretty text-muted">{on.join(' · ')}</p>
                           ) : null}
-                        </p>
-                        {on.length > 0 ? (
-                          <p className="text-xs text-pretty text-muted">{on.join(' · ')}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                    {main ? null : separating === version.gameId ? (
-                      <div
-                        role="group"
-                        aria-label={t('separate')}
-                        className="grid gap-3 border-t border-line pt-3"
-                      >
-                        <p className="text-sm text-pretty">
-                          {t('confirmSeparate', { title: version.title, main: owned.title })}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="primary" size="sm" onClick={() => separate(version)}>
-                            <SplitIcon aria-hidden="true" />
-                            {t('separateConfirm')}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSeparating(undefined)}
-                          >
-                            {t('keepTogether')}
-                          </Button>
                         </div>
                       </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            save(owned, () =>
-                              actions.update(owned.entryId, { mainVersion: version.gameId }),
-                            )
-                          }
+                      {main ? null : separating === version.gameId ? (
+                        <div
+                          role="group"
+                          aria-label={t('separate')}
+                          className="grid gap-3 border-t border-line pt-3"
                         >
-                          <StarIcon aria-hidden="true" />
-                          {t('makeMain')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          aria-expanded={false}
-                          onClick={() => setSeparating(version.gameId)}
-                        >
-                          <SplitIcon aria-hidden="true" />
-                          {t('separate')}
-                        </Button>
-                      </div>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ) : null}
+                          <p className="text-sm text-pretty">
+                            {t('confirmSeparate', { title: version.title, main: owned.title })}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button variant="primary" size="sm" onClick={() => separate(version)}>
+                              <SplitIcon aria-hidden="true" />
+                              {t('separateConfirm')}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSeparating(undefined)}
+                            >
+                              {t('keepTogether')}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              save(owned, () =>
+                                actions.update(owned.entryId, { mainVersion: version.gameId }),
+                              )
+                            }
+                          >
+                            <StarIcon aria-hidden="true" />
+                            {t('makeMain')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            aria-expanded={false}
+                            onClick={() => setSeparating(version.gameId)}
+                          >
+                            <SplitIcon aria-hidden="true" />
+                            {t('separate')}
+                          </Button>
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ) : null}
 
-        <div className="flex flex-wrap gap-2 border-t border-line pt-6">
-          {confirming ? (
-            <div role="group" aria-label={t('remove')} className="grid gap-3">
-              <p className="text-sm text-pretty">{t('confirmRemove', { title: owned.title })}</p>
-              <p className="text-sm text-pretty text-muted">{t('orArchive')}</p>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="primary" onClick={remove}>
-                  {t('confirm')}
-                </Button>
-                <Button variant="secondary" onClick={() => void archive()}>
+          <div className="flex flex-wrap gap-2 border-t border-line pt-6">
+            {confirming ? (
+              <div role="group" aria-label={t('remove')} className="grid gap-3">
+                <p className="text-sm text-pretty">{t('confirmRemove', { title: owned.title })}</p>
+                <p className="text-sm text-pretty text-muted">{t('orArchive')}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="primary" onClick={remove}>
+                    {t('confirm')}
+                  </Button>
+                  <Button variant="secondary" onClick={() => void archive()}>
+                    <ArchiveIcon aria-hidden="true" />
+                    {t('archive')}
+                  </Button>
+                  <Button variant="secondary" onClick={() => setConfirming(false)}>
+                    {t('keep')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => void archive()}>
                   <ArchiveIcon aria-hidden="true" />
                   {t('archive')}
                 </Button>
-                <Button variant="secondary" onClick={() => setConfirming(false)}>
-                  {t('keep')}
+                <Button variant="ghost" onClick={() => setConfirming(true)}>
+                  <Trash2Icon aria-hidden="true" />
+                  {t('remove')}
                 </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <Button variant="ghost" onClick={() => void archive()}>
-                <ArchiveIcon aria-hidden="true" />
-                {t('archive')}
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirming(true)}>
-                <Trash2Icon aria-hidden="true" />
-                {t('remove')}
-              </Button>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </MineFields>
     </section>
   )
 }

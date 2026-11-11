@@ -1,361 +1,297 @@
 'use client'
 
-import { ChevronLeftIcon, ChevronRightIcon, EyeIcon, XIcon } from 'lucide-react'
+import { ChevronLeftIcon, ChevronRightIcon, EyeIcon, MaximizeIcon, PlayIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { Dialog } from 'radix-ui'
-import { lazy, Suspense, useEffect, useRef, useState, type PointerEvent } from 'react'
+import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { GameImage, GameVideo } from '@/domain/igdb/game'
-import { imageUrl, screenshotSources } from '@/domain/igdb/images'
-import { Tip } from '@/ui/tooltip'
+import { screenshotSources } from '@/domain/igdb/images'
+import { galleryItems, videoPosterSources, type GalleryItem } from '@/domain/library/media'
+import {
+  autoplayPreference,
+  readPreference,
+  subscribeToPreferences,
+  writePreference,
+} from '@/features/library/preferences'
+import { Switch } from '@/ui/checkbox'
 
-/** How far a screenshot can be zoomed. */
-const MAX_ZOOM = 4
-/** What a double tap or a double click zooms to. */
-const TAP_ZOOM = 2.5
+import { useAllowsAutoplay } from './media-preferences'
 
+const VideoPlayer = lazy(() => import('./video-player'))
+const ScreenshotViewer = lazy(() =>
+  import('./screenshot-viewer').then((module) => ({ default: module.ScreenshotViewer })),
+)
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-type View = { scale: number; x: number; y: number }
-const AT_REST: View = { scale: 1, x: 0, y: 0 }
-
-/**
- * A screenshot's zoom, worked by two fingers, a double tap, a trackpad's
- * pinch or Ctrl and the wheel. Written straight to the image, frame by
- * frame: asking React to draw each step would lag the fingers.
- */
-function useZoom(onZoomed: (zoomed: boolean) => void) {
-  const view = useRef<View>(AT_REST)
-  const image = useRef<HTMLImageElement | null>(null)
-  const pointers = useRef(new Map<number, { x: number; y: number }>())
-  const gesture = useRef<
-    | { kind: 'pinch'; distance: number; mid: { x: number; y: number }; from: View }
-    | { kind: 'pan'; at: { x: number; y: number }; from: View }
-    | undefined
-  >(undefined)
-
-  /** The picture's frame, which the zoom does not move: the slide it fills. */
-  const frame = () => image.current?.parentElement?.getBoundingClientRect()
-
-  const apply = (next: View) => {
-    const element = image.current
-    const box = frame()
-    if (!element || !box) return
-    // The picture may not be dragged off the screen.
-    const limitX = (box.width * (next.scale - 1)) / 2
-    const limitY = (box.height * (next.scale - 1)) / 2
-    const clamped = {
-      scale: next.scale,
-      x: Math.max(-limitX, Math.min(limitX, next.x)),
-      y: Math.max(-limitY, Math.min(limitY, next.y)),
-    }
-    const zoomedBefore = view.current.scale > 1
-    view.current = clamped
-    element.style.transform = `translate(${clamped.x}px, ${clamped.y}px) scale(${clamped.scale})`
-    if (zoomedBefore !== clamped.scale > 1) onZoomed(clamped.scale > 1)
-  }
-
-  /**
-   * Zooms from `from` to `scale`, so that the point of the picture that was
-   * under `start` on the screen ends up under `end`. A point p of the picture,
-   * measured from its middle C, is drawn at C + (x, y) + scale * p.
-   */
-  const zoomTo = (
-    from: View,
-    scale: number,
-    start: { x: number; y: number },
-    end: { x: number; y: number },
-  ) => {
-    const box = frame()
-    if (!box) return
-    const target = Math.max(1, Math.min(MAX_ZOOM, scale))
-    const center = { x: box.left + box.width / 2, y: box.top + box.height / 2 }
-    const p = {
-      x: (start.x - center.x - from.x) / from.scale,
-      y: (start.y - center.y - from.y) / from.scale,
-    }
-    apply({ scale: target, x: end.x - center.x - target * p.x, y: end.y - center.y - target * p.y })
-  }
-
-  /** Zooms to `scale`, keeping the point under (x, y) where it is. */
-  const zoomAt = (scale: number, x: number, y: number) =>
-    zoomTo(view.current, scale, { x, y }, { x, y })
-
-  const reset = () => {
-    pointers.current.clear()
-    gesture.current = undefined
-    apply(AT_REST)
-  }
-
-  const points = () => [...pointers.current.values()]
-
-  const handlers = {
-    onPointerDown: (event: PointerEvent<HTMLElement>) => {
-      if (event.pointerType === 'mouse' && event.button !== 0) return
-      pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-      const [a, b] = points()
-      if (a && b) {
-        gesture.current = {
-          kind: 'pinch',
-          distance: Math.hypot(a.x - b.x, a.y - b.y),
-          mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
-          from: view.current,
-        }
-      } else if (a && view.current.scale > 1) {
-        gesture.current = { kind: 'pan', at: a, from: view.current }
-        event.currentTarget.setPointerCapture(event.pointerId)
-      }
-    },
-    onPointerMove: (event: PointerEvent<HTMLElement>) => {
-      if (!pointers.current.has(event.pointerId)) return
-      pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
-      const now = gesture.current
-      const [a, b] = points()
-      if (now?.kind === 'pinch' && a && b) {
-        // Two fingers both zoom and move: what was under them stays under them.
-        const distance = Math.hypot(a.x - b.x, a.y - b.y)
-        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
-        zoomTo(now.from, (now.from.scale * distance) / Math.max(1, now.distance), now.mid, mid)
-      } else if (now?.kind === 'pan' && a) {
-        apply({ ...now.from, x: now.from.x + a.x - now.at.x, y: now.from.y + a.y - now.at.y })
-      }
-    },
-    onPointerUp: (event: PointerEvent<HTMLElement>) => {
-      pointers.current.delete(event.pointerId)
-      gesture.current = undefined
-      // Let go almost at rest: back to rest.
-      if (view.current.scale < 1.05) apply(AT_REST)
-    },
-    onDoubleClick: (event: { clientX: number; clientY: number }) => {
-      if (view.current.scale > 1) apply(AT_REST)
-      else zoomAt(TAP_ZOOM, event.clientX, event.clientY)
-    },
-  }
-
-  const wheel = (event: WheelEvent) => {
-    // A trackpad's pinch arrives as the wheel with Ctrl held.
-    if (!event.ctrlKey) return
-    event.preventDefault()
-    zoomAt(view.current.scale * Math.exp(-event.deltaY / 100), event.clientX, event.clientY)
-  }
-
-  return { image, reset, handlers, wheel }
+const visiblePage = () => document.visibilityState === 'visible'
+const subscribePage = (listener: () => void) => {
+  document.addEventListener('visibilitychange', listener)
+  return () => document.removeEventListener('visibilitychange', listener)
 }
 
-type ViewerProps = {
-  shots: readonly GameImage[]
-  title: string
-  /** Which screenshot is open, or nothing. */
-  open?: number
-  onClose: () => void
-}
-
-/**
- * The screenshots, full screen: one at a time, swiped sideways or stepped
- * with the arrow keys, and zoomed with two fingers. Swiping is the browser's
- * own scrolling, snapped to each picture, so it feels as a phone's photos do.
- */
-function ScreenshotViewer({ shots, title, open, onClose }: ViewerProps) {
+/** The failed player gives its place back to a usable poster, without keeping a loading ghost. */
+export function MediaFailure() {
   const t = useTranslations('Game')
-  const track = useRef<HTMLDivElement>(null)
-  const [at, setAt] = useState(open ?? 0)
-  const [openedAt, setOpenedAt] = useState(open)
-  if (open !== openedAt) {
-    setOpenedAt(open)
-    if (open !== undefined) setAt(open)
-  }
-  const [zoomed, setZoomed] = useState(false)
-  const zoom = useZoom(setZoomed)
-
-  // The wheel listener must be able to stop the page zooming, so it is not passive.
-  useEffect(() => {
-    const element = track.current
-    if (!element || open === undefined) return
-    const onWheel = (event: WheelEvent) => zoom.wheel(event)
-    element.addEventListener('wheel', onWheel, { passive: false })
-    return () => element.removeEventListener('wheel', onWheel)
-  })
-
-  const go = (index: number) => {
-    const element = track.current
-    if (!element || index < 0 || index >= shots.length) return
-    zoom.reset()
-    element.scrollTo({
-      left: index * element.clientWidth,
-      behavior: reduced() ? 'instant' : 'smooth',
-    })
-  }
-
   return (
-    <Dialog.Root open={open !== undefined} onOpenChange={(next) => !next && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[60] bg-cinema/92 data-[state=open]:animate-fade-in" />
-        <Dialog.Content
-          className="shot-viewer fixed inset-0 z-[60] flex flex-col text-on-cinema outline-none data-[state=open]:animate-fade-in"
-          onOpenAutoFocus={() => {
-            // Opens at the screenshot chosen, with no slide to it. The viewer is in the page by now.
-            const element = track.current
-            if (element && open !== undefined) element.scrollLeft = open * element.clientWidth
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'ArrowLeft') go(at - 1)
-            else if (event.key === 'ArrowRight') go(at + 1)
-            else return
-            event.preventDefault()
-            // The game's panel around it steps through games on the same keys.
-            event.stopPropagation()
-          }}
-        >
-          <Dialog.Title className="sr-only">{t('viewerTitle', { title })}</Dialog.Title>
-          <Dialog.Description className="sr-only">{t('viewerHelp')}</Dialog.Description>
-          <div className="flex flex-none items-center justify-between gap-3 px-4 py-3">
-            <p className="readout text-[0.6875rem]" aria-live="polite">
-              {t('viewerCount', { at: at + 1, total: shots.length })}
-            </p>
-            <Tip label={t('viewerClose')}>
-              <Dialog.Close
-                aria-label={t('viewerClose')}
-                className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
-              >
-                <XIcon aria-hidden="true" className="size-5" />
-              </Dialog.Close>
-            </Tip>
-          </div>
-          <div
-            ref={track}
-            className="shot-track"
-            data-zoomed={zoomed ? '' : undefined}
-            onScroll={(event) => {
-              const element = event.currentTarget
-              const index = Math.round(element.scrollLeft / Math.max(1, element.clientWidth))
-              if (index !== at) {
-                zoom.reset()
-                setAt(index)
-              }
-            }}
-          >
-            {shots.map((shot, index) => (
-              <div key={shot.id} className="shot-slide" {...(index === at ? zoom.handlers : {})}>
-                {/* Straight from IGDB's servers, which resize them. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  ref={index === at ? zoom.image : undefined}
-                  alt={t('screenshotAlt', { at: index + 1, total: shots.length, title })}
-                  src={imageUrl(shot.id, '1080p')}
-                  srcSet={[
-                    `${imageUrl(shot.id, 'screenshot_big')} 889w`,
-                    `${imageUrl(shot.id, 'screenshot_huge')} 1280w`,
-                    `${imageUrl(shot.id, '1080p')} 1920w`,
-                  ].join(', ')}
-                  sizes="100vw"
-                  loading={Math.abs(index - at) <= 1 ? 'eager' : 'lazy'}
-                  decoding="async"
-                  draggable={false}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-none items-center justify-center gap-3 px-4 py-3 pointer-coarse:hidden">
-            <Tip label={t('viewerPrevious')}>
-              <button
-                type="button"
-                aria-label={t('viewerPrevious')}
-                disabled={at === 0}
-                onClick={() => go(at - 1)}
-                className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
-              >
-                <ChevronLeftIcon aria-hidden="true" className="size-5" />
-              </button>
-            </Tip>
-            <Tip label={t('viewerNext')}>
-              <button
-                type="button"
-                aria-label={t('viewerNext')}
-                disabled={at === shots.length - 1}
-                onClick={() => go(at + 1)}
-                className="inline-flex size-11 items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20 disabled:opacity-40"
-              >
-                <ChevronRightIcon aria-hidden="true" className="size-5" />
-              </button>
-            </Tip>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <p role="status" className="gallery-error">
+      {t('galleryFailed')}
+    </p>
   )
 }
 
-const VideoPlayer = lazy(() => import('./video-player'))
-
-/** The player's own place over the page, for the moment before its dialog says what it is. */
-function VideoGhost() {
+/** Shared with the navigation drawing: the selected frame and rail reserve their real geometry. */
+export function MediaSkeleton() {
   return (
-    <div
-      aria-hidden="true"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-cinema/92 px-4 pb-6"
-    >
-      <span className="ghost aspect-video w-full max-w-6xl rounded-case bg-on-cinema/10" />
+    <div aria-hidden="true" className="game-gallery">
+      <div className="gallery-stage ghost" />
+      <div className="flex gap-2 overflow-hidden">
+        {[0, 1, 2, 3].map((index) => (
+          <span key={index} className="gallery-thumb ghost" />
+        ))}
+      </div>
+      <span className="ghost h-6 w-44 rounded-control" />
     </div>
   )
 }
 
-/**
- * A game's videos and screenshots, in one strip that scrolls sideways
- * (spec 7.1): videos first, each on one of the game's own pictures with a
- * play button, then the screenshots. No scrollbar: an edge with more past it
- * fades, and an arrow there moves the strip on a pointer that can hover.
- */
-export function Screenshots({
+function Picture({
+  item,
+  large,
+  fallback,
+}: {
+  item: GalleryItem
+  large?: boolean
+  fallback?: GameImage
+}) {
+  const [failed, setFailed] = useState(false)
+  const sizes = large ? '(min-width: 80rem) 900px, (min-width: 40rem) 80vw, 100vw' : '128px'
+  if (item.kind === 'video' && !failed)
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- The first-party optimizer resizes these public posters.
+      <img
+        alt=""
+        {...videoPosterSources(item.video.id)}
+        width={480}
+        height={360}
+        className="gallery-video-image"
+        sizes={sizes}
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailed(true)}
+      />
+    )
+  const shot = item.kind === 'shot' ? item.shot : fallback
+  if (!shot) return null
+  // These files are already resized by their source. Only YouTube's public posters need a first-party proxy.
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      alt=""
+      {...screenshotSources(shot.id)}
+      sizes={sizes}
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+    />
+  )
+}
+
+function VideoStage({
+  item,
+  title,
+  automatic,
+  manual,
+  visible,
+  hidden,
+  reveal,
+  fallback,
+}: {
+  item: Extract<GalleryItem, { kind: 'video' }>
+  title: string
+  automatic: boolean
+  manual: boolean
+  visible: boolean
+  hidden: boolean
+  reveal: () => void
+  fallback?: GameImage
+}) {
+  const t = useTranslations('Game')
+  const [intent, setIntent] = useState<'idle' | 'manual' | 'auto' | 'paused'>(
+    manual ? 'manual' : 'idle',
+  )
+  const [failed, setFailed] = useState(false)
+  if (intent === 'idle' && automatic && visible && !hidden) setIntent('auto')
+  const name = t('galleryVideoName', { number: item.number, name: item.video.name ?? t('video') })
+  const playing = visible && !hidden && (intent === 'manual' || (intent === 'auto' && automatic))
+  return (
+    <>
+      {intent !== 'idle' && !hidden && !failed ? (
+        <Suspense fallback={<div className="ghost absolute inset-0" />}>
+          <VideoPlayer
+            video={item.video}
+            title={title}
+            playing={playing}
+            visible={visible}
+            focusOnReady={intent === 'manual'}
+            onPaused={() => setIntent('paused')}
+            onPlaying={() => setIntent((now) => (now === 'paused' ? 'manual' : now))}
+            onFailed={() => {
+              setFailed(true)
+              setIntent('paused')
+            }}
+          />
+        </Suspense>
+      ) : (
+        <button
+          type="button"
+          className="gallery-poster"
+          data-adult={hidden ? 'hidden' : undefined}
+          aria-label={hidden ? t('galleryAdult', { title }) : t('galleryPlay', { name, title })}
+          onClick={() => {
+            if (hidden) reveal()
+            else {
+              setFailed(false)
+              setIntent('manual')
+            }
+          }}
+        >
+          <Picture item={item} large fallback={fallback} />
+          <span className="gallery-play" aria-hidden="true">
+            {hidden ? <EyeIcon /> : <PlayIcon />}
+          </span>
+          <span className="gallery-caption">{hidden ? t('adultMark') : name}</span>
+        </button>
+      )}
+      {failed ? <MediaFailure /> : null}
+    </>
+  )
+}
+
+/** A new game resets selection, explicit reveals and a manual pause, while the device choice stays. */
+export function Screenshots(props: {
+  game?: string
+  shots: readonly GameImage[]
+  videos?: readonly GameVideo[]
+  title: string
+  adult?: boolean
+}) {
+  return <Gallery key={props.game ?? props.title} {...props} />
+}
+
+function Gallery({
   shots,
   videos = [],
   title,
+  adult = false,
 }: {
   shots: readonly GameImage[]
   videos?: readonly GameVideo[]
   title: string
+  adult?: boolean
 }) {
   const t = useTranslations('Game')
+  const items = galleryItems(shots, videos)
+  const [at, setAt] = useState(0)
+  const [request, setRequest] = useState(0)
   const [open, setOpen] = useState<number>()
-  const [playing, setPlaying] = useState<GameVideo>()
-  // Asked once a game, and of this game only: the panel steps from game to game with this kept.
-  const [shownFor, setShownFor] = useState<string>()
-  const adultShown = shownFor === title
-  // The viewer holds only what I have let be seen, so a swipe can't arrive at the rest.
-  const seen = adultShown ? shots : shots.filter((shot) => !shot.mature)
-  const strip = useRef<HTMLUListElement>(null)
+  const [viewerAsked, setViewerAsked] = useState(false)
+  const autoplayHint = useId()
+  const [adultShown, setAdultShown] = useState(false)
+  const [inView, setInView] = useState(false)
   const [edges, setEdges] = useState({ before: false, after: false })
-
-  // Which ends have more past them: on scrolling, and whenever the strip's width changes.
+  const stage = useRef<HTMLDivElement>(null)
+  const strip = useRef<HTMLUListElement>(null)
+  const activePage = useSyncExternalStore(subscribePage, visiblePage, () => false)
+  const allows = useAllowsAutoplay()
+  const choice = useSyncExternalStore(
+    subscribeToPreferences,
+    () => readPreference(autoplayPreference),
+    () => 'off' as const,
+  )
+  const selected = items[Math.min(at, items.length - 1)]
+  useEffect(() => {
+    const element = stage.current
+    if (!element || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView((entry?.intersectionRatio ?? 0) >= 0.6),
+      { threshold: [0, 0.6] },
+    )
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
   useEffect(() => {
     const element = strip.current
     if (!element) return
-    const measure = () => {
-      const before = element.scrollLeft > 4
-      const after = element.scrollLeft + element.clientWidth < element.scrollWidth - 4
-      setEdges((now) => (now.before === before && now.after === after ? now : { before, after }))
-    }
+    const measure = () =>
+      setEdges({
+        before: element.scrollLeft > 4,
+        after: element.scrollLeft + element.clientWidth < element.scrollWidth - 4,
+      })
     measure()
     element.addEventListener('scroll', measure, { passive: true })
-    const resized = new ResizeObserver(measure)
-    resized.observe(element)
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
     return () => {
       element.removeEventListener('scroll', measure)
-      resized.disconnect()
+      observer.disconnect()
     }
   }, [])
-
-  const step = (direction: 1 | -1) => {
-    const element = strip.current
-    if (!element) return
-    element.scrollBy({
-      left: direction * element.clientWidth * 0.8,
+  if (!selected) return null
+  const seen = adultShown ? shots : shots.filter((shot) => !shot.mature)
+  const hidden = !adultShown && (selected.kind === 'shot' ? selected.shot.mature === true : adult)
+  const select = (index: number) => {
+    setAt(index)
+    setRequest((now) => now + 1)
+  }
+  const label = (item: GalleryItem) =>
+    item.kind === 'video'
+      ? t('galleryVideoName', { number: item.number, name: item.video.name ?? t('video') })
+      : t('galleryShotName', { number: item.number })
+  const step = (direction: -1 | 1) =>
+    strip.current?.scrollBy({
+      left: direction * strip.current.clientWidth * 0.8,
       behavior: reduced() ? 'instant' : 'smooth',
     })
-  }
-
-  const total = videos.length + shots.length
   return (
-    <>
+    <div className="game-gallery">
+      <div ref={stage} className="gallery-stage" data-adult={hidden ? 'hidden' : undefined}>
+        {selected.kind === 'video' ? (
+          <VideoStage
+            key={`${selected.video.id}:${request}`}
+            item={selected}
+            title={title}
+            automatic={choice === 'on' && allows}
+            manual={request > 0}
+            visible={inView && activePage}
+            hidden={hidden}
+            reveal={() => setAdultShown(true)}
+            fallback={shots.find((shot) => !shot.mature)}
+          />
+        ) : (
+          <button
+            type="button"
+            className="gallery-poster"
+            aria-label={
+              hidden
+                ? t('screenshotAdult', { at: selected.number, total: shots.length, title })
+                : t('screenshotOpen', { at: selected.number, total: shots.length, title })
+            }
+            onClick={() => {
+              if (hidden) setAdultShown(true)
+              else {
+                setViewerAsked(true)
+                setOpen(seen.indexOf(selected.shot))
+              }
+            }}
+          >
+            <Picture item={selected} large />
+            <span className="gallery-caption">{label(selected)}</span>
+            <span className="gallery-expand" aria-hidden="true">
+              {hidden ? <EyeIcon /> : <MaximizeIcon />}
+              {hidden ? t('adultMark') : t('galleryFullscreen')}
+            </span>
+          </button>
+        )}
+      </div>
       <div
         className="media-strip"
         data-before={edges.before ? '' : undefined}
@@ -371,66 +307,53 @@ export function Screenshots({
         >
           <ChevronLeftIcon aria-hidden="true" className="size-5" />
         </button>
-        <ul ref={strip} className="shot-strip">
-          {videos.map((video, index) => {
-            const picture = shots[index % Math.max(1, shots.length)]
-            const name = video.name ?? t('video')
-            return (
-              <li key={video.id}>
-                <button
-                  type="button"
-                  className="shot-thumb media-video"
-                  aria-label={t('videoOpen', { name, at: index + 1, total, title })}
-                  onClick={() => setPlaying(video)}
-                >
-                  {picture ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      alt=""
-                      {...screenshotSources(picture.id)}
-                      sizes="(min-width: 40rem) 224px, 176px"
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                    />
-                  ) : null}
-                  <span className="media-play" aria-hidden="true">
-                    <span />
-                  </span>
-                  <span className="media-name" aria-hidden="true">
-                    {name}
-                  </span>
-                </button>
-              </li>
+        {/* The rail delegates arrow keys from its buttons; it is not a focus target itself. */}
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+        <ul
+          ref={strip}
+          className="shot-strip"
+          aria-label={t('media')}
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+            event.preventDefault()
+            event.stopPropagation()
+            const next = Math.max(
+              0,
+              Math.min(items.length - 1, at + (event.key === 'ArrowRight' ? 1 : -1)),
             )
-          })}
-          {shots.map((shot, index) => {
-            const hidden = shot.mature && !adultShown
-            const place = { at: videos.length + index + 1, total, title }
+            if (next === at) return
+            select(next)
+            strip.current?.querySelectorAll('button')[next]?.focus()
+          }}
+        >
+          {items.map((item, index) => {
+            const mature = item.kind === 'shot' ? item.shot.mature : adult
+            const blurred = mature && !adultShown
             return (
-              <li key={shot.id}>
+              <li key={item.kind === 'video' ? `video-${item.video.id}` : `shot-${item.shot.id}`}>
                 <button
                   type="button"
-                  className="shot-thumb"
-                  data-adult={shot.mature ? (hidden ? 'hidden' : 'shown') : undefined}
-                  aria-label={t(hidden ? 'screenshotAdult' : 'screenshotOpen', place)}
+                  className="gallery-thumb"
+                  aria-pressed={at === index}
+                  aria-label={
+                    blurred
+                      ? t('galleryAdult', { title }) + ': ' + label(item)
+                      : t('gallerySelect', { name: label(item), title })
+                  }
+                  data-adult={mature ? (blurred ? 'hidden' : 'shown') : undefined}
                   onClick={() => {
-                    if (hidden) setShownFor(title)
-                    else setOpen(seen.indexOf(shot))
+                    if (blurred) setAdultShown(true)
+                    select(index)
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt=""
-                    {...screenshotSources(shot.id)}
-                    sizes="(min-width: 40rem) 224px, 176px"
-                    loading="lazy"
-                    decoding="async"
-                    draggable={false}
-                  />
-                  {shot.mature ? (
+                  <Picture item={item} fallback={shots.find((shot) => !shot.mature)} />
+                  {item.kind === 'video' ? (
+                    <PlayIcon className="gallery-thumb-play" aria-hidden="true" />
+                  ) : null}
+                  <span className="gallery-thumb-name">{label(item)}</span>
+                  {mature ? (
                     <span className="shot-adult" aria-hidden="true">
-                      {hidden ? <EyeIcon className="size-4" /> : null}
+                      {blurred ? <EyeIcon className="size-4" /> : null}
                       {t('adultMark')}
                     </span>
                   ) : null}
@@ -450,12 +373,42 @@ export function Screenshots({
           <ChevronRightIcon aria-hidden="true" className="size-5" />
         </button>
       </div>
-      <ScreenshotViewer shots={seen} title={title} open={open} onClose={() => setOpen(undefined)} />
-      {playing ? (
-        <Suspense fallback={<VideoGhost />}>
-          <VideoPlayer video={playing} title={title} onClose={() => setPlaying(undefined)} />
+      {videos.length ? (
+        <div className="gallery-settings">
+          <label className="flex min-h-6 items-center gap-2 text-sm">
+            <Switch
+              aria-describedby={autoplayHint}
+              checked={choice === 'on'}
+              onChange={(event) =>
+                writePreference(autoplayPreference, event.currentTarget.checked ? 'on' : 'off')
+              }
+            />
+            <span>{t('galleryAutoplay')}</span>
+          </label>
+          <p id={autoplayHint} className="text-xs text-muted">
+            {t(allows ? 'galleryAutoplayHint' : 'galleryCalmHint')}
+          </p>
+        </div>
+      ) : null}
+      {viewerAsked ? (
+        <Suspense
+          fallback={
+            <div
+              aria-hidden="true"
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-cinema/92 p-4"
+            >
+              <span className="ghost aspect-video w-full max-w-6xl rounded-case" />
+            </div>
+          }
+        >
+          <ScreenshotViewer
+            shots={seen}
+            title={title}
+            open={open}
+            onClose={() => setOpen(undefined)}
+          />
         </Suspense>
       ) : null}
-    </>
+    </div>
   )
 }

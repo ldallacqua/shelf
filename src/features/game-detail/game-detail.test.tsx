@@ -290,10 +290,15 @@ describe('Screenshots', () => {
     )
     await userEvent.click(
       screen.getByRole('button', {
+        name: 'Show Screenshot 2 from Bloodborne',
+      }),
+    )
+    await userEvent.click(
+      screen.getByRole('button', {
         name: 'Screenshot 2 of 3 from Bloodborne: open it full screen',
       }),
     )
-    const viewer = screen.getByRole('dialog', { name: 'Screenshots from Bloodborne' })
+    const viewer = await screen.findByRole('dialog', { name: 'Screenshots from Bloodborne' })
     expect(viewer).toHaveTextContent('2 of 3')
     expect(within(viewer).getAllByRole('img')).toHaveLength(3)
     await userEvent.keyboard('{ArrowRight}')
@@ -317,23 +322,18 @@ describe('Screenshots', () => {
     expect(screen.getByRole('heading', { name: 'Videos and screenshots' })).toBeInTheDocument()
     const strip = document.querySelector<HTMLElement>('.shot-strip')!
     const tiles = within(strip).getAllByRole('button')
-    expect(tiles[0]).toHaveAccessibleName('Play Gameplay Trailer, 1 of 5, Bloodborne')
-    expect(tiles[1]).toHaveAccessibleName('Play Video, 2 of 5, Bloodborne')
-    expect(tiles[2]).toHaveAccessibleName(/^Screenshot 3 of 5 from Bloodborne/)
+    expect(tiles[0]).toHaveAccessibleName('Show Gameplay Trailer · 1 from Bloodborne')
+    expect(tiles[1]).toHaveAccessibleName('Show Video · 2 from Bloodborne')
+    expect(tiles[2]).toHaveAccessibleName('Show Screenshot 1 from Bloodborne')
     // Nothing from YouTube until a video is pressed: its tile is the game's own screenshot.
     expect(document.querySelector('iframe')).toBeNull()
     expect(tiles[0]!.querySelector('img')).toHaveAttribute(
       'src',
-      expect.stringContaining('images.igdb.com'),
+      expect.stringContaining('/_next/image?'),
     )
 
-    await userEvent.click(tiles[0]!)
-    const player = await screen.findByRole('dialog', { name: 'Gameplay Trailer: Bloodborne' })
-    expect(within(player).getByTitle('Gameplay Trailer: Bloodborne')).toHaveAttribute(
-      'src',
-      'https://www.youtube-nocookie.com/embed/2UJxaWZoK6Y?autoplay=1&rel=0&playsinline=1',
-    )
-    await userEvent.keyboard('{Escape}')
+    await userEvent.click(tiles[2]!)
+    expect(document.querySelector('script[src*="youtube"]')).toBeNull()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 

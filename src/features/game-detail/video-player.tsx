@@ -1,81 +1,126 @@
 'use client'
 
-import { XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { Dialog } from 'radix-ui'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { GameVideo } from '@/domain/igdb/game'
 import { Ghost } from '@/ui/ghost'
-import { Tip } from '@/ui/tooltip'
 
-/**
- * A game's video, played over the page (spec 7.1). Its code and YouTube's
- * player load only now, when it is pressed: the strip shows the game's own
- * pictures, so nothing reaches YouTube before. YouTube's privacy-enhanced
- * address keeps it from setting cookies until the video plays.
- */
+import { galleryPlaying } from './media-focus'
+import { loadYoutube, type YoutubePlayer } from './youtube'
+
+/** One inline player, created only after a press or a saved autoplay choice. YouTube keeps its controls. */
 export default function VideoPlayer({
   video,
   title,
-  onClose,
+  playing,
+  visible,
+  focusOnReady = false,
+  onPaused,
+  onPlaying,
+  onFailed,
 }: {
-  video: GameVideo | undefined
+  video: GameVideo
   title: string
-  onClose: () => void
+  playing: boolean
+  visible: boolean
+  focusOnReady?: boolean
+  onPaused: () => void
+  onPlaying: () => void
+  onFailed: () => void
 }) {
   const t = useTranslations('Game')
-  const name = video?.name ?? t('video')
-  // YouTube's player takes a moment of its own to arrive: a ghost holds its place until it does.
-  const [arrived, setArrived] = useState(false)
+  const frame = useRef<HTMLDivElement>(null)
+  const player = useRef<YoutubePlayer | undefined>(undefined)
+  const owner = useRef(Symbol())
+  const [ready, setReady] = useState(false)
+  const latest = useRef({ playing, visible, focusOnReady, onPaused, onPlaying, onFailed })
+  useEffect(() => {
+    latest.current = { playing, visible, focusOnReady, onPaused, onPlaying, onFailed }
+  }, [playing, visible, focusOnReady, onPaused, onPlaying, onFailed])
+  const commandedPause = useRef(false)
+  const restored = useRef(false)
+
+  useEffect(() => {
+    let current = true
+    const container = frame.current!
+    const slot = document.createElement('div')
+    container.append(slot)
+    const token = owner.current
+    const failed = () => {
+      if (current) latest.current.onFailed()
+    }
+    const timer = window.setTimeout(failed, 25_000)
+    void loadYoutube()
+      .then((api) => {
+        if (!current) return
+        player.current = new api.Player(slot, {
+          host: 'https://www.youtube-nocookie.com',
+          videoId: video.id,
+          width: '100%',
+          height: '100%',
+          playerVars: { playsinline: 1, rel: 0, origin: window.location.origin },
+          events: {
+            onReady: ({ target }) => {
+              if (!current) return
+              window.clearTimeout(timer)
+              target.getIframe().title = t('videoTitle', { name: video.name ?? t('video'), title })
+              target.mute()
+              setReady(true)
+              if (restored.current) latest.current.onPaused()
+              else if (latest.current.playing) {
+                target.playVideo()
+                if (latest.current.focusOnReady) target.getIframe().focus({ preventScroll: true })
+              }
+            },
+            onStateChange: ({ data }) => {
+              if (!current) return
+              if (data === 1 && !latest.current.visible) {
+                commandedPause.current = true
+                player.current?.pauseVideo()
+                galleryPlaying(token, false)
+                return
+              }
+              galleryPlaying(token, data === 1)
+              if (data === 1) {
+                commandedPause.current = false
+                latest.current.onPlaying()
+              }
+              // A pause from the player's own controls must survive scrolling and redraws.
+              if (data === 0 || (data === 2 && !commandedPause.current)) latest.current.onPaused()
+              if (data === 2) commandedPause.current = false
+            },
+            onError: failed,
+            onAutoplayBlocked: failed,
+          },
+        })
+      })
+      .catch(failed)
+    return () => {
+      current = false
+      window.clearTimeout(timer)
+      restored.current = true
+      galleryPlaying(token, false)
+      player.current?.destroy()
+      player.current = undefined
+      container.replaceChildren()
+    }
+  }, [video.id, video.name, title, t])
+
+  useEffect(() => {
+    if (!ready || !player.current) return
+    if (playing) player.current.playVideo()
+    else {
+      commandedPause.current = true
+      player.current.pauseVideo()
+      galleryPlaying(owner.current, false)
+    }
+  }, [playing, ready])
+
   return (
-    <Dialog.Root open={video !== undefined} onOpenChange={(next) => !next && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[60] bg-cinema/92 data-[state=open]:animate-fade-in" />
-        <Dialog.Content
-          className="fixed inset-0 z-[60] flex flex-col text-on-cinema outline-none data-[state=open]:animate-fade-in"
-          onKeyDown={(event) => {
-            // The game's panel around it steps through games on these keys.
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') event.stopPropagation()
-          }}
-        >
-          <div className="flex flex-none items-center justify-between gap-3 px-4 py-3">
-            <Dialog.Title className="min-w-0 truncate text-sm font-semibold">
-              {t('videoTitle', { name, title })}
-            </Dialog.Title>
-            <Tip label={t('viewerClose')}>
-              <Dialog.Close
-                aria-label={t('viewerClose')}
-                className="inline-flex size-11 flex-none items-center justify-center rounded-full bg-on-cinema/10 hover:bg-on-cinema/20"
-              >
-                <XIcon aria-hidden="true" className="size-5" />
-              </Dialog.Close>
-            </Tip>
-          </div>
-          <Dialog.Description className="sr-only">{t('videoFrom')}</Dialog.Description>
-          <div className="flex min-h-0 flex-1 items-center justify-center px-4 pb-6">
-            {video ? (
-              <div className="relative aspect-video max-h-full w-full max-w-6xl">
-                {arrived ? null : (
-                  <Ghost className="absolute inset-0 rounded-case bg-on-cinema/10" />
-                )}
-                <iframe
-                  key={video.id}
-                  // A frame's title is its name for a screen reader; browsers show it as no tooltip.
-                  // eslint-disable-next-line react/forbid-dom-props
-                  title={t('videoTitle', { name, title })}
-                  src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&playsinline=1`}
-                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  onLoad={() => setArrived(true)}
-                  className="absolute inset-0 size-full rounded-case"
-                />
-              </div>
-            ) : null}
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <div className="gallery-player">
+      {!ready ? <Ghost className="absolute inset-0 rounded-case" /> : null}
+      <div ref={frame} className="absolute inset-0" />
+    </div>
   )
 }

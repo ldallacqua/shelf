@@ -33,6 +33,8 @@ const contentSecurityPolicy = Object.entries({
     "'self'",
     "'unsafe-inline'",
     ...(development ? ["'unsafe-eval'"] : []),
+    // Loaded only after a video is pressed, or desktop autoplay is explicitly chosen.
+    'https://www.youtube.com',
     ...toolbar('https://vercel.live'),
   ],
   'style-src': ["'self'", "'unsafe-inline'", ...toolbar('https://vercel.live')],
@@ -54,7 +56,7 @@ const contentSecurityPolicy = Object.entries({
     'http://ipc.localhost',
     ...toolbar('https://vercel.live', 'wss://ws-us3.pusher.com'),
   ],
-  // A game's video, once pressed (spec 7.1): YouTube's privacy-enhanced player, nothing else.
+  // A game's video, once pressed or desktop autoplay is chosen: the privacy-enhanced player.
   'frame-src': ['https://www.youtube-nocookie.com', ...toolbar('https://vercel.live')],
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
@@ -81,6 +83,12 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  images: {
+    // Only public video posters are proxied: a visitor's browser never reaches YouTube for an image.
+    remotePatterns: [
+      { protocol: 'https', hostname: 'i.ytimg.com', pathname: '/vi/*/hqdefault.jpg', search: '' },
+    ],
+  },
   async headers() {
     // Not on Next.js's own script, style and font files: a policy governs a
     // page, and on every one of those files it was 600 bytes for nothing.

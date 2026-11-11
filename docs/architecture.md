@@ -902,6 +902,13 @@ list reacting to filter changes.
 
 ## 20. Security
 
+The inline game gallery (11 Nov 2026, spec 7.1) loads YouTube's iframe API only after a press or an
+explicit remembered desktop autoplay choice. `script-src` permits its official `www.youtube.com`
+host; `frame-src` stays limited to the privacy-enhanced player. Public video posters use Next's
+image service with one exact remote host/path pattern, `i.ytimg.com/vi/*/hqdefault.jpg`, so no visitor's
+browser contacts that host for an image. Unavailable posters fall back to a game's permitted screenshot.
+No new catalog column, write service or administrative backfill is involved.
+
 | Concern | Design |
 | --- | --- |
 | Secrets | In `.env.local` here and in Vercel's settings in production. Never in git, logs, summaries or chat. `.env.example` holds names only. |

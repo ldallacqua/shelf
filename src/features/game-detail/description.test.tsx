@@ -121,7 +121,7 @@ describe('a store description', () => {
   it('leaves About to IGDB’s words for a game without one', () => {
     draw({})
     const section = within(about())
-    expect(section.getByText('A keeper and a lighthouse.')).toBeInTheDocument()
+    expect(screen.getByText('A keeper and a lighthouse.').closest('header')).not.toBeNull()
     expect(section.getByText('The light went out in spring.')).toBeInTheDocument()
   })
 
@@ -145,7 +145,8 @@ describe('a store description', () => {
   it('is led by the summary when it is only pictures with their words drawn in', () => {
     draw({ description: [{ kind: 'picture', id: `${FILES}/a.avif`, width: 780, height: 300 }] })
     const section = within(about())
-    expect(section.getByText('A keeper and a lighthouse.').tagName).toBe('P')
+    expect(section.queryByText('A keeper and a lighthouse.')).toBeNull()
+    expect(screen.getByText('A keeper and a lighthouse.').closest('header')).not.toBeNull()
     expect(about().querySelector('img')).not.toBeNull()
   })
 

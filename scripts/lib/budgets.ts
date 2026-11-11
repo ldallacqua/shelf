@@ -34,7 +34,11 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // A game opened from the shelf (ADR 009, 9 Nov 2026): measured 216.03 KB, from 215.99. The
   // line across the top, on every page, follows a game chosen on the shelf as it follows a
   // link (`navigationStarted`): the budget had no room left for its listener.
-  { path: '/en', name: 'Home', kilobytes: 216.5 },
+  // Game media (11 Nov 2026): 221.2 KB, from 216.0. The landing page now demonstrates the real
+  // screenshot gallery. Its full-screen viewer and video player stay lazy; posters use plain
+  // first-party image URLs rather than shipping Next's interactive Image component. The game's
+  // own page fell to 231.7 KB (within its unchanged 234 KB budget).
+  { path: '/en', name: 'Home', kilobytes: 222 },
   // Step 3: measured 228.9 KB. The shell (191 KB), plus 38 KB for the library
   // itself: the shelf, the wall and the list, the sheet a game opens in, the
   // address state, and the decoder for the blurred cover previews.
