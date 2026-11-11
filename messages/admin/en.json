@@ -1,0 +1,78 @@
+{
+  "Admin": {
+    "metaTitle": "Admin",
+    "title": "Admin",
+    "intro": "Run Shelf’s jobs now, on the server, instead of waiting for the night’s run. A long job carries on by itself, a few minutes at a time, until it’s done.",
+    "checking": "Opening the admin page",
+    "lock": "Lock",
+    "locked": {
+      "label": "Password",
+      "unlock": "Unlock",
+      "unlocking": "Unlocking…",
+      "wrong": "That isn’t the password.",
+      "failed": "The server didn’t answer. Try again."
+    },
+    "off": "The admin page is off on this server: it has no ADMIN_PASSWORD.",
+    "jobs": {
+      "title": "Jobs",
+      "run": "Run",
+      "starting": "Starting…",
+      "running": "Running",
+      "failed": "It didn’t start: the server didn’t answer."
+    },
+    "job": {
+      "steam-pages-new": {
+        "name": "Steam pages of new games",
+        "what": "Reads the store page of each game on Steam that was never read: its cover, art, screenshots and description."
+      },
+      "steam-pages": {
+        "name": "Every Steam page",
+        "what": "Reads every game’s store page on Steam again, for covers or screenshots that changed there."
+      },
+      "steam-reviews": {
+        "name": "Steam scores",
+        "what": "Reads what Steam’s players say of every game sold there."
+      },
+      "igdb": {
+        "name": "IGDB records",
+        "what": "Asks IGDB about every game again, and keeps what changed."
+      },
+      "sync": {
+        "name": "Daily sync",
+        "what": "Syncs every Steam and Nintendo account that syncs each day, as the night’s run does."
+      },
+      "everything": {
+        "name": "Everything",
+        "what": "IGDB records, then Steam scores, then every Steam page."
+      }
+    },
+    "facts": {
+      "neverRead": "{count, plural, =0 {Every page read} one {# page never read} other {# pages never read}}",
+      "onSteam": "{count, plural, one {# game on Steam} other {# games on Steam}}",
+      "records": "{count, plural, one {# record} other {# records}}, the oldest asked {when}",
+      "noRecords": "No records yet",
+      "linked": "{count, plural, =0 {No account syncs daily} one {# account syncs daily} other {# accounts sync daily}}"
+    },
+    "runs": {
+      "title": "Runs",
+      "empty": "Nothing has run from here yet.",
+      "stop": "Stop",
+      "stopping": "Stopping…",
+      "started": "Started {when}",
+      "took": "took {duration}",
+      "sofar": "{duration} so far",
+      "counts": "{checked, number} read · {changed, number} changed",
+      "steps": "{count, plural, one {# step} other {# steps}}",
+      "state": {
+        "running": "Running",
+        "done": "Done",
+        "failed": "Failed",
+        "stopped": "Stopped",
+        "stale": "Not answering"
+      },
+      "stale": "No step has reported for ten minutes, so a request may have died. Run it again.",
+      "ended": "{job}: {state}"
+    },
+    "duration": "{minutes, plural, =0 {under a minute} one {# minute} other {# minutes}}"
+  }
+}

@@ -1,3 +1,4 @@
+import type adminMessages from './messages/admin/en.json'
 import type appMessages from './messages/app/en.json'
 import type messages from './messages/en.json'
 import type { routing } from './src/i18n/routing'
@@ -6,6 +7,6 @@ import type { routing } from './src/i18n/routing'
 declare module 'next-intl' {
   interface AppConfig {
     Locale: (typeof routing.locales)[number]
-    Messages: typeof messages & typeof appMessages
+    Messages: typeof messages & typeof appMessages & typeof adminMessages
   }
 }

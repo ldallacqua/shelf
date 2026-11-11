@@ -2,7 +2,7 @@ import 'server-only'
 
 import { after } from 'next/server'
 import { revalidateTag } from 'next/cache'
-import { and, asc, eq, inArray, isNotNull, isNull, like, or, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNotNull, isNull, like, lt, or, sql } from 'drizzle-orm'
 
 import type { Palette } from '@/domain/color/palette'
 import type { GameImage } from '@/domain/igdb/game'
@@ -95,6 +95,35 @@ const pageOf = (item: StoreGame) => {
 const pickPage = (apps: readonly string[], found: ReadonlyMap<string, StoreGame>) =>
   apps.map((app) => found.get(app)).find((item) => item !== undefined && isStoreGame(item))
 
+/** A game IGDB has with a page on Steam, as far as its record says. */
+const onSteam = and(
+  isNotNull(games.igdbId),
+  or(like(games.storeIds, '%"steam"%'), like(games.storeLinks, '%"steam"%')),
+)
+
+/** Pages never read; with a time, also those last read before it. */
+const unreadSince = (before: number | undefined) =>
+  before === undefined
+    ? isNull(games.steamPageCheckedAt)
+    : before === Infinity
+      ? undefined
+      : or(isNull(games.steamPageCheckedAt), lt(games.steamPageCheckedAt, before))
+
+/** How many games with a page on Steam are left to read: never read, or not since `before`. */
+export const steamPagesLeft = async (db: Db, before?: number): Promise<number> => {
+  const [row] = await db
+    .select({ left: count() })
+    .from(games)
+    .where(and(onSteam, unreadSince(before)))
+  return row?.left ?? 0
+}
+
+/** How many games IGDB has with a page on Steam. */
+export const steamPagesKnown = async (db: Db): Promise<number> => {
+  const [row] = await db.select({ known: count() }).from(games).where(onSteam)
+  return row?.known ?? 0
+}
+
 export const createSteamPages =
   ({ db, storeGames, readArt, clock = Date.now }: SteamPagesDeps) =>
   async (
@@ -102,12 +131,10 @@ export const createSteamPages =
     now = Date.now(),
     only: 'all' | 'unread' = 'all',
     budgetMs = PAGES_BUDGET_MS,
+    /** Only pages not read since then: a run that reads every page again, in steps. */
+    before?: number,
   ): Promise<PagesRead> => {
     const deadline = clock() + budgetMs
-    const onSteam = and(
-      isNotNull(games.igdbId),
-      or(like(games.storeIds, '%"steam"%'), like(games.storeLinks, '%"steam"%')),
-    )
     const rows = await db
       .select({
         id: games.id,
@@ -119,7 +146,7 @@ export const createSteamPages =
         steamPage: games.steamPage,
       })
       .from(games)
-      .where(only === 'unread' ? and(onSteam, isNull(games.steamPageCheckedAt)) : onSteam)
+      .where(and(onSteam, unreadSince(only === 'unread' ? undefined : (before ?? Infinity))))
       // Those never read first, then the longest unread.
       .orderBy(sql`${games.steamPageCheckedAt} is not null`, asc(games.steamPageCheckedAt))
       .limit(count)
@@ -242,6 +269,10 @@ const reader = () =>
 
 /** The reading for this server, against Steam itself (or its test double, under `SHELF_MOCKS`). */
 export const readSteamPages = (count?: number) => reader()(count)
+
+/** A reading started by hand (the admin page): within `budgetMs`, all again or only those never read. */
+export const readSteamPagesNow = (only: 'all' | 'unread', budgetMs: number, before?: number) =>
+  reader()(PAGES_COUNT, Date.now(), only, budgetMs, before)
 
 /**
  * Once the answer to an add has gone, asks Steam about games never asked yet: their scores, and

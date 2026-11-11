@@ -347,6 +347,14 @@ only what needs them. A place can also be OneDrive or Google Drive, signed in on
 (`saves/sign_in.rs`); `saves/cloud.rs` alone knows their addresses, a sign-in stays in Credential Manager
 (`vault.rs`), and tests and `pnpm desktop:check` use stand-ins, never a real account. Spec 7.12.
 
+**The admin page.** `/admin` starts the server's jobs by hand (refreshing IGDB's records, reading Steam's
+scores and store pages, the daily sync), for whoever has `ADMIN_PASSWORD`, which only the owner knows; it lives in
+`.env.local` and Vercel's Production settings, and is never printed. Its words are `messages/admin`, loaded with its
+code only. A job is stages (`domain/admin/jobs.ts`), a stage runs in steps of a few minutes (`server/admin/runs.ts`),
+and a step asks this server for the next while there is more (`continueRun`), so no job is held to one request's
+time. A new job is a stage that does what it can within the time it is given and says whether there is more. To start
+one from a terminal: `POST /api/admin/runs` with `{"job": …}` and the password as a bearer token.
+
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in
 button (architecture, section 11). Name them in words. An icon beside words is `aria-hidden`.

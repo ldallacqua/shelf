@@ -18,6 +18,7 @@ import {
   type AchievementProvider,
   type ProgressProblem,
 } from '@/domain/achievements/achievements'
+import { runStates, type AdminJob, type RunState } from '@/domain/admin/jobs'
 import type { Palette } from '@/domain/color/palette'
 import type { SteamReviews } from '@/domain/steam/reviews'
 import type { SteamPage } from '@/domain/steam/store-game'
@@ -1043,3 +1044,29 @@ export const oauthClientAssertions = sqliteTable('oauth_client_assertions', {
   id: text().primaryKey(),
   expiresAt: moment().notNull(),
 })
+
+/**
+ * A job started from the admin page, and how far it got. It runs on in steps, each its own
+ * request, until it is done, fails or is stopped; this row is what each step reads and writes.
+ */
+export const adminRuns = sqliteTable(
+  'admin_runs',
+  {
+    id: text().primaryKey(),
+    job: text().$type<AdminJob>().notNull(),
+    /** Which of the job's stages it is on (`jobStages`): `everything` has three. */
+    stage: integer().notNull().default(0),
+    state: text().$type<RunState>().notNull(),
+    steps: integer().notNull().default(0),
+    checked: integer().notNull().default(0),
+    changed: integer().notNull().default(0),
+    error: text(),
+    startedAt: integer().notNull(),
+    updatedAt: integer().notNull(),
+    finishedAt: integer(),
+  },
+  (table) => [
+    index('admin_runs_started_at').on(table.startedAt),
+    check('admin_runs_state', sql`${table.state} in (${oneOf(runStates)})`),
+  ],
+)

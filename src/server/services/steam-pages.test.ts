@@ -9,7 +9,7 @@ import { readVersion } from '@/server/library/store'
 import { SEED_NOW } from '@/server/seed/mine'
 import { createTestDatabase, sampleLibraryId } from '@/test/database'
 
-import { createSteamPages, type SteamPagesDeps } from './steam-pages'
+import { createSteamPages, steamPagesLeft, type SteamPagesDeps } from './steam-pages'
 
 let db: Db
 let sample: string
@@ -229,6 +229,20 @@ describe('reading a game’s store page (ADR 010)', () => {
     const calls = storeGames.mock.calls.length
     await read(100, NOW + 2, 'unread')
     expect(storeGames).toHaveBeenCalledTimes(calls)
+  })
+
+  it('reads again, in steps, only the pages not read since a run began', async () => {
+    const storeGames = store([storePage(app)])
+    const read = reader({ storeGames })
+    await read(undefined, NOW)
+    expect(await steamPagesLeft(db, NOW + 1)).toBeGreaterThan(0)
+    const first = await read(undefined, NOW + 2, 'all', undefined, NOW + 1)
+    expect(first.checked).toBeGreaterThan(0)
+    expect(await steamPagesLeft(db, NOW + 1)).toBe(0)
+    const calls = storeGames.mock.calls.length
+    expect((await read(undefined, NOW + 3, 'all', undefined, NOW + 1)).checked).toBe(0)
+    expect(storeGames).toHaveBeenCalledTimes(calls)
+    expect(await steamPagesLeft(db)).toBe(0)
   })
 
   it('asks the store a hundred apps at a time', async () => {

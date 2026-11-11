@@ -1,9 +1,9 @@
 import 'server-only'
 
-import { and, asc, eq, inArray, isNotNull, notInArray } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNotNull, lt, min, notInArray } from 'drizzle-orm'
 
 import { toGameData } from '@/domain/igdb/game'
-import { database } from '@/server/db/client'
+import { database, type Db } from '@/server/db/client'
 import { entryVersions, games, users } from '@/server/db/schema'
 import { igdb } from '@/server/igdb'
 import { readCoverArt } from '@/server/igdb/cover-art'
@@ -54,7 +54,12 @@ export const createRefresh = (deps: RecordsDeps) => {
   const { db, igdb: api } = deps
   const records = createRecords(deps)
 
-  return async (count = REFRESH_COUNT, now = Date.now()): Promise<Refreshed> => {
+  return async (
+    count = REFRESH_COUNT,
+    now = Date.now(),
+    /** The games of the accounts that have all of theirs asked about each day, as well: not by hand. */
+    everyDay = true,
+  ): Promise<Refreshed> => {
     const fields = {
       id: games.id,
       igdbId: games.igdbId,
@@ -67,22 +72,29 @@ export const createRefresh = (deps: RecordsDeps) => {
       videos: games.videos,
       storeLinks: games.storeLinks,
     }
+    const withEveryDay = everyDay
     // The games of the accounts that have all of theirs asked about each day.
-    const everyDay = db
+    const everyDayGames = db
       .selectDistinct({ gameId: entryVersions.gameId })
       .from(entryVersions)
       .innerJoin(users, eq(users.id, entryVersions.userId))
       .where(eq(users.refreshAll, true))
     const [all, oldest] = await Promise.all([
-      db
-        .select(fields)
-        .from(games)
-        .where(and(isNotNull(games.igdbId), inArray(games.id, everyDay))),
+      withEveryDay
+        ? db
+            .select(fields)
+            .from(games)
+            .where(and(isNotNull(games.igdbId), inArray(games.id, everyDayGames)))
+        : [],
       db
         .select(fields)
         .from(games)
         // A game not from IGDB has nothing to ask about.
-        .where(and(isNotNull(games.igdbId), notInArray(games.id, everyDay)))
+        .where(
+          withEveryDay
+            ? and(isNotNull(games.igdbId), notInArray(games.id, everyDayGames))
+            : isNotNull(games.igdbId),
+        )
         .orderBy(asc(games.checkedAt), asc(games.igdbId))
         .limit(count),
     ])
@@ -169,10 +181,34 @@ export const createRefresh = (deps: RecordsDeps) => {
   }
 }
 
+/** How many of IGDB's records were last asked about before `before`. */
+export const recordsLeft = async (db: Db, before: number): Promise<number> => {
+  const [row] = await db
+    .select({ left: count() })
+    .from(games)
+    .where(and(isNotNull(games.igdbId), lt(games.checkedAt, before)))
+  return row?.left ?? 0
+}
+
+/** IGDB's records, and when the one asked longest ago was asked. */
+export const recordsKnown = async (db: Db): Promise<{ records: number; oldestAsked?: number }> => {
+  const [row] = await db
+    .select({ records: count(), oldest: min(games.checkedAt) })
+    .from(games)
+    .where(isNotNull(games.igdbId))
+  return {
+    records: row?.records ?? 0,
+    ...(row?.oldest !== null && row?.oldest !== undefined ? { oldestAsked: row.oldest } : {}),
+  }
+}
+
 let shared: ReturnType<typeof createRefresh> | undefined
 
 /** The refresh for this server, against IGDB itself (or its test double, under `SHELF_MOCKS`). */
-export const refreshOldest = (count?: number) =>
-  (shared ??= createRefresh({ db: database(), igdb: igdb(), readArt: (id) => readCoverArt(id) }))(
-    count,
-  )
+const refresher = () =>
+  (shared ??= createRefresh({ db: database(), igdb: igdb(), readArt: (id) => readCoverArt(id) }))
+
+export const refreshOldest = (count?: number) => refresher()(count)
+
+/** A refresh started by hand (the admin page): the oldest `count`, the daily ones left to the night. */
+export const refreshNow = (count: number) => refresher()(count, Date.now(), false)

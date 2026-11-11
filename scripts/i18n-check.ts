@@ -19,8 +19,9 @@ const locales = readdirSync(messages)
   .filter((file) => file.endsWith('.json'))
   .map((file) => file.replace(/\.json$/, ''))
 
-// `messages/app` holds the words only Shelf for Windows draws, which no page's HTML carries.
-const problems = [messages, join(messages, 'app')].flatMap((directory) =>
+// `messages/app` holds the words only Shelf for Windows draws, and `messages/admin` the admin
+// page's, which no other page's HTML carries.
+const problems = [messages, join(messages, 'app'), join(messages, 'admin')].flatMap((directory) =>
   compareMessages(
     read(directory, SOURCE),
     Object.fromEntries(

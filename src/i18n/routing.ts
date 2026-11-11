@@ -46,6 +46,8 @@ export const routing = defineRouting({
     '/terms': '/terms',
     // The design foundations, for reference: not linked, not indexed.
     '/foundations': '/foundations',
+    // Jobs started by hand, for whoever has the admin password: not linked, not indexed.
+    '/admin': '/admin',
   },
 })
 
