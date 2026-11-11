@@ -62,7 +62,10 @@ describe('an image on Steam’s servers (ADR 006)', () => {
   })
 
   it('is among the servers a page connects to early, with IGDB’s', () => {
-    expect(IMAGE_HOSTS).toEqual(['https://images.igdb.com', 'https://shared.akamai.steamstatic.com'])
+    expect(IMAGE_HOSTS).toEqual([
+      'https://images.igdb.com',
+      'https://shared.akamai.steamstatic.com',
+    ])
     expect(HOST.startsWith(IMAGE_HOSTS[1])).toBe(true)
   })
 

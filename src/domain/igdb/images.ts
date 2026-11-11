@@ -92,7 +92,10 @@ const sources = (imageId: string, sizes: readonly ImageSize[]): Sources => {
   const files = new Map(sizes.map((size) => fileOf(imageId, size)).map((file) => [file.url, file]))
   return {
     // A browser without srcset support gets the 264-pixel cover, or the nearest to it.
-    src: imageUrl(imageId, sizes.includes('cover_big') ? 'cover_big' : (sizes.at(-1) ?? 'cover_big')),
+    src: imageUrl(
+      imageId,
+      sizes.includes('cover_big') ? 'cover_big' : (sizes.at(-1) ?? 'cover_big'),
+    ),
     srcSet: [...files.values()].map(({ url, width }) => `${url} ${width}w`).join(', '),
   }
 }
