@@ -2,8 +2,6 @@ import { z } from 'zod'
 
 import records from '../../../fixtures/igdb/games.json'
 import { Screenshots } from '@/features/game-detail/screenshots'
-import { Link } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
 
 import '../game-detail/game-detail.css'
 
@@ -21,8 +19,11 @@ const games = z
   .parse(records)
 const game = games.find((each) => each.slug === 'hollow-knight')!
 
+/**
+ * The gallery working on the example shelf's game. No link to the game's page: the example shelf
+ * is drawn on this page alone, and no shelf of that name is in production to open it on.
+ */
 export function MediaDemo() {
-  const t = useTranslations('Landing.media')
   return (
     <div className="rounded-panel border border-line bg-surface p-3 sm:p-5">
       <h3 className="mb-3 title text-xl">{game.name}</h3>
@@ -32,15 +33,6 @@ export function MediaDemo() {
           .slice(0, 4)
           .map((shot) => ({ id: shot.image_id, width: shot.width, height: shot.height }))}
       />
-      <Link
-        className="mt-4 inline-flex min-h-6 items-center text-sm text-accent hover:underline"
-        href={{
-          pathname: '/u/[handle]/game/[slug]',
-          params: { handle: 'sample', slug: game.slug },
-        }}
-      >
-        {t('open')}
-      </Link>
     </div>
   )
 }
