@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import type { GameFacts } from '@/domain/library/game-page'
 import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
@@ -273,6 +273,8 @@ describe('GameDetail', () => {
 })
 
 describe('Screenshots', () => {
+  // The viewer is lazy: loaded first, it arrives within findByRole's second while the suite runs.
+  beforeAll(() => import('./screenshot-viewer'))
   it('opens the viewer at the screenshot chosen, and its arrows stay its own', async () => {
     const onNext = vi.fn()
     renderWithIntl(

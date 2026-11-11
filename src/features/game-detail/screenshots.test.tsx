@@ -1,6 +1,6 @@
 import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextIntlClientProvider } from 'next-intl'
 import type { ComponentProps } from 'react'
 import type VideoPlayer from './video-player'
@@ -23,6 +23,9 @@ vi.mock('./video-player', () => ({
     </div>
   ),
 }))
+// The viewer is lazy: loaded here first, it arrives at once when pressed. Fetched on the press,
+// it could miss findByRole's second while the whole suite runs.
+beforeAll(() => import('./screenshot-viewer'))
 let visibility: IntersectionObserverCallback
 beforeEach(() => {
   vi.stubGlobal(
