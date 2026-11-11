@@ -63,7 +63,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="game-section max-w-[44rem] p-6 [&_.game-picture]:bg-surface-raised">
+      <div className="game-section w-full max-w-[60rem] p-6 [&_.game-picture]:bg-surface-raised">
         <Story />
       </div>
     ),
@@ -79,6 +79,17 @@ export const Folded: Story = {}
 /** A short one shows whole. */
 export const Short: Story = {
   args: { blocks: story.slice(0, 2) },
+}
+
+/** The same description reflows within a phone's content column. */
+export const Narrow: Story = {
+  decorators: [
+    (Story) => (
+      <div className="max-w-80">
+        <Story />
+      </div>
+    ),
+  ],
 }
 
 /**
