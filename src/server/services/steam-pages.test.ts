@@ -1,10 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { thumbnailOf } from '@/domain/library/library'
 import type { StoreGame } from '@/domain/steam/store-game'
 import type { Db } from '@/server/db/client'
-import { games } from '@/server/db/schema'
-import { readGameExtras, readLibrary } from '@/server/library/read'
+import { entries, entryVersions, games } from '@/server/db/schema'
+import { readArchived, readGameExtras, readLibrary } from '@/server/library/read'
 import { readVersion } from '@/server/library/store'
 import { SEED_NOW } from '@/server/seed/mine'
 import { createTestDatabase, sampleLibraryId } from '@/test/database'
@@ -97,6 +98,26 @@ describe('reading a game’s store page (ADR 010)', () => {
     expect(before.cover).not.toBe(game.cover)
     expect((await skyrim()).cover?.id).toBe(before.cover)
     expect((await skyrim()).steamPageCheckedAt).toBe(NOW)
+  })
+
+  it('keeps IGDB’s cover for thumbnails, which Steam has no small file of', async () => {
+    const before = await onTheShelf()
+    expect(before.smallCover).toBeUndefined()
+    await reader({ storeGames: store([storePage(app)]) })(undefined, NOW)
+
+    const game = await onTheShelf()
+    expect(game.smallCover).toBe(before.cover)
+    expect(thumbnailOf(game)).toBe(before.cover)
+
+    // A list that only draws thumbnails reads IGDB's first, with its own colors.
+    const [row] = await db
+      .select({ entryId: entryVersions.entryId })
+      .from(entryVersions)
+      .where(eq(entryVersions.gameId, skyrimId))
+    await db.update(entries).set({ archivedAt: NOW }).where(eq(entries.id, row!.entryId))
+    const archived = (await readArchived(db, sample)).find((each) => each.slug === slug)!
+    expect(archived.cover).toBe(before.cover)
+    expect(archived.colors).toEqual(before.colors)
   })
 
   it('shows the store’s screenshots, summary and art on the game’s page, and IGDB’s videos', async () => {

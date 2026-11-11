@@ -5,7 +5,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { useRef, type ReactNode } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
-import type { LibraryPlatform } from '@/domain/library/library'
+import { thumbnailOf, type LibraryPlatform } from '@/domain/library/library'
 import { naturalSort, type Sort, type SortKey } from '@/domain/library/sort'
 import { shareFirstBoxes } from '@/domain/library/view'
 
@@ -190,7 +190,7 @@ function ListTable({
               <td>
                 <span className="game-thumb" aria-hidden="true">
                   <Cover
-                    cover={copy?.cover ?? game.cover}
+                    cover={copy?.cover ?? thumbnailOf(game)}
                     colors={game.colors}
                     hash={game.hash}
                     title=""

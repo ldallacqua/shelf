@@ -1,5 +1,5 @@
 import type { Palette } from '@/domain/color/palette'
-import type { Library, LibraryGame, Named } from '@/domain/library/library'
+import { thumbnailOf, type Library, type LibraryGame, type Named } from '@/domain/library/library'
 import { libraryStats } from '@/domain/library/stats'
 import { backlogOf, type BacklogStats } from '@/domain/library/trophy-backlog'
 import {
@@ -130,9 +130,10 @@ export const RANKED_MORE = 5
 
 const gameOf = ({ slug, title }: LibraryGame): StatGame => ({ slug, title })
 
+/** A game beside a fact, its cover a thumbnail. */
 const picturedOf = (game: LibraryGame): PicturedGame => ({
   ...gameOf(game),
-  ...(game.cover ? { cover: game.cover } : {}),
+  ...(thumbnailOf(game) ? { cover: thumbnailOf(game) } : {}),
   ...(game.colors ? { colors: game.colors } : {}),
   ...(game.hash ? { hash: game.hash } : {}),
 })

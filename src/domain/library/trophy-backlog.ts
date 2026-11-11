@@ -1,5 +1,5 @@
 import type { Palette } from '@/domain/color/palette'
-import type { Library, LibraryGame } from '@/domain/library/library'
+import { thumbnailOf, type Library, type LibraryGame } from '@/domain/library/library'
 import { COMMUNITY_FROM } from '@/domain/library/trophy-taste'
 import type { Day } from '@/domain/library/values'
 
@@ -100,7 +100,8 @@ const waitingOf = (game: LibraryGame): WaitingGame => {
   return {
     slug: game.slug,
     title: game.title,
-    ...(game.cover ? { cover: game.cover } : {}),
+    // Drawn as a row's thumbnail.
+    ...(thumbnailOf(game) ? { cover: thumbnailOf(game) } : {}),
     ...(game.colors ? { colors: game.colors } : {}),
     ...(game.hash ? { hash: game.hash } : {}),
     ...(game.year === undefined ? {} : { year: game.year }),

@@ -412,11 +412,19 @@ Steam's capsules and so of most covers since ADR 010. A cover of that shape, or 
 of it, fills its frame. Any other, such as IGDB's 3:4, stands whole inside it, centered, over a
 blur of itself a little darker, so nothing is cut from a logo or a title and every row keeps one
 height. The owner, on 10 Nov 2026, of a cover cut short on the wall and whole on its page: "I
-think the proportion of the game covers inside the 'mural' view is wrong." The account page's
-lists of archived games and of hours, and a game's versions in Mine, use the same frame; Add a
-game keeps IGDB's 3:4, as its results are IGDB's. So do the trophy wall and its perfect games. On
+think the proportion of the game covers inside the 'mural' view is wrong." Add a game keeps
+IGDB's 3:4, as its results are IGDB's. The trophy wall and its perfect games take the 2:3 frame. On
 the shelf, a download stands with no case, at its cover's own shape and its case's height (11 Nov
 2026); a copy in a case keeps its platform's case, as a case's shape says what it is for.
+
+**A row's thumbnail is IGDB's** (11 Nov 2026). Where a cover is a thumbnail a few dozen pixels
+wide (the list view's rows, the list beside a game, Organize, the account page's lists of archived
+games and of hours, a game's versions in Mine, the trophy page's facts and waiting games), it is
+IGDB's where the game has one, in a 3:4 frame it fills. Steam keeps no cover narrower than 300
+pixels, about 65 KB, where IGDB's 90-pixel file is about 6, and a list's first screen fetched ten
+times the bytes it needed. A game with only Steam's fills the frame the same way, a hair cut at a
+size where none shows. A cover drawn as a cover, on the shelf, the wall or a game's page, stays
+Steam's.
 
 **Banners** (built 11 Nov 2026). The owner, on 11 Nov 2026: "I want a new view called banner view
 [...] Similar to what hydra, steam, has". Each game a wide card, as Steam's lists and Hydra's

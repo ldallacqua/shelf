@@ -27,9 +27,13 @@ in the game details such as videos. I don't think we should change search and th
    values, which are the library's and not the page's.
 2. **The cover everywhere but search.** The owner, the same day. A cover isn't only on the page: it is in the
    library file, and the page's cover grows from the box on the shelf (`morph.ts`). Taken on the page alone, the
-   image would change halfway through that transition. So the shelf, the wall, the list, the 3D shelf, the
-   editor and the page all draw Steam's (`drawnCover` in `server/library/read.ts`), its colors and blur read from
-   it. Search and Add a game keep IGDB's: they show IGDB's results.
+   image would change halfway through that transition. So the shelf, the wall, the 3D shelf, the editor and the
+   page all draw Steam's (`drawnCover` in `server/library/read.ts`), its colors and blur read from it. Search and
+   Add a game keep IGDB's: they show IGDB's results. **Amended 11 Nov 2026, with the owner:** a row's thumbnail, a
+   few dozen pixels wide (the list view, the list beside a game, Organize, the account page's lists, the versions in
+   Mine, the trophy page's facts), draws IGDB's where the game has one: `smallCover` in the library file,
+   `thumbnailOf`, and `thumbnailCover` for the server's reads that draw nothing else. Steam keeps no cover narrower
+   than 300 pixels, about 65 KB, where IGDB's 90-pixel file is about 6.
 3. **Kept apart from IGDB's record.** `steam_cover`, `steam_colors`, `steam_thumbhash` and `steam_page` on
    `games`, beside IGDB's columns, and laid over them as they are read. IGDB's refresh and Steam's reading never
    overwrite each other, and taking Steam's away puts IGDB's back as it was.
