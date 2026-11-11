@@ -99,7 +99,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // button and icon in the toolbar, its ghosts drawn while its code arrives, and the banner read
   // from the library file. The view itself is fetched only when it is drawn (`banner-later.tsx`):
   // imported directly, it was 293.0.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 291.5 },
+  // A game drawn twice, seen once (11 Nov 2026): measured 291.5 KB, from 291.3 (main the same
+  // day). A cover drawn again keeps a file of it already on the page underneath (`Cover`), and the
+  // library file's address carries its revision. The owner saw a game's page blink as it changed.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 291.8 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
@@ -117,7 +120,9 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // tooltip, which no smaller way of loading it saves without losing focus on the button.
   // Games from Steam (1 Nov 2026): measured 214.0 KB, a few bytes over. On every page the two
   // ways to add one, handed to the header, and `imageUrl` reading a Steam image's path (ADR 006).
-  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 214.5 },
+  // A game drawn twice, seen once (11 Nov 2026): measured 214.7 KB, from 214.4 (main the same
+  // day). The shared `Cover` keeps a file of a cover already on the page under one drawn again.
+  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 215.0 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
   // screenshots and their viewer, and the way back to the library.
   // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf
@@ -146,7 +151,12 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // A box never waits (10 Nov 2026): measured 231.3 KB, from 230.8 (main the same day). The same
   // module, grown by 1.2 KB before compression: a drawing that stands where the window is and
   // ends when a link is followed, which the list's drawing uses too, and the shelf's own.
-  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 231.5 },
+  // A game drawn twice, seen once (11 Nov 2026): measured 232.1 KB, from 231.5 (main the same
+  // day). A score's bar is drawn on the device (`score-meter.tsx`) and fills once for the game
+  // shown, where it filled again as the server's page took the library's place; the cover keeps
+  // a file of it already on the page underneath. The owner saw the IGDB score blink as a game
+  // changed.
+  { path: '/en/u/sample/game/bloodborne', name: 'Game', kilobytes: 232.4 },
 ]
 
 /**

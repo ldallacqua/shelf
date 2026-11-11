@@ -399,6 +399,7 @@ export function GameDetail({
       shelf={facts?.shelfScore}
       waiting={!facts}
       level="h2"
+      game={game.slug}
     />
   )
 

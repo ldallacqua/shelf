@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { LIBRARY_FILE_REVISION } from '@/domain/library/file-address'
 import { emptyLibrary } from '@/domain/library/library'
 import { encodeLibrary } from '@/domain/library/snapshot'
 
+import { snapshotAddress } from './shelf-address'
 import { load } from './use-library'
 
 /**
@@ -31,7 +33,18 @@ describe('loading the library file', () => {
     await vi.runAllTimersAsync()
     expect((await library).version).toBe(42)
     expect(fetched).toHaveBeenCalledTimes(3)
-    expect(String(fetched.mock.calls[0]?.[0])).toBe('/api/v1/libraries/again/snapshot/42')
+    expect(String(fetched.mock.calls[0]?.[0])).toBe(
+      `/api/v1/libraries/again/snapshot/42?revision=${LIBRARY_FILE_REVISION}`,
+    )
+  })
+
+  it('asks for the file’s revision, so a browser holding a copy made before asks again', () => {
+    // A copy kept from before IGDB's small covers were carried would draw Steam's in a list's rows.
+    expect(LIBRARY_FILE_REVISION).toBeGreaterThanOrEqual(2)
+    expect(snapshotAddress({ kind: 'public', key: 'k' }, 7)).toBe(
+      `/api/v1/libraries/k/snapshot/7?revision=${LIBRARY_FILE_REVISION}`,
+    )
+    expect(snapshotAddress({ kind: 'mine' }, 7)).toBe('/api/v1/me/library')
   })
 
   it('takes what it is given in the end, rather than never drawing', async () => {

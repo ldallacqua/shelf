@@ -350,9 +350,12 @@
       filter: none;
     }
 
-    /* The one thing here that moves, once, as the page opens: the bars fill to their marks. */
+    /*
+     * The one thing here that moves, once, as the page opens: the bars fill to their marks. A bar
+     * drawn again as the server's page takes the library's place stands still (`score-meter.tsx`).
+     */
     @media (prefers-reduced-motion: no-preference) {
-      & > span {
+      &:not([data-still]) > span {
         transition: clip-path var(--motion-slow) var(--ease-glide);
 
         @starting-style {

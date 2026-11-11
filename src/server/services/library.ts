@@ -3,6 +3,7 @@ import 'server-only'
 import { asc, eq } from 'drizzle-orm'
 import { cacheLife, cacheTag } from 'next/cache'
 
+import { libraryFilePath } from '@/domain/library/file-address'
 import { buildGamePage, type GamePage } from '@/domain/library/game-page'
 import type { Library } from '@/domain/library/library'
 import { encodeKeywords, encodeLibrary } from '@/domain/library/snapshot'
@@ -185,8 +186,7 @@ export const getLibrarySnapshot = async (
 }
 
 /** Where a public library's current file lives. The address changes when the library does. */
-export const snapshotPath = (key: string, version: number): string =>
-  `/api/v1/libraries/${key}/snapshot/${version}`
+export const snapshotPath = libraryFilePath
 
 const keywordsOf = async (libraryId: string) =>
   // One transaction, so the keywords are the version's own.
