@@ -11,6 +11,7 @@ import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
 import { steamStoreLink } from '@/domain/library/store-links'
 import type { Day } from '@/domain/library/values'
 import { isSteamImage } from '@/domain/igdb/images'
+import { readDescription, type Description } from '@/domain/steam/description'
 
 /**
  * A game's page on Steam's store: the whole of a game IGDB does not have (ADR 006), and
@@ -50,6 +51,7 @@ export const storeGameQuestion = (appIds: readonly string[], country: string): s
     data_request: {
       include_assets: true,
       include_basic_info: true,
+      include_full_description: true,
       include_platforms: true,
       include_release: true,
       include_screenshots: true,
@@ -80,6 +82,8 @@ export const storeGameSchema = z.object({
               publishers: named,
             })
             .optional(),
+          /** The long description its page shows under "About this game", in BBCode. */
+          full_description_bbcode: z.string().optional(),
           assets: z
             .object({
               asset_url_format: z.string(),
@@ -361,6 +365,8 @@ export type SteamPage = {
   app: string
   cover?: GameImage
   summary?: string
+  /** Its long description, read into blocks Shelf draws (decision 11): its page's About, before the summary. */
+  description?: Description
   /** What Steam shows to anyone first; then what it keeps for adults, marked, to be drawn blurred. */
   screenshots: GameImage[]
   /** Its library hero, the art behind the cover: marked on a game for adults. */
@@ -379,6 +385,9 @@ export const toSteamPage = (item: StoreGame): SteamPage => {
   const cover = isMadeUpCapsule(item.assets) ? undefined : coverOf(item.assets)
   const banner = bannerOf(item.assets)
   const summary = item.basic_info?.short_description?.trim()
+  const description = item.full_description_bbcode
+    ? readDescription(item.full_description_bbcode, String(item.id), adultOn(item))
+    : undefined
   return {
     app: String(item.id),
     screenshots: [
@@ -402,6 +411,7 @@ export const toSteamPage = (item: StoreGame): SteamPage => {
     ...(cover ? { cover } : {}),
     ...(banner ? { banner } : {}),
     ...(summary ? { summary } : {}),
+    ...(description ? { description } : {}),
     ...(adultOn(item) ? { adult: true as const } : {}),
   }
 }

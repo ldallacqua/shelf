@@ -1,14 +1,17 @@
 import 'server-only'
 
+import { createHash } from 'node:crypto'
+
 import { after } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { and, asc, count, eq, inArray, isNotNull, isNull, like, lt, or, sql } from 'drizzle-orm'
 
 import type { Palette } from '@/domain/color/palette'
 import type { GameImage } from '@/domain/igdb/game'
+import type { Description } from '@/domain/steam/description'
 import { isStoreGame, toSteamPage, type StoreGame } from '@/domain/steam/store-game'
 import { database, type Db } from '@/server/db/client'
-import { entryVersions, games } from '@/server/db/schema'
+import { entryVersions, games, type StoredSteamPage } from '@/server/db/schema'
 import { readCoverArt } from '@/server/igdb/cover-art'
 import { bumpVersion, type CoverArt } from '@/server/library/store'
 import { NEW_REVIEWS_COUNT, readSteamReviews, steamAppsOf } from '@/server/services/steam-reviews'
@@ -17,7 +20,7 @@ import { steam, type Steam } from '@/server/sync/steam'
 
 /**
  * A game IGDB has, as its page on Steam's store shows it (ADR 010): the cover every shelf draws,
- * and the summary, screenshots and art its own page shows before IGDB's. Read when a game is
+ * and the description, summary, screenshots and art its own page shows before IGDB's. Read when a game is
  * added and once a day after, a hundred apps to a request, never because someone opened a page.
  * A game IGDB doesn't have was read whole from the store already (ADR 006), and isn't read here.
  */
@@ -75,7 +78,7 @@ type Held = {
   steamBanner: GameImage | null
   steamColors: Palette | null
   steamThumbhash: string | null
-  steamPage: object | null
+  steamPage: StoredSteamPage | null
 }
 
 type Change = {
@@ -84,13 +87,21 @@ type Change = {
   steamBanner: GameImage | null
   steamColors: Palette | null
   steamThumbhash: string | null
-  steamPage: ReturnType<typeof pageOf> | null
+  steamPage: StoredSteamPage | null
+  steamDescription: Description | null
 }
 
-/** What is kept of a page apart from its cover and banner, which have columns of their own. */
-const pageOf = (item: StoreGame) => {
-  const { cover: _cover, banner: _banner, ...page } = toSteamPage(item)
-  return page
+/** A short fingerprint of a description: a change to it is a change to the page. */
+const fingerprint = (description: Description): string =>
+  createHash('sha256').update(JSON.stringify(description)).digest('base64url').slice(0, 16)
+
+/**
+ * What is kept of a page apart from its cover, banner and description, which have columns of their
+ * own: the description by its fingerprint.
+ */
+const pageOf = (item: StoreGame): StoredSteamPage => {
+  const { cover: _cover, banner: _banner, description, ...page } = toSteamPage(item)
+  return description ? { ...page, described: fingerprint(description) } : page
 }
 
 /** The game's page among its apps': the first the store shows that is a game, not a DLC or a soundtrack. */
@@ -198,9 +209,11 @@ export const createSteamPages =
       const read = item ? pageOf(item) : null
       // A page with nothing to show is as good as none: the game stays on IGDB's record.
       const page =
-        read && (read.summary || read.screenshots.length > 0 || read.artworks.length > 0)
+        read &&
+        (read.summary || read.described || read.screenshots.length > 0 || read.artworks.length > 0)
           ? read
           : null
+      const description = page ? (shown?.description ?? null) : null
       const coverMoved = !same(cover, game.steamCover)
       if (!coverMoved && same(banner, game.steamBanner) && same(page, game.steamPage)) {
         checked.push(game.id)
@@ -213,6 +226,7 @@ export const createSteamPages =
         steamColors: coverMoved ? null : game.steamColors,
         steamThumbhash: coverMoved ? null : game.steamThumbhash,
         steamPage: page,
+        steamDescription: description,
       }
       if (cover && coverMoved) needArt.push({ change, cover })
       else {
@@ -249,6 +263,7 @@ export const createSteamPages =
             steamColors: change.steamColors,
             steamThumbhash: change.steamThumbhash,
             steamPage: change.steamPage,
+            steamDescription: change.steamDescription,
           })
           .where(eq(games.id, change.id))
       }

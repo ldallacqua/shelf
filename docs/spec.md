@@ -1369,7 +1369,7 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Stores** | Where it is sold, with a link to its page there (section 7.9) |
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
 | **Scores** | What others think of it, a place to a column: IGDB, Steam, and people on Shelf (section 7.11) |
-| **About** | Steam's short description, or IGDB's summary without one, and IGDB's storyline, in their paragraphs. A long one shows about a screen's worth, and the rest behind **Read more**, opened in place |
+| **About** | The long description of its page on Steam's store, its headings, lists, pictures and clips drawn by Shelf; without one, Steam's short description or IGDB's summary, and IGDB's storyline, in their paragraphs. A long one shows its first paragraph and about a screen's worth, and the rest behind **Read more**, opened in place |
 | **Videos and screenshots** | One strip, videos first: each video on one of the game's own pictures with a play button and what it is ("Launch Trailer"), then the screenshots. No scrollbar: an edge with more past it fades, and on a pointer that can hover an arrow there moves the strip. A screenshot opens a full-screen viewer (arrow keys, swipe, pinch to zoom); a video plays over the page, from YouTube, which nothing reaches before it is pressed |
 | **Achievements** | For a game a sync brought in from Steam: how many are unlocked, and each one (section 7.8) |
 | **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat |
@@ -1387,6 +1387,17 @@ point where we don't have the data." A game with a page on Steam's store takes f
 - **The screenshots,** instead of IGDB's: those for anyone first, then those Steam keeps for adults, blurred
   under the eye.
 - **The summary,** its short description.
+- **About,** its long description (built 11 Nov 2026, ADR 010 decision 11). The owner, the same day: "can we
+  grab the full description of a game from steam [...] just fallback to igdb in case we can't". The store
+  writes it in BBCode; Shelf reads its headings, paragraphs, set words, lists and pictures into blocks it
+  draws itself, so no markup of the store's reaches the page and no link leads anywhere. A picture is kept
+  only when it is a file on Steam's own servers, and drawn at its own size, never wider than the column; it
+  has no words of its own, so a description that is only pictures is led by the summary. A clip that stands
+  in for a GIF plays, silent and looping, while it is near the window: pressing it pauses it (WCAG 2.2.2),
+  and under reduced motion it stands still until pressed. A game the store keeps for adults has its
+  description's pictures blurred under the eye until one is pressed, which shows them all. With a long
+  description, About shows neither the summary nor the storyline: it already tells both. Looked at for it:
+  Steam's own store page and Hydra (the owner's screenshots), and GOG's.
 
 What the store leaves empty, and the rest of the page (videos, the storyline, time to beat, release dates,
 Details), stays IGDB's. A page is read when the game is added, and again once a day; never because someone

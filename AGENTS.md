@@ -288,7 +288,7 @@ straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
 
 **Steam first on a game's page.** A game IGDB has that has a page on Steam's store is drawn from that page
 first ([ADR 010](docs/adr/010-steam-first-on-a-game-page.md)): its cover wherever a cover is drawn but search,
-Add a game and a row's thumbnail (`thumbnailOf`: IGDB's small file, where Steam has none), and its art, screenshots and summary on its page. IGDB fills what the store leaves empty, and
+Add a game and a row's thumbnail (`thumbnailOf`: IGDB's small file, where Steam has none), and its art, screenshots, summary and long description on its page. The description is read from BBCode into blocks Shelf draws (`domain/steam/description.ts`, `features/game-detail/description.tsx`): never draw a store's markup, and keep its column (`steam_description`) out of anything a library reads. IGDB fills what the store leaves empty, and
 stays the only source of videos, length, storyline, releases and filter values. The store's answer is kept
 apart from IGDB's record (`steam_cover`, `steam_page` and their kin on `games`), read by
 `services/steam-pages.ts` after an add and daily, and laid over IGDB's as it is read: `drawnCover` in

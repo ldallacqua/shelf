@@ -9,6 +9,7 @@ import type {
 } from '@/domain/library/library'
 import { storeNames, type StoreLink, type StoreName } from '@/domain/library/stores'
 import { filterWord, type ListKey } from '@/domain/query/keys'
+import type { Description } from '@/domain/steam/description'
 import type { SteamReviews } from '@/domain/steam/reviews'
 import type { SteamPage } from '@/domain/steam/store-game'
 
@@ -30,6 +31,11 @@ export type GameFacts = {
   slug: string
   /** What IGDB calls this version, such as "Definitive Edition". */
   versionTitle?: string
+  /**
+   * Its store page's long description on Steam (ADR 010, decision 11): where there is one, it is
+   * what About shows, in place of the summary and the storyline, which are for anything else.
+   */
+  description?: Description
   summary?: string
   storyline?: string
   /** Behind the cover: key art, or a screenshot when there is none. Without either, the cover's colors. */
@@ -66,6 +72,7 @@ export type GamePage = {
 /** What the database has for a game beyond the library file. */
 export type GameExtras = {
   versionTitle?: string
+  description?: Description
   summary?: string
   storyline?: string
   artworks: GameArtwork[]
@@ -234,6 +241,7 @@ export const buildGamePage = (
   }
   if (extras.videos.length > 0) facts.videos = extras.videos
   if (extras.versionTitle) facts.versionTitle = extras.versionTitle
+  if (extras.description) facts.description = extras.description
   if (extras.summary) facts.summary = extras.summary
   if (extras.storyline) facts.storyline = extras.storyline
   const backdrop = backdropOf(extras.artworks, extras.screenshots)
