@@ -134,9 +134,7 @@ export function DescriptionMedia({
         {/* The WebM first, as Steam's page has it: Steam's MP4s are HEVC, which Edge and
             WebView2 claim to play, then fail to decode after the file is chosen, too late
             for the next source. A browser without VP9 skips this one and takes the MP4. */}
-        {loop.webm ? (
-          <source src={steamFileUrl(loop.webm)} type="video/webm; codecs=vp9" />
-        ) : null}
+        {loop.webm ? <source src={steamFileUrl(loop.webm)} type="video/webm; codecs=vp9" /> : null}
         {loop.mp4 ? <source src={steamFileUrl(loop.mp4)} type="video/mp4" /> : null}
       </video>
     ) : null
