@@ -1402,7 +1402,7 @@ folding into a minus, and simply appear under reduced motion. Beside a wide page
 and its skeleton share this wrapper, so a long record cannot push all discovery content several screens
 down on a narrow page. The same page is still drawn by the server and the library during navigation.
 
-Basis: the owner's Steam/Hydra examples, live Shelf pages (Hollow Knight and Tears of the Kingdom),
+Basis: the owner's Steam/Hydra examples, live Shelf game pages,
 Steam and GOG's pages, [Steamworks trailer guidance](https://partner.steamgames.com/doc/store/trailer),
 [WCAG Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide),
 [YouTube's player API](https://developers.google.com/youtube/iframe_api_reference) and
@@ -1435,7 +1435,7 @@ point where we don't have the data." A game with a page on Steam's store takes f
 
 **About's width (11 Nov 2026).** Its text fills the same main column as the gallery, including the rest
 opened by Read more. The page's 90rem outer cap, padding and separate sidebar bound the column; About
-has no additional character-width cap. This follows the owner's No Man's Sky example and request to use
+has no additional character-width cap. This follows the owner's example of a game page and request to use
 the available space, and Steam's description filling its own main column. Line spacing and natural
 wrapping remain, with the narrower-line trade-off reviewed against [W3C's visual presentation guidance](https://www.w3.org/WAI/WCAG22/Understanding/visual-presentation.html).
 
