@@ -1,0 +1,1 @@
+ALTER TABLE `games` ADD `steam_banner` text;

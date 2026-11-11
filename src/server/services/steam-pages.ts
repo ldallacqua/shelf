@@ -72,6 +72,7 @@ type Held = {
   id: string
   apps: string[]
   steamCover: GameImage | null
+  steamBanner: GameImage | null
   steamColors: Palette | null
   steamThumbhash: string | null
   steamPage: object | null
@@ -80,14 +81,15 @@ type Held = {
 type Change = {
   id: string
   steamCover: GameImage | null
+  steamBanner: GameImage | null
   steamColors: Palette | null
   steamThumbhash: string | null
   steamPage: ReturnType<typeof pageOf> | null
 }
 
-/** What is kept of a page apart from its cover, which has columns of its own. */
+/** What is kept of a page apart from its cover and banner, which have columns of their own. */
 const pageOf = (item: StoreGame) => {
-  const { cover: _cover, ...page } = toSteamPage(item)
+  const { cover: _cover, banner: _banner, ...page } = toSteamPage(item)
   return page
 }
 
@@ -95,10 +97,16 @@ const pageOf = (item: StoreGame) => {
 const pickPage = (apps: readonly string[], found: ReadonlyMap<string, StoreGame>) =>
   apps.map((app) => found.get(app)).find((item) => item !== undefined && isStoreGame(item))
 
-/** A game IGDB has with a page on Steam, as far as its record says. */
-const onSteam = and(
-  isNotNull(games.igdbId),
-  or(like(games.storeIds, '%"steam"%'), like(games.storeLinks, '%"steam"%')),
+/**
+ * A game with a page on Steam, as far as its record says: one IGDB has, or one read from the store
+ * alone (ADR 006), whose page this reads again too, for its banner and what changed there.
+ */
+const onSteam = or(
+  isNotNull(games.steamAppId),
+  and(
+    isNotNull(games.igdbId),
+    or(like(games.storeIds, '%"steam"%'), like(games.storeLinks, '%"steam"%')),
+  ),
 )
 
 /** Pages never read; with a time, also those last read before it. */
@@ -138,9 +146,11 @@ export const createSteamPages =
     const rows = await db
       .select({
         id: games.id,
+        steamAppId: games.steamAppId,
         storeIds: games.storeIds,
         storeLinks: games.storeLinks,
         steamCover: games.steamCover,
+        steamBanner: games.steamBanner,
         steamColors: games.steamColors,
         steamThumbhash: games.steamThumbhash,
         steamPage: games.steamPage,
@@ -151,7 +161,7 @@ export const createSteamPages =
       .orderBy(sql`${games.steamPageCheckedAt} is not null`, asc(games.steamPageCheckedAt))
       .limit(count)
     const held: Held[] = rows
-      .map((row) => ({ ...row, apps: steamAppsOf({ ...row, steamAppId: null }) }))
+      .map((row) => ({ ...row, apps: steamAppsOf(row) }))
       .filter((game) => game.apps.length > 0)
     if (held.length === 0) return { checked: 0, changed: 0, libraries: [] }
 
@@ -182,7 +192,9 @@ export const createSteamPages =
     for (const game of held) {
       if (!answered.has(game.id)) continue
       const item = answered.get(game.id)
-      const cover = (item && toSteamPage(item).cover) ?? null
+      const shown = item ? toSteamPage(item) : undefined
+      const cover = shown?.cover ?? null
+      const banner = shown?.banner ?? null
       const read = item ? pageOf(item) : null
       // A page with nothing to show is as good as none: the game stays on IGDB's record.
       const page =
@@ -190,13 +202,14 @@ export const createSteamPages =
           ? read
           : null
       const coverMoved = !same(cover, game.steamCover)
-      if (!coverMoved && same(page, game.steamPage)) {
+      if (!coverMoved && same(banner, game.steamBanner) && same(page, game.steamPage)) {
         checked.push(game.id)
         continue
       }
       const change: Change = {
         id: game.id,
         steamCover: cover,
+        steamBanner: banner,
         steamColors: coverMoved ? null : game.steamColors,
         steamThumbhash: coverMoved ? null : game.steamThumbhash,
         steamPage: page,
@@ -232,6 +245,7 @@ export const createSteamPages =
           .update(games)
           .set({
             steamCover: change.steamCover,
+            steamBanner: change.steamBanner,
             steamColors: change.steamColors,
             steamThumbhash: change.steamThumbhash,
             steamPage: change.steamPage,

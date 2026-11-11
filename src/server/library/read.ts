@@ -95,6 +95,18 @@ const byId = <T extends { id: number }>(a: T, b: T) => a.id - b.id
 const adultOnSteam = sql<number | null>`json_extract(${games.steamPage}, '$.adult')`
 
 /**
+ * The art for a game's banner where its store page on Steam has none: IGDB's key art, then any art,
+ * then a screenshot. Never one kept for adults: a banner is shown to anyone who sees the shelf.
+ */
+const artForBanner = sql<string | null>`coalesce(
+  (select json_extract(value, '$.id') from json_each(${games.artworks})
+    where json_extract(value, '$.type') = 'key' and json_extract(value, '$.mature') is null limit 1),
+  (select json_extract(value, '$.id') from json_each(${games.artworks})
+    where json_extract(value, '$.mature') is null limit 1),
+  (select json_extract(value, '$.id') from json_each(${games.screenshots})
+    where json_extract(value, '$.mature') is null limit 1))`
+
+/**
  * A game's cover wherever a shelf draws one (ADR 010): its store page on Steam's, then IGDB's.
  * Its colors and blur are read from the same image; IGDB's stand in when Steam's could not be read.
  */
@@ -156,6 +168,8 @@ export const readLibrary = async (
         igdbRatingCount: games.igdbRatingCount,
         adultsOnly: games.adultsOnly,
         adultOnSteam,
+        steamBanner: games.steamBanner,
+        artForBanner,
         ages: games.ages,
         length: games.length,
         genres: games.genres,
@@ -323,6 +337,10 @@ export const readLibrary = async (
       game.cover = primary.cover.id
       game.coverRatio = Math.round((primary.cover.width / primary.cover.height) * 100)
     }
+    if (primary.steamBanner) {
+      game.banner = primary.steamBanner.id
+      game.bannerTitled = true
+    } else if (primary.artForBanner) game.banner = primary.artForBanner
     if (primary.colors) game.colors = primary.colors
     if (primary.thumbhash) game.hash = primary.thumbhash
 

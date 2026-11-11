@@ -221,14 +221,15 @@ describe('seedLibrary: stress', () => {
     expect(library.games.length).toBeGreaterThan(1000)
   })
 
-  it('keeps the library file within 122 KB compressed per thousand games', () => {
+  it('keeps the library file within 131 KB compressed per thousand games', () => {
     const json = JSON.stringify(encodeLibrary(library))
     const compressed = gzipSync(json).length
     const perThousand = (compressed / library.games.length) * 1000
     // The budget from the architecture, section 19. If this fails, the file
     // grew: look at what was added to each game's row before raising it.
-    // 120 KB until IGDB's hasty times came (row "Backlog, as a range").
-    expect(perThousand).toBeLessThan(122_000)
+    // 120 KB until IGDB's hasty times came (row "Backlog, as a range"), 122 KB until each game
+    // carried its banner (row "Banners").
+    expect(perThousand).toBeLessThan(131_000)
   })
 
   it('round-trips through the library file', () => {

@@ -50,8 +50,15 @@ in the game details such as videos. I don't think we should change search and th
    leaves through the public API, an assistant, structured data or a link's preview. A game the store marks for
    adults (descriptor 3 or 4) is adult on a shelf whatever IGDB says (spec 3.13), so "Hide adult games" takes it
    and its art off a device.
-8. **A game IGDB doesn't have isn't read here.** Its row was read whole from the store (ADR 006), and still ages
-   until a moderator pastes its link again.
+8. **A game IGDB doesn't have is read again too** (amended 11 Nov 2026, it first was not). Its row was read whole
+   from the store (ADR 006); reading its page beside the others gives it a banner and keeps it current, and what is
+   laid over its row is its own store's. A **capsule the store made up** from its header, for a game whose makers
+   gave none (`portrait.png`, with no larger file and no library hero), is no cover for a game IGDB has: IGDB's goes
+   before it. For a game only Steam has, it stays, as nothing better is there. The owner, on 11 Nov 2026: "some
+   games on steam have a banner like image instead of a full 2:3 [...] we use igdb instead only for those".
+10. **The banner** (amended 11 Nov 2026): a game's store header, 460 by 215 with its name drawn in, kept in
+    `steam_banner` and carried in the library file for the banner view (spec 3.8). A game not on Steam takes IGDB's
+    key art, then any art, then a screenshot for anyone, never one kept for adults.
 9. **Not taken:** the store's long description, which is HTML and often a sales pitch, and would need making
    plain first; its trailers; and its pages in Brazilian Portuguese (`brazilian`), which would give the summary in
    the visitor's language. Each can follow on its own.

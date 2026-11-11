@@ -592,7 +592,8 @@
      * measured as a largest paint six seconds late on a slow phone.
      */
     .shelf-cell[data-enter] .game-box,
-    .wall-cell[data-enter] {
+    .wall-cell[data-enter],
+    .banner-cell[data-enter] {
       animation: box-in var(--motion-slow) var(--ease-settle) both;
       animation-delay: calc(min(var(--i, 0), 24) * 22ms);
     }
@@ -846,6 +847,142 @@
 
   .wall-grid[data-size='small'] .wall-marks span {
     display: none;
+  }
+
+  /*
+   * The banner view: each game a wide card, the header of its store page on Steam (460 by 215,
+   * its name drawn in) over its title and a line of what is mine. As many to a row as fit at
+   * about 19rem, so a wide screen holds six or seven, and a phone one.
+   */
+  .banner-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 1.25rem 1rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .banner-cell {
+    position: relative;
+    display: block;
+    min-width: 0;
+  }
+
+  .banner-box {
+    display: grid;
+    width: 100%;
+    gap: 0.5rem;
+    padding: 0;
+    text-align: start;
+    border-radius: var(--radius-case);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .banner-art {
+    position: relative;
+    display: block;
+    aspect-ratio: 460 / 215;
+    overflow: hidden;
+    border-radius: var(--radius-case);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 0.375rem 0.875rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.6));
+    transition:
+      translate var(--motion-quick) var(--ease-settle),
+      box-shadow var(--motion-quick) var(--ease-settle);
+  }
+
+  .banner-box:is(:hover, :focus-visible) .banner-art {
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 0.625rem 1.5rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.9)),
+      0 0 calc(0.5rem + var(--glow) * 1.5rem)
+        color-mix(in srgb, var(--case-led, var(--led)) calc(30% + var(--glow) * 45%), transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) {
+    .banner-box:is(:hover, :focus-visible) .banner-art {
+      translate: 0 -3px;
+    }
+  }
+
+  /* The image: a wash of the cover's colors, then the banner; its title in type when it has none. */
+  .banner {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: var(--surface-raised);
+  }
+
+  .banner img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .banner:has(img):not([data-failed]) .banner-title {
+    display: none;
+  }
+
+  .banner-title {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 0.75rem 1rem;
+    overflow: hidden;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 800;
+    line-height: 1.1;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+    overflow-wrap: anywhere;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.55), transparent 70%);
+  }
+
+  .banner-info {
+    display: grid;
+    gap: 0.125rem;
+    min-width: 0;
+    padding-inline: 0.125rem;
+  }
+
+  .banner-name {
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .banner-facts {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .banner-box[data-status='wishlist'] .banner {
+    opacity: 0.4;
+    filter: grayscale(0.55);
+  }
+
+  .banner-box[data-status='wishlist'] .banner-art {
+    box-shadow: none;
+    outline: 1.5px dashed var(--line-strong);
+    outline-offset: -1.5px;
   }
 }
 

@@ -88,6 +88,21 @@ export const screenshotSources = (imageId: string): Sources =>
   sources(imageId, ['screenshot_med', 'screenshot_big', 'screenshot_huge'])
 
 /**
+ * A game's banner (the banner view): its store page's header on Steam, 460 pixels wide and 920
+ * when `@2x` says that file is there, or IGDB's art at its two smaller screenshot sizes.
+ */
+export const bannerSources = (imageId: string): Sources => {
+  if (!isSteamImage(imageId)) return sources(imageId, ['screenshot_med', 'screenshot_big'])
+  const path = imageId.replace('@2x', '')
+  const one = `${STEAM_IMAGES}/${path}`
+  if (path === imageId) return { src: one, srcSet: `${one} 460w` }
+  return {
+    src: one,
+    srcSet: `${one} 460w, ${STEAM_IMAGES}/${path.replace(/(\.\w+)$/, '_2x$1')} 920w`,
+  }
+}
+
+/**
  * Key art behind a game's cover. It is dimmed to a third, so a file smaller
  * than the screen is never seen as soft, and on a phone's slow connection
  * the largest file was what held its page's largest paint back.

@@ -414,7 +414,19 @@ blur of itself a little darker, so nothing is cut from a logo or a title and eve
 height. The owner, on 10 Nov 2026, of a cover cut short on the wall and whole on its page: "I
 think the proportion of the game covers inside the 'mural' view is wrong." The account page's
 lists of archived games and of hours, and a game's versions in Mine, use the same frame; Add a
-game keeps IGDB's 3:4, as its results are IGDB's.
+game keeps IGDB's 3:4, as its results are IGDB's. So do the trophy wall and its perfect games. On
+the shelf, a download stands with no case, at its cover's own shape and its case's height (11 Nov
+2026); a copy in a case keeps its platform's case, as a case's shape says what it is for.
+
+**Banners** (built 11 Nov 2026). The owner, on 11 Nov 2026: "I want a new view called banner view
+[...] Similar to what hydra, steam, has". Each game a wide card, as Steam's lists and Hydra's
+library show games: the header of its store page on Steam, 460 by 215 with its name drawn in, or,
+for a game not there, IGDB's key art in the same frame. Under it, its title and one line of what is
+mine: status in words beside its mark, the platforms I have it on, my hours and my rating. As many
+to a row as fit at about 19rem: six or seven on a wide screen, one on a phone. Grouped and folded as
+the wall is, with the same pinned labels; opening one goes to the game's page without the cover
+growing from it, as a wide banner can't become a tall cover. A banner that can't be loaded shows the
+title in type over its cover's colors.
 
 **List.** One compact row per game, for fast scanning:
 

@@ -28,6 +28,7 @@ const toDemo = (game: LibraryGame, copy: LibraryCopy | undefined = game.copies[0
     slug: game.slug,
     title: game.title,
     cover: copy?.cover ?? game.cover ?? '',
+    ...(game.banner ? { banner: game.banner } : {}),
     colors,
     led: ledFrom(colors[0]),
     shape: platform?.shape ?? 'keepCase',

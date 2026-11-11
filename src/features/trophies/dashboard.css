@@ -1418,9 +1418,10 @@
     gap: 0.5rem;
   }
 
+  /* 2:3, as the wall's: a cover of another shape stands whole inside (`coverFit`). */
   .trophy-perfect-cover {
     display: block;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 2 / 3;
     overflow: hidden;
     border-radius: var(--radius-case);
     box-shadow:

@@ -51,6 +51,13 @@ export type LibraryGame = {
   colors?: Palette
   /** A ThumbHash of the cover, base64: about 25 bytes that become a blurred preview. */
   hash?: string
+  /**
+   * The wide image the banner view shows: the header of its store page on Steam, the name drawn
+   * in, or IGDB's art, or a screenshot for anyone. An image id, IGDB's or Steam's.
+   */
+  banner?: string
+  /** The banner has the game's name drawn in (Steam's header): the view writes no title over it. */
+  bannerTitled?: boolean
   featured: boolean
   /** True when there are notes a visitor may read. */
   hasNotes: boolean

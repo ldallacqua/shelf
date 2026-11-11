@@ -3,6 +3,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { type CSSProperties, useId } from 'react'
 
 import { ledFrom } from '@/domain/color/palette'
+import { coverFit, ratioOfCover } from '@/domain/library/cover-fit'
 import type { AchievementStats, AchievementWall } from '@/domain/library/trophy-achievements'
 import type { Trophy, TrophyStats, TrophyWall } from '@/domain/library/trophies'
 import { Cover } from '@/features/library/cover'
@@ -52,6 +53,7 @@ function TrophyCase({ trophy, handle, eager }: { trophy: Trophy; handle: string;
               title={trophy.title}
               sizes={SIZES}
               eager={eager}
+              fit={coverFit(ratioOfCover(trophy.cover))}
             />
           </span>
           <span aria-hidden="true" className="trophy-plinth" />
