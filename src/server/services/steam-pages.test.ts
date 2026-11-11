@@ -37,6 +37,8 @@ const storePage = (appId: string, over: Partial<StoreGame> = {}): StoreGame => (
     library_capsule: 'aa11/library_capsule.jpg',
     library_capsule_2x: 'aa11/library_capsule_2x.jpg',
     library_hero: 'bb22/library_hero.jpg',
+    header: 'cc33/header.jpg',
+    header_2x: 'cc33/header_2x.jpg',
   },
   screenshots: {
     all_ages_screenshots: [
@@ -210,12 +212,32 @@ describe('reading a game’s store page (ADR 010)', () => {
     expect((await skyrim()).steamPage?.app).toBe(app)
   })
 
-  it('never reads a game IGDB doesn’t have: its page was read whole already (ADR 006)', async () => {
+  it('reads a game IGDB doesn’t have too, for its banner, and keeps its own cover', async () => {
+    const before = await onTheShelf()
     await db.update(games).set({ igdbId: null, steamAppId: app }).where(eq(games.id, skyrimId))
     const storeGames = store([storePage(app)])
     await reader({ storeGames })(undefined, NOW)
-    expect(storeGames.mock.calls.flatMap(([apps]) => apps)).not.toContain(app)
-    expect((await skyrim()).steamPageCheckedAt).toBeNull()
+    expect(storeGames.mock.calls.flatMap(([apps]) => apps)).toContain(app)
+    expect((await skyrim()).steamBanner?.id).toBe(`steam/apps/${app}/cc33/header.jpg@2x`)
+    expect(before.cover).toBeDefined()
+  })
+
+  it('keeps IGDB’s cover over a capsule the store made up from its header, and takes the banner', async () => {
+    const igdb = await onTheShelf()
+    await reader({
+      storeGames: store([
+        storePage(app, {
+          assets: {
+            asset_url_format: `steam/apps/${app}/\${FILENAME}?t=1`,
+            library_capsule: 'portrait.png',
+            header: 'header.jpg',
+          },
+        }),
+      ]),
+    })(undefined, NOW)
+    expect((await onTheShelf()).cover).toBe(igdb.cover)
+    expect((await skyrim()).steamCover).toBeNull()
+    expect((await skyrim()).steamBanner?.id).toBe(`steam/apps/${app}/header.jpg`)
   })
 
   it('after an add, reads only games never read', async () => {

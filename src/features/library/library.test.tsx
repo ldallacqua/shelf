@@ -38,6 +38,7 @@ import { ShelfProvider } from './shelf'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 import { WallView } from './wall-view'
+import { BannerView } from './banner-view'
 
 // The empty shelf links to the account page.
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
@@ -744,6 +745,56 @@ describe('the wall (issue 193)', () => {
       (cover) => cover.getAttribute('data-fit') ?? 'fill',
     )
     expect(fits).toEqual(['fill', 'whole', 'whole'])
+  })
+})
+
+describe('the banner view', () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('shows each game’s banner, title and what is mine, and names the card in words', () => {
+    const items = [
+      item({
+        slug: 'steam',
+        title: 'From Steam',
+        banner: 'steam/apps/10/ab/header.jpg@2x',
+        bannerTitled: true,
+        minutes: 600,
+        rating: 80,
+      }),
+      item({ slug: 'none', title: 'No Banner' }),
+    ]
+    const { container } = renderWithIntl(
+      <BannerView
+        shelves={[{ kind: 'all', key: 'all', items, total: items.length }]}
+        platforms={platforms}
+        onOpen={vi.fn()}
+        enter={false}
+        firstBoxes={48}
+      />,
+    )
+    const cards = [...container.querySelectorAll<HTMLElement>('.banner-box')]
+    expect(cards[0]).toHaveAccessibleName(
+      describeBox(items[0]!, platformFor(items[0]!, platforms), t),
+    )
+    // A wide banner doesn't grow into a tall cover.
+    expect(cards[0]).toHaveAttribute('data-morph', 'off')
+    const images = container.querySelectorAll('.banner img')
+    expect(images).toHaveLength(1)
+    expect(images[0]).toHaveAttribute('srcset', expect.stringContaining('header_2x.jpg 920w'))
+    // With no banner, the title in type over its colors.
+    expect(container.querySelectorAll('.banner-title')[1]).toHaveTextContent('No Banner')
+    expect(cards[0]?.querySelector('.banner-name')).toHaveTextContent('From Steam')
+    expect(cards[0]?.querySelector('.banner-facts')).toHaveTextContent(/Backlog.*PS5.*10 h.*8/)
   })
 })
 

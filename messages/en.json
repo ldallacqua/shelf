@@ -219,12 +219,13 @@
     },
     "views": {
       "eyebrow": "Views",
-      "title": "Shelf, wall or list.",
-      "body": "Walk it as a shelf, scan it as a wall of covers, or sort it as a list of numbers.",
+      "title": "Shelf, wall, list or banners.",
+      "body": "Walk it as a shelf, scan it as a wall of covers, sort it as a list of numbers, or browse it in wide banners, as a store does.",
       "label": "View",
       "shelf": "Shelf",
       "wall": "Wall",
       "list": "List",
+      "banner": "Banners",
       "columns": {
         "game": "Game",
         "platform": "Platform",
@@ -343,7 +344,8 @@
       "label": "View",
       "shelf": "Shelf",
       "wall": "Wall",
-      "list": "List"
+      "list": "List",
+      "banner": "Banners"
     },
     "group": {
       "label": "Group",

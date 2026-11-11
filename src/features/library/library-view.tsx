@@ -111,6 +111,8 @@ import { followOpen, openGameAt, type OpenGame } from './open-game'
 import { PulledGame } from './pulled-game'
 import type { DrawnShelf, OpenBox } from './view-props'
 import { GhostWall, WallView } from './wall-view'
+import { GhostBanners } from './banner-ghosts'
+import { BannerViewLater } from './banner-later'
 
 // Each change of view or grouping is a step in the browser's history, so Back undoes it.
 const viewParam = parseAsStringLiteral(views)
@@ -150,7 +152,8 @@ const keyOf = (item: { game: { slug: string }; copy?: { platform: number } }) =>
  */
 const coverOf = (root: HTMLElement | null, key: string): HTMLElement | undefined => {
   const target = root?.querySelector<HTMLElement>(`[data-flip="${CSS.escape(key)}"]`)
-  if (!target) return undefined
+  // A banner is wide, a cover tall: the page opens without one growing into the other.
+  if (!target || target.dataset.morph === 'off') return undefined
   const thumb = target.closest('tr')?.querySelector<HTMLElement>('.game-thumb')
   return thumb ?? (target.firstElementChild as HTMLElement | null) ?? undefined
 }
@@ -942,6 +945,7 @@ export function LibraryView({
               {view === 'shelf' ? <GhostShelves /> : null}
               {view === 'wall' ? <GhostWall size={wallSize} /> : null}
               {view === 'list' ? <GhostList /> : null}
+              {view === 'banner' ? <GhostBanners /> : null}
             </div>
           ) : (
             <div
@@ -965,6 +969,7 @@ export function LibraryView({
               {view === 'list' ? (
                 <ListView {...viewProps} sort={sort} onSort={writeSortTo} />
               ) : null}
+              {view === 'banner' ? <BannerViewLater {...viewProps} /> : null}
             </div>
           )}
           {/* Under the wall, centered on it, held at the window's foot while the wall is in view. */}

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { coverSources, imageIdOf, imageUrl, screenshotSources } from '@/domain/igdb/images'
+import {
+  bannerSources,
+  coverSources,
+  imageIdOf,
+  imageUrl,
+  screenshotSources,
+} from '@/domain/igdb/images'
 
 describe('an IGDB image address', () => {
   it('is made from an image id and a size, as WebP', () => {
@@ -53,5 +59,23 @@ describe('an image on Steam’s servers (ADR 006)', () => {
     ]) {
       expect(() => imageUrl(id, 'cover_big')).toThrow()
     }
+  })
+})
+
+describe('a banner’s files', () => {
+  it('offers Steam’s header and, when it is there, the one twice as large', () => {
+    expect(bannerSources('steam/apps/10/ab/header.jpg@2x')).toEqual({
+      src: 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/ab/header.jpg',
+      srcSet:
+        'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/ab/header.jpg 460w, https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/ab/header_2x.jpg 920w',
+    })
+    expect(bannerSources('steam/apps/10/header.jpg').srcSet).toBe(
+      'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/10/header.jpg 460w',
+    )
+  })
+
+  it('offers IGDB’s art at its smaller screenshot sizes', () => {
+    expect(bannerSources('ar1abc').srcSet).toContain('t_screenshot_med/ar1abc.webp 569w')
+    expect(bannerSources('ar1abc').srcSet).toContain('t_screenshot_big/ar1abc.webp 889w')
   })
 })

@@ -15,6 +15,8 @@ export type DemoGame = {
   slug: string
   title: string
   cover: string
+  /** Its wide banner (the banner view), when it has one. */
+  banner?: string
   colors: Palette
   /** The light it gives off in focus: from its cover. */
   led: string

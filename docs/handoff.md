@@ -4,6 +4,16 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Banners, and covers Steam made up (11 Nov 2026)
+
+The library has a fourth view, **Banners** (spec 3.8): each game a wide card, Steam's header or IGDB's art, with
+its title and a line of status, platforms, hours and rating. Steam's headers come from the store pages Shelf already
+reads (`steam_banner`), so production has them once Steam pages are read again from the admin page. The same
+reading now skips a capsule Steam made up from its header (`portrait.png`) for a game IGDB has, which keeps IGDB's
+cover (ADR 010, decision 8), and reads games Steam alone has too. On the shelf, a download stands at its cover's own
+shape; the trophy wall's covers took the wall's 2:3 frame. The design skills ran (`design-critique`). Looked at:
+Steam's top sellers in a browser, and the owner's screenshots of Hydra and Steam.
+
 ## The admin page (10 Nov 2026)
 
 `/admin` starts the server's jobs by hand: Steam pages (new, or every one again), Steam scores, IGDB records, the daily

@@ -4,7 +4,7 @@ import { StarIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 
-import { coverSources, imageUrl } from '@/domain/igdb/images'
+import { bannerSources, coverSources, imageUrl } from '@/domain/igdb/images'
 import { useFlip } from '@/features/library/use-flip'
 import { useReducedMotion } from '@/features/library/use-preference'
 import { Ledge } from '@/ui/ledge'
@@ -13,7 +13,7 @@ import { Segmented, SegmentedItem } from '@/ui/segmented'
 import { DemoCase, type DemoGame } from './demo-case'
 import { useArrived } from './reveals'
 
-const VIEWS = ['shelf', 'wall', 'list'] as const
+const VIEWS = ['shelf', 'wall', 'list', 'banner'] as const
 type View = (typeof VIEWS)[number]
 
 /** How long each view shows before the next, while the scene plays by itself. */
@@ -94,6 +94,31 @@ export function ViewsDemo({ games }: { games: readonly DemoGame[] }) {
                   className="aspect-3/4 w-full rounded-[3px] object-cover shadow-panel"
                   style={{ backgroundColor: game.colors[2] }}
                 />
+              </li>
+            ))}
+          </ul>
+        ) : view === 'banner' ? (
+          <ul className="grid gap-3 sm:grid-cols-3">
+            {games.slice(0, 6).map((game) => (
+              <li key={game.slug} data-flip={game.slug} className="grid min-w-0 gap-1.5">
+                <span
+                  className="relative block aspect-[460/215] overflow-hidden rounded-[3px] shadow-panel"
+                  style={{ backgroundColor: game.colors[2] }}
+                >
+                  {game.banner ? (
+                    // Straight from IGDB's or Steam's servers, which cache them.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      alt=""
+                      {...bannerSources(game.banner)}
+                      sizes="(min-width: 40rem) 220px, 100vw"
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 size-full object-cover"
+                    />
+                  ) : null}
+                </span>
+                <span className="truncate text-sm font-semibold">{game.title}</span>
               </li>
             ))}
           </ul>

@@ -10,6 +10,7 @@ import { ShelfGrid } from './shelf-grid'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 import { WallView } from './wall-view'
+import { BannerView } from './banner-view'
 
 /**
  * The parts of the library, on their own. The games here are made up, with a
@@ -154,6 +155,22 @@ export const Wall: Story = {
       enter={false}
       firstBoxes={states.length}
       size="medium"
+    />
+  ),
+}
+
+/**
+ * The banner view (spec 3.8): each game a wide card, its banner over its title and a line of what
+ * is mine. Made up as everywhere here: with no banner, each shows its title over its colors.
+ */
+export const Banners: Story = {
+  render: () => (
+    <BannerView
+      shelves={[{ kind: 'all', key: 'all', items: states, total: states.length }]}
+      platforms={platforms}
+      onOpen={() => undefined}
+      enter={false}
+      firstBoxes={48}
     />
   ),
 }

@@ -162,6 +162,15 @@ describe('the library file', () => {
     expect(file.games[1]).toHaveLength(28)
   })
 
+  it('carries the banner last, and whether it has the name drawn in', () => {
+    const steam = { ...bare, banner: 'steam/apps/10/ab/header.jpg@2x', bannerTitled: true }
+    const art = { ...bare, slug: 'art', banner: 'ar1abc' }
+    const file = encodeLibrary({ ...library, games: [steam, art, bare] })
+    expect(decodeLibrary(file).games).toEqual([steam, art, bare])
+    expect(file.games[1]?.slice(28)).toEqual([[], [], 0, [], 'ar1abc'])
+    expect(file.games[2]).toHaveLength(28)
+  })
+
   it('carries that a game is for adults (spec 3.13)', () => {
     const adult = { ...bare, adult: true as const }
     expect(decodeLibrary(encodeLibrary({ ...library, games: [adult, bare] })).games).toEqual([

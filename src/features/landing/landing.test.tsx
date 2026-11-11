@@ -71,7 +71,7 @@ describe('the landing page', () => {
       'Ask it anything.',
       'One game. Every copy.',
       'Add a game in seconds. Or a hundred.',
-      'Shelf, wall or list.',
+      'Shelf, wall, list or banners.',
       'See how far you got.',
       'Yours to show, or to keep.',
       'Ask your assistant what to play.',

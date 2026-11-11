@@ -175,8 +175,10 @@ export const games = sqliteTable(
     steamCover: text({ mode: 'json' }).$type<GameImage>(),
     steamColors: text({ mode: 'json' }).$type<Palette>(),
     steamThumbhash: text(),
+    /** Its store page's wide header, the game's name drawn in: the banner view's image. */
+    steamBanner: text({ mode: 'json' }).$type<GameImage>(),
     /** What its page on the game's own page takes before IGDB's: summary, screenshots, art. */
-    steamPage: text({ mode: 'json' }).$type<Omit<SteamPage, 'cover'>>(),
+    steamPage: text({ mode: 'json' }).$type<Omit<SteamPage, 'cover' | 'banner'>>(),
     /** When its store page was last read. The daily reading takes those never read, then the oldest. */
     steamPageCheckedAt: integer(),
     /** When Shelf last stored this record. */

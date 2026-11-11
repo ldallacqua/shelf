@@ -4,6 +4,7 @@ import { CheckIcon, InfinityIcon, LockIcon } from 'lucide-react'
 import { memo, type CSSProperties, type KeyboardEvent } from 'react'
 
 import { fromHex, ledFrom } from '@/domain/color/palette'
+import { COVER_FRAME, ratioOfCover } from '@/domain/library/cover-fit'
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 import { caseShapes, GameCase, plastics, type CaseShape } from '@/ui/game-case'
@@ -139,15 +140,19 @@ export const GameBox = memo(function GameBox({
       </span>
     )
   } else if (loose) {
-    // The cover alone, at the size it would have inside its case.
+    // The cover alone, as tall as it would stand inside its case and at its own shape: a download
+    // has no case to fit, so nothing is cut from it (issue 193). One of a shape not known stands
+    // whole inside the shape most covers have.
+    const ratio = copy?.cover ? ratioOfCover(copy.cover) : ratioOfCover(game.cover, game.coverRatio)
+    const height = Math.round(size.height * 0.89)
     body = (
       <span
         className="game-loose"
         data-active={active ? 'true' : undefined}
         style={
           {
-            width: `calc(var(--mm) * ${Math.round(size.width * 0.95)})`,
-            height: `calc(var(--mm) * ${Math.round(size.height * 0.89)})`,
+            width: `calc(var(--mm) * ${Math.round(height * (ratio ? ratio / 100 : COVER_FRAME))})`,
+            height: `calc(var(--mm) * ${height})`,
             '--case-led': led,
           } as CSSProperties
         }
@@ -160,6 +165,7 @@ export const GameBox = memo(function GameBox({
           sizes={SHELF_SIZES}
           eager={eager}
           small
+          fit={ratio ? 'fill' : 'whole'}
         />
       </span>
     )

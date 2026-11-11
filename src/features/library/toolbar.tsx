@@ -8,6 +8,7 @@ import {
   LayoutGridIcon,
   ListIcon,
   RectangleVerticalIcon,
+  RectangleHorizontalIcon,
   Rows3Icon,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -63,7 +64,12 @@ type ToolbarProps = {
   ready?: { on: boolean; onChange: (on: boolean) => void }
 }
 
-const viewIcons = { shelf: Rows3Icon, wall: LayoutGridIcon, list: ListIcon } as const
+const viewIcons = {
+  shelf: Rows3Icon,
+  wall: LayoutGridIcon,
+  list: ListIcon,
+  banner: RectangleHorizontalIcon,
+} as const
 const densityIcons = { covers: RectangleVerticalIcon, compact: Columns4Icon } as const
 
 /**

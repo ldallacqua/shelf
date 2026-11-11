@@ -68,6 +68,8 @@ type GameRow = [
   hastyShare?: number,
   /** Positions in `storeNames`; with them, the three before are there, empty if need be. */
   wantedStores?: number[],
+  /** The banner view's image id; with it, the four before are there, empty if need be. */
+  banner?: string,
 ]
 
 type NamedRow = [id: number, name: string, slug: string]
@@ -104,6 +106,8 @@ const FEATURED = 1
 const HAS_NOTES = 2
 const PRIVATE = 4
 const ADULT = 8
+/** The banner has the game's name drawn in. */
+const BANNER_TITLED = 16
 
 const DAY_MS = 86_400_000
 
@@ -149,7 +153,8 @@ const baseRow = (game: LibraryGame): GameRow => [
   (game.featured ? FEATURED : 0) |
     (game.hasNotes ? HAS_NOTES : 0) |
     (game.private ? PRIVATE : 0) |
-    (game.adult ? ADULT : 0),
+    (game.adult ? ADULT : 0) |
+    (game.bannerTitled ? BANNER_TITLED : 0),
   game.copies.map((copy): CopyRow => {
     const row: CopyRow = [copy.platform, position(formats, copy.format)]
     if (copy.cover || copy.stores?.length) row.push(copy.cover ?? '')
@@ -173,10 +178,12 @@ const encodeGame = (game: LibraryGame): GameRow => {
   const ages = game.ages?.map((word) => ageWords.indexOf(word)).filter((at) => at >= 0)
   const hasty = game.hastyShare
   const stores = game.wantedStores?.length ? packStores(game.wantedStores) : undefined
-  if (game.wanted?.length || ages?.length || hasty || stores) row.push(game.wanted ?? [])
-  if (ages?.length || hasty || stores) row.push(ages ?? [])
-  if (hasty || stores) row.push(hasty ?? 0)
-  if (stores) row.push(stores)
+  const banner = game.banner
+  if (game.wanted?.length || ages?.length || hasty || stores || banner) row.push(game.wanted ?? [])
+  if (ages?.length || hasty || stores || banner) row.push(ages ?? [])
+  if (hasty || stores || banner) row.push(hasty ?? 0)
+  if (stores || banner) row.push(stores ?? [])
+  if (banner) row.push(banner)
   return row
 }
 
@@ -226,6 +233,8 @@ const decodeGame = (row: GameRow): LibraryGame => {
   if (ages?.length) game.ages = ages
   if (row[30]) game.hastyShare = row[30]
   if (row[31]?.length) game.wantedStores = unpackStores(row[31])
+  if (row[32]) game.banner = row[32]
+  if (row[16] & BANNER_TITLED) game.bannerTitled = true
   if (row[16] & PRIVATE) game.private = true
   if (row[16] & ADULT) game.adult = true
   return game

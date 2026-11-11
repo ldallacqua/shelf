@@ -217,3 +217,44 @@ describe('a store page before IGDB’s record (ADR 010)', () => {
     expect(page).toEqual({ app: '2000001', screenshots: [], artworks: [] })
   })
 })
+
+describe('a capsule the store made up, and the banner', () => {
+  it('takes no cover from a capsule made up from the header, for a game IGDB has', () => {
+    const page = toSteamPage(
+      item({
+        assets: {
+          asset_url_format: 'steam/apps/2000001/${FILENAME}?t=1',
+          library_capsule: 'portrait.png',
+          header: 'header.jpg',
+        },
+      }),
+    )
+    expect(page.cover).toBeUndefined()
+    expect(page.banner).toEqual({ id: 'steam/apps/2000001/header.jpg', width: 460, height: 215 })
+  })
+
+  it('keeps it for a game IGDB doesn’t have: nothing better is there', () => {
+    const game = toSteamGame(
+      item({
+        assets: {
+          asset_url_format: 'steam/apps/2000001/${FILENAME}?t=1',
+          library_capsule: 'portrait.png',
+        },
+      }),
+    )
+    expect(game.cover?.id).toBe('steam/apps/2000001/portrait.png')
+  })
+
+  it('reads the header’s larger file, when it is there', () => {
+    const page = toSteamPage(
+      item({
+        assets: {
+          asset_url_format: 'steam/apps/2000001/${FILENAME}?t=1',
+          header: 'ab12/header.jpg',
+          header_2x: 'ab12/header_2x.jpg',
+        },
+      }),
+    )
+    expect(page.banner?.id).toBe('steam/apps/2000001/ab12/header.jpg@2x')
+  })
+})

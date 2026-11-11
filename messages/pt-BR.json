@@ -219,12 +219,13 @@
     },
     "views": {
       "eyebrow": "Visualizações",
-      "title": "Estante, mural ou lista.",
-      "body": "Percorra como uma estante, passe os olhos como um mural de capas, ou ordene como uma lista de números.",
+      "title": "Estante, mural, lista ou banners.",
+      "body": "Percorra como uma estante, passe os olhos como um mural de capas, ordene como uma lista de números, ou navegue em banners largos, como numa loja.",
       "label": "Visualização",
       "shelf": "Estante",
       "wall": "Mural",
       "list": "Lista",
+      "banner": "Banners",
       "columns": {
         "game": "Jogo",
         "platform": "Plataforma",
@@ -343,7 +344,8 @@
       "label": "Visualização",
       "shelf": "Estante",
       "wall": "Mural",
-      "list": "Lista"
+      "list": "Lista",
+      "banner": "Banners"
     },
     "group": {
       "label": "Agrupar",

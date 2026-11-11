@@ -31,7 +31,8 @@ import { writeQuery } from '@/domain/query/write'
  * and the same page worked out on the device cannot disagree.
  */
 
-export const views = ['shelf', 'wall', 'list'] as const
+// A new view goes at the end: the remembered choice (`remembered.ts`) keeps a view by its name.
+export const views = ['shelf', 'wall', 'list', 'banner'] as const
 export type View = (typeof views)[number]
 
 export const isView = (value: unknown): value is View =>

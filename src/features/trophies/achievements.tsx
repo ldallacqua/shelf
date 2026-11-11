@@ -8,6 +8,7 @@ import {
   type Rarity,
   type VaultItem,
 } from '@/domain/library/trophy-achievements'
+import { coverFit, ratioOfCover } from '@/domain/library/cover-fit'
 import type { Measure } from '@/domain/library/trophy-taste'
 import { Cover } from '@/features/library/cover'
 import { dateOf } from '@/features/library/format'
@@ -520,6 +521,7 @@ function Perfects({ stats, handle }: Props) {
                   title={game.title}
                   sizes="96px"
                   small
+                  fit={coverFit(ratioOfCover(game.cover))}
                 />
               </span>
               <span aria-hidden="true" className="line-clamp-2 text-xs font-medium text-balance">

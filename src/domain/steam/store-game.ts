@@ -86,6 +86,8 @@ export const storeGameSchema = z.object({
               library_capsule: z.string().optional(),
               library_capsule_2x: z.string().optional(),
               library_hero: z.string().optional(),
+              header: z.string().optional(),
+              header_2x: z.string().optional(),
             })
             .optional(),
           release: z.object({ steam_release_date: z.number().int().optional() }).optional(),
@@ -290,15 +292,41 @@ const assetPath = (format: string, file: string): string =>
   format.split('?')[0]!.replace('${FILENAME}', file)
 
 /** `@2x` on the id says the file at twice the size is beside it, where it is named as expected. */
-const coverOf = (assets: StoreGame['assets']): GameImage | undefined => {
-  if (!assets?.library_capsule) return undefined
-  const path = assetPath(assets.asset_url_format, assets.library_capsule)
+/** A store file and its twice-as-large one, as an id `images.ts` reads: `@2x` when the second is there. */
+const imageOf = (
+  format: string,
+  file: string,
+  double: string | undefined,
+  size: { width: number; height: number },
+): GameImage | undefined => {
+  const path = assetPath(format, file)
   if (!isSteamImage(path)) return undefined
-  const double =
-    assets.library_capsule_2x && assetPath(assets.asset_url_format, assets.library_capsule_2x)
-  const id = double === path.replace(/(\.\w+)$/, '_2x$1') ? `${path}@2x` : path
-  return { id, width: 300, height: 450 }
+  const twice = double && assetPath(format, double)
+  const id = twice === path.replace(/(\.\w+)$/, '_2x$1') ? `${path}@2x` : path
+  return { id, ...size }
 }
+
+const coverOf = (assets: StoreGame['assets']): GameImage | undefined =>
+  assets?.library_capsule
+    ? imageOf(assets.asset_url_format, assets.library_capsule, assets.library_capsule_2x, {
+        width: 300,
+        height: 450,
+      })
+    : undefined
+
+/**
+ * A capsule the store made for itself, for a game whose makers gave it none: the wide header,
+ * letterboxed into the tall frame over a blur of itself. Steam names it `portrait.png`, and
+ * gives no larger file and no library hero beside it.
+ */
+export const isMadeUpCapsule = (assets: StoreGame['assets']): boolean =>
+  /(^|\/)portrait\.png$/i.test(assets?.library_capsule ?? '')
+
+/** The store's wide header, 460 by 215, with the game's name drawn in: its banner. */
+const bannerOf = (assets: StoreGame['assets']): GameImage | undefined =>
+  assets?.header
+    ? imageOf(assets.asset_url_format, assets.header, assets.header_2x, { width: 460, height: 215 })
+    : undefined
 
 /** What Shelf stores of a game from Steam: as of IGDB's, its companies still only names. */
 export type SteamGameData = Omit<
@@ -339,13 +367,17 @@ export type SteamPage = {
   artworks: GameArtwork[]
   /** The store says it is for adults: so is it on a shelf, whatever IGDB says (spec 3.13). */
   adult?: true
+  /** Its wide header, the game's name drawn in: what the banner view shows. */
+  banner?: GameImage
 }
 
 export const toSteamPage = (item: StoreGame): SteamPage => {
   const hero = item.assets?.library_hero
     ? assetPath(item.assets.asset_url_format, item.assets.library_hero)
     : undefined
-  const cover = coverOf(item.assets)
+  // A capsule the store made up from its header is no cover: IGDB's goes before it.
+  const cover = isMadeUpCapsule(item.assets) ? undefined : coverOf(item.assets)
+  const banner = bannerOf(item.assets)
   const summary = item.basic_info?.short_description?.trim()
   return {
     app: String(item.id),
@@ -368,6 +400,7 @@ export const toSteamPage = (item: StoreGame): SteamPage => {
           ]
         : [],
     ...(cover ? { cover } : {}),
+    ...(banner ? { banner } : {}),
     ...(summary ? { summary } : {}),
     ...(adultOn(item) ? { adult: true as const } : {}),
   }
@@ -378,7 +411,9 @@ export const toSteamGame = (item: StoreGame, title?: string): SteamGameData => {
   const appId = String(item.id)
   const adultsOnly = new Set(item.content_descriptorids).has(ADULT_ONLY)
   const adult = adultOn(item)
-  const { cover, summary, screenshots, artworks } = toSteamPage(item)
+  const { summary, screenshots, artworks } = toSteamPage(item)
+  // A game IGDB doesn't have has nothing better than the capsule the store made up.
+  const cover = coverOf(item.assets)
   const platforms = [
     ...(item.platforms?.windows ? [PC] : []),
     ...(item.platforms?.mac ? [MAC] : []),

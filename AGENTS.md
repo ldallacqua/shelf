@@ -156,7 +156,7 @@ they are not in the library file, so a shelf write leaves the version alone and 
 `src/server/db/schema.ts`, run `pnpm db:generate`, and commit the SQL it writes. A migration
 must be safe for the code already deployed: add first, remove in a later release.
 
-**The library's views.** The shelf, the wall and the list draw the same shelves
+**The library's views.** The shelf, the wall, the list and the banners draw the same shelves
 (`arrangeLibrary` in `src/domain/library/view.ts`) and are given the same props. CSS decides
 how many boxes fit on a row; `useRowWindow` keeps rows that are far from the window out of
 the page. On a phone the shelves beside the one in view keep only the box Tab stops at
