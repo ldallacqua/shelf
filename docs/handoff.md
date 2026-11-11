@@ -4,13 +4,21 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Storybook three weeks behind, and two rules (11 Nov 2026)
+
+The owner found https://shelf-storybook.vercel.app far out of date. Every build Git started for it since 21 Oct 2026
+had been skipped by its own skip check (`deploy/storybook/vercel.json`), `main` included: the two that went live that
+day were deployed by hand. The check now builds unless Vercel says the build is for another branch, and prints what
+it was told. Two rules of the owner's went into AGENTS.md: Storybook's build of every merge must go live, and every
+admin action a feature needs is a job on the admin page in the same change.
+
 ## A game's whole store description (11 Nov 2026)
 
 The owner asked for a game's full description from Steam, with its pictures, as Steam and Hydra show it, and IGDB's
 words only where there is none (ADR 010, decision 11; spec 7.1). The store pages Shelf already reads now carry it, as
 BBCode, read into headings, paragraphs, lists, pictures and clips that Shelf draws itself; About shows it in place of
-the summary and the storyline. **Production has it once Steam pages are read again** (the admin page's "every one
-again", or the daily reading in time). Checked by hand against the real store on a scratch copy of the sample shelf
+the summary and the storyline. **Production has it once Steam pages are read again**: the admin page's **Every Steam
+page** job, or the daily reading over the next days. Checked by hand against the real store on a scratch copy of the sample shelf
 (118 of its 119 games on Steam have one), and on 66 popular store pages: every picture and clip kept, no tag left
 over. Clips play near the window and pause on a press; under reduced motion they wait. Not seen: a game the store
 keeps for adults, as the sample shelf has none (unit tests and the story cover its blurred pictures). The design

@@ -27,7 +27,7 @@
       },
       "steam-pages": {
         "name": "Every Steam page",
-        "what": "Reads every game’s store page on Steam again, for covers or screenshots that changed there."
+        "what": "Reads every game’s store page on Steam again: covers, art, screenshots and descriptions that changed there, and what Shelf reads now that it didn’t before."
       },
       "steam-reviews": {
         "name": "Steam scores",
