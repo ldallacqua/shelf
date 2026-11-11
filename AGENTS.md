@@ -355,6 +355,12 @@ and a step asks this server for the next while there is more (`continueRun`), so
 time. A new job is a stage that does what it can within the time it is given and says whether there is more. To start
 one from a terminal: `POST /api/admin/runs` with `{"job": …}` and the password as a bearer token.
 
+**Every admin action a feature needs is on the admin page, in the same change** (the owner's rule, 11 Nov 2026). When a
+feature needs something done on the server by hand before production shows it whole (reading every game again for a
+field it now keeps, filling a new column, running a sync or a reading out of turn), the pull request gives it a job
+on `/admin`, or says which job already does it and makes that job's words say so. Never only a script, a terminal
+command or a note in a handoff. The pull request names the job to run after merging.
+
 **Icons.** lucide's, and `src/ui/icons.tsx` for what it lacks, drawn as lucide draws. Never a
 store's or console's logo: Nintendo, Microsoft and Sony allow none, and Valve only its sign-in
 button (architecture, section 11). Name them in words. An icon beside words is `aria-hidden`.

@@ -27,7 +27,7 @@
       },
       "steam-pages": {
         "name": "Todas as páginas da Steam",
-        "what": "Lê de novo a página de cada jogo na loja da Steam, para capas ou capturas de tela que mudaram lá."
+        "what": "Lê de novo a página de cada jogo na loja da Steam: capas, artes, capturas de tela e descrições que mudaram lá, e o que o Shelf passou a ler e não lia antes."
       },
       "steam-reviews": {
         "name": "Notas da Steam",
