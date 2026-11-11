@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { Palette } from '@/domain/color/palette'
 import type { CoverFit } from '@/domain/library/cover-fit'
@@ -35,6 +35,25 @@ type CoverProps = {
   fit?: CoverFit
 }
 
+/**
+ * The largest file of each cover that has arrived on this page, by the cover's id. A cover drawn
+ * again on the device, such as a game's page as the server draws it after the one the library
+ * drew, has it underneath at once, as a cover opened from the shelf has the shelf's file, and
+ * never drops back to a blur while its own file comes.
+ */
+const arrivedFiles = new Map<string, { src: string; width: number }>()
+
+const noteArrived = (cover: string, src: string, width: number) => {
+  if (src && width >= (arrivedFiles.get(cover)?.width ?? 0)) arrivedFiles.set(cover, { src, width })
+}
+
+/** For tests: a page on which no cover has arrived yet. */
+export const forgetArrivedCovers = (): void => arrivedFiles.clear()
+
+const noChange = () => () => {}
+const onDevice = () => true
+const onServer = () => false
+
 const wash = ([accent, second, base]: Palette): string =>
   `radial-gradient(90% 70% at 25% 18%, ${accent}, transparent 68%), radial-gradient(85% 75% at 85% 92%, ${second}, transparent 62%), ${base}`
 
@@ -61,15 +80,32 @@ export function Cover({
   // blur, which nobody would see, is not worked out. Either way it fades in as
   // it arrives, as every image does (`image-script.tsx`).
   const [joined] = useState(pageIsLive)
+  // False on the server and while the browser brings its page to life, so both draw it alike.
+  const drawnOnDevice = useSyncExternalStore(noChange, onDevice, onServer)
+  const whole = fit === 'whole'
+  // A file of it already on this page, for a cover drawn again. Not under one drawn whole, whose
+  // bands keep its blur.
+  const [arrived] = useState(() =>
+    drawnOnDevice && cover && !placeholder && !whole ? arrivedFiles.get(cover)?.src : undefined,
+  )
+  const underneath = placeholder ?? arrived
   // The blur is worked out when the browser is idle, and only while the
   // image is still on its way.
   const [preview, setPreview] = useState(() => (joined && hash ? previewIfReady(hash) : undefined))
   const image = useRef<HTMLImageElement>(null)
   const forget = useRef<(() => void) | undefined>(undefined)
-  const whole = fit === 'whole'
   useEffect(() => {
-    // With the file the shelf already shows underneath, a blur would only be worse.
-    if (!hash || !cover || placeholder) return
+    if (!cover) return
+    // The shelf's file, under a cover opened from it, is on the page; so is one that arrived
+    // before the page came to life, which says nothing as it does.
+    if (placeholder) noteArrived(cover, placeholder, 0)
+    const shown = image.current
+    if (shown?.complete && shown.naturalWidth > 0)
+      noteArrived(cover, shown.currentSrc, shown.naturalWidth)
+  }, [cover, placeholder])
+  useEffect(() => {
+    // With a file of it already underneath, a blur would only be worse.
+    if (!hash || !cover || underneath) return
     // A cover drawn whole keeps its blur in the bands around it, as long as it is drawn: the
     // colors at its own edges, where the wash's would be anywhere's.
     if (whole) return requestPreview(hash, setPreview)
@@ -77,15 +113,15 @@ export function Cover({
     if (image.current?.complete) return
     forget.current = requestPreview(hash, setPreview)
     return () => forget.current?.()
-  }, [joined, hash, cover, placeholder, whole])
+  }, [joined, hash, cover, underneath, whole])
 
   return (
     <span
       className="cover"
       data-fit={fit === 'whole' ? 'whole' : undefined}
       style={{
-        backgroundImage: placeholder
-          ? `url("${placeholder}")`
+        backgroundImage: underneath
+          ? `url("${underneath}")`
           : preview
             ? `url("${preview}")`
             : colors
@@ -105,7 +141,11 @@ export function Cover({
           decoding="async"
           draggable={false}
           ref={image}
-          onLoad={() => forget.current?.()}
+          onLoad={(event) => {
+            forget.current?.()
+            const shown = event.currentTarget
+            if (cover) noteArrived(cover, shown.currentSrc, shown.naturalWidth)
+          }}
           onError={(event) => {
             // Leave the wash and say the title in type instead.
             const image = event.currentTarget

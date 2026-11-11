@@ -25,7 +25,11 @@ import { caseShapes, families, plastics } from '@/domain/platforms/platforms'
  * `decodeLibrary` still refuses a file of the wrong format.
  */
 
-/** Raised whenever the row layout changes, so an old cached file is never misread. */
+/**
+ * Raised whenever the row layout changes, so an old cached file is never misread. A field added
+ * last in a game's row reads the same in a file without it: that raises the file's revision
+ * instead (`file-address.ts`), so browsers ask for the file again.
+ */
 export const SNAPSHOT_FORMAT = 1
 
 // A store is its position in `storeNames`; with stores, `cover` is there, empty if need be.

@@ -6,6 +6,8 @@ import type { ShelfScore } from '@/domain/library/game-page'
 import { steamStoreLink } from '@/domain/library/store-links'
 import type { SteamReviews } from '@/domain/steam/reviews'
 
+import { Meter } from './score-meter'
+
 /** Below this many, a score is one person's taste or two: its meter says so by dimming. */
 const FEW = 5
 
@@ -23,20 +25,6 @@ const STEAM_WORDS = [
   'overwhelminglyPositive',
 ] as const
 
-/**
- * How full, as a game's bar is: twenty segments, so a glance compares one
- * place with another while the number beside it keeps that place's own scale.
- * Only whole ones light, rounded down, so a bar is only full at a hundred.
- * Empty, it holds the place of a score still to come.
- */
-function Meter({ share, few }: { share: number; few?: boolean }) {
-  return (
-    <span aria-hidden="true" className="game-score-meter" data-few={few ? '' : undefined}>
-      <span style={{ '--score': Math.floor(share / 5) * 5 } as CSSProperties} />
-    </span>
-  )
-}
-
 function Source({
   name,
   url,
@@ -46,7 +34,11 @@ function Source({
   count,
   share,
   few,
+  game,
+  source,
 }: {
+  game?: string
+  source: string
   name: string
   url?: string
   value?: string
@@ -77,7 +69,7 @@ function Source({
         </dd>
       ) : null}
       <dd className="game-score-bar">
-        <Meter share={share} few={few} />
+        <Meter share={share} few={few} game={game} source={source} />
       </dd>
       <dd className="game-score-who">
         <span>{who}</span> {count ? <span>{count}</span> : null}
@@ -114,6 +106,8 @@ type ScoresProps = {
   /** The page's facts are on their way: Steam and Shelf wait as ghosts. */
   waiting?: boolean
   level: 'h2' | 'h3'
+  /** The game whose page it is: its bars fill once, however often the page is drawn. */
+  game?: string
 }
 
 /**
@@ -124,7 +118,7 @@ type ScoresProps = {
  *
  * With nothing from anywhere, the section is not drawn.
  */
-export function Scores({ igdb, steam, shelf, waiting, level: Level }: ScoresProps) {
+export function Scores({ igdb, steam, shelf, waiting, level: Level, game }: ScoresProps) {
   const t = useTranslations('Game.scores')
   const format = useFormatter()
   if (!waiting && !igdb && !steam && !shelf) return null
@@ -138,6 +132,8 @@ export function Scores({ igdb, steam, shelf, waiting, level: Level }: ScoresProp
     columns.push(
       <Source
         key="igdb"
+        game={game}
+        source="igdb"
         name={t('igdb')}
         url={igdb.url}
         value={format.number(igdb.rating)}
@@ -156,6 +152,8 @@ export function Scores({ igdb, steam, shelf, waiting, level: Level }: ScoresProp
       columns.push(
         <Source
           key="steam"
+          game={game}
+          source="steam"
           name={t('steam')}
           url={`${steamStoreLink(steam.app).url}#app_reviews_hash`}
           value={format.number(steam.percent / 100, { style: 'percent' })}
@@ -171,6 +169,8 @@ export function Scores({ igdb, steam, shelf, waiting, level: Level }: ScoresProp
       shelf ? (
         <Source
           key="shelf"
+          game={game}
+          source="shelf"
           name={t('shelf')}
           value={format.number(shelf.rating / 10, { maximumFractionDigits: 1 })}
           unit={t('ofTen')}
@@ -180,7 +180,7 @@ export function Scores({ igdb, steam, shelf, waiting, level: Level }: ScoresProp
           few={shelf.count < FEW}
         />
       ) : (
-        <Source key="shelf" name={t('shelf')} who={t('none')} share={0} />
+        <Source key="shelf" source="shelf" name={t('shelf')} who={t('none')} share={0} />
       ),
     )
   }

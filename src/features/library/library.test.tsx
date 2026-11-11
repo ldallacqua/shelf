@@ -14,7 +14,7 @@ import {
 import { messages, renderWithIntl } from '@/test/render'
 import { caseShapes, plastics } from '@/ui/game-case'
 
-import { Cover } from './cover'
+import { Cover, forgetArrivedCovers } from './cover'
 import { describeBox, shelfName } from './describe'
 import { EmptyLibrary } from './empty-library'
 import { dateOf, hoursOf, outOfTen } from './format'
@@ -832,6 +832,7 @@ describe('a cover, by when it joined the page', () => {
   afterEach(() => {
     resetPageLive()
     resetPreviews()
+    forgetArrivedCovers()
     vi.mocked(thumbHashToDataURL).mockClear()
   })
 
@@ -879,6 +880,27 @@ describe('a cover, by when it joined the page', () => {
     await new Promise((resolve) => setTimeout(resolve, 80))
     expect(thumbHashToDataURL).not.toHaveBeenCalled()
   })
+  it('drawn again on the device, has a file of it already on the page underneath, not a blur', async () => {
+    markPageLive()
+    const first = renderWithIntl(<Cover {...cover} hash="GGGG" />)
+    const arrived = screen.getByRole('img', { name: 'Hades' })
+    Object.defineProperty(arrived, 'currentSrc', { value: 'https://images.igdb.com/a.webp' })
+    Object.defineProperty(arrived, 'naturalWidth', { value: 264 })
+    fireEvent.load(arrived)
+    first.unmount()
+
+    // The game's page as the server draws it, in the place of the one the library drew.
+    const { container } = renderWithIntl(<Cover {...cover} hash="GGGG" />)
+    const again = container.querySelector<HTMLElement>('.cover')!
+    expect(again.style.backgroundImage).toBe('url("https://images.igdb.com/a.webp")')
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    expect(thumbHashToDataURL).not.toHaveBeenCalled()
+
+    // A cover drawn whole keeps its blur in its bands instead.
+    const whole = renderWithIntl(<Cover {...cover} fit="whole" />)
+    expect(whole.container.querySelector<HTMLElement>('.cover')!.style.backgroundImage).toBe('')
+  })
+
   it('drawn whole in a frame of another shape, keeps its blur around it once it arrives', async () => {
     const { container } = renderWithIntl(<Cover {...cover} hash="FFFF" fit="whole" />)
     const drawn = container.querySelector<HTMLElement>('.cover')!

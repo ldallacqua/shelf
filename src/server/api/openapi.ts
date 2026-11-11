@@ -579,6 +579,14 @@ export const openApiDocument = () => {
           parameters: [
             { name: 'key', in: 'path', required: true, schema: { type: 'string' } },
             { name: 'version', in: 'path', required: true, schema: { type: 'integer' } },
+            {
+              name: 'revision',
+              in: 'query',
+              required: false,
+              description:
+                'Ignored here. The site adds the file’s revision so that a browser holding an older copy asks again.',
+              schema: { type: 'integer' },
+            },
           ],
           responses: {
             200: { description: 'The library file' },

@@ -16,6 +16,11 @@ are 3:4 again, as the list's always were. Still heavy, not changed: a game page'
 of about 300 KB, and IGDB's covers on the large wall, fetched at the medium size first because the server draws the
 wall before it knows the size this device chose.
 
+Then the owner saw a game's page blink as it changed: a score's bar refilled each time the page was drawn (the
+library's, then the server's), and a cover dropped back to its blur. Both now hold (`score-meter.tsx`, `cover.tsx`),
+and the library file's address carries a revision (`file-address.ts`), raised whenever the file gains a field, so a
+browser's year-long copy is asked for again.
+
 ## Banners, and covers Steam made up (11 Nov 2026)
 
 The library has a fourth view, **Banners** (spec 3.8): each game a wide card, Steam's header or IGDB's art, with

@@ -32,7 +32,7 @@ test.describe('the library file @smoke', () => {
     const file = await response.json()
     expect(file.format).toBe(1)
     // The address names the same version the file carries.
-    expect(response.url()).toMatch(new RegExp(`/snapshot/${file.version}$`))
+    expect(response.url()).toMatch(new RegExp(`/snapshot/${file.version}\\?revision=\\d+$`))
     expect(file.games.length).toBeGreaterThanOrEqual(200)
     expect(file.names.platform.length).toBeGreaterThan(10)
   })

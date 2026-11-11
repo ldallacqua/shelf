@@ -4,6 +4,8 @@
  * `shelf.tsx`.
  */
 
+import { libraryFilePath } from '@/domain/library/file-address'
+
 /** Where a library's files come from: a public one's, cached by address, or one's own, fetched fresh. */
 export type LibraryFiles = { kind: 'public'; key: string } | { kind: 'mine' }
 
@@ -15,11 +17,12 @@ export type ShelfInfo = {
   files: LibraryFiles
 }
 
-/** The library file's address, for this version. One's own is fetched fresh, whatever the version. */
+/**
+ * The library file's address, for this version and the file's revision. One's own is fetched
+ * fresh, whatever the version.
+ */
 export const snapshotAddress = (files: LibraryFiles, version: number): string =>
-  files.kind === 'public'
-    ? `/api/v1/libraries/${files.key}/snapshot/${version}`
-    : '/api/v1/me/library'
+  files.kind === 'public' ? libraryFilePath(files.key, version) : '/api/v1/me/library'
 
 /** A game's facts' address, for this version. */
 export const factsAddress = (files: LibraryFiles, version: number, slug: string): string =>
