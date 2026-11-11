@@ -48,6 +48,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm perf:3d`                          | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.                                |
 | `pnpm storybook`                        | The component workshop at http://localhost:6300                                                                                            |
 | `pnpm i18n:check`                       | Fails if the two languages disagree                                                                                                        |
+| `pnpm tokens:colorways`                 | After changing a colorway's seeds or the rules in `src/domain/colorway/`: writes `src/ui/tokens/colorways.css`                             |
 | `pnpm seed [set]`                       | Migrates `.data/shelf.db` and fills the sample shelf, `/u/sample`: `default` (230 games), `empty` or `stress` (1,280)                      |
 | `pnpm account:password <handle>`        | A new random password for that account, printed once, every session ended. No email resets yet                                             |
 | `pnpm account:moderator <handle> [off]` | Lets that account add a game IGDB does not have, from its Steam link, to the catalog every shelf shares (ADR 006). Nothing on the site can |
@@ -123,7 +124,11 @@ for anything not on it, and a test fails if the list and the folders disagree.
 **Color.** Use the meaning tokens (`bg-wall`, `text-muted`, `bg-accent`), never a palette
 color and never a raw hex in a component. Tailwind's stock palette is switched off. The
 exception is a game's own colors, which are data. A new text-on-background pair must be added
-to the contrast test in `src/ui/tokens/tokens.test.ts`.
+to the contrast test in `src/ui/tokens/tokens.test.ts`, and to `requiredPairs` in
+`domain/colorway/derive.ts`. A colorway (issue 206, spec 9) is other values for those tokens,
+worked out from three seeds by `derive.ts`; `pnpm tokens:colorways` writes the presets into
+`src/ui/tokens/colorways.css`, and the contrast test runs over every one. Drawn with the tokens,
+a component follows every colorway by itself; `data-colors` on an element draws it in one.
 
 **Light.** A theme is a lighting state: room lights on, or off with the LEDs carrying the
 room. Draw with the lighting tokens (`--led`, `--led-strength`, `--glow`, `--shadow-depth`)

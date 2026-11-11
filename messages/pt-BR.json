@@ -1435,6 +1435,36 @@
       "title": "Tema",
       "body": "Claro, escuro, ou como este aparelho estiver. O botão no topo também muda."
     },
+    "colors": {
+      "title": "Cores",
+      "body": "A tinta das paredes, os botões e a luz atrás dos seus jogos. Cada conjunto funciona com as luzes acesas e apagadas.",
+      "presets": {
+        "violet": {
+          "name": "Violeta",
+          "detail": "A do Shelf"
+        },
+        "ocean": {
+          "name": "Oceano",
+          "detail": "Azul, com luz ciano"
+        },
+        "ember": {
+          "name": "Brasa",
+          "detail": "Laranja, com luz quente"
+        },
+        "arcade": {
+          "name": "Fliperama",
+          "detail": "Rosa sobre roxo, com luz magenta"
+        },
+        "crimson": {
+          "name": "Carmesim",
+          "detail": "Vermelho, com luz vermelha"
+        },
+        "graphite": {
+          "name": "Grafite",
+          "detail": "Cinza, com luz branca"
+        }
+      }
+    },
     "language": {
       "title": "Idioma",
       "body": "O idioma em que o Shelf fala. O botão no topo também muda.",

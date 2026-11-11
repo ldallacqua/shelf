@@ -40,6 +40,23 @@ export function readTheme(theme: 'light' | 'dark'): TokenMap {
   return new Map([...block(css, /\[data-theme\]$/), ...block(css, selector)])
 }
 
+/** The colorways' names, in the order colorways.css has them. */
+export function readColorwayNames(): string[] {
+  const names = [...read('colorways.css').matchAll(/^\[data-colors='([\w-]+)'\],$/gm)].map(
+    (match) => match[1] ?? '',
+  )
+  return [...new Set(names)]
+}
+
+/** A colorway's tokens in one theme: theme.css's, with the colorway's laid over them. */
+export function readColorway(name: string, theme: 'light' | 'dark'): TokenMap {
+  const selector =
+    theme === 'light'
+      ? new RegExp(String.raw`^\[data-colors='${name}'\],`)
+      : new RegExp(String.raw`^\[data-colors='${name}'\]\[data-theme='dark'\],`)
+  return new Map([...readTheme(theme), ...block(read('colorways.css'), selector)])
+}
+
 export function readMotion(): { durations: TokenMap; curves: TokenMap } {
   const css = read('motion.css')
   return { durations: block(css, /^:root$/), curves: block(css, /^@theme static$/) }

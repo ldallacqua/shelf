@@ -8,6 +8,7 @@ import appEn from '../messages/app/en.json'
 import appPtBR from '../messages/app/pt-BR.json'
 import en from '../messages/en.json'
 import ptBR from '../messages/pt-BR.json'
+import { presetNames } from '../src/domain/colorway/names'
 import { fontVariables } from '../src/ui/fonts'
 
 import '../src/app/globals.css'
@@ -19,16 +20,27 @@ const messages = {
 type Locale = keyof typeof messages
 
 /**
- * Lights the story the way the app would be lit: `data-theme` on <html>, the
- * same attribute the theme script sets. The toolbar's theme switch drives it.
+ * Lights the story the way the app would be lit: `data-theme` and `data-colors`
+ * on <html>, the attributes the theme script sets. The toolbar's theme and
+ * colors switches drive them.
  */
-function Lit({ theme, children }: { theme: 'light' | 'dark'; children: ReactNode }) {
+function Lit({
+  theme,
+  colors,
+  children,
+}: {
+  theme: 'light' | 'dark'
+  colors: string
+  children: ReactNode
+}) {
   useEffect(() => {
     const root = document.documentElement
     root.dataset.theme = theme
     root.dataset.themeChoice = theme
+    if (colors === 'violet') delete root.dataset.colors
+    else root.dataset.colors = colors
     root.classList.add(...fontVariables.split(' '))
-  }, [theme])
+  }, [theme, colors])
 
   return children
 }
@@ -47,7 +59,10 @@ function Translated({ locale, children }: { locale: Locale; children: ReactNode 
 }
 
 const withTheme: Decorator = (Story, context) => (
-  <Lit theme={context.globals.theme === 'dark' ? 'dark' : 'light'}>
+  <Lit
+    theme={context.globals.theme === 'dark' ? 'dark' : 'light'}
+    colors={presetNames.find((name) => name === context.globals.colors) ?? 'violet'}
+  >
     <Story />
   </Lit>
 )
@@ -73,6 +88,15 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+    colors: {
+      description: 'Colors',
+      toolbar: {
+        title: 'Colors',
+        icon: 'paintbrush',
+        items: presetNames.map((name) => ({ value: name, title: name })),
+        dynamicTitle: true,
+      },
+    },
     locale: {
       description: 'Language',
       toolbar: {
@@ -86,7 +110,7 @@ const preview: Preview = {
       },
     },
   },
-  initialGlobals: { theme: 'dark', locale: 'en' },
+  initialGlobals: { theme: 'dark', colors: 'violet', locale: 'en' },
   parameters: {
     layout: 'padded',
     nextjs: { appDirectory: true },

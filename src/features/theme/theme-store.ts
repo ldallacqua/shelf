@@ -1,5 +1,6 @@
 import {
   changeDirection,
+  colorwayWall,
   parseThemeChoice,
   resolveTheme,
   THEME_STORAGE_KEY,
@@ -12,6 +13,10 @@ import {
  * The browser side of the theme: reads and writes the stored choice, applies
  * it to the page, and tells React when it changes. There is no provider; the
  * page's <html> element is the single source, set first by the theme script.
+ *
+ * Every page loads this, so of the colorway it knows only what the theme needs:
+ * which one <html> names, for the browser's chrome. Choosing one is
+ * `colorway-store.ts`, loaded where the picker is.
  */
 
 // A little longer than the longest lighting transition (300ms delay + 700ms).
@@ -40,21 +45,44 @@ function applyWithoutAnimation(choice: ThemeChoice): void {
   apply(choice, false)
 }
 
+/**
+ * Plays a change of the room's colors as a change of light, about a second.
+ * A new colorway goes the way of the theme it is in: its lighting stays, and
+ * only the colors glide.
+ */
+export function playChange(to: Theme): void {
+  if (prefersReducedMotion()) return
+  const root = document.documentElement
+  root.dataset.themeChanging = changeDirection(to)
+  clearTimeout(changeTimer)
+  changeTimer = setTimeout(() => {
+    delete root.dataset.themeChanging
+  }, CHANGE_WINDOW_MS)
+}
+
+/**
+ * The browser's own chrome, the color of the wall: the wall of the colorway
+ * <html> names, or Shelf's own. Looked up as it stands, so that every page,
+ * which loads this, needn't load the list of colorways to check the name.
+ */
+export function paintChrome(): void {
+  const named = document.documentElement.dataset.colors
+  const walls =
+    named && Object.hasOwn(colorwayWall, named)
+      ? colorwayWall[named as keyof typeof colorwayWall]
+      : themeColor
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', walls[getTheme()])
+}
+
 function apply(choice: ThemeChoice, animate = true): void {
   const root = document.documentElement
   const theme = resolveTheme(choice, deviceIsDark())
 
-  if (animate && root.dataset.theme !== theme && !prefersReducedMotion()) {
-    root.dataset.themeChanging = changeDirection(theme)
-    clearTimeout(changeTimer)
-    changeTimer = setTimeout(() => {
-      delete root.dataset.themeChanging
-    }, CHANGE_WINDOW_MS)
-  }
+  if (animate && root.dataset.theme !== theme) playChange(theme)
 
   root.dataset.theme = theme
   root.dataset.themeChoice = choice
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor[theme])
+  paintChrome()
 }
 
 function notify(): void {

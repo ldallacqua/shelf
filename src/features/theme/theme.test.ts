@@ -4,12 +4,14 @@ import { readPalette, readTheme, resolve } from '@/ui/tokens/read-tokens'
 
 import {
   changeDirection,
+  COLORS_STORAGE_KEY,
+  colorwayWall,
   parseThemeChoice,
   resolveTheme,
   THEME_STORAGE_KEY,
   themeColor,
-  themeScript,
 } from './theme'
+import { themeScript } from './theme-script'
 
 describe('parseThemeChoice', () => {
   it('keeps the two explicit choices', () => {
@@ -60,12 +62,19 @@ describe('changeDirection', () => {
 describe('themeScript', () => {
   type Fake = {
     stored?: string | null
+    storedColors?: string | null
     deviceIsDark?: boolean
     storageThrows?: boolean
     matchMediaMissing?: boolean
   }
 
-  function run({ stored = null, deviceIsDark = false, storageThrows, matchMediaMissing }: Fake) {
+  function run({
+    stored = null,
+    storedColors = null,
+    deviceIsDark = false,
+    storageThrows,
+    matchMediaMissing,
+  }: Fake) {
     const attributes = new Map<string, string>()
     const metas: { name: string; content: string }[] = []
     const document = {
@@ -78,6 +87,7 @@ describe('themeScript', () => {
     const localStorage = {
       getItem: (key: string) => {
         if (storageThrows) throw new Error('blocked')
+        if (key === COLORS_STORAGE_KEY) return storedColors
         return key === THEME_STORAGE_KEY ? stored : null
       },
     }
@@ -95,6 +105,7 @@ describe('themeScript', () => {
     return {
       theme: attributes.get('data-theme'),
       choice: attributes.get('data-theme-choice'),
+      colors: attributes.get('data-colors'),
       metas,
     }
   }
@@ -144,6 +155,21 @@ describe('themeScript', () => {
       { name: 'theme-color', content: themeColor.light },
     ])
   })
+
+  it('paints the page in a stored colorway, and the chrome in its wall', () => {
+    const page = run({ storedColors: 'ocean', deviceIsDark: true })
+    expect(page).toMatchObject({ theme: 'dark', colors: 'ocean' })
+    expect(page.metas).toEqual([{ name: 'theme-color', content: colorwayWall.ocean.dark }])
+  })
+
+  it.each([null, 'violet', 'sepia', 'toString', '__proto__', 'hasOwnProperty'])(
+    "names no colorway for %j, so the page is Shelf's own",
+    (storedColors) => {
+      const page = run({ storedColors, deviceIsDark: false })
+      expect(page.colors).toBeUndefined()
+      expect(page.metas).toEqual([{ name: 'theme-color', content: themeColor.light }])
+    },
+  )
 
   it('is one statement with no line breaks, safe to inline in <head>', () => {
     const script = themeScript()
