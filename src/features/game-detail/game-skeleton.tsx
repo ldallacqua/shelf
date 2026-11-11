@@ -23,7 +23,8 @@ export function GameSkeleton() {
             </span>
           </span>
           <div className="flex items-end gap-4 @min-[39rem]:gap-6">
-            <span className="game-cover ghost aspect-[3/4]" />
+            {/* Its shape isn't known yet: most covers' (`COVER_FRAME`). */}
+            <span className="game-cover ghost aspect-[2/3]" />
             <div className="grid flex-1 gap-3 pb-1">
               <span className="ghost h-8 w-3/4 @min-[39rem]:h-12" />
               <span className={cn('ghost h-3 w-40')} />

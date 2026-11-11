@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type { Palette } from '@/domain/color/palette'
+import type { CoverFit } from '@/domain/library/cover-fit'
 import { coverSources } from '@/domain/igdb/images'
 
 import { pageIsLive } from './live'
@@ -27,6 +28,11 @@ type CoverProps = {
    * blank while its larger file loads.
    */
   placeholder?: string
+  /**
+   * How it stands in its frame (`coverFit`): filling it, or whole inside it, over its own
+   * colors, when it is another shape. Filling it, unless said.
+   */
+  fit?: CoverFit
 }
 
 const wash = ([accent, second, base]: Palette): string =>
@@ -46,6 +52,7 @@ export function Cover({
   eager,
   small,
   placeholder,
+  fit,
 }: CoverProps) {
   // The page as the server built it has its covers over a wash of their colors.
   // A cover that joins a live page (a row scrolled into view) is over a blur of
@@ -59,17 +66,23 @@ export function Cover({
   const [preview, setPreview] = useState(() => (joined && hash ? previewIfReady(hash) : undefined))
   const image = useRef<HTMLImageElement>(null)
   const forget = useRef<(() => void) | undefined>(undefined)
+  const whole = fit === 'whole'
   useEffect(() => {
     // With the file the shelf already shows underneath, a blur would only be worse.
-    if (!joined || !hash || !cover || placeholder) return
+    if (!hash || !cover || placeholder) return
+    // A cover drawn whole keeps its blur in the bands around it, as long as it is drawn: the
+    // colors at its own edges, where the wash's would be anywhere's.
+    if (whole) return requestPreview(hash, setPreview)
+    if (!joined) return
     if (image.current?.complete) return
     forget.current = requestPreview(hash, setPreview)
     return () => forget.current?.()
-  }, [joined, hash, cover, placeholder])
+  }, [joined, hash, cover, placeholder, whole])
 
   return (
     <span
       className="cover"
+      data-fit={fit === 'whole' ? 'whole' : undefined}
       style={{
         backgroundImage: placeholder
           ? `url("${placeholder}")`

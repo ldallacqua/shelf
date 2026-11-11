@@ -407,6 +407,15 @@ scroll past, on a phone too. At rest a label sits on the wall like the shelf's a
 headings; only once pinned does it take a band of wall color, so no cover shows through it. The
 trophy wall's year labels do the same.
 
+**Every cover whole** (issue 193, 10 Nov 2026). Each cover stands in a 2:3 frame, the shape of
+Steam's capsules and so of most covers since ADR 010. A cover of that shape, or within a twentieth
+of it, fills its frame. Any other, such as IGDB's 3:4, stands whole inside it, centered, over a
+blur of itself a little darker, so nothing is cut from a logo or a title and every row keeps one
+height. The owner, on 10 Nov 2026, of a cover cut short on the wall and whole on its page: "I
+think the proportion of the game covers inside the 'mural' view is wrong." The account page's
+lists of archived games and of hours, and a game's versions in Mine, use the same frame; Add a
+game keeps IGDB's 3:4, as its results are IGDB's.
+
 **List.** One compact row per game, for fast scanning:
 
 | Column | Notes |

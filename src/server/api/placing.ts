@@ -8,7 +8,7 @@ import { statuses, syncSources } from '@/domain/library/values'
  * What the page for placing a sync's games is answered with (spec 4.5): the
  * signed-in account's unsorted games and how many games stand in each
  * status. In the library file's units, as that page reads them beside it:
- * a rating out of 100, minutes, IGDB image ids. Only the account's own, and
+ * a rating out of 100, minutes, image ids. Only the account's own, and
  * kept by no one.
  */
 

@@ -59,7 +59,7 @@ in the game details such as videos. I don't think we should change search and th
 ## Consequences
 
 - Most covers on a shelf synced from Steam are now 2:3, where IGDB's are 3:4. The wall cropped every cover to 3:4
-  until issue #193.
+  until issue #193, which made its frame 2:3 and draws any other cover whole inside it (spec 3.8).
 - A cover read from Steam has its path as its id, so the library file grows by about fifty bytes a game.
 - Visitors' browsers fetch more from Steam's image servers. ADR 006 decision 7's note on Valve's licence applies to
   more of the site.

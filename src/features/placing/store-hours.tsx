@@ -7,6 +7,7 @@ import type { StoreHoursGame } from '@/domain/library/editing'
 import type { IgdbTime } from '@/domain/library/hours'
 import type { SyncSource } from '@/domain/library/values'
 import { editClient } from '@/features/game-detail/edit-client'
+import { coverFit, ratioOfCover } from '@/domain/library/cover-fit'
 import { Cover } from '@/features/library/cover'
 import { libraryHref } from '@/features/library/shelf-address'
 import { useAccount } from '@/features/owner/account'
@@ -84,7 +85,7 @@ function HoursGhosts() {
         {Array.from({ length: GHOST_ROWS }, (_, row) => (
           <div key={row} className="grid gap-3">
             <div className="flex items-center gap-3">
-              <Ghost order={row} className="aspect-[3/4] w-10 flex-none rounded-[3px]" />
+              <Ghost order={row} className="aspect-[2/3] w-10 flex-none rounded-[3px]" />
               <span className="grid min-w-0 flex-1 gap-0.5">
                 <GhostText order={row} className="w-1/2" />
                 <span className="text-sm">
@@ -218,7 +219,7 @@ function HoursList({ handle }: { handle: string }) {
                     <span
                       aria-hidden="true"
                       className="relative block w-10 flex-none overflow-hidden rounded-[3px] bg-text/8"
-                      style={{ aspectRatio: '3 / 4' }}
+                      style={{ aspectRatio: '2 / 3' }}
                     >
                       <Cover
                         cover={game.cover}
@@ -226,6 +227,7 @@ function HoursList({ handle }: { handle: string }) {
                         hash={game.hash}
                         title={game.title}
                         sizes="40px"
+                        fit={coverFit(ratioOfCover(game.cover))}
                       />
                     </span>
                     <span className="grid min-w-0 flex-1 gap-0.5">

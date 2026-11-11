@@ -4,6 +4,15 @@ Work moved from the Mac mini to another computer partway through the review pass
 step 3. This note is what the next session needs and cannot get from the code. Read
 `AGENTS.md` first, then this.
 
+## Every cover whole on the wall (10 Nov 2026)
+
+Issue 193: the wall's frames are 2:3, the shape of Steam's capsules and of most covers since ADR 010. A cover of
+that shape fills its frame; any other (IGDB's 3:4) stands whole inside it over a blur of itself, darker, so rows keep
+one height and nothing is cut (`domain/library/cover-fit.ts`, `Cover`'s `fit`). The account page's archived and
+hours lists and the versions in Mine use the same frame. The design skills ran (`design-critique`); Steam's own
+library, which builds a tile from a landscape image for an app with no portrait art, couldn't be opened here.
+**The wall's reference screenshots are out of date** until the browser tests return after the MVP.
+
 ## Steam first on a game's page (10 Nov 2026)
 
 Issue 192, [ADR 010](adr/010-steam-first-on-a-game-page.md): a game IGDB has with a page on Steam's store takes
