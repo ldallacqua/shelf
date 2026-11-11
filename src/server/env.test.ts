@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  adminPassword,
   databaseTarget,
   deployment,
   igdbEnv,
@@ -22,6 +23,7 @@ const NAMES = [
   'SHELF_MOCKS',
   'VERCEL',
   'VERCEL_ENV',
+  'ADMIN_PASSWORD',
 ]
 
 beforeEach(() => {
@@ -55,6 +57,17 @@ describe('igdbEnv', () => {
     vi.stubEnv('TWITCH_CLIENT_ID', '   ')
     vi.stubEnv('TWITCH_CLIENT_SECRET', 'secret')
     expect(() => igdbEnv()).toThrow(/TWITCH_CLIENT_ID/)
+  })
+})
+
+describe('adminPassword', () => {
+  it('takes the owner’s own, twelve characters or more, and nothing shorter', () => {
+    vi.stubEnv('ADMIN_PASSWORD', ' twelve-chars ')
+    expect(adminPassword()).toBe('twelve-chars')
+    vi.stubEnv('ADMIN_PASSWORD', 'eleven-char')
+    expect(adminPassword()).toBeUndefined()
+    vi.stubEnv('ADMIN_PASSWORD', '')
+    expect(adminPassword()).toBeUndefined()
   })
 })
 

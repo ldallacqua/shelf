@@ -9,7 +9,7 @@ step 3. This note is what the next session needs and cannot get from the code. R
 `/admin` starts the server's jobs by hand: Steam pages (new, or every one again), Steam scores, IGDB records, the daily
 sync, or everything, each run in steps of four minutes that carry on by themselves until done (spec 17a, architecture
 section 20). It needs `ADMIN_PASSWORD`: one was made for the owner into `.env.local`, and **the owner pastes the same
-value into Vercel's Production settings and redeploys**; until then production's page says it is off. It was run here
+value into Vercel's Production settings and redeploys**; until then production's page says it is off. The owner chose a password of their own, so the page takes one of 12 characters or more (it first asked for 24, and said off). The status read is never built ahead: built without a password, Vercel's edge had kept its "off". It was run here
 against the test doubles (a job done in one step, a stage's failure shown in words, the step route refusing without
 the password); the hand-off from one step to the next over HTTP is covered by a unit test and by calling the step
 route by hand, not yet by a long run on production. The design skills ran (`design-critique` on the cover change,

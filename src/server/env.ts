@@ -87,13 +87,17 @@ export const cronSecret = (): string | undefined => {
 
 /**
  * What opens the admin page, where jobs are started by hand. Only the owner knows it; it lives in
- * `.env.local` and in Vercel's settings, nowhere else. Without one, or one too short to be safe,
- * the page lets nobody in. While the test doubles answer, it is their made-up one.
+ * `.env.local` and in Vercel's settings, nowhere else. The owner's own, so one they can type: twelve
+ * characters at least, as a wrong guess also waits (`/api/admin/session`). Without one, or a shorter
+ * one, the page lets nobody in. While the test doubles answer, it is their made-up one.
  */
+/** The shortest admin password the page accepts. */
+export const ADMIN_PASSWORD_LENGTH = 12
+
 export const adminPassword = (): string | undefined => {
   if (mocksRequested() && !onVercel()) return MOCK_ADMIN_PASSWORD
   const value = process.env.ADMIN_PASSWORD?.trim()
-  return value && value.length >= 24 ? value : undefined
+  return value && value.length >= ADMIN_PASSWORD_LENGTH ? value : undefined
 }
 
 /**
