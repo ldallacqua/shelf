@@ -117,6 +117,41 @@ describe('GameDetail', () => {
     expect(screen.getAllByText('Read more')).toHaveLength(1)
   })
 
+  it('cuts the hero’s summary only where About tells it whole', () => {
+    const draw = (extra: Partial<GameFacts>) =>
+      renderWithIntl(
+        <GameDetail
+          handle="sample"
+          game={game()}
+          tags={tags}
+          platforms={platforms}
+          facts={facts({ storyline: undefined, ...extra })}
+        />,
+      )
+    const intro = () => document.querySelector('.game-intro')!
+
+    // Too short for About, so the hero is its only place: whole there, however narrow.
+    const middling = `A Hunter wakes in Yharnam. ${'The night is long. '.repeat(12)}`.trim()
+    const { unmount } = draw({ summary: middling })
+    expect(intro()).toHaveTextContent(middling)
+    expect(intro()).not.toHaveAttribute('data-clamped')
+    unmount()
+
+    const long = `A Hunter wakes in Yharnam. ${'The night is long. '.repeat(20)}`.trim()
+    const second = draw({ summary: long })
+    expect(intro()).toHaveAttribute('data-clamped')
+    expect(screen.getAllByText(long)).toHaveLength(2)
+    second.unmount()
+
+    // Beside a store description About does not tell it, so it is whole in the hero.
+    draw({
+      summary: long,
+      description: [{ kind: 'paragraph', runs: [{ text: 'From the store.' }] }],
+    })
+    expect(intro()).not.toHaveAttribute('data-clamped')
+    expect(screen.getAllByText(long)).toHaveLength(1)
+  })
+
   it('lists the platforms a game came out on by date, one line a date', () => {
     const switchPlatform = { ...ps4, id: 130, key: 'switch', name: 'Nintendo Switch' }
     renderWithIntl(

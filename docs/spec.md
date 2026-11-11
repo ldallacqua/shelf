@@ -1377,9 +1377,11 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 
 Each value under Details is a link to the library filtered by it.
 
-**Media gallery (11 Nov 2026).** The short description introduces the game in the hero, at most four
-lines; it is not repeated under About unless it is longer than 300 characters or has several paragraphs,
-in which case About keeps it whole. The scores keep their place and their meters. The gallery's stage and
+**Media gallery (11 Nov 2026).** The short description introduces the game in the hero; it is not
+repeated under About unless it is longer than 300 characters or has several paragraphs and the store
+gives no long description, in which case About keeps it whole and the hero shows its first four lines.
+Any other summary is whole in the hero, as Steam's page draws its short description: cut there, its end
+would be nowhere on the page. The scores keep their place and their meters. The gallery's stage and
 rail have matching skeletons during the library's navigation handoff; an empty gallery is omitted, and
 a game without videos leads with its screenshots. Mature media waits blurred until explicitly revealed,
 and a hidden mature video never autoplays. Selecting a thumbnail does not force full-screen playback.
