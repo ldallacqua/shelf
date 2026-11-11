@@ -1,5 +1,6 @@
 import { colorsOf, colorTokens, type Colors, type Theme } from '@/domain/colorway/derive'
-import { DEFAULT_PRESET, presetNames, presets, type Preset } from '@/domain/colorway/presets'
+import { DEFAULT_PRESET, presetNames, type Preset } from '@/domain/colorway/names'
+import { presets } from '@/domain/colorway/presets'
 import { readPalette, readTheme, resolve } from '@/ui/tokens/read-tokens'
 
 /**

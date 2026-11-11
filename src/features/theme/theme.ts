@@ -1,4 +1,4 @@
-import { DEFAULT_PRESET, isPreset, type Preset } from '@/domain/colorway/presets'
+import type { Preset } from '@/domain/colorway/names'
 
 /**
  * The theme rules, with no browser or React in them.
@@ -38,11 +38,6 @@ export function parseThemeChoice(value: unknown): ThemeChoice {
   return value === 'light' || value === 'dark' ? value : 'system'
 }
 
-/** Anything that is not a preset, including nothing stored, means Shelf's own colors. */
-export function parseColorway(value: unknown): Preset {
-  return isPreset(value) ? value : DEFAULT_PRESET
-}
-
 export function resolveTheme(choice: ThemeChoice, deviceIsDark: boolean): Theme {
   if (choice === 'system') return deviceIsDark ? 'dark' : 'light'
   return choice
@@ -51,31 +46,4 @@ export function resolveTheme(choice: ThemeChoice, deviceIsDark: boolean): Theme 
 /** Which way the light is changing, for the theme-change animation. */
 export function changeDirection(to: Theme): 'to-dark' | 'to-light' {
   return to === 'dark' ? 'to-dark' : 'to-light'
-}
-
-/**
- * The script that runs in <head> before the first paint, so the page never
- * flashes the wrong theme or the wrong colors. It must stand alone: no
- * imports, no modern syntax that could fail to parse, and it must never throw
- * (storage can be blocked).
- */
-export function themeScript(): string {
-  const key = JSON.stringify(THEME_STORAGE_KEY)
-  const colorsKey = JSON.stringify(COLORS_STORAGE_KEY)
-  // Each colorway's walls, light then dark: also the list of colorways it knows.
-  const walls = JSON.stringify(
-    Object.fromEntries(
-      Object.entries(colorwayWall).map(([name, wall]) => [name, [wall.light, wall.dark]]),
-    ),
-  )
-  return (
-    `(function(){var d=document.documentElement,c='system',t='light',k=${JSON.stringify(DEFAULT_PRESET)},w=${walls};` +
-    `try{var s=localStorage.getItem(${key});if(s==='light'||s==='dark')c=s}catch(e){}` +
-    `try{t=c==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):c}catch(e){}` +
-    `try{var p=localStorage.getItem(${colorsKey});if(p&&Object.prototype.hasOwnProperty.call(w,p))k=p}catch(e){}` +
-    `d.setAttribute('data-theme',t);d.setAttribute('data-theme-choice',c);` +
-    `if(k!==${JSON.stringify(DEFAULT_PRESET)})d.setAttribute('data-colors',k);` +
-    `var m=document.createElement('meta');m.name='theme-color';m.content=w[k][t==='dark'?1:0];` +
-    `document.head.appendChild(m)})()`
-  )
 }

@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 
-import { presetNames, type Preset } from '@/domain/colorway/presets'
+import { presetNames, type Preset } from '@/domain/colorway/names'
 import { ChoiceCard, ChoiceCards } from '@/ui/choice-cards'
 import { cn } from '@/ui/cn'
 

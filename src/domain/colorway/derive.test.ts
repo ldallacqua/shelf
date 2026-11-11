@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { contrast, mix } from './contrast'
 import { colorsOf, colorTokens, ledWash, requiredPairs, type Colors, type Theme } from './derive'
 import { fromOklch, toOklch } from './oklch'
-import { presetNames, presets, type Seeds } from './presets'
+import { presetNames } from './names'
+import { presets, type Seeds } from './presets'
 
 const themes: Theme[] = ['light', 'dark']
 

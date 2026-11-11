@@ -2,15 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setDevice } from '@/test/device'
 
-import { COLORS_STORAGE_KEY, colorwayWall, THEME_STORAGE_KEY, themeColor } from './theme'
-import {
-  getColorway,
-  getTheme,
-  getThemeChoice,
-  setColorway,
-  setThemeChoice,
-  subscribeToTheme,
-} from './theme-store'
+import { THEME_STORAGE_KEY, themeColor } from './theme'
+import { getTheme, getThemeChoice, setThemeChoice, subscribeToTheme } from './theme-store'
 
 const root = document.documentElement
 
@@ -154,113 +147,6 @@ describe('theme store', () => {
 
     expect(root.dataset.theme).toBe('dark')
     expect(root.dataset.themeChoice).toBe('dark')
-
-    unsubscribe()
-  })
-})
-
-describe('colorway store', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    delete root.dataset.colors
-    startPage('dark')
-  })
-
-  afterEach(() => {
-    vi.runOnlyPendingTimers()
-    vi.useRealTimers()
-    delete root.dataset.colors
-  })
-
-  it("reads Shelf's own colors when the page names none", () => {
-    expect(getColorway()).toBe('violet')
-  })
-
-  it('paints the page in a colorway and remembers it', () => {
-    setColorway('ocean')
-
-    expect(root.dataset.colors).toBe('ocean')
-    expect(getColorway()).toBe('ocean')
-    expect(window.localStorage.getItem(COLORS_STORAGE_KEY)).toBe('ocean')
-    expect(themeColorMeta()).toBe(colorwayWall.ocean.dark)
-  })
-
-  it("forgets it, and names none, back on Shelf's own", () => {
-    setColorway('ember')
-    setColorway('violet')
-
-    expect(root.dataset.colors).toBeUndefined()
-    expect(window.localStorage.getItem(COLORS_STORAGE_KEY)).toBeNull()
-    expect(themeColorMeta()).toBe(themeColor.dark)
-  })
-
-  it('plays the change as a change of light in the theme that is on', () => {
-    setColorway('arcade')
-    expect(root.dataset.themeChanging).toBe('to-dark')
-    expect(root.dataset.theme).toBe('dark')
-
-    vi.advanceTimersByTime(1200)
-    expect(root.dataset.themeChanging).toBeUndefined()
-  })
-
-  it('changes at once under reduced motion', () => {
-    setDevice({ reducedMotion: true })
-    setColorway('crimson')
-
-    expect(root.dataset.colors).toBe('crimson')
-    expect(root.dataset.themeChanging).toBeUndefined()
-  })
-
-  it('keeps the wall in the browser chrome when the theme changes', () => {
-    setColorway('graphite')
-    setThemeChoice('light')
-
-    expect(themeColorMeta()).toBe(colorwayWall.graphite.light)
-  })
-
-  it('still paints the page when storage is blocked', () => {
-    const blocked = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('blocked')
-    })
-    setColorway('ocean')
-    expect(root.dataset.colors).toBe('ocean')
-    blocked.mockRestore()
-  })
-
-  it('tells subscribers about a change', () => {
-    const listener = vi.fn()
-    const unsubscribe = subscribeToTheme(listener)
-
-    setColorway('ember')
-    expect(listener).toHaveBeenCalledTimes(1)
-
-    unsubscribe()
-  })
-
-  it('picks up a colorway chosen in another tab', () => {
-    const unsubscribe = subscribeToTheme(() => {})
-
-    window.localStorage.setItem(COLORS_STORAGE_KEY, 'arcade')
-    window.dispatchEvent(
-      new StorageEvent('storage', { key: COLORS_STORAGE_KEY, newValue: 'arcade' }),
-    )
-
-    expect(root.dataset.colors).toBe('arcade')
-    // The theme is left as it was.
-    expect(root.dataset.theme).toBe('dark')
-
-    unsubscribe()
-  })
-
-  it('applies the stored colorway itself when the theme script never ran', () => {
-    delete root.dataset.theme
-    delete root.dataset.themeChoice
-    window.localStorage.setItem(COLORS_STORAGE_KEY, 'ocean')
-
-    const unsubscribe = subscribeToTheme(() => {})
-
-    expect(root.dataset.colors).toBe('ocean')
-    expect(root.dataset.themeChanging).toBeUndefined()
 
     unsubscribe()
   })

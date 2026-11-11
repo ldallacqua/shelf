@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_PRESET, isPreset, parseSeeds, presetNames } from './presets'
+import { DEFAULT_PRESET, isPreset, presetNames } from './names'
+import { parseSeeds, presets } from './presets'
 
 describe('presets', () => {
   it("starts with Shelf's own", () => {
     expect(presetNames[0]).toBe(DEFAULT_PRESET)
+  })
+
+  it('has seeds for every name, and no others', () => {
+    expect(Object.keys(presets)).toEqual([...presetNames])
   })
 
   it('knows a preset by its name, and nothing else', () => {

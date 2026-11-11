@@ -6,13 +6,12 @@ import {
   changeDirection,
   COLORS_STORAGE_KEY,
   colorwayWall,
-  parseColorway,
   parseThemeChoice,
   resolveTheme,
   THEME_STORAGE_KEY,
   themeColor,
-  themeScript,
 } from './theme'
+import { themeScript } from './theme-script'
 
 describe('parseThemeChoice', () => {
   it('keeps the two explicit choices', () => {
@@ -24,19 +23,6 @@ describe('parseThemeChoice', () => {
     'treats %j as "follow the device"',
     (value) => {
       expect(parseThemeChoice(value)).toBe('system')
-    },
-  )
-})
-
-describe('parseColorway', () => {
-  it('keeps a preset', () => {
-    expect(parseColorway('ocean')).toBe('ocean')
-  })
-
-  it.each([null, undefined, '', 'OCEAN', 'mine', 'toString', 42, {}])(
-    "treats %j as Shelf's own colors",
-    (value) => {
-      expect(parseColorway(value)).toBe('violet')
     },
   )
 })

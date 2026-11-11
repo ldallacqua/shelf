@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 import { ledWash } from '@/domain/colorway/derive'
-import { presetNames } from '@/domain/colorway/presets'
+import { presetNames } from '@/domain/colorway/names'
 import { readTheme } from '@/ui/tokens/read-tokens'
 
 import { colorsOfPreset, colorwaysCss } from './colorways-css'

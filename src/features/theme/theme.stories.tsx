@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import { presetNames } from '@/domain/colorway/presets'
+import { presetNames } from '@/domain/colorway/names'
 
 import { ColorwayPicker, ColorwayRoom } from './colorway-picker'
 import { ThemePicker } from './theme-picker'

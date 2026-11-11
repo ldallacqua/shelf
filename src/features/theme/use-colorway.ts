@@ -2,9 +2,9 @@
 
 import { useSyncExternalStore } from 'react'
 
-import { DEFAULT_PRESET, type Preset } from '@/domain/colorway/presets'
+import { DEFAULT_PRESET, type Preset } from '@/domain/colorway/names'
 
-import { getColorway, setColorway, subscribeToTheme } from './theme-store'
+import { getColorway, setColorway, subscribeToColorway } from './colorway-store'
 
 /**
  * The colorway this device paints Shelf in, and a way to change it. On the
@@ -12,6 +12,6 @@ import { getColorway, setColorway, subscribeToTheme } from './theme-store'
  * follows at once, without a hydration warning.
  */
 export function useColorway(): { colorway: Preset; setColorway: (colorway: Preset) => void } {
-  const colorway = useSyncExternalStore(subscribeToTheme, getColorway, () => DEFAULT_PRESET)
+  const colorway = useSyncExternalStore(subscribeToColorway, getColorway, () => DEFAULT_PRESET)
   return { colorway, setColorway }
 }

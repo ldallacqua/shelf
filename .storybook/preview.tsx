@@ -8,7 +8,7 @@ import appEn from '../messages/app/en.json'
 import appPtBR from '../messages/app/pt-BR.json'
 import en from '../messages/en.json'
 import ptBR from '../messages/pt-BR.json'
-import { presetNames } from '../src/domain/colorway/presets'
+import { presetNames } from '../src/domain/colorway/names'
 import { fontVariables } from '../src/ui/fonts'
 
 import '../src/app/globals.css'

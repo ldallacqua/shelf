@@ -1,5 +1,7 @@
 import { isHex } from '@/domain/color/palette'
 
+import type { Preset } from './names'
+
 /**
  * A colorway: the colors Shelf is drawn in, chosen on the device (issue 206).
  * It sets the meaning tokens of `src/ui/tokens/theme.css` in both themes, and
@@ -12,31 +14,25 @@ import { isHex } from '@/domain/color/palette'
  * and the text) and the light (the LEDs at rest). A preset is three seeds, and
  * so is a colorway of one's own: the same rules make both.
  *
- * This file is what every page needs, the names; the arithmetic is apart.
+ * The names alone are `names.ts`, which every page loads; the seeds are here,
+ * and the arithmetic is `derive.ts`, both loaded only where colorways are chosen.
  */
 
 export type Seeds = { accent: string; room: string; led: string }
 
 /**
- * The presets, in the order the picker shows them. Violet is Shelf's own
- * colors, which `theme.css` draws with no colorway at all; its seeds are where
- * a colorway of one's own starts from.
+ * Each preset's seeds. Violet is Shelf's own colors, which `theme.css` draws
+ * with no colorway at all; its seeds are where a colorway of one's own starts
+ * from.
  */
-export const presets = {
+export const presets: Record<Preset, Seeds> = {
   violet: { accent: '#6a4cf5', room: '#3a4152', led: '#7c5cff' },
   ocean: { accent: '#1f8fd6', room: '#2c4a66', led: '#22c8ee' },
   ember: { accent: '#f26b2a', room: '#463d3a', led: '#ff7a3d' },
   arcade: { accent: '#f0399b', room: '#3a2860', led: '#ff4fd8' },
   crimson: { accent: '#e5223a', room: '#3c3f46', led: '#ff3b3b' },
   graphite: { accent: '#24282f', room: '#808080', led: '#d3d8e4' },
-} as const satisfies Record<string, Seeds>
-
-export type Preset = keyof typeof presets
-export const presetNames = Object.keys(presets) as Preset[]
-export const DEFAULT_PRESET: Preset = 'violet'
-
-export const isPreset = (value: unknown): value is Preset =>
-  typeof value === 'string' && Object.hasOwn(presets, value)
+}
 
 /** Seeds read from anywhere (storage, a form): three #rrggbb colors, or nothing. */
 export function parseSeeds(value: unknown): Seeds | undefined {
