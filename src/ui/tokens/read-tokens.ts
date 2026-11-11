@@ -48,6 +48,13 @@ export function readColorwayNames(): string[] {
   return [...new Set(names)]
 }
 
+/** The presets: every colorway whose colors are written in the file, not read from <html>. */
+export function readPresetNames(): string[] {
+  return readColorwayNames().filter((name) =>
+    /^#/.test(readColorway(name, 'light').get('--wall') ?? ''),
+  )
+}
+
 /** A colorway's tokens in one theme: theme.css's, with the colorway's laid over them. */
 export function readColorway(name: string, theme: 'light' | 'dark'): TokenMap {
   const selector =

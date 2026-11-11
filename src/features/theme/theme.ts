@@ -8,22 +8,34 @@ import type { Preset } from '@/domain/colorway/names'
  *
  * Apart from the theme, the device keeps a colorway (issue 206): the colors
  * the room is painted in, in both themes. Shelf's own is violet, which is
- * theme.css with no `data-colors` on <html>.
+ * theme.css with no `data-colors` on <html>. One's own is kept whole, worked
+ * out, under a key of its own.
  */
 export const THEME_STORAGE_KEY = 'shelf:theme'
 export const COLORS_STORAGE_KEY = 'shelf:colors'
+export const OWN_COLORS_STORAGE_KEY = 'shelf:colors:own'
+
+export type Theme = 'light' | 'dark'
+
+/**
+ * The wall of the colorway on screen, per theme, as properties on <html>, for
+ * the browser's own chrome when the theme changes. Set only for a colorway that
+ * isn't Shelf's own, which is `themeColor`.
+ */
+export const chromeProperty: Record<Theme, string> = {
+  light: '--chrome-light',
+  dark: '--chrome-dark',
+}
 
 export const themeChoices = ['system', 'light', 'dark'] as const
 export type ThemeChoice = (typeof themeChoices)[number]
-export type Theme = 'light' | 'dark'
-
 /** Wall color per theme, for the browser's own chrome. Kept equal to the tokens by a test. */
 export const themeColor: Record<Theme, string> = {
   light: '#eceef2',
   dark: '#0b0d12',
 }
 
-/** Each colorway's wall per theme, for the same. Kept equal to colorways.css by a test. */
+/** Each preset's wall per theme, for the same. Kept equal to colorways.css by a test. */
 export const colorwayWall: Record<Preset, Record<Theme, string>> = {
   violet: themeColor,
   ocean: { light: '#e8eff6', dark: '#060e16' },

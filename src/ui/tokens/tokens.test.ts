@@ -5,6 +5,7 @@ import { duration, ease } from './motion'
 import {
   readColorway,
   readColorwayNames,
+  readPresetNames,
   readMotion,
   readPalette,
   readProperties,
@@ -15,7 +16,7 @@ import {
 const palette = readPalette()
 const themes = { light: readTheme('light'), dark: readTheme('dark') }
 const themeNames = ['light', 'dark'] as const
-const colorways = readColorwayNames()
+const colorways = readPresetNames()
 
 describe('contrast', () => {
   it('keeps the cinema captions readable over the selected media', async () => {
@@ -75,9 +76,26 @@ describe('theme tokens', () => {
 })
 
 describe('colorway tokens', () => {
-  it("has Shelf's own and the other presets", () => {
+  it("has Shelf's own and the other presets, then one's own", () => {
     expect(colorways[0]).toBe('violet')
     expect(colorways.length).toBeGreaterThan(1)
+    expect(readColorwayNames()).toEqual([...colorways, 'own'])
+  })
+
+  it("reads one's own from <html>, and is Shelf's own where <html> has nothing", () => {
+    for (const theme of themeNames) {
+      const own = readColorway('own', theme)
+      for (const [token, value] of own) {
+        if (value === themes[theme].get(token)) continue
+        const read = /^var\((--own-[\w-]+), (#[0-9a-f]{6})\)$/.exec(value)
+        expect(read, `${token} in ${theme}`).not.toBeNull()
+        const property = token === '--led' ? '--own-led' : `--own-${theme}-${token.slice(2)}`
+        expect(read?.[1]).toBe(property)
+        expect(read?.[2], `${token} falls back to Shelf's own`).toBe(
+          resolve(token, themes[theme], palette),
+        )
+      }
+    }
   })
 
   it.each(colorways)('%s sets the same tokens in both themes, all registered colors', (name) => {

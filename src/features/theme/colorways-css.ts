@@ -1,6 +1,6 @@
-import { colorsOf, colorTokens, type Colors, type Theme } from '@/domain/colorway/derive'
-import { DEFAULT_PRESET, presetNames, type Preset } from '@/domain/colorway/names'
-import { presets } from '@/domain/colorway/presets'
+import { colorsOf } from '@/domain/colorway/derive'
+import { DEFAULT_PRESET, OWN, presetNames, type Preset } from '@/domain/colorway/names'
+import { colorTokens, presets, type Colors, type Theme } from '@/domain/colorway/presets'
 import { readPalette, readTheme, resolve } from '@/ui/tokens/read-tokens'
 
 /**
@@ -58,7 +58,7 @@ export function colorwaysCss(): string {
  * in src/domain/colorway/presets.ts. Don't edit it: change a seed and run it.
  *
  * <html> carries \`data-colors\` for every colorway but Shelf's own, which is
- * theme.css. Any element may carry it too, to draw itself in one, within the
+ * theme.css. One's own is last: its colors are properties on <html>. Any element may carry it too, to draw itself in one, within the
  * theme around it. Both forms are more specific than theme.css's own blocks.
  */
 `
@@ -74,5 +74,37 @@ export function colorwaysCss(): string {
       block(name, 'dark', colors),
     ]
   })
-  return header + blocks.join('')
+  return header + blocks.join('') + ownBlocks()
+}
+
+/** The custom property on <html> that carries one token of one's own colorway in one theme. */
+export const ownProperty = (theme: Theme, token: string): string => `--own-${theme}-${token}`
+export const OWN_LED = '--own-led'
+
+/**
+ * One's own colorway: every token read from a property on <html>, which the
+ * theme script or the picker sets from what the device keeps, and Shelf's own
+ * color where it is missing.
+ */
+function ownBlocks(): string {
+  const own = ownColors()
+  const read = (theme: Theme) =>
+    Object.fromEntries(
+      colorTokens.map((token) => [
+        token,
+        `var(${ownProperty(theme, token)}, ${own[theme][token]})`,
+      ]),
+    ) as Colors[Theme]
+  const colors: Colors = {
+    light: read('light'),
+    dark: read('dark'),
+    led: `var(${OWN_LED}, ${own.led})`,
+  }
+  return [
+    `
+/* ${OWN}: one's own, worked out on the device; <html> carries its colors */
+`,
+    block(OWN, 'light', colors),
+    block(OWN, 'dark', colors),
+  ].join('')
 }

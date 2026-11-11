@@ -1,36 +1,12 @@
 import { contrast, mix } from './contrast'
 import { fromOklch, toOklch, type Oklch } from './oklch'
-import type { Seeds } from './presets'
+import type { Colors, ColorToken, Seeds, Theme, ThemeColors } from './presets'
 
 /**
  * How a colorway's every color is worked out from its three seeds (see
  * `presets.ts`), the same way for a preset and for one's own. Every pair the
  * interface may use reaches its contrast in both themes, whatever the seeds.
  */
-
-/** The meaning tokens a colorway sets, in each theme. */
-export const colorTokens = [
-  'wall',
-  'wall-deep',
-  'surface',
-  'surface-raised',
-  'ledge',
-  'ledge-top',
-  'on-ledge',
-  'text',
-  'text-muted',
-  'accent',
-  'on-accent',
-  'marker',
-  'line',
-  'line-strong',
-  'focus',
-] as const
-export type ColorToken = (typeof colorTokens)[number]
-
-export type Theme = 'light' | 'dark'
-export type ThemeColors = Record<ColorToken, string>
-export type Colors = { light: ThemeColors; dark: ThemeColors; led: string }
 
 type Neutral = Exclude<ColorToken, 'accent' | 'on-accent' | 'marker' | 'focus'>
 

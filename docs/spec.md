@@ -2147,7 +2147,7 @@ fade and the LEDs come up, or the reverse. Under reduced motion it is immediate.
 
 Apart from the theme, this device keeps a **colorway** (issue 206): the paint on the walls, the
 shelves and the buttons, and the color of the LEDs at rest. There are six, each in both themes:
-Violet, Shelf's own and the default; Ocean; Ember; Arcade; Crimson; Graphite. They are chosen in
+Violet, Shelf's own and the default; Ocean; Ember; Arcade; Crimson; Graphite; and one's own. They are chosen in
 Settings, Appearance, under Theme, and like the theme they are on the device, for anyone, and
 applied before the first paint. Choosing one repaints the page as a change of light, about a
 second, at once under reduced motion.
@@ -2162,7 +2162,17 @@ Every colorway is worked out from three colors by the same rules (`domain/colorw
 its accent, a tint for the room, and its light. The walls keep Shelf's own lightness and take the
 room's hue; the accent keeps its hue, deeper with the lights on and paler with them off; every pair
 of colors the interface uses is moved until it reaches its contrast, in both themes. So a preset
-is three colors, and a colorway of one's own (issue 206, phase 2) will be three colors too.
+is three colors, and so is one's own.
+
+**One's own** is the last card, "Your own". Chosen the first time, it starts from the colorway on
+screen; under the cards it then opens its three colors, Accent, Room and Light, each the device's own
+color picker with the color written beside it and what it is for. The page is the preview: each
+color repaints it as it is picked. The words say that Shelf keeps each color's hue and sets how light
+or dark it is, which is why what is picked may come out deeper or paler, and "Start again from Ocean"
+(the preset it started from) puts its three colors back. Choosing a preset keeps one's own for
+coming back to. The device keeps it worked out, every color of both themes, so the theme script
+paints a page in it before the first paint, and anything in storage that is not a whole set of
+colors leaves the page in Shelf's own.
 
 **The picker** is a card per colorway: a corner of the room in it (its wall, a button, a line of
 text, a lit shelf), drawn in the theme that is on, then its name and a few words ("Blue, with cyan

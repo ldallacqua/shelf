@@ -2,14 +2,16 @@
 
 ## Colorways (11 Nov 2026)
 
-Issue 206, phase 1: six colorways in Settings, Appearance, under Theme (spec 9; architecture section 25, row
+Issue 206: six colorways and one's own in Settings, Appearance, under Theme (spec 9; architecture section 25, row
 "Colorways"). Each is three seeds in `domain/colorway/presets.ts`, worked out for both themes by `derive.ts`, and
 written into `src/ui/tokens/colorways.css` by `pnpm tokens:colorways`; a test fails when the file and the seeds
 disagree, and the contrast test runs over every colorway. The device keeps the choice (`shelf:colors`), the theme
 script applies it before the first paint, and Storybook's toolbar has a Colors switch. The design skills ran
 (`design-critique`, `accessibility-review`). Checked in the app at desktop and phone width, both themes; the 3D shelf,
-behind Experimental views, was not looked at in a colorway. **Phase 2, a colorway of one's own** (three colors picked
-by hand, through the same `derive.ts`), is still the issue's.
+behind Experimental views, was not looked at in a colorway. Phase 2 added one's own: three colors picked in
+Settings (`own-colorway.tsx`, `ColorField` in `src/ui`), worked out by the same `derive.ts` and kept whole
+(`shelf:colors:own`), which the theme script lays on `<html>` as `--own-light-wall` and its kin for colorways.css
+to read. The browser's chrome reads the colorway's walls from `--chrome-light` and `--chrome-dark` on `<html>`.
 
 ## Game media gallery (11 Nov 2026)
 
