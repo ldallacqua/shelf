@@ -2,11 +2,18 @@
 
 import { EyeIcon, PauseIcon, PlayIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { createContext, use, useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  use,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react'
 
 import { steamFileUrl } from '@/domain/igdb/images'
 import type { DescriptionPicture } from '@/domain/steam/description'
-import { useReducedMotion } from '@/features/library/use-preference'
 
 /** Whether a description's pictures for adults were asked for, and how to ask. */
 const AdultShown = createContext<{ shown: boolean; show: () => void }>({
@@ -27,6 +34,26 @@ export function AdultPictures({ game, children }: { game: string; children: Reac
   )
 }
 
+const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
+
+const subscribeToMotion = (listener: () => void) => {
+  const query = window.matchMedia(REDUCED_MOTION)
+  query.addEventListener('change', listener)
+  return () => query.removeEventListener('change', listener)
+}
+
+/**
+ * Whether this device asks for reduced motion; the server, which cannot tell, says yes, so nothing
+ * moves before the device has said. Not `useReducedMotion`, whose module would bring every
+ * preference to a game's page.
+ */
+const useCalm = () =>
+  useSyncExternalStore(
+    subscribeToMotion,
+    () => window.matchMedia(REDUCED_MOTION).matches,
+    () => true,
+  )
+
 /** How far ahead of the window a clip starts loading, so it is moving as it arrives. */
 const NEAR = '200px'
 
@@ -45,7 +72,7 @@ export function DescriptionMedia({
 }) {
   const t = useTranslations('Game')
   const { shown, show } = use(AdultShown)
-  const calm = useReducedMotion()
+  const calm = useCalm()
   const frame = useRef<HTMLButtonElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const [near, setNear] = useState(false)

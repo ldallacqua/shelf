@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { foldDescription, readDescription, type Description } from './description'
+import { foldDescription, type Description } from './description'
+import { readDescription } from './read-description'
 
 /**
  * Store pages' BBCode, written by hand in the shapes `GetItems` answered for 66 games on

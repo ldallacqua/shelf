@@ -11,7 +11,8 @@ import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
 import { steamStoreLink } from '@/domain/library/store-links'
 import type { Day } from '@/domain/library/values'
 import { isSteamImage } from '@/domain/igdb/images'
-import { readDescription, type Description } from '@/domain/steam/description'
+import type { Description } from '@/domain/steam/description'
+import { readDescription } from '@/domain/steam/read-description'
 
 /**
  * A game's page on Steam's store: the whole of a game IGDB does not have (ADR 006), and
