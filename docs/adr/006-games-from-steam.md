@@ -3,7 +3,8 @@
 - **Status:** accepted, 1 Nov 2026
 - **Date:** 1 Nov 2026
 - **Decides:** how a game IGDB does not have gets onto a shelf, who may do it, and what is kept of it.
-  Amended the same day by decision 13: a sync reads such a game for itself
+  Amended the same day by decision 13: a sync reads such a game for itself. Amended on 10 Nov 2026 by
+  [ADR 010](010-steam-first-on-a-game-page.md): a game IGDB has is drawn from its store page too, first
 
 ## Context
 

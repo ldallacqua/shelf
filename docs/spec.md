@@ -695,7 +695,8 @@ esconder toda vez que atualizar a pagina, então essa seleção tem que ser lemb
 Adult Only. Tipo se eu quiser mostrar minha biblioteca pra uma pessoa no meu pc e não quiser
 mostrar esses games."
 
-- **Adult** means a game IGDB gives the theme Erotic, or that the ESRB rates Adults Only (AO).
+- **Adult** means a game IGDB gives the theme Erotic, or that the ESRB rates Adults Only (AO), or
+  whose page on Steam's store is marked for adults (ADR 010).
   Shelf keeps IGDB's themes already; age ratings are fetched with every game from then on, and
   for the games already cached as the daily refresh reaches them, about a hundred a day, so an
   Adults Only game not Erotic too is known within days. The ESRB gives AO for violence too
@@ -829,6 +830,9 @@ isso." And: "eu não queria ter que colocar todas as informações do jogo na m�
   first given. A later moderator adding it takes that title.
 
 Not yet: anyone but a moderator finding these games in the search; refreshing one from Steam by itself.
+
+A game IGDB **does** have is drawn from its Steam page too, before IGDB's record, wherever it has one
+(7.1, [ADR 010](adr/010-steam-first-on-a-game-page.md)).
 
 ### 4.3 When IGDB misbehaves
 
@@ -1331,18 +1335,33 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 
 | Part | Content |
 | --- | --- |
-| **Hero** | The cover, large, over the game's key art dimmed behind it. No key art: a screenshot. No screenshot: the cover's own colors. |
+| **Hero** | The cover, large, over the game's key art dimmed behind it: Steam's library hero first. No key art: a screenshot. No screenshot: the cover's own colors. |
 | **Heading** | Title, year, developer |
 | **Stores** | Where it is sold, with a link to its page there (section 7.9) |
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
 | **Scores** | What others think of it, a place to a column: IGDB, Steam, and people on Shelf (section 7.11) |
-| **About** | IGDB's summary and storyline, in their paragraphs. A long one shows about a screen's worth, and the rest behind **Read more**, opened in place |
+| **About** | Steam's short description, or IGDB's summary without one, and IGDB's storyline, in their paragraphs. A long one shows about a screen's worth, and the rest behind **Read more**, opened in place |
 | **Videos and screenshots** | One strip, videos first: each video on one of the game's own pictures with a play button and what it is ("Launch Trailer"), then the screenshots. No scrollbar: an edge with more past it fades, and on a pointer that can hover an arrow there moves the strip. A screenshot opens a full-screen viewer (arrow keys, swipe, pinch to zoom); a video plays over the page, from YouTube, which nothing reaches before it is pressed |
 | **Achievements** | For a game a sync brought in from Steam: how many are unlocked, and each one (section 7.8) |
 | **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat |
 | **Versions** | The editions and ports linked to this entry (signed in) |
 
 Each value under Details is a link to the library filtered by it.
+
+**Steam first** (built 10 Nov 2026, [ADR 010](adr/010-steam-first-on-a-game-page.md)). The owner, on
+10 Nov 2026: "I want steam to be the main source of truth for everything we show up in the page up to the
+point where we don't have the data." A game with a page on Steam's store takes from it, field by field:
+
+- **The cover,** wherever its cover is drawn: the shelf, the wall, the list and this page, so the cover
+  that grows from the box is the one that lands. Search and Add a game keep IGDB's.
+- **The art behind the cover,** its library hero.
+- **The screenshots,** instead of IGDB's: those for anyone first, then those Steam keeps for adults, blurred
+  under the eye.
+- **The summary,** its short description.
+
+What the store leaves empty, and the rest of the page (videos, the storyline, time to beat, release dates,
+Details), stays IGDB's. A page is read when the game is added, and again once a day; never because someone
+opened it. A page the store takes down puts the game back on IGDB's record.
 
 IGDB's text stays in English, as IGDB provides it. In the Portuguese interface those passages
 are marked as English, so a screen reader pronounces them correctly.

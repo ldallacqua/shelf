@@ -10,6 +10,7 @@ import type {
 import { storeNames, type StoreLink, type StoreName } from '@/domain/library/stores'
 import { filterWord, type ListKey } from '@/domain/query/keys'
 import type { SteamReviews } from '@/domain/steam/reviews'
+import type { SteamPage } from '@/domain/steam/store-game'
 
 /**
  * A game's page (spec 7.1). The library file carries what a shelf, a filter
@@ -109,6 +110,28 @@ export const firstReleases = (versions: readonly (readonly Release[])[]): Releas
   return [...byPlatform.values()].sort((a, b) =>
     when(a) < when(b) ? -1 : when(a) > when(b) ? 1 : 0,
   )
+}
+
+/** What a game's page takes from IGDB, or from its store page on Steam before it. */
+type PageImages = { summary?: string; screenshots: GameImage[]; artworks: GameArtwork[] }
+
+/**
+ * A game's page from its store page on Steam first, and IGDB's record for what the store leaves
+ * empty (ADR 010), field by field: Steam's screenshots instead of IGDB's when it has any, its
+ * summary, and its library hero ahead of IGDB's art, which stays behind it for the backdrop.
+ */
+export const steamFirst = <T extends PageImages>(
+  igdb: T,
+  steam: Omit<SteamPage, 'app' | 'cover'> | undefined,
+): T => {
+  if (!steam) return igdb
+  const summary = steam.summary ?? igdb.summary
+  return {
+    ...igdb,
+    screenshots: steam.screenshots.length > 0 ? steam.screenshots : igdb.screenshots,
+    artworks: [...steam.artworks, ...igdb.artworks],
+    ...(summary ? { summary } : {}),
+  }
 }
 
 /** Key art, then any other art, then a screenshot for anyone: what stands dimmed behind the cover. */

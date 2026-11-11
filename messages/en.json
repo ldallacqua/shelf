@@ -12,7 +12,7 @@
     "placing": "Organize",
     "waiting": "{count, plural, one {# game waiting} other {# games waiting}}",
     "menu": "Menu",
-    "igdbCredit": "Game data and covers from <link>IGDB.com</link>.",
+    "igdbCredit": "Game data and covers from <link>IGDB.com</link> and Steam.",
     "dismiss": "Dismiss",
     "privacy": "Privacy",
     "terms": "Terms",
@@ -277,7 +277,7 @@
       },
       "data": {
         "q": "Where does the information about games come from?",
-        "a": "From IGDB.com: titles, covers, release dates, and how long games take to finish. What is yours you add: where you own a game, how far you got, what you thought of it."
+        "a": "From IGDB.com: titles, release dates, and how long games take to finish. Covers, screenshots and descriptions come from Steam's store for a game sold there, and from IGDB.com for the rest. What is yours you add: where you own a game, how far you got, what you thought of it."
       },
       "sync": {
         "q": "Can it bring in the games I already own?",

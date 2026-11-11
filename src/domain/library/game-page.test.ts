@@ -6,6 +6,7 @@ import {
   filterFor,
   firstReleases,
   namesOf,
+  steamFirst,
   storeRows,
   videoGameData,
   type GameExtras,
@@ -109,6 +110,46 @@ describe('backdropOf', () => {
       id: 'ar2',
       mature: true,
     })
+  })
+})
+
+describe('steamFirst', () => {
+  const shot = (id: string, mature?: true) => ({
+    id,
+    width: 1920,
+    height: 1080,
+    ...(mature ? { mature } : {}),
+  })
+  const igdb = {
+    summary: 'IGDB’s words.',
+    screenshots: [shot('igdbshot')],
+    artworks: [{ id: 'igdbart', width: 1920, height: 1080, type: 'key' as const }],
+  }
+  const hero = { id: 'steam/apps/1/hero.jpg', width: 1920, height: 620, type: 'key' as const }
+
+  it('is IGDB’s record alone when the game has no store page', () => {
+    expect(steamFirst(igdb, undefined)).toBe(igdb)
+  })
+
+  it('shows the store’s screenshots instead of IGDB’s, its summary, and its hero first', () => {
+    const steamShots = [shot('steam/apps/1/ss_a.jpg'), shot('steam/apps/1/ss_b.jpg', true)]
+    const shown = steamFirst(igdb, {
+      summary: 'Steam’s words.',
+      screenshots: steamShots,
+      artworks: [hero],
+    })
+    expect(shown.screenshots).toEqual(steamShots)
+    expect(shown.summary).toBe('Steam’s words.')
+    expect(shown.artworks).toEqual([hero, ...igdb.artworks])
+    expect(backdropOf(shown.artworks, shown.screenshots)?.id).toBe(hero.id)
+  })
+
+  it('keeps IGDB’s for each field the store leaves empty', () => {
+    const shown = steamFirst(igdb, { screenshots: [], artworks: [] })
+    expect(shown).toEqual(igdb)
+    expect(
+      steamFirst({ screenshots: [], artworks: [] }, { screenshots: [], artworks: [] }),
+    ).not.toHaveProperty('summary')
   })
 })
 

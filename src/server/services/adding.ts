@@ -53,7 +53,7 @@ import {
   type Records,
   type RecordsDeps,
 } from '@/server/services/igdb-records'
-import { askSteamAfterAdding } from '@/server/services/steam-reviews'
+import { askSteamAfterAdding } from '@/server/services/steam-pages'
 import {
   addFromIgdb,
   findEntryIdBySlug,

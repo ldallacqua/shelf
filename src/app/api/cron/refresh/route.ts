@@ -4,6 +4,7 @@ import { revalidateTag } from 'next/cache'
 
 import { cronSecret } from '@/server/env'
 import { refreshOldest } from '@/server/services/refresh'
+import { readSteamPages } from '@/server/services/steam-pages'
 import { readSteamReviews } from '@/server/services/steam-reviews'
 import { libraryTag } from '@/server/services/tags'
 
@@ -31,12 +32,15 @@ export async function GET(request: Request) {
   const { checked, changed, libraries } = await refreshOldest()
   // Steam failing costs a day's scores, and never the refresh of IGDB's records beside it.
   const reviews = await readSteamReviews().catch(() => undefined)
-  const stale = new Set([...libraries, ...(reviews?.libraries ?? [])])
+  // Its store pages too (ADR 010): covers and screenshots, within the time they are allowed.
+  const pages = await readSteamPages().catch(() => undefined)
+  const stale = new Set([...libraries, ...(reviews?.libraries ?? []), ...(pages?.libraries ?? [])])
   for (const libraryId of stale) revalidateTag(libraryTag(libraryId), { expire: 0 })
   return Response.json({
     checked,
     changed,
     libraries: stale.size,
     steamReviews: reviews ? { checked: reviews.checked, changed: reviews.changed } : null,
+    steamPages: pages ? { checked: pages.checked, changed: pages.changed } : null,
   })
 }

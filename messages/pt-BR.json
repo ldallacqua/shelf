@@ -12,7 +12,7 @@
     "placing": "Organizar",
     "waiting": "{count, plural, one {# jogo esperando} other {# jogos esperando}}",
     "menu": "Menu",
-    "igdbCredit": "Dados e capas dos jogos: <link>IGDB.com</link>.",
+    "igdbCredit": "Dados e capas dos jogos: <link>IGDB.com</link> e Steam.",
     "dismiss": "Dispensar",
     "privacy": "Privacidade",
     "terms": "Termos",
@@ -277,7 +277,7 @@
       },
       "data": {
         "q": "De onde vêm as informações dos jogos?",
-        "a": "Do IGDB.com: títulos, capas, datas de lançamento e quanto tempo os jogos levam para zerar. O que é seu, você adiciona: onde você tem o jogo, até onde chegou, o que achou."
+        "a": "Do IGDB.com: títulos, datas de lançamento e quanto tempo os jogos levam para zerar. Capas, capturas de tela e descrições vêm da loja da Steam para um jogo vendido lá, e do IGDB.com para o resto. O que é seu, você adiciona: onde você tem o jogo, até onde chegou, o que achou."
       },
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",

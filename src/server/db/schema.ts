@@ -20,6 +20,7 @@ import {
 } from '@/domain/achievements/achievements'
 import type { Palette } from '@/domain/color/palette'
 import type { SteamReviews } from '@/domain/steam/reviews'
+import type { SteamPage } from '@/domain/steam/store-game'
 import type {
   GameArtwork,
   GameImage,
@@ -164,6 +165,19 @@ export const games = sqliteTable(
     steamReviews: text({ mode: 'json' }).$type<SteamReviews>(),
     /** When Steam was last asked about it. The daily reading takes the oldest first. */
     steamReviewsCheckedAt: integer(),
+    /**
+     * A game IGDB has, as its page on Steam's store shows it (ADR 010): its cover, and what is
+     * read with it, come before IGDB's wherever a cover is drawn but search. Null when the store
+     * has no page for it, or none was read yet. A game IGDB doesn't have keeps its page in the
+     * columns above instead.
+     */
+    steamCover: text({ mode: 'json' }).$type<GameImage>(),
+    steamColors: text({ mode: 'json' }).$type<Palette>(),
+    steamThumbhash: text(),
+    /** What its page on the game's own page takes before IGDB's: summary, screenshots, art. */
+    steamPage: text({ mode: 'json' }).$type<Omit<SteamPage, 'cover'>>(),
+    /** When its store page was last read. The daily reading takes those never read, then the oldest. */
+    steamPageCheckedAt: integer(),
     /** When Shelf last stored this record. */
     fetchedAt: integer().notNull(),
     /** When Shelf last asked IGDB whether it changed. The daily refresh takes the oldest. */
@@ -175,6 +189,7 @@ export const games = sqliteTable(
     uniqueIndex('games_slug').on(table.slug),
     index('games_checked_at').on(table.checkedAt),
     index('games_steam_reviews_checked_at').on(table.steamReviewsCheckedAt),
+    index('games_steam_page_checked_at').on(table.steamPageCheckedAt),
     check('games_kind', sql`${table.kind} in (${oneOf(kinds)})`),
   ],
 )

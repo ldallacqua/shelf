@@ -50,6 +50,7 @@ import {
 import { spend, TooManyError } from '@/server/services/fair-use'
 import { forAccount } from '@/server/services/for-account'
 import { createRecords, type Records, type RecordsDeps } from '@/server/services/igdb-records'
+import { askSteamAfterAdding } from '@/server/services/steam-pages'
 import {
   confirmItems,
   decideItem,
@@ -862,7 +863,13 @@ export const syncMine = (source: unknown, body: unknown) => {
   if (!which || !parsed.success) return invalid()
   return forAccount(async (account) => {
     if (parsed.data.read) await spend(account, 'read')
-    return syncFor(account.id).step(which, { read: parsed.data.read, allow: allowance(account) })
+    const step = await syncFor(account.id).step(which, {
+      read: parsed.data.read,
+      allow: allowance(account),
+    })
+    // Once the last games are on the shelf: their scores and store pages (ADR 010), read now.
+    if ('added' in step && step.added > 0 && step.remaining === 0) askSteamAfterAdding()
+    return step
   }, true)
 }
 

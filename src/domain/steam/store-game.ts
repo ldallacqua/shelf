@@ -1,14 +1,21 @@
 import { z } from 'zod'
 
-import { dayFromSeconds, EROTIC, type GameData, type GameImage } from '@/domain/igdb/game'
+import {
+  dayFromSeconds,
+  EROTIC,
+  type GameArtwork,
+  type GameData,
+  type GameImage,
+} from '@/domain/igdb/game'
 import type { IgdbNamed, VocabKind } from '@/domain/igdb/schema'
 import { steamStoreLink } from '@/domain/library/store-links'
 import type { Day } from '@/domain/library/values'
 import { isSteamImage } from '@/domain/igdb/images'
 
 /**
- * A game IGDB does not have, read from Steam's store (ADR 006): the only
- * place that knows the store's fields for a game's page. `IStoreBrowseService/GetItems`
+ * A game's page on Steam's store: the whole of a game IGDB does not have (ADR 006), and
+ * the images and words that come before IGDB's for one it has (ADR 010). The only place
+ * that knows the store's fields for a game's page. `IStoreBrowseService/GetItems`
  * answers everything in one request, and tells screenshots for anyone from
  * those it keeps for adults.
  */
@@ -311,13 +318,67 @@ const shotsOf = (shots: readonly { filename: string }[] = [], mature?: true): Ga
     .filter(isSteamImage)
     .map((id) => ({ id, width: 1920, height: 1080, ...(mature ? { mature } : {}) }))
 
+/** What makes a game adult on a shelf (spec 3.13), so "Hide adult games" takes it too. */
+const adultOn = (item: StoreGame): boolean => {
+  const descriptors = new Set(item.content_descriptorids)
+  return descriptors.has(ADULT_ONLY) || descriptors.has(FREQUENT_SEXUAL_CONTENT)
+}
+
+/**
+ * The images and words a game's page takes from its store page, before IGDB's (ADR 010). A field
+ * the store leaves empty is left out, so the page can take IGDB's for it instead.
+ */
+export type SteamPage = {
+  /** The app it was read from. */
+  app: string
+  cover?: GameImage
+  summary?: string
+  /** What Steam shows to anyone first; then what it keeps for adults, marked, to be drawn blurred. */
+  screenshots: GameImage[]
+  /** Its library hero, the art behind the cover: marked on a game for adults. */
+  artworks: GameArtwork[]
+  /** The store says it is for adults: so is it on a shelf, whatever IGDB says (spec 3.13). */
+  adult?: true
+}
+
+export const toSteamPage = (item: StoreGame): SteamPage => {
+  const hero = item.assets?.library_hero
+    ? assetPath(item.assets.asset_url_format, item.assets.library_hero)
+    : undefined
+  const cover = coverOf(item.assets)
+  const summary = item.basic_info?.short_description?.trim()
+  return {
+    app: String(item.id),
+    screenshots: [
+      ...shotsOf(item.screenshots?.all_ages_screenshots),
+      ...shotsOf(item.screenshots?.mature_content_screenshots, true),
+    ].slice(0, MAX_SCREENSHOTS),
+    // Valve's rules hold only a cover to PG-13, so a game for adults has this marked: on its page
+    // and nowhere a page's rules don't reach.
+    artworks:
+      hero && isSteamImage(hero)
+        ? [
+            {
+              id: hero,
+              width: 1920,
+              height: 620,
+              type: 'key',
+              ...(adultOn(item) ? { mature: true } : {}),
+            },
+          ]
+        : [],
+    ...(cover ? { cover } : {}),
+    ...(summary ? { summary } : {}),
+    ...(adultOn(item) ? { adult: true as const } : {}),
+  }
+}
+
 /** Turns a store page into Shelf's own shape. `title` is the moderator's, over Steam's. */
 export const toSteamGame = (item: StoreGame, title?: string): SteamGameData => {
   const appId = String(item.id)
-  const descriptors = new Set(item.content_descriptorids)
-  const adultsOnly = descriptors.has(ADULT_ONLY)
-  // What makes a game adult on a shelf (spec 3.13), so "Hide adult games" takes it too.
-  const adult = adultsOnly || descriptors.has(FREQUENT_SEXUAL_CONTENT)
+  const adultsOnly = new Set(item.content_descriptorids).has(ADULT_ONLY)
+  const adult = adultOn(item)
+  const { cover, summary, screenshots, artworks } = toSteamPage(item)
   const platforms = [
     ...(item.platforms?.windows ? [PC] : []),
     ...(item.platforms?.mac ? [MAC] : []),
@@ -328,11 +389,6 @@ export const toSteamGame = (item: StoreGame, title?: string): SteamGameData => {
   const year = releasedOn ? Number(releasedOn.slice(0, 4)) : undefined
   const developerNames = (item.basic_info?.developers ?? []).map((company) => company.name)
   const publisherNames = (item.basic_info?.publishers ?? []).map((company) => company.name)
-  const hero = item.assets?.library_hero
-    ? assetPath(item.assets.asset_url_format, item.assets.library_hero)
-    : undefined
-  const cover = coverOf(item.assets)
-  const summary = item.basic_info?.short_description?.trim()
 
   return {
     steamAppId: appId,
@@ -350,17 +406,8 @@ export const toSteamGame = (item: StoreGame, title?: string): SteamGameData => {
     developerNames: [...new Set(developerNames)],
     publisherNames: [...new Set(publisherNames)],
     companies: [],
-    // What Steam shows to anyone first; then what it keeps for adults, marked, to be drawn blurred.
-    screenshots: [
-      ...shotsOf(item.screenshots?.all_ages_screenshots),
-      ...shotsOf(item.screenshots?.mature_content_screenshots, true),
-    ].slice(0, MAX_SCREENSHOTS),
-    // Valve's rules hold only a cover to PG-13, so a game for adults has this marked: on its page
-    // and nowhere a page's rules don't reach.
-    artworks:
-      hero && isSteamImage(hero)
-        ? [{ id: hero, width: 1920, height: 620, type: 'key', ...(adult ? { mature: true } : {}) }]
-        : [],
+    screenshots,
+    artworks,
     videos: [],
     releases: on.map((platform) => ({
       platform,
