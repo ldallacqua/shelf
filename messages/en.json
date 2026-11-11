@@ -1435,6 +1435,36 @@
       "title": "Theme",
       "body": "Light, dark, or as this device is set. The switch in the header changes it too."
     },
+    "colors": {
+      "title": "Colors",
+      "body": "The paint on the walls, the buttons and the light behind your games. Each set works with the lights on and off.",
+      "presets": {
+        "violet": {
+          "name": "Violet",
+          "detail": "Shelf’s own"
+        },
+        "ocean": {
+          "name": "Ocean",
+          "detail": "Blue, with cyan light"
+        },
+        "ember": {
+          "name": "Ember",
+          "detail": "Orange, with warm light"
+        },
+        "arcade": {
+          "name": "Arcade",
+          "detail": "Pink on purple, with magenta light"
+        },
+        "crimson": {
+          "name": "Crimson",
+          "detail": "Red, with red light"
+        },
+        "graphite": {
+          "name": "Graphite",
+          "detail": "Gray, with white light"
+        }
+      }
+    },
     "language": {
       "title": "Language",
       "body": "The language Shelf speaks. The switch in the header changes it too.",

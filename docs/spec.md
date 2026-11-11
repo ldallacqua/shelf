@@ -88,7 +88,7 @@ language the browser asks for.
 | `/en/settings/privacy` | Privacy & content: who can see the shelf (the account's), and hiding adult games (this device's, 3.13) |
 | `/en/settings/platforms` | The account's: the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)) |
 | `/en/settings/security` | The account's: the password, signing out everywhere, and, last, deleting the account |
-| `/en/settings/appearance` | This device's: the theme, the language and experimental views (3.6) |
+| `/en/settings/appearance` | This device's: the theme, the colors ([section 9](#9-themes)), the language and experimental views (3.6) |
 | `/en/settings/app` | In Shelf for Windows alone: starting with Windows, and this computer's name (7.3). A browser is told the page is the app's |
 | `/en/settings/download-sources` | In Shelf for Windows alone: download sources (7.10) |
 | `/en/settings/download-services` | In Shelf for Windows alone: Real-Debrid, one card per service (7.10) |
@@ -2143,12 +2143,39 @@ face.
 **Changing theme** is itself the lighting change: about a second in which the room lights
 fade and the LEDs come up, or the reverse. Under reduced motion it is immediate.
 
+### Colors
+
+Apart from the theme, this device keeps a **colorway** (issue 206): the paint on the walls, the
+shelves and the buttons, and the color of the LEDs at rest. There are six, each in both themes:
+Violet, Shelf's own and the default; Ocean; Ember; Arcade; Crimson; Graphite. They are chosen in
+Settings, Appearance, under Theme, and like the theme they are on the device, for anyone, and
+applied before the first paint. Choosing one repaints the page as a change of light, about a
+second, at once under reduced motion.
+
+A colorway changes the colors, never the lighting. Lights on is still daylight with thin LEDs,
+lights off is still the LEDs carrying the room, and the shelves stay black. A game in focus still
+lights its shelf in its own color. It leaves alone what is not the room's: a game's own colors, the
+green of "playing", scrims over art, the gold seal of a finished game, and the pictures the
+server draws (the trophy card, the landing page's share pictures).
+
+Every colorway is worked out from three colors by the same rules (`domain/colorway/derive.ts`):
+its accent, a tint for the room, and its light. The walls keep Shelf's own lightness and take the
+room's hue; the accent keeps its hue, deeper with the lights on and paler with them off; every pair
+of colors the interface uses is moved until it reaches its contrast, in both themes. So a preset
+is three colors, and a colorway of one's own (issue 206, phase 2) will be three colors too.
+
+**The picker** is a card per colorway: a corner of the room in it (its wall, a button, a line of
+text, a lit shelf), drawn in the theme that is on, then its name and a few words ("Blue, with cyan
+light"), as a radio group. Based on Slack and Linear, which keep light and dark apart from the
+colors and offer presets beside one's own built from a few colors, and GitHub, which shows each
+theme as a card with a picture of it.
+
 **Done when**
 
 - Every screen is designed in both themes, and screenshots of both are part of each step's
   review.
-- Every text and control meets its contrast requirement in both themes.
-- No flash of the wrong theme on load, checked with the system set each way.
+- Every text and control meets its contrast requirement in both themes, in every colorway.
+- No flash of the wrong theme or the wrong colors on load, checked with the system set each way.
 
 ---
 

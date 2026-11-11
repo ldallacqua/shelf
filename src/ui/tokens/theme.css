@@ -107,6 +107,7 @@ html[data-theme-changing] {
     --surface-raised var(--_room),
     --ledge var(--_room),
     --ledge-top var(--_room),
+    --on-ledge var(--_room),
     --text var(--_room),
     --text-muted var(--_room),
     --accent var(--_room),

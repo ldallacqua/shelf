@@ -1,5 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
+import { presetNames } from '@/domain/colorway/presets'
+
+import { ColorwayPicker, ColorwayRoom } from './colorway-picker'
 import { ThemePicker } from './theme-picker'
 import { ThemeSwitch } from './theme-switch'
 
@@ -16,3 +19,39 @@ export const Switch: Story = { render: () => <ThemeSwitch /> }
 
 /** The same three choices in a row, for use inside a page. */
 export const Picker: Story = { render: () => <ThemePicker /> }
+
+/**
+ * The colorways, in Settings' Appearance (issue 206). Each card is a corner of
+ * the room in its own colors, in the theme that is on; choosing one paints the
+ * whole page, as a change of light.
+ */
+export const Colors: Story = {
+  parameters: { layout: 'padded' },
+  render: () => (
+    <div className="max-w-3xl">
+      <h2 id="colors-title" className="mb-3 text-xl font-medium">
+        Colors
+      </h2>
+      <ColorwayPicker labelledBy="colors-title" />
+    </div>
+  ),
+}
+
+/** Every colorway with the lights on and off, side by side, to compare them. */
+export const EveryColorway: Story = {
+  parameters: { layout: 'padded' },
+  render: () => (
+    <div className="grid max-w-3xl grid-cols-2 gap-3">
+      {presetNames.flatMap((name) =>
+        (['light', 'dark'] as const).map((theme) => (
+          <div key={`${name}-${theme}`} data-theme={theme} className="grid gap-1 bg-wall p-2">
+            <span className="text-xs text-muted">
+              {name}, {theme}
+            </span>
+            <ColorwayRoom colorway={name} className="rounded-control" />
+          </div>
+        )),
+      )}
+    </div>
+  ),
+}

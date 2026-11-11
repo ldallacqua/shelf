@@ -4,6 +4,7 @@
 @import '../ui/tokens/palette.css';
 @import '../ui/tokens/properties.css';
 @import '../ui/tokens/theme.css';
+@import '../ui/tokens/colorways.css';
 @import '../ui/tokens/motion.css';
 @import '../ui/room.css';
 @import '../ui/shelf.css';

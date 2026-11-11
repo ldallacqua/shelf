@@ -4,6 +4,7 @@ import { CheckIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 
 import { ExperimentalViews } from '@/features/owner/experimental-views'
+import { ColorwayPicker } from '@/features/theme/colorway-picker'
 import { ThemePicker } from '@/features/theme/theme-picker'
 import { Link } from '@/i18n/navigation'
 import { localeLabels, routing } from '@/i18n/routing'
@@ -14,8 +15,8 @@ import { SECTIONS, SettingsSection } from './settings-section'
 
 /**
  * Appearance (issue 152): how Shelf looks on this device. The theme and the language are also the
- * header's switches, and stay there; here they sit with the views this device offers. Nothing here
- * is the account's, so the page is whole for anyone, signed in or not.
+ * header's switches, and stay there; here they sit with the colors (issue 206) and the views this
+ * device offers. Nothing here is the account's, so the page is whole for anyone, signed in or not.
  */
 export function AppearanceSettings() {
   const t = useTranslations('Settings')
@@ -25,6 +26,12 @@ export function AppearanceSettings() {
       <SettingsSection title={t('theme.title')} scope="device">
         <p className="max-w-xl text-pretty text-muted">{t('theme.body')}</p>
         <ThemePicker className="w-fit" />
+      </SettingsSection>
+      <SettingsSection id="colors" title={t('colors.title')} scope="device">
+        <p id="colors-body" className="max-w-xl text-pretty text-muted">
+          {t('colors.body')}
+        </p>
+        <ColorwayPicker labelledBy="colors-title" describedBy="colors-body" className="max-w-3xl" />
       </SettingsSection>
       <SettingsSection title={t('language.title')} scope="device">
         <p className="max-w-xl text-pretty text-muted">{t('language.body')}</p>

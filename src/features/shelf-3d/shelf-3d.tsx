@@ -320,7 +320,7 @@ export default function Shelf3D({
     focusBox(target.shelf, target.index)
   })
 
-  // The light: follows a theme change as it plays, about a second (architecture, section 11).
+  // The light: follows a change of theme or colorway as it plays, about a second (architecture, section 11).
   useEffect(() => {
     const host = stage.current
     if (!ready || !host) return
@@ -341,7 +341,7 @@ export default function Shelf3D({
     })
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme', 'data-theme-changing'],
+      attributeFilter: ['data-theme', 'data-theme-changing', 'data-colors'],
     })
     return () => {
       observer.disconnect()

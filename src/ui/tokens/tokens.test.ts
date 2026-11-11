@@ -2,11 +2,20 @@ import { describe, expect, it } from 'vitest'
 
 import { contrast, mix } from './contrast'
 import { duration, ease } from './motion'
-import { readMotion, readPalette, readProperties, readTheme, resolve } from './read-tokens'
+import {
+  readColorway,
+  readColorwayNames,
+  readMotion,
+  readPalette,
+  readProperties,
+  readTheme,
+  resolve,
+} from './read-tokens'
 
 const palette = readPalette()
 const themes = { light: readTheme('light'), dark: readTheme('dark') }
 const themeNames = ['light', 'dark'] as const
+const colorways = readColorwayNames()
 
 describe('contrast', () => {
   it('keeps the cinema captions readable over the selected media', async () => {
@@ -65,6 +74,35 @@ describe('theme tokens', () => {
   })
 })
 
+describe('colorway tokens', () => {
+  it("has Shelf's own and the other presets", () => {
+    expect(colorways[0]).toBe('violet')
+    expect(colorways.length).toBeGreaterThan(1)
+  })
+
+  it.each(colorways)('%s sets the same tokens in both themes, all registered colors', (name) => {
+    const properties = readProperties()
+    for (const theme of themeNames) {
+      const own = [...readColorway(name, theme)].filter(([token]) => !themes[theme].has(token))
+      expect(own, 'a colorway sets only tokens the theme has').toEqual([])
+    }
+    const light = readColorway(name, 'light')
+    for (const [token, value] of light) {
+      if (value === themes.light.get(token)) continue
+      expect(properties.get(token)?.syntax, `${token} is a registered color`).toBe('<color>')
+    }
+  })
+
+  it("draws Shelf's own colors exactly as theme.css does", () => {
+    for (const theme of themeNames) {
+      const own = readColorway('violet', theme)
+      for (const token of own.keys()) {
+        expect(resolve(token, own, palette), token).toBe(resolve(token, themes[theme], palette))
+      }
+    }
+  })
+})
+
 /**
  * The accessibility contract for color. Text needs 4.5:1; anything that is
  * not text but must be seen (a control's edge, the focus ring, a marker)
@@ -86,10 +124,21 @@ describe('contrast requirements', () => {
     ['--focus', [...walls, '--surface', '--surface-raised']],
   ]
 
-  for (const theme of themeNames) {
-    const color = (name: string) => resolve(name, themes[theme], palette)
+  const lit = [
+    ...themeNames.map((theme) => ({ name: theme, theme, tokens: themes[theme] })),
+    ...colorways.flatMap((colorway) =>
+      themeNames.map((theme) => ({
+        name: `${colorway}, ${theme}`,
+        theme,
+        tokens: readColorway(colorway, theme),
+      })),
+    ),
+  ]
 
-    describe(theme, () => {
+  for (const { name, tokens } of lit) {
+    const color = (token: string) => resolve(token, tokens, palette)
+
+    describe(name, () => {
       it.each(text.flatMap(([fg, bgs]) => bgs.map((bg) => [fg, bg])))(
         'text %s on %s is at least 4.5:1',
         (fg, bg) => {
@@ -115,13 +164,22 @@ describe('contrast requirements', () => {
  */
 describe('text on a wall washed by the LED', () => {
   const worstLed = { light: '#000000', dark: '#ffffff' }
+  const lit = [
+    ...themeNames.map((theme) => ({ name: theme, theme, tokens: themes[theme] })),
+    ...colorways.flatMap((colorway) =>
+      themeNames.map((theme) => ({
+        name: `${colorway}, ${theme}`,
+        theme,
+        tokens: readColorway(colorway, theme),
+      })),
+    ),
+  ]
 
-  for (const theme of themeNames) {
-    const tokens = themes[theme]
+  for (const { name, theme, tokens } of lit) {
     const share = Number(tokens.get('--led-strength')) * Number(tokens.get('--led-wash'))
 
     it.each(['--text', '--text-muted'])(
-      `${theme}: %s stays at 4.5:1 under any LED color`,
+      `${name}: %s stays at 4.5:1 under any LED color`,
       (name) => {
         for (const wall of ['--wall', '--wall-deep']) {
           const washed = mix(resolve(wall, tokens, palette), worstLed[theme], share)

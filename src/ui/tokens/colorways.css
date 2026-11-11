@@ -1,0 +1,261 @@
+/*
+ * Colorways (issue 206): the meaning tokens and the LED's resting color, for
+ * each preset in each theme. Written by `pnpm tokens:colorways` from the seeds
+ * in src/domain/colorway/presets.ts. Don't edit it: change a seed and run it.
+ *
+ * <html> carries `data-colors` for every colorway but Shelf's own, which is
+ * theme.css. Any element may carry it too, to draw itself in one, within the
+ * theme around it. Both forms are more specific than theme.css's own blocks.
+ */
+
+/* violet: Shelf's own, theme.css's. One's own starts from accent #6a4cf5, room #3a4152, light #7c5cff */
+[data-colors='violet'],
+[data-colors='violet'] [data-theme='light'],
+[data-theme='light'] [data-colors='violet'] {
+  --wall: #eceef2;
+  --wall-deep: #e1e4ea;
+  --surface: #f7f8fa;
+  --surface-raised: #ffffff;
+  --ledge: #1b1e27;
+  --ledge-top: #3a4152;
+  --on-ledge: #f2f4f8;
+  --text: #0e1014;
+  --text-muted: #555c6b;
+  --accent: #5b3fe6;
+  --on-accent: #ffffff;
+  --marker: #0a6b3a;
+  --line: #c3c8d2;
+  --line-strong: #7a8191;
+  --focus: #5b3fe6;
+  --led: #7c5cff;
+}
+[data-colors='violet'][data-theme='dark'],
+[data-colors='violet'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='violet'] {
+  --wall: #0b0d12;
+  --wall-deep: #07080c;
+  --surface: #14171f;
+  --surface-raised: #1c202b;
+  --ledge: #14171f;
+  --ledge-top: #262b38;
+  --on-ledge: #f2f4f8;
+  --text: #f2f4f8;
+  --text-muted: #a3abbb;
+  --accent: #a796ff;
+  --on-accent: #0b0d12;
+  --marker: #4ade80;
+  --line: #262b38;
+  --line-strong: #6f7890;
+  --focus: #a796ff;
+  --led: #7c5cff;
+}
+
+/* ocean: accent #1f8fd6, room #2c4a66, light #22c8ee */
+[data-colors='ocean'],
+[data-colors='ocean'] [data-theme='light'],
+[data-theme='light'] [data-colors='ocean'] {
+  --wall: #e8eff6;
+  --wall-deep: #dbe5ef;
+  --surface: #f5f8fc;
+  --surface-raised: #ffffff;
+  --ledge: #10202e;
+  --ledge-top: #26445f;
+  --on-ledge: #eef5fc;
+  --text: #0a1117;
+  --text-muted: #455f77;
+  --accent: #006ba6;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #bacada;
+  --line-strong: #6a849e;
+  --focus: #006ba6;
+  --led: #22c8ee;
+}
+[data-colors='ocean'][data-theme='dark'],
+[data-colors='ocean'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='ocean'] {
+  --wall: #060e16;
+  --wall-deep: #04090f;
+  --surface: #0a1825;
+  --surface-raised: #0e2234;
+  --ledge: #0a1825;
+  --ledge-top: #162d42;
+  --on-ledge: #eef5fc;
+  --text: #eef5fc;
+  --text-muted: #93aec8;
+  --accent: #3fa7ef;
+  --on-accent: #060e16;
+  --marker: #48de81;
+  --line: #162d42;
+  --line-strong: #547da3;
+  --focus: #3fa7ef;
+  --led: #22c8ee;
+}
+
+/* ember: accent #f26b2a, room #463d3a, light #ff7a3d */
+[data-colors='ember'],
+[data-colors='ember'] [data-theme='light'],
+[data-theme='light'] [data-colors='ember'] {
+  --wall: #f0eded;
+  --wall-deep: #e6e3e2;
+  --surface: #f9f8f7;
+  --surface-raised: #ffffff;
+  --ledge: #221d1c;
+  --ledge-top: #483f3c;
+  --on-ledge: #f6f3f3;
+  --text: #120f0f;
+  --text-muted: #625a57;
+  --accent: #af4200;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #ccc6c5;
+  --line-strong: #887f7c;
+  --focus: #af4200;
+  --led: #ff7a3d;
+}
+[data-colors='ember'][data-theme='dark'],
+[data-colors='ember'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='ember'] {
+  --wall: #0f0c0b;
+  --wall-deep: #0a0807;
+  --surface: #1a1615;
+  --surface-raised: #251f1d;
+  --ledge: #1a1615;
+  --ledge-top: #302a27;
+  --on-ledge: #f6f3f3;
+  --text: #f6f3f3;
+  --text-muted: #b1a9a6;
+  --accent: #f87030;
+  --on-accent: #0f0c0b;
+  --marker: #48de81;
+  --line: #302a27;
+  --line-strong: #827571;
+  --focus: #f87030;
+  --led: #ff7a3d;
+}
+
+/* arcade: accent #f0399b, room #3a2860, light #ff4fd8 */
+[data-colors='arcade'],
+[data-colors='arcade'] [data-theme='light'],
+[data-theme='light'] [data-colors='arcade'] {
+  --wall: #efecf9;
+  --wall-deep: #e5e1f5;
+  --surface: #f8f7fe;
+  --surface-raised: #ffffff;
+  --ledge: #211836;
+  --ledge-top: #46356e;
+  --on-ledge: #f5f2ff;
+  --text: #110d1b;
+  --text-muted: #605284;
+  --accent: #c30078;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #cac2e4;
+  --line-strong: #8577ac;
+  --focus: #c30078;
+  --led: #ff4fd8;
+}
+[data-colors='arcade'][data-theme='dark'],
+[data-colors='arcade'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='arcade'] {
+  --wall: #0e0a1a;
+  --wall-deep: #090613;
+  --surface: #19112c;
+  --surface-raised: #24183d;
+  --ledge: #19112c;
+  --ledge-top: #2f214d;
+  --on-ledge: #f5f2ff;
+  --text: #f5f2ff;
+  --text-muted: #aea1d7;
+  --accent: #ff52aa;
+  --on-accent: #0e0a1a;
+  --marker: #48de81;
+  --line: #2f214d;
+  --line-strong: #7f68b7;
+  --focus: #ff52aa;
+  --led: #ff4fd8;
+}
+
+/* crimson: accent #e5223a, room #3c3f46, light #ff3b3b */
+[data-colors='crimson'],
+[data-colors='crimson'] [data-theme='light'],
+[data-theme='light'] [data-colors='crimson'] {
+  --wall: #edeef0;
+  --wall-deep: #e3e4e6;
+  --surface: #f8f8f9;
+  --surface-raised: #ffffff;
+  --ledge: #1d1e22;
+  --ledge-top: #3e4148;
+  --on-ledge: #f3f4f6;
+  --text: #0f1012;
+  --text-muted: #595c62;
+  --accent: #cd002c;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #c6c8cc;
+  --line-strong: #7e8188;
+  --focus: #cd002c;
+  --led: #ff3b3b;
+}
+[data-colors='crimson'][data-theme='dark'],
+[data-colors='crimson'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='crimson'] {
+  --wall: #0c0d0f;
+  --wall-deep: #07080a;
+  --surface: #16171a;
+  --surface-raised: #1e2025;
+  --ledge: #16171a;
+  --ledge-top: #292b31;
+  --on-ledge: #f3f4f6;
+  --text: #f3f4f6;
+  --text-muted: #a8abb1;
+  --accent: #ff6265;
+  --on-accent: #0c0d0f;
+  --marker: #48de81;
+  --line: #292b31;
+  --line-strong: #747882;
+  --focus: #ff6265;
+  --led: #ff3b3b;
+}
+
+/* graphite: accent #24282f, room #808080, light #d3d8e4 */
+[data-colors='graphite'],
+[data-colors='graphite'] [data-theme='light'],
+[data-theme='light'] [data-colors='graphite'] {
+  --wall: #eeeeee;
+  --wall-deep: #e4e4e4;
+  --surface: #f8f8f8;
+  --surface-raised: #ffffff;
+  --ledge: #1e1e1e;
+  --ledge-top: #414141;
+  --on-ledge: #f4f4f4;
+  --text: #101010;
+  --text-muted: #5c5c5c;
+  --accent: #252930;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #c8c8c8;
+  --line-strong: #818181;
+  --focus: #252930;
+  --led: #d0d8ed;
+}
+[data-colors='graphite'][data-theme='dark'],
+[data-colors='graphite'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='graphite'] {
+  --wall: #0d0d0d;
+  --wall-deep: #080808;
+  --surface: #171717;
+  --surface-raised: #202020;
+  --ledge: #171717;
+  --ledge-top: #2b2b2b;
+  --on-ledge: #f4f4f4;
+  --text: #f4f4f4;
+  --text-muted: #ababab;
+  --accent: #dfe5ee;
+  --on-accent: #0d0d0d;
+  --marker: #48de81;
+  --line: #2b2b2b;
+  --line-strong: #787878;
+  --focus: #dfe5ee;
+  --led: #d0d8ed;
+}

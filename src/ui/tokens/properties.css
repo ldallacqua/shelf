@@ -1,6 +1,6 @@
 /*
- * Typed registrations for every token that changes with the theme, and for
- * the LED color, which changes with the game in focus.
+ * Typed registrations for every token that changes with the theme or the
+ * colorway, and for the LED color, which changes with the game in focus.
  * A registered property can be interpolated, which is what lets a theme change
  * play as a change of light (see the transition in theme.css) instead of a cut.
  * The initial values are the light theme.
@@ -34,6 +34,11 @@
   syntax: '<color>';
   inherits: true;
   initial-value: #3a4152;
+}
+@property --on-ledge {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f2f4f8;
 }
 @property --text {
   syntax: '<color>';
