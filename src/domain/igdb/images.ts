@@ -26,32 +26,58 @@ export const IMAGE_HOST = 'https://images.igdb.com'
 const IMAGE_ID = /^[a-z0-9_]+$/i
 
 /**
- * A game IGDB does not have keeps its images on Steam's servers (ADR 006), and
- * an image id is then the file's path there. They resize nothing, so each size
- * is the nearest file there is: a cover in two, when `@2x` says the second
- * exists, a screenshot in two, anything else as it is.
+ * Steam's image servers: covers, banners and art from its store pages (ADR 010), achievement
+ * icons (ADR 003).
  */
-export const STEAM_IMAGES = 'https://shared.akamai.steamstatic.com/store_item_assets'
+export const STEAM_IMAGE_HOST = 'https://shared.akamai.steamstatic.com'
+
+/** Every server a library's images come from: a page opens its connections to them early. */
+export const IMAGE_HOSTS = [IMAGE_HOST, STEAM_IMAGE_HOST] as const
+
+/**
+ * A game's images from its store page on Steam (ADR 010), and every image of a game IGDB does
+ * not have (ADR 006), are on Steam's servers, and an image id is then the file's path there.
+ */
+export const STEAM_IMAGES = `${STEAM_IMAGE_HOST}/store_item_assets`
 const STEAM_IMAGE = /^steam\/apps\/\d+(\/\w[\w.-]*)+\.(jpe?g|png)(@2x)?$/i
 
 export const isSteamImage = (imageId: string): boolean => STEAM_IMAGE.test(imageId)
 
-const steamImageUrl = (imageId: string, size: ImageSize): string => {
+type ImageFile = { url: string; width: number }
+
+/**
+ * The file on Steam's servers nearest a size, and how wide it really is, which is what a
+ * browser chooses by. They resize nothing, so a cover is in two files, 300 and 600 pixels wide,
+ * when `@2x` says the second exists; a screenshot in two, 600 and 1920; anything else is the one
+ * file there is.
+ *
+ * A cover's smaller file is said to be 300 wide, as it is, and not IGDB's 264: a wall's large
+ * cover, 192 pixels at 150%, needs 288, and would otherwise take the file twice the size.
+ */
+const steamFile = (imageId: string, size: ImageSize): ImageFile => {
   const path = imageId.replace('@2x', '')
   const { width } = imageSizes[size]
-  const file = /\/ss_[^/]+$/.test(path)
-    ? path.replace(/\.jpg$/i, width > 600 ? '.1920x1080.jpg' : '.600x338.jpg')
-    : path !== imageId && width > 300
-      ? path.replace(/(\.\w+)$/, '_2x$1')
-      : path
-  return `${STEAM_IMAGES}/${file}`
+  const at = (file: string) => `${STEAM_IMAGES}/${file}`
+  if (/\/ss_[^/]+$/.test(path))
+    return width > 600
+      ? { url: at(path.replace(/\.jpg$/i, '.1920x1080.jpg')), width: 1920 }
+      : { url: at(path.replace(/\.jpg$/i, '.600x338.jpg')), width: 600 }
+  if (path === imageId) return { url: at(path), width }
+  return width > 300
+    ? { url: at(path.replace(/(\.\w+)$/, '_2x$1')), width: 600 }
+    : { url: at(path), width: 300 }
 }
 
-export const imageUrl = (imageId: string, size: ImageSize): string => {
-  if (isSteamImage(imageId)) return steamImageUrl(imageId, size)
+const fileOf = (imageId: string, size: ImageSize): ImageFile => {
+  if (isSteamImage(imageId)) return steamFile(imageId, size)
   if (!IMAGE_ID.test(imageId)) throw new Error('Not an IGDB image id')
-  return `${IMAGE_HOST}/igdb/image/upload/t_${size}/${imageId}.webp`
+  return {
+    url: `${IMAGE_HOST}/igdb/image/upload/t_${size}/${imageId}.webp`,
+    width: imageSizes[size].width,
+  }
 }
+
+export const imageUrl = (imageId: string, size: ImageSize): string => fileOf(imageId, size).url
 
 const IMAGE_URL =
   /^https:\/\/images\.igdb\.com\/igdb\/image\/upload\/t_[a-z0-9_]+\/([a-z0-9_]+)\.\w+$/i
@@ -61,11 +87,18 @@ export const imageIdOf = (url: string): string | undefined => IMAGE_URL.exec(url
 
 type Sources = { src: string; srcSet: string }
 
-const sources = (imageId: string, sizes: readonly ImageSize[]): Sources => ({
-  // A browser without srcset support gets the 264-pixel cover, or the nearest to it.
-  src: imageUrl(imageId, sizes.includes('cover_big') ? 'cover_big' : (sizes.at(-1) ?? 'cover_big')),
-  srcSet: sizes.map((size) => `${imageUrl(imageId, size)} ${imageSizes[size].width}w`).join(', '),
-})
+const sources = (imageId: string, sizes: readonly ImageSize[]): Sources => {
+  // Steam's servers have fewer files than there are sizes: each is named once, at its own width.
+  const files = new Map(sizes.map((size) => fileOf(imageId, size)).map((file) => [file.url, file]))
+  return {
+    // A browser without srcset support gets the 264-pixel cover, or the nearest to it.
+    src: imageUrl(
+      imageId,
+      sizes.includes('cover_big') ? 'cover_big' : (sizes.at(-1) ?? 'cover_big'),
+    ),
+    srcSet: [...files.values()].map(({ url, width }) => `${url} ${width}w`).join(', '),
+  }
+}
 
 const COVER_SIZES = ['cover_small', 'cover_small_2x', 'cover_big', 'cover_big_2x'] as const
 
