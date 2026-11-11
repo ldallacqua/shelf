@@ -1428,6 +1428,12 @@ point where we don't have the data." A game with a page on Steam's store takes f
   description, About shows neither the summary nor the storyline: it already tells both. Looked at for it:
   Steam's own store page and Hydra (the owner's screenshots), and GOG's.
 
+**About's width (11 Nov 2026).** Its text fills the same main column as the gallery, including the rest
+opened by Read more. The page's 90rem outer cap, padding and separate sidebar bound the column; About
+has no additional character-width cap. This follows the owner's No Man's Sky example and request to use
+the available space, and Steam's description filling its own main column. Line spacing and natural
+wrapping remain, with the narrower-line trade-off reviewed against [W3C's visual presentation guidance](https://www.w3.org/WAI/WCAG22/Understanding/visual-presentation.html).
+
 What the store leaves empty, and the rest of the page (videos, the storyline, time to beat, release dates,
 Details), stays IGDB's. A page is read when the game is added, and again once a day; never because someone
 opened it. A page the store takes down puts the game back on IGDB's record.
