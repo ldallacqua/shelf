@@ -130,8 +130,7 @@
     }
   }
   .gallery-caption,
-  .gallery-expand,
-  .gallery-thumb-name {
+  .gallery-expand {
     position: absolute;
     bottom: 0;
     padding: 0.75rem;
@@ -198,15 +197,6 @@
       height: 3px;
       background: var(--accent);
     }
-  }
-  .gallery-thumb-name {
-    inset-inline: 0;
-    padding: 0.125rem 0.25rem;
-    font-size: 0.6875rem;
-    text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
   .gallery-thumb-play {
     position: absolute;

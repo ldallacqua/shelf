@@ -75,6 +75,23 @@ describe('the selected gallery frame', () => {
       expect.stringContaining('/_next/image?'),
     )
   })
+  it('writes no names on the tiles or under a screenshot, and keeps them for screen readers', async () => {
+    draw()
+    const tiles = rail().getAllByRole('button')
+    // A video is told from a screenshot by its play mark alone, as on Steam. A tile for adults
+    // keeps its mark.
+    for (const tile of tiles.filter((each) => !each.hasAttribute('data-adult')))
+      expect(tile).toHaveTextContent(/^$/)
+    expect(tiles[3]).toHaveTextContent(/^\+18$/)
+    expect(tiles[0]!.querySelector('.gallery-thumb-play')).not.toBeNull()
+    expect(tiles[2]!.querySelector('.gallery-thumb-play')).toBeNull()
+
+    await userEvent.click(rail().getByRole('button', { name: 'Show Screenshot 1 from A Game' }))
+    const stage = screen.getByRole('button', {
+      name: 'Screenshot 1 of 3 from A Game: open it full screen',
+    })
+    expect(stage).toHaveTextContent(/^Full screen$/)
+  })
   it('selects an image in place, and opens full screen only when the large image is pressed', async () => {
     draw()
     await userEvent.click(rail().getByRole('button', { name: 'Show Screenshot 1 from A Game' }))

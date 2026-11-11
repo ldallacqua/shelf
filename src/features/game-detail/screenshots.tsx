@@ -283,8 +283,8 @@ function Gallery({
               }
             }}
           >
+            {/* A screenshot has no name to show, as on Steam: its number is for screen readers. */}
             <Picture item={selected} large />
-            <span className="gallery-caption">{label(selected)}</span>
             <span className="gallery-expand" aria-hidden="true">
               {hidden ? <EyeIcon /> : <MaximizeIcon />}
               {hidden ? t('adultMark') : t('galleryFullscreen')}
@@ -346,11 +346,12 @@ function Gallery({
                     select(index)
                   }}
                 >
+                  {/* No words on a tile, as on Steam: a video is told by its play mark, and its
+                      name is said on the stage and in the button's name. */}
                   <Picture item={item} fallback={shots.find((shot) => !shot.mature)} />
                   {item.kind === 'video' ? (
                     <PlayIcon className="gallery-thumb-play" aria-hidden="true" />
                   ) : null}
-                  <span className="gallery-thumb-name">{label(item)}</span>
                   {mature ? (
                     <span className="shot-adult" aria-hidden="true">
                       {blurred ? <EyeIcon className="size-4" /> : null}
