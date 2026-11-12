@@ -6,10 +6,10 @@ import {
   BLACK_WALL,
   chromeProperty,
   COLORS_STORAGE_KEY,
-  colorwayWall,
   OWN_COLORS_STORAGE_KEY,
   THEME_STORAGE_KEY,
 } from './theme'
+import { colorwayWall } from './colorway-walls'
 
 /**
  * The script that runs in <head> before the first paint, so the page never

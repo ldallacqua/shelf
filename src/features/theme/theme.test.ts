@@ -11,13 +11,13 @@ import {
   BLACK_WALL,
   chromeProperty,
   COLORS_STORAGE_KEY,
-  colorwayWall,
   OWN_COLORS_STORAGE_KEY,
   parseThemeChoice,
   resolveTheme,
   THEME_STORAGE_KEY,
   themeColor,
 } from './theme'
+import { colorwayWall } from './colorway-walls'
 import { themeScript } from './theme-script'
 
 describe('parseThemeChoice', () => {

@@ -6,8 +6,8 @@ import { ledWash } from '@/domain/colorway/derive'
 import { presetNames } from '@/domain/colorway/names'
 import { readTheme } from '@/ui/tokens/read-tokens'
 
+import { colorwayWall } from './colorway-walls'
 import { colorsOfPreset, colorwaysCss } from './colorways-css'
-import { colorwayWall } from './theme'
 
 describe('colorways.css', () => {
   it('is what the presets make: run pnpm tokens:colorways after changing one', () => {
