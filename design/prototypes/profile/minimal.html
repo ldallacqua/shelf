@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <title>Lucas · Shelf profile concept</title>
+  <title>Mira · Shelf profile concept</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400;100,500;100,600;100,700;100,800;125,700;125,800;125,900&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -212,7 +212,7 @@
     <div class="topbar-inner">
       <a class="brand" href="#" aria-label="Shelf profile"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>Shelf</a>
       <nav class="global-nav" aria-label="Main"><a class="active" href="#profile">Profile</a><a href="#" data-open-library>Library</a><a href="#finished">Trophies</a></nav>
-      <div class="account-nav"><button class="text-button topbar-preview" id="visitor-toggle" type="button">View as visitor <span class="arrow" aria-hidden="true">↗</span></button><button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to light theme">☼</button><button class="small-avatar" data-edit aria-label="Edit your profile" type="button">L</button></div>
+      <div class="account-nav"><button class="text-button topbar-preview" id="visitor-toggle" type="button">View as visitor <span class="arrow" aria-hidden="true">↗</span></button><button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to light theme">☼</button><button class="small-avatar" data-edit aria-label="Edit your profile" type="button">M</button></div>
     </div>
   </header>
   <div class="visitor-banner" id="visitor-banner" hidden><div class="shell"><p>You’re viewing your public profile.</p><button class="text-button" id="exit-visitor" type="button">Back to your view <span aria-hidden="true">↗</span></button></div></div>
@@ -221,7 +221,7 @@
       <div class="hero-art" id="hero-art"></div>
       <div class="shell">
         <div class="breadcrumb"><span class="public-dot" aria-hidden="true"></span><span>Public profile</span><span aria-hidden="true">/</span><span>Here since 2024</span></div>
-        <div class="identity"><div class="avatar profile-initial" aria-hidden="true">L</div><div><h1 class="name" id="profile-name">Lucas</h1><p class="handle">@lucas</p></div></div>
+        <div class="identity"><div class="avatar profile-initial" aria-hidden="true">M</div><div><h1 class="name" id="profile-name">Mira</h1><p class="handle">@mira</p></div></div>
         <p class="bio" id="profile-bio">Here for <strong>worlds worth getting lost in.</strong><br>Story-driven games, strange little indies, and just one more run.</p>
         <div class="hero-actions"><button class="button button-quiet" data-edit type="button"><span aria-hidden="true">✎</span> Edit profile</button><button class="button button-primary" id="share-profile" type="button">Share profile <span aria-hidden="true">↗</span></button></div>
         <div class="hero-baseline"><div class="social-links"><a href="https://store.steampowered.com/" target="_blank" rel="noopener noreferrer">Steam <span aria-hidden="true">↗</span></a><span class="muted" aria-hidden="true">·</span><span class="muted">PC & Nintendo Switch</span></div><span class="art-credit" id="art-credit">A little piece of Outer Wilds</span></div>
@@ -248,14 +248,14 @@
     <div class="editor-grid">
       <nav class="editor-nav" aria-label="Profile settings"><a href="#edit-identity">Identity</a><a href="#edit-favorites">Favorite games</a><a href="#edit-sections">Sections</a><a href="#edit-privacy">Privacy</a></nav>
       <form class="editor-form" id="profile-form">
-        <section class="form-section" id="edit-identity"><h2>A little about you</h2><p>This is how you introduce yourself to people who visit your shelf.</p><div class="avatar-editor"><div class="avatar" id="editor-avatar" aria-hidden="true">L</div><div><strong>Your profile mark</strong><p>Made from your name. Always a little yours.</p></div></div><label class="field">Display name<input id="name-input" name="displayName" maxlength="32" required value="Lucas"></label><label class="field">Bio<textarea id="bio-input" name="bio" maxlength="180">Here for worlds worth getting lost in.
+        <section class="form-section" id="edit-identity"><h2>A little about you</h2><p>This is how you introduce yourself to people who visit your shelf.</p><div class="avatar-editor"><div class="avatar" id="editor-avatar" aria-hidden="true">M</div><div><strong>Your profile mark</strong><p>Made from your name. Always a little yours.</p></div></div><label class="field">Display name<input id="name-input" name="displayName" maxlength="32" required value="Mira"></label><label class="field">Bio<textarea id="bio-input" name="bio" maxlength="180">Here for worlds worth getting lost in.
 Story-driven games, strange little indies, and just one more run.</textarea><span class="field-hint" id="bio-count">114 / 180 characters</span></label><label class="field">A world for your header<select id="hero-input" name="header"><option value="753640">Outer Wilds</option><option value="1245620">Elden Ring</option><option value="367520">Hollow Knight</option><option value="none">Keep it quiet · no artwork</option></select><span class="field-hint">Game art from your collection, with a calm space for your name.</span></label></section>
         <section class="form-section" id="edit-favorites"><h2>Your all-time five</h2><p>Pick the games that say the most about you. You can change your mind anytime.</p><div class="editor-favorites" id="editor-favorites"></div><label class="field" id="add-game-field" hidden>Add a favorite<select id="add-game-select"><option value="">Choose a game from your library</option></select></label></section>
         <section class="form-section" id="edit-sections"><h2>What else feels like you?</h2><p>Keep the parts you want to share. Empty sections stay out of the way.</p><label class="switch-row"><span>Currently playing<small>A few games from your Playing list.</small></span><input type="checkbox" id="show-playing" checked></label><label class="switch-row"><span>My kind of games<small>Your short introduction to what you like.</small></span><input type="checkbox" id="show-taste" checked></label><label class="switch-row"><span>Recent finishes<small>Your last three recorded completions.</small></span><input type="checkbox" id="show-finished" checked></label><label class="switch-row"><span>Selected shelves<small>Handy doors into your collection.</small></span><input type="checkbox" id="show-shelves" checked></label></section>
         <section class="form-section" id="edit-privacy"><h2>Public, on your terms.</h2><p>Your profile follows your shelf’s visibility. Games marked private stay private, including in favorites and counts.</p><p class="field-hint">This concept uses sample data. Your real profile and library stay unchanged.</p></section>
         <div class="form-actions"><button class="button button-quiet" id="cancel-edit" type="button">Cancel</button><button class="button button-primary" type="submit">Save changes <span aria-hidden="true">↗</span></button></div>
       </form>
-      <aside class="editor-aside" aria-label="Profile preview"><p class="mono muted">Your introduction</p><div class="preview-card"><div class="preview-header" id="preview-header"></div><div class="preview-body"><div class="avatar" id="preview-avatar" aria-hidden="true">L</div><p class="preview-name" id="preview-name">Lucas</p><p class="handle">@lucas</p><p class="preview-bio" id="preview-bio"></p><div class="preview-covers" id="preview-covers"></div></div></div><p class="preview-label">Your changes appear here before you save.</p><div class="preview-public"><strong>Public profile</strong><br>Only the games you share are shown to visitors.</div></aside>
+      <aside class="editor-aside" aria-label="Profile preview"><p class="mono muted">Your introduction</p><div class="preview-card"><div class="preview-header" id="preview-header"></div><div class="preview-body"><div class="avatar" id="preview-avatar" aria-hidden="true">M</div><p class="preview-name" id="preview-name">Mira</p><p class="handle">@mira</p><p class="preview-bio" id="preview-bio"></p><div class="preview-covers" id="preview-covers"></div></div></div><p class="preview-label">Your changes appear here before you save.</p><div class="preview-public"><strong>Public profile</strong><br>Only the games you share are shown to visitors.</div></aside>
     </div>
   </main>
   <footer class="footer"><div class="shell"><span>Game data and artwork from Steam & IGDB.</span><span class="concept-label">Shelf · Profile study · Sample data</span></div></footer>
@@ -279,7 +279,7 @@ Story-driven games, strange little indies, and just one more run.</textarea><spa
         { id:'814380', title:'Sekiro: Shadows Die Twice', year:'2019', platform:'PC', rating:'9.5', hours:'47', note:'Hesitation is defeat.' }
       ];
       const findGame = id => games.find(game => game.id === id);
-      let state = { name:'Lucas', bio:'Here for worlds worth getting lost in.\nStory-driven games, strange little indies, and just one more run.', hero:'753640', favorites:games.slice(0,5).map(game=>game.id), playing:true, taste:true, finished:true, shelves:true };
+      let state = { name:'Mira', bio:'Here for worlds worth getting lost in.\nStory-driven games, strange little indies, and just one more run.', hero:'753640', favorites:games.slice(0,5).map(game=>game.id), playing:true, taste:true, finished:true, shelves:true };
       let draft = null;
       let visitor = false;
       let toastTimer;
@@ -305,7 +305,7 @@ Story-driven games, strange little indies, and just one more run.</textarea><spa
         document.title=state.name+' · Shelf profile concept';
         $('profile-bio').textContent=state.bio;
         $('profile-bio').style.whiteSpace='pre-line';
-        document.querySelectorAll('.profile-initial,.small-avatar').forEach(el=>el.textContent=state.name.trim().slice(0,1).toUpperCase()||'L');
+        document.querySelectorAll('.profile-initial,.small-avatar').forEach(el=>el.textContent=state.name.trim().slice(0,1).toUpperCase()||'M');
         $('hero-art').style.backgroundImage=state.hero==='none'?'none':`url('${steam(state.hero,'library_hero.jpg')}')`;
         $('art-credit').textContent=state.hero==='none'?'':`A little piece of ${findGame(state.hero).title}`;
         $('favorite-grid').innerHTML=state.favorites.map(id=>{const game=findGame(id);return `<button class="favorite" data-game="${id}" aria-label="${escape(game.title)}, favorite game, ${game.year}" type="button"><span class="cover-wrap">${cover(game)}</span><span class="favorite-title">${escape(game.title)}</span><span class="favorite-year">${game.year} <span aria-hidden="true">·</span> ${game.platform}</span></button>`;}).join('');
@@ -322,7 +322,7 @@ Story-driven games, strange little indies, and just one more run.</textarea><spa
         if(!draft)return;
         draft.name=$('name-input').value; draft.bio=$('bio-input').value; draft.hero=$('hero-input').value;
         $('preview-name').textContent=draft.name||'Your name'; $('preview-bio').textContent=draft.bio; $('preview-bio').style.whiteSpace='pre-line';
-        $('preview-avatar').textContent=$('editor-avatar').textContent=draft.name.trim().slice(0,1).toUpperCase()||'L';
+        $('preview-avatar').textContent=$('editor-avatar').textContent=draft.name.trim().slice(0,1).toUpperCase()||'M';
         $('bio-count').textContent=`${draft.bio.length} / 180 characters`;
         $('preview-header').style.backgroundImage=draft.hero==='none'?'none':`url('${steam(draft.hero,'library_hero.jpg')}')`;
         $('preview-covers').innerHTML=draft.favorites.map(id=>cover(findGame(id))).join('');
@@ -359,7 +359,7 @@ Story-driven games, strange little indies, and just one more run.</textarea><spa
       $('visitor-toggle').onclick=()=>toggleVisitor(!visitor);
       $('exit-visitor').onclick=()=>{if(draft){$('editor').hidden=false;$('profile').hidden=true;$('visitor-banner').hidden=true;$('visitor-banner').querySelector('p').textContent='You’re viewing your public profile.';$('exit-visitor').textContent='Back to your view ↗';}else toggleVisitor(false);};
       $('theme-toggle').onclick=()=>{const light=root.dataset.theme!=='light';root.dataset.theme=light?'light':'dark';$('theme-toggle').textContent=light?'☾':'☼';$('theme-toggle').setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');};
-      $('share-profile').onclick=async()=>{try{await navigator.clipboard.writeText('https://shelf.example/en/u/lucas/profile');toast('Sample profile link copied.');}catch{toast('Sample profile: shelf.example/en/u/lucas/profile');}};
+      $('share-profile').onclick=async()=>{try{await navigator.clipboard.writeText('https://shelf.example/en/u/mira/profile');toast('Sample profile link copied.');}catch{toast('Sample profile: shelf.example/en/u/mira/profile');}};
       $('all-favorites').onclick=()=>showLibrary('The favorites',games.slice(0,5));
       $('show-trophies').onclick=()=>showLibrary('A few finished games',['367520','504230','814380'].map(findGame));
       $('close-dialog').onclick=()=>$('content-dialog').close();
