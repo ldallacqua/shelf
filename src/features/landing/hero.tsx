@@ -1,9 +1,8 @@
-import { ArrowDownIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { CSSProperties } from 'react'
 
+import { DownloadForWindows } from '@/features/desktop/download-windows'
 import { Eyebrow, Page } from '@/features/shell/page'
-import { Button } from '@/ui/button'
 import { Ledge } from '@/ui/ledge'
 
 import { CreateShelf } from './create-shelf'
@@ -16,11 +15,14 @@ const PER_BAY = 8
 /** A case on the hero's shelf is about this wide: 135 mm at the largest `--mm`. */
 const HERO_SIZES = '(min-width: 64rem) 106px, (min-width: 40rem) 98px, 82px'
 
+/** What a visitor can count on, in a few words each, under the buttons. */
+const FACTS = ['free', 'sync', 'windows', 'languages'] as const
+
 /**
- * The first screen: what Shelf is, in a line, the one call to action, and
- * the product itself beside it, a lit shelf of real covers. Its lights come
- * on bay by bay, once (landing.css). On a phone the shelf stands under the
- * words, two bays of it.
+ * The first screen: what Shelf is, in a line, the call to action with the
+ * download for Windows beside it, and the product itself, a lit shelf of real
+ * covers. Its lights come on bay by bay, once (landing.css). On a phone the
+ * shelf stands under the words, two bays of it.
  */
 export function Hero({ games }: { games: readonly DemoGame[] }) {
   const t = useTranslations('Landing.hero')
@@ -28,7 +30,7 @@ export function Hero({ games }: { games: readonly DemoGame[] }) {
     games.slice(bay * PER_BAY, (bay + 1) * PER_BAY),
   )
   return (
-    <section aria-labelledby="landing-title" className="overflow-x-clip">
+    <section id="top" aria-labelledby="landing-title" className="overflow-x-clip">
       <Page className="grid min-h-[min(54rem,calc(100svh-4rem))] grid-cols-[minmax(0,1fr)] items-center gap-x-10 gap-y-12 pt-10 pb-16 sm:pt-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:pb-24">
         <div>
           <Eyebrow>{t('eyebrow')}</Eyebrow>
@@ -38,14 +40,21 @@ export function Hero({ games }: { games: readonly DemoGame[] }) {
           <p className="mt-6 max-w-[42ch] text-lg text-pretty text-muted sm:text-xl">{t('lead')}</p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <CreateShelf />
-            <Button variant="ghost" asChild className="h-12 px-5 text-base">
-              <a href="#how">
-                {t('how')}
-                <ArrowDownIcon aria-hidden="true" />
-              </a>
-            </Button>
+            <DownloadForWindows />
           </div>
-          <p className="mt-5 text-sm text-muted">{t('note')}</p>
+          <ul
+            aria-label={t('facts.label')}
+            className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted"
+          >
+            {FACTS.map((fact, index) => (
+              <li key={fact} className="flex items-center gap-3">
+                {index > 0 ? (
+                  <span aria-hidden="true" className="size-1 rounded-full bg-muted/60" />
+                ) : null}
+                {t(`facts.${fact}`)}
+              </li>
+            ))}
+          </ul>
         </div>
         <div
           role="img"

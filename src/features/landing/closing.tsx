@@ -2,12 +2,24 @@ import { PlusIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Suspense } from 'react'
 
+import { DownloadForWindows } from '@/features/desktop/download-windows'
 import { Eyebrow, Page } from '@/features/shell/page'
 import { Ledge, ShelfLabel } from '@/ui/ledge'
 
 import { CreateShelf } from './create-shelf'
 
-const QUESTIONS = ['free', 'data', 'media', 'sync', 'hours', 'who', 'export'] as const
+const QUESTIONS = [
+  'free',
+  'data',
+  'sync',
+  'desktop',
+  'windows',
+  'hours',
+  'look',
+  'media',
+  'who',
+  'export',
+] as const
 
 /**
  * The end of the page: an empty, lit shelf waiting for its first game, the
@@ -18,7 +30,7 @@ export function Closing() {
   return (
     // As each part above: hydrated on its own, and drawn only once near.
     <Suspense>
-      <section aria-labelledby="closing-title" className="landing-part py-16 sm:py-24">
+      <section id="closing" aria-labelledby="closing-title" className="landing-part py-16 sm:py-24">
         <Page className="reveal mx-auto max-w-3xl text-center">
           <Ledge
             itemsClassName="h-32 sm:h-44"
@@ -30,13 +42,14 @@ export function Closing() {
           <p className="mx-auto mt-5 max-w-[44ch] text-lg text-pretty text-muted">
             {t('closing.body')}
           </p>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
             <CreateShelf />
+            <DownloadForWindows />
           </div>
         </Page>
       </section>
 
-      <section aria-labelledby="faq-title" className="landing-part pb-20 sm:pb-28">
+      <section id="faq" aria-labelledby="faq-title" className="landing-part pb-20 sm:pb-28">
         <Page className="faq reveal mx-auto max-w-3xl">
           <Eyebrow>{t('faq.eyebrow')}</Eyebrow>
           <h2 id="faq-title" className="mt-3 title text-3xl sm:text-4xl">

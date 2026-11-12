@@ -162,9 +162,51 @@
       "eyebrow": "For people with a lot of games",
       "title": "Every game you own, on one shelf.",
       "lead": "Physical and digital, every console and every generation, lit like the shelf you always wanted. Find the next one to play in a second.",
-      "how": "See how it works",
-      "note": "Free. Your shelf is ready in a minute.",
+      "facts": {
+        "label": "At a glance",
+        "free": "Free",
+        "sync": "Syncs Steam and Nintendo",
+        "windows": "App for Windows",
+        "languages": "In English and Portuguese"
+      },
       "shelf": "An example shelf of {count, number} games, facing out and lit from behind"
+    },
+    "features": {
+      "eyebrow": "At a glance",
+      "title": "Everything a big collection needs.",
+      "body": "Every part below works on an example shelf of real games. Jump to the one you came for.",
+      "filters": {
+        "title": "Ask it anything",
+        "body": "One line finds any game, and saves as a shelf of its own."
+      },
+      "copies": {
+        "title": "Every copy, one box",
+        "body": "The disc, the sale and the Switch port, together."
+      },
+      "sync": {
+        "title": "Steam and Nintendo",
+        "body": "Your games and hours, brought in and kept in step."
+      },
+      "views": {
+        "title": "Four ways to browse",
+        "body": "A lit shelf, a wall of covers, a list or banners."
+      },
+      "look": {
+        "title": "Your colors",
+        "body": "Lights on or off, eleven colorways, or your own."
+      },
+      "desktop": {
+        "title": "Play on Windows",
+        "body": "Start games from your shelf, count hours, back up saves."
+      },
+      "progress": {
+        "title": "Trophies and stats",
+        "body": "What you finished, your achievements, your years."
+      },
+      "assistant": {
+        "title": "Ask your assistant",
+        "body": "Claude and other MCP assistants read your shelf."
+      }
     },
     "ask": {
       "eyebrow": "Filters",
@@ -209,7 +251,8 @@
     "sync": {
       "eyebrow": "Steam and Nintendo",
       "title": "Bring your Steam and Switch games with you.",
-      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours on it, and each game’s page shows its achievements. Link Nintendo, and the games you played on a Switch or a Switch 2 come too, once you say whether each is a cartridge or a download. Then both keep in step by themselves once a day. Games already on your shelf gain a copy, never a second box. The new ones wait, unsorted, on a page where you rate them and say where each stands, one tap at a time or many at once. PlayStation and Xbox come next.",
+      "body": "Sign in through Steam, and every game you own there lands on your shelf with your hours and achievements. Link Nintendo, and the games you played on a Switch or a Switch 2 come too, once you say cartridge or download. Both keep in step by themselves once a day, and a game already on your shelf gains a copy, never a second box. PlayStation and Xbox come next.",
+      "organize": "New games wait, unsorted, on one page where you rate them and say where each stands, one tap at a time or many at once.",
       "card": "Steam and Nintendo, syncing",
       "where": "PC · Steam",
       "whereNintendo": "Switch · Nintendo · cartridge",
@@ -236,8 +279,60 @@
     "finished": {
       "eyebrow": "Progress",
       "title": "See how far you got.",
-      "body": "Mark a game finished and it goes up on your trophy wall, under its own light, in the year you finished it. Above it: how many, how many hours, and what you made of them.",
+      "body": "Mark a game finished and it goes up on your trophy wall, under its own light, in the year you finished it. Above it: how many, how many hours, and what you made of them. Steam’s achievements add up there too, the rarest kept in a vault, with your backlog, your taste and a card of your year to share.",
       "wall": "Games finished on the example shelf"
+    },
+    "look": {
+      "eyebrow": "Colors",
+      "title": "Paint the room your way.",
+      "body": "Lights on or lights off. Eleven colorways, vivid or pastel, or three colors of your own, kept readable either way. Pure black for OLED screens, and a room that can take the colors of the game you’re looking at.",
+      "choose": "Colorway",
+      "off": "Lights off",
+      "on": "Lights on",
+      "rooms": "The example shelf in {name}, with the lights off and on"
+    },
+    "desktop": {
+      "eyebrow": "Shelf for Windows",
+      "title": "Press Play on your shelf.",
+      "body": "Shelf for Windows puts your shelf in a window of its own on your PC, and starts your games from it.",
+      "points": {
+        "play": "Play any game from its file, or through Steam",
+        "hours": "Hours counted while you play, added up across every PC",
+        "saves": "Saves backed up when you stop, and carried between PCs through a folder, OneDrive or Google Drive",
+        "ready": "Ready to play shows only what this PC can start",
+        "updates": "Updates itself while it runs"
+      },
+      "notes": "Release notes",
+      "window": "Shelf for Windows, with {title} ready to play: {hours, plural, one {# hour} other {# hours}} played on Steam, its saves backed up to OneDrive",
+      "nav": {
+        "library": "Library",
+        "trophies": "Trophies"
+      },
+      "update": "Update",
+      "where": "PC · Steam · {hours, plural, one {# hour} other {# hours}} played",
+      "play": "Play",
+      "saves": "Saves",
+      "savesWhere": "OneDrive · 2 h ago",
+      "readyToPlay": "Ready to play"
+    },
+    "start": {
+      "eyebrow": "Getting started",
+      "title": "Ready in a minute.",
+      "body": "Sign up, and Shelf walks you through the rest. Any step can wait.",
+      "steps": {
+        "create": {
+          "title": "Create your shelf",
+          "body": "A name, an address of your own, and whether anyone else can see it."
+        },
+        "bring": {
+          "title": "Bring your games",
+          "body": "Link Steam or Nintendo, or paste a list of titles. Covers, years and lengths come with each."
+        },
+        "play": {
+          "title": "Make it yours",
+          "body": "Pick your colors, give each game a status, and find the next one to play."
+        }
+      }
     },
     "privacy": {
       "eyebrow": "Privacy",
@@ -291,7 +386,7 @@
       },
       "sync": {
         "q": "Can it bring in the games I already own?",
-        "a": "From Steam and Nintendo, yes: link them right after signing up, or later on your account page. Every game you own on Steam comes onto your shelf with its hours and achievements; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them, give each a status, and put right one taken for the wrong game. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
+        "a": "From Steam and Nintendo, yes: link them right after signing up, or later in Settings. Every game you own on Steam comes onto your shelf with its hours and achievements; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them, give each a status, and put right one taken for the wrong game. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
       },
       "hours": {
         "q": "How does Shelf count my hours?",
@@ -299,7 +394,19 @@
       },
       "who": {
         "q": "Who can see my shelf?",
-        "a": "You choose when you sign up, and can change it any time on your account page. A public shelf is for anyone, and search engines can list it; a private one is for you alone. Notes stay private unless you mark them public, game by game, and any one game can be marked private, so only you see it."
+        "a": "You choose when you sign up, and can change it any time in Settings. A public shelf is for anyone, and search engines can list it; a private one is for you alone. Notes stay private unless you mark them public, game by game, and any one game can be marked private, so only you see it."
+      },
+      "desktop": {
+        "q": "Is there an app for my computer?",
+        "a": "Yes: Shelf for Windows, free, for Windows 10 and 11. It opens your shelf in a window of its own, starts your games from it, from their file or through Steam, counts your hours while you play, and backs up your saves. It updates itself. For now it is for Windows only."
+      },
+      "windows": {
+        "q": "Why does Windows warn me about the installer?",
+        "a": "The installer isn’t signed with a paid certificate, so Windows SmartScreen may say it doesn’t recognize it. Choose More info, then Run anyway; it asks only once. Every installer is published on the releases page of Shelf’s public repository on GitHub, and every update after it is signed and checked by the app before it installs."
+      },
+      "look": {
+        "q": "Can I change how Shelf looks?",
+        "a": "Yes: lights on or off, eleven colorways or three colors of your own, and pure black for OLED screens. You can also let the room take the colors of the game you’re looking at. Each is this device’s choice, in Settings, Appearance."
       },
       "export": {
         "q": "Can I take my games with me?",
@@ -1526,6 +1633,11 @@
       "body": "The language Shelf speaks. The switch in the header changes it too.",
       "current": "(in use)"
     },
+    "setupAgain": {
+      "title": "Set up your shelf again",
+      "description": "Go through setup from its first step. Your games, platforms and colors stay as they are.",
+      "side": "Setup"
+    },
     "appOnly": {
       "title": "Part of Shelf for Windows",
       "body": "This page is in Shelf for Windows, the app that starts your games and counts their hours on a PC. Open Settings there to see it.",
@@ -1609,30 +1721,134 @@
   "Start": {
     "metaTitle": "Set up your shelf",
     "title": "Set up your shelf",
-    "intro": "Bring your games in, then say where each one stands. Each step checks itself off once it is done, and none has to be finished in one go.",
     "signInFirst": "Sign in to set up your shelf.",
-    "steps": "Steps",
-    "done": "Done",
+    "steps": "Setup steps",
+    "stepOf": "Step {number} of {total} · {name}",
+    "doneName": "{name}, done",
     "failed": "Shelf could not read your shelf just now.",
     "retry": "Try again",
+    "back": "Back",
+    "next": "Continue",
+    "skip": "Skip for now",
+    "finish": "Finish",
+    "later": "Finish later",
+    "names": {
+      "play": "Where you play",
+      "bring": "Your games",
+      "look": "Your colors",
+      "sort": "Statuses"
+    },
+    "play": {
+      "title": "Where do you play?",
+      "lead": "Pick every place your games live. The next step shows the quickest way to bring each one in.",
+      "legend": "Where you play",
+      "places": {
+        "pc": {
+          "name": "PC",
+          "detail": "Brought in from Steam, with your hours"
+        },
+        "switch": {
+          "name": "Nintendo Switch",
+          "detail": "From Nintendo’s play history, Switch 2 too"
+        },
+        "playstation": {
+          "name": "PlayStation",
+          "detail": "Added by title for now: syncing comes later"
+        },
+        "xbox": {
+          "name": "Xbox",
+          "detail": "Added by title for now: syncing comes later"
+        },
+        "physical": {
+          "name": "Boxes on a real shelf",
+          "detail": "Any console, any generation, added by title"
+        }
+      },
+      "none": "Not sure yet? Continue, and every way in is offered.",
+      "change": "You can come back and change this at any step."
+    },
     "bring": {
       "title": "Bring your games in",
-      "body": "Link a platform and Shelf brings in every game you have there, then keeps it up to date. Whatever it cannot match, or wants you to confirm, waits in that platform's card for your answer.",
-      "byHand": "Rather add them yourself? Add one game, or paste a whole list, on <shelf>your shelf</shelf>.",
-      "onShelf": "{count, plural, one {# game on your shelf.} other {# games on your shelf.}}",
+      "lead": "Link a platform and Shelf brings in every game you have there, with your hours, then keeps in step once a day. Whatever it can’t match waits in that platform’s card for your answer.",
+      "byHand": {
+        "title": "Add games by title",
+        "forPlaces": "PlayStation, Xbox and games on a real shelf come in by title: search for one, or paste a whole list, a game on each line, and check what Shelf found.",
+        "body": "Anything else? Search for a game, or paste a whole list, a game on each line.",
+        "search": "Search for a game",
+        "paste": "Paste a list"
+      },
+      "onShelf": "{count, plural, =0 {No games on your shelf yet.} one {# game on your shelf.} other {# games on your shelf.}}",
       "waiting": "{count, plural, one {# game is waiting for your answer above.} other {# games are waiting for your answer above.}}"
     },
-    "place": {
+    "look": {
+      "title": "Make it yours",
+      "lead": "Choose how the room looks on this device. Every choice shows at once, and Settings can change it later.",
+      "lights": "Lights",
+      "lightsBody": "Lights on, lights off, or as this device is set. The switch in the header changes it too.",
+      "colors": "Colors",
+      "colorsBody": "The paint on the walls, the buttons and the light behind your games. Each works with the lights on and off."
+    },
+    "sort": {
       "title": "Say where each game stands",
-      "body": "Games a platform brings in wait under Unsorted until you give each one a status: Playing, Backlog, Completed, Dropped or Wishlist. You can rate them in the same place.",
-      "nothingYet": "Games that come in without a status will wait here.",
+      "lead": "Games a platform brings in wait under Unsorted until you give each a status: Playing, Backlog, Completed, Dropped or Wishlist. Rate them in the same place.",
+      "waitingTitle": "Waiting for a status",
+      "nothingYet": "Nothing to sort yet. Games that come in without a status will wait here.",
       "left": "{count, plural, one {# of your {total, number} games has no status yet.} other {# of your {total, number} games have no status yet.}}",
       "share": "Games with a status",
       "go": "Place my games",
-      "later": "Leaving some for another day is fine: they wait there.",
+      "later": "Leaving some for another day is fine: they wait there, and the header counts them.",
       "none": "{count, plural, one {Your # game has a status.} other {All # of your games have a status.}}"
     },
-    "toShelf": "See my shelf"
+    "ready": {
+      "eyebrow": "All set",
+      "title": "Your shelf is ready.",
+      "lead": "{count, plural, =0 {It’s lit and waiting for its first game.} one {# game is on it, lit and in its case.} other {# games are on it, lit and in their cases.}}",
+      "toShelf": "See my shelf",
+      "summary": "What you set up",
+      "games": "{count, plural, =0 {No games yet} one {# game on your shelf} other {# games on your shelf}}{unsorted, plural, =0 {} other {, # waiting for a status}}",
+      "linked": "Linked: {platforms}",
+      "nothingLinked": "No platform linked yet",
+      "colors": "Colors: {name}",
+      "public": "Public, at /u/{handle}. <change>Change</change>",
+      "private": "Private: only you can see it. <change>Change</change>",
+      "next": {
+        "title": "What’s next",
+        "desktop": {
+          "title": "Shelf for Windows",
+          "body": "Press Play on any game on your shelf, count your hours while you play, and keep your saves backed up."
+        },
+        "assistant": {
+          "title": "Your AI assistant",
+          "body": "Add this address to Claude, or another assistant that supports MCP, as a custom connector. It asks you to sign in, then answers from your shelf.",
+          "placeholder": "The address appears here",
+          "copy": "Copy the address",
+          "copied": "Copied."
+        },
+        "filter": {
+          "title": "Ask your shelf",
+          "body": "One line finds any game. This one finds something short in your backlog, for tonight.",
+          "example": "status:backlog length:<10",
+          "go": "Try it on my shelf"
+        }
+      }
+    },
+    "preview": {
+      "title": "Your shelf",
+      "address": "Address",
+      "handle": "/u/{handle}",
+      "games": "Games",
+      "count": "{count, number}",
+      "unknown": "–",
+      "linked": "Linked",
+      "nothingLinked": "Nothing yet",
+      "seenBy": "Seen by",
+      "public": "Anyone",
+      "private": "Only you"
+    }
+  },
+  "Desktop": {
+    "download": "Download for Windows",
+    "facts": "Free · Windows 10 and 11, 64-bit · About 3 MB · Updates itself"
   },
   "Sync": {
     "source": {

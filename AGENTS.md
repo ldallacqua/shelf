@@ -5,6 +5,13 @@ filters and sorting. Anyone can sign up for a shelf of their own, at `/u/{handle
 private ([ADR 004](docs/adr/004-one-library-per-account.md)). This file is for anyone, human or
 AI, about to change the code.
 
+**One set of rules for every agent** (the owner's rule, 12 Nov 2026). Claude Code, Codex and any other
+agent work here under this file and the documents it links, and nothing else. A tool's own file
+(`CLAUDE.md`, `.claude/`, a Codex or editor config) only points here or wraps a procedure written in
+`docs/`; a rule, a checklist or a procedure is never written only there, and none here names one tool as
+the only way to follow it. Where a tool has a helper for a step (a design skill, a subagent, a browser
+panel), say so as one way, beside the plain steps any agent can do by hand.
+
 **Picking up from another computer?** Read [the handoff note](docs/handoff.md) first: where
 the build stands, what is still unchecked, and the owner's rules that are not written
 anywhere else.
@@ -76,6 +83,42 @@ A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app 
 libraries from `.data/shelf.db`, which is not committed. A database seeded before accounts
 (ADR 004) has no sample account: seed it again.
 
+**Committing, pull requests and merging** (the owner's rule, 12 Nov 2026). An agent may commit, push a
+branch, open its pull request and merge it once verified, without asking each time:
+
+1. Work on a branch of its own, never on `main`. One commit per step, its message saying what changed
+   and why.
+2. Commit as the owner: their own Git identity, as `git log` shows it, set in this repository's config
+   (`git config user.name` and `user.email`), never a bot's (rule 6: Vercel deploys only the owner's
+   commits). A `Co-Authored-By` line for the assistant is fine, as the history has.
+3. Before merging, `pnpm verify --skip-browser` passes on the branch's last commit (`--skip-linux` too
+   when Docker isn't running, said in the pull request).
+4. The pull request says what the change was based on (its design pass), what ran and what didn't, and
+   names any admin job to run after merging.
+5. Merge with a merge commit, as the history has (`gh pr merge --merge --delete-branch`), then check that
+   Storybook's build of the merge went live (rule above).
+6. Never push to `main` directly, force-push a shared branch, skip a hook, or start the GitHub workflow.
+
+**On Windows.** Clone to a short path (`Documents\shelf`, not a deep folder): with `node_modules` past
+Windows' 260 characters, esbuild's install fails. Set `git config core.longpaths true` for the reference
+screenshots' long names. Node 24 is pinned; a newer one only warns. PowerShell's `pnpm` wrapper hands a
+list of arguments over as one, so run a tool on many files through Node (`node
+node_modules/prettier/bin/prettier.cjs --write …`), and give `git commit` a long message as a file
+(`git commit -F message.txt`).
+
+**Looking at a page, any agent, any computer.** An agent's own browser may have no window, or draw nothing
+while its panel is hidden (Claude's desktop app does). Look at pages with a headless Chromium script
+instead: Playwright from `node_modules` (`pnpm exec playwright install chromium` once), against
+`pnpm dev` with `SHELF_MOCKS=1`, with accounts made through the real sign-up, screenshots at phone and
+desktop width in both themes, and `@axe-core/playwright` for accessibility. A dev server left running
+slows Lighthouse: stop it before `pnpm verify`.
+
+**Lint holds a few of these rules** (`eslint.config.mjs`): the import boundaries, words only from
+`messages/`, no `title` tooltips, no "Loading" words or spinners, no link to one release's installer, and
+the device's storage only through its store modules (`deviceStores`: a new choice kept on the device gets
+a store module of its own, added there). A rule that keeps catching the same mistake belongs there, with
+a message that says what to do instead.
+
 ## Where code goes
 
 ```text
@@ -104,9 +147,11 @@ however small: a new element, a moved one, a new state, an animation. The owner'
 
 1. **Research it.** Open how good products do the same thing in a browser (text searches say little
    about layout), and read UI/UX guidance on the question at hand. Note what could not be looked at.
-2. **Check it with a skill.** Use the design skills the session has: the Design plugin's
-   `design-critique`, `accessibility-review` and `ux-copy`, and `frontend-design`. With none
-   installed, say so in the pull request rather than skip the thinking they stand for.
+2. **Check it against [the design pass](docs/design-pass.md):** its critique, accessibility (WCAG 2.2
+   AA, axe-core run over the pages touched) and copy checklists, for every agent. An agent with design
+   tools of its own runs them as well (Claude Code's Design plugin: `design-critique`,
+   `accessibility-review`, `ux-copy`); either way the pull request says which parts ran and what they
+   changed, rather than skip the thinking they stand for.
 3. **Build it from what is here.** `src/ui` and the tokens first, and a place chosen on purpose: it
    has to make sense where it stands, not just be on the page.
 4. **Give it a story.** Every new element has its component in Storybook, with each of its states.
@@ -265,6 +310,62 @@ example shelf is `pnpm landing:demo`; a part that needs a game it lacks adds the
 What a link to Shelf shows is a picture of the hero (`public/share/`): after changing the
 hero, run `pnpm landing:share` against `pnpm serve:test` and look at both pictures.
 
+**Every feature is mapped to the landing page, and a test checks it** (the owner's rule, 12 Nov
+2026). `src/features/landing/coverage.ts` names every numbered section of the spec, by number
+and title, with the landing page's parts that show it (`shown`) or why none does (`left`).
+`coverage.test.ts` fails when the spec gains a section the map doesn't name, a mapped section
+leaves the spec or is renamed, a part named there isn't drawn, or a part shows nothing. So a
+new feature, which is a new section of the spec, can't merge without a decision about the
+landing page. Before finishing any change that adds or changes something a person can do:
+
+1. Run `pnpm exec vitest run src/features/landing`. A failure naming a section is the rule
+   speaking, not a test to quiet.
+2. If a visitor would choose Shelf for it, build its part (or change the part that already
+   shows it) in the same change, with the FAQ answer it raises, and map the section to it.
+   `left` is only for what no visitor chooses Shelf for: internals, rules of every page, the
+   owner's tools, experiments behind a switch, and download sources, which are never shown.
+   Its reason says which.
+3. A feature that changes inside a section already mapped (a new view, filter, colorway or
+   platform) changes that part's words and scene too: read the part before calling it done.
+4. Say in the pull request which part shows the feature, or why none does.
+
+The audit, step by step, is [docs/feature-coverage.md](docs/feature-coverage.md), for any agent to run
+before a pull request. (Claude Code can run it as a subagent, `.claude/agents/landing-coverage.md`, which
+only reads that file.)
+
+**Every feature is offered in setup where it helps a new shelf, and a test checks it** (the owner's rule,
+12 Nov 2026). Setting a shelf up (`/account/start`, spec 4.6) is where a new account learns what Shelf can
+do for it, so it grows with the product as the landing page does. `src/features/start/coverage.ts` names
+every numbered section of the spec with the setup steps that offer it (`play`, `bring`, `look`, `sort`,
+`ready`), or why a new shelf doesn't need it; `coverage.test.ts` fails on a section it doesn't name.
+Offer a feature in setup when it fills a new shelf (a new platform or way to add games goes in "Bring your
+games in", and "Where do you play?" gains its place), sets up how the shelf looks or who sees it ("Make it
+yours"), sorts what came in ("Say where each game stands"), or is the next thing a new owner would reach for
+(a card in "What's next"). Reuse the feature's own component there, as the steps reuse the platform cards,
+the Add dialog and the colorway picker; never a second copy of it. Going through setup again must still
+clear nothing.
+
+**A new feature, then, touches four places in the same change:** its section of the spec; the landing page
+and `features/landing/coverage.ts`; setup and `features/start/coverage.ts`; and the FAQ, if it raises a
+question. Plus an admin job if production needs one (below), a story for each new element, and both
+languages. `pnpm exec vitest run src/features/landing src/features/start` says which map is behind.
+
+**Download buttons** link to `DOWNLOAD_WINDOWS` (`/api/desktop/windows`, `domain/desktop/release.ts`),
+which reads the newest release's `latest.json` and sends the browser to its installer, only ever on
+this repository's releases. Never link a versioned installer from a page: the page is built ahead,
+and the next release would leave it behind.
+
+**Setting a shelf up.** `/account/start` (`src/features/start`, spec 4.6) is where sign-up leads: where I
+play, my games in, my colors, my games sorted, then ready. Each step is the address's hash (`#bring`), so
+Back works; where the flow stands and where I play are this device's (`setup-memory.ts`, per handle), and
+everything a step changes is kept where it always is (platforms on the account, colors on the device).
+Settings' "Set up your shelf again" opens `#play` and clears nothing: never make starting over delete a
+choice. A step offers what already exists elsewhere (the platform cards, the Add dialog, the colorway
+picker, Organize); a new way to fill a shelf belongs in "Bring your games in" too. A page reached by a
+move from another page is drawn before the router puts its address in the bar, so read the address again
+once it has opened (`settleSetupMemory`), never only while drawing; a unit test cannot see this order, a
+browser can.
+
 **Syncing.** A store or console fills a shelf through one matcher and one memory
 ([ADR 003](docs/adr/003-platform-sync.md)). What a source can tell (owned, played, or nothing)
 is `src/domain/sync/sources.ts`; how to ask it is its adapter in `src/server/sync/` (Steam's
@@ -402,7 +503,10 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 - New behavior has a test. A bug fix has a test that failed before it.
 - A visual change had its design pass, and a new element has its story in Storybook (see
   [A change anyone can see](#how-things-are-done-here)).
-- The landing page shows the feature, and still tells the truth about the ones it changed.
+- The landing page shows the feature, and still tells the truth about the ones it changed; its
+  section is in `src/features/landing/coverage.ts` and that test passes.
+- Setting a shelf up offers it where it helps a new shelf, or `src/features/start/coverage.ts` says
+  why not, and that test passes.
 - Reference screenshots are updated if the look changed on purpose
   ([how](docs/testing.md#reference-screenshots)).
 - One commit per build step, with a message that says what changed and why.

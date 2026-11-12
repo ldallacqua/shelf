@@ -1,99 +1,167 @@
 'use client'
 
-import { CheckIcon, InboxIcon, LibraryBigIcon } from 'lucide-react'
+import { ArrowLeftIcon, ArrowRightIcon, LibraryBigIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 
 import type { Standing } from '@/domain/library/placing'
+import {
+  isSetupStep,
+  nextStep,
+  placesWithLinks,
+  previousStep,
+  setupSteps,
+  type PlayPlace,
+  type SetupMemory,
+  type SetupStep,
+} from '@/domain/setup/setup'
+import type { AddActions } from '@/features/add-game/actions'
+import type { AddGame as AddGameType } from '@/features/add-game/add-game'
 import { libraryHref } from '@/features/library/shelf-address'
 import { useAccount } from '@/features/owner/account'
 import { readTally } from '@/features/placing/placing-client'
-import { PlatformCardGhosts, PlatformCards } from '@/features/platforms/platforms'
-import type { PlatformRow } from '@/features/platforms/sync-client'
+import { readPlatforms, type PlatformRow } from '@/features/platforms/sync-client'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
-import { cn } from '@/ui/cn'
-import { Progress } from '@/ui/progress'
 import { Loading } from '@/ui/ghost'
 import { Ghosts } from '@/ui/ghosts'
 
-const LINK = 'rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2'
+import { changeSetupMemory, settleSetupMemory, useSetupMemory } from './setup-memory'
+import { SetupProgress } from './setup-progress'
+import { BringStep, LookStep, PlayStep, ReadyStep, SortStep } from './setup-steps'
+import { ShelfPreview } from './shelf-preview'
 
-/** One step: its number, or a check once what it asks is true, and what to do. */
-function Step({
-  number,
+import './start.css'
+
+type Tab = 'one' | 'list'
+
+let addCode: Promise<typeof AddGameType> | undefined
+/** The Add dialog's code, fetched when it is first reached for, as the header's button does. */
+const loadAddGame = () =>
+  (addCode ??= import('@/features/add-game/add-game').then((module) => module.AddGame))
+
+const STEP_TITLE = 'setup-step-title'
+
+/** The frame every step stands in: its heading and lead, what it holds, and the way on. */
+function StepFrame({
+  step,
   title,
-  done,
+  lead,
+  heading,
   children,
+  actions,
 }: {
-  number: number
+  step: SetupStep
   title: string
-  done: boolean
+  lead: ReactNode
+  heading?: Ref<HTMLHeadingElement>
   children: ReactNode
+  actions: ReactNode
 }) {
-  const t = useTranslations('Start')
   return (
-    <li className="grid gap-x-5 gap-y-4 rounded-panel border border-line bg-surface p-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:p-6">
-      <span
-        aria-hidden="true"
-        className={cn(
-          'grid size-8 place-items-center rounded-full border text-sm tabular-nums',
-          done ? 'border-accent bg-accent text-on-accent' : 'border-line-strong text-muted',
-        )}
+    <section key={step} aria-labelledby={STEP_TITLE} className="setup-step mt-8 sm:mt-10">
+      <h2
+        id={STEP_TITLE}
+        ref={heading}
+        tabIndex={-1}
+        // Focus brings it into view below the sticky header, with the line of steps above it.
+        className="scroll-mt-40 title text-3xl text-balance outline-none sm:text-5xl"
       >
-        {done ? <CheckIcon className="size-4" /> : number}
-      </span>
-      <div className="grid min-w-0 gap-4">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h2 className="title text-xl sm:text-2xl">{title}</h2>
-          {/* Said in words, not by the check's color alone. */}
-          {done ? (
-            <span className="readout text-[0.625rem] text-muted uppercase">{t('done')}</span>
-          ) : null}
-        </div>
-        {children}
+        {title}
+      </h2>
+      <div className="mt-4 max-w-2xl text-lg text-pretty text-muted">{lead}</div>
+      <div className="mt-8">{children}</div>
+      <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-line pt-6">
+        {actions}
       </div>
-    </li>
+    </section>
   )
 }
 
-/** The two steps with their words, and ghosts for what is read from the shelf. */
-function StepsGhosts() {
+/** The page's frame while it asks whose account this is: the first step's words, its cards as ghosts. */
+function SetupGhosts() {
   const t = useTranslations('Start')
   const account = useTranslations('AccountPage')
   return (
     <Loading label={account('checking')}>
-      <ol className="mt-8 grid gap-5">
-        <Step number={1} title={t('bring.title')} done={false}>
-          <p className="max-w-2xl text-pretty text-muted">{t('bring.body')}</p>
-          <div className="grid gap-5">
-            <PlatformCardGhosts />
-          </div>
-        </Step>
-        <Step number={2} title={t('place.title')} done={false}>
-          <p className="max-w-2xl text-pretty text-muted">{t('place.body')}</p>
-          <Ghosts lines={2} className="max-w-md" />
-        </Step>
-      </ol>
+      <StepFrame step="play" title={t('play.title')} lead={<p>{t('play.lead')}</p>} actions={null}>
+        <Ghosts lines={4} className="max-w-xl" />
+      </StepFrame>
     </Loading>
   )
 }
 
 /**
- * The two steps, once the account is known. What each asks is read from the
- * shelf as it is, so a step checks itself off: games on the shelf with no
- * platform question left, then every game given a status. The tally is read
- * again whenever a card's counts move, as a sync adds games or a question
- * is answered.
+ * The steps, once the account is known (spec 4.6). Where the flow stands and where I play are
+ * this device's (`setup-memory.ts`); everything a step changes is kept where it always is, so
+ * going through the steps again, as Settings offers, loses nothing. Each step is an entry in the
+ * browser's history (`#bring`), so Back goes to the step before.
  */
-function Steps({ handle }: { handle: string }) {
+function Setup({
+  handle,
+  shelfPublic,
+  add,
+}: {
+  handle: string
+  shelfPublic: boolean
+  add?: AddActions
+}) {
   const t = useTranslations('Start')
+  const sync = useTranslations('Sync')
+  const memory = useSetupMemory(handle)
   const [rows, setRows] = useState<PlatformRow[]>()
   const [standing, setStanding] = useState<Standing>()
   const [trouble, setTrouble] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const [AddGame, setAddGame] = useState<typeof AddGameType>()
+  const [adding, setAdding] = useState<{ tab: Tab; open: boolean }>()
+  const heading = useRef<HTMLHeadingElement>(null)
+  const moved = useRef(false)
+  const change = useCallback(
+    (to: (memory: SetupMemory) => SetupMemory) => changeSetupMemory(handle, to),
+    [handle],
+  )
 
-  const moved = rows ? JSON.stringify(rows.map((row) => row.link?.counts ?? null)) : ''
+  // The step it opened on, kept and named in the address, once the page knows it.
+  const opened = memory !== undefined
+  useEffect(() => {
+    if (opened) settleSetupMemory(handle)
+  }, [opened, handle])
+
+  // Back and Forward between steps.
+  useEffect(() => {
+    const onPop = () => {
+      const named = window.location.hash.slice(1)
+      if (!isSetupStep(named)) return
+      moved.current = true
+      change((current) => ({ ...current, step: named }))
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [change])
+
+  // A step that opens on a move takes focus, so a screen reader hears where it is.
+  useEffect(() => {
+    if (!moved.current) return
+    moved.current = false
+    heading.current?.focus()
+  }, [memory?.step])
+
+  // Which platforms are linked, from the first step on: a link already says where I play, and
+  // ticks that place once, as the page opens. A place unticked after that stays unticked.
+  useEffect(() => {
+    const abort = new AbortController()
+    void readPlatforms(abort.signal).then((answer) => {
+      if (abort.signal.aborted || !answer.ok) return
+      setRows(answer.value)
+      const linked = answer.value.flatMap((row) => (row.link ? [row.source] : []))
+      change((current) => ({ ...current, places: placesWithLinks(current.places, linked) }))
+    })
+    return () => abort.abort()
+  }, [change])
+
+  // The tally, read again whenever a card's counts move or something was added.
+  const moving = rows ? JSON.stringify(rows.map((row) => row.link?.counts ?? null)) : ''
   useEffect(() => {
     const abort = new AbortController()
     void readTally(abort.signal).then((answer) => {
@@ -102,97 +170,198 @@ function Steps({ handle }: { handle: string }) {
       if (answer.ok) setStanding(answer.value)
     })
     return () => abort.abort()
-  }, [moved, attempt])
+  }, [moving, attempt])
 
+  const onRows = useCallback((next: PlatformRow[]) => setRows(next), [])
+
+  const go = (step: SetupStep) => {
+    if (!memory || step === memory.step) return
+    moved.current = true
+    window.history.pushState(null, '', `#${step}`)
+    change((current) => ({
+      ...current,
+      step,
+      looked: current.looked || current.step === 'look',
+    }))
+  }
+
+  const openAdd = (tab: Tab) =>
+    void loadAddGame().then((dialog) => {
+      setAddGame(() => dialog)
+      setAdding({ tab, open: true })
+    })
+
+  if (!memory) return <SetupGhosts />
+
+  const { step, places } = memory
   const total = standing
     ? Object.values(standing.tally).reduce((sum, count) => sum + count, 0)
     : undefined
   const unsorted = standing?.tally.unsorted ?? 0
   const waiting = rows?.reduce((sum, row) => sum + (row.link?.counts['needs-you'] ?? 0), 0) ?? 0
-  const brought = total !== undefined && total > 0 && rows !== undefined && waiting === 0
-  const placed = total !== undefined && total > 0 && unsorted === 0
+  const linked = (rows ?? []).flatMap((row) => (row.link ? [sync(`source.${row.source}`)] : []))
+  const done = {
+    play: places.length > 0,
+    bring: total !== undefined && total > 0 && rows !== undefined && waiting === 0,
+    look: memory.looked || setupSteps.indexOf(step) > setupSteps.indexOf('look'),
+    sort: total !== undefined && total > 0 && unsorted === 0,
+  }
+  const later = (
+    <Link
+      href={libraryHref(handle)}
+      className="inline-flex min-h-6 items-center rounded-[2px] text-sm text-muted underline decoration-1 underline-offset-4 hover:text-text"
+    >
+      {t('later')}
+    </Link>
+  )
+
+  const back =
+    step === 'play' ? null : (
+      <Button variant="ghost" onClick={() => go(previousStep(step))}>
+        <ArrowLeftIcon aria-hidden="true" />
+        {t('back')}
+      </Button>
+    )
+  const forward = (
+    <>
+      <span className="flex-1" />
+      {step !== 'sort' && step !== 'ready' && !done[step] ? (
+        <Button variant="ghost" onClick={() => go(nextStep(step))}>
+          {t('skip')}
+        </Button>
+      ) : null}
+      <Button variant="primary" onClick={() => go(nextStep(step))}>
+        {step === 'sort' ? t('finish') : t('next')}
+        <ArrowRightIcon aria-hidden="true" />
+      </Button>
+    </>
+  )
+
+  const failed = trouble ? (
+    <div role="alert" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <p>{t('failed')}</p>
+      <Button variant="secondary" size="sm" onClick={() => setAttempt((value) => value + 1)}>
+        {t('retry')}
+      </Button>
+    </div>
+  ) : null
+
+  const lead =
+    step === 'ready' ? (
+      total === undefined ? null : (
+        <p>{t('ready.lead', { count: total })}</p>
+      )
+    ) : (
+      <p>{t(`${step}.lead`)}</p>
+    )
+
+  const frame = (children: ReactNode) => (
+    <StepFrame
+      step={step}
+      title={t(`${step}.title`)}
+      lead={lead}
+      heading={heading}
+      actions={
+        step === 'ready' ? (
+          <>
+            {back}
+            <span className="flex-1" />
+            <Button variant="primary" asChild className="h-12 px-6 text-base">
+              <Link href={libraryHref(handle)}>
+                <LibraryBigIcon aria-hidden="true" />
+                {t('ready.toShelf')}
+              </Link>
+            </Button>
+          </>
+        ) : (
+          <>
+            {back}
+            {forward}
+          </>
+        )
+      }
+    >
+      {failed}
+      {children}
+    </StepFrame>
+  )
+
+  const body =
+    step === 'play'
+      ? frame(
+          <PlayStep
+            places={places}
+            onChange={(next: PlayPlace[]) => change((current) => ({ ...current, places: next }))}
+          />,
+        )
+      : step === 'bring'
+        ? frame(
+            <BringStep
+              handle={handle}
+              places={places}
+              total={total}
+              waiting={waiting}
+              onRows={onRows}
+              onAdd={openAdd}
+            />,
+          )
+        : step === 'look'
+          ? frame(<LookStep />)
+          : step === 'sort'
+            ? frame(<SortStep total={total} unsorted={unsorted} trouble={trouble} />)
+            : frame(
+                <ReadyStep
+                  handle={handle}
+                  total={total}
+                  unsorted={unsorted}
+                  linked={linked}
+                  places={places}
+                  shelfPublic={shelfPublic}
+                />,
+              )
 
   return (
-    <>
-      {trouble ? (
-        <div role="alert" className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <p>{t('failed')}</p>
-          <Button variant="secondary" size="sm" onClick={() => setAttempt((value) => value + 1)}>
-            {t('retry')}
-          </Button>
-        </div>
-      ) : null}
-
-      <ol aria-label={t('steps')} className="mt-8 grid gap-5">
-        <Step number={1} title={t('bring.title')} done={brought}>
-          <p className="max-w-2xl text-pretty text-muted">{t('bring.body')}</p>
-          <div className="grid gap-5">
-            <PlatformCards handle={handle} page="start" onRows={setRows} />
+    <div className="mt-4 grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_19rem]">
+      <div className={step === 'ready' ? 'min-w-0 lg:col-span-2' : 'min-w-0'}>
+        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+          <div className="min-w-0 flex-1 basis-80">
+            <SetupProgress current={step} done={done} onPick={go} />
           </div>
-          <p className="max-w-2xl text-sm text-pretty">
-            {t.rich('bring.byHand', {
-              shelf: (chunks) => (
-                <Link href={libraryHref(handle)} className={LINK}>
-                  {chunks}
-                </Link>
-              ),
-            })}
-          </p>
-          {waiting > 0 ? (
-            <p className="text-sm font-medium">{t('bring.waiting', { count: waiting })}</p>
-          ) : total ? (
-            <p className="text-sm font-medium">{t('bring.onShelf', { count: total })}</p>
-          ) : null}
-        </Step>
-
-        <Step number={2} title={t('place.title')} done={placed}>
-          <p className="max-w-2xl text-pretty text-muted">{t('place.body')}</p>
-          {total === undefined ? (
-            trouble ? null : (
-              <Ghosts lines={2} className="max-w-md" />
-            )
-          ) : total === 0 ? (
-            <p className="text-sm text-muted">{t('place.nothingYet')}</p>
-          ) : unsorted > 0 ? (
-            <div className="grid max-w-md gap-3">
-              <p className="text-sm font-medium">{t('place.left', { count: unsorted, total })}</p>
-              <Progress value={total - unsorted} max={total} aria-label={t('place.share')} />
-              <div>
-                <Button variant="primary" asChild>
-                  <Link href="/account/unsorted">
-                    <InboxIcon aria-hidden="true" />
-                    {t('place.go')}
-                  </Link>
-                </Button>
-              </div>
-              <p className="text-sm text-pretty text-muted">{t('place.later')}</p>
-            </div>
-          ) : (
-            <p className="text-sm font-medium">{t('place.none', { count: total })}</p>
-          )}
-        </Step>
-      </ol>
-
-      <div className="mt-8">
-        {/* The way out is the page's main action once nothing is left to do. */}
-        <Button variant={brought && placed ? 'primary' : 'secondary'} asChild>
-          <Link href={libraryHref(handle)}>
-            <LibraryBigIcon aria-hidden="true" />
-            {t('toShelf')}
-          </Link>
-        </Button>
+          {step === 'ready' ? null : later}
+        </div>
+        {body}
       </div>
-    </>
+      {step === 'ready' ? null : (
+        <div className="hidden lg:block">
+          <div className="sticky top-20">
+            <ShelfPreview handle={handle} total={total} linked={linked} shelfPublic={shelfPublic} />
+          </div>
+        </div>
+      )}
+      {AddGame && add && adding ? (
+        <AddGame
+          key={adding.tab}
+          open={adding.open}
+          startOn={adding.tab}
+          actions={add}
+          onOpenChange={(open) => {
+            setAdding({ ...adding, open })
+            // Whatever was added counts at once.
+            if (!open) setAttempt((value) => value + 1)
+          }}
+        />
+      ) : null}
+    </div>
   )
 }
 
 /**
- * Setting a new shelf up, where signing up leads: bring the games in, from a
- * platform or by hand, then say where each one stands. Nothing here is new:
- * the same platform cards as the account page, and the way to the page for
- * placing a sync's games (spec 4.5).
+ * Setting a new shelf up (spec 4.6), where signing up leads and Settings can lead again: where I
+ * play, my games brought in, my colors, my games sorted, then my shelf. Nothing here is new to
+ * the product: the platform cards are Settings', the Add dialog is the header's, the colors are
+ * Appearance's and the sorting is Organize's, offered in the order a new shelf needs them.
  */
-export function SetUpShelf() {
+export function SetUpShelf({ add }: { add?: AddActions }) {
   const t = useTranslations('Start')
   const account = useTranslations('AccountPage')
   const locale = useLocale()
@@ -213,10 +382,6 @@ export function SetUpShelf() {
     )
   }
 
-  return (
-    <>
-      <p className="mt-4 max-w-2xl text-lg text-pretty text-muted">{t('intro')}</p>
-      {who.status === 'checking' ? <StepsGhosts /> : <Steps handle={who.handle} />}
-    </>
-  )
+  if (who.status === 'checking') return <SetupGhosts />
+  return <Setup handle={who.handle} shelfPublic={who.shelfPublic} add={add} />
 }

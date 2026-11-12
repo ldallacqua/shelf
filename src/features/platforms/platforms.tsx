@@ -473,10 +473,16 @@ export function PlatformCardGhosts() {
 export function PlatformCards({
   handle,
   page = 'account',
+  only,
   onRows,
 }: {
   handle: string
   page?: LinkPage
+  /**
+   * The platforms to draw, when not all: setting a shelf up offers the ones where its owner
+   * plays. A platform already linked is always drawn, so a link is never out of sight.
+   */
+  only?: readonly SyncSource[]
   onRows?: (rows: PlatformRow[]) => void
 }) {
   const t = useTranslations('Sync')
@@ -519,7 +525,7 @@ export function PlatformCards({
         </Loading>
       ) : null}
       {rows
-        ?.filter((row) => row.ready)
+        ?.filter((row) => row.ready && (!only || row.link || only.includes(row.source)))
         .map((row) => (
           <PlatformCard
             key={row.source}

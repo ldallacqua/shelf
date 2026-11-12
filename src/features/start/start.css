@@ -1,0 +1,67 @@
+/*
+ * Setting a shelf up (spec 4.6). The preview's cases are drawn small, and arrive one after
+ * another as games come onto the shelf; a step's words rise into place as it opens; and the last
+ * step's shelf lights up once. Under reduced motion each is simply there.
+ */
+@layer components {
+  .setup-preview {
+    --mm: 0.52px;
+  }
+
+  .setup-ready-shelf {
+    --mm: 0.7px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .setup-case {
+      animation: setup-arrive var(--motion-slow) var(--ease-settle) both;
+      animation-delay: calc(var(--arrive, 0) * 70ms);
+    }
+
+    .setup-step {
+      animation: setup-step-in var(--motion-base) var(--ease-settle) both;
+    }
+
+    .setup-ready-shelf .bay-glow {
+      animation: setup-lights-on 1.4s linear both;
+      animation-delay: 200ms;
+    }
+  }
+
+  @keyframes setup-arrive {
+    from {
+      opacity: 0;
+      translate: 0 -0.75rem;
+    }
+  }
+
+  @keyframes setup-step-in {
+    from {
+      opacity: 0;
+      translate: 0 0.5rem;
+    }
+  }
+
+  /* A tube catching, as the landing page's shelf does: a flicker, a dip, then full and steady. */
+  @keyframes setup-lights-on {
+    0% {
+      opacity: 0;
+    }
+    8% {
+      opacity: 0.7;
+    }
+    14% {
+      opacity: 0.2;
+    }
+    24% {
+      opacity: 0.9;
+    }
+    32% {
+      opacity: 0.5;
+    }
+    45%,
+    100% {
+      opacity: 1;
+    }
+  }
+}

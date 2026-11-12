@@ -1110,33 +1110,80 @@ something that says how many games have no status, but "não quero que vc fique 
 botões a torto e a direito": the line under the status row (4.5) was that, and nothing else
 was added. On 27 Oct 2026 they moved it into the header, as a link with a count (4.5).
 
-- **A page of its own**, `/account/start`, titled "Set up your shelf", where signing up leads.
-  An empty shelf leads there too.
-- **Two steps,** each checked off by what is true of the shelf, never by a box I tick:
-  1. **Bring your games in:** the platform cards of 4.4, working here as in Settings:
-     linking, the first sync with its progress, and the games that need my answer, answered
-     in the card; a card's "240 games to place" is left to the next step here. Or by hand, on
-     my shelf. Done once the shelf has a game and no platform
-     waits for an answer ("3 games are waiting for your answer above").
-  2. **Say where each game stands:** how many games have no status yet, of how many, with a
-     bar, and the way to the page for placing them (4.5). Done once none is unsorted. Leaving
-     some for another day is fine, and the step says so.
-- **See my shelf** ends the page, its main action once both steps are done.
+**Redesigned 12 Nov 2026,** at the owner's ask: "we need to improve our onboarding experience.
+Research how other places do a perfectly good onboarding [...] Then add an option in settings
+page for me to redo onboarding without deleting my previous selected options". What it was based
+on:
+
+- **Research.** Nielsen Norman Group's studies of onboarding: deck-of-cards tutorials left task
+  success unchanged (91% read, 94% skipped) and made tasks feel harder, so the setup teaches by
+  doing, never by a tour; onboarding earns its place where an app needs something from the person
+  before it is useful, which a shelf with no games is. Product guidance (Appcues, Product School):
+  get to the first moment of value fast (here, my own games on a lit shelf), ask a personalising
+  question only when the answer changes what follows, show progress and what is ahead, let every
+  step be skipped, and end on what to do next. Products looked at: Playnite and GOG Galaxy (a
+  game library's ways in, platform by platform), Letterboxd's import (a pasted or uploaded list,
+  matches checked before they land), and Shelf's own first version, used as a new account.
+- **What the first version lacked,** seen as a new account: every platform's instructions at once,
+  Nintendo's copy-and-paste for someone with no Switch, adding by title as a small link after
+  them (the only way in for PlayStation, Xbox and boxes on a shelf), the second step out of sight
+  under the first, no sense of where it ends, and nothing of what makes Shelf Shelf (its colors,
+  Shelf for Windows, an assistant) before being dropped on the shelf.
+- **The design skills ran:** `design-critique` on the first version and on this one,
+  `accessibility-review` and `ux-copy` on this one.
+
+The page:
+
+- **A page of its own**, `/account/start`, "Set up your shelf", where signing up leads. An empty
+  shelf leads there too, and Settings (below).
+- **Four steps and an end,** one at a time, each with its question as the page's large heading,
+  under a line of four segments: lit up to the step in view, each named and numbered, ticked once
+  what it asks is true, and each a button, as no step is required. A phone shows "Step 2 of 4 ·
+  Your games" above the line. Back, Skip for now (while the step is not done) and Continue end
+  each step; Finish later leads to the shelf from any of them.
+  1. **Where do you play?** PC, Nintendo Switch, PlayStation, Xbox, and boxes on a real shelf,
+     any number, as cards to tick, each saying how its games come in ("Brought in from Steam, with
+     your hours"; "Added by title for now"). A platform already linked ticks its place.
+  2. **Bring your games in:** the platform cards of 4.4 for the places chosen (Steam for a PC,
+     Nintendo for a Switch; both when neither is chosen; a linked one always), working as in
+     Settings, and **Add games by title**, which opens the Add dialog itself (4.1, 4.2) on its
+     search or its pasted list. It leads, as the primary action, when every place chosen is one
+     no sync reaches. Done once the shelf has a game and no platform waits for an answer.
+  3. **Make it yours:** the lights (the theme picker) and the colors (the colorway picker of 9),
+     this device's, changing the page as they are picked. Done once passed.
+  4. **Say where each game stands:** how many games have no status, of how many, with a bar, and
+     the way to the page for placing them (4.5). Done once none is unsorted.
+  - **Your shelf is ready:** its lights come on once, then what was set up in words (games and
+    how many wait, platforms linked, the colors, public at `/u/{handle}` or private, with the
+    way to change it), **See my shelf**, and three things to do next: Shelf for Windows with its
+    download (first for someone who plays on a PC), the address an AI assistant connects to,
+    with a copy button, and a filter to try on the shelf.
+- **Beside the steps,** on a wide window, the shelf as it stands: a small lit ledge in the colors
+  chosen, a case (a blur of the room's colors, never a drawn cover) for each game up to seven,
+  and its address, count, links and who can see it in words.
+- **Each step is an address** (`#play`, `#bring`, `#look`, `#sort`, `#ready`), so the browser's
+  Back goes to the step before, and focus moves to the step's heading. Back from Steam's sign-in
+  opens on step 2. Otherwise the page opens where this device left it: where the flow stands, the
+  places chosen and whether the colors were seen are kept on the device, per handle
+  (`shelf:setup:{handle}`).
+- **Setting up again,** from Settings ("Set up your shelf again", in the account's group of both
+  lists): it opens `#play` with every choice as it was. Nothing is cleared: the places stay
+  ticked, the platforms linked, the games on the shelf, the colors chosen. It is how the owner
+  tests the flow.
 - **Nothing else points here:** no banner, no menu item. What waits has its own place:
   platforms in Settings, unsorted games in the header's link to placing them, with
   their count (the owner chose a count on 27 Oct 2026, though leaving games unsorted is
   allowed, so it may stay a while); a banner would push the games down to say what the link
-  says; a tour teaches less than doing (Nielsen Norman Group
-  found that deck-of-cards tutorials did not help people finish tasks, and made the tasks
-  seem harder).
+  says; a tour teaches less than doing.
 
 While building it, "Last synced in 2 seconds" showed on the first sync: the server's clock ran
 a moment ahead of the browser's. A sync is never said to be in the future.
 
 **Done when**
 
-- Signing up leads here, and Steam's sign-in started here comes back here.
+- Signing up leads here, and Steam's sign-in started here comes back here, to step 2.
 - Each step checks itself off as the shelf changes, a sync's progress included.
+- Back and Forward move between steps; Settings starts the flow again and nothing is lost.
 - Both themes, both languages, a phone.
 
 ### 4.7 Hours a store counted
@@ -2445,17 +2492,27 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
 
 | Part | What happens |
 | --- | --- |
-| **1. Arrival** | "Every game you own, on one shelf.", a line on physical and digital, every console, and the call to action. Beside it (under it, on a phone) three bays of real covers in near darkness; their lights come on bay by bay, once, with the flutter of a tube catching. |
+| **1. Arrival** | "Every game you own, on one shelf.", a line on physical and digital, every console, the call to action and **Download for Windows** beside it, and four facts in a line (free, Steam and Nintendo, an app for Windows, two languages). Beside it (under it, on a phone) three bays of real covers in near darkness; their lights come on bay by bay, once, with the flutter of a tube catching. |
+| **Everything in one place** | Eight tiles, each a feature in a line and a link to its part below: for a visitor who came for one thing, and one deciding whether to read on. |
 | **2. Ask it anything** | The example shelf and the real filter language. As it comes into view, three filters switch on in turn, "Not started", "Under 10 hours", "On Switch", and the boxes rearrange for each: 61, 26, 6, 3. Then it is the visitor's: a filter on or off, or typed. |
 | **3. One game, every copy** | One game owned three ways, each copy in its platform's case, then the one box the shelf stands, with its count of copies. |
 | **4. Add in seconds** | A search typed letter by letter and the games it finds; a pasted list and the game each line matched. |
 | **5. Bring your Steam library** | Games arriving from Steam one by one, each with its hours, then the count, and "Again tomorrow, by itself". |
 | **6. Shelf, wall or list** | The same games three ways, turning by itself until the visitor picks one; covers travel between the shelf and the wall. |
+| **Paint the room your way** | The example shelf in each colorway (9), lights off and on side by side, chosen by a row of chips. The chips are radio buttons and every room is drawn ahead; CSS shows the checked one, so it needs no script. |
+| **Press Play on your shelf** | Shelf for Windows (7.7, 7.12) as a picture of its window: a game ready to play with its hours and where its saves are, Ready to play, the shelf under it. Beside it what the app does, **Download for Windows** with its facts, and the release notes. Never its downloads (7.10). |
 | **7. How far you got** | A glimpse of the trophy wall: its stats counting up (finished, this year, hours, the average rating), over the example shelf's latest year of trophies, each under its own light. |
 | **A closer look** | The game page's real screenshot gallery, using a game from the example shelf: select a thumbnail, open full screen and zoom. It links nowhere: the example shelf is drawn on this page alone, with no shelf of its own in production to open the game on. Its words describe scores, trailers and the full description, and the FAQ explains the optional muted autoplay. |
 | **8. Yours to show, or to keep** | Public or private, as sign-up offers them, and that notes stay private unless marked public. |
 | **9. Your AI assistant** | A conversation: asked for something short, not started, on the Switch, it answers from the shelf (section 17). |
-| **10. The close** | An empty lit shelf, "Your shelf is waiting.", the call to action again, and five questions: free, where game data comes from, bringing in games one already owns, who can see a shelf, taking the games away. |
+| **Ready in a minute** | The three steps from signing up to a shelf of one's own, as setting a shelf up (4.6) walks through them. |
+| **10. The close** | An empty lit shelf, "Your shelf is waiting.", the call to action and the download again, and the questions people ask: free, where game data comes from, bringing in games one already owns, the app for a computer, Windows' warning about its installer, hours, changing the colors, videos, who can see a shelf, taking the games away. |
+
+**Every section of this spec is mapped** to the parts above that show it, or says why none does, in
+`src/features/landing/coverage.ts`; its test fails when a section is added, renamed or removed without
+the map following (AGENTS.md, "Every feature is mapped to the landing page"). **Download buttons** lead to
+`/api/desktop/windows`, which answers with the newest release's installer, so the page, built ahead, never
+names an old version.
 
 - **Signed in**, the call to action is **Go to your shelf**.
 - **Motion** is the product's own: lights, boxes rearranging, numbers counting. Parts rise into

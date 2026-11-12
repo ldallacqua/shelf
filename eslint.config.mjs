@@ -23,6 +23,36 @@ const only3d = {
     'three.js may only be imported inside src/features/shelf-3d, so it stays out of every other bundle.',
 }
 
+/**
+ * A page is built ahead, so a link to one release's installer is left behind by the next one.
+ * Download buttons link `DOWNLOAD_WINDOWS` (src/domain/desktop/release.ts), which answers with the
+ * newest installer; that file alone knows the releases' addresses.
+ */
+const installerMessage =
+  'Link DOWNLOAD_WINDOWS (src/domain/desktop/release.ts), never one release’s installer: the next release would leave the link behind.'
+const versionedInstaller = [
+  { selector: 'Literal[value=/releases\\/download\\//]', message: installerMessage },
+  { selector: 'TemplateElement[value.raw=/releases\\/download\\//]', message: installerMessage },
+]
+
+/**
+ * What a device keeps goes through one module per choice, which reads it back through a check
+ * and survives storage that is full, switched off or private (AGENTS.md, "The library's views").
+ * These are those modules; a new choice gets one of its own, added here.
+ */
+const deviceStores = [
+  'src/features/library/preferences.ts',
+  'src/features/library/collapsed.ts',
+  'src/features/library/collapsed-script.ts',
+  'src/features/filters/shortcuts.ts',
+  'src/features/theme/theme-store.ts',
+  'src/features/theme/colorway-store.ts',
+  'src/features/theme/theme-script.tsx',
+  'src/features/start/setup-memory.ts',
+]
+const storageMessage =
+  'Keep a device’s choice in a store module of its own (see deviceStores in eslint.config.mjs), which checks what it reads back and survives storage that is off or full.'
+
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -105,6 +135,35 @@ export default defineConfig([
           message:
             'A spinner says nothing of what is coming: draw ghosts in its shape, inside Loading (src/ui/ghost.tsx).',
         },
+        ...versionedInstaller,
+      ],
+    },
+  },
+
+  // The same for code that draws nothing (the rule above holds every component's).
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['src/domain/desktop/release.ts', '**/*.test.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...versionedInstaller],
+    },
+  },
+
+  // Storage on the device, only through its store modules.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: [...deviceStores, '**/*.test.{ts,tsx}', '**/*.stories.tsx', 'src/test/**'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        { name: 'localStorage', message: storageMessage },
+        { name: 'sessionStorage', message: storageMessage },
+      ],
+      'no-restricted-properties': [
+        'error',
+        { object: 'window', property: 'localStorage', message: storageMessage },
+        { object: 'window', property: 'sessionStorage', message: storageMessage },
+        { object: 'globalThis', property: 'localStorage', message: storageMessage },
       ],
     },
   },

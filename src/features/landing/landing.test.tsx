@@ -2,13 +2,18 @@ import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { presetNames } from '@/domain/colorway/names'
+import { DOWNLOAD_WINDOWS } from '@/domain/desktop/release'
 import { setDevice } from '@/test/device'
 import { renderWithIntl } from '@/test/render'
 
 import { AskDemo } from './ask-demo'
 import { matchesOf } from './ask-engine'
+import { landingParts } from './coverage'
 import { askMatches, demoGames } from './demo'
 import { Landing } from './landing'
+import { FIRST_LOOK } from './look-demo'
+import { overviewParts } from './overview'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 
@@ -68,18 +73,69 @@ describe('the landing page', () => {
     expect(calls).toHaveLength(2)
     for (const call of calls) expect(call).toHaveAttribute('href', '/en/sign-up')
     for (const name of [
+      'Everything a big collection needs.',
       'Ask it anything.',
       'One game. Every copy.',
       'Add a game in seconds. Or a hundred.',
       'Shelf, wall, list or banners.',
+      'Paint the room your way.',
+      'Press Play on your shelf.',
       'See how far you got.',
       'Yours to show, or to keep.',
       'Ask your assistant what to play.',
+      'Ready in a minute.',
       'Your shelf is waiting.',
       'Before you start',
     ]) {
       expect(screen.getByRole('region', { name })).toBeInTheDocument()
     }
+  })
+
+  it('draws every part its map of the spec names, in that order (coverage.ts)', () => {
+    const { container } = renderWithIntl(<Landing />)
+    const drawn = landingParts.map((part) => container.querySelector(`#${part}`))
+    expect(drawn.every(Boolean)).toBe(true)
+    const order = [...container.querySelectorAll('[id]')]
+      .map((element) => element.id)
+      .filter((id) => (landingParts as readonly string[]).includes(id))
+    expect(order).toEqual([...landingParts])
+  })
+
+  it('leads from the overview to a part of the page for each tile', () => {
+    renderWithIntl(<Landing />)
+    const overview = screen.getByRole('region', { name: 'Everything a big collection needs.' })
+    const links = within(overview).getAllByRole('link')
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(
+      overviewParts.map((part) => `#${part}`),
+    )
+    for (const part of overviewParts) expect(document.getElementById(part)).not.toBeNull()
+  })
+
+  it('offers Shelf for Windows, through the address that always names the newest installer', () => {
+    renderWithIntl(<Landing />)
+    const downloads = screen.getAllByRole('link', { name: 'Download for Windows' })
+    // The first screen, the app's own part and the close.
+    expect(downloads).toHaveLength(3)
+    for (const link of downloads) expect(link).toHaveAttribute('href', DOWNLOAD_WINDOWS)
+    expect(screen.getByRole('link', { name: 'Release notes' })).toHaveAttribute(
+      'href',
+      'https://github.com/ldallacqua/shelf/releases',
+    )
+  })
+
+  it('paints the example shelf in any colorway, with no script: a chip and a room for each', () => {
+    renderWithIntl(<Landing />)
+    const chips = within(screen.getByRole('group', { name: 'Colorway' })).getAllByRole('radio')
+    expect(chips.map((chip) => chip.getAttribute('value'))).toEqual([...presetNames])
+    expect(screen.getByRole('radio', { name: 'Ocean' })).toBeChecked()
+    expect(FIRST_LOOK).toBe('ocean')
+    for (const name of presetNames) {
+      const room = document.querySelector(`[data-stage='${name}']`)
+      expect(room?.getAttribute('data-colors')).toBe(name)
+      expect(room?.querySelector("[data-theme='dark']")).not.toBeNull()
+      expect(room?.querySelector("[data-theme='light']")).not.toBeNull()
+    }
+    // landing.css shows the room of the chip that is checked (`coverage.test.ts` holds its rules).
   })
 
   it('names the example shelf, and every cover on it, for people who cannot see them', () => {
@@ -106,7 +162,9 @@ describe('the landing page', () => {
       screen.getByRole('heading', { level: 1, name: 'Todos os seus jogos, em uma estante.' }),
     ).toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: 'Crie sua estante' })).toHaveLength(2)
+    expect(screen.getAllByRole('link', { name: 'Baixar para Windows' })).toHaveLength(3)
     expect(screen.getByRole('region', { name: 'Pergunte o que quiser.' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Pinte o cômodo do seu jeito.' })).toBeInTheDocument()
   })
 })
 
