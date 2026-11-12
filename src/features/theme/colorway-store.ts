@@ -13,10 +13,13 @@ import {
 } from '@/domain/colorway/presets'
 
 import {
+  BLACK_STORAGE_KEY,
+  BLACK_WALL,
   chromeProperty,
   COLORS_STORAGE_KEY,
   colorwayWall,
   OWN_COLORS_STORAGE_KEY,
+  themeColor,
   type Theme,
 } from './theme'
 import { getTheme, paintChrome, playChange } from './theme-store'
@@ -31,6 +34,9 @@ import { getTheme, paintChrome, playChange } from './theme-store'
  * One's own is kept whole (`OwnColorway`): its seeds, the preset it started
  * from, and every color worked out, which the theme script lays on <html> as
  * properties (`--own-light-wall`…) for colorways.css to read.
+ *
+ * Pure black (`data-black`) is kept here too: it changes every colorway's dark
+ * theme, and the walls the browser's chrome takes.
  */
 
 const listeners = new Set<() => void>()
@@ -86,13 +92,33 @@ export function getColorway(): Colorway {
   return parseColorway(document.documentElement.dataset.colors)
 }
 
-/** The walls of what is on screen, for the browser's chrome; none for Shelf's own. */
+/** Whether the page is in pure black with the lights off. */
+export function getBlack(): boolean {
+  return document.documentElement.hasAttribute('data-black')
+}
+
+/**
+ * The walls of what is on screen, for the browser's chrome: the colorway's,
+ * black with the lights off under pure black, and none for Shelf's own as it is.
+ */
 function setChromeWalls(walls: Record<Theme, string> | undefined): void {
   const style = document.documentElement.style
+  const black = getBlack()
+  const shown = walls ?? (black ? themeColor : undefined)
   for (const theme of ['light', 'dark'] as const) {
-    if (walls) style.setProperty(chromeProperty[theme], walls[theme])
+    const wall = black && theme === 'dark' ? BLACK_WALL : shown?.[theme]
+    if (wall) style.setProperty(chromeProperty[theme], wall)
     else style.removeProperty(chromeProperty[theme])
   }
+}
+
+/** The walls of a colorway, or none for Shelf's own. */
+function wallsOf(colorway: Colorway): Record<Theme, string> | undefined {
+  if (colorway === OWN) {
+    const own = getOwnColorway()
+    return own ? { light: own.colors.light.wall, dark: own.colors.dark.wall } : undefined
+  }
+  return colorway === DEFAULT_PRESET ? undefined : colorwayWall[colorway]
 }
 
 /** Lays one's own colors on <html>, where colorways.css reads them. */
@@ -116,7 +142,7 @@ function show(colorway: Colorway): void {
 
 function applyPreset(preset: Preset): void {
   if (getColorway() === preset) return
-  setChromeWalls(preset === DEFAULT_PRESET ? undefined : colorwayWall[preset])
+  setChromeWalls(wallsOf(preset))
   show(preset)
 }
 
@@ -139,16 +165,26 @@ function notify(): void {
   for (const listener of listeners) listener()
 }
 
-// Another tab chose a colorway, or changed its own.
+function applyBlack(black: boolean): void {
+  if (getBlack() === black) return
+  if (getTheme() === 'dark') playChange('dark')
+  document.documentElement.toggleAttribute('data-black', black)
+  setChromeWalls(wallsOf(getColorway()))
+  paintChrome()
+}
+
+// Another tab chose a colorway, changed its own, or turned pure black on or off.
 function onStorage(event: StorageEvent): void {
-  if (
-    event.key !== null &&
-    event.key !== COLORS_STORAGE_KEY &&
-    event.key !== OWN_COLORS_STORAGE_KEY
-  ) {
-    return
+  if (event.key === null || event.key === BLACK_STORAGE_KEY) {
+    applyBlack(readStored(BLACK_STORAGE_KEY) === '1')
   }
-  applyStored()
+  if (
+    event.key === null ||
+    event.key === COLORS_STORAGE_KEY ||
+    event.key === OWN_COLORS_STORAGE_KEY
+  ) {
+    applyStored()
+  }
   notify()
 }
 
@@ -178,5 +214,12 @@ export function setOwnColorway(own: OwnColorway): void {
   writeStored(OWN_COLORS_STORAGE_KEY, JSON.stringify(own))
   writeStored(COLORS_STORAGE_KEY, OWN)
   applyOwn(own)
+  notify()
+}
+
+/** Turns pure black on or off for the lights-off theme, and remembers it. */
+export function setBlack(black: boolean): void {
+  writeStored(BLACK_STORAGE_KEY, black ? '1' : null)
+  applyBlack(black)
   notify()
 }

@@ -2,11 +2,12 @@
 
 import { RotateCcwIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 
 import { colorsOf } from '@/domain/colorway/derive'
 import { presets, type OwnColorway, type Seeds } from '@/domain/colorway/presets'
 import { Button } from '@/ui/button'
+import { Switch } from '@/ui/checkbox'
 import { ColorField } from '@/ui/color-field'
 
 /** One's own colorway made from three seeds, by the rules every preset is made by. */
@@ -31,10 +32,11 @@ export function OwnColorwayEditor({
   const t = useTranslations('Settings.colors')
   const pending = useRef<Seeds | null>(null)
   const frame = useRef(0)
+  const pastelId = useId()
 
   useEffect(() => () => cancelAnimationFrame(frame.current), [])
 
-  const pick = (seed: keyof Seeds, color: string) => {
+  const pick = (seed: 'accent' | 'room' | 'led', color: string) => {
     pending.current = { ...(pending.current ?? own.seeds), [seed]: color.toLowerCase() }
     if (frame.current) return
     frame.current = requestAnimationFrame(() => {
@@ -75,6 +77,25 @@ export function OwnColorwayEditor({
           value={own.seeds.led}
           onValueChange={(color) => pick('led', color)}
         />
+      </div>
+      <div className="grid max-w-xl gap-1.5">
+        <div className="flex items-center gap-3">
+          <Switch
+            id={pastelId}
+            checked={own.seeds.pastel === true}
+            aria-describedby={`${pastelId}-hint`}
+            onChange={(event) => {
+              const { pastel: _, ...seeds } = own.seeds
+              onChange(ownFrom(event.target.checked ? { ...seeds, pastel: true } : seeds, own.from))
+            }}
+          />
+          <label htmlFor={pastelId} className="text-sm font-medium">
+            {t('own.pastel.label')}
+          </label>
+        </div>
+        <p id={`${pastelId}-hint`} className="pl-13 text-xs text-pretty text-muted">
+          {t('own.pastel.hint')}
+        </p>
       </div>
       <Button
         variant="ghost"

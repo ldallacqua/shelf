@@ -11,7 +11,9 @@ script applies it before the first paint, and Storybook's toolbar has a Colors s
 behind Experimental views, was not looked at in a colorway. Phase 2 added one's own: three colors picked in
 Settings (`own-colorway.tsx`, `ColorField` in `src/ui`), worked out by the same `derive.ts` and kept whole
 (`shelf:colors:own`), which the theme script lays on `<html>` as `--own-light-wall` and its kin for colorways.css
-to read. The browser's chrome reads the colorway's walls from `--chrome-light` and `--chrome-dark` on `<html>`.
+to read. The browser's chrome reads the colorway's walls from `--chrome-light` and `--chrome-dark` on `<html>`. Then five
+pastel presets (`pastel: true` seeds, worked out softer) and pure black for OLED screens (`shelf:black`,
+`data-black`, `blackOf`), a switch under the theme.
 
 ## Game media gallery (11 Nov 2026)
 

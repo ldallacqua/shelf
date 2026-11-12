@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { contrast, mix } from './contrast'
-import { colorsOf, ledWash, requiredPairs } from './derive'
+import { blackOf, colorsOf, ledWash, requiredPairs } from './derive'
 import { fromOklch, toOklch } from './oklch'
 import { presetNames } from './names'
 import { colorTokens, presets, type Colors, type Seeds, type Theme } from './presets'
@@ -51,6 +51,44 @@ describe('colorsOf', () => {
       }
       expect(failures(colorsOf(seeds)), JSON.stringify(seeds)).toEqual([])
     }
+  })
+
+  it('makes any three colors readable as pastel, and in pure black', () => {
+    const colors = [...seededColors(300)].reverse()
+    for (let index = 0; index + 2 < colors.length; index += 3) {
+      const seeds: Seeds = {
+        accent: colors[index]!,
+        room: colors[index + 1]!,
+        led: colors[index + 2]!,
+        pastel: true,
+      }
+      const worked = colorsOf(seeds)
+      expect(failures(worked), JSON.stringify(seeds)).toEqual([])
+      const black = { ...worked, dark: blackOf(worked.dark) }
+      expect(failures(black), `black ${JSON.stringify(seeds)}`).toEqual([])
+    }
+  })
+
+  it.each(presetNames)('keeps %s readable in pure black', (name) => {
+    const worked = colorsOf(presets[name])
+    expect(failures({ ...worked, dark: blackOf(worked.dark) })).toEqual([])
+  })
+
+  it('makes pure black walls fully black, and panels and shelves a shade above them', () => {
+    const black = blackOf(colorsOf(presets.ocean).dark)
+    expect(black.wall).toBe('#000000')
+    expect(black['wall-deep']).toBe('#000000')
+    expect(toOklch(black.surface).l).toBeGreaterThan(0.1)
+    expect(toOklch(black.surface).l).toBeLessThan(toOklch(colorsOf(presets.ocean).dark.surface).l)
+    expect(black.text).toBe(colorsOf(presets.ocean).dark.text)
+  })
+
+  it('tints pastel walls more than vivid ones, and pales the accent with the lights off', () => {
+    const vivid = colorsOf({ ...presets.lilac, pastel: false })
+    const pastel = colorsOf(presets.lilac)
+    expect(toOklch(pastel.light.wall).c).toBeGreaterThan(toOklch(vivid.light.wall).c)
+    expect(toOklch(pastel.dark.accent).l).toBeGreaterThan(0.78)
+    expect(toOklch(pastel.dark.accent).c).toBeLessThan(0.12)
   })
 
   it.each([

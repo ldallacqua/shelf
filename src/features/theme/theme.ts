@@ -14,6 +14,10 @@ import type { Preset } from '@/domain/colorway/names'
 export const THEME_STORAGE_KEY = 'shelf:theme'
 export const COLORS_STORAGE_KEY = 'shelf:colors'
 export const OWN_COLORS_STORAGE_KEY = 'shelf:colors:own'
+/** Pure black with the lights off, for OLED screens: '1', or nothing. */
+export const BLACK_STORAGE_KEY = 'shelf:black'
+/** The wall with the lights off when pure black is on. */
+export const BLACK_WALL = '#000000'
 
 export type Theme = 'light' | 'dark'
 
@@ -43,6 +47,11 @@ export const colorwayWall: Record<Preset, Record<Theme, string>> = {
   arcade: { light: '#efecf9', dark: '#0e0a1a' },
   crimson: { light: '#edeef0', dark: '#0c0d0f' },
   graphite: { light: '#eeeeee', dark: '#0d0d0d' },
+  lilac: { light: '#f0ebff', dark: '#0e0b16' },
+  mint: { light: '#dcf5eb', dark: '#03100b' },
+  peach: { light: '#ffe9df', dark: '#160a05' },
+  sky: { light: '#e1f0ff', dark: '#050e17' },
+  rose: { light: '#ffe7ee', dark: '#15090d' },
 }
 
 /** Anything that is not a known choice, including nothing stored, means "follow the device". */

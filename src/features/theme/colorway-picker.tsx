@@ -4,13 +4,23 @@ import { useTranslations } from 'next-intl'
 import type { CSSProperties } from 'react'
 
 import { colorsOf } from '@/domain/colorway/derive'
-import { DEFAULT_PRESET, isPreset, OWN, presetNames, type Colorway } from '@/domain/colorway/names'
+import {
+  DEFAULT_PRESET,
+  isPreset,
+  OWN,
+  pastelNames,
+  presetNames,
+  type Colorway,
+  type Preset,
+} from '@/domain/colorway/names'
 import { colorTokens, presets, type Colors } from '@/domain/colorway/presets'
 import { ChoiceCard, ChoiceCards } from '@/ui/choice-cards'
 import { cn } from '@/ui/cn'
 
 import { OwnColorwayEditor, ownFrom } from './own-colorway'
 import { useColorway } from './use-colorway'
+
+const vivid = presetNames.filter((name) => !pastelNames.includes(name))
 
 /** One's own colors as the properties colorways.css reads them from, for one element. */
 export const ownStyle = (colors: Colors): CSSProperties =>
@@ -58,9 +68,26 @@ export function ColorwayRoom({
 }
 
 /**
+ * A group's name across the grid, over its cards. Hidden from assistive
+ * technology, which hears each card's own words ("Pastel lavender…"): a
+ * heading inside a radio group is no part of its pattern.
+ */
+function GroupName({ children }: { children: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="col-span-full pt-2 font-mono text-xs tracking-label text-muted uppercase first:pt-0"
+    >
+      {children}
+    </span>
+  )
+}
+
+/**
  * The colorways laid out as cards, for Settings' Appearance, each showing
- * itself, and last one's own. Chosen, one's own opens its three colors under
- * the cards; made the first time from the preset on screen.
+ * itself: the vivid presets, the pastel ones, and last one's own. Chosen, one's
+ * own opens its three colors under the cards; made the first time from the
+ * preset on screen.
  */
 export function ColorwayPicker({
   labelledBy,
@@ -79,6 +106,16 @@ export function ColorwayPicker({
   const startFrom = isPreset(colorway) ? colorway : DEFAULT_PRESET
   const ownColors = own?.colors ?? colorsOf(presets[startFrom])
 
+  const card = (name: Preset) => (
+    <ChoiceCard
+      key={name}
+      value={name}
+      label={t(`presets.${name}.name`)}
+      detail={t(`presets.${name}.detail`)}
+      picture={<ColorwayRoom colorway={name} />}
+    />
+  )
+
   const choose = (next: Colorway) => {
     if (next !== OWN) return setColorway(next)
     setOwnColorway(own ?? ownFrom(presets[startFrom], startFrom))
@@ -92,15 +129,11 @@ export function ColorwayPicker({
         value={colorway}
         onValueChange={choose}
       >
-        {presetNames.map((name) => (
-          <ChoiceCard
-            key={name}
-            value={name}
-            label={t(`presets.${name}.name`)}
-            detail={t(`presets.${name}.detail`)}
-            picture={<ColorwayRoom colorway={name} />}
-          />
-        ))}
+        <GroupName>{t('groups.vivid')}</GroupName>
+        {vivid.map(card)}
+        <GroupName>{t('groups.pastel')}</GroupName>
+        {pastelNames.map(card)}
+        <GroupName>{t('groups.yours')}</GroupName>
         <ChoiceCard
           value={OWN}
           label={t('own.name')}

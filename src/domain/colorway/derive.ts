@@ -6,6 +6,11 @@ import type { Colors, ColorToken, Seeds, Theme, ThemeColors } from './presets'
  * How a colorway's every color is worked out from its three seeds (see
  * `presets.ts`), the same way for a preset and for one's own. Every pair the
  * interface may use reaches its contrast in both themes, whatever the seeds.
+ *
+ * Pastel seeds are worked out softer: walls tinted clearly in the room's hue,
+ * accents and light dustier, and with the lights off, accents pale enough to
+ * read as pastel. Pure black (`blackOf`) is any colorway's dark theme with the
+ * walls fully black, for OLED screens.
  */
 
 type Neutral = Exclude<ColorToken, 'accent' | 'on-accent' | 'marker' | 'focus'>
@@ -47,6 +52,44 @@ const ladder: Record<Theme, Record<Neutral, [number, number]>> = {
 const ROOM_CHROMA = 0.0307
 /** How far a room may tint: past this, walls stop reading as a room's and become a color. */
 const MOST_TINT = 3.2
+
+/**
+ * A pastel room's chroma for each neutral, at its fullest: walls clearly
+ * tinted, lines and muted text a little more, text and the brightest surface
+ * barely. A room seed less colorful than PASTEL_ROOM tints less, and a gray one
+ * not at all.
+ */
+const pastelChroma: Record<Theme, Record<Neutral, number>> = {
+  light: {
+    wall: 0.03,
+    'wall-deep': 0.038,
+    surface: 0.016,
+    'surface-raised': 0.005,
+    // The shelves stay near black, as in every colorway: tinted more, a warm
+    // room's would turn to wood (ADR 002).
+    ledge: 0.016,
+    'ledge-top': 0.03,
+    'on-ledge': 0.008,
+    text: 0.02,
+    'text-muted': 0.05,
+    line: 0.036,
+    'line-strong': 0.05,
+  },
+  dark: {
+    wall: 0.024,
+    'wall-deep': 0.02,
+    surface: 0.032,
+    'surface-raised': 0.038,
+    ledge: 0.032,
+    'ledge-top': 0.042,
+    'on-ledge': 0.008,
+    text: 0.008,
+    'text-muted': 0.045,
+    line: 0.042,
+    'line-strong': 0.06,
+  },
+}
+const PASTEL_ROOM = 0.06
 
 /** "Playing", in each theme: a green that never changes hue, so it keeps its meaning. */
 const marker: Record<Theme, Oklch> = {
@@ -92,17 +135,31 @@ function reach(start: Oklch, against: string[], ratio: number, way: 1 | -1): str
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
-/** The accent's lightness: the seed's own, within what reads in each theme, mirrored for dark. */
-function accentLightness(seed: Oklch): Record<Theme, number> {
+/**
+ * The accent where it starts, before contrast moves it: the seed's own
+ * lightness within what reads in each theme, mirrored for dark. A pastel one
+ * is dustier with the lights on, and pale with them off.
+ */
+function accentStart(seed: Oklch, theme: Theme, pastel: boolean): Oklch {
+  if (pastel) {
+    return theme === 'light'
+      ? { ...seed, l: clamp(seed.l, 0.42, 0.6), c: Math.min(seed.c, 0.12) }
+      : { ...seed, l: clamp(seed.l, 0.8, 0.9), c: Math.min(seed.c, 0.11) }
+  }
   const light = clamp(seed.l, 0.28, 0.58)
-  return { light, dark: clamp(1.28 - light, 0.68, 0.92) }
+  return { ...seed, l: theme === 'light' ? light : clamp(1.28 - light, 0.68, 0.92) }
 }
 
-function themeColors(seeds: { accent: Oklch; room: Oklch }, theme: Theme): ThemeColors {
+function themeColors(
+  seeds: { accent: Oklch; room: Oklch },
+  theme: Theme,
+  pastel: boolean,
+): ThemeColors {
   const tint = clamp(seeds.room.c / ROOM_CHROMA, 0, MOST_TINT)
+  const pastelTint = clamp(seeds.room.c / PASTEL_ROOM, 0, 1)
   const neutral = (token: Neutral): Oklch => {
     const [l, c] = ladder[theme][token]
-    return { l, c: c * tint, h: seeds.room.h }
+    return { l, c: pastel ? pastelChroma[theme][token] * pastelTint : c * tint, h: seeds.room.h }
   }
   const hex = (token: Neutral) => fromOklch(neutral(token))
 
@@ -113,7 +170,7 @@ function themeColors(seeds: { accent: Oklch; room: Oklch }, theme: Theme): Theme
   // Text on a light wall reads by being darker, and on a dark one by being lighter.
   const away: 1 | -1 = theme === 'light' ? -1 : 1
 
-  let accent = reach({ ...seeds.accent, l: accentLightness(seeds.accent)[theme] }, walls, 4.5, away)
+  let accent = reach(accentStart(seeds.accent, theme, pastel), walls, 4.5, away)
   // What is written on the accent: the brightest of the room on a light theme's
   // deeper accent, the room's darkest on a dark theme's paler one.
   const onAccentFirst = theme === 'light' ? hex('surface-raised') : hex('wall')
@@ -144,9 +201,10 @@ function themeColors(seeds: { accent: Oklch; room: Oklch }, theme: Theme): Theme
   }
 }
 
-/** The LED at rest: bright enough to read as light; a gray seed gives a cool white. */
-function ledOf(seed: Oklch): string {
+/** The LED at rest: bright enough to read as light; a gray seed gives a cool white, a pastel one a soft light. */
+function ledOf(seed: Oklch, pastel: boolean): string {
   if (seed.c < 0.03) return fromOklch({ l: clamp(seed.l, 0.78, 0.9), c: 0.03, h: 270 })
+  if (pastel) return fromOklch({ ...seed, l: clamp(seed.l, 0.8, 0.88), c: Math.min(seed.c, 0.13) })
   return fromOklch({ ...seed, l: clamp(seed.l, 0.58, 0.82) })
 }
 
@@ -154,9 +212,33 @@ function ledOf(seed: Oklch): string {
 export function colorsOf(seeds: Seeds): Colors {
   const accent = toOklch(seeds.accent)
   const room = toOklch(seeds.room)
+  const pastel = seeds.pastel === true
   return {
-    light: themeColors({ accent, room }, 'light'),
-    dark: themeColors({ accent, room }, 'dark'),
-    led: ledOf(toOklch(seeds.led)),
+    light: themeColors({ accent, room }, 'light', pastel),
+    dark: themeColors({ accent, room }, 'dark', pastel),
+    led: ledOf(toOklch(seeds.led), pastel),
+  }
+}
+
+/**
+ * Pure black, for OLED screens: what a colorway's dark theme becomes when the
+ * walls are fully black. Panels, shelves and lines keep BLACK_KEEP of what they
+ * were, mixed with black in OKLab, so they still stand off the wall; text and
+ * accents stay, and only gain contrast. colorways.css does the same mix for
+ * one's own (`color-mix(in oklab, … 72%, #000)`).
+ */
+export const BLACK_KEEP = 0.72
+export const blackWalls = ['wall', 'wall-deep'] as const
+export const blackDarkened = ['surface', 'surface-raised', 'ledge', 'ledge-top', 'line'] as const
+
+export function blackOf(dark: ThemeColors): ThemeColors {
+  const darker = (hex: string) => {
+    const { l, c, h } = toOklch(hex)
+    return fromOklch({ l: l * BLACK_KEEP, c: c * BLACK_KEEP, h })
+  }
+  return {
+    ...dark,
+    ...Object.fromEntries(blackWalls.map((token) => [token, '#000000'])),
+    ...Object.fromEntries(blackDarkened.map((token) => [token, darker(dark[token])])),
   }
 }

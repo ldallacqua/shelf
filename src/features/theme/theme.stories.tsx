@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { presetNames } from '@/domain/colorway/names'
 import { presets } from '@/domain/colorway/presets'
 
+import { BlackSwitch } from './black-switch'
 import { ColorwayPicker, ColorwayRoom, ownStyle } from './colorway-picker'
 import { OwnColorwayEditor, ownFrom } from './own-colorway'
 import { ThemePicker } from './theme-picker'
@@ -22,6 +23,12 @@ export const Switch: Story = { render: () => <ThemeSwitch /> }
 
 /** The same three choices in a row, for use inside a page. */
 export const Picker: Story = { render: () => <ThemePicker /> }
+
+/**
+ * Pure black with the lights off, for OLED screens, under the theme in
+ * Appearance. Turn the lights off in the toolbar to see it change the page.
+ */
+export const PureBlack: Story = { render: () => <BlackSwitch /> }
 
 /**
  * The colorways, in Settings' Appearance (issue 206). Each card is a corner of

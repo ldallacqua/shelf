@@ -34,7 +34,10 @@ describe('ColorwayPicker', () => {
 
     const group = screen.getByRole('radiogroup', { name: 'Colors' })
     expect(group).toHaveAccessibleDescription('What it changes')
-    expect(screen.getAllByRole('radio')).toHaveLength(7)
+    expect(screen.getAllByRole('radio')).toHaveLength(12)
+    expect(screen.getByRole('radio', { name: 'Lilac' })).toHaveAccessibleDescription(
+      'Pastel lavender, with soft violet light',
+    )
     expect(screen.getByRole('radio', { name: 'Your own' })).toHaveAccessibleDescription(
       'Three colors you pick',
     )
@@ -67,7 +70,20 @@ describe('ColorwayPicker', () => {
     const painted = [...container.querySelectorAll('[data-colors]')].map(
       (element) => (element as HTMLElement).dataset.colors,
     )
-    expect(painted).toEqual(['violet', 'ocean', 'ember', 'arcade', 'crimson', 'graphite', 'own'])
+    expect(painted).toEqual([
+      'violet',
+      'ocean',
+      'ember',
+      'arcade',
+      'crimson',
+      'graphite',
+      'lilac',
+      'mint',
+      'peach',
+      'sky',
+      'rose',
+      'own',
+    ])
   })
 
   it("makes one's own from the colorway on screen, and opens its three colors", async () => {
@@ -115,5 +131,16 @@ describe('ColorwayPicker', () => {
 
     expect(getOwnColorway()?.seeds.room).toBe('#2c4a66')
     expect(screen.getByLabelText('Room')).toHaveValue('#2c4a66')
+  })
+
+  it("makes one's own pastel, and back", async () => {
+    root.dataset.colors = 'sky'
+    renderWithIntl(<Section />)
+    await userEvent.click(screen.getByRole('radio', { name: 'Your own' }))
+    expect(getOwnColorway()?.seeds.pastel).toBe(true)
+
+    await userEvent.click(screen.getByRole('switch', { name: 'Pastel' }))
+    expect(getOwnColorway()?.seeds.pastel).toBeUndefined()
+    expect(screen.getByRole('switch', { name: 'Pastel' })).not.toBeChecked()
   })
 })
