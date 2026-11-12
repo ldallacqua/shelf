@@ -19,6 +19,7 @@ import { GhostHeading } from './ghosts'
 import { StatusMark } from './status-mark'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
+import { useFollowOnHover } from './follow-hover'
 import { ghostOrder } from '@/ui/ghost'
 
 /** Rows drawn before the layout is measured, over all the tables: two screens of them. */
@@ -132,6 +133,9 @@ function ListTable({
   const describe = (item: ShelfItem, platform: LibraryPlatform | undefined) =>
     describeBox(item, platform, t)
 
+  // With following on, the room takes the colors of the row in focus.
+  const follow = useFollowOnHover((index) => shelf.items[index]?.game.colors)
+
   return (
     <table className="game-table" aria-rowcount={shelf.total + 1}>
       <caption className="sr-only">{caption}</caption>
@@ -165,7 +169,7 @@ function ListTable({
           </Heading>
         </tr>
       </thead>
-      <tbody ref={body} data-grid-of={shelf.key}>
+      <tbody ref={body} data-grid-of={shelf.key} {...follow}>
         {/* Rows that are not near the screen are not in the page; these keep their place.
             One cell each: one across all nine would make columns of those a phone hides,
             and they would take the title's room. */}

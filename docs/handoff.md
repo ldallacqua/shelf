@@ -15,8 +15,10 @@ to read. The browser's chrome reads the colorway's walls from `--chrome-light` a
 pastel presets (`pastel: true` seeds, worked out softer) and pure black for OLED screens (`shelf:black`,
 `data-black`, `blackOf`), a switch under the theme. Then following the game (`shelf:colors:follow`, `data-follow`,
 `data-game`): `useFollowGame` on the shelf and a game's page, the arithmetic loaded only once it is on
-(`follow-paint.ts`). The trophies don't follow: their page is at 214.9 KB of its 215. The wall, list and banners
-don't either.
+(`follow-paint.ts`). The wall, list and banners follow through `useFollowOnHover` (`features/library/follow-hover.ts`),
+handlers on the grid that read a cell's place; the room glides (`data-colors-changing`, theme.css) and drops to
+changing at once on a device the first glide was too slow for. The trophies don't follow: their page is at
+214.9 KB of its 215.
 
 ## Game media gallery (11 Nov 2026)
 

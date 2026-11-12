@@ -2181,17 +2181,20 @@ game in focus, worked out from the three its cover gave (its accent, a room tint
 common color, and the light its shelf already takes) by the same rules, so they stay readable:
 
 - **A game's page** is in its game's colors as it opens, and gives the room back as it closes.
-- **The shelf** follows the game the pointer rests on (about a third of a second) or the keyboard
-  reaches, and gives the room back a moment after leaving the shelves. Not for a touch screen, which
-  has no hover, nor under reduced motion, where colors changing under the pointer are too much.
+- **The library**, in every view (the shelf, the wall, the list, the banners), follows the game the
+  pointer rests on (about a third of a second) or the keyboard reaches, and gives the room back a
+  moment after leaving the games. Not for a touch screen, which has no hover, nor under reduced
+  motion, where colors changing under the pointer are too much.
 - **Everywhere else** keeps the colorway chosen: Settings, so what is picked is what is seen; the
   trophies, whose page has no room in its script's budget yet (a later step could follow the trophy
   in focus); the landing page.
 
-It changes at once, never gliding: measured with the processor four times slower, a whole page
-gliding to new colors dropped about a dozen frames each time, and a change at once about one. Pure
-black still makes the walls black, and a pastel colorway makes the games' colors pastel too. The
-wall, the list and the banners don't follow yet.
+The colors glide for half a second, every part of the page together: what animates its own colors (a
+button on hover, the chosen view) waits meanwhile, so nothing snaps while the rest glides, and nothing
+lags behind. A whole page gliding is heavy for a slow device: measured with the processor four times
+slower, it dropped about a dozen frames each time. So the first glide is watched, and a device that
+dropped frames changes at once from then on. Under reduced motion it changes at once too. Pure black
+still makes the walls black, and a pastel colorway makes the games' colors pastel too.
 
 **One's own** is the last card, "Your own". Chosen the first time, it starts from the colorway on
 screen; under the cards it then opens its three colors, Accent, Room and Light, each the device's own

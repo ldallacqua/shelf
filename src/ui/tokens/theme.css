@@ -145,3 +145,41 @@ html[data-theme-changing] *::before,
 html[data-theme-changing] *::after {
   transition: none !important;
 }
+
+/*
+ * The room taking a game's colors, or giving them back (following the game,
+ * issue 206): the colors glide, quicker than a theme change, and the lighting
+ * stays. Set by the follow module for that half second, and never under
+ * reduced motion, nor on a device the glide proved too slow for.
+ */
+html[data-colors-changing] {
+  --_colors: var(--motion-slow) var(--ease-glide);
+  transition:
+    --wall var(--_colors),
+    --wall-deep var(--_colors),
+    --surface var(--_colors),
+    --surface-raised var(--_colors),
+    --ledge var(--_colors),
+    --ledge-top var(--_colors),
+    --on-ledge var(--_colors),
+    --text var(--_colors),
+    --text-muted var(--_colors),
+    --accent var(--_colors),
+    --on-accent var(--_colors),
+    --marker var(--_colors),
+    --line var(--_colors),
+    --line-strong var(--_colors),
+    --focus var(--_colors),
+    --led var(--_colors);
+}
+
+/*
+ * Meanwhile, what animates its own colors (a button on hover, a chosen view)
+ * waits, so every part glides with the room together and none snaps or lags.
+ * What moves keeps moving: a box lifting under the pointer still lifts.
+ */
+html[data-colors-changing] *,
+html[data-colors-changing] *::before,
+html[data-colors-changing] *::after {
+  transition-property: transform, translate, scale, rotate, opacity !important;
+}
