@@ -2146,8 +2146,9 @@ fade and the LEDs come up, or the reverse. Under reduced motion it is immediate.
 ### Colors
 
 Apart from the theme, this device keeps a **colorway** (issue 206): the paint on the walls, the
-shelves and the buttons, and the color of the LEDs at rest. There are six, each in both themes:
-Violet, Shelf's own and the default; Ocean; Ember; Arcade; Crimson; Graphite; and one's own. They are chosen in
+shelves and the buttons, and the color of the LEDs at rest. Each works in both themes. Six are vivid:
+Violet, Shelf's own and the default; Ocean; Ember; Arcade; Crimson; Graphite. Five are pastel: Lilac,
+Mint, Peach, Sky, Rose. And one's own. They are chosen in
 Settings, Appearance, under Theme, and like the theme they are on the device, for anyone, and
 applied before the first paint. Choosing one repaints the page as a change of light, about a
 second, at once under reduced motion.
@@ -2163,6 +2164,17 @@ its accent, a tint for the room, and its light. The walls keep Shelf's own light
 room's hue; the accent keeps its hue, deeper with the lights on and paler with them off; every pair
 of colors the interface uses is moved until it reaches its contrast, in both themes. So a preset
 is three colors, and so is one's own.
+
+**Pastel** colorways are worked out softer from their three colors: with the lights on, walls
+clearly tinted in the room's color and a dusty accent, deep enough to read on them, as a pastel accent
+on a pale wall can't; with the lights off, pale pastel accents and light on a muted wall. The shelves
+stay near black, so a warm room never turns to wood (ADR 002). One's own can be pastel too, a switch
+under its colors.
+
+**Pure black** with the lights off is a switch under the theme, for OLED screens, and works with
+every colorway: the walls turn fully black, and panels, shelves and lines keep 72% of what they were,
+mixed with black, so depth still shows where shadows can't on black. Text stays off-white. Like the
+theme, it is the device's, and applied before the first paint.
 
 **One's own** is the last card, "Your own". Chosen the first time, it starts from the colorway on
 screen; under the cards it then opens its three colors, Accent, Room and Light, each the device's own

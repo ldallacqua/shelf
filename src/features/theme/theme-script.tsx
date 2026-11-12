@@ -2,12 +2,14 @@ import { DEFAULT_PRESET, OWN } from '@/domain/colorway/names'
 import { colorTokens } from '@/domain/colorway/presets'
 
 import {
+  BLACK_STORAGE_KEY,
+  BLACK_WALL,
   chromeProperty,
   COLORS_STORAGE_KEY,
-  colorwayWall,
   OWN_COLORS_STORAGE_KEY,
   THEME_STORAGE_KEY,
 } from './theme'
+import { colorwayWall } from './colorway-walls'
 
 /**
  * The script that runs in <head> before the first paint, so the page never
@@ -22,6 +24,7 @@ export function themeScript(): string {
   const own = JSON.stringify(OWN)
   const preset = JSON.stringify(DEFAULT_PRESET)
   const tokens = JSON.stringify(colorTokens)
+  const blackKey = JSON.stringify(BLACK_STORAGE_KEY)
   // Each colorway's walls, light then dark: also the list of colorways it knows.
   const walls = JSON.stringify(
     Object.fromEntries(
@@ -32,7 +35,7 @@ export function themeScript(): string {
   // in storage leaves the page in Shelf's own colors. The loops count down, as
   // the script may hold no "<".
   return (
-    `(function(){var d=document.documentElement,c='system',t='light',k=${preset},w=${walls};` +
+    `(function(){var d=document.documentElement,c='system',t='light',k=${preset},w=${walls},b=0;` +
     `try{var s=localStorage.getItem(${key});if(s==='light'||s==='dark')c=s}catch(e){}` +
     `try{t=c==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):c}catch(e){}` +
     `try{var p=localStorage.getItem(${colorsKey});` +
@@ -41,9 +44,11 @@ export function themeScript(): string {
     `if(ok){for(i=T.length;i--;){d.style.setProperty('--own-light-'+T[i],o.light[T[i]]);d.style.setProperty('--own-dark-'+T[i],o.dark[T[i]])}` +
     `d.style.setProperty('--own-led',o.led);w[p]=[o.light.wall,o.dark.wall];k=p}}` +
     `else if(p&&Object.prototype.hasOwnProperty.call(w,p))k=p}catch(e){}` +
+    `try{b=localStorage.getItem(${blackKey})==='1'}catch(e){}` +
     `d.setAttribute('data-theme',t);d.setAttribute('data-theme-choice',c);` +
-    `if(k!==${preset}){d.setAttribute('data-colors',k);` +
-    `d.style.setProperty(${JSON.stringify(chromeProperty.light)},w[k][0]);d.style.setProperty(${JSON.stringify(chromeProperty.dark)},w[k][1])}` +
+    `if(k!==${preset})d.setAttribute('data-colors',k);` +
+    `if(b){d.setAttribute('data-black','');w[k]=[w[k][0],${JSON.stringify(BLACK_WALL)}]}` +
+    `if(k!==${preset}||b){d.style.setProperty(${JSON.stringify(chromeProperty.light)},w[k][0]);d.style.setProperty(${JSON.stringify(chromeProperty.dark)},w[k][1])}` +
     `var m=document.createElement('meta');m.name='theme-color';m.content=w[k][t==='dark'?1:0];` +
     `document.head.appendChild(m)})()`
   )

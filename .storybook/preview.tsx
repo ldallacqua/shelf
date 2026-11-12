@@ -27,10 +27,12 @@ type Locale = keyof typeof messages
 function Lit({
   theme,
   colors,
+  black,
   children,
 }: {
   theme: 'light' | 'dark'
   colors: string
+  black: boolean
   children: ReactNode
 }) {
   useEffect(() => {
@@ -39,8 +41,9 @@ function Lit({
     root.dataset.themeChoice = theme
     if (colors === 'violet') delete root.dataset.colors
     else root.dataset.colors = colors
+    root.toggleAttribute('data-black', black)
     root.classList.add(...fontVariables.split(' '))
-  }, [theme, colors])
+  }, [theme, colors, black])
 
   return children
 }
@@ -62,6 +65,7 @@ const withTheme: Decorator = (Story, context) => (
   <Lit
     theme={context.globals.theme === 'dark' ? 'dark' : 'light'}
     colors={presetNames.find((name) => name === context.globals.colors) ?? 'violet'}
+    black={context.globals.black === 'on'}
   >
     <Story />
   </Lit>
@@ -97,6 +101,18 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+    black: {
+      description: 'Pure black with the lights off',
+      toolbar: {
+        title: 'Pure black',
+        icon: 'contrast',
+        items: [
+          { value: 'off', title: 'Pure black off' },
+          { value: 'on', title: 'Pure black on' },
+        ],
+        dynamicTitle: true,
+      },
+    },
     locale: {
       description: 'Language',
       toolbar: {
@@ -110,7 +126,7 @@ const preview: Preview = {
       },
     },
   },
-  initialGlobals: { theme: 'dark', colors: 'violet', locale: 'en' },
+  initialGlobals: { theme: 'dark', colors: 'violet', black: 'off', locale: 'en' },
   parameters: {
     layout: 'padded',
     nextjs: { appDirectory: true },

@@ -1,5 +1,3 @@
-import type { Preset } from '@/domain/colorway/names'
-
 /**
  * The theme rules, with no browser or React in them.
  *
@@ -14,6 +12,10 @@ import type { Preset } from '@/domain/colorway/names'
 export const THEME_STORAGE_KEY = 'shelf:theme'
 export const COLORS_STORAGE_KEY = 'shelf:colors'
 export const OWN_COLORS_STORAGE_KEY = 'shelf:colors:own'
+/** Pure black with the lights off, for OLED screens: '1', or nothing. */
+export const BLACK_STORAGE_KEY = 'shelf:black'
+/** The wall with the lights off when pure black is on. */
+export const BLACK_WALL = '#000000'
 
 export type Theme = 'light' | 'dark'
 
@@ -33,16 +35,6 @@ export type ThemeChoice = (typeof themeChoices)[number]
 export const themeColor: Record<Theme, string> = {
   light: '#eceef2',
   dark: '#0b0d12',
-}
-
-/** Each preset's wall per theme, for the same. Kept equal to colorways.css by a test. */
-export const colorwayWall: Record<Preset, Record<Theme, string>> = {
-  violet: themeColor,
-  ocean: { light: '#e8eff6', dark: '#060e16' },
-  ember: { light: '#f0eded', dark: '#0f0c0b' },
-  arcade: { light: '#efecf9', dark: '#0e0a1a' },
-  crimson: { light: '#edeef0', dark: '#0c0d0f' },
-  graphite: { light: '#eeeeee', dark: '#0d0d0d' },
 }
 
 /** Anything that is not a known choice, including nothing stored, means "follow the device". */

@@ -64,6 +64,14 @@ export function readColorway(name: string, theme: 'light' | 'dark'): TokenMap {
   return new Map([...readTheme(theme), ...block(read('colorways.css'), selector)])
 }
 
+/** A colorway's pure black: its dark theme with the pure black block laid over it. */
+export function readBlack(name: string): TokenMap {
+  const selector = new RegExp(
+    String.raw`^\[data-black\]\[data-theme='dark'\]\[data-colors='${name}'\],`,
+  )
+  return new Map([...readColorway(name, 'dark'), ...block(read('colorways.css'), selector)])
+}
+
 export function readMotion(): { durations: TokenMap; curves: TokenMap } {
   const css = read('motion.css')
   return { durations: block(css, /^:root$/), curves: block(css, /^@theme static$/) }

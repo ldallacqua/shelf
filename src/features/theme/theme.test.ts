@@ -7,15 +7,17 @@ import { readPalette, readTheme, resolve } from '@/ui/tokens/read-tokens'
 
 import {
   changeDirection,
+  BLACK_STORAGE_KEY,
+  BLACK_WALL,
   chromeProperty,
   COLORS_STORAGE_KEY,
-  colorwayWall,
   OWN_COLORS_STORAGE_KEY,
   parseThemeChoice,
   resolveTheme,
   THEME_STORAGE_KEY,
   themeColor,
 } from './theme'
+import { colorwayWall } from './colorway-walls'
 import { themeScript } from './theme-script'
 
 describe('parseThemeChoice', () => {
@@ -69,6 +71,7 @@ describe('themeScript', () => {
     stored?: string | null
     storedColors?: string | null
     storedOwn?: string | null
+    storedBlack?: string | null
     deviceIsDark?: boolean
     storageThrows?: boolean
     matchMediaMissing?: boolean
@@ -78,6 +81,7 @@ describe('themeScript', () => {
     stored = null,
     storedColors = null,
     storedOwn = null,
+    storedBlack = null,
     deviceIsDark = false,
     storageThrows,
     matchMediaMissing,
@@ -98,6 +102,7 @@ describe('themeScript', () => {
         if (storageThrows) throw new Error('blocked')
         if (key === COLORS_STORAGE_KEY) return storedColors
         if (key === OWN_COLORS_STORAGE_KEY) return storedOwn
+        if (key === BLACK_STORAGE_KEY) return storedBlack
         return key === THEME_STORAGE_KEY ? stored : null
       },
     }
@@ -116,6 +121,7 @@ describe('themeScript', () => {
       theme: attributes.get('data-theme'),
       choice: attributes.get('data-theme-choice'),
       colors: attributes.get('data-colors'),
+      black: attributes.has('data-black'),
       properties,
       metas,
     }
@@ -221,6 +227,26 @@ describe('themeScript', () => {
     expect(page.colors).toBeUndefined()
     expect(page.properties.size).toBe(0)
     expect(page.metas).toEqual([{ name: 'theme-color', content: themeColor.light }])
+  })
+
+  it('makes the walls pure black with the lights off when the device keeps it so', () => {
+    const page = run({ storedBlack: '1', storedColors: 'ocean', deviceIsDark: true })
+    expect(page.black).toBe(true)
+    expect(page.properties.get(chromeProperty.dark)).toBe(BLACK_WALL)
+    expect(page.properties.get(chromeProperty.light)).toBe(colorwayWall.ocean.light)
+    expect(page.metas).toEqual([{ name: 'theme-color', content: BLACK_WALL }])
+  })
+
+  it("makes Shelf's own colors pure black too, and leaves the lights-on wall", () => {
+    const dark = run({ storedBlack: '1', deviceIsDark: true })
+    expect(dark).toMatchObject({ black: true, colors: undefined })
+    expect(dark.metas).toEqual([{ name: 'theme-color', content: BLACK_WALL }])
+    const light = run({ storedBlack: '1', deviceIsDark: false })
+    expect(light.metas).toEqual([{ name: 'theme-color', content: themeColor.light }])
+  })
+
+  it.each([null, '0', 'true'])('leaves pure black off for %j', (storedBlack) => {
+    expect(run({ storedBlack, deviceIsDark: true }).black).toBe(false)
   })
 
   it('is one statement with no line breaks, safe to inline in <head>', () => {

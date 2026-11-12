@@ -1433,11 +1433,20 @@
     },
     "theme": {
       "title": "Tema",
-      "body": "Claro, escuro, ou como este aparelho estiver. O botão no topo também muda."
+      "body": "Claro, escuro, ou como este aparelho estiver. O botão no topo também muda.",
+      "black": {
+        "label": "Preto puro com as luzes apagadas",
+        "hint": "Para telas OLED: as paredes ficam totalmente pretas. Painéis e estantes ficam um tom mais claros, para continuar destacados."
+      }
     },
     "colors": {
       "title": "Cores",
       "body": "A tinta das paredes, os botões e a luz atrás dos seus jogos. Cada conjunto funciona com as luzes acesas e apagadas.",
+      "groups": {
+        "vivid": "Vivas",
+        "pastel": "Pastel",
+        "yours": "Suas"
+      },
       "presets": {
         "violet": {
           "name": "Violeta",
@@ -1462,6 +1471,26 @@
         "graphite": {
           "name": "Grafite",
           "detail": "Cinza, com luz branca"
+        },
+        "lilac": {
+          "name": "Lilás",
+          "detail": "Lavanda pastel, com luz violeta suave"
+        },
+        "mint": {
+          "name": "Menta",
+          "detail": "Menta pastel, com luz verde suave"
+        },
+        "peach": {
+          "name": "Pêssego",
+          "detail": "Pêssego pastel, com luz quente e suave"
+        },
+        "sky": {
+          "name": "Céu",
+          "detail": "Azul pastel, com luz celeste suave"
+        },
+        "rose": {
+          "name": "Rosa",
+          "detail": "Rosa pastel, com luz rosada suave"
         }
       },
       "own": {
@@ -1481,7 +1510,11 @@
           "label": "Luz",
           "hint": "Os LEDs atrás dos seus jogos"
         },
-        "reset": "Recomeçar de {preset}"
+        "reset": "Recomeçar de {preset}",
+        "pastel": {
+          "label": "Pastel",
+          "hint": "Mais suave: paredes no tom da sala, destaque e luz mais esmaecidos, e claros com as luzes apagadas."
+        }
       }
     },
     "language": {

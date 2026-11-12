@@ -1433,11 +1433,20 @@
     },
     "theme": {
       "title": "Theme",
-      "body": "Light, dark, or as this device is set. The switch in the header changes it too."
+      "body": "Light, dark, or as this device is set. The switch in the header changes it too.",
+      "black": {
+        "label": "Pure black with the lights off",
+        "hint": "For OLED screens: the walls turn fully black. Panels and shelves stay a shade lighter, so they still stand out."
+      }
     },
     "colors": {
       "title": "Colors",
       "body": "The paint on the walls, the buttons and the light behind your games. Each set works with the lights on and off.",
+      "groups": {
+        "vivid": "Vivid",
+        "pastel": "Pastel",
+        "yours": "Yours"
+      },
       "presets": {
         "violet": {
           "name": "Violet",
@@ -1462,6 +1471,26 @@
         "graphite": {
           "name": "Graphite",
           "detail": "Gray, with white light"
+        },
+        "lilac": {
+          "name": "Lilac",
+          "detail": "Pastel lavender, with soft violet light"
+        },
+        "mint": {
+          "name": "Mint",
+          "detail": "Pastel mint, with soft green light"
+        },
+        "peach": {
+          "name": "Peach",
+          "detail": "Pastel peach, with soft warm light"
+        },
+        "sky": {
+          "name": "Sky",
+          "detail": "Pastel blue, with soft sky light"
+        },
+        "rose": {
+          "name": "Rose",
+          "detail": "Pastel pink, with soft rose light"
         }
       },
       "own": {
@@ -1481,7 +1510,11 @@
           "label": "Light",
           "hint": "The LEDs behind your games"
         },
-        "reset": "Start again from {preset}"
+        "reset": "Start again from {preset}",
+        "pastel": {
+          "label": "Pastel",
+          "hint": "Softer: walls tinted in the room’s color, the accent and light dustier, and pale with the lights off."
+        }
       }
     },
     "language": {

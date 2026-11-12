@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { contrast, mix } from './contrast'
 import { duration, ease } from './motion'
 import {
+  readBlack,
   readColorway,
   readColorwayNames,
   readPresetNames,
@@ -111,6 +112,14 @@ describe('colorway tokens', () => {
     }
   })
 
+  it('makes the walls fully black in pure black, for every colorway', () => {
+    for (const colorway of [...colorways, 'own']) {
+      const black = readBlack(colorway)
+      expect(black.get('--wall'), colorway).toBe('#000000')
+      expect(black.get('--wall-deep'), colorway).toBe('#000000')
+    }
+  })
+
   it("draws Shelf's own colors exactly as theme.css does", () => {
     for (const theme of themeNames) {
       const own = readColorway('violet', theme)
@@ -151,6 +160,11 @@ describe('contrast requirements', () => {
         tokens: readColorway(colorway, theme),
       })),
     ),
+    ...colorways.map((colorway) => ({
+      name: `${colorway}, pure black`,
+      theme: 'dark' as const,
+      tokens: readBlack(colorway),
+    })),
   ]
 
   for (const { name, tokens } of lit) {
@@ -191,6 +205,11 @@ describe('text on a wall washed by the LED', () => {
         tokens: readColorway(colorway, theme),
       })),
     ),
+    ...colorways.map((colorway) => ({
+      name: `${colorway}, pure black`,
+      theme: 'dark' as const,
+      tokens: readBlack(colorway),
+    })),
   ]
 
   for (const { name, theme, tokens } of lit) {

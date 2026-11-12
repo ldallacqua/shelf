@@ -12,13 +12,8 @@ import {
   setOwnColorway,
   subscribeToColorway,
 } from './colorway-store'
-import {
-  chromeProperty,
-  COLORS_STORAGE_KEY,
-  colorwayWall,
-  OWN_COLORS_STORAGE_KEY,
-  themeColor,
-} from './theme'
+import { chromeProperty, COLORS_STORAGE_KEY, OWN_COLORS_STORAGE_KEY, themeColor } from './theme'
+import { colorwayWall } from './colorway-walls'
 import { setThemeChoice } from './theme-store'
 
 const root = document.documentElement

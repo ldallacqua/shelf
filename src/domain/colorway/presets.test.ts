@@ -22,6 +22,12 @@ describe('presets', () => {
 })
 
 describe('parseSeeds', () => {
+  it('keeps pastel when it is true, and only then', () => {
+    const seeds = { accent: '#aabbcc', room: '#000000', led: '#ffffff' }
+    expect(parseSeeds({ ...seeds, pastel: true })).toEqual({ ...seeds, pastel: true })
+    expect(parseSeeds({ ...seeds, pastel: 'yes' })).toEqual(seeds)
+  })
+
   it('takes three #rrggbb colors, in lower case', () => {
     expect(parseSeeds({ accent: '#AABBCC', room: '#000000', led: '#ffffff' })).toEqual({
       accent: '#aabbcc',

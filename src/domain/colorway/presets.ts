@@ -18,7 +18,8 @@ import { isPreset, type Preset } from './names'
  * `derive.ts`, both loaded only where colorways are chosen.
  */
 
-export type Seeds = { accent: string; room: string; led: string }
+/** Three colors a colorway is worked out from; pastel ones are worked out softer. */
+export type Seeds = { accent: string; room: string; led: string; pastel?: boolean }
 
 /**
  * Each preset's seeds. Violet is Shelf's own colors, which `theme.css` draws
@@ -32,6 +33,11 @@ export const presets: Record<Preset, Seeds> = {
   arcade: { accent: '#f0399b', room: '#3a2860', led: '#ff4fd8' },
   crimson: { accent: '#e5223a', room: '#3c3f46', led: '#ff3b3b' },
   graphite: { accent: '#24282f', room: '#808080', led: '#d3d8e4' },
+  lilac: { accent: '#9b7fe0', room: '#b9a6e8', led: '#c8b2ff', pastel: true },
+  mint: { accent: '#3fb29a', room: '#a8dcc8', led: '#9ef0d4', pastel: true },
+  peach: { accent: '#e98a6b', room: '#f1c2ad', led: '#ffc2a0', pastel: true },
+  sky: { accent: '#5aa3e0', room: '#a9cdee', led: '#a8dcff', pastel: true },
+  rose: { accent: '#e07a9e', room: '#f0b7c9', led: '#ffb3cf', pastel: true },
 }
 
 /** The meaning tokens a colorway sets, in each theme. */
@@ -66,12 +72,13 @@ export type Colors = { light: ThemeColors; dark: ThemeColors; led: string }
  */
 export type OwnColorway = { seeds: Seeds; from: Preset; colors: Colors }
 
-/** Seeds read from anywhere (storage, a form): three #rrggbb colors, or nothing. */
+/** Seeds read from anywhere (storage, a form): three #rrggbb colors and maybe pastel, or nothing. */
 export function parseSeeds(value: unknown): Seeds | undefined {
   if (typeof value !== 'object' || value === null) return undefined
-  const { accent, room, led } = value as Record<string, unknown>
+  const { accent, room, led, pastel } = value as Record<string, unknown>
   if (!isHex(accent) || !isHex(room) || !isHex(led)) return undefined
-  return { accent: accent.toLowerCase(), room: room.toLowerCase(), led: led.toLowerCase() }
+  const seeds = { accent: accent.toLowerCase(), room: room.toLowerCase(), led: led.toLowerCase() }
+  return pastel === true ? { ...seeds, pastel: true } : seeds
 }
 
 function parseThemeColors(value: unknown): ThemeColors | undefined {

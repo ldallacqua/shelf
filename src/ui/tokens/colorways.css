@@ -4,8 +4,13 @@
  * in src/domain/colorway/presets.ts. Don't edit it: change a seed and run it.
  *
  * <html> carries `data-colors` for every colorway but Shelf's own, which is
- * theme.css. One's own is last: its colors are properties on <html>. Any element may carry it too, to draw itself in one, within the
+ * theme.css. Any element may carry it too, to draw itself in one, within the
  * theme around it. Both forms are more specific than theme.css's own blocks.
+ * One's own is last: its colors are properties on <html>.
+ *
+ * `data-black` on <html> is pure black for OLED screens: each colorway's
+ * dark theme with its walls fully black, and its panels, shelves and lines
+ * mixed with black. Its blocks come after the themes', and are more specific.
  */
 
 /* violet: Shelf's own, theme.css's. One's own starts from accent #6a4cf5, room #3a4152, light #7c5cff */
@@ -260,6 +265,216 @@
   --led: #d0d8ed;
 }
 
+/* lilac: accent #9b7fe0, room #b9a6e8, light #c8b2ff, pastel */
+[data-colors='lilac'],
+[data-colors='lilac'] [data-theme='light'],
+[data-theme='light'] [data-colors='lilac'] {
+  --wall: #f0ebff;
+  --wall-deep: #e6dffb;
+  --surface: #f9f7ff;
+  --surface-raised: #ffffff;
+  --ledge: #1f1d25;
+  --ledge-top: #433e50;
+  --on-ledge: #f4f3f9;
+  --text: #110e18;
+  --text-muted: #5f5675;
+  --accent: #6f58a6;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #cac4dd;
+  --line-strong: #847b9c;
+  --focus: #6f58a6;
+  --led: #c8b2ff;
+}
+[data-colors='lilac'][data-theme='dark'],
+[data-colors='lilac'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='lilac'] {
+  --wall: #0e0b16;
+  --wall-deep: #09070f;
+  --surface: #191424;
+  --surface-raised: #221c30;
+  --ledge: #191424;
+  --ledge-top: #2e273e;
+  --on-ledge: #f4f3f9;
+  --text: #f4f3f9;
+  --text-muted: #ada5c4;
+  --accent: #c3affd;
+  --on-accent: #0e0b16;
+  --marker: #48de81;
+  --line: #2e273e;
+  --line-strong: #7c7198;
+  --focus: #c3affd;
+  --led: #c8b2ff;
+}
+
+/* mint: accent #3fb29a, room #a8dcc8, light #9ef0d4, pastel */
+[data-colors='mint'],
+[data-colors='mint'] [data-theme='light'],
+[data-theme='light'] [data-colors='mint'] {
+  --wall: #dcf5eb;
+  --wall-deep: #ccede0;
+  --surface: #eefcf6;
+  --surface-raised: #ffffff;
+  --ledge: #17211d;
+  --ledge-top: #31473f;
+  --on-ledge: #eff6f3;
+  --text: #07130f;
+  --text-muted: #3e6557;
+  --accent: #007462;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #b2d0c4;
+  --line-strong: #638b7c;
+  --focus: #007462;
+  --led: #99ebcf;
+}
+[data-colors='mint'][data-theme='dark'],
+[data-colors='mint'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='mint'] {
+  --wall: #03100b;
+  --wall-deep: #020b07;
+  --surface: #061c15;
+  --surface-raised: #0a261d;
+  --ledge: #061c15;
+  --ledge-top: #133228;
+  --on-ledge: #eff6f3;
+  --text: #eff6f3;
+  --text-muted: #90b4a6;
+  --accent: #66d5bc;
+  --on-accent: #03100b;
+  --marker: #48de81;
+  --line: #133228;
+  --line-strong: #538473;
+  --focus: #66d5bc;
+  --led: #99ebcf;
+}
+
+/* peach: accent #e98a6b, room #f1c2ad, light #ffc2a0, pastel */
+[data-colors='peach'],
+[data-colors='peach'] [data-theme='light'],
+[data-theme='light'] [data-colors='peach'] {
+  --wall: #ffe9df;
+  --wall-deep: #fbddcf;
+  --surface: #fff6f2;
+  --surface-raised: #ffffff;
+  --ledge: #251c18;
+  --ledge-top: #4f3d34;
+  --on-ledge: #f9f3f0;
+  --text: #170d09;
+  --text-muted: #745344;
+  --accent: #a14d30;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #ddc1b5;
+  --line-strong: #9b7868;
+  --focus: #a14d30;
+  --led: #ffc2a0;
+}
+[data-colors='peach'][data-theme='dark'],
+[data-colors='peach'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='peach'] {
+  --wall: #160a05;
+  --wall-deep: #0f0603;
+  --surface: #23120a;
+  --surface-raised: #2f1a11;
+  --ledge: #23120a;
+  --ledge-top: #3d2419;
+  --on-ledge: #f9f3f0;
+  --text: #f9f3f0;
+  --text-muted: #c4a394;
+  --accent: #fba589;
+  --on-accent: #160a05;
+  --marker: #48de81;
+  --line: #3d2419;
+  --line-strong: #976e5b;
+  --focus: #fba589;
+  --led: #ffc2a0;
+}
+
+/* sky: accent #5aa3e0, room #a9cdee, light #a8dcff, pastel */
+[data-colors='sky'],
+[data-colors='sky'] [data-theme='light'],
+[data-theme='light'] [data-colors='sky'] {
+  --wall: #e1f0ff;
+  --wall-deep: #d0e7fc;
+  --surface: #f3f9ff;
+  --surface-raised: #ffffff;
+  --ledge: #181f26;
+  --ledge-top: #344351;
+  --on-ledge: #f0f5f9;
+  --text: #091118;
+  --text-muted: #445f77;
+  --accent: #1c6aa3;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #b6cbdf;
+  --line-strong: #69859e;
+  --focus: #1c6aa3;
+  --led: #a8dcff;
+}
+[data-colors='sky'][data-theme='dark'],
+[data-colors='sky'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='sky'] {
+  --wall: #050e17;
+  --wall-deep: #030910;
+  --surface: #0a1825;
+  --surface-raised: #102232;
+  --ledge: #0a1825;
+  --ledge-top: #192d3f;
+  --on-ledge: #f0f5f9;
+  --text: #f0f5f9;
+  --text-muted: #94aec6;
+  --accent: #81c5ff;
+  --on-accent: #050e17;
+  --marker: #48de81;
+  --line: #192d3f;
+  --line-strong: #5b7c9a;
+  --focus: #81c5ff;
+  --led: #a8dcff;
+}
+
+/* rose: accent #e07a9e, room #f0b7c9, light #ffb3cf, pastel */
+[data-colors='rose'],
+[data-colors='rose'] [data-theme='light'],
+[data-theme='light'] [data-colors='rose'] {
+  --wall: #ffe7ee;
+  --wall-deep: #fadae4;
+  --surface: #fff5f8;
+  --surface-raised: #ffffff;
+  --ledge: #251b1e;
+  --ledge-top: #4f3b41;
+  --on-ledge: #f9f2f4;
+  --text: #170c10;
+  --text-muted: #74505c;
+  --accent: #9e4868;
+  --on-accent: #ffffff;
+  --marker: #096b3a;
+  --line: #ddbfc8;
+  --line-strong: #9b7581;
+  --focus: #9e4868;
+  --led: #ffb3cf;
+}
+[data-colors='rose'][data-theme='dark'],
+[data-colors='rose'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='rose'] {
+  --wall: #15090d;
+  --wall-deep: #0f0508;
+  --surface: #231117;
+  --surface-raised: #2f1820;
+  --ledge: #231117;
+  --ledge-top: #3c222b;
+  --on-ledge: #f9f2f4;
+  --text: #f9f2f4;
+  --text-muted: #c4a0ab;
+  --accent: #f8a0bd;
+  --on-accent: #15090d;
+  --marker: #48de81;
+  --line: #3c222b;
+  --line-strong: #966a78;
+  --focus: #f8a0bd;
+  --led: #ffb3cf;
+}
+
 /* own: one's own, worked out on the device; <html> carries its colors */
 [data-colors='own'],
 [data-colors='own'] [data-theme='light'],
@@ -300,4 +515,127 @@
   --line-strong: var(--own-dark-line-strong, #6f7890);
   --focus: var(--own-dark-focus, #a796ff);
   --led: var(--own-led, #7c5cff);
+}
+
+/* Pure black, for OLED screens */
+[data-black][data-theme='dark'][data-colors='violet'],
+[data-black][data-theme='dark'] [data-colors='violet'],
+[data-black][data-theme='dark'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #090b10;
+  --surface-raised: #0e1118;
+  --ledge: #090b10;
+  --ledge-top: #141820;
+  --line: #141820;
+}
+[data-black][data-theme='dark'][data-colors='ocean'],
+[data-black][data-theme='dark'] [data-colors='ocean'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #040b14;
+  --surface-raised: #05121e;
+  --ledge: #040b14;
+  --ledge-top: #0a1927;
+  --line: #0a1927;
+}
+[data-black][data-theme='dark'][data-colors='ember'],
+[data-black][data-theme='dark'] [data-colors='ember'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #0d0a09;
+  --surface-raised: #14100f;
+  --ledge: #0d0a09;
+  --ledge-top: #1b1715;
+  --line: #1b1715;
+}
+[data-black][data-theme='dark'][data-colors='arcade'],
+[data-black][data-theme='dark'] [data-colors='arcade'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #0c0718;
+  --surface-raised: #130b24;
+  --ledge: #0c0718;
+  --ledge-top: #1a112e;
+  --line: #1a112e;
+}
+[data-black][data-theme='dark'][data-colors='crimson'],
+[data-black][data-theme='dark'] [data-colors='crimson'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #0a0b0d;
+  --surface-raised: #0f1114;
+  --ledge: #0a0b0d;
+  --ledge-top: #16181c;
+  --line: #16181c;
+}
+[data-black][data-theme='dark'][data-colors='graphite'],
+[data-black][data-theme='dark'] [data-colors='graphite'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #0b0b0b;
+  --surface-raised: #111111;
+  --ledge: #0b0b0b;
+  --ledge-top: #181818;
+  --line: #181818;
+}
+[data-black][data-theme='dark'][data-colors='lilac'],
+[data-black][data-theme='dark'] [data-colors='lilac'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #0c0913;
+  --surface-raised: #120e1b;
+  --ledge: #0c0913;
+  --ledge-top: #1a1524;
+  --line: #1a1524;
+}
+[data-black][data-theme='dark'][data-colors='mint'],
+[data-black][data-theme='dark'] [data-colors='mint'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #020e09;
+  --surface-raised: #04140f;
+  --ledge: #020e09;
+  --ledge-top: #081c16;
+  --line: #081c16;
+}
+[data-black][data-theme='dark'][data-colors='peach'],
+[data-black][data-theme='dark'] [data-colors='peach'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #120704;
+  --surface-raised: #1a0d07;
+  --ledge: #120704;
+  --ledge-top: #24130c;
+  --line: #24130c;
+}
+[data-black][data-theme='dark'][data-colors='sky'],
+[data-black][data-theme='dark'] [data-colors='sky'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #040b14;
+  --surface-raised: #06121c;
+  --ledge: #040b14;
+  --ledge-top: #0c1925;
+  --line: #0c1925;
+}
+[data-black][data-theme='dark'][data-colors='rose'],
+[data-black][data-theme='dark'] [data-colors='rose'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: #12070b;
+  --surface-raised: #1a0b11;
+  --ledge: #12070b;
+  --ledge-top: #231218;
+  --line: #231218;
+}
+[data-black][data-theme='dark'][data-colors='own'],
+[data-black][data-theme='dark'] [data-colors='own'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: color-mix(in oklab, var(--own-dark-surface, #14171f) 72%, #000000);
+  --surface-raised: color-mix(in oklab, var(--own-dark-surface-raised, #1c202b) 72%, #000000);
+  --ledge: color-mix(in oklab, var(--own-dark-ledge, #14171f) 72%, #000000);
+  --ledge-top: color-mix(in oklab, var(--own-dark-ledge-top, #262b38) 72%, #000000);
+  --line: color-mix(in oklab, var(--own-dark-line, #262b38) 72%, #000000);
 }

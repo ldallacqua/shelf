@@ -4,6 +4,7 @@ import { CheckIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 
 import { ExperimentalViews } from '@/features/owner/experimental-views'
+import { BlackSwitch } from '@/features/theme/black-switch'
 import { ColorwayPicker } from '@/features/theme/colorway-picker'
 import { ThemePicker } from '@/features/theme/theme-picker'
 import { Link } from '@/i18n/navigation'
@@ -26,6 +27,7 @@ export function AppearanceSettings() {
       <SettingsSection title={t('theme.title')} scope="device">
         <p className="max-w-xl text-pretty text-muted">{t('theme.body')}</p>
         <ThemePicker className="w-fit" />
+        <BlackSwitch />
       </SettingsSection>
       <SettingsSection id="colors" title={t('colors.title')} scope="device">
         <p id="colors-body" className="max-w-xl text-pretty text-muted">
