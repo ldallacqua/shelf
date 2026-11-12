@@ -5,6 +5,13 @@ filters and sorting. Anyone can sign up for a shelf of their own, at `/u/{handle
 private ([ADR 004](docs/adr/004-one-library-per-account.md)). This file is for anyone, human or
 AI, about to change the code.
 
+**One set of rules for every agent** (the owner's rule, 12 Nov 2026). Claude Code, Codex and any other
+agent work here under this file and the documents it links, and nothing else. A tool's own file
+(`CLAUDE.md`, `.claude/`, a Codex or editor config) only points here or wraps a procedure written in
+`docs/`; a rule, a checklist or a procedure is never written only there, and none here names one tool as
+the only way to follow it. Where a tool has a helper for a step (a design skill, a subagent, a browser
+panel), say so as one way, beside the plain steps any agent can do by hand.
+
 **Picking up from another computer?** Read [the handoff note](docs/handoff.md) first: where
 the build stands, what is still unchecked, and the owner's rules that are not written
 anywhere else.
@@ -96,9 +103,15 @@ branch, open its pull request and merge it once verified, without asking each ti
 Windows' 260 characters, esbuild's install fails. Set `git config core.longpaths true` for the reference
 screenshots' long names. Node 24 is pinned; a newer one only warns. PowerShell's `pnpm` wrapper hands a
 list of arguments over as one, so run a tool on many files through Node (`node
-node_modules/prettier/bin/prettier.cjs --write …`). The desktop app's browser pane draws nothing while
-it is hidden: look at pages with a headless Chromium script instead (Playwright, and
-`@axe-core/playwright` for accessibility), against `pnpm dev` with `SHELF_MOCKS=1`.
+node_modules/prettier/bin/prettier.cjs --write …`), and give `git commit` a long message as a file
+(`git commit -F message.txt`).
+
+**Looking at a page, any agent, any computer.** An agent's own browser may have no window, or draw nothing
+while its panel is hidden (Claude's desktop app does). Look at pages with a headless Chromium script
+instead: Playwright from `node_modules` (`pnpm exec playwright install chromium` once), against
+`pnpm dev` with `SHELF_MOCKS=1`, with accounts made through the real sign-up, screenshots at phone and
+desktop width in both themes, and `@axe-core/playwright` for accessibility. A dev server left running
+slows Lighthouse: stop it before `pnpm verify`.
 
 **Lint holds a few of these rules** (`eslint.config.mjs`): the import boundaries, words only from
 `messages/`, no `title` tooltips, no "Loading" words or spinners, no link to one release's installer, and
@@ -134,9 +147,11 @@ however small: a new element, a moved one, a new state, an animation. The owner'
 
 1. **Research it.** Open how good products do the same thing in a browser (text searches say little
    about layout), and read UI/UX guidance on the question at hand. Note what could not be looked at.
-2. **Check it with a skill.** Use the design skills the session has: the Design plugin's
-   `design-critique`, `accessibility-review` and `ux-copy`, and `frontend-design`. With none
-   installed, say so in the pull request rather than skip the thinking they stand for.
+2. **Check it against [the design pass](docs/design-pass.md):** its critique, accessibility (WCAG 2.2
+   AA, axe-core run over the pages touched) and copy checklists, for every agent. An agent with design
+   tools of its own runs them as well (Claude Code's Design plugin: `design-critique`,
+   `accessibility-review`, `ux-copy`); either way the pull request says which parts ran and what they
+   changed, rather than skip the thinking they stand for.
 3. **Build it from what is here.** `src/ui` and the tokens first, and a place chosen on purpose: it
    has to make sense where it stands, not just be on the page.
 4. **Give it a story.** Every new element has its component in Storybook, with each of its states.
@@ -314,7 +329,9 @@ landing page. Before finishing any change that adds or changes something a perso
    platform) changes that part's words and scene too: read the part before calling it done.
 4. Say in the pull request which part shows the feature, or why none does.
 
-A Claude Code agent does this audit on request: `.claude/agents/landing-coverage.md`.
+The audit, step by step, is [docs/feature-coverage.md](docs/feature-coverage.md), for any agent to run
+before a pull request. (Claude Code can run it as a subagent, `.claude/agents/landing-coverage.md`, which
+only reads that file.)
 
 **Every feature is offered in setup where it helps a new shelf, and a test checks it** (the owner's rule,
 12 Nov 2026). Setting a shelf up (`/account/start`, spec 4.6) is where a new account learns what Shelf can

@@ -26,7 +26,10 @@ buttons, and an agent rule that catches features missing from it.
   answered 0.18.0's installer.
 - **The rule**: `src/features/landing/coverage.ts` maps every numbered section of the spec to a landing part or a
   reason; `coverage.test.ts` fails on a section added, renamed or removed without it (AGENTS.md, "Every feature is
-  mapped to the landing page"). `.claude/agents/landing-coverage.md` does the audit on request.
+  mapped to the landing page"), and `src/features/start/coverage.ts` does the same for setup. The audit is
+  `docs/feature-coverage.md`, for any agent. Every rule now lives in AGENTS.md and `docs/` for every agent
+  (Claude Code, Codex): the design pass's checklists are `docs/design-pass.md`, and `CLAUDE.md` and
+  `.claude/` only point there.
 
 **Checked here:** format, lint, types, translations, every unit and component test (3,397), the production build,
 Storybook's build, the JavaScript budgets, Lighthouse at a slowdown of 5.5 (home 94, accessibility 100, layout shift 0; the library
@@ -1297,8 +1300,8 @@ resumes it with another assistant. What is known so far:
   to the saved theme on every load, because Next.js hydrates a page's content after the
   layout that sets `data-ready`. Segmented controls now hold their own transitions until
   two frames after they mount (`src/ui/segmented.tsx`).
-- **For an AI agent on this computer:** the Claude app's Bash tool runs in a sandbox where
-  Playwright's Firefox cannot start (`spawn UNKNOWN`); Chromium and WebKit can. Run browser
+- **For any agent on that computer whose shell runs in a sandbox** (the Claude app's Bash tool
+  did): Playwright's Firefox cannot start there (`spawn UNKNOWN`); Chromium and WebKit can. Run browser
   tests that include Firefox, and `pnpm verify`, from PowerShell, with
   `PLAYWRIGHT_BROWSERS_PATH` pointing at
   `%LOCALAPPDATA%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\ms-playwright`, where the
