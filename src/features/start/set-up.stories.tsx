@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 import { useState } from 'react'
 
 import type { PlayPlace, SetupStep } from '@/domain/setup/setup'
+import type { ShowcaseGame } from '@/domain/setup/showcase'
 
 import { SetupProgress } from './setup-progress'
 import { LookStep, PlayStep, ReadyStep, SortStep } from './setup-steps'
@@ -57,11 +58,42 @@ export const PreviewEmpty: Story = {
   ),
 }
 
-/** A shelf Steam has filled, private. A case for each game, up to seven. */
+/** Some games of the example shelf, as `showcaseOf` hands them over: most played first. */
+const MINE: ShowcaseGame[] = [
+  ['elden-ring', 'Elden Ring', 'co4jni', ['#d1a96a', '#715d41', '#060b07']],
+  ['hades--1', 'Hades', 'cob9kr', ['#b25235', '#d7c5be', '#0d0403']],
+  ['hollow-knight', 'Hollow Knight', 'cobfzp', ['#1e5fb1', '#c0b8ce', '#040b42']],
+  ['half-life-2', 'Half-Life 2', 'co1nmw', ['#432c1e', '#d1d0c4', '#0c150f']],
+  ['celeste', 'Celeste', 'cob9dh', ['#8f4e4c', '#b0b0b3', '#342127']],
+].map(([slug, title, cover, colors]) => ({
+  slug: slug as string,
+  title: title as string,
+  cover: cover as string,
+  colors: colors as [string, string, string],
+  shape: 'keepCase' as const,
+  plastic: 'black' as const,
+}))
+
+/** A shelf Steam has filled, private: its own games on the ledge, most played first, up to seven. */
 export const PreviewFilled: Story = {
   render: () => (
     <div className="w-76">
-      <ShelfPreview handle="ana" total={240} linked={['Steam', 'Nintendo']} shelfPublic={false} />
+      <ShelfPreview
+        handle="ana"
+        total={240}
+        games={MINE}
+        linked={['Steam', 'Nintendo']}
+        shelfPublic={false}
+      />
+    </div>
+  ),
+}
+
+/** Games on the shelf, before the library file has been read: cases in the room's colors. */
+export const PreviewFilledReading: Story = {
+  render: () => (
+    <div className="w-76">
+      <ShelfPreview handle="ana" total={240} linked={['Steam']} shelfPublic />
     </div>
   ),
 }
@@ -111,6 +143,7 @@ export const ReadyOnAPc: Story = {
     <ReadyStep
       handle="ana"
       total={240}
+      games={MINE}
       unsorted={12}
       linked={['Steam']}
       places={['pc']}

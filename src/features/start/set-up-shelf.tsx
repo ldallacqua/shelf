@@ -15,9 +15,11 @@ import {
   type SetupMemory,
   type SetupStep,
 } from '@/domain/setup/setup'
+import { showcaseOf, type ShowcaseGame } from '@/domain/setup/showcase'
 import type { AddActions } from '@/features/add-game/actions'
 import type { AddGame as AddGameType } from '@/features/add-game/add-game'
 import { libraryHref } from '@/features/library/shelf-address'
+import { loadMine } from '@/features/library/use-library'
 import { useAccount } from '@/features/owner/account'
 import { readTally } from '@/features/placing/placing-client'
 import { readPlatforms, type PlatformRow } from '@/features/platforms/sync-client'
@@ -41,6 +43,9 @@ const loadAddGame = () =>
   (addCode ??= import('@/features/add-game/add-game').then((module) => module.AddGame))
 
 const STEP_TITLE = 'setup-step-title'
+
+/** How many of my games the shelves stand: as many as the ready step's widest shelf holds. */
+const SHOWCASE = 12
 
 /** The frame every step stands in: its heading and lead, what it holds, and the way on. */
 function StepFrame({
@@ -173,6 +178,26 @@ function Setup({
   }, [moving, attempt])
 
   const onRows = useCallback((next: PlatformRow[]) => setRows(next), [])
+
+  // My own games, to stand on the preview's and the ready step's shelves: read from my library
+  // file once the shelf has any, again on reaching the end, and after adding some here. Until it
+  // arrives, or if it can't be read, cases in the room's colors stand in.
+  const hasGames = Object.values(standing?.tally ?? {}).some((count) => count > 0)
+  const atTheEnd = memory?.step === 'ready'
+  const [showcase, setShowcase] = useState<ShowcaseGame[]>()
+  useEffect(() => {
+    if (!hasGames) return
+    let live = true
+    void loadMine().then(
+      (library) => {
+        if (live) setShowcase(showcaseOf(library, SHOWCASE))
+      },
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [hasGames, atTheEnd, attempt])
 
   const go = (step: SetupStep) => {
     if (!memory || step === memory.step) return
@@ -313,6 +338,7 @@ function Setup({
                 <ReadyStep
                   handle={handle}
                   total={total}
+                  games={showcase}
                   unsorted={unsorted}
                   linked={linked}
                   places={places}
@@ -334,7 +360,13 @@ function Setup({
       {step === 'ready' ? null : (
         <div className="hidden lg:block">
           <div className="sticky top-20">
-            <ShelfPreview handle={handle} total={total} linked={linked} shelfPublic={shelfPublic} />
+            <ShelfPreview
+              handle={handle}
+              total={total}
+              games={showcase}
+              linked={linked}
+              shelfPublic={shelfPublic}
+            />
           </div>
         </div>
       )}

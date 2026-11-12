@@ -1153,14 +1153,18 @@ The page:
      this device's, changing the page as they are picked. Done once passed.
   4. **Say where each game stands:** how many games have no status, of how many, with a bar, and
      the way to the page for placing them (4.5). Done once none is unsorted.
-  - **Your shelf is ready:** its lights come on once, then what was set up in words (games and
+  - **Your shelf is ready:** its lights come on once over my own games, the ones most played first
+    (never an empty ledge on a shelf that has games: the owner, 12 Nov 2026, of 628 games behind an
+    empty one), then what was set up in words (games and
     how many wait, platforms linked, the colors, public at `/u/{handle}` or private, with the
     way to change it), **See my shelf**, and three things to do next: Shelf for Windows with its
     download (first for someone who plays on a PC), the address an AI assistant connects to,
     with a copy button, and a filter to try on the shelf.
 - **Beside the steps,** on a wide window, the shelf as it stands: a small lit ledge in the colors
-  chosen, a case (a blur of the room's colors, never a drawn cover) for each game up to seven,
-  and its address, count, links and who can see it in words.
+  chosen with my own games on it, most played first, up to seven, read from my library file
+  (`showcaseOf`: owned games with a cover, never one for adults); until that arrives, a case in a
+  blur of the room's colors (never a drawn cover) for each game. Under it, its address, count,
+  links and who can see it, in words.
 - **Each step is an address** (`#play`, `#bring`, `#look`, `#sort`, `#ready`), so the browser's
   Back goes to the step before, and focus moves to the step's heading. Back from Steam's sign-in
   opens on step 2. Otherwise the page opens where this device left it: where the flow stands, the

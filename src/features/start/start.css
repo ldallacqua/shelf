@@ -9,7 +9,19 @@
   }
 
   .setup-ready-shelf {
-    --mm: 0.7px;
+    --mm: 0.56px;
+  }
+
+  @media (min-width: 40rem) {
+    .setup-ready-shelf {
+      --mm: 0.72px;
+    }
+  }
+
+  /* My games on it: as many as fit, the last fading out at the shelf's end, never cut by its edge. */
+  .setup-ready-games {
+    padding-top: 1.5rem;
+    mask-image: linear-gradient(90deg, black 82%, transparent 100%);
   }
 
   @media (prefers-reduced-motion: no-preference) {

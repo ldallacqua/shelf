@@ -110,8 +110,11 @@ node_modules/prettier/bin/prettier.cjs --write …`), and give `git commit` a lo
 while its panel is hidden (Claude's desktop app does). Look at pages with a headless Chromium script
 instead: Playwright from `node_modules` (`pnpm exec playwright install chromium` once), against
 `pnpm dev` with `SHELF_MOCKS=1`, with accounts made through the real sign-up, screenshots at phone and
-desktop width in both themes, and `@axe-core/playwright` for accessibility. A dev server left running
-slows Lighthouse: stop it before `pnpm verify`.
+desktop width in both themes, and `@axe-core/playwright` for accessibility. If `pnpm dev` keeps
+reloading a page (it has, while sign-ins wrote to `.data/shelf.db`), look at it on `pnpm build` then
+`pnpm serve:test` instead, as the browser tests do; signed in as the sample shelf with the test doubles'
+made-up owner (`src/server/mocks/owner.ts`) it has 230 games. Give covers a few seconds to paint before
+a screenshot. A dev server left running slows Lighthouse: stop it before `pnpm verify`.
 
 **Lint holds a few of these rules** (`eslint.config.mjs`): the import boundaries, words only from
 `messages/`, no `title` tooltips, no "Loading" words or spinners, no link to one release's installer, and

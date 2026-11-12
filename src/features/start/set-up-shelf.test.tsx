@@ -2,7 +2,10 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Library } from '@/domain/library/library'
 import { emptyTally, type Standing } from '@/domain/library/placing'
+import { encodeLibrary } from '@/domain/library/snapshot'
+import { testGame, testLibrary } from '@/domain/library/testing'
 import type { LinkView, SyncStep } from '@/domain/sync/link'
 import type { AccountState } from '@/features/owner/account'
 import type { PlatformRow } from '@/features/platforms/sync-client'
@@ -58,6 +61,7 @@ let platforms: PlatformRow[]
 let standing: Standing
 let tallyFails: boolean
 let steps: SyncStep[]
+let library: Library | undefined
 
 const KEY = 'shelf:setup:ana'
 const remembered = () => JSON.parse(window.localStorage.getItem(KEY) ?? 'null') as unknown
@@ -71,6 +75,7 @@ beforeEach(() => {
   standing = { version: 1, tally: EMPTY }
   tallyFails = false
   steps = []
+  library = undefined
   window.localStorage.clear()
   at('/en/account/start')
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
@@ -80,6 +85,9 @@ beforeEach(() => {
     if (path === '/api/v1/me/platforms') return Response.json(platforms)
     if (path === '/api/v1/me/tally') {
       return tallyFails ? new Response(null, { status: 500 }) : Response.json(standing)
+    }
+    if (path === '/api/v1/me/library') {
+      return library ? Response.json(encodeLibrary(library)) : new Response(null, { status: 404 })
     }
     if (path.endsWith('/sync')) return Response.json(steps.shift())
     if (path.includes('/items?list=')) return Response.json([])
@@ -242,6 +250,39 @@ describe('SetUpShelf', () => {
     expect(screen.getByRole('link', { name: 'Try it on my shelf' })).toHaveAttribute(
       'href',
       '/en/u/ana?q=status%3Abacklog+length%3A%3C10',
+    )
+  })
+
+  it('stands my own games on its shelves, the ones most played first, never an empty ledge', async () => {
+    platforms = rowsOf(STEAM)
+    standing = { version: 4, tally: { ...EMPTY, playing: 2, backlog: 1 } }
+    library = testLibrary([
+      testGame('Celeste', { cover: 'celeste', minutes: 300 }),
+      testGame('Hades', { cover: 'hades', minutes: 4000 }),
+      testGame('Wished', { cover: 'wished', status: 'wishlist' }),
+    ])
+    at('/en/account/start#ready')
+    const { container } = renderWithIntl(<SetUpShelf />)
+    await stepTitle('Your shelf is ready.')
+    await waitFor(() =>
+      expect(
+        [...container.querySelectorAll('.setup-ready-shelf img')].map((image) =>
+          image.getAttribute('alt'),
+        ),
+      ).toEqual(['Hades', 'Celeste']),
+    )
+    // The shelf is a picture: the summary says the same in words.
+    expect(container.querySelector('.setup-ready-shelf')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByText('3 games on your shelf')).toBeInTheDocument()
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Back' }))
+    await stepTitle('Say where each game stands')
+    await waitFor(() =>
+      expect(
+        [...container.querySelectorAll('.setup-preview img')].map((image) =>
+          image.getAttribute('alt'),
+        ),
+      ).toEqual(['Hades', 'Celeste']),
     )
   })
 
