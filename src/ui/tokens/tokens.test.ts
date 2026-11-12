@@ -120,6 +120,24 @@ describe('colorway tokens', () => {
     }
   })
 
+  it("reads the followed game's colors from <html>, and is Shelf's own where <html> has nothing", async () => {
+    const { readFileSync } = await import('node:fs')
+    const css = readFileSync(new URL('./colorways.css', import.meta.url), 'utf8')
+    for (const theme of themeNames) {
+      const body = new RegExp(String.raw`\[data-game\]\[data-theme='${theme}'\] \{([^}]*)\}`).exec(
+        css,
+      )?.[1]
+      expect(body, theme).toBeDefined()
+      for (const [, token, property, fallback] of body!.matchAll(
+        /(--[\w-]+): var\((--game-[\w-]+), (#[0-9a-f]{6})\);/g,
+      )) {
+        const expected = token === '--led' ? '--game-led' : `--game-${theme}-${token!.slice(2)}`
+        expect(property).toBe(expected)
+        expect(fallback, `${token} in ${theme}`).toBe(resolve(token!, themes[theme], palette))
+      }
+    }
+  })
+
   it("draws Shelf's own colors exactly as theme.css does", () => {
     for (const theme of themeNames) {
       const own = readColorway('violet', theme)

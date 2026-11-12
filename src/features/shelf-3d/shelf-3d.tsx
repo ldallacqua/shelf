@@ -341,7 +341,13 @@ export default function Shelf3D({
     })
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme', 'data-theme-changing', 'data-colors'],
+      attributeFilter: [
+        'data-theme',
+        'data-theme-changing',
+        'data-colors',
+        'data-black',
+        'data-game',
+      ],
     })
     return () => {
       observer.disconnect()

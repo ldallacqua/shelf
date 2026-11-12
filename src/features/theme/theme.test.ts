@@ -11,6 +11,7 @@ import {
   BLACK_WALL,
   chromeProperty,
   COLORS_STORAGE_KEY,
+  FOLLOW_STORAGE_KEY,
   OWN_COLORS_STORAGE_KEY,
   parseThemeChoice,
   resolveTheme,
@@ -72,6 +73,7 @@ describe('themeScript', () => {
     storedColors?: string | null
     storedOwn?: string | null
     storedBlack?: string | null
+    storedFollow?: string | null
     deviceIsDark?: boolean
     storageThrows?: boolean
     matchMediaMissing?: boolean
@@ -82,6 +84,7 @@ describe('themeScript', () => {
     storedColors = null,
     storedOwn = null,
     storedBlack = null,
+    storedFollow = null,
     deviceIsDark = false,
     storageThrows,
     matchMediaMissing,
@@ -103,6 +106,7 @@ describe('themeScript', () => {
         if (key === COLORS_STORAGE_KEY) return storedColors
         if (key === OWN_COLORS_STORAGE_KEY) return storedOwn
         if (key === BLACK_STORAGE_KEY) return storedBlack
+        if (key === FOLLOW_STORAGE_KEY) return storedFollow
         return key === THEME_STORAGE_KEY ? stored : null
       },
     }
@@ -122,6 +126,7 @@ describe('themeScript', () => {
       choice: attributes.get('data-theme-choice'),
       colors: attributes.get('data-colors'),
       black: attributes.has('data-black'),
+      follow: attributes.get('data-follow'),
       properties,
       metas,
     }
@@ -243,6 +248,19 @@ describe('themeScript', () => {
     expect(dark.metas).toEqual([{ name: 'theme-color', content: BLACK_WALL }])
     const light = run({ storedBlack: '1', deviceIsDark: false })
     expect(light.metas).toEqual([{ name: 'theme-color', content: themeColor.light }])
+  })
+
+  it('marks the page as following the game, pastel when the colorway is', () => {
+    expect(run({ storedFollow: '1', storedColors: 'ocean' }).follow).toBe('')
+    expect(run({ storedFollow: '1', storedColors: 'mint' }).follow).toBe('pastel')
+    expect(
+      run({
+        storedFollow: '1',
+        storedColors: 'own',
+        storedOwn: JSON.stringify({ ...own, seeds: { ...own.seeds, pastel: true } }),
+      }).follow,
+    ).toBe('pastel')
+    expect(run({ storedFollow: null }).follow).toBeUndefined()
   })
 
   it.each([null, '0', 'true'])('leaves pure black off for %j', (storedBlack) => {

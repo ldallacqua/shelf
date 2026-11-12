@@ -8,11 +8,19 @@ import {
   getColorway,
   getOwnColorway,
   parseColorway,
+  getFollow,
   setColorway,
+  setFollow,
   setOwnColorway,
   subscribeToColorway,
 } from './colorway-store'
-import { chromeProperty, COLORS_STORAGE_KEY, OWN_COLORS_STORAGE_KEY, themeColor } from './theme'
+import {
+  chromeProperty,
+  COLORS_STORAGE_KEY,
+  FOLLOW_STORAGE_KEY,
+  OWN_COLORS_STORAGE_KEY,
+  themeColor,
+} from './theme'
 import { colorwayWall } from './colorway-walls'
 import { setThemeChoice } from './theme-store'
 
@@ -252,5 +260,40 @@ describe("one's own colorway", () => {
     expect(getColorway()).toBe('violet')
 
     unsubscribe()
+  })
+})
+
+describe('following the game', () => {
+  afterEach(() => {
+    delete root.dataset.colors
+    root.removeAttribute('data-follow')
+    delete root.dataset.game
+    window.localStorage.removeItem(FOLLOW_STORAGE_KEY)
+  })
+
+  it('turns following on, remembers it, and marks the page', () => {
+    setFollow(true)
+
+    expect(getFollow()).toBe(true)
+    expect(root.dataset.follow).toBe('')
+    expect(window.localStorage.getItem(FOLLOW_STORAGE_KEY)).toBe('1')
+  })
+
+  it('marks it pastel while a pastel colorway is chosen', () => {
+    setFollow(true)
+    setColorway('peach')
+    expect(root.dataset.follow).toBe('pastel')
+    setColorway('crimson')
+    expect(root.dataset.follow).toBe('')
+  })
+
+  it('gives the room back when turned off', () => {
+    setFollow(true)
+    root.dataset.game = 'a game'
+    setFollow(false)
+
+    expect(getFollow()).toBe(false)
+    expect(root.dataset.game).toBeUndefined()
+    expect(window.localStorage.getItem(FOLLOW_STORAGE_KEY)).toBeNull()
   })
 })

@@ -11,6 +11,10 @@
  * `data-black` on <html> is pure black for OLED screens: each colorway's
  * dark theme with its walls fully black, and its panels, shelves and lines
  * mixed with black. Its blocks come after the themes', and are more specific.
+ *
+ * `data-game` on <html> is the game in focus, while the room follows it:
+ * its colors are properties on <html>, and its blocks come last, so they win
+ * over whichever colorway is chosen, pure black too.
  */
 
 /* violet: Shelf's own, theme.css's. One's own starts from accent #6a4cf5, room #3a4152, light #7c5cff */
@@ -638,4 +642,51 @@
   --ledge: color-mix(in oklab, var(--own-dark-ledge, #14171f) 72%, #000000);
   --ledge-top: color-mix(in oklab, var(--own-dark-ledge-top, #262b38) 72%, #000000);
   --line: color-mix(in oklab, var(--own-dark-line, #262b38) 72%, #000000);
+}
+
+/* The game in focus, while the room follows it */
+[data-game][data-theme='light'] {
+  --wall: var(--game-light-wall, #eceef2);
+  --wall-deep: var(--game-light-wall-deep, #e1e4ea);
+  --surface: var(--game-light-surface, #f7f8fa);
+  --surface-raised: var(--game-light-surface-raised, #ffffff);
+  --ledge: var(--game-light-ledge, #1b1e27);
+  --ledge-top: var(--game-light-ledge-top, #3a4152);
+  --on-ledge: var(--game-light-on-ledge, #f2f4f8);
+  --text: var(--game-light-text, #0e1014);
+  --text-muted: var(--game-light-text-muted, #555c6b);
+  --accent: var(--game-light-accent, #5b3fe6);
+  --on-accent: var(--game-light-on-accent, #ffffff);
+  --marker: var(--game-light-marker, #0a6b3a);
+  --line: var(--game-light-line, #c3c8d2);
+  --line-strong: var(--game-light-line-strong, #7a8191);
+  --focus: var(--game-light-focus, #5b3fe6);
+  --led: var(--game-led, #7c5cff);
+}
+[data-game][data-theme='dark'] {
+  --wall: var(--game-dark-wall, #0b0d12);
+  --wall-deep: var(--game-dark-wall-deep, #07080c);
+  --surface: var(--game-dark-surface, #14171f);
+  --surface-raised: var(--game-dark-surface-raised, #1c202b);
+  --ledge: var(--game-dark-ledge, #14171f);
+  --ledge-top: var(--game-dark-ledge-top, #262b38);
+  --on-ledge: var(--game-dark-on-ledge, #f2f4f8);
+  --text: var(--game-dark-text, #f2f4f8);
+  --text-muted: var(--game-dark-text-muted, #a3abbb);
+  --accent: var(--game-dark-accent, #a796ff);
+  --on-accent: var(--game-dark-on-accent, #0b0d12);
+  --marker: var(--game-dark-marker, #4ade80);
+  --line: var(--game-dark-line, #262b38);
+  --line-strong: var(--game-dark-line-strong, #6f7890);
+  --focus: var(--game-dark-focus, #a796ff);
+  --led: var(--game-led, #7c5cff);
+}
+[data-black][data-game][data-theme='dark'] {
+  --wall: #000000;
+  --wall-deep: #000000;
+  --surface: color-mix(in oklab, var(--game-dark-surface, #14171f) 72%, #000000);
+  --surface-raised: color-mix(in oklab, var(--game-dark-surface-raised, #1c202b) 72%, #000000);
+  --ledge: color-mix(in oklab, var(--game-dark-ledge, #14171f) 72%, #000000);
+  --ledge-top: color-mix(in oklab, var(--game-dark-ledge-top, #262b38) 72%, #000000);
+  --line: color-mix(in oklab, var(--game-dark-line, #262b38) 72%, #000000);
 }

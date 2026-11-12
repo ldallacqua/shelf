@@ -4,7 +4,7 @@ import { CheckIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 
 import { ExperimentalViews } from '@/features/owner/experimental-views'
-import { BlackSwitch } from '@/features/theme/black-switch'
+import { BlackSwitch, FollowSwitch } from '@/features/theme/black-switch'
 import { ColorwayPicker } from '@/features/theme/colorway-picker'
 import { ThemePicker } from '@/features/theme/theme-picker'
 import { Link } from '@/i18n/navigation'
@@ -34,6 +34,7 @@ export function AppearanceSettings() {
           {t('colors.body')}
         </p>
         <ColorwayPicker labelledBy="colors-title" describedBy="colors-body" className="max-w-3xl" />
+        <FollowSwitch />
       </SettingsSection>
       <SettingsSection title={t('language.title')} scope="device">
         <p className="max-w-xl text-pretty text-muted">{t('language.body')}</p>
