@@ -25,6 +25,7 @@ describe('following the game', () => {
     vi.useRealTimers()
     root.removeAttribute('data-follow')
     delete root.dataset.game
+    delete root.dataset.colorsChanging
     root.removeAttribute('style')
   })
 
@@ -85,5 +86,13 @@ describe('following the game', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 600))
     expect(root.dataset.game).toBeUndefined()
+  })
+
+  it('changes at once under reduced motion, without gliding', async () => {
+    setDevice({ reducedMotion: true })
+    render(<FollowGame colors={hades} />)
+
+    await waitFor(() => expect(root.dataset.game).toBeDefined())
+    expect(root.dataset.colorsChanging).toBeUndefined()
   })
 })

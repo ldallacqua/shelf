@@ -19,6 +19,7 @@ import type { WallSize } from './preferences'
 import { StatusMark } from './status-mark'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
+import { useFollowOnHover } from './follow-hover'
 import { ghostOrder } from '@/ui/ghost'
 
 /**
@@ -138,6 +139,8 @@ function WallGrid({
 }: WallGridProps) {
   const ref = useRef<HTMLUListElement>(null)
   const rowWindow = useRowWindow(ref, shelf.total)
+  // With following on, the room takes the colors of the cover in focus.
+  const follow = useFollowOnHover((index) => shelf.items[index]?.game.colors)
 
   // Every place on the shelf, the ones whose covers come with the library file included: those hold ghosts.
   const from = rowWindow ? rowWindow.start * rowWindow.columns : 0
@@ -158,6 +161,7 @@ function WallGrid({
       className="wall-grid"
       data-size={size}
       aria-label={label}
+      {...follow}
       // Rows that are not near the screen are not in the page; padding keeps their place.
       style={{ paddingTop: before, paddingBottom: after }}
     >

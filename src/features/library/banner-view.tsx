@@ -19,6 +19,7 @@ import { platformFor } from './game-box'
 import { StatusMark } from './status-mark'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
+import { useFollowOnHover } from './follow-hover'
 
 /**
  * The banner view: each game as a wide card, the way Steam's lists and Hydra's library show
@@ -152,6 +153,9 @@ function BannerGrid({
   const before = rowWindow ? rowWindow.start * rowWindow.pitch : 0
   const after = rowWindow ? (rowWindow.rows - rowWindow.end) * rowWindow.pitch : 0
 
+  // With following on, the room takes the colors of the banner in focus.
+  const follow = useFollowOnHover((index) => shelf.items[index]?.game.colors)
+
   return (
     // Safari stops calling a list a list once its bullets are styled away; the role says it again.
     // eslint-disable-next-line jsx-a11y/no-redundant-roles
@@ -161,6 +165,7 @@ function BannerGrid({
       data-grid-of={shelf.key}
       className="banner-grid"
       aria-label={label}
+      {...follow}
       // Rows that are not near the screen are not in the page; padding keeps their place.
       style={{ paddingTop: before, paddingBottom: after }}
     >

@@ -71,6 +71,23 @@ describe('theme tokens', () => {
     }
   })
 
+  it('glides every token a colorway sets when the room follows a game', async () => {
+    const { readFileSync } = await import('node:fs')
+    const css = readFileSync(new URL('./theme.css', import.meta.url), 'utf8')
+    const transition = /html\[data-colors-changing\]\s*\{[\s\S]*?transition:([\s\S]*?);/.exec(
+      css,
+    )?.[1]
+    expect(transition).toBeDefined()
+    const set = [...readColorway(colorways[1]!, 'dark').keys()].filter(
+      (name) => readColorway(colorways[1]!, 'dark').get(name) !== themes.dark.get(name),
+    )
+    for (const name of set) {
+      expect(transition, `${name} is missing from the follow transition`).toMatch(
+        new RegExp(`${name} var\\(`),
+      )
+    }
+  })
+
   it('gives the LED the same resting color in both themes', () => {
     expect(resolve('--led', themes.light, palette)).toBe(resolve('--led', themes.dark, palette))
   })
