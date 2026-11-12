@@ -71,6 +71,10 @@ export function colorwaysCss(): string {
  * \`data-black\` on <html> is pure black for OLED screens: each colorway's
  * dark theme with its walls fully black, and its panels, shelves and lines
  * mixed with black. Its blocks come after the themes', and are more specific.
+ *
+ * \`data-game\` on <html> is the game in focus, while the room follows it:
+ * its colors are properties on <html>, and its blocks come last, so they win
+ * over whichever colorway is chosen, pure black too.
  */
 `
   const blocks = presetNames.flatMap((name) => {
@@ -85,7 +89,7 @@ export function colorwaysCss(): string {
       block(name, 'dark', colors),
     ]
   })
-  return header + blocks.join('') + ownBlocks() + blackBlocks()
+  return header + blocks.join('') + ownBlocks() + blackBlocks() + gameBlocks()
 }
 
 /** The tokens pure black changes, each the only ones its blocks set. */
@@ -156,5 +160,38 @@ function ownBlocks(): string {
 `,
     block(OWN, 'light', colors),
     block(OWN, 'dark', colors),
+  ].join('')
+}
+
+/** The custom property on <html> that carries one token of the followed game's colors. */
+export const gameProperty = (theme: Theme | 'led', token = ''): string =>
+  theme === 'led' ? '--game-led' : `--game-${theme}-${token}`
+
+/**
+ * The game in focus, while the room follows it: every token read from <html>,
+ * where `follow-paint.ts` lays it, with Shelf's own where it is missing.
+ */
+function gameBlocks(): string {
+  const own = ownColors()
+  const theme = (name: Theme) =>
+    `[data-game][data-theme='${name}'] {\n${[
+      ...colorTokens.map(
+        (token) => `  --${token}: var(${gameProperty(name, token)}, ${own[name][token]});`,
+      ),
+      `  --led: var(${gameProperty('led')}, ${own.led});`,
+    ].join('\n')}\n}\n`
+  const keep = `${Math.round(BLACK_KEEP * 100)}%`
+  const black = `[data-black][data-game][data-theme='dark'] {\n${[
+    ...blackWalls.map((token) => `  --${token}: #000000;`),
+    ...blackDarkened.map(
+      (token) =>
+        `  --${token}: color-mix(in oklab, var(${gameProperty('dark', token)}, ${own.dark[token]}) ${keep}, #000000);`,
+    ),
+  ].join('\n')}\n}\n`
+  return [
+    `\n/* The game in focus, while the room follows it */\n`,
+    theme('light'),
+    theme('dark'),
+    black,
   ].join('')
 }

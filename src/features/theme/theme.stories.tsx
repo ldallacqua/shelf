@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { presetNames } from '@/domain/colorway/names'
 import { presets } from '@/domain/colorway/presets'
 
-import { BlackSwitch } from './black-switch'
+import { BlackSwitch, FollowSwitch } from './black-switch'
 import { ColorwayPicker, ColorwayRoom, ownStyle } from './colorway-picker'
 import { OwnColorwayEditor, ownFrom } from './own-colorway'
 import { ThemePicker } from './theme-picker'
@@ -29,6 +29,12 @@ export const Picker: Story = { render: () => <ThemePicker /> }
  * Appearance. Turn the lights off in the toolbar to see it change the page.
  */
 export const PureBlack: Story = { render: () => <BlackSwitch /> }
+
+/**
+ * Following the game, under the colorways in Appearance: with it on, a game's
+ * page and the game the pointer rests on take the room's colors from its cover.
+ */
+export const FollowTheGame: Story = { render: () => <FollowSwitch /> }
 
 /**
  * The colorways, in Settings' Appearance (issue 206). Each card is a corner of

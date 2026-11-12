@@ -1515,6 +1515,10 @@
           "label": "Pastel",
           "hint": "Mais suave: paredes no tom da sala, destaque e luz mais esmaecidos, e claros com as luzes apagadas."
         }
+      },
+      "follow": {
+        "label": "Seguir o jogo",
+        "hint": "Na página de um jogo, e quando você para o ponteiro sobre um jogo na estante, a sala ganha as cores da capa dele, sempre legíveis. No resto, as cores acima."
       }
     },
     "language": {

@@ -8,8 +8,10 @@ import type { OwnColorway } from '@/domain/colorway/presets'
 import {
   getBlack,
   getColorway,
+  getFollow,
   getOwnColorway,
   setBlack,
+  setFollow,
   setColorway,
   setOwnColorway,
   subscribeToColorway,
@@ -22,9 +24,12 @@ type UseColorway = {
   own: OwnColorway | undefined
   /** Pure black with the lights off, for OLED screens. */
   black: boolean
+  /** The room takes the colors of the game in focus. */
+  follow: boolean
   setColorway: typeof setColorway
   setOwnColorway: typeof setOwnColorway
   setBlack: typeof setBlack
+  setFollow: typeof setFollow
 }
 
 /**
@@ -36,5 +41,6 @@ export function useColorway(): UseColorway {
   const colorway = useSyncExternalStore(subscribeToColorway, getColorway, () => DEFAULT_PRESET)
   const own = useSyncExternalStore(subscribeToColorway, getOwnColorway, () => undefined)
   const black = useSyncExternalStore(subscribeToColorway, getBlack, () => false)
-  return { colorway, own, black, setColorway, setOwnColorway, setBlack }
+  const follow = useSyncExternalStore(subscribeToColorway, getFollow, () => false)
+  return { colorway, own, black, follow, setColorway, setOwnColorway, setBlack, setFollow }
 }

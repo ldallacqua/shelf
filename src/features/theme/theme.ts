@@ -12,6 +12,8 @@
 export const THEME_STORAGE_KEY = 'shelf:theme'
 export const COLORS_STORAGE_KEY = 'shelf:colors'
 export const OWN_COLORS_STORAGE_KEY = 'shelf:colors:own'
+/** The room takes the colors of the game in focus: '1', or nothing. */
+export const FOLLOW_STORAGE_KEY = 'shelf:colors:follow'
 /** Pure black with the lights off, for OLED screens: '1', or nothing. */
 export const BLACK_STORAGE_KEY = 'shelf:black'
 /** The wall with the lights off when pure black is on. */

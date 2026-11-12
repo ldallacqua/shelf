@@ -2,6 +2,7 @@ import {
   DEFAULT_PRESET,
   isColorway,
   OWN,
+  pastelNames,
   type Colorway,
   type Preset,
 } from '@/domain/colorway/names'
@@ -17,6 +18,7 @@ import {
   BLACK_WALL,
   chromeProperty,
   COLORS_STORAGE_KEY,
+  FOLLOW_STORAGE_KEY,
   OWN_COLORS_STORAGE_KEY,
   themeColor,
   type Theme,
@@ -137,7 +139,30 @@ function show(colorway: Colorway): void {
   if (getColorway() !== colorway) playChange(getTheme())
   if (colorway === DEFAULT_PRESET) delete root.dataset.colors
   else root.dataset.colors = colorway
+  markFollow()
   paintChrome()
+}
+
+/** Whether the room takes the colors of the game in focus. */
+export function getFollow(): boolean {
+  return document.documentElement.hasAttribute('data-follow')
+}
+
+/**
+ * `data-follow` on <html> while following: 'pastel' when the colorway chosen
+ * is, so the games' colors are worked out pastel too.
+ */
+function markFollow(on = getFollow()): void {
+  const root = document.documentElement
+  if (!on) {
+    root.removeAttribute('data-follow')
+    delete root.dataset.game
+    return
+  }
+  const colorway = getColorway()
+  const pastel =
+    colorway === OWN ? getOwnColorway()?.seeds.pastel === true : pastelNames.includes(colorway)
+  root.dataset.follow = pastel ? 'pastel' : ''
 }
 
 function applyPreset(preset: Preset): void {
@@ -173,8 +198,11 @@ function applyBlack(black: boolean): void {
   paintChrome()
 }
 
-// Another tab chose a colorway, changed its own, or turned pure black on or off.
+// Another tab chose a colorway, changed its own, or turned pure black or following on or off.
 function onStorage(event: StorageEvent): void {
+  if (event.key === null || event.key === FOLLOW_STORAGE_KEY) {
+    markFollow(readStored(FOLLOW_STORAGE_KEY) === '1')
+  }
   if (event.key === null || event.key === BLACK_STORAGE_KEY) {
     applyBlack(readStored(BLACK_STORAGE_KEY) === '1')
   }
@@ -221,5 +249,12 @@ export function setOwnColorway(own: OwnColorway): void {
 export function setBlack(black: boolean): void {
   writeStored(BLACK_STORAGE_KEY, black ? '1' : null)
   applyBlack(black)
+  notify()
+}
+
+/** Turns following the game in focus on or off, and remembers it. */
+export function setFollow(follow: boolean): void {
+  writeStored(FOLLOW_STORAGE_KEY, follow ? '1' : null)
+  markFollow(follow)
   notify()
 }

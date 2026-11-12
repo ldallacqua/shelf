@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } f
 import { ledFrom } from '@/domain/color/palette'
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
+import { useFollowGame } from '@/features/theme/follow-game'
 
 import { GameBox, platformFor } from './game-box'
 import { GhostCase } from './ghosts'
@@ -106,6 +107,8 @@ export function ShelfGrid({
   const activeItem = active === undefined ? undefined : items[active]
   const activeRow = active === undefined || !columns ? undefined : Math.floor(active / columns)
   const activeLed = activeItem?.game.colors ? ledFrom(activeItem.game.colors[0]) : undefined
+  // With following on, the room takes the colors of the game in focus too.
+  useFollowGame(activeItem?.game.colors)
 
   const move = (to: number) => {
     const target = Math.min(items.length - 1, Math.max(0, to))

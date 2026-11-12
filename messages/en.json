@@ -1515,6 +1515,10 @@
           "label": "Pastel",
           "hint": "Softer: walls tinted in the room’s color, the accent and light dustier, and pale with the lights off."
         }
+      },
+      "follow": {
+        "label": "Follow the game",
+        "hint": "On a game’s page, and when you rest the pointer on a game on the shelf, the room takes the colors of its cover, kept readable. Everywhere else, the colors above."
       }
     },
     "language": {

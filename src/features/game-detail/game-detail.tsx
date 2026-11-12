@@ -12,6 +12,7 @@ import { Duration } from '@/features/library/duration'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
 import { StatusMark } from '@/features/library/status-mark'
 import { libraryHref } from '@/features/library/shelf-address'
+import { FollowGame } from '@/features/theme/follow-game'
 import { Link } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 import { Ghosts } from '@/ui/ghosts'
@@ -224,6 +225,7 @@ export function GameDetail({
             />
             {/* The cover growing from the shelf lands here (`morph.ts`). */}
             <PageDrawn />
+            <FollowGame colors={game.colors} />
           </span>
           <div className="game-name min-w-0 pb-1">
             <h1 className="title text-3xl text-balance break-words @min-[39rem]:text-5xl @min-[63rem]:text-6xl">
