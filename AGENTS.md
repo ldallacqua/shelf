@@ -110,8 +110,11 @@ node_modules/prettier/bin/prettier.cjs --write …`), and give `git commit` a lo
 while its panel is hidden (Claude's desktop app does). Look at pages with a headless Chromium script
 instead: Playwright from `node_modules` (`pnpm exec playwright install chromium` once), against
 `pnpm dev` with `SHELF_MOCKS=1`, with accounts made through the real sign-up, screenshots at phone and
-desktop width in both themes, and `@axe-core/playwright` for accessibility. A dev server left running
-slows Lighthouse: stop it before `pnpm verify`.
+desktop width in both themes, and `@axe-core/playwright` for accessibility. If `pnpm dev` keeps
+reloading a page (it has, while sign-ins wrote to `.data/shelf.db`), look at it on `pnpm build` then
+`pnpm serve:test` instead, as the browser tests do; signed in as the sample shelf with the test doubles'
+made-up owner (`src/server/mocks/owner.ts`) it has 230 games. Give covers a few seconds to paint before
+a screenshot. A dev server left running slows Lighthouse: stop it before `pnpm verify`.
 
 **Lint holds a few of these rules** (`eslint.config.mjs`): the import boundaries, words only from
 `messages/`, no `title` tooltips, no "Loading" words or spinners, no link to one release's installer, and
@@ -361,7 +364,10 @@ Back works; where the flow stands and where I play are this device's (`setup-mem
 everything a step changes is kept where it always is (platforms on the account, colors on the device).
 Settings' "Set up your shelf again" opens `#play` and clears nothing: never make starting over delete a
 choice. A step offers what already exists elsewhere (the platform cards, the Add dialog, the colorway
-picker, Organize); a new way to fill a shelf belongs in "Bring your games in" too. A page reached by a
+picker, Organize); a new way to fill a shelf belongs in "Bring your games in" too. It reads my library
+file through its own fetch (`my-games.ts`), not the library's `loadMine`: importing `use-library.ts`
+from another page split the library page's script past its budget. Check `pnpm perf:js` after
+importing anything of `features/library` elsewhere. A page reached by a
 move from another page is drawn before the router puts its address in the bar, so read the address again
 once it has opened (`settleSetupMemory`), never only while drawing; a unit test cannot see this order, a
 browser can.

@@ -20,6 +20,7 @@ import { useState, useSyncExternalStore, type ReactNode } from 'react'
 
 import { isPreset } from '@/domain/colorway/names'
 import { byHandOnly, playPlaces, sourcesFor, type PlayPlace } from '@/domain/setup/setup'
+import type { ShowcaseGame } from '@/domain/setup/showcase'
 import { DownloadFacts, DownloadForWindows } from '@/features/desktop/download-windows'
 import { libraryHref } from '@/features/library/shelf-address'
 import { PlatformCards } from '@/features/platforms/platforms'
@@ -35,7 +36,12 @@ import { Ghosts } from '@/ui/ghosts'
 import { Ledge, ShelfLabel } from '@/ui/ledge'
 import { Progress } from '@/ui/progress'
 
+import { ShowcaseCase } from './showcase-case'
+
 const LINK = 'rounded-[2px] text-text underline decoration-1 underline-offset-4 hover:decoration-2'
+
+/** A case on the ready step's shelf is about this wide. */
+const READY_SIZES = '(min-width: 40rem) 100px, 76px'
 
 const placeIcons: Record<PlayPlace, LucideIcon> = {
   pc: MonitorIcon,
@@ -279,6 +285,7 @@ function AssistantAddress() {
 export function ReadyStep({
   handle,
   total,
+  games,
   unsorted,
   linked,
   places,
@@ -286,6 +293,8 @@ export function ReadyStep({
 }: {
   handle: string
   total: number | undefined
+  /** Some of my games to stand on its shelf, most played first (`showcaseOf`). */
+  games?: readonly ShowcaseGame[]
   unsorted: number
   linked: readonly string[]
   places: readonly PlayPlace[]
@@ -349,11 +358,19 @@ export function ReadyStep({
   return (
     <div className="grid gap-10">
       <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        {/* My shelf lighting up with my own games on it, the ones most played first. */}
         <div aria-hidden="true" className="setup-ready-shelf">
           <Ledge
-            itemsClassName="h-24 sm:h-32"
+            itemsClassName={cn(
+              'flex-nowrap items-end justify-start gap-[calc(var(--mm)*9)] overflow-hidden px-2',
+              games && games.length > 0 ? 'setup-ready-games' : 'h-24 sm:h-32',
+            )}
             label={<ShelfLabel count={total ?? 0}>{handle}</ShelfLabel>}
-          />
+          >
+            {games?.map((game, index) => (
+              <ShowcaseCase key={game.slug} game={game} sizes={READY_SIZES} order={index} />
+            ))}
+          </Ledge>
         </div>
 
         <section

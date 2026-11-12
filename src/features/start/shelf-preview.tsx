@@ -3,8 +3,14 @@
 import { useTranslations } from 'next-intl'
 import type { CSSProperties } from 'react'
 
+import type { ShowcaseGame } from '@/domain/setup/showcase'
 import { CoverPlaceholder, GameCase, plastics, type CaseShape } from '@/ui/game-case'
 import { Ledge, ShelfLabel } from '@/ui/ledge'
+
+import { ShowcaseCase } from './showcase-case'
+
+/** A case in the preview is about this wide. */
+const PREVIEW_SIZES = '40px'
 
 /** The cases the preview stands, in turn, as games arrive: a mix of shapes, as a real shelf has. */
 const SHAPES: readonly CaseShape[] = [
@@ -29,25 +35,30 @@ const BLUR: readonly (readonly [string, string, string])[] = [
 
 /**
  * The shelf as setting it up has made it so far (spec 4.6), beside the steps on a wide window:
- * a small lit ledge in the colors chosen on this device, with a case for each game up to seven,
- * and what is true of it in words. Pictures are hidden from assistive technology; the words say
- * it all.
+ * a small lit ledge in the colors chosen on this device with my own games on it, the ones most
+ * played first, up to seven, and what is true of it in words. Until my games have been read,
+ * a case stands for each, in a blur of the room's colors. Pictures are hidden from assistive
+ * technology; the words say it all.
  */
 export function ShelfPreview({
   handle,
   total,
+  games,
   linked,
   shelfPublic,
 }: {
   handle: string
   /** Games on the shelf; unknown until the tally is read. */
   total: number | undefined
+  /** Some of them, to stand on the ledge (`showcaseOf`); unknown until the library is read. */
+  games?: readonly ShowcaseGame[]
   /** The platforms linked, by name. */
   linked: readonly string[]
   shelfPublic: boolean
 }) {
   const t = useTranslations('Start.preview')
   const shown = Math.min(total ?? 0, SHAPES.length)
+  const mine = games && games.length > 0 ? games.slice(0, SHAPES.length) : undefined
   return (
     <aside
       aria-labelledby="setup-preview"
@@ -64,17 +75,21 @@ export function ShelfPreview({
           itemsClassName="h-[7.5rem] flex-nowrap items-end justify-center gap-1"
           label={<ShelfLabel count={total ?? 0}>{handle}</ShelfLabel>}
         >
-          {SHAPES.slice(0, shown).map((shape, index) => (
-            <GameCase
-              key={index}
-              shape={shape}
-              frame={plastics[index % 3 === 1 ? 'red' : 'black']}
-              className="setup-case"
-              style={{ '--arrive': index } as CSSProperties}
-            >
-              <CoverPlaceholder colors={BLUR[index % BLUR.length]!} />
-            </GameCase>
-          ))}
+          {mine
+            ? mine.map((game, index) => (
+                <ShowcaseCase key={game.slug} game={game} sizes={PREVIEW_SIZES} order={index} />
+              ))
+            : SHAPES.slice(0, shown).map((shape, index) => (
+                <GameCase
+                  key={index}
+                  shape={shape}
+                  frame={plastics[index % 3 === 1 ? 'red' : 'black']}
+                  className="setup-case"
+                  style={{ '--arrive': index } as CSSProperties}
+                >
+                  <CoverPlaceholder colors={BLUR[index % BLUR.length]!} />
+                </GameCase>
+              ))}
         </Ledge>
       </div>
       <dl className="mt-4 grid gap-2.5 text-sm">
