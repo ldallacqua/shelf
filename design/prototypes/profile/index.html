@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Lucas · Shelf profile concept</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400;100,500;100,600;100,700;100,800;125,700;125,800;125,900&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; --wall:#0b0d12; --deep:#07080c; --surface:#14171f; --raised:#1c202b; --text:#f2f4f8; --muted:#a3abbb; --faint:#7d879a; --line:#262b38; --strong:#3a4152; --accent:#b4a4ff; --on-accent:#0b0d12; --marker:#78dca0; --led:#7c5cff; --shadow:0 18px 30px #0006; --hero-veil:linear-gradient(90deg,#0b0d12 3%,#0b0d12e8 28%,#0b0d1245 72%,#0b0d121a),linear-gradient(0deg,#0b0d12 0%,#0b0d1200 55%); --art-text:#f2f4f8; --radius:8px; font-family:Archivo,Arial,sans-serif; font-size:16px; }
+    :root[data-theme="light"] { color-scheme:light; --wall:#eceef2; --deep:#e1e4ea; --surface:#f7f8fa; --raised:#fff; --text:#0e1014; --muted:#555c6b; --faint:#666e7c; --line:#c3c8d2; --strong:#9098a8; --accent:#5b3fe6; --on-accent:#fff; --marker:#0a6b3a; --shadow:0 15px 25px #1b203020; --hero-veil:linear-gradient(90deg,#eceef2 3%,#eceef2ed 28%,#eceef23b 75%,#eceef21a),linear-gradient(0deg,#eceef2 0%,#eceef200 60%); }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:90px; }
+    body { margin:0; background:var(--wall); color:var(--text); }
+    button,input,textarea,select { font:inherit; }
+    button,a,input,textarea,select { -webkit-tap-highlight-color:transparent; }
+    button,a { touch-action:manipulation; }
+    button { cursor:pointer; }
+    a { color:inherit; text-decoration:none; }
+    button { color:inherit; }
+    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+    button:disabled { opacity:.35; cursor:default; }
+    [hidden] { display:none !important; }
+    h1,h2,h3,p,figure { margin:0; }
+    img { display:block; max-width:100%; }
+    .mono { font-family:"Martian Mono",monospace; font-size:10px; font-weight:400; letter-spacing:.1em; text-transform:uppercase; }
+    .muted { color:var(--muted); }
+    .shell { width:min(1160px,calc(100% - 80px)); margin-inline:auto; }
+    .topbar { border-bottom:1px solid var(--line); background:var(--wall); }
+    .topbar-inner { width:min(1360px,calc(100% - 64px)); min-height:72px; margin:auto; display:flex; align-items:center; gap:48px; }
+    .brand { display:flex; align-items:center; gap:10px; font-size:24px; font-weight:800; letter-spacing:-1px; }
+    .brand-mark { display:flex; align-items:flex-end; gap:3px; width:25px; height:24px; border-bottom:2px solid var(--accent); padding:0 2px 4px; }
+    .brand-mark i { display:block; width:5px; height:15px; background:var(--text); transform:skewY(-9deg); }
+    .brand-mark i:nth-child(2) { height:19px; opacity:.8; }
+    .brand-mark i:last-child { height:13px; opacity:.6; }
+    .global-nav { display:flex; gap:30px; align-items:stretch; align-self:stretch; }
+    .global-nav a { display:flex; align-items:center; color:var(--muted); font-size:13px; font-weight:600; position:relative; }
+    .global-nav a:hover { color:var(--text); }
+    .global-nav .active { color:var(--text); }
+    .global-nav .active:after { content:""; position:absolute; bottom:0; height:2px; background:var(--accent); left:0; right:0; box-shadow:0 -2px 12px color-mix(in srgb,var(--led) 60%,transparent); }
+    .account-nav { margin-left:auto; display:flex; align-items:center; gap:18px; }
+    .icon-button { background:transparent; border:0; min-width:36px; min-height:36px; padding:6px; font-size:22px; border-radius:5px; display:grid; place-items:center; }
+    .icon-button:hover { background:var(--surface); }
+    .small-avatar { display:grid; place-items:center; width:31px; height:31px; border-radius:50%; background:var(--raised); border:1px solid var(--strong); color:var(--accent); font-size:11px; font-weight:700; }
+    .button { display:inline-flex; justify-content:center; align-items:center; gap:9px; min-height:40px; padding:10px 16px; border:1px solid var(--strong); border-radius:6px; background:var(--surface); font-size:12px; font-weight:600; line-height:1.2; }
+    .button:hover { background:var(--raised); border-color:var(--muted); }
+    .button-primary { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+    .button-primary:hover { background:color-mix(in srgb,var(--accent) 88%,var(--text)); border-color:var(--accent); }
+    .button-quiet { background:transparent; border-color:var(--line); }
+    .text-button { display:inline-flex; align-items:center; gap:9px; padding:7px 0; border:0; background:transparent; font-size:12px; font-weight:500; color:var(--muted); }
+    .text-button:hover { color:var(--accent); }
+    .arrow { font-size:19px; line-height:1; font-weight:400; }
+    .hero { position:relative; isolation:isolate; padding-top:49px; min-height:351px; overflow:hidden; }
+    .hero-art { position:absolute; z-index:-2; inset:0 0 0 0; background-image:url('https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/753640/library_hero.jpg'); background-size:cover; background-position:center 47%; opacity:.8; }
+    .hero:after { content:""; position:absolute; inset:0; z-index:-1; background:var(--hero-veil); }
+    .hero .shell { position:relative; }
+    .breadcrumb { display:flex; align-items:center; gap:9px; color:var(--muted); margin-bottom:29px; font-size:11px; }
+    .breadcrumb .public-dot { width:5px; height:5px; background:var(--marker); border-radius:50%; }
+    .identity { display:flex; align-items:center; gap:20px; }
+    .avatar { width:82px; height:82px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--strong)); border-radius:19px; background:linear-gradient(145deg,var(--raised),var(--deep)); box-shadow:inset 0 0 24px color-mix(in srgb,var(--led) 12%,transparent); display:grid; place-items:center; font-size:33px; font-weight:700; color:var(--accent); position:relative; }
+    .avatar:after { content:""; width:18px; height:2px; background:var(--accent); position:absolute; bottom:15px; opacity:.7; }
+    .name { font-size:54px; letter-spacing:-2px; line-height:1.08; font-weight:800; font-stretch:125%; }
+    .handle { color:var(--muted); font-size:13px; margin-top:9px; }
+    .hero-actions { position:absolute; top:0; right:0; display:flex; gap:8px; }
+    .bio { margin:22px 0 0; max-width:410px; font-size:15px; line-height:1.65; color:var(--muted); }
+    .bio strong { font-weight:500; color:var(--text); }
+    .hero-baseline { display:flex; align-items:flex-end; justify-content:space-between; gap:28px; padding:25px 0 23px; }
+    .social-links { display:flex; gap:18px; align-items:center; font-size:11px; }
+    .social-links a { color:var(--muted); min-height:24px; display:flex; align-items:center; gap:6px; }
+    .social-links a:hover { color:var(--text); }
+    .art-credit { color:var(--faint); font-size:10px; letter-spacing:.02em; }
+    .summary { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); padding:18px 0 21px; gap:24px; }
+    .stats { display:flex; gap:33px; flex-wrap:wrap; }
+    .stat { display:flex; align-items:baseline; gap:8px; }
+    .stat b { font-size:21px; font-weight:600; letter-spacing:-.7px; font-variant-numeric:tabular-nums; }
+    .stat .mono { color:var(--muted); font-size:9px; letter-spacing:.06em; }
+    .profile-body { padding-bottom:38px; }
+    .section { padding-top:37px; }
+    .section-heading { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:20px; }
+    .eyebrow { color:var(--accent); margin-bottom:9px; font-size:9px; letter-spacing:.14em; }
+    h2 { font-size:23px; letter-spacing:-.6px; font-weight:600; }
+    .section-note { font-size:12px; color:var(--muted); margin-top:7px; line-height:1.6; }
+    .favorites { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:26px; padding:0 13px 0; position:relative; }
+    .favorites:after { content:""; position:absolute; inset:auto -4px 47px; height:7px; border-top:1px solid color-mix(in srgb,var(--accent) 65%,var(--line)); background:linear-gradient(var(--raised),var(--deep)); box-shadow:0 -1px 12px color-mix(in srgb,var(--led) 40%,transparent),0 10px 17px #0005; }
+    .favorite { min-width:0; position:relative; padding:0; border:0; background:transparent; text-align:left; z-index:1; border-radius:5px; }
+    .cover-wrap { display:block; position:relative; aspect-ratio:2/3; margin:0 auto 22px; border-radius:5px; box-shadow:var(--shadow); background:var(--surface); width:100%; }
+    .cover-wrap:after { content:""; position:absolute; inset:0; border-radius:5px; border:1px solid #ffffff20; box-shadow:inset 3px 0 2px #ffffff22,inset -2px 0 2px #0006; pointer-events:none; }
+    .cover-wrap img { width:100%; height:100%; object-fit:cover; border-radius:5px; }
+    .favorite-title { display:block; font-size:13px; font-weight:600; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .favorite-year { display:block; font-size:10px; margin-top:7px; color:var(--muted); }
+    .favorite:hover .favorite-title { color:var(--accent); }
+    .favorite:focus-visible { outline-offset:7px; }
+    .split { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(0,1fr); gap:45px; }
+    .lower-split { margin-top:8px; }
+    .playing-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px; }
+    .playing-card { border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; background:var(--surface); text-align:left; padding:0; }
+    .playing-card:hover { border-color:var(--strong); }
+    .playing-image { position:relative; aspect-ratio:1.7; overflow:hidden; background:var(--deep); }
+    .playing-image img { width:100%; height:100%; object-fit:cover; }
+    .playing-image:after { content:""; position:absolute; inset:0; background:linear-gradient(0deg,#0006,transparent 60%); }
+    .playing-card-body { padding:14px 13px; }
+    .playing-card h3 { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .playing-card .meta { font-size:10px; color:var(--muted); margin-top:9px; display:flex; gap:7px; align-items:center; }
+    .playing-indicator { display:inline-flex; gap:6px; align-items:center; font-size:9px; color:var(--marker); margin-top:15px; }
+    .playing-indicator:before { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; }
+    .taste { border-top:1px solid var(--line); padding-top:18px; }
+    .taste .quote { font-size:19px; line-height:1.5; letter-spacing:-.3px; max-width:330px; }
+    .taste .quote em { font-style:normal; color:var(--accent); }
+    .tags { display:flex; flex-wrap:wrap; gap:7px; margin:18px 0; }
+    .tag { font-size:10px; padding:6px 10px; border:1px solid var(--line); border-radius:4px; color:var(--muted); background:var(--surface); }
+    .taste-platform { display:flex; align-items:baseline; justify-content:space-between; padding-top:17px; border-top:1px solid var(--line); }
+    .taste-platform span { color:var(--muted); font-size:10px; }
+    .taste-platform strong { font-size:12px; font-weight:500; }
+    .finished-list { border-top:1px solid var(--line); }
+    .finished-row { display:grid; grid-template-columns:40px minmax(0,1fr) auto; gap:13px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); }
+    .finished-row img { width:40px; height:56px; object-fit:cover; border-radius:3px; }
+    .finished-row h3 { font-size:12px; font-weight:500; }
+    .finished-row p { font-size:10px; color:var(--muted); margin-top:8px; }
+    .finished-row .rating { font-family:"Martian Mono",monospace; font-size:14px; color:var(--text); text-align:right; }
+    .rating small { font-size:9px; color:var(--muted); }
+    .rating .finished-date { display:block; font-family:Archivo,sans-serif; margin-top:8px; font-size:10px; }
+    .collection-card { position:relative; display:flex; align-items:center; gap:16px; padding:18px; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:12px; background:var(--surface); }
+    .collection-card:hover { border-color:var(--strong); }
+    .mini-covers { width:84px; flex:none; height:65px; position:relative; }
+    .mini-covers img { width:40px; height:60px; object-fit:cover; position:absolute; border-radius:2px; border:1px solid var(--line); top:3px; box-shadow:2px 2px 5px #0005; }
+    .mini-covers img:nth-child(1) { left:0; transform:rotate(-8deg); }
+    .mini-covers img:nth-child(2) { left:22px; top:0; z-index:1; }
+    .mini-covers img:nth-child(3) { left:44px; transform:rotate(8deg); }
+    .collection-card h3 { font-size:13px; font-weight:500; line-height:1.5; }
+    .collection-card p { font-size:10px; color:var(--muted); margin-top:6px; }
+    .collection-card .arrow { margin-left:auto; color:var(--muted); }
+    .footer { border-top:1px solid var(--line); padding:24px 0; color:var(--muted); font-size:10px; }
+    .footer .shell { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .footer .concept-label { color:var(--faint); }
+    .visitor-banner { background:var(--surface); padding:13px 0; border-bottom:1px solid var(--line); }
+    .visitor-banner .shell { display:flex; align-items:center; justify-content:space-between; gap:20px; font-size:12px; }
+    .visitor-banner p { color:var(--muted); }
+    .toast { position:fixed; bottom:25px; left:50%; transform:translateX(-50%); z-index:10; padding:13px 20px; border:1px solid var(--strong); border-radius:7px; box-shadow:var(--shadow); background:var(--raised); font-size:12px; max-width:calc(100% - 32px); text-align:center; }
+    .editor { padding:38px 0 60px; }
+    .editor-top { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:30px; }
+    .editor h1 { font-size:34px; font-weight:700; letter-spacing:-1px; margin-top:13px; }
+    .editor-grid { display:grid; grid-template-columns:160px minmax(0,1fr) 290px; gap:36px; align-items:start; }
+    .editor-nav { display:grid; gap:6px; padding-top:4px; }
+    .editor-nav a { font-size:12px; color:var(--muted); padding:10px 11px; border-radius:4px; }
+    .editor-nav a:first-child { background:var(--surface); color:var(--text); border-left:2px solid var(--accent); }
+    .editor-form { min-width:0; }
+    .form-section { padding-bottom:26px; border-bottom:1px solid var(--line); margin-bottom:27px; }
+    .form-section h2 { font-size:18px; margin-bottom:8px; }
+    .form-section>p { font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:22px; }
+    .field { display:grid; gap:9px; margin-top:20px; font-size:12px; }
+    input,textarea,select { width:100%; color:var(--text); background:var(--surface); border:1px solid var(--strong); border-radius:5px; padding:11px 12px; font-size:13px; }
+    textarea { resize:vertical; min-height:100px; line-height:1.6; }
+    .field-hint { color:var(--muted); font-size:10px; line-height:1.6; }
+    .avatar-editor { display:flex; gap:15px; align-items:center; margin:24px 0 12px; }
+    .avatar-editor .avatar { width:60px; height:60px; border-radius:12px; font-size:25px; }
+    .avatar-editor .avatar:after { bottom:9px; }
+    .avatar-editor strong { font-size:12px; font-weight:500; }
+    .avatar-editor p { font-size:10px; color:var(--muted); line-height:1.6; margin-top:6px; }
+    .editor-favorites { display:grid; gap:0; border-top:1px solid var(--line); }
+    .editor-favorite { display:flex; gap:11px; align-items:center; border-bottom:1px solid var(--line); padding:11px 0; }
+    .editor-favorite img { width:29px; height:42px; object-fit:cover; border-radius:2px; }
+    .editor-favorite .order { width:14px; color:var(--muted); font-family:"Martian Mono",monospace; font-size:9px; }
+    .editor-favorite .game-name { font-size:11px; flex:1; min-width:0; }
+    .order-button { min-width:29px; min-height:30px; border:1px solid var(--line); border-radius:3px; background:transparent; color:var(--muted); padding:4px; }
+    .order-button:hover { color:var(--text); background:var(--surface); }
+    .switch-row { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:15px 0; border-bottom:1px solid var(--line); }
+    .switch-row span { font-size:12px; }
+    .switch-row small { display:block; font-size:10px; color:var(--muted); margin-top:6px; line-height:1.6; }
+    .switch-row input { width:34px; height:18px; accent-color:var(--accent); flex:none; }
+    .form-actions { display:flex; gap:10px; justify-content:flex-end; }
+    .preview-card { border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surface); margin-top:12px; }
+    .preview-header { height:85px; background-image:linear-gradient(0deg,#14171f33,#14171f33),url('https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/753640/library_hero.jpg'); background-position:center; background-size:cover; }
+    .preview-body { padding:0 19px 20px; }
+    .preview-body .avatar { width:45px; height:45px; border-radius:10px; margin-top:-22px; font-size:20px; }
+    .preview-body .avatar:after { display:none; }
+    .preview-name { font-size:24px; font-weight:700; margin-top:12px; }
+    .preview-bio { font-size:11px; line-height:1.7; color:var(--muted); margin-top:10px; overflow-wrap:anywhere; }
+    .preview-covers { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; margin-top:20px; }
+    .preview-covers img { width:100%; aspect-ratio:2/3; border-radius:2px; object-fit:cover; }
+    .preview-label { font-size:10px; color:var(--muted); margin-top:13px; line-height:1.7; }
+    .view-toggle { display:flex; gap:5px; margin:18px 0; }
+    .view-toggle .button { min-height:30px; padding:7px 12px; font-size:10px; }
+    .preview-public { border-top:1px solid var(--line); padding-top:17px; margin-top:17px; font-size:11px; line-height:1.7; color:var(--muted); }
+    .preview-public strong { color:var(--text); font-weight:500; }
+    dialog { border:1px solid var(--strong); border-radius:12px; background:var(--wall); color:var(--text); padding:0; max-width:700px; width:calc(100% - 40px); box-shadow:0 35px 110px #0009; }
+    dialog::backdrop { background:#000a; }
+    .dialog-heading { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:22px 25px; border-bottom:1px solid var(--line); }
+    .dialog-heading h2 { font-size:22px; }
+    .dialog-content { padding:25px; max-height:70vh; overflow:auto; }
+    .dialog-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; }
+    .dialog-game img { width:100%; aspect-ratio:2/3; object-fit:cover; border-radius:4px; }
+    .dialog-game p { font-size:11px; margin-top:10px; line-height:1.5; }
+    .dialog-game small { display:block; margin-top:5px; color:var(--muted); font-size:10px; }
+    .game-dialog-art { width:100%; aspect-ratio:2.2; object-fit:cover; border-radius:5px; }
+    .game-dialog-meta { margin:18px 0; font-size:12px; color:var(--muted); line-height:1.8; }
+    .game-dialog-bottom { display:flex; justify-content:space-between; align-items:center; gap:20px; }
+    .game-dialog-bottom p { font-size:12px; color:var(--muted); }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (prefers-reduced-motion:no-preference) { .cover-wrap { transition:transform 280ms ease,box-shadow 280ms ease; } .favorite:hover .cover-wrap { transform:translateY(-8px); box-shadow:0 23px 35px #0007,0 0 23px color-mix(in srgb,var(--led) 16%,transparent); } }
+    @media (max-width:1000px) { .shell { width:calc(100% - 56px); } .hero-actions { top:-3px; } .split { gap:28px; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); } .favorites { gap:19px; padding-inline:3px; } .stats { gap:25px; } .editor-grid { grid-template-columns:minmax(0,1fr) 270px; gap:35px; } .editor-nav { display:none; } }
+    @media (max-width:760px) { .topbar-inner { min-height:62px; width:calc(100% - 36px); gap:28px; } .brand { font-size:22px; } .global-nav { gap:20px; } .global-nav a { font-size:11px; } .account-nav { gap:7px; } .topbar-preview { display:none; } .shell { width:calc(100% - 40px); } .hero { padding-top:27px; min-height:333px; } .hero-art { background-position:70% center; } .hero-actions { position:static; margin-top:20px; } .breadcrumb { margin-bottom:25px; } .identity { gap:15px; } .avatar { width:65px; height:65px; border-radius:14px; font-size:28px; } .name { font-size:42px; } .bio { max-width:340px; font-size:13px; margin-top:20px; } .hero-baseline { padding:17px 0; } .art-credit { display:none; } .summary { padding-top:14px; align-items:flex-start; } .stats { gap:23px; } .stat { display:block; } .stat b { font-size:21px; display:block; margin-bottom:7px; } .stat .mono { font-size:8px; } .summary>.text-button { font-size:10px; white-space:nowrap; margin-top:3px; } .favorites { gap:15px; padding-inline:0; } .cover-wrap { margin-bottom:20px; } .favorite-title { font-size:11px; } .favorite-year { font-size:9px; } .favorites:after { bottom:43px; } .section { padding-top:29px; } h2 { font-size:21px; } .section-note { font-size:11px; } .split { grid-template-columns:1fr; gap:3px; } .taste .quote { max-width:none; font-size:18px; } .taste-platform { max-width:400px; } .playing-card h3 { font-size:12px; } .editor-grid { grid-template-columns:1fr; } .editor-aside { display:none; } .editor-top .button { display:none; } }
+    @media (max-width:500px) { .global-nav { gap:16px; } .global-nav a:last-child { display:none; } .account-nav .small-avatar { display:none; } .topbar-inner { gap:24px; } .brand-mark { width:20px; gap:2px; } .brand { font-size:21px; gap:7px; } .shell { width:calc(100% - 32px); } .hero-art { opacity:.62; background-position:65%; } .hero { min-height:340px; } .hero:after { background:linear-gradient(90deg,var(--wall),color-mix(in srgb,var(--wall) 85%,transparent) 40%,transparent),linear-gradient(0deg,var(--wall),transparent); } .name { font-size:40px; } .summary { gap:13px; } .stats { gap:23px; } .stat b { font-size:20px; } .summary>.text-button { max-width:70px; white-space:normal; line-height:1.5; text-align:left; } .favorites { grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px 15px; } .favorite { grid-column:span 2; } .favorite:nth-child(4) { grid-column:2 / span 2; } .favorites:after { display:none; } .cover-wrap { margin-bottom:12px; } .favorite-title { font-size:10px; } .favorite-year { margin-top:6px; } .section-heading { gap:12px; margin-bottom:19px; } .section-heading>.text-button { font-size:10px; white-space:nowrap; } h2 { font-size:22px; } .eyebrow { font-size:8px; } .playing-grid { grid-template-columns:1fr; gap:10px; } .playing-card { display:grid; grid-template-columns:117px minmax(0,1fr); } .playing-image { aspect-ratio:auto; height:100%; min-height:105px; } .playing-image img { object-position:center; } .playing-card-body { padding:15px; } .playing-indicator { margin-top:12px; } .playing-card h3 { font-size:13px; } .playing-card .meta { font-size:11px; } .collection-card { padding:16px; } .dialog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .dialog-heading,.dialog-content { padding:19px; } .footer .shell { display:grid; line-height:1.7; } .visitor-banner .shell { align-items:flex-start; } .visitor-banner p { max-width:200px; font-size:11px; line-height:1.6; } .visitor-banner button { white-space:nowrap; font-size:11px; } .editor h1 { font-size:30px; } .editor-favorite { gap:7px; } .order-button { min-width:30px; min-height:34px; } .editor-favorite .game-name { font-size:10px; } }
+    @media (max-width:760px) { .editor-top { flex-wrap:wrap; } .editor-top .button { display:inline-flex; } }
+    @media (pointer:coarse) { .icon-button { min-width:42px; min-height:42px; } .button { min-height:44px; } .text-button { min-height:36px; } input,textarea,select { font-size:16px; } .order-button { min-height:42px; min-width:32px; } }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+    /* The second study gives the profile an editorial rhythm, with the person's words beside their games. */
+    .hero { padding-top:31px; min-height:296px; }
+    .breadcrumb { margin-bottom:22px; }
+    .hero-baseline { padding:20px 0 19px; }
+    .bio { max-width:510px; margin-top:18px; }
+    .name { font-size:49px; }
+    .social-counts { display:flex; gap:17px; margin-top:10px; }
+    .social-counts button { padding:0; min-height:24px; font-size:11px; color:var(--muted); border:0; background:none; }
+    .social-counts b { color:var(--text); font-weight:500; }
+    .hero-baseline .social-links { gap:13px; }
+    .summary { padding:15px 0; border-bottom:1px solid var(--line); }
+    .profile-columns { display:grid; grid-template-columns:minmax(0,1fr) 295px; gap:43px; align-items:start; }
+    .profile-main,.profile-rail { min-width:0; }
+    .section { padding-top:29px; }
+    .section-heading { margin-bottom:17px; }
+    .section-heading h2 { font-size:21px; }
+    .favorites { gap:17px; padding:0 5px; }
+    .favorite-title { font-size:11px; }
+    .favorite-year { font-size:10px; }
+    .favorites:after { bottom:46px; }
+    .cover-wrap { margin-bottom:23px; }
+    .rail-section { padding-top:29px; }
+    .rail-section .section-heading { margin-bottom:15px; }
+    .rail-section h2 { font-size:15px; letter-spacing:-.2px; }
+    .playing-grid { grid-template-columns:1fr; gap:0; border-top:1px solid var(--line); }
+    .playing-card { display:grid; grid-template-columns:47px minmax(0,1fr); gap:12px; border:0; border-radius:0; border-bottom:1px solid var(--line); background:transparent; padding:12px 0; }
+    .playing-image { width:47px; height:66px; aspect-ratio:auto; border-radius:3px; }
+    .playing-image img { object-fit:cover; }
+    .playing-card-body { padding:3px 0; }
+    .playing-card h3 { font-size:12px; }
+    .playing-card .meta { margin-top:7px; font-size:10px; }
+    .playing-indicator { margin-top:9px; font-size:9px; }
+    .review-list { display:grid; gap:0; }
+    .review { padding:22px 0; border-top:1px solid var(--line); }
+    .review-featured { border:1px solid var(--line); border-radius:8px; background:var(--surface); padding:22px; margin-bottom:17px; position:relative; overflow:hidden; }
+    .review-featured:before { content:""; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--accent); opacity:.7; }
+    .review-kicker { display:flex; justify-content:space-between; align-items:center; margin-bottom:17px; color:var(--muted); font-size:10px; }
+    .review-kicker .pin-label { color:var(--accent); }
+    .review-layout { display:grid; grid-template-columns:78px minmax(0,1fr); column-gap:19px; row-gap:0; }
+    .review-cover { width:78px; aspect-ratio:2/3; object-fit:cover; border-radius:4px; box-shadow:var(--shadow); grid-row:1 / span 2; align-self:start; }
+    .review-writing { grid-column:2; }
+    .review-meta { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+    .review-game { font-size:16px; font-weight:600; letter-spacing:-.3px; }
+    .review-game button { border:0; background:transparent; padding:0; text-align:left; font:inherit; }
+    .review-game small { color:var(--muted); font-size:11px; font-weight:400; padding-left:6px; }
+    .review-platform { color:var(--muted); font-size:10px; margin-top:7px; line-height:1.7; }
+    .review-score { font-size:20px; font-weight:600; font-family:"Martian Mono",monospace; letter-spacing:-1px; flex:none; color:var(--accent); }
+    .review-score small { font-family:Archivo,sans-serif; color:var(--muted); font-size:10px; letter-spacing:0; font-weight:400; }
+    .review h4 { font-size:17px; font-weight:500; letter-spacing:-.3px; margin:17px 0 9px; line-height:1.45; }
+    .review-copy { color:var(--muted); font-size:13px; line-height:1.85; }
+    .review-copy + .review-copy { margin-top:13px; }
+    .review-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:17px; }
+    .review-social { display:flex; gap:15px; flex-wrap:wrap; }
+    .review-social button { color:var(--muted); background:none; border:0; padding:5px 0; font-size:10px; min-height:27px; }
+    .review-social button[aria-pressed="true"] { color:var(--accent); }
+    .review-more { border:0; background:none; color:var(--text); font-size:11px; padding:6px 0; text-align:left; }
+    .review-more:hover { color:var(--accent); }
+    .review-regular .review-layout { grid-template-columns:57px minmax(0,1fr); column-gap:16px; row-gap:0; }
+    .review-regular .review-cover { width:57px; }
+    .review-regular .review-game { font-size:14px; }
+    .review-regular h4 { font-size:15px; margin-top:12px; }
+    .review-regular .review-score { font-size:16px; }
+    .review-regular .review-copy { font-size:12px; line-height:1.8; }
+    .comments { border-top:1px solid var(--line); margin-top:17px; padding-top:15px; display:grid; gap:13px; }
+    .comment { display:flex; align-items:flex-start; gap:10px; font-size:11px; line-height:1.7; }
+    .comment-avatar { display:grid; place-items:center; width:27px; height:27px; border-radius:50%; flex:none; background:var(--raised); color:var(--accent); border:1px solid var(--line); font-size:10px; }
+    .comment strong { font-weight:500; }
+    .comment p { color:var(--muted); margin-top:3px; }
+    .comment-form { display:flex; align-items:center; gap:8px; }
+    .comment-form input { font-size:11px; padding:10px; min-width:0; }
+    .comment-form button { padding:10px; min-height:36px; font-size:10px; }
+    .spoiler-preview { padding:16px; background:var(--surface); border:1px dashed var(--strong); border-radius:5px; margin-top:14px; display:flex; align-items:center; justify-content:space-between; gap:15px; font-size:11px; color:var(--muted); }
+    .goal-card { border:1px solid var(--line); border-radius:7px; background:var(--surface); padding:18px; }
+    .goal-top { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+    .goal-top strong { font-size:28px; letter-spacing:-1px; font-weight:600; }
+    .goal-top strong small { color:var(--muted); font-size:13px; font-weight:400; }
+    .goal-top .mono { font-size:9px; color:var(--muted); }
+    .goal-track { height:4px; background:var(--strong); border-radius:9px; margin:16px 0 12px; overflow:hidden; }
+    .goal-track span { height:100%; display:block; width:75%; background:var(--accent); }
+    .goal-card p { font-size:11px; line-height:1.7; color:var(--muted); }
+    .goal-card .goal-reason { color:var(--text); margin-top:9px; }
+    .activity-list { border-top:1px solid var(--line); }
+    .activity-item { position:relative; padding:15px 0 15px 18px; font-size:11px; line-height:1.7; border-bottom:1px solid var(--line); }
+    .activity-item:before { content:""; position:absolute; left:0; top:22px; width:5px; height:5px; border-radius:50%; background:var(--accent); }
+    .activity-item p { color:var(--muted); }
+    .activity-item strong { font-weight:500; color:var(--text); }
+    .activity-item time { display:block; color:var(--faint); font-size:10px; margin-top:5px; }
+    .radar-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; }
+    .radar-game { background:none; padding:0; border:0; text-align:left; min-width:0; }
+    .radar-game img { width:100%; aspect-ratio:2/3; border-radius:3px; object-fit:cover; }
+    .radar-game span { display:block; margin-top:8px; color:var(--muted); font-size:10px; line-height:1.55; }
+    .journal-entry { border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surface); }
+    .journal-image { height:192px; width:100%; object-fit:cover; object-position:center; }
+    .journal-body { padding:21px 23px; }
+    .journal-meta { display:flex; gap:9px; align-items:center; color:var(--muted); font-size:10px; margin-bottom:12px; }
+    .journal-body h3 { font-size:22px; letter-spacing:-.6px; font-weight:500; line-height:1.4; }
+    .journal-body p { margin-top:12px; font-size:13px; color:var(--muted); line-height:1.85; }
+    .journal-footer { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:17px; }
+    .collection-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+    .editorial-collection { display:block; border:1px solid var(--line); background:var(--surface); border-radius:7px; overflow:hidden; padding:0; text-align:left; }
+    .collection-strip { display:flex; width:100%; aspect-ratio:2.8; overflow:hidden; background:var(--deep); }
+    .collection-strip img { width:25%; object-fit:cover; object-position:center 30%; border-right:2px solid var(--surface); }
+    .editorial-collection-copy { padding:17px; }
+    .editorial-collection h3 { font-size:15px; font-weight:500; letter-spacing:-.3px; }
+    .editorial-collection p { color:var(--muted); font-size:11px; line-height:1.8; margin-top:9px; }
+    .collection-detail { display:flex; align-items:center; justify-content:space-between; color:var(--muted); font-size:10px; margin-top:15px; }
+    .milestone { display:grid; grid-template-columns:39px minmax(0,1fr); gap:12px; align-items:center; padding:15px 0; border-top:1px solid var(--line); }
+    .milestone-mark { height:39px; display:grid; place-items:center; border:1px solid var(--strong); background:var(--surface); border-radius:8px; font-family:"Martian Mono",monospace; font-size:12px; color:var(--accent); }
+    .milestone strong { display:block; font-size:11px; font-weight:500; }
+    .milestone p { color:var(--muted); font-size:10px; line-height:1.7; margin-top:5px; }
+    .taste .quote { font-size:16px; }
+    .taste-platform { gap:16px; }
+    .common-games { padding:13px 16px; margin-top:22px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--muted); font-size:11px; line-height:1.7; }
+    .common-games strong { color:var(--text); font-weight:500; }
+    .footer a { color:var(--accent); }
+    .reviews-empty { padding:20px 0; font-size:12px; color:var(--muted); }
+    .review-collection-link { display:flex; justify-content:flex-end; border-top:1px solid var(--line); padding:14px 0 0; }
+    .all-reviews-view { padding:32px 0 55px; }
+    .all-reviews-heading { display:flex; justify-content:space-between; align-items:center; gap:22px; margin:17px 0 26px; }
+    .all-reviews-heading h1 { font-size:36px; letter-spacing:-1px; font-weight:700; }
+    .review-browse-controls { display:grid; grid-template-columns:minmax(0,1fr) 180px; gap:15px; max-width:820px; margin-bottom:17px; }
+    .review-browse-controls label { display:grid; gap:8px; color:var(--muted); font-size:11px; }
+    .all-reviews-list { max-width:820px; }
+    .review-result-count { margin-bottom:19px; color:var(--muted); font-size:11px; }
+    .pin-intro { font-size:12px; color:var(--muted); line-height:1.8; margin-bottom:19px; }
+    .pin-choices { display:grid; gap:9px; }
+    .pin-choice { display:grid; grid-template-columns:39px minmax(0,1fr) auto; align-items:center; gap:13px; width:100%; padding:12px; border:1px solid var(--line); background:var(--surface); border-radius:6px; text-align:left; }
+    .pin-choice[aria-pressed="true"] { border-color:var(--accent); }
+    .pin-choice img { width:39px; height:57px; object-fit:cover; border-radius:3px; }
+    .pin-choice strong { display:block; font-size:12px; font-weight:500; }
+    .pin-choice p { color:var(--muted); font-size:11px; line-height:1.65; margin-top:5px; }
+    .pin-choice .pin-state { font-size:11px; color:var(--accent); }
+    .pin-actions { margin-top:18px; display:flex; justify-content:flex-end; }
+    @media (max-width:500px) {
+      .review-cover { grid-row:auto; }
+      dialog { width:100%; max-width:none; height:100dvh; max-height:100dvh; min-height:100dvh; margin:0; border:0; border-radius:0; }
+      dialog[open] { display:grid; grid-template-rows:auto minmax(0,1fr); }
+      dialog .dialog-heading { min-height:73px; }
+      dialog .dialog-content { max-height:none; overflow:auto; }
+    }
+    @media (max-width:1000px) { .profile-columns { grid-template-columns:minmax(0,1fr) 250px; gap:28px; } .favorites { gap:11px; padding:0; } .favorite-title { font-size:10px; } .review-featured { padding:18px; } .review-layout { grid-template-columns:63px minmax(0,1fr); gap:15px; } .review-cover { width:63px; } .review h4 { font-size:16px; } .stats { gap:23px; } .stat b { font-size:19px; } }
+    @media (max-width:760px) { .hero { min-height:312px; padding-top:25px; } .name { font-size:41px; } .hero-baseline { padding:15px 0; } .profile-columns { grid-template-columns:1fr; } .profile-rail { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 25px; } .favorites { gap:19px; } .favorite-title { font-size:11px; } .summary { padding:17px 0; } .stats { gap:24px; } .stat { display:block; } .stat b { margin-bottom:6px; } .stat .mono { font-size:8px; } .summary>.text-button { font-size:10px; } .review-copy { font-size:13px; } .rail-section { padding-top:26px; } .profile-rail { padding-bottom:10px; } }
+    @media (max-width:500px) { .all-reviews-heading { align-items:flex-start; flex-wrap:wrap; } .all-reviews-heading h1 { font-size:29px; } .review-browse-controls { grid-template-columns:1fr; } .pin-choice { grid-template-columns:35px minmax(0,1fr); } .pin-choice img { width:35px; height:51px; } .pin-choice .pin-state { grid-column:2; } }
+    @media (max-width:500px) { .name { font-size:39px; } .hero { min-height:345px; } .hero-baseline .social-links { flex-wrap:wrap; gap:8px; font-size:10px; } .hero-baseline { padding-bottom:18px; } .hero-actions { flex-wrap:wrap; } .summary { align-items:center; } .stats { gap:19px; } .stat b { font-size:19px; } .stat-hours { display:none; } .favorites { grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px; } .favorite { grid-column:auto !important; } .favorite-title { display:none; } .favorite-year { display:none; } .cover-wrap { margin-bottom:5px; } .section-heading h2 { font-size:21px; } .section-note { font-size:11px; } .profile-rail { grid-template-columns:1fr; } .profile-columns { gap:0; } .review-featured { padding:17px; } .review-layout { grid-template-columns:48px minmax(0,1fr); gap:12px; } .review-cover { width:48px; } .review-game { font-size:14px; } .review-game small { display:none; } .review-score { font-size:16px; } .review h4 { font-size:16px; margin-top:15px; } .review-featured .review-writing { grid-column:1 / -1; } .review-copy { font-size:12px; line-height:1.85; } .review-footer { align-items:flex-start; } .review-social { gap:12px; } .review-social button { font-size:10px; } .review-regular .review-layout { grid-template-columns:44px minmax(0,1fr); gap:12px; } .review-regular .review-cover { width:44px; } .review-regular .review-writing { grid-column:1 / -1; } .spoiler-preview { padding:13px; font-size:10px; } .journal-image { height:155px; } .journal-body { padding:18px; } .journal-body h3 { font-size:21px; } .journal-body p { font-size:12px; } .collection-grid { grid-template-columns:1fr; gap:13px; } .editorial-collection { display:grid; grid-template-columns:95px minmax(0,1fr); } .collection-strip { aspect-ratio:auto; height:100%; } .collection-strip img { width:100%; height:100%; } .collection-strip img:not(:first-child) { display:none; } .editorial-collection-copy { padding:16px; } .editorial-collection h3 { font-size:14px; line-height:1.5; } .editorial-collection p { font-size:11px; } .playing-card { grid-template-columns:47px minmax(0,1fr); } .playing-image { min-height:0; height:66px; } .playing-card-body { padding:3px 0; } .playing-card h3 { font-size:12px; } .playing-card .meta { font-size:10px; } .profile-body { padding-bottom:26px; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="Shelf profile"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>Shelf</a>
+      <nav class="global-nav" aria-label="Main"><a class="active" href="#profile">Profile</a><a href="#" data-open-library>Library</a><a href="#finished">Trophies</a></nav>
+      <div class="account-nav"><button class="text-button topbar-preview" id="visitor-toggle" type="button">View as visitor <span class="arrow" aria-hidden="true">↗</span></button><button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to light theme">☼</button><button class="small-avatar" data-edit aria-label="Edit your profile" type="button">L</button></div>
+    </div>
+  </header>
+  <div class="visitor-banner" id="visitor-banner" hidden><div class="shell"><p>You’re viewing your public profile.</p><button class="text-button" id="exit-visitor" type="button">Back to your view <span aria-hidden="true">↗</span></button></div></div>
+  <main id="profile">
+    <section class="hero" aria-labelledby="profile-name">
+      <div class="hero-art" id="hero-art"></div>
+      <div class="shell">
+        <div class="breadcrumb"><span class="public-dot" aria-hidden="true"></span><span>Public profile</span><span aria-hidden="true">/</span><span>Here since 2024</span></div>
+        <div class="identity"><div class="avatar profile-initial" aria-hidden="true">L</div><div><h1 class="name" id="profile-name">Lucas</h1><p class="handle">@lucas</p><div class="social-counts"><button type="button" data-community="followers"><b id="follower-count">314</b> followers</button><button type="button" data-community="following"><b>89</b> following</button></div></div></div>
+        <p class="bio" id="profile-bio">Here for <strong>worlds worth getting lost in.</strong><br>Story-driven games, strange little indies, and just one more run.</p>
+        <div class="hero-actions"><button class="button button-quiet" data-edit type="button">Edit profile</button><button class="button button-primary" id="follow-profile" type="button" aria-pressed="false" hidden>Follow</button><button class="button button-quiet" id="share-profile" type="button">Share profile <span aria-hidden="true">↗</span></button></div>
+        <div class="hero-baseline"><div class="social-links"><a href="https://store.steampowered.com/" target="_blank" rel="noopener noreferrer">Steam <span aria-hidden="true">↗</span></a><span class="muted" aria-hidden="true">·</span><span class="muted">PC & Nintendo Switch</span></div><span class="art-credit" id="art-credit">A little piece of Outer Wilds</span></div>
+      </div>
+    </section>
+    <div class="shell profile-body">
+      <div class="summary"><div class="stats"><div class="stat"><b>286</b><span class="mono">Games</span></div><div class="stat"><b>84</b><span class="mono">Finished</span></div><div class="stat"><b id="review-count">8</b><span class="mono">Reviews</span></div><div class="stat stat-hours"><b>1,840</b><span class="mono">Hours played</span></div></div><button class="text-button" data-open-library type="button">Explore the library <span class="arrow" aria-hidden="true">↗</span></button></div>
+      <div class="common-games" id="common-games" hidden><strong>You have a few worlds in common.</strong> Outer Wilds, Hades and Hollow Knight are in both of your favorites.</div>
+      <div class="profile-columns">
+        <div class="profile-main">
+          <section class="section" aria-labelledby="favorite-heading"><div class="section-heading"><div><p class="eyebrow mono">The games that stay with me</p><h2 id="favorite-heading">My all-time five</h2></div><button class="text-button" id="all-favorites" type="button">18 favorites <span class="arrow" aria-hidden="true">↗</span></button></div><div class="favorites" id="favorite-grid"></div></section>
+          <section class="section" id="reviews-section" aria-labelledby="reviews-heading"><div class="section-heading"><div><h2 id="reviews-heading">Reviews & reflections</h2><p class="section-note">The worlds I loved. The things they left me thinking about.</p></div><button class="text-button" data-choose-pinned-review data-owner type="button">Choose pinned review <span class="arrow" aria-hidden="true">↗</span></button></div><div class="review-list" id="review-list"></div><div class="review-collection-link"><button class="text-button" id="view-all-reviews" type="button">View all reviews <span class="arrow" aria-hidden="true">↗</span></button></div></section>
+          <section class="section" id="journal-section" aria-labelledby="journal-heading"><div class="section-heading"><h2 id="journal-heading">A page from my journal</h2><span class="mono muted">11 Nov</span></div><article class="journal-entry"><img class="journal-image" src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1190460/library_hero.jpg" alt="The landscape of Death Stranding" loading="lazy"><div class="journal-body"><div class="journal-meta"><span>Death Stranding</span><span aria-hidden="true">·</span><span>Field notes #12</span></div><h3>Tonight, I took the long way.</h3><p>I was supposed to make one delivery. Instead, I spent an hour building a road I might never use again. Someone else will, though. I think that’s the part of this game that finally clicked.</p><p id="journal-more" hidden>It’s a strange sort of multiplayer: you never meet the people who make your journey easier. You just find a ladder exactly where you needed one. I left a few of my own before logging off.</p><div class="journal-footer"><button class="text-button" id="read-journal" type="button" aria-expanded="false">Read the entry <span aria-hidden="true">↗</span></button><span class="mono muted">3 min read</span></div></div></article></section>
+          <section class="section" id="shelves-section" aria-labelledby="shelves-heading"><div class="section-heading"><div><h2 id="shelves-heading">Shelves I’d hand a friend</h2><p class="section-note">A few carefully chosen ways into my collection.</p></div><span class="mono muted">2 pinned</span></div><div class="collection-grid" id="collection-list"></div></section>
+          <section class="section" id="finished" aria-labelledby="finished-heading"><div class="section-heading"><h2 id="finished-heading">Rolled the credits</h2><button class="text-button" id="show-trophies" type="button">All 84 finished <span class="arrow" aria-hidden="true">↗</span></button></div><div class="finished-list" id="finished-list"></div></section>
+        </div>
+        <aside class="profile-rail" aria-label="More about Lucas's gaming life">
+          <section class="rail-section" id="playing-section" aria-labelledby="playing-heading"><div class="section-heading"><h2 id="playing-heading">On my screen lately</h2><span class="mono muted">3 playing</span></div><div class="playing-grid" id="playing-grid"></div></section>
+          <section class="rail-section" id="goal-section" aria-labelledby="goal-heading"><div class="section-heading"><h2 id="goal-heading">A year well played</h2><span class="mono muted">2026</span></div><div class="goal-card"><div class="goal-top"><strong>18 <small>/ <span id="goal-total">24</span></small></strong><span class="mono">Games finished</span></div><div class="goal-track" role="progressbar" aria-label="Annual gaming goal" aria-valuenow="18" aria-valuemin="0" aria-valuemax="24"><span id="goal-progress"></span></div><p id="goal-caption">Six more stories before the year is out.</p><p class="goal-reason">Less collecting. More experiencing.</p></div></section>
+          <section class="rail-section" id="activity-section" aria-labelledby="activity-heading"><div class="section-heading"><h2 id="activity-heading">The latest</h2><span class="mono muted">This week</span></div><div class="activity-list"><div class="activity-item"><p>Finished <strong>Hollow Knight</strong><br>58 hours, a very full heart.</p><time>2 days ago</time></div><div class="activity-item"><p>Published a review of <strong>Celeste</strong><br>“The summit was never the point.”</p><time>3 days ago</time></div><div class="activity-item"><p>Added <strong>Tunic</strong> to On my radar</p><time>4 days ago</time></div><div class="activity-item"><p>Updated the shelf <strong>Go in knowing nothing</strong></p><time>5 days ago</time></div></div></section>
+          <section class="rail-section" id="wishlist-section" aria-labelledby="wishlist-heading"><div class="section-heading"><h2 id="wishlist-heading">On my radar</h2><button class="text-button" id="view-wishlist" type="button">View all <span aria-hidden="true">↗</span></button></div><div class="radar-grid" id="radar-grid"></div></section>
+          <section class="rail-section" id="milestones-section" aria-labelledby="milestones-heading"><div class="section-heading"><h2 id="milestones-heading">Little victories</h2></div><div class="milestone"><span class="milestone-mark" aria-hidden="true">50</span><div><strong>My fiftieth credits roll</strong><p>Celeste · A mountain worth climbing.</p></div></div><div class="milestone"><span class="milestone-mark" aria-hidden="true">100h</span><div><strong>A world I couldn’t leave</strong><p>Elden Ring · 138 hours in the Lands Between.</p></div></div><div class="milestone"><span class="milestone-mark" aria-hidden="true">10</span><div><strong>My first perfect score</strong><p>Outer Wilds · Still the one.</p></div></div></section>
+          <section class="rail-section" id="taste-section" aria-labelledby="taste-heading"><div class="section-heading"><h2 id="taste-heading">My kind of games</h2></div><div class="taste"><p class="quote">A good story. A strange world.<br>A reason to <em>stay a little longer.</em></p><div class="tags"><span class="tag">Exploration</span><span class="tag">RPGs</span><span class="tag">Indie</span><span class="tag">Single player</span></div><div class="taste-platform"><span>Usually playing on</span><strong>PC & Switch</strong></div></div></section>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <main class="shell all-reviews-view" id="all-reviews-view" hidden>
+    <button class="text-button" id="back-from-reviews" type="button">← Back to profile</button>
+    <div class="all-reviews-heading"><div><h1 id="all-reviews-title">Lucas’s reviews</h1><p class="section-note">Every game, in my own words.</p></div><button class="button button-quiet" data-choose-pinned-review data-owner type="button">Choose pinned review</button></div>
+    <div class="review-browse-controls"><label>Find a review<input type="search" id="review-search" placeholder="Search by game or review title"></label><label>Sort by<select id="review-sort"><option value="newest">Newest first</option><option value="rating">Highest rated</option></select></label></div>
+    <p class="review-result-count" id="review-result-count" role="status"></p>
+    <div class="all-reviews-list" id="all-review-list"></div>
+  </main>
+  <main class="shell editor" id="editor" hidden>
+    <div class="editor-top"><div><button class="text-button" id="back-profile" type="button">← Back to profile</button><h1>Make it yours.</h1><p class="section-note">Your games. Your introduction.</p></div><button class="button button-quiet" id="editor-preview-button" type="button">Preview profile <span aria-hidden="true">↗</span></button></div>
+    <div class="editor-grid">
+      <nav class="editor-nav" aria-label="Profile settings"><a href="#edit-identity">Identity</a><a href="#edit-favorites">Favorite games</a><a href="#edit-sections">Sections</a><a href="#edit-privacy">Privacy</a></nav>
+      <form class="editor-form" id="profile-form">
+        <section class="form-section" id="edit-identity"><h2>A little about you</h2><p>This is how you introduce yourself to people who visit your shelf.</p><div class="avatar-editor"><div class="avatar" id="editor-avatar" aria-hidden="true">L</div><div><strong>Your profile mark</strong><p>Made from your name. Always a little yours.</p></div></div><label class="field">Display name<input id="name-input" name="displayName" maxlength="32" required value="Lucas"></label><label class="field">Bio<textarea id="bio-input" name="bio" maxlength="180">Here for worlds worth getting lost in.
+Story-driven games, strange little indies, and just one more run.</textarea><span class="field-hint" id="bio-count">114 / 180 characters</span></label><label class="field">A world for your header<select id="hero-input" name="header"><option value="753640">Outer Wilds</option><option value="1245620">Elden Ring</option><option value="367520">Hollow Knight</option><option value="none">Keep it quiet · no artwork</option></select><span class="field-hint">Game art from your collection, with a calm space for your name.</span></label></section>
+        <section class="form-section" id="edit-favorites"><h2>Your all-time five</h2><p>Pick the games that say the most about you. You can change your mind anytime.</p><div class="editor-favorites" id="editor-favorites"></div><label class="field" id="add-game-field" hidden>Add a favorite<select id="add-game-select"><option value="">Choose a game from your library</option></select></label></section>
+        <section class="form-section" id="edit-writing"><h2>Your voice, front and center.</h2><p>Pin a review you’ve already written on a game’s page, and choose a goal that feels good to work toward.</p><label class="field">Pinned review<select id="pinned-review-input"></select></label><label class="field">Games to finish this year<input type="number" id="goal-input" min="18" max="365" value="24"><span class="field-hint">The sample account has finished 18 games this year.</span></label><label class="field">Your taste, in a sentence<textarea id="taste-input" maxlength="160">A good story. A strange world. A reason to stay a little longer.</textarea></label></section>
+        <section class="form-section" id="edit-sections"><h2>What else feels like you?</h2><p>Keep the parts you want to share. Empty sections stay out of the way.</p><div id="section-choices"></div></section>
+        <section class="form-section" id="edit-privacy"><h2>Public, on your terms.</h2><p>Your profile follows your shelf’s visibility. Games marked private stay private, including in favorites and counts.</p><p class="field-hint">This concept uses sample data. Your real profile and library stay unchanged.</p></section>
+        <div class="form-actions"><button class="button button-quiet" id="cancel-edit" type="button">Cancel</button><button class="button button-primary" type="submit">Save changes <span aria-hidden="true">↗</span></button></div>
+      </form>
+      <aside class="editor-aside" aria-label="Profile preview"><p class="mono muted">Your introduction</p><div class="preview-card"><div class="preview-header" id="preview-header"></div><div class="preview-body"><div class="avatar" id="preview-avatar" aria-hidden="true">L</div><p class="preview-name" id="preview-name">Lucas</p><p class="handle">@lucas</p><p class="preview-bio" id="preview-bio"></p><div class="preview-covers" id="preview-covers"></div></div></div><p class="preview-label">Your changes appear here before you save.</p><div class="preview-public"><strong>Public profile</strong><br>Only the games you share are shown to visitors.</div></aside>
+    </div>
+  </main>
+  <footer class="footer"><div class="shell"><span>Game data and artwork from Steam & IGDB. <a href="minimal.html">Compare the first concept ↗</a></span><span class="concept-label">Shelf · Profile study · Sample data & future features</span></div></footer>
+  <dialog id="content-dialog" aria-labelledby="dialog-title"><div class="dialog-heading"><h2 id="dialog-title">Your library</h2><button class="icon-button" id="close-dialog" type="button" aria-label="Close">×</button></div><div class="dialog-content" id="dialog-content"></div></dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const $ = (id) => document.getElementById(id);
+      const steam = (id, image = 'library_600x900.jpg') => `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/${image}`;
+      const games = [
+        { id:'753640', title:'Outer Wilds', year:'2019', platform:'PC', rating:'10', hours:'31', note:'Some discoveries stay with you long after the credits.' },
+        { id:'1145360', title:'Hades', year:'2020', platform:'Switch', rating:'9.5', hours:'124', note:'One more run. Always one more run.' },
+        { id:'367520', title:'Hollow Knight', year:'2017', platform:'PC', rating:'9.5', hours:'58', note:'Getting wonderfully lost in Hallownest.' },
+        { id:'1245620', title:'Elden Ring', year:'2022', platform:'PC', rating:'10', hours:'138', note:'The view from the next hill was always worth it.' },
+        { id:'632470', title:'Disco Elysium', year:'2019', platform:'PC', rating:'10', hours:'42', note:'A city, a very bad morning, and a story I still think about.' },
+        { id:'1091500', title:'Cyberpunk 2077', year:'2020', platform:'PC', hours:'46.2', note:'Taking the long way through Night City.' },
+        { id:'1145350', title:'Hades II', year:'2025', platform:'PC', hours:'28.4', note:'A few more nights in the underworld.' },
+        { id:'1190460', title:'Death Stranding', year:'2019', platform:'PC', hours:'19.7', note:'One delivery at a time.' },
+        { id:'504230', title:'Celeste', year:'2018', platform:'Switch', rating:'9', hours:'19', note:'A mountain worth climbing.' },
+        { id:'814380', title:'Sekiro: Shadows Die Twice', year:'2019', platform:'PC', rating:'9.5', hours:'47', note:'Hesitation is defeat.' },
+        { id:'553420', title:'Tunic', year:'2022', platform:'PC', hours:'0', note:'Waiting for a quiet weekend and a notebook.' },
+        { id:'813230', title:'Animal Well', year:'2024', platform:'PC', hours:'0', note:'Something strange is waiting down there.' },
+        { id:'1086940', title:'Baldur’s Gate 3', year:'2023', platform:'PC', hours:'0', note:'Saving this adventure for a few good friends.' },
+        { id:'1903340', title:'Clair Obscur: Expedition 33', year:'2025', platform:'PC', hours:'0', note:'Next on my list of worlds to get lost in.' }
+      ];
+      const findGame = id => games.find(game => game.id === id);
+      const commentCount = count => count + (count===1?' comment':' comments');
+      const reviews = [
+        { id:'r-outer', game:'753640', title:'A universe that trusts you to be curious.', rating:'10', date:'6 Oct 2026', likes:42, comments:2, text:'Most games tell me where to go. Outer Wilds gave me a tiny ship, a handful of questions, and the space to follow whichever one kept me up at night. I started taking notes on paper. Not because I had to, but because I cared. That feels like a small miracle.', more:'The thing I love most is how often a place changes without changing at all. You come back with a different question, and suddenly the same room means something else. It made me a better listener, a more patient explorer, and a little more comfortable with not knowing.\n\nIf it is still ahead of you, I am a little jealous. Take your time. Follow the thing that makes you curious. I would not trade my first trip for anything.', spoiler:false },
+        { id:'r-celeste', game:'504230', title:'The summit was never the point.', rating:'9', date:'28 Oct 2026', likes:18, comments:1, text:'I came for the platforming and stayed for how gently this game talks about being hard on yourself. Every room says: try again, you can do this. Every failure takes about a second to forgive. I wish I was that kind to myself off the mountain.', more:'The optional challenges are still waiting for me, and I am happy to leave them there for a while. Finishing felt less like proving something and more like finally taking a breath.', spoiler:false },
+        { id:'r-disco', game:'632470', title:'I came for a mystery. I stayed for the people.', rating:'10', date:'19 Sep 2026', likes:27, comments:3, text:'Some of the moments I remember most were the ones where I stopped trying to say the clever thing. A hesitant answer. An awkward silence. The kindness of somebody who had every reason to walk away. This is a game I wanted to talk to, not just finish.', more:'It is messy and funny and often painfully human. I kept returning to conversations I thought were over, hoping there was one more small thing I could understand about the person on the other side.', spoiler:true },
+        { id:'r-hollow', game:'367520', title:'A place that gets quieter as you know it better.', rating:'9.5', date:'9 Nov 2026', likes:21, comments:2, text:'At first, every unfamiliar passage felt like a threat. By the end, the sound of a familiar bench was enough to make me feel at home. I love games that let a place become a memory instead of just another map to clear.', more:'There are still corners I have not seen. I like knowing they are there, waiting for a return trip that does not need to prove anything.', spoiler:false },
+        { id:'r-hades', game:'1145360', title:'One more run became the whole summer.', rating:'9.5', date:'16 Aug 2026', likes:16, comments:1, text:'I usually play games to see what happens next. Here I kept playing because I wanted to see everyone again. A failed attempt still meant a new conversation, a new combination, a tiny thing to look forward to.', more:'Eventually I stopped calling the unsuccessful runs failures. They were just another way of spending an evening in a world I liked being in.', spoiler:false },
+        { id:'r-elden', game:'1245620', title:'The next hill was always worth it.', rating:'10', date:'14 Jul 2026', likes:29, comments:3, text:'I kept setting out with a plan and getting distracted within five minutes. A shape on the horizon, a path that seemed to lead nowhere, a view I wanted to get closer to. My favorite part was being allowed to wander.', more:'The hardest encounters were memorable, but so were the quiet rides between them. This world knew how to make distance feel like a promise.', spoiler:false },
+        { id:'r-sekiro', game:'814380', title:'The moment hesitation stopped.', rating:'9.5', date:'12 Oct 2026', likes:12, comments:1, text:'There was a particular evening when I finally stopped trying to survive every encounter and started listening to its rhythm. The game had not become easier. I had just learned how to meet it halfway.', more:'That change in confidence stayed with me through the last stretch. Every difficult game promises a feeling like this; very few have made it feel so earned.', spoiler:false },
+        { id:'r-death', game:'1190460', title:'An unexpectedly human kind of solitude.', rating:'8.5', status:'Playing', date:'10 Nov 2026', likes:9, comments:1, text:'Still making my way through this one, slowly. What keeps surprising me is how grateful I feel for people I will never meet. A bridge in the right place can say more than a whole conversation.', more:'I am not ready to give it a final verdict. For now, I am happy to keep walking and leave the next person a slightly easier path.', spoiler:false }
+      ];
+      const reviewDates = { 'r-outer':'2026-10-06', 'r-celeste':'2026-10-28', 'r-disco':'2026-09-19', 'r-hollow':'2026-11-09', 'r-hades':'2026-08-16', 'r-elden':'2026-07-14', 'r-sekiro':'2026-10-12', 'r-death':'2026-11-10' };
+      const sections = [
+        ['reviews','Reviews & reflections','Your writing, with one review pinned first.','reviews-section'],
+        ['journal','Gaming journal','A personal note from the worlds you are exploring.','journal-section'],
+        ['playing','Currently playing','A few games from your Playing list.','playing-section'],
+        ['goal','Annual goal','A little encouragement for the year ahead.','goal-section'],
+        ['activity','Recent activity','Reviews, finishes and shelves you have shared.','activity-section'],
+        ['wishlist','On my radar','The games you are looking forward to.','wishlist-section'],
+        ['milestones','Personal milestones','A few moments worth keeping.','milestones-section'],
+        ['taste','My kind of games','Your introduction to what you like.','taste-section'],
+        ['finished','Recent finishes','Your last three recorded completions.','finished'],
+        ['shelves','Curated shelves','The collections you would hand a friend.','shelves-section'],
+        ['social','Social connections','Followers and shared favorites in visitor view.',null]
+      ];
+      let state = { name:'Lucas', bio:'Here for worlds worth getting lost in.\nStory-driven games, strange little indies, and just one more run.', hero:'753640', favorites:games.slice(0,5).map(game=>game.id), ...Object.fromEntries(sections.map(([key])=>[key,true])), pinnedReview:'r-outer', annualGoal:24, tasteNote:'A good story. A strange world. A reason to stay a little longer.' };
+      let draft = null;
+      let visitor = false;
+      let following = false;
+      let allReviewsOpen = false;
+      let reviewReturnScroll = 0;
+      let toastTimer;
+      let gameFavorite = true;
+      const escape = text => String(text).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+      const cover = (game, className='') => `<img class="${className}" src="${steam(game.id)}" alt="${escape(game.title)}" loading="lazy">`;
+      const toast = message => { $('toast').textContent=message; $('toast').hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toast').hidden=true,3500); };
+      function showGame(id) {
+        const game=findGame(id);
+        $('dialog-title').textContent=game.title;
+        $('dialog-content').innerHTML=`<img class="game-dialog-art" src="${steam(game.id,'header.jpg')}" alt=""><p class="game-dialog-meta">${escape(game.year)} · ${escape(game.platform)} · ${escape(game.hours)} hours played${game.rating ? ' · Rated '+escape(game.rating)+'/10' : ''}</p><div class="game-dialog-bottom"><p>${escape(game.note)}</p><button class="button button-quiet" id="sample-favorite" type="button" aria-pressed="true">♥ Favorite</button></div>`;
+        gameFavorite=true;
+        $('sample-favorite').onclick=()=>{gameFavorite=!gameFavorite;$('sample-favorite').textContent=gameFavorite?'♥ Favorite':'♡ Favorite';$('sample-favorite').setAttribute('aria-pressed',String(gameFavorite));};
+        $('content-dialog').showModal();
+      }
+      function showLibrary(title='The library', selected=games) {
+        $('dialog-title').textContent=title;
+        $('dialog-content').innerHTML=`<div class="dialog-grid">${selected.map(game=>`<div class="dialog-game">${cover(game)}<p>${escape(game.title)}</p><small>${escape(game.platform)} · ${escape(game.year)}</small></div>`).join('')}</div>`;
+        $('content-dialog').showModal();
+      }
+      function appendComment(form,message) {
+        const comment=document.createElement('div');comment.className='comment';
+        comment.innerHTML='<span class="comment-avatar" aria-hidden="true">Y</span><div><strong>You</strong><p></p></div>';
+        comment.querySelector('p').textContent=message;form.before(comment);
+      }
+      function renderReviews() {
+        const byNewest=(a,b)=>reviewDates[b.id].localeCompare(reviewDates[a.id]);
+        const ordered=[...reviews].sort(allReviewsOpen?byNewest:(a,b)=>Number(b.id===state.pinnedReview)-Number(a.id===state.pinnedReview)||byNewest(a,b));
+        const query=$('review-search').value.trim().toLowerCase();
+        const shown=allReviewsOpen?ordered.filter(review=>(findGame(review.game).title+' '+review.title+' '+review.text).toLowerCase().includes(query)):ordered.slice(0,3);
+        if(allReviewsOpen&&$('review-sort').value==='rating')shown.sort((a,b)=>Number(b.rating)-Number(a.rating)||byNewest(a,b));
+        const list=allReviewsOpen?$('all-review-list'):$('review-list');
+        (allReviewsOpen?$('review-list'):$('all-review-list')).innerHTML='';
+        list.innerHTML=shown.map(review=>{
+          const game=findGame(review.game),pinned=review.id===state.pinnedReview;
+          return `<article class="review ${pinned?'review-featured':'review-regular'}" aria-label="Review of ${escape(game.title)}">${pinned?'<div class="review-kicker"><span class="pin-label">PINNED REVIEW</span><span>A good place to start</span></div>':''}<div class="review-layout">${cover(game,'review-cover')}<div class="review-meta"><div><h3 class="review-game"><button type="button" data-game="${game.id}">${escape(game.title)}</button><small>${game.year}</small></h3><p class="review-platform">${game.platform} · ${review.status || 'Finished'} · ${review.date}</p></div><span class="review-score">${review.rating}<small> / 10</small></span></div><div class="review-writing"><h4>${escape(review.title)}</h4>${review.spoiler?`<div class="spoiler-preview" id="spoiler-${review.id}"><span>This review contains story spoilers.</span><button class="review-more" data-reveal="${review.id}" type="button">Reveal review</button></div>`:''}<div id="writing-${review.id}" ${review.spoiler?'hidden':''}><p class="review-copy">${escape(review.text)}</p><div id="extra-${review.id}" hidden>${review.more.split('\n\n').map(p=>`<p class="review-copy" style="margin-top:13px">${escape(p)}</p>`).join('')}</div><button class="review-more" data-read="${review.id}" type="button" aria-expanded="false">Read full review ↗</button></div><div class="review-footer"><div class="review-social"><button type="button" data-like="${review.id}" aria-pressed="${Boolean(review.liked)}">${review.liked?'Liked':'Like'} · ${review.likes}</button><button type="button" data-comments="${review.id}" aria-expanded="false">${commentCount(review.comments)}</button></div><button class="text-button" type="button" data-pin-review="${review.id}" data-owner>${pinned?'Unpin review':'Pin review'}</button></div><div class="comments" id="comments-${review.id}" hidden><div class="comment"><span class="comment-avatar" aria-hidden="true">M</span><div><strong>Maya</strong><p>That feeling when a game follows you into the rest of your week. This one did that for me too.</p></div></div><form class="comment-form" data-comment-form="${review.id}"><label class="sr-only" for="comment-input-${review.id}">Add a comment</label><input id="comment-input-${review.id}" maxlength="300" placeholder="Add to the conversation…" required><button class="button button-quiet" type="submit">Post</button></form></div></div></div></article>`;
+        }).join('');
+        shown.forEach(review=>{const form=document.querySelector(`[data-comment-form="${review.id}"]`);(review.addedComments??[]).forEach(message=>appendComment(form,message));});
+        if(!shown.length)list.innerHTML='<p class="reviews-empty">No reviews match. Try another game or title.</p>';
+        const total=reviews.length;
+        $('review-count').textContent=total;
+        $('view-all-reviews').textContent=`View all ${total} reviews ↗`;
+        $('all-reviews-title').textContent=state.name+'’s reviews';
+        $('review-result-count').textContent=shown.length===total?`${total} reviews`:`${shown.length} of ${total} reviews`;
+        document.querySelectorAll('[data-owner]').forEach(el=>el.hidden=visitor);
+      }
+      function showPinChooser() {
+        if(visitor)return;
+        $('dialog-title').textContent='Choose a review to pin';
+        $('dialog-content').innerHTML=`<p class="pin-intro">Select one of the reviews you’ve written for a game. It will appear first on your profile.</p><div class="pin-choices">${[...reviews].sort((a,b)=>reviewDates[b.id].localeCompare(reviewDates[a.id])).map(review=>`<button class="pin-choice" data-select-pin="${review.id}" aria-pressed="${review.id===state.pinnedReview}" type="button">${cover(findGame(review.game))}<span><strong>${escape(findGame(review.game).title)} · ${review.rating}/10</strong><p>${escape(review.title)}</p></span><span class="pin-state">${review.id===state.pinnedReview?'Pinned':'Select'}</span></button>`).join('')}</div>${state.pinnedReview?'<div class="pin-actions"><button class="text-button" data-clear-pin type="button">Remove pinned review</button></div>':''}`;
+        $('content-dialog').showModal();
+      }
+      function openAllReviews() {
+        reviewReturnScroll=window.scrollY;allReviewsOpen=true;
+        $('profile').hidden=true;$('all-reviews-view').hidden=false;renderReviews();window.scrollTo(0,0);
+      }
+      function closeAllReviews(toTop=false) {
+        allReviewsOpen=false;$('all-reviews-view').hidden=true;$('profile').hidden=false;renderReviews();window.scrollTo(0,toTop?0:reviewReturnScroll);
+      }
+      function renderProfile() {
+        $('profile-name').textContent=state.name;
+        document.title=state.name+' · Shelf profile concept';
+        $('profile-bio').textContent=state.bio;
+        $('profile-bio').style.whiteSpace='pre-line';
+        document.querySelectorAll('.profile-initial,.small-avatar').forEach(el=>el.textContent=state.name.trim().slice(0,1).toUpperCase()||'L');
+        $('hero-art').style.backgroundImage=state.hero==='none'?'none':`url('${steam(state.hero,'library_hero.jpg')}')`;
+        $('art-credit').textContent=state.hero==='none'?'':`A little piece of ${findGame(state.hero).title}`;
+        $('favorite-grid').innerHTML=state.favorites.map(id=>{const game=findGame(id);return `<button class="favorite" data-game="${id}" aria-label="${escape(game.title)}, favorite game, ${game.year}" type="button"><span class="cover-wrap">${cover(game)}</span><span class="favorite-title">${escape(game.title)}</span><span class="favorite-year">${game.year} <span aria-hidden="true">·</span> ${game.platform}</span></button>`;}).join('');
+        $('favorite-heading').textContent=state.favorites.length===5?'My all-time five':'The ones I come back to';
+        sections.forEach(([key,,,id])=>{if(id)$(id).hidden=!state[key];});
+        $('taste-section').querySelector('.quote').textContent=state.tasteNote;
+        $('goal-total').textContent=state.annualGoal;
+        $('goal-progress').style.width=Math.min(100,18/state.annualGoal*100)+'%';
+        $('goal-section').querySelector('[role="progressbar"]').setAttribute('aria-valuemax',String(state.annualGoal));
+        const left=Math.max(0,state.annualGoal-18); $('goal-caption').textContent=left?`${left} more stories before the year is out.`:'A year of stories, and a goal reached.';
+        $('follow-profile').hidden=!visitor||!state.social; $('common-games').hidden=!visitor||!state.social;
+        document.querySelector('.social-counts').hidden=!state.social;
+        document.querySelectorAll('[data-edit]').forEach(el=>el.hidden=visitor);
+        renderReviews();
+      }
+      function renderStatic() {
+        $('playing-grid').innerHTML=games.slice(5,8).map(game=>`<button class="playing-card" data-game="${game.id}" type="button"><div class="playing-image"><img src="${steam(game.id)}" alt="" loading="lazy"></div><div class="playing-card-body"><h3>${escape(game.title)}</h3><p class="meta"><span>${game.platform}</span><span aria-hidden="true">·</span><span>${game.hours} h</span></p><span class="playing-indicator">Playing</span></div></button>`).join('');
+        $('finished-list').innerHTML=[['367520','9 Nov'],['504230','28 Oct'],['814380','12 Oct']].map(([id,date])=>{const game=findGame(id);return `<a class="finished-row" href="#" data-game="${id}">${cover(game)}<div><h3>${escape(game.title)}</h3><p>${game.platform} <span aria-hidden="true">·</span> ${game.hours} hours</p></div><div class="rating">${game.rating}<small> / 10</small><small class="finished-date">${date} 2026</small></div></a>`;}).join('');
+        $('collection-list').innerHTML=[{title:'Go in knowing nothing',detail:'8 games · 24 saves',description:'Close the trailer. Put the guide away. These are better when you find your own way.',ids:['753640','553420','813230','367520']},{title:'After the credits, silence',detail:'12 games · 16 saves',description:'The ones that made me sit with the menu music for a little longer.',ids:['632470','504230','1190460','1145360']}].map((shelf,i)=>`<a class="editorial-collection" href="#" data-collection="${i}"><div class="collection-strip" aria-hidden="true">${shelf.ids.map(id=>cover(findGame(id))).join('')}</div><div class="editorial-collection-copy"><h3>${shelf.title}</h3><p>${shelf.description}</p><div class="collection-detail"><span>${shelf.detail}</span><span aria-hidden="true">↗</span></div></div></a>`).join('');
+        $('radar-grid').innerHTML=['553420','813230','1086940'].map(id=>`<button class="radar-game" data-game="${id}" type="button">${cover(findGame(id))}<span>${escape(findGame(id).title)}</span></button>`).join('');
+        $('section-choices').innerHTML=sections.map(([key,label,hint])=>`<label class="switch-row"><span>${label}<small>${hint}</small></span><input type="checkbox" id="show-${key}" checked></label>`).join('');
+      }
+      function previewDraft() {
+        if(!draft)return;
+        draft.name=$('name-input').value; draft.bio=$('bio-input').value; draft.hero=$('hero-input').value;
+        draft.pinnedReview=$('pinned-review-input').value; draft.annualGoal=Number($('goal-input').value)||24; draft.tasteNote=$('taste-input').value;
+        $('preview-name').textContent=draft.name||'Your name'; $('preview-bio').textContent=draft.bio; $('preview-bio').style.whiteSpace='pre-line';
+        $('preview-avatar').textContent=$('editor-avatar').textContent=draft.name.trim().slice(0,1).toUpperCase()||'L';
+        $('bio-count').textContent=`${draft.bio.length} / 180 characters`;
+        $('preview-header').style.backgroundImage=draft.hero==='none'?'none':`url('${steam(draft.hero,'library_hero.jpg')}')`;
+        $('preview-covers').innerHTML=draft.favorites.map(id=>cover(findGame(id))).join('');
+      }
+      function renderEditorFavorites() {
+        $('editor-favorites').innerHTML=draft.favorites.map((id,index)=>`<div class="editor-favorite"><span class="order">${index+1}</span>${cover(findGame(id))}<span class="game-name">${escape(findGame(id).title)}</span><button class="order-button" data-move="${index}" data-direction="-1" type="button" aria-label="Move ${escape(findGame(id).title)} earlier" ${index===0?'disabled':''}>↑</button><button class="order-button" data-move="${index}" data-direction="1" type="button" aria-label="Move ${escape(findGame(id).title)} later" ${index===draft.favorites.length-1?'disabled':''}>↓</button><button class="order-button" data-remove="${id}" type="button" aria-label="Remove ${escape(findGame(id).title)} from showcase">×</button></div>`).join('');
+        $('add-game-field').hidden=draft.favorites.length>=5;
+        $('add-game-select').innerHTML='<option value="">Choose a game from your library</option>'+games.filter(game=>!draft.favorites.includes(game.id)).map(game=>`<option value="${game.id}">${escape(game.title)}</option>`).join('');
+        previewDraft();
+      }
+      function editProfile() {
+        allReviewsOpen=false;$('all-reviews-view').hidden=true;
+        draft=structuredClone(state);
+        $('name-input').value=draft.name; $('bio-input').value=draft.bio; $('hero-input').value=draft.hero;
+        $('pinned-review-input').innerHTML='<option value="">No pinned review</option>'+reviews.map(review=>`<option value="${review.id}">${escape(findGame(review.game).title)} · ${review.rating}/10</option>`).join('');
+        $('pinned-review-input').value=draft.pinnedReview; $('goal-input').value=draft.annualGoal; $('taste-input').value=draft.tasteNote;
+        sections.forEach(([key])=>$('show-'+key).checked=draft[key]);
+        $('profile').hidden=true; $('editor').hidden=false;
+        renderEditorFavorites(); window.scrollTo(0,0); $('name-input').focus({preventScroll:true});
+      }
+      function closeEditor() { $('editor').hidden=true; $('profile').hidden=false; draft=null; $('visitor-banner').hidden=!visitor; $('visitor-banner').querySelector('p').textContent='You’re viewing your public profile.'; $('exit-visitor').textContent='Back to your view ↗'; renderProfile(); window.scrollTo(0,0); }
+      function toggleVisitor(value) {visitor=value;$('visitor-banner').hidden=!visitor;$('visitor-toggle').textContent=visitor?'Back to your view ↗':'View as visitor ↗';renderProfile();}
+      document.addEventListener('click',event=>{
+        const game=event.target.closest('[data-game]'); if(game){event.preventDefault();showGame(game.dataset.game);}
+        if(event.target.closest('[data-edit]'))editProfile();
+        if(event.target.closest('[data-open-library]')){event.preventDefault();showLibrary();}
+        const collection=event.target.closest('[data-collection]');if(collection){event.preventDefault();const first=collection.dataset.collection==='0';showLibrary(first?'Go in knowing nothing':'After the credits, silence',(first?['753640','553420','813230','367520']:['632470','504230','1190460','1145360']).map(findGame));}
+        const move=event.target.closest('[data-move]');if(move){const index=Number(move.dataset.move),next=index+Number(move.dataset.direction);[draft.favorites[index],draft.favorites[next]]=[draft.favorites[next],draft.favorites[index]];renderEditorFavorites();document.querySelector(`[data-move="${next}"][data-direction="${move.dataset.direction}"]`)?.focus();}
+        const remove=event.target.closest('[data-remove]');if(remove){draft.favorites=draft.favorites.filter(id=>id!==remove.dataset.remove);renderEditorFavorites();}
+        const like=event.target.closest('[data-like]');if(like){const review=reviews.find(r=>r.id===like.dataset.like);review.liked=!review.liked;review.likes+=review.liked?1:-1;like.textContent=`${review.liked?'Liked':'Like'} · ${review.likes}`;like.setAttribute('aria-pressed',String(review.liked));}
+        const read=event.target.closest('[data-read]');if(read){const extra=$('extra-'+read.dataset.read);extra.hidden=!extra.hidden;read.textContent=extra.hidden?'Read full review ↗':'Show less';read.setAttribute('aria-expanded',String(!extra.hidden));}
+        const reveal=event.target.closest('[data-reveal]');if(reveal){$('writing-'+reveal.dataset.reveal).hidden=false;$('spoiler-'+reveal.dataset.reveal).hidden=true;}
+        const comments=event.target.closest('[data-comments]');if(comments){const box=$('comments-'+comments.dataset.comments);box.hidden=!box.hidden;comments.setAttribute('aria-expanded',String(!box.hidden));}
+        const pin=event.target.closest('[data-pin-review]');if(pin){state.pinnedReview=state.pinnedReview===pin.dataset.pinReview?'':pin.dataset.pinReview;renderReviews();toast(state.pinnedReview?'Review pinned to your profile.':'Review unpinned.');}
+        if(event.target.closest('[data-choose-pinned-review]'))showPinChooser();
+        const selectPin=event.target.closest('[data-select-pin]');if(selectPin&&!visitor){state.pinnedReview=selectPin.dataset.selectPin;$('content-dialog').close();renderReviews();toast('Review pinned to your profile.');}
+        if(event.target.closest('[data-clear-pin]')&&!visitor){state.pinnedReview='';$('content-dialog').close();renderReviews();toast('Review unpinned.');}
+        if(allReviewsOpen&&event.target.closest('.brand,.global-nav a[href="#profile"]')){event.preventDefault();closeAllReviews(true);}
+        if(allReviewsOpen&&event.target.closest('.global-nav a[href="#finished"]'))closeAllReviews();
+        const community=event.target.closest('[data-community]');if(community){$('dialog-title').textContent=community.dataset.community==='followers'?'A few people following Lucas':'A few people Lucas follows';$('dialog-content').innerHTML=[['M','Maya','RPGs, slow adventures, very fast roguelikes.'],['J','Jo','Usually taking the scenic route.'],['E','Ellie','A soft spot for small games with big ideas.'],['A','André','One more attempt. Then one more.']].map(([initial,name,bio])=>`<div class="comment" style="padding:14px 0;border-bottom:1px solid var(--line)"><span class="comment-avatar" aria-hidden="true">${initial}</span><div><strong>${name}</strong><p>${bio}</p></div></div>`).join('');$('content-dialog').showModal();}
+      });
+      $('add-game-select').onchange=event=>{if(event.target.value&&draft.favorites.length<5){draft.favorites.push(event.target.value);renderEditorFavorites();}};
+      $('profile-form').addEventListener('input',previewDraft);
+      $('profile-form').onsubmit=event=>{event.preventDefault();if(!$('name-input').value.trim()){ $('name-input').setCustomValidity('Enter a name for your profile.');$('name-input').reportValidity();return; }previewDraft();state={...draft,name:draft.name.trim()};sections.forEach(([key])=>state[key]=$('show-'+key).checked);renderProfile();closeEditor();toast('Profile updated in this preview.');};
+      $('name-input').addEventListener('input',()=>$('name-input').setCustomValidity(''));
+      $('cancel-edit').onclick=$('back-profile').onclick=closeEditor;
+      $('editor-preview-button').onclick=()=>{previewDraft();const saved=state;state={...draft};sections.forEach(([key])=>state[key]=$('show-'+key).checked);renderProfile();state=saved;$('editor').hidden=true;$('profile').hidden=false;$('visitor-banner').hidden=false;$('visitor-banner').querySelector('p').textContent='Previewing your unsaved changes.';$('exit-visitor').textContent='Back to editing ↗';document.querySelectorAll('[data-edit],[data-owner]').forEach(el=>el.hidden=true);window.scrollTo(0,0);};
+      $('visitor-toggle').onclick=()=>toggleVisitor(!visitor);
+      $('exit-visitor').onclick=()=>{if(draft){$('editor').hidden=false;$('profile').hidden=true;$('visitor-banner').hidden=true;$('visitor-banner').querySelector('p').textContent='You’re viewing your public profile.';$('exit-visitor').textContent='Back to your view ↗';}else toggleVisitor(false);};
+      $('theme-toggle').onclick=()=>{const light=root.dataset.theme!=='light';root.dataset.theme=light?'light':'dark';$('theme-toggle').textContent=light?'☾':'☼';$('theme-toggle').setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');};
+      $('share-profile').onclick=async()=>{try{await navigator.clipboard.writeText('https://shelf.example/en/u/lucas/profile');toast('Sample profile link copied.');}catch{toast('Sample profile: shelf.example/en/u/lucas/profile');}};
+      $('all-favorites').onclick=()=>showLibrary('The favorites',games.slice(0,5));
+      $('show-trophies').onclick=()=>showLibrary('A few finished games',['367520','504230','814380'].map(findGame));
+      $('view-wishlist').onclick=()=>showLibrary('On my radar',['553420','813230','1086940','1903340'].map(findGame));
+      $('read-journal').onclick=()=>{const more=$('journal-more');more.hidden=!more.hidden;$('read-journal').textContent=more.hidden?'Read the entry ↗':'Close the entry';$('read-journal').setAttribute('aria-expanded',String(!more.hidden));};
+      $('follow-profile').onclick=()=>{following=!following;$('follow-profile').textContent=following?'Following':'Follow';$('follow-profile').setAttribute('aria-pressed',String(following));$('follower-count').textContent=314+Number(following);};
+      $('view-all-reviews').onclick=openAllReviews;
+      $('back-from-reviews').onclick=()=>closeAllReviews();
+      $('review-search').oninput=renderReviews;
+      $('review-sort').onchange=renderReviews;
+      document.addEventListener('submit',event=>{const form=event.target.closest('[data-comment-form]');if(!form)return;event.preventDefault();const input=form.querySelector('input'),message=input.value.trim();if(!message)return;appendComment(form,message);input.value='';const review=reviews.find(r=>r.id===form.dataset.commentForm);(review.addedComments??=[]).push(message);review.comments+=1;document.querySelector(`[data-comments="${review.id}"]`).textContent=commentCount(review.comments);});
+      $('close-dialog').onclick=()=>$('content-dialog').close();
+      $('content-dialog').addEventListener('click',event=>{if(event.target===$('content-dialog')){const rect=event.target.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)event.target.close();}});
+      renderStatic();renderProfile();
+    })();
+  </script>
+</body>
+</html>

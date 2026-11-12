@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Lucas · Shelf profile concept</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400;100,500;100,600;100,700;100,800;125,700;125,800;125,900&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; --wall:#0b0d12; --deep:#07080c; --surface:#14171f; --raised:#1c202b; --text:#f2f4f8; --muted:#a3abbb; --faint:#7d879a; --line:#262b38; --strong:#3a4152; --accent:#b4a4ff; --on-accent:#0b0d12; --marker:#78dca0; --led:#7c5cff; --shadow:0 18px 30px #0006; --hero-veil:linear-gradient(90deg,#0b0d12 3%,#0b0d12e8 28%,#0b0d1245 72%,#0b0d121a),linear-gradient(0deg,#0b0d12 0%,#0b0d1200 55%); --art-text:#f2f4f8; --radius:8px; font-family:Archivo,Arial,sans-serif; font-size:16px; }
+    :root[data-theme="light"] { color-scheme:light; --wall:#eceef2; --deep:#e1e4ea; --surface:#f7f8fa; --raised:#fff; --text:#0e1014; --muted:#555c6b; --faint:#666e7c; --line:#c3c8d2; --strong:#9098a8; --accent:#5b3fe6; --on-accent:#fff; --marker:#0a6b3a; --shadow:0 15px 25px #1b203020; --hero-veil:linear-gradient(90deg,#eceef2 3%,#eceef2ed 28%,#eceef23b 75%,#eceef21a),linear-gradient(0deg,#eceef2 0%,#eceef200 60%); }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:90px; }
+    body { margin:0; background:var(--wall); color:var(--text); }
+    button,input,textarea,select { font:inherit; }
+    button,a,input,textarea,select { -webkit-tap-highlight-color:transparent; }
+    button,a { touch-action:manipulation; }
+    button { cursor:pointer; }
+    a { color:inherit; text-decoration:none; }
+    button { color:inherit; }
+    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+    button:disabled { opacity:.35; cursor:default; }
+    [hidden] { display:none !important; }
+    h1,h2,h3,p,figure { margin:0; }
+    img { display:block; max-width:100%; }
+    .mono { font-family:"Martian Mono",monospace; font-size:10px; font-weight:400; letter-spacing:.1em; text-transform:uppercase; }
+    .muted { color:var(--muted); }
+    .shell { width:min(1160px,calc(100% - 80px)); margin-inline:auto; }
+    .topbar { border-bottom:1px solid var(--line); background:var(--wall); }
+    .topbar-inner { width:min(1360px,calc(100% - 64px)); min-height:72px; margin:auto; display:flex; align-items:center; gap:48px; }
+    .brand { display:flex; align-items:center; gap:10px; font-size:24px; font-weight:800; letter-spacing:-1px; }
+    .brand-mark { display:flex; align-items:flex-end; gap:3px; width:25px; height:24px; border-bottom:2px solid var(--accent); padding:0 2px 4px; }
+    .brand-mark i { display:block; width:5px; height:15px; background:var(--text); transform:skewY(-9deg); }
+    .brand-mark i:nth-child(2) { height:19px; opacity:.8; }
+    .brand-mark i:last-child { height:13px; opacity:.6; }
+    .global-nav { display:flex; gap:30px; align-items:stretch; align-self:stretch; }
+    .global-nav a { display:flex; align-items:center; color:var(--muted); font-size:13px; font-weight:600; position:relative; }
+    .global-nav a:hover { color:var(--text); }
+    .global-nav .active { color:var(--text); }
+    .global-nav .active:after { content:""; position:absolute; bottom:0; height:2px; background:var(--accent); left:0; right:0; box-shadow:0 -2px 12px color-mix(in srgb,var(--led) 60%,transparent); }
+    .account-nav { margin-left:auto; display:flex; align-items:center; gap:18px; }
+    .icon-button { background:transparent; border:0; min-width:36px; min-height:36px; padding:6px; font-size:22px; border-radius:5px; display:grid; place-items:center; }
+    .icon-button:hover { background:var(--surface); }
+    .small-avatar { display:grid; place-items:center; width:31px; height:31px; border-radius:50%; background:var(--raised); border:1px solid var(--strong); color:var(--accent); font-size:11px; font-weight:700; }
+    .button { display:inline-flex; justify-content:center; align-items:center; gap:9px; min-height:40px; padding:10px 16px; border:1px solid var(--strong); border-radius:6px; background:var(--surface); font-size:12px; font-weight:600; line-height:1.2; }
+    .button:hover { background:var(--raised); border-color:var(--muted); }
+    .button-primary { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+    .button-primary:hover { background:color-mix(in srgb,var(--accent) 88%,var(--text)); border-color:var(--accent); }
+    .button-quiet { background:transparent; border-color:var(--line); }
+    .text-button { display:inline-flex; align-items:center; gap:9px; padding:7px 0; border:0; background:transparent; font-size:12px; font-weight:500; color:var(--muted); }
+    .text-button:hover { color:var(--accent); }
+    .arrow { font-size:19px; line-height:1; font-weight:400; }
+    .hero { position:relative; isolation:isolate; padding-top:49px; min-height:351px; overflow:hidden; }
+    .hero-art { position:absolute; z-index:-2; inset:0 0 0 0; background-image:url('https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/753640/library_hero.jpg'); background-size:cover; background-position:center 47%; opacity:.8; }
+    .hero:after { content:""; position:absolute; inset:0; z-index:-1; background:var(--hero-veil); }
+    .hero .shell { position:relative; }
+    .breadcrumb { display:flex; align-items:center; gap:9px; color:var(--muted); margin-bottom:29px; font-size:11px; }
+    .breadcrumb .public-dot { width:5px; height:5px; background:var(--marker); border-radius:50%; }
+    .identity { display:flex; align-items:center; gap:20px; }
+    .avatar { width:82px; height:82px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--strong)); border-radius:19px; background:linear-gradient(145deg,var(--raised),var(--deep)); box-shadow:inset 0 0 24px color-mix(in srgb,var(--led) 12%,transparent); display:grid; place-items:center; font-size:33px; font-weight:700; color:var(--accent); position:relative; }
+    .avatar:after { content:""; width:18px; height:2px; background:var(--accent); position:absolute; bottom:15px; opacity:.7; }
+    .name { font-size:54px; letter-spacing:-2px; line-height:1.08; font-weight:800; font-stretch:125%; }
+    .handle { color:var(--muted); font-size:13px; margin-top:9px; }
+    .hero-actions { position:absolute; top:0; right:0; display:flex; gap:8px; }
+    .bio { margin:22px 0 0; max-width:410px; font-size:15px; line-height:1.65; color:var(--muted); }
+    .bio strong { font-weight:500; color:var(--text); }
+    .hero-baseline { display:flex; align-items:flex-end; justify-content:space-between; gap:28px; padding:25px 0 23px; }
+    .social-links { display:flex; gap:18px; align-items:center; font-size:11px; }
+    .social-links a { color:var(--muted); min-height:24px; display:flex; align-items:center; gap:6px; }
+    .social-links a:hover { color:var(--text); }
+    .art-credit { color:var(--faint); font-size:10px; letter-spacing:.02em; }
+    .summary { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); padding:18px 0 21px; gap:24px; }
+    .stats { display:flex; gap:33px; flex-wrap:wrap; }
+    .stat { display:flex; align-items:baseline; gap:8px; }
+    .stat b { font-size:21px; font-weight:600; letter-spacing:-.7px; font-variant-numeric:tabular-nums; }
+    .stat .mono { color:var(--muted); font-size:9px; letter-spacing:.06em; }
+    .profile-body { padding-bottom:38px; }
+    .section { padding-top:37px; }
+    .section-heading { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-bottom:20px; }
+    .eyebrow { color:var(--accent); margin-bottom:9px; font-size:9px; letter-spacing:.14em; }
+    h2 { font-size:23px; letter-spacing:-.6px; font-weight:600; }
+    .section-note { font-size:12px; color:var(--muted); margin-top:7px; line-height:1.6; }
+    .favorites { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:26px; padding:0 13px 0; position:relative; }
+    .favorites:after { content:""; position:absolute; inset:auto -4px 47px; height:7px; border-top:1px solid color-mix(in srgb,var(--accent) 65%,var(--line)); background:linear-gradient(var(--raised),var(--deep)); box-shadow:0 -1px 12px color-mix(in srgb,var(--led) 40%,transparent),0 10px 17px #0005; }
+    .favorite { min-width:0; position:relative; padding:0; border:0; background:transparent; text-align:left; z-index:1; border-radius:5px; }
+    .cover-wrap { display:block; position:relative; aspect-ratio:2/3; margin:0 auto 22px; border-radius:5px; box-shadow:var(--shadow); background:var(--surface); width:100%; }
+    .cover-wrap:after { content:""; position:absolute; inset:0; border-radius:5px; border:1px solid #ffffff20; box-shadow:inset 3px 0 2px #ffffff22,inset -2px 0 2px #0006; pointer-events:none; }
+    .cover-wrap img { width:100%; height:100%; object-fit:cover; border-radius:5px; }
+    .favorite-title { display:block; font-size:13px; font-weight:600; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .favorite-year { display:block; font-size:10px; margin-top:7px; color:var(--muted); }
+    .favorite:hover .favorite-title { color:var(--accent); }
+    .favorite:focus-visible { outline-offset:7px; }
+    .split { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(0,1fr); gap:45px; }
+    .lower-split { margin-top:8px; }
+    .playing-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px; }
+    .playing-card { border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; background:var(--surface); text-align:left; padding:0; }
+    .playing-card:hover { border-color:var(--strong); }
+    .playing-image { position:relative; aspect-ratio:1.7; overflow:hidden; background:var(--deep); }
+    .playing-image img { width:100%; height:100%; object-fit:cover; }
+    .playing-image:after { content:""; position:absolute; inset:0; background:linear-gradient(0deg,#0006,transparent 60%); }
+    .playing-card-body { padding:14px 13px; }
+    .playing-card h3 { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .playing-card .meta { font-size:10px; color:var(--muted); margin-top:9px; display:flex; gap:7px; align-items:center; }
+    .playing-indicator { display:inline-flex; gap:6px; align-items:center; font-size:9px; color:var(--marker); margin-top:15px; }
+    .playing-indicator:before { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; }
+    .taste { border-top:1px solid var(--line); padding-top:18px; }
+    .taste .quote { font-size:19px; line-height:1.5; letter-spacing:-.3px; max-width:330px; }
+    .taste .quote em { font-style:normal; color:var(--accent); }
+    .tags { display:flex; flex-wrap:wrap; gap:7px; margin:18px 0; }
+    .tag { font-size:10px; padding:6px 10px; border:1px solid var(--line); border-radius:4px; color:var(--muted); background:var(--surface); }
+    .taste-platform { display:flex; align-items:baseline; justify-content:space-between; padding-top:17px; border-top:1px solid var(--line); }
+    .taste-platform span { color:var(--muted); font-size:10px; }
+    .taste-platform strong { font-size:12px; font-weight:500; }
+    .finished-list { border-top:1px solid var(--line); }
+    .finished-row { display:grid; grid-template-columns:40px minmax(0,1fr) auto; gap:13px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); }
+    .finished-row img { width:40px; height:56px; object-fit:cover; border-radius:3px; }
+    .finished-row h3 { font-size:12px; font-weight:500; }
+    .finished-row p { font-size:10px; color:var(--muted); margin-top:8px; }
+    .finished-row .rating { font-family:"Martian Mono",monospace; font-size:14px; color:var(--text); text-align:right; }
+    .rating small { font-size:9px; color:var(--muted); }
+    .rating .finished-date { display:block; font-family:Archivo,sans-serif; margin-top:8px; font-size:10px; }
+    .collection-card { position:relative; display:flex; align-items:center; gap:16px; padding:18px; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:12px; background:var(--surface); }
+    .collection-card:hover { border-color:var(--strong); }
+    .mini-covers { width:84px; flex:none; height:65px; position:relative; }
+    .mini-covers img { width:40px; height:60px; object-fit:cover; position:absolute; border-radius:2px; border:1px solid var(--line); top:3px; box-shadow:2px 2px 5px #0005; }
+    .mini-covers img:nth-child(1) { left:0; transform:rotate(-8deg); }
+    .mini-covers img:nth-child(2) { left:22px; top:0; z-index:1; }
+    .mini-covers img:nth-child(3) { left:44px; transform:rotate(8deg); }
+    .collection-card h3 { font-size:13px; font-weight:500; line-height:1.5; }
+    .collection-card p { font-size:10px; color:var(--muted); margin-top:6px; }
+    .collection-card .arrow { margin-left:auto; color:var(--muted); }
+    .footer { border-top:1px solid var(--line); padding:24px 0; color:var(--muted); font-size:10px; }
+    .footer .shell { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .footer .concept-label { color:var(--faint); }
+    .visitor-banner { background:var(--surface); padding:13px 0; border-bottom:1px solid var(--line); }
+    .visitor-banner .shell { display:flex; align-items:center; justify-content:space-between; gap:20px; font-size:12px; }
+    .visitor-banner p { color:var(--muted); }
+    .toast { position:fixed; bottom:25px; left:50%; transform:translateX(-50%); z-index:10; padding:13px 20px; border:1px solid var(--strong); border-radius:7px; box-shadow:var(--shadow); background:var(--raised); font-size:12px; max-width:calc(100% - 32px); text-align:center; }
+    .editor { padding:38px 0 60px; }
+    .editor-top { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:30px; }
+    .editor h1 { font-size:34px; font-weight:700; letter-spacing:-1px; margin-top:13px; }
+    .editor-grid { display:grid; grid-template-columns:160px minmax(0,1fr) 290px; gap:36px; align-items:start; }
+    .editor-nav { display:grid; gap:6px; padding-top:4px; }
+    .editor-nav a { font-size:12px; color:var(--muted); padding:10px 11px; border-radius:4px; }
+    .editor-nav a:first-child { background:var(--surface); color:var(--text); border-left:2px solid var(--accent); }
+    .editor-form { min-width:0; }
+    .form-section { padding-bottom:26px; border-bottom:1px solid var(--line); margin-bottom:27px; }
+    .form-section h2 { font-size:18px; margin-bottom:8px; }
+    .form-section>p { font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:22px; }
+    .field { display:grid; gap:9px; margin-top:20px; font-size:12px; }
+    input,textarea,select { width:100%; color:var(--text); background:var(--surface); border:1px solid var(--strong); border-radius:5px; padding:11px 12px; font-size:13px; }
+    textarea { resize:vertical; min-height:100px; line-height:1.6; }
+    .field-hint { color:var(--muted); font-size:10px; line-height:1.6; }
+    .avatar-editor { display:flex; gap:15px; align-items:center; margin:24px 0 12px; }
+    .avatar-editor .avatar { width:60px; height:60px; border-radius:12px; font-size:25px; }
+    .avatar-editor .avatar:after { bottom:9px; }
+    .avatar-editor strong { font-size:12px; font-weight:500; }
+    .avatar-editor p { font-size:10px; color:var(--muted); line-height:1.6; margin-top:6px; }
+    .editor-favorites { display:grid; gap:0; border-top:1px solid var(--line); }
+    .editor-favorite { display:flex; gap:11px; align-items:center; border-bottom:1px solid var(--line); padding:11px 0; }
+    .editor-favorite img { width:29px; height:42px; object-fit:cover; border-radius:2px; }
+    .editor-favorite .order { width:14px; color:var(--muted); font-family:"Martian Mono",monospace; font-size:9px; }
+    .editor-favorite .game-name { font-size:11px; flex:1; min-width:0; }
+    .order-button { min-width:29px; min-height:30px; border:1px solid var(--line); border-radius:3px; background:transparent; color:var(--muted); padding:4px; }
+    .order-button:hover { color:var(--text); background:var(--surface); }
+    .switch-row { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:15px 0; border-bottom:1px solid var(--line); }
+    .switch-row span { font-size:12px; }
+    .switch-row small { display:block; font-size:10px; color:var(--muted); margin-top:6px; line-height:1.6; }
+    .switch-row input { width:34px; height:18px; accent-color:var(--accent); flex:none; }
+    .form-actions { display:flex; gap:10px; justify-content:flex-end; }
+    .preview-card { border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surface); margin-top:12px; }
+    .preview-header { height:85px; background-image:linear-gradient(0deg,#14171f33,#14171f33),url('https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/753640/library_hero.jpg'); background-position:center; background-size:cover; }
+    .preview-body { padding:0 19px 20px; }
+    .preview-body .avatar { width:45px; height:45px; border-radius:10px; margin-top:-22px; font-size:20px; }
+    .preview-body .avatar:after { display:none; }
+    .preview-name { font-size:24px; font-weight:700; margin-top:12px; }
+    .preview-bio { font-size:11px; line-height:1.7; color:var(--muted); margin-top:10px; overflow-wrap:anywhere; }
+    .preview-covers { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; margin-top:20px; }
+    .preview-covers img { width:100%; aspect-ratio:2/3; border-radius:2px; object-fit:cover; }
+    .preview-label { font-size:10px; color:var(--muted); margin-top:13px; line-height:1.7; }
+    .view-toggle { display:flex; gap:5px; margin:18px 0; }
+    .view-toggle .button { min-height:30px; padding:7px 12px; font-size:10px; }
+    .preview-public { border-top:1px solid var(--line); padding-top:17px; margin-top:17px; font-size:11px; line-height:1.7; color:var(--muted); }
+    .preview-public strong { color:var(--text); font-weight:500; }
+    dialog { border:1px solid var(--strong); border-radius:12px; background:var(--wall); color:var(--text); padding:0; max-width:700px; width:calc(100% - 40px); box-shadow:0 35px 110px #0009; }
+    dialog::backdrop { background:#000a; }
+    .dialog-heading { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:22px 25px; border-bottom:1px solid var(--line); }
+    .dialog-heading h2 { font-size:22px; }
+    .dialog-content { padding:25px; max-height:70vh; overflow:auto; }
+    .dialog-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; }
+    .dialog-game img { width:100%; aspect-ratio:2/3; object-fit:cover; border-radius:4px; }
+    .dialog-game p { font-size:11px; margin-top:10px; line-height:1.5; }
+    .dialog-game small { display:block; margin-top:5px; color:var(--muted); font-size:10px; }
+    .game-dialog-art { width:100%; aspect-ratio:2.2; object-fit:cover; border-radius:5px; }
+    .game-dialog-meta { margin:18px 0; font-size:12px; color:var(--muted); line-height:1.8; }
+    .game-dialog-bottom { display:flex; justify-content:space-between; align-items:center; gap:20px; }
+    .game-dialog-bottom p { font-size:12px; color:var(--muted); }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (prefers-reduced-motion:no-preference) { .cover-wrap { transition:transform 280ms ease,box-shadow 280ms ease; } .favorite:hover .cover-wrap { transform:translateY(-8px); box-shadow:0 23px 35px #0007,0 0 23px color-mix(in srgb,var(--led) 16%,transparent); } }
+    @media (max-width:1000px) { .shell { width:calc(100% - 56px); } .hero-actions { top:-3px; } .split { gap:28px; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); } .favorites { gap:19px; padding-inline:3px; } .stats { gap:25px; } .editor-grid { grid-template-columns:minmax(0,1fr) 270px; gap:35px; } .editor-nav { display:none; } }
+    @media (max-width:760px) { .topbar-inner { min-height:62px; width:calc(100% - 36px); gap:28px; } .brand { font-size:22px; } .global-nav { gap:20px; } .global-nav a { font-size:11px; } .account-nav { gap:7px; } .topbar-preview { display:none; } .shell { width:calc(100% - 40px); } .hero { padding-top:27px; min-height:333px; } .hero-art { background-position:70% center; } .hero-actions { position:static; margin-top:20px; } .breadcrumb { margin-bottom:25px; } .identity { gap:15px; } .avatar { width:65px; height:65px; border-radius:14px; font-size:28px; } .name { font-size:42px; } .bio { max-width:340px; font-size:13px; margin-top:20px; } .hero-baseline { padding:17px 0; } .art-credit { display:none; } .summary { padding-top:14px; align-items:flex-start; } .stats { gap:23px; } .stat { display:block; } .stat b { font-size:21px; display:block; margin-bottom:7px; } .stat .mono { font-size:8px; } .summary>.text-button { font-size:10px; white-space:nowrap; margin-top:3px; } .favorites { gap:15px; padding-inline:0; } .cover-wrap { margin-bottom:20px; } .favorite-title { font-size:11px; } .favorite-year { font-size:9px; } .favorites:after { bottom:43px; } .section { padding-top:29px; } h2 { font-size:21px; } .section-note { font-size:11px; } .split { grid-template-columns:1fr; gap:3px; } .taste .quote { max-width:none; font-size:18px; } .taste-platform { max-width:400px; } .playing-card h3 { font-size:12px; } .editor-grid { grid-template-columns:1fr; } .editor-aside { display:none; } .editor-top .button { display:none; } }
+    @media (max-width:500px) { .global-nav { gap:16px; } .global-nav a:last-child { display:none; } .account-nav .small-avatar { display:none; } .topbar-inner { gap:24px; } .brand-mark { width:20px; gap:2px; } .brand { font-size:21px; gap:7px; } .shell { width:calc(100% - 32px); } .hero-art { opacity:.62; background-position:65%; } .hero { min-height:340px; } .hero:after { background:linear-gradient(90deg,var(--wall),color-mix(in srgb,var(--wall) 85%,transparent) 40%,transparent),linear-gradient(0deg,var(--wall),transparent); } .name { font-size:40px; } .summary { gap:13px; } .stats { gap:23px; } .stat b { font-size:20px; } .summary>.text-button { max-width:70px; white-space:normal; line-height:1.5; text-align:left; } .favorites { grid-template-columns:repeat(6,minmax(0,1fr)); gap:18px 15px; } .favorite { grid-column:span 2; } .favorite:nth-child(4) { grid-column:2 / span 2; } .favorites:after { display:none; } .cover-wrap { margin-bottom:12px; } .favorite-title { font-size:10px; } .favorite-year { margin-top:6px; } .section-heading { gap:12px; margin-bottom:19px; } .section-heading>.text-button { font-size:10px; white-space:nowrap; } h2 { font-size:22px; } .eyebrow { font-size:8px; } .playing-grid { grid-template-columns:1fr; gap:10px; } .playing-card { display:grid; grid-template-columns:117px minmax(0,1fr); } .playing-image { aspect-ratio:auto; height:100%; min-height:105px; } .playing-image img { object-position:center; } .playing-card-body { padding:15px; } .playing-indicator { margin-top:12px; } .playing-card h3 { font-size:13px; } .playing-card .meta { font-size:11px; } .collection-card { padding:16px; } .dialog-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .dialog-heading,.dialog-content { padding:19px; } .footer .shell { display:grid; line-height:1.7; } .visitor-banner .shell { align-items:flex-start; } .visitor-banner p { max-width:200px; font-size:11px; line-height:1.6; } .visitor-banner button { white-space:nowrap; font-size:11px; } .editor h1 { font-size:30px; } .editor-favorite { gap:7px; } .order-button { min-width:30px; min-height:34px; } .editor-favorite .game-name { font-size:10px; } }
+    @media (max-width:760px) { .editor-top { flex-wrap:wrap; } .editor-top .button { display:inline-flex; } }
+    @media (pointer:coarse) { .icon-button { min-width:42px; min-height:42px; } .button { min-height:44px; } .text-button { min-height:36px; } input,textarea,select { font-size:16px; } .order-button { min-height:42px; min-width:32px; } }
+    @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="Shelf profile"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>Shelf</a>
+      <nav class="global-nav" aria-label="Main"><a class="active" href="#profile">Profile</a><a href="#" data-open-library>Library</a><a href="#finished">Trophies</a></nav>
+      <div class="account-nav"><button class="text-button topbar-preview" id="visitor-toggle" type="button">View as visitor <span class="arrow" aria-hidden="true">↗</span></button><button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to light theme">☼</button><button class="small-avatar" data-edit aria-label="Edit your profile" type="button">L</button></div>
+    </div>
+  </header>
+  <div class="visitor-banner" id="visitor-banner" hidden><div class="shell"><p>You’re viewing your public profile.</p><button class="text-button" id="exit-visitor" type="button">Back to your view <span aria-hidden="true">↗</span></button></div></div>
+  <main id="profile">
+    <section class="hero" aria-labelledby="profile-name">
+      <div class="hero-art" id="hero-art"></div>
+      <div class="shell">
+        <div class="breadcrumb"><span class="public-dot" aria-hidden="true"></span><span>Public profile</span><span aria-hidden="true">/</span><span>Here since 2024</span></div>
+        <div class="identity"><div class="avatar profile-initial" aria-hidden="true">L</div><div><h1 class="name" id="profile-name">Lucas</h1><p class="handle">@lucas</p></div></div>
+        <p class="bio" id="profile-bio">Here for <strong>worlds worth getting lost in.</strong><br>Story-driven games, strange little indies, and just one more run.</p>
+        <div class="hero-actions"><button class="button button-quiet" data-edit type="button"><span aria-hidden="true">✎</span> Edit profile</button><button class="button button-primary" id="share-profile" type="button">Share profile <span aria-hidden="true">↗</span></button></div>
+        <div class="hero-baseline"><div class="social-links"><a href="https://store.steampowered.com/" target="_blank" rel="noopener noreferrer">Steam <span aria-hidden="true">↗</span></a><span class="muted" aria-hidden="true">·</span><span class="muted">PC & Nintendo Switch</span></div><span class="art-credit" id="art-credit">A little piece of Outer Wilds</span></div>
+      </div>
+    </section>
+    <div class="shell profile-body">
+      <div class="summary"><div class="stats"><div class="stat"><b>286</b><span class="mono">Games</span></div><div class="stat"><b>84</b><span class="mono">Finished</span></div><div class="stat"><b>1,840</b><span class="mono">Hours played</span></div></div><button class="text-button" data-open-library type="button">Explore the library <span class="arrow" aria-hidden="true">↗</span></button></div>
+      <section class="section" aria-labelledby="favorite-heading">
+        <div class="section-heading"><div><p class="eyebrow mono">The games that stay with me</p><h2 id="favorite-heading">My all-time five</h2><p class="section-note">If you want to know my taste, start here.</p></div><button class="text-button" id="all-favorites" type="button">18 favorites <span class="arrow" aria-hidden="true">↗</span></button></div>
+        <div class="favorites" id="favorite-grid"></div>
+      </section>
+      <div class="split">
+        <section class="section" id="playing-section" aria-labelledby="playing-heading"><div class="section-heading"><h2 id="playing-heading">On my screen lately</h2><span class="mono muted">3 playing</span></div><div class="playing-grid" id="playing-grid"></div></section>
+        <section class="section" id="taste-section" aria-labelledby="taste-heading"><div class="section-heading"><h2 id="taste-heading">My kind of games</h2></div><div class="taste"><p class="quote">A good story. A strange world.<br>A reason to <em>stay a little longer.</em></p><div class="tags"><span class="tag">Exploration</span><span class="tag">RPGs</span><span class="tag">Indie</span><span class="tag">Single player</span></div><div class="taste-platform"><span>Usually playing on</span><strong>PC & Switch</strong></div></div></section>
+      </div>
+      <div class="split lower-split">
+        <section class="section" id="finished" aria-labelledby="finished-heading"><div class="section-heading"><h2 id="finished-heading">Rolled the credits</h2><button class="text-button" id="show-trophies" type="button">All 84 finished <span class="arrow" aria-hidden="true">↗</span></button></div><div class="finished-list" id="finished-list"></div></section>
+        <section class="section" id="shelves-section" aria-labelledby="shelves-heading"><div class="section-heading"><h2 id="shelves-heading">A few shelves to explore</h2></div><div id="collection-list"></div></section>
+      </div>
+    </div>
+  </main>
+  <main class="shell editor" id="editor" hidden>
+    <div class="editor-top"><div><button class="text-button" id="back-profile" type="button">← Back to profile</button><h1>Make it yours.</h1><p class="section-note">Your games. Your introduction.</p></div><button class="button button-quiet" id="editor-preview-button" type="button">Preview profile <span aria-hidden="true">↗</span></button></div>
+    <div class="editor-grid">
+      <nav class="editor-nav" aria-label="Profile settings"><a href="#edit-identity">Identity</a><a href="#edit-favorites">Favorite games</a><a href="#edit-sections">Sections</a><a href="#edit-privacy">Privacy</a></nav>
+      <form class="editor-form" id="profile-form">
+        <section class="form-section" id="edit-identity"><h2>A little about you</h2><p>This is how you introduce yourself to people who visit your shelf.</p><div class="avatar-editor"><div class="avatar" id="editor-avatar" aria-hidden="true">L</div><div><strong>Your profile mark</strong><p>Made from your name. Always a little yours.</p></div></div><label class="field">Display name<input id="name-input" name="displayName" maxlength="32" required value="Lucas"></label><label class="field">Bio<textarea id="bio-input" name="bio" maxlength="180">Here for worlds worth getting lost in.
+Story-driven games, strange little indies, and just one more run.</textarea><span class="field-hint" id="bio-count">114 / 180 characters</span></label><label class="field">A world for your header<select id="hero-input" name="header"><option value="753640">Outer Wilds</option><option value="1245620">Elden Ring</option><option value="367520">Hollow Knight</option><option value="none">Keep it quiet · no artwork</option></select><span class="field-hint">Game art from your collection, with a calm space for your name.</span></label></section>
+        <section class="form-section" id="edit-favorites"><h2>Your all-time five</h2><p>Pick the games that say the most about you. You can change your mind anytime.</p><div class="editor-favorites" id="editor-favorites"></div><label class="field" id="add-game-field" hidden>Add a favorite<select id="add-game-select"><option value="">Choose a game from your library</option></select></label></section>
+        <section class="form-section" id="edit-sections"><h2>What else feels like you?</h2><p>Keep the parts you want to share. Empty sections stay out of the way.</p><label class="switch-row"><span>Currently playing<small>A few games from your Playing list.</small></span><input type="checkbox" id="show-playing" checked></label><label class="switch-row"><span>My kind of games<small>Your short introduction to what you like.</small></span><input type="checkbox" id="show-taste" checked></label><label class="switch-row"><span>Recent finishes<small>Your last three recorded completions.</small></span><input type="checkbox" id="show-finished" checked></label><label class="switch-row"><span>Selected shelves<small>Handy doors into your collection.</small></span><input type="checkbox" id="show-shelves" checked></label></section>
+        <section class="form-section" id="edit-privacy"><h2>Public, on your terms.</h2><p>Your profile follows your shelf’s visibility. Games marked private stay private, including in favorites and counts.</p><p class="field-hint">This concept uses sample data. Your real profile and library stay unchanged.</p></section>
+        <div class="form-actions"><button class="button button-quiet" id="cancel-edit" type="button">Cancel</button><button class="button button-primary" type="submit">Save changes <span aria-hidden="true">↗</span></button></div>
+      </form>
+      <aside class="editor-aside" aria-label="Profile preview"><p class="mono muted">Your introduction</p><div class="preview-card"><div class="preview-header" id="preview-header"></div><div class="preview-body"><div class="avatar" id="preview-avatar" aria-hidden="true">L</div><p class="preview-name" id="preview-name">Lucas</p><p class="handle">@lucas</p><p class="preview-bio" id="preview-bio"></p><div class="preview-covers" id="preview-covers"></div></div></div><p class="preview-label">Your changes appear here before you save.</p><div class="preview-public"><strong>Public profile</strong><br>Only the games you share are shown to visitors.</div></aside>
+    </div>
+  </main>
+  <footer class="footer"><div class="shell"><span>Game data and artwork from Steam & IGDB.</span><span class="concept-label">Shelf · Profile study · Sample data</span></div></footer>
+  <dialog id="content-dialog" aria-labelledby="dialog-title"><div class="dialog-heading"><h2 id="dialog-title">Your library</h2><button class="icon-button" id="close-dialog" type="button" aria-label="Close">×</button></div><div class="dialog-content" id="dialog-content"></div></dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const $ = (id) => document.getElementById(id);
+      const steam = (id, image = 'library_600x900.jpg') => `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/${image}`;
+      const games = [
+        { id:'753640', title:'Outer Wilds', year:'2019', platform:'PC', rating:'10', hours:'31', note:'Some discoveries stay with you long after the credits.' },
+        { id:'1145360', title:'Hades', year:'2020', platform:'Switch', rating:'9.5', hours:'124', note:'One more run. Always one more run.' },
+        { id:'367520', title:'Hollow Knight', year:'2017', platform:'PC', rating:'9.5', hours:'58', note:'Getting wonderfully lost in Hallownest.' },
+        { id:'1245620', title:'Elden Ring', year:'2022', platform:'PC', rating:'10', hours:'138', note:'The view from the next hill was always worth it.' },
+        { id:'632470', title:'Disco Elysium', year:'2019', platform:'PC', rating:'10', hours:'42', note:'A city, a very bad morning, and a story I still think about.' },
+        { id:'1091500', title:'Cyberpunk 2077', year:'2020', platform:'PC', hours:'46.2', note:'Taking the long way through Night City.' },
+        { id:'1145350', title:'Hades II', year:'2025', platform:'PC', hours:'28.4', note:'A few more nights in the underworld.' },
+        { id:'1190460', title:'Death Stranding', year:'2019', platform:'PC', hours:'19.7', note:'One delivery at a time.' },
+        { id:'504230', title:'Celeste', year:'2018', platform:'Switch', rating:'9', hours:'19', note:'A mountain worth climbing.' },
+        { id:'814380', title:'Sekiro: Shadows Die Twice', year:'2019', platform:'PC', rating:'9.5', hours:'47', note:'Hesitation is defeat.' }
+      ];
+      const findGame = id => games.find(game => game.id === id);
+      let state = { name:'Lucas', bio:'Here for worlds worth getting lost in.\nStory-driven games, strange little indies, and just one more run.', hero:'753640', favorites:games.slice(0,5).map(game=>game.id), playing:true, taste:true, finished:true, shelves:true };
+      let draft = null;
+      let visitor = false;
+      let toastTimer;
+      let gameFavorite = true;
+      const escape = text => String(text).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+      const cover = (game, className='') => `<img class="${className}" src="${steam(game.id)}" alt="${escape(game.title)}" loading="lazy">`;
+      const toast = message => { $('toast').textContent=message; $('toast').hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toast').hidden=true,3500); };
+      function showGame(id) {
+        const game=findGame(id);
+        $('dialog-title').textContent=game.title;
+        $('dialog-content').innerHTML=`<img class="game-dialog-art" src="${steam(game.id,'header.jpg')}" alt=""><p class="game-dialog-meta">${escape(game.year)} · ${escape(game.platform)} · ${escape(game.hours)} hours played${game.rating ? ' · Rated '+escape(game.rating)+'/10' : ''}</p><div class="game-dialog-bottom"><p>${escape(game.note)}</p><button class="button button-quiet" id="sample-favorite" type="button" aria-pressed="true">♥ Favorite</button></div>`;
+        gameFavorite=true;
+        $('sample-favorite').onclick=()=>{gameFavorite=!gameFavorite;$('sample-favorite').textContent=gameFavorite?'♥ Favorite':'♡ Favorite';$('sample-favorite').setAttribute('aria-pressed',String(gameFavorite));};
+        $('content-dialog').showModal();
+      }
+      function showLibrary(title='The library', selected=games) {
+        $('dialog-title').textContent=title;
+        $('dialog-content').innerHTML=`<div class="dialog-grid">${selected.map(game=>`<div class="dialog-game">${cover(game)}<p>${escape(game.title)}</p><small>${escape(game.platform)} · ${escape(game.year)}</small></div>`).join('')}</div>`;
+        $('content-dialog').showModal();
+      }
+      function renderProfile() {
+        $('profile-name').textContent=state.name;
+        document.title=state.name+' · Shelf profile concept';
+        $('profile-bio').textContent=state.bio;
+        $('profile-bio').style.whiteSpace='pre-line';
+        document.querySelectorAll('.profile-initial,.small-avatar').forEach(el=>el.textContent=state.name.trim().slice(0,1).toUpperCase()||'L');
+        $('hero-art').style.backgroundImage=state.hero==='none'?'none':`url('${steam(state.hero,'library_hero.jpg')}')`;
+        $('art-credit').textContent=state.hero==='none'?'':`A little piece of ${findGame(state.hero).title}`;
+        $('favorite-grid').innerHTML=state.favorites.map(id=>{const game=findGame(id);return `<button class="favorite" data-game="${id}" aria-label="${escape(game.title)}, favorite game, ${game.year}" type="button"><span class="cover-wrap">${cover(game)}</span><span class="favorite-title">${escape(game.title)}</span><span class="favorite-year">${game.year} <span aria-hidden="true">·</span> ${game.platform}</span></button>`;}).join('');
+        $('favorite-heading').textContent=state.favorites.length===5?'My all-time five':'The ones I come back to';
+        $('playing-section').hidden=!state.playing; $('taste-section').hidden=!state.taste; $('finished').hidden=!state.finished; $('shelves-section').hidden=!state.shelves;
+        document.querySelectorAll('[data-edit]').forEach(el=>el.hidden=visitor);
+      }
+      function renderStatic() {
+        $('playing-grid').innerHTML=games.slice(5,8).map(game=>`<button class="playing-card" data-game="${game.id}" type="button"><div class="playing-image"><img src="${steam(game.id,'header.jpg')}" alt="" loading="lazy"></div><div class="playing-card-body"><h3>${escape(game.title)}</h3><p class="meta"><span>${game.platform}</span><span aria-hidden="true">·</span><span>${game.hours} h</span></p><span class="playing-indicator">Playing</span></div></button>`).join('');
+        $('finished-list').innerHTML=[['367520','9 Nov'],['504230','28 Oct'],['814380','12 Oct']].map(([id,date])=>{const game=findGame(id);return `<a class="finished-row" href="#" data-game="${id}">${cover(game)}<div><h3>${escape(game.title)}</h3><p>${game.platform} <span aria-hidden="true">·</span> ${game.hours} hours</p></div><div class="rating">${game.rating}<small> / 10</small><small class="finished-date">${date} 2026</small></div></a>`;}).join('');
+        $('collection-list').innerHTML=[{title:'Stories that stayed with me',detail:'16 games · For the journey',ids:['632470','753640','1190460']},{title:'Small games. Big feelings.',detail:'12 games · Indie favorites',ids:['504230','367520','1145360']}].map((shelf,i)=>`<a class="collection-card" href="#" data-collection="${i}"><div class="mini-covers" aria-hidden="true">${shelf.ids.map(id=>cover(findGame(id))).join('')}</div><div><h3>${shelf.title}</h3><p>${shelf.detail}</p></div><span class="arrow" aria-hidden="true">↗</span></a>`).join('');
+      }
+      function previewDraft() {
+        if(!draft)return;
+        draft.name=$('name-input').value; draft.bio=$('bio-input').value; draft.hero=$('hero-input').value;
+        $('preview-name').textContent=draft.name||'Your name'; $('preview-bio').textContent=draft.bio; $('preview-bio').style.whiteSpace='pre-line';
+        $('preview-avatar').textContent=$('editor-avatar').textContent=draft.name.trim().slice(0,1).toUpperCase()||'L';
+        $('bio-count').textContent=`${draft.bio.length} / 180 characters`;
+        $('preview-header').style.backgroundImage=draft.hero==='none'?'none':`url('${steam(draft.hero,'library_hero.jpg')}')`;
+        $('preview-covers').innerHTML=draft.favorites.map(id=>cover(findGame(id))).join('');
+      }
+      function renderEditorFavorites() {
+        $('editor-favorites').innerHTML=draft.favorites.map((id,index)=>`<div class="editor-favorite"><span class="order">${index+1}</span>${cover(findGame(id))}<span class="game-name">${escape(findGame(id).title)}</span><button class="order-button" data-move="${index}" data-direction="-1" type="button" aria-label="Move ${escape(findGame(id).title)} earlier" ${index===0?'disabled':''}>↑</button><button class="order-button" data-move="${index}" data-direction="1" type="button" aria-label="Move ${escape(findGame(id).title)} later" ${index===draft.favorites.length-1?'disabled':''}>↓</button><button class="order-button" data-remove="${id}" type="button" aria-label="Remove ${escape(findGame(id).title)} from showcase">×</button></div>`).join('');
+        $('add-game-field').hidden=draft.favorites.length>=5;
+        $('add-game-select').innerHTML='<option value="">Choose a game from your library</option>'+games.filter(game=>!draft.favorites.includes(game.id)).map(game=>`<option value="${game.id}">${escape(game.title)}</option>`).join('');
+        previewDraft();
+      }
+      function editProfile() {
+        draft=structuredClone(state);
+        $('name-input').value=draft.name; $('bio-input').value=draft.bio; $('hero-input').value=draft.hero;
+        ['playing','taste','finished','shelves'].forEach(key=>$('show-'+key).checked=draft[key]);
+        $('profile').hidden=true; $('editor').hidden=false;
+        renderEditorFavorites(); window.scrollTo(0,0); $('name-input').focus({preventScroll:true});
+      }
+      function closeEditor() { $('editor').hidden=true; $('profile').hidden=false; draft=null; $('visitor-banner').hidden=!visitor; $('visitor-banner').querySelector('p').textContent='You’re viewing your public profile.'; $('exit-visitor').textContent='Back to your view ↗'; renderProfile(); window.scrollTo(0,0); }
+      function toggleVisitor(value) {visitor=value;$('visitor-banner').hidden=!visitor;$('visitor-toggle').textContent=visitor?'Back to your view ↗':'View as visitor ↗';renderProfile();}
+      document.addEventListener('click',event=>{
+        const game=event.target.closest('[data-game]'); if(game){event.preventDefault();showGame(game.dataset.game);}
+        if(event.target.closest('[data-edit]'))editProfile();
+        if(event.target.closest('[data-open-library]')){event.preventDefault();showLibrary();}
+        const collection=event.target.closest('[data-collection]');if(collection){event.preventDefault();const first=collection.dataset.collection==='0';showLibrary(first?'Stories that stayed with me':'Small games. Big feelings.',(first?['632470','753640','1190460']:['504230','367520','1145360']).map(findGame));}
+        const move=event.target.closest('[data-move]');if(move){const index=Number(move.dataset.move),next=index+Number(move.dataset.direction);[draft.favorites[index],draft.favorites[next]]=[draft.favorites[next],draft.favorites[index]];renderEditorFavorites();document.querySelector(`[data-move="${next}"][data-direction="${move.dataset.direction}"]`)?.focus();}
+        const remove=event.target.closest('[data-remove]');if(remove){draft.favorites=draft.favorites.filter(id=>id!==remove.dataset.remove);renderEditorFavorites();}
+      });
+      $('add-game-select').onchange=event=>{if(event.target.value&&draft.favorites.length<5){draft.favorites.push(event.target.value);renderEditorFavorites();}};
+      $('profile-form').addEventListener('input',previewDraft);
+      $('profile-form').onsubmit=event=>{event.preventDefault();if(!$('name-input').value.trim()){ $('name-input').setCustomValidity('Enter a name for your profile.');$('name-input').reportValidity();return; }previewDraft();state={...draft,name:draft.name.trim()};['playing','taste','finished','shelves'].forEach(key=>state[key]=$('show-'+key).checked);renderProfile();closeEditor();toast('Profile updated in this preview.');};
+      $('name-input').addEventListener('input',()=>$('name-input').setCustomValidity(''));
+      $('cancel-edit').onclick=$('back-profile').onclick=closeEditor;
+      $('editor-preview-button').onclick=()=>{previewDraft();const saved=state;state={...draft};['playing','taste','finished','shelves'].forEach(key=>state[key]=$('show-'+key).checked);renderProfile();state=saved;$('editor').hidden=true;$('profile').hidden=false;$('visitor-banner').hidden=false;$('visitor-banner').querySelector('p').textContent='Previewing your unsaved changes.';$('exit-visitor').textContent='Back to editing ↗';document.querySelectorAll('[data-edit]').forEach(el=>el.hidden=true);window.scrollTo(0,0);};
+      $('visitor-toggle').onclick=()=>toggleVisitor(!visitor);
+      $('exit-visitor').onclick=()=>{if(draft){$('editor').hidden=false;$('profile').hidden=true;$('visitor-banner').hidden=true;$('visitor-banner').querySelector('p').textContent='You’re viewing your public profile.';$('exit-visitor').textContent='Back to your view ↗';}else toggleVisitor(false);};
+      $('theme-toggle').onclick=()=>{const light=root.dataset.theme!=='light';root.dataset.theme=light?'light':'dark';$('theme-toggle').textContent=light?'☾':'☼';$('theme-toggle').setAttribute('aria-label',light?'Switch to dark theme':'Switch to light theme');};
+      $('share-profile').onclick=async()=>{try{await navigator.clipboard.writeText('https://shelf.example/en/u/lucas/profile');toast('Sample profile link copied.');}catch{toast('Sample profile: shelf.example/en/u/lucas/profile');}};
+      $('all-favorites').onclick=()=>showLibrary('The favorites',games.slice(0,5));
+      $('show-trophies').onclick=()=>showLibrary('A few finished games',['367520','504230','814380'].map(findGame));
+      $('close-dialog').onclick=()=>$('content-dialog').close();
+      $('content-dialog').addEventListener('click',event=>{if(event.target===$('content-dialog')){const rect=event.target.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)event.target.close();}});
+      renderStatic();renderProfile();
+    })();
+  </script>
+</body>
+</html>
