@@ -15,11 +15,10 @@ import {
   type SetupMemory,
   type SetupStep,
 } from '@/domain/setup/setup'
-import { showcaseOf, type ShowcaseGame } from '@/domain/setup/showcase'
+import type { ShowcaseGame } from '@/domain/setup/showcase'
 import type { AddActions } from '@/features/add-game/actions'
 import type { AddGame as AddGameType } from '@/features/add-game/add-game'
 import { libraryHref } from '@/features/library/shelf-address'
-import { loadMine } from '@/features/library/use-library'
 import { useAccount } from '@/features/owner/account'
 import { readTally } from '@/features/placing/placing-client'
 import { readPlatforms, type PlatformRow } from '@/features/platforms/sync-client'
@@ -28,6 +27,7 @@ import { Button } from '@/ui/button'
 import { Loading } from '@/ui/ghost'
 import { Ghosts } from '@/ui/ghosts'
 
+import { readMyGames } from './my-games'
 import { changeSetupMemory, settleSetupMemory, useSetupMemory } from './setup-memory'
 import { SetupProgress } from './setup-progress'
 import { BringStep, LookStep, PlayStep, ReadyStep, SortStep } from './setup-steps'
@@ -188,12 +188,9 @@ function Setup({
   useEffect(() => {
     if (!hasGames) return
     let live = true
-    void loadMine().then(
-      (library) => {
-        if (live) setShowcase(showcaseOf(library, SHOWCASE))
-      },
-      () => {},
-    )
+    void readMyGames(SHOWCASE).then((games) => {
+      if (live && games) setShowcase(games)
+    })
     return () => {
       live = false
     }

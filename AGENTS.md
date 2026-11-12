@@ -364,7 +364,10 @@ Back works; where the flow stands and where I play are this device's (`setup-mem
 everything a step changes is kept where it always is (platforms on the account, colors on the device).
 Settings' "Set up your shelf again" opens `#play` and clears nothing: never make starting over delete a
 choice. A step offers what already exists elsewhere (the platform cards, the Add dialog, the colorway
-picker, Organize); a new way to fill a shelf belongs in "Bring your games in" too. A page reached by a
+picker, Organize); a new way to fill a shelf belongs in "Bring your games in" too. It reads my library
+file through its own fetch (`my-games.ts`), not the library's `loadMine`: importing `use-library.ts`
+from another page split the library page's script past its budget. Check `pnpm perf:js` after
+importing anything of `features/library` elsewhere. A page reached by a
 move from another page is drawn before the router puts its address in the bar, so read the address again
 once it has opened (`settleSetupMemory`), never only while drawing; a unit test cannot see this order, a
 browser can.
