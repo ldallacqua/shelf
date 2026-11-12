@@ -1463,6 +1463,25 @@
           "name": "Graphite",
           "detail": "Gray, with white light"
         }
+      },
+      "own": {
+        "name": "Your own",
+        "detail": "Three colors you pick",
+        "title": "Your colors",
+        "body": "Pick three colors. Shelf keeps each one’s hue and sets how light or dark it is, so everything stays readable with the lights on and off.",
+        "accent": {
+          "label": "Accent",
+          "hint": "Buttons, links and the focus ring"
+        },
+        "room": {
+          "label": "Room",
+          "hint": "A tint for the walls, the shelves and the text"
+        },
+        "light": {
+          "label": "Light",
+          "hint": "The LEDs behind your games"
+        },
+        "reset": "Start again from {preset}"
       }
     },
     "language": {

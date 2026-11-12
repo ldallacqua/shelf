@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_PRESET, isPreset, presetNames } from './names'
-import { parseSeeds, presets } from './presets'
+import { colorsOf } from './derive'
+import { parseOwnColorway, parseSeeds, presets } from './presets'
 
 describe('presets', () => {
   it("starts with Shelf's own", () => {
@@ -38,5 +39,27 @@ describe('parseSeeds', () => {
     { accent: '#aabbcc', room: '#000000', led: '#ffffff;}body{display:none' },
   ])('refuses %j', (value) => {
     expect(parseSeeds(value)).toBeUndefined()
+  })
+})
+
+describe('parseOwnColorway', () => {
+  const own = { seeds: presets.arcade, from: 'arcade', colors: colorsOf(presets.arcade) }
+
+  it('takes one kept whole', () => {
+    expect(parseOwnColorway(JSON.parse(JSON.stringify(own)))).toEqual(own)
+  })
+
+  it.each([
+    ['nothing', null],
+    ['no seeds', { ...own, seeds: undefined }],
+    ['a preset it could not start from', { ...own, from: 'own' }],
+    ['no colors', { ...own, colors: undefined }],
+    [
+      'a token missing',
+      { ...own, colors: { ...own.colors, dark: { ...own.colors.dark, text: undefined } } },
+    ],
+    ['a color that is not one', { ...own, colors: { ...own.colors, led: 'url(x)' } }],
+  ])('refuses one with %s', (_, value) => {
+    expect(parseOwnColorway(value)).toBeUndefined()
   })
 })

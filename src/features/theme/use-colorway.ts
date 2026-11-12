@@ -2,16 +2,33 @@
 
 import { useSyncExternalStore } from 'react'
 
-import { DEFAULT_PRESET, type Preset } from '@/domain/colorway/names'
+import { DEFAULT_PRESET, type Colorway } from '@/domain/colorway/names'
+import type { OwnColorway } from '@/domain/colorway/presets'
 
-import { getColorway, setColorway, subscribeToColorway } from './colorway-store'
+import {
+  getColorway,
+  getOwnColorway,
+  setColorway,
+  setOwnColorway,
+  subscribeToColorway,
+} from './colorway-store'
+
+type UseColorway = {
+  /** The colorway the page is painted in. */
+  colorway: Colorway
+  /** One's own, as the device keeps it, chosen or not; none until it is first made. */
+  own: OwnColorway | undefined
+  setColorway: typeof setColorway
+  setOwnColorway: typeof setOwnColorway
+}
 
 /**
- * The colorway this device paints Shelf in, and a way to change it. On the
+ * The colorway this device paints Shelf in, and ways to change it. On the
  * server, and until the page has hydrated, it reports Shelf's own; the real one
  * follows at once, without a hydration warning.
  */
-export function useColorway(): { colorway: Preset; setColorway: (colorway: Preset) => void } {
+export function useColorway(): UseColorway {
   const colorway = useSyncExternalStore(subscribeToColorway, getColorway, () => DEFAULT_PRESET)
-  return { colorway, setColorway }
+  const own = useSyncExternalStore(subscribeToColorway, getOwnColorway, () => undefined)
+  return { colorway, own, setColorway, setOwnColorway }
 }

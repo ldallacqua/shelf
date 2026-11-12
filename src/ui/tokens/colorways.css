@@ -4,7 +4,7 @@
  * in src/domain/colorway/presets.ts. Don't edit it: change a seed and run it.
  *
  * <html> carries `data-colors` for every colorway but Shelf's own, which is
- * theme.css. Any element may carry it too, to draw itself in one, within the
+ * theme.css. One's own is last: its colors are properties on <html>. Any element may carry it too, to draw itself in one, within the
  * theme around it. Both forms are more specific than theme.css's own blocks.
  */
 
@@ -258,4 +258,46 @@
   --line-strong: #787878;
   --focus: #dfe5ee;
   --led: #d0d8ed;
+}
+
+/* own: one's own, worked out on the device; <html> carries its colors */
+[data-colors='own'],
+[data-colors='own'] [data-theme='light'],
+[data-theme='light'] [data-colors='own'] {
+  --wall: var(--own-light-wall, #eceef2);
+  --wall-deep: var(--own-light-wall-deep, #e1e4ea);
+  --surface: var(--own-light-surface, #f7f8fa);
+  --surface-raised: var(--own-light-surface-raised, #ffffff);
+  --ledge: var(--own-light-ledge, #1b1e27);
+  --ledge-top: var(--own-light-ledge-top, #3a4152);
+  --on-ledge: var(--own-light-on-ledge, #f2f4f8);
+  --text: var(--own-light-text, #0e1014);
+  --text-muted: var(--own-light-text-muted, #555c6b);
+  --accent: var(--own-light-accent, #5b3fe6);
+  --on-accent: var(--own-light-on-accent, #ffffff);
+  --marker: var(--own-light-marker, #0a6b3a);
+  --line: var(--own-light-line, #c3c8d2);
+  --line-strong: var(--own-light-line-strong, #7a8191);
+  --focus: var(--own-light-focus, #5b3fe6);
+  --led: var(--own-led, #7c5cff);
+}
+[data-colors='own'][data-theme='dark'],
+[data-colors='own'] [data-theme='dark'],
+[data-theme='dark'] [data-colors='own'] {
+  --wall: var(--own-dark-wall, #0b0d12);
+  --wall-deep: var(--own-dark-wall-deep, #07080c);
+  --surface: var(--own-dark-surface, #14171f);
+  --surface-raised: var(--own-dark-surface-raised, #1c202b);
+  --ledge: var(--own-dark-ledge, #14171f);
+  --ledge-top: var(--own-dark-ledge-top, #262b38);
+  --on-ledge: var(--own-dark-on-ledge, #f2f4f8);
+  --text: var(--own-dark-text, #f2f4f8);
+  --text-muted: var(--own-dark-text-muted, #a3abbb);
+  --accent: var(--own-dark-accent, #a796ff);
+  --on-accent: var(--own-dark-on-accent, #0b0d12);
+  --marker: var(--own-dark-marker, #4ade80);
+  --line: var(--own-dark-line, #262b38);
+  --line-strong: var(--own-dark-line-strong, #6f7890);
+  --focus: var(--own-dark-focus, #a796ff);
+  --led: var(--own-led, #7c5cff);
 }

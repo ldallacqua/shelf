@@ -1,6 +1,6 @@
 import {
   changeDirection,
-  colorwayWall,
+  chromeProperty,
   parseThemeChoice,
   resolveTheme,
   THEME_STORAGE_KEY,
@@ -15,7 +15,7 @@ import {
  * page's <html> element is the single source, set first by the theme script.
  *
  * Every page loads this, so of the colorway it knows only what the theme needs:
- * which one <html> names, for the browser's chrome. Choosing one is
+ * its walls, which <html> carries, for the browser's chrome. Choosing one is
  * `colorway-store.ts`, loaded where the picker is.
  */
 
@@ -61,17 +61,14 @@ export function playChange(to: Theme): void {
 }
 
 /**
- * The browser's own chrome, the color of the wall: the wall of the colorway
- * <html> names, or Shelf's own. Looked up as it stands, so that every page,
- * which loads this, needn't load the list of colorways to check the name.
+ * The browser's own chrome, the color of the wall: the colorway's, which the
+ * theme script and the picker leave on <html>, or Shelf's own.
  */
 export function paintChrome(): void {
-  const named = document.documentElement.dataset.colors
-  const walls =
-    named && Object.hasOwn(colorwayWall, named)
-      ? colorwayWall[named as keyof typeof colorwayWall]
-      : themeColor
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', walls[getTheme()])
+  const theme = getTheme()
+  const wall =
+    document.documentElement.style.getPropertyValue(chromeProperty[theme]) || themeColor[theme]
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', wall)
 }
 
 function apply(choice: ThemeChoice, animate = true): void {

@@ -1463,6 +1463,25 @@
           "name": "Grafite",
           "detail": "Cinza, com luz branca"
         }
+      },
+      "own": {
+        "name": "Do seu jeito",
+        "detail": "Três cores que você escolhe",
+        "title": "Suas cores",
+        "body": "Escolha três cores. O Shelf mantém o tom de cada uma e acerta o quanto ela é clara ou escura, para tudo continuar legível com as luzes acesas e apagadas.",
+        "accent": {
+          "label": "Destaque",
+          "hint": "Botões, links e o anel de foco"
+        },
+        "room": {
+          "label": "Sala",
+          "hint": "Um tom para as paredes, as estantes e o texto"
+        },
+        "light": {
+          "label": "Luz",
+          "hint": "Os LEDs atrás dos seus jogos"
+        },
+        "reset": "Recomeçar de {preset}"
       }
     },
     "language": {

@@ -1,8 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import { useState } from 'react'
 
 import { presetNames } from '@/domain/colorway/names'
+import { presets } from '@/domain/colorway/presets'
 
-import { ColorwayPicker, ColorwayRoom } from './colorway-picker'
+import { ColorwayPicker, ColorwayRoom, ownStyle } from './colorway-picker'
+import { OwnColorwayEditor, ownFrom } from './own-colorway'
 import { ThemePicker } from './theme-picker'
 import { ThemeSwitch } from './theme-switch'
 
@@ -55,3 +58,20 @@ export const EveryColorway: Story = {
     </div>
   ),
 }
+
+function OwnEditor() {
+  const [own, setOwn] = useState(() => ownFrom(presets.ocean, 'ocean'))
+  return (
+    <div data-colors="own" style={ownStyle(own.colors)} className="grid gap-4 bg-wall p-4">
+      <OwnColorwayEditor own={own} onChange={setOwn} />
+      <ColorwayRoom colorway="own" className="max-w-3xl rounded-control" />
+    </div>
+  )
+}
+
+/**
+ * One's own colorway: three colors, each worked out for both themes as it is
+ * picked, which repaints everything around it. Here only the frame around the
+ * editor is painted, as the page would be.
+ */
+export const YourOwn: Story = { parameters: { layout: 'padded' }, render: () => <OwnEditor /> }

@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest'
 
+import { colorsOf } from '@/domain/colorway/derive'
+import { presets } from '@/domain/colorway/presets'
+
 import { readPalette, readTheme, resolve } from '@/ui/tokens/read-tokens'
 
 import {
   changeDirection,
+  chromeProperty,
   COLORS_STORAGE_KEY,
   colorwayWall,
+  OWN_COLORS_STORAGE_KEY,
   parseThemeChoice,
   resolveTheme,
   THEME_STORAGE_KEY,
@@ -63,6 +68,7 @@ describe('themeScript', () => {
   type Fake = {
     stored?: string | null
     storedColors?: string | null
+    storedOwn?: string | null
     deviceIsDark?: boolean
     storageThrows?: boolean
     matchMediaMissing?: boolean
@@ -71,15 +77,18 @@ describe('themeScript', () => {
   function run({
     stored = null,
     storedColors = null,
+    storedOwn = null,
     deviceIsDark = false,
     storageThrows,
     matchMediaMissing,
   }: Fake) {
     const attributes = new Map<string, string>()
+    const properties = new Map<string, string>()
     const metas: { name: string; content: string }[] = []
     const document = {
       documentElement: {
         setAttribute: (name: string, value: string) => attributes.set(name, value),
+        style: { setProperty: (name: string, value: string) => properties.set(name, value) },
       },
       createElement: () => ({ name: '', content: '' }),
       head: { appendChild: (meta: { name: string; content: string }) => metas.push(meta) },
@@ -88,6 +97,7 @@ describe('themeScript', () => {
       getItem: (key: string) => {
         if (storageThrows) throw new Error('blocked')
         if (key === COLORS_STORAGE_KEY) return storedColors
+        if (key === OWN_COLORS_STORAGE_KEY) return storedOwn
         return key === THEME_STORAGE_KEY ? stored : null
       },
     }
@@ -106,6 +116,7 @@ describe('themeScript', () => {
       theme: attributes.get('data-theme'),
       choice: attributes.get('data-theme-choice'),
       colors: attributes.get('data-colors'),
+      properties,
       metas,
     }
   }
@@ -170,6 +181,47 @@ describe('themeScript', () => {
       expect(page.metas).toEqual([{ name: 'theme-color', content: themeColor.light }])
     },
   )
+
+  it("leaves the walls of a colorway on <html> for the chrome, and none for Shelf's own", () => {
+    expect(run({ storedColors: 'arcade' }).properties).toEqual(
+      new Map([
+        [chromeProperty.light, colorwayWall.arcade.light],
+        [chromeProperty.dark, colorwayWall.arcade.dark],
+      ]),
+    )
+    expect(run({ storedColors: null }).properties.size).toBe(0)
+  })
+
+  const own = { seeds: presets.ember, from: 'ember', colors: colorsOf(presets.ember) }
+
+  it("paints the page in one's own colors, kept whole", () => {
+    const page = run({ storedColors: 'own', storedOwn: JSON.stringify(own), deviceIsDark: true })
+
+    expect(page.colors).toBe('own')
+    expect(page.properties.get('--own-light-wall')).toBe(own.colors.light.wall)
+    expect(page.properties.get('--own-dark-accent')).toBe(own.colors.dark.accent)
+    expect(page.properties.get('--own-led')).toBe(own.colors.led)
+    expect(page.properties.get(chromeProperty.dark)).toBe(own.colors.dark.wall)
+    expect(page.metas).toEqual([{ name: 'theme-color', content: own.colors.dark.wall }])
+  })
+
+  it.each([
+    ['nothing', null],
+    ['not JSON', '{'],
+    ['no colors', JSON.stringify({ seeds: own.seeds })],
+    ['a color missing', JSON.stringify({ colors: { ...own.colors, led: undefined } })],
+    [
+      'a color that is not one',
+      JSON.stringify({
+        colors: { ...own.colors, light: { ...own.colors.light, wall: 'red;}html{display:none' } },
+      }),
+    ],
+  ])("leaves the page in Shelf's own when one's own is %s", (_, storedOwn) => {
+    const page = run({ storedColors: 'own', storedOwn })
+    expect(page.colors).toBeUndefined()
+    expect(page.properties.size).toBe(0)
+    expect(page.metas).toEqual([{ name: 'theme-color', content: themeColor.light }])
+  })
 
   it('is one statement with no line breaks, safe to inline in <head>', () => {
     const script = themeScript()
