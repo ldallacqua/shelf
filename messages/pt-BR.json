@@ -162,9 +162,51 @@
       "eyebrow": "Para quem tem muitos jogos",
       "title": "Todos os seus jogos, em uma estante.",
       "lead": "Físicos e digitais, de todos os consoles e de todas as gerações, iluminados como a estante que você sempre quis. Encontre o próximo para jogar em um segundo.",
-      "how": "Veja como funciona",
-      "note": "De graça. Sua estante fica pronta em um minuto.",
+      "facts": {
+        "label": "Em resumo",
+        "free": "De graça",
+        "sync": "Sincroniza Steam e Nintendo",
+        "windows": "App para Windows",
+        "languages": "Em português e inglês"
+      },
       "shelf": "Uma estante de exemplo com {count, number} jogos, de frente e iluminados por trás"
+    },
+    "features": {
+      "eyebrow": "Visão geral",
+      "title": "Tudo o que uma coleção grande precisa.",
+      "body": "Cada parte abaixo funciona numa estante de exemplo com jogos de verdade. Pule para a que trouxe você aqui.",
+      "filters": {
+        "title": "Pergunte o que quiser",
+        "body": "Uma linha encontra qualquer jogo, e vira uma prateleira só dela."
+      },
+      "copies": {
+        "title": "Todas as cópias, uma caixa",
+        "body": "O disco, a promoção e a versão de Switch, juntos."
+      },
+      "sync": {
+        "title": "Steam e Nintendo",
+        "body": "Seus jogos e horas, trazidos e mantidos em dia."
+      },
+      "views": {
+        "title": "Quatro jeitos de ver",
+        "body": "Uma estante iluminada, um mural de capas, uma lista ou banners."
+      },
+      "look": {
+        "title": "Suas cores",
+        "body": "Luzes acesas ou apagadas, onze paletas, ou a sua."
+      },
+      "desktop": {
+        "title": "Jogue no Windows",
+        "body": "Abra jogos da sua estante, conte horas, faça backup dos saves."
+      },
+      "progress": {
+        "title": "Troféus e números",
+        "body": "O que você zerou, suas conquistas, seus anos."
+      },
+      "assistant": {
+        "title": "Pergunte ao assistente",
+        "body": "O Claude e outros assistentes com MCP leem sua estante."
+      }
     },
     "ask": {
       "eyebrow": "Filtros",
@@ -209,7 +251,8 @@
     "sync": {
       "eyebrow": "Steam e Nintendo",
       "title": "Traga seus jogos da Steam e do Switch com você.",
-      "body": "Entre pela Steam, e cada jogo que você tem lá chega à sua estante com as suas horas, e a página de cada jogo mostra as conquistas dele. Conecte a Nintendo, e os jogos que você jogou num Switch ou num Switch 2 vêm também, assim que você disser se cada um é um cartucho ou um download. Depois, as duas se mantêm em dia sozinhas, uma vez por dia. Jogos que já estão na sua estante ganham uma cópia, nunca uma segunda caixa. Os novos esperam, a definir, numa página onde você dá a nota e diz em que pé está cada um, um toque por vez ou vários de uma vez. PlayStation e Xbox vêm a seguir.",
+      "body": "Entre pela Steam, e cada jogo que você tem lá chega à sua estante com as suas horas e conquistas. Conecte a Nintendo, e os jogos que você jogou num Switch ou num Switch 2 vêm também, assim que você disser se é cartucho ou download. As duas se mantêm em dia sozinhas, uma vez por dia, e um jogo que já está na sua estante ganha uma cópia, nunca uma segunda caixa. PlayStation e Xbox vêm a seguir.",
+      "organize": "Os jogos novos esperam, a definir, numa página onde você dá a nota e diz em que pé está cada um, um toque por vez ou vários de uma vez.",
       "card": "Steam e Nintendo, sincronizando",
       "where": "PC · Steam",
       "whereNintendo": "Switch · Nintendo · cartucho",
@@ -236,8 +279,60 @@
     "finished": {
       "eyebrow": "Progresso",
       "title": "Veja até onde você chegou.",
-      "body": "Marque um jogo como zerado e ele vai para a sua parede de troféus, sob a própria luz, no ano em que você zerou. Acima, quantos, quantas horas e o que você achou deles.",
+      "body": "Marque um jogo como zerado e ele vai para a sua parede de troféus, sob a própria luz, no ano em que você zerou. Acima, quantos, quantas horas e o que você achou deles. As conquistas da Steam também somam ali, as mais raras guardadas num cofre, com a sua fila, o seu gosto e um cartão do seu ano para compartilhar.",
       "wall": "Jogos zerados na estante de exemplo"
+    },
+    "look": {
+      "eyebrow": "Cores",
+      "title": "Pinte o cômodo do seu jeito.",
+      "body": "Luzes acesas ou apagadas. Onze paletas, vivas ou pastel, ou três cores suas, sempre legíveis. Preto puro para telas OLED, e um cômodo que pode ganhar as cores do jogo que você está vendo.",
+      "choose": "Paleta",
+      "off": "Luzes apagadas",
+      "on": "Luzes acesas",
+      "rooms": "A estante de exemplo em {name}, com as luzes apagadas e acesas"
+    },
+    "desktop": {
+      "eyebrow": "Shelf para Windows",
+      "title": "Aperte Jogar na sua estante.",
+      "body": "O Shelf para Windows coloca sua estante numa janela própria no seu PC, e abre seus jogos a partir dela.",
+      "points": {
+        "play": "Jogue qualquer jogo pelo arquivo dele, ou pela Steam",
+        "hours": "Horas contadas enquanto você joga, somadas em todos os PCs",
+        "saves": "Saves com backup quando você para, e levados entre PCs por uma pasta, pelo OneDrive ou pelo Google Drive",
+        "ready": "Pronto para jogar mostra só o que este PC consegue abrir",
+        "updates": "Atualiza sozinho enquanto está aberto"
+      },
+      "notes": "Notas da versão",
+      "window": "Shelf para Windows, com {title} pronto para jogar: {hours, plural, one {# hora jogada} other {# horas jogadas}} na Steam, os saves com backup no OneDrive",
+      "nav": {
+        "library": "Biblioteca",
+        "trophies": "Troféus"
+      },
+      "update": "Atualizar",
+      "where": "PC · Steam · {hours, plural, one {# hora jogada} other {# horas jogadas}}",
+      "play": "Jogar",
+      "saves": "Saves",
+      "savesWhere": "OneDrive · há 2 h",
+      "readyToPlay": "Pronto para jogar"
+    },
+    "start": {
+      "eyebrow": "Primeiros passos",
+      "title": "Pronta em um minuto.",
+      "body": "Crie sua conta, e o Shelf guia você pelo resto. Qualquer passo pode esperar.",
+      "steps": {
+        "create": {
+          "title": "Crie sua estante",
+          "body": "Um nome, um endereço só seu, e se mais alguém pode vê-la."
+        },
+        "bring": {
+          "title": "Traga seus jogos",
+          "body": "Conecte a Steam ou a Nintendo, ou cole uma lista de títulos. Capa, ano e duração vêm com cada um."
+        },
+        "play": {
+          "title": "Deixe com a sua cara",
+          "body": "Escolha suas cores, dê um status a cada jogo, e encontre o próximo para jogar."
+        }
+      }
     },
     "privacy": {
       "eyebrow": "Privacidade",
@@ -291,7 +386,7 @@
       },
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",
-        "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, na página da sua conta. Cada jogo que você tem na Steam chega à sua estante com as horas e as conquistas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um, e corrigir um jogo reconhecido errado. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
+        "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, em Configurações. Cada jogo que você tem na Steam chega à sua estante com as horas e as conquistas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um, e corrigir um jogo reconhecido errado. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
       },
       "hours": {
         "q": "Como o Shelf conta minhas horas?",
@@ -299,7 +394,19 @@
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
-        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser na página da sua conta. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As anotações continuam privadas a menos que você as marque como públicas, jogo por jogo, e qualquer jogo pode ser marcado como privado, para que só você o veja."
+        "a": "Você escolhe ao criar a conta, e pode mudar quando quiser em Configurações. Uma estante pública é para qualquer pessoa, e mecanismos de busca podem listá-la; uma privada é só para você. As anotações continuam privadas a menos que você as marque como públicas, jogo por jogo, e qualquer jogo pode ser marcado como privado, para que só você o veja."
+      },
+      "desktop": {
+        "q": "Tem um app para o meu computador?",
+        "a": "Tem: o Shelf para Windows, de graça, para Windows 10 e 11. Ele abre sua estante numa janela própria, abre seus jogos a partir dela, pelo arquivo ou pela Steam, conta suas horas enquanto você joga e faz backup dos seus saves. Ele se atualiza sozinho. Por enquanto, é só para Windows."
+      },
+      "windows": {
+        "q": "Por que o Windows avisa sobre o instalador?",
+        "a": "O instalador não é assinado com um certificado pago, então o Windows SmartScreen pode dizer que não o reconhece. Escolha Mais informações, depois Executar assim mesmo; ele pergunta só uma vez. Cada instalador é publicado na página de versões do repositório público do Shelf no GitHub, e cada atualização depois dele é assinada e conferida pelo app antes de instalar."
+      },
+      "look": {
+        "q": "Dá para mudar a aparência do Shelf?",
+        "a": "Dá: luzes acesas ou apagadas, onze paletas ou três cores suas, e preto puro para telas OLED. Você também pode deixar o cômodo ganhar as cores do jogo que está vendo. Cada escolha é deste dispositivo, em Configurações, Aparência."
       },
       "export": {
         "q": "Posso levar meus jogos comigo?",
@@ -1526,6 +1633,11 @@
       "body": "O idioma em que o Shelf fala. O botão no topo também muda.",
       "current": "(em uso)"
     },
+    "setupAgain": {
+      "title": "Montar sua estante de novo",
+      "description": "Passe pela configuração desde o primeiro passo. Seus jogos, plataformas e cores continuam como estão.",
+      "side": "Configuração inicial"
+    },
     "appOnly": {
       "title": "Parte do Shelf para Windows",
       "body": "Esta página fica no Shelf para Windows, o app que abre seus jogos e conta as horas deles num PC. Abra as Configurações por lá para vê-la.",
@@ -1609,30 +1721,134 @@
   "Start": {
     "metaTitle": "Monte sua estante",
     "title": "Monte sua estante",
-    "intro": "Traga seus jogos e diga em que pé está cada um. Cada passo se marca sozinho quando estiver feito, e nenhum precisa ser terminado de uma vez.",
     "signInFirst": "Entre para montar sua estante.",
-    "steps": "Passos",
-    "done": "Feito",
+    "steps": "Passos da configuração",
+    "stepOf": "Passo {number} de {total} · {name}",
+    "doneName": "{name}, feito",
     "failed": "O Shelf não conseguiu ler sua estante agora.",
     "retry": "Tentar de novo",
+    "back": "Voltar",
+    "next": "Continuar",
+    "skip": "Pular por agora",
+    "finish": "Concluir",
+    "later": "Terminar depois",
+    "names": {
+      "play": "Onde você joga",
+      "bring": "Seus jogos",
+      "look": "Suas cores",
+      "sort": "Status"
+    },
+    "play": {
+      "title": "Onde você joga?",
+      "lead": "Marque todos os lugares onde seus jogos estão. O próximo passo mostra o jeito mais rápido de trazer cada um.",
+      "legend": "Onde você joga",
+      "places": {
+        "pc": {
+          "name": "PC",
+          "detail": "Trazidos da Steam, com suas horas"
+        },
+        "switch": {
+          "name": "Nintendo Switch",
+          "detail": "Do histórico de jogo da Nintendo, Switch 2 também"
+        },
+        "playstation": {
+          "name": "PlayStation",
+          "detail": "Adicionados pelo título por enquanto: a sincronização vem depois"
+        },
+        "xbox": {
+          "name": "Xbox",
+          "detail": "Adicionados pelo título por enquanto: a sincronização vem depois"
+        },
+        "physical": {
+          "name": "Caixas numa estante de verdade",
+          "detail": "Qualquer console, qualquer geração, adicionados pelo título"
+        }
+      },
+      "none": "Ainda não sabe? Continue, e todos os caminhos aparecem.",
+      "change": "Dá para voltar e mudar isso em qualquer passo."
+    },
     "bring": {
       "title": "Traga seus jogos",
-      "body": "Conecte uma plataforma e o Shelf traz todos os jogos que você tem lá, e mantém tudo em dia. O que ele não conseguir reconhecer, ou quiser que você confirme, espera no cartão da plataforma pela sua resposta.",
-      "byHand": "Prefere adicionar você mesmo? Adicione um jogo, ou cole uma lista inteira, na <shelf>sua estante</shelf>.",
-      "onShelf": "{count, plural, one {# jogo na sua estante.} other {# jogos na sua estante.}}",
+      "lead": "Conecte uma plataforma e o Shelf traz todos os jogos que você tem lá, com suas horas, e mantém tudo em dia uma vez por dia. O que ele não conseguir reconhecer espera no cartão da plataforma pela sua resposta.",
+      "byHand": {
+        "title": "Adicione jogos pelo título",
+        "forPlaces": "PlayStation, Xbox e jogos numa estante de verdade entram pelo título: busque um, ou cole uma lista inteira, um jogo por linha, e confira o que o Shelf encontrou.",
+        "body": "Mais algum? Busque um jogo, ou cole uma lista inteira, um jogo por linha.",
+        "search": "Buscar um jogo",
+        "paste": "Colar uma lista"
+      },
+      "onShelf": "{count, plural, =0 {Nenhum jogo na sua estante ainda.} one {# jogo na sua estante.} other {# jogos na sua estante.}}",
       "waiting": "{count, plural, one {# jogo espera sua resposta aí em cima.} other {# jogos esperam sua resposta aí em cima.}}"
     },
-    "place": {
+    "look": {
+      "title": "Deixe com a sua cara",
+      "lead": "Escolha como o cômodo fica neste dispositivo. Cada escolha aparece na hora, e dá para mudar depois em Configurações.",
+      "lights": "Luzes",
+      "lightsBody": "Luzes acesas, apagadas, ou como este dispositivo estiver. O botão no topo também muda.",
+      "colors": "Cores",
+      "colorsBody": "A tinta das paredes, os botões e a luz atrás dos seus jogos. Cada uma funciona com as luzes acesas e apagadas."
+    },
+    "sort": {
       "title": "Diga onde cada jogo está",
-      "body": "Os jogos que uma plataforma traz ficam A definir até você dar um status a cada um: Jogando, Na fila, Zerado, Abandonado ou Lista de desejos. Dá para dar nota no mesmo lugar.",
-      "nothingYet": "Os jogos que chegarem sem status vão esperar aqui.",
+      "lead": "Os jogos que uma plataforma traz ficam A definir até você dar um status a cada um: Jogando, Na fila, Zerado, Abandonado ou Lista de desejos. Dá para dar nota no mesmo lugar.",
+      "waitingTitle": "Esperando um status",
+      "nothingYet": "Nada para organizar ainda. Os jogos que chegarem sem status vão esperar aqui.",
       "left": "{count, plural, one {# dos seus {total, number} jogos ainda está sem status.} other {# dos seus {total, number} jogos ainda estão sem status.}}",
       "share": "Jogos com status",
       "go": "Organizar meus jogos",
-      "later": "Deixar alguns para outro dia não tem problema: eles esperam lá.",
+      "later": "Deixar alguns para outro dia não tem problema: eles esperam lá, e o topo da página conta quantos.",
       "none": "{count, plural, one {Seu # jogo tem status.} other {Todos os seus # jogos têm status.}}"
     },
-    "toShelf": "Ver minha estante"
+    "ready": {
+      "eyebrow": "Tudo pronto",
+      "title": "Sua estante está pronta.",
+      "lead": "{count, plural, =0 {Ela está acesa, esperando o primeiro jogo.} one {# jogo está nela, iluminado e na sua caixa.} other {# jogos estão nela, iluminados e nas suas caixas.}}",
+      "toShelf": "Ver minha estante",
+      "summary": "O que você configurou",
+      "games": "{count, plural, =0 {Nenhum jogo ainda} one {# jogo na sua estante} other {# jogos na sua estante}}{unsorted, plural, =0 {} other {, # esperando um status}}",
+      "linked": "Conectado: {platforms}",
+      "nothingLinked": "Nenhuma plataforma conectada ainda",
+      "colors": "Cores: {name}",
+      "public": "Pública, em /u/{handle}. <change>Mudar</change>",
+      "private": "Privada: só você vê. <change>Mudar</change>",
+      "next": {
+        "title": "E agora",
+        "desktop": {
+          "title": "Shelf para Windows",
+          "body": "Aperte Jogar em qualquer jogo da sua estante, conte suas horas enquanto joga e mantenha seus saves com backup."
+        },
+        "assistant": {
+          "title": "Seu assistente de IA",
+          "body": "Adicione este endereço ao Claude, ou a outro assistente compatível com MCP, como um conector personalizado. Ele pede para você entrar, e depois responde a partir da sua estante.",
+          "placeholder": "O endereço aparece aqui",
+          "copy": "Copiar o endereço",
+          "copied": "Copiado."
+        },
+        "filter": {
+          "title": "Pergunte à sua estante",
+          "body": "Uma linha encontra qualquer jogo. Esta encontra algo curto na sua fila, para hoje à noite.",
+          "example": "status:backlog length:<10",
+          "go": "Experimentar na minha estante"
+        }
+      }
+    },
+    "preview": {
+      "title": "Sua estante",
+      "address": "Endereço",
+      "handle": "/u/{handle}",
+      "games": "Jogos",
+      "count": "{count, number}",
+      "unknown": "–",
+      "linked": "Conectado",
+      "nothingLinked": "Nada ainda",
+      "seenBy": "Quem vê",
+      "public": "Qualquer pessoa",
+      "private": "Só você"
+    }
+  },
+  "Desktop": {
+    "download": "Baixar para Windows",
+    "facts": "De graça · Windows 10 e 11, 64 bits · Cerca de 3 MB · Atualiza sozinho"
   },
   "Sync": {
     "source": {

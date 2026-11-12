@@ -16,23 +16,25 @@ import { AddList, type AddedMany } from './add-list'
 import { AddOne } from './add-one'
 import { undoGames } from './list-client'
 
+type Tab = 'one' | 'list'
+
 type AddGameProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   actions: AddActions
+  /** The tab it opens on: one game, or a pasted list, as setting a shelf up offers both. */
+  startOn?: Tab
 }
-
-type Tab = 'one' | 'list'
 
 /**
  * Adding games (spec 4), for the owner: the dialog the Add button, `A` and
  * the empty library open. One game, or a pasted list. After an add the
  * library moves to the new game, and a notice offers Undo.
  */
-export function AddGame({ open, onOpenChange, actions }: AddGameProps) {
+export function AddGame({ open, onOpenChange, actions, startOn = 'one' }: AddGameProps) {
   const t = useTranslations('Add')
   const router = useRouter()
-  const [tab, setTab] = useState<Tab>('one')
+  const [tab, setTab] = useState<Tab>(startOn)
 
   const onAdded = (added: AddedGame, again: boolean) => {
     const undo = async () => {

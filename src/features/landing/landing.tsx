@@ -6,13 +6,17 @@ import { Assistant } from './assistant'
 import { Closing } from './closing'
 import { askGames, askMatches, demoGames, demoTrophies, everyCopy, platformSync } from './demo'
 import type { DemoGame } from './demo-case'
+import { DesktopDemo, DesktopPoints } from './desktop-demo'
 import { EveryCopy } from './every-copy'
 import { FinishedWall } from './finished-wall'
 import { Hero } from './hero'
+import { LookDemo } from './look-demo'
 import { MediaDemo } from './media-demo'
+import { Overview } from './overview'
 import { Privacy } from './privacy'
 import { Reveals } from './reveals'
 import { Section } from './section'
+import { StartSteps } from './start-steps'
 import { SyncDemo } from './sync-demo'
 import { ViewsDemo } from './views-demo'
 
@@ -35,6 +39,23 @@ const PASTED = [
 const FROM_STEAM = ['hollow-knight', 'hades--1', 'elden-ring', 'half-life-2']
 /** Switch games of the example shelf, as Nintendo's play history brings them, cartridges once said. */
 const FROM_NINTENDO = ['the-legend-of-zelda-breath-of-the-wild', 'animal-crossing-new-horizons']
+
+/** "Paint the room your way": the games each room's shelf holds. */
+const IN_THE_ROOM = ['hollow-knight', 'celeste', 'hades--1']
+
+/** "Press Play on your shelf": the game ready to play, and the PC games on the shelf under it. */
+const READY = 'hades--1'
+const ON_THE_PC = [
+  'hollow-knight',
+  'elden-ring',
+  'half-life-2',
+  'celeste',
+  'disco-elysium',
+  'outer-wilds',
+  'tunic',
+  'balatro',
+  'firewatch',
+]
 
 const pick = (games: readonly DemoGame[], slugs: readonly string[]): DemoGame[] =>
   slugs.flatMap((slug) => games.find((game) => game.slug === slug) ?? [])
@@ -64,11 +85,14 @@ export function Landing() {
     .filter((game) => game.rating !== undefined)
     .toSorted((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     .slice(0, 12)
+  const ready = pick(games, [READY])[0]
+  if (!ready) throw new Error(`${READY} is not on the example shelf: run pnpm landing:demo`)
 
   return (
     <div id="landing">
       <Reveals root="landing" />
       <Hero games={hero.filter((game) => game !== undefined)} />
+      <Overview />
       <Section id="how" eyebrow={t('ask.eyebrow')} title={t('ask.title')} body={t('ask.body')}>
         <AskDemo games={askGames()} matches={matches} />
       </Section>
@@ -91,6 +115,7 @@ export function Landing() {
         eyebrow={t('sync.eyebrow')}
         title={t('sync.title')}
         body={t('sync.body')}
+        aside={<p className="mt-4 text-sm text-pretty text-muted">{t('sync.organize')}</p>}
       >
         <SyncDemo steam={synced.steam} nintendo={synced.nintendo} count={synced.count} />
       </Section>
@@ -103,8 +128,16 @@ export function Landing() {
         <ViewsDemo games={rated} />
       </Section>
       <Section
-        id="media"
+        id="look"
         flip
+        eyebrow={t('look.eyebrow')}
+        title={t('look.title')}
+        body={t('look.body')}
+      >
+        <LookDemo games={pick(games, IN_THE_ROOM)} />
+      </Section>
+      <Section
+        id="media"
         eyebrow={t('media.eyebrow')}
         title={t('media.title')}
         body={t('media.body')}
@@ -112,8 +145,17 @@ export function Landing() {
         <MediaDemo />
       </Section>
       <Section
-        id="finished"
+        id="desktop"
         flip
+        eyebrow={t('desktop.eyebrow')}
+        title={t('desktop.title')}
+        body={t('desktop.body')}
+        aside={<DesktopPoints />}
+      >
+        <DesktopDemo game={ready} shelf={pick(games, ON_THE_PC)} />
+      </Section>
+      <Section
+        id="finished"
         eyebrow={t('finished.eyebrow')}
         title={t('finished.title')}
         body={t('finished.body')}
@@ -122,6 +164,7 @@ export function Landing() {
       </Section>
       <Section
         id="privacy"
+        flip
         eyebrow={t('privacy.eyebrow')}
         title={t('privacy.title')}
         body={t('privacy.body')}
@@ -130,12 +173,20 @@ export function Landing() {
       </Section>
       <Section
         id="assistant"
-        flip
         eyebrow={t('assistant.eyebrow')}
         title={t('assistant.title')}
         body={t('assistant.body')}
       >
         <Assistant picks={picks} />
+      </Section>
+      <Section
+        id="start"
+        wide
+        eyebrow={t('start.eyebrow')}
+        title={t('start.title')}
+        body={t('start.body')}
+      >
+        <StartSteps />
       </Section>
       <Closing />
     </div>

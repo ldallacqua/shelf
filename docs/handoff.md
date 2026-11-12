@@ -1,5 +1,43 @@
 # Handoff: 27 October 2026
 
+## Setup redesigned, the landing page caught up, and its rule enforced (12 Nov 2026)
+
+Branch `setup-and-landing`, on a Windows machine set up fresh for it (Git, Node 26 and pnpm installed by winget; the
+repository wants Node 24, which only warns). The owner asked for a researched onboarding, a way in Settings to go
+through it again without losing anything, a professional landing page with every shipped feature and download
+buttons, and an agent rule that catches features missing from it.
+
+- **Setting a shelf up** (spec 4.6, rewritten with what it was based on): four steps and an end, one at a time,
+  with a line of steps, a live preview beside them, Back/Skip/Continue, and each step in the address's hash.
+  New: "Where do you play?" (`CheckCards` in `src/ui`), platform cards for the places chosen (`PlatformCards`'
+  `only`), the Add dialog opened in place (`AddGame`'s `startOn`, actions passed by the route), the colors step, and
+  an end with what was set up and what's next (Shelf for Windows, the MCP address, a filter). Rules in
+  `domain/setup/setup.ts`; the device's memory in `features/start/setup-memory.ts`.
+- **Settings, "Set up your shelf again"**, in the account's group of the hub and the side list: opens `#play` and
+  clears nothing. A move from Settings draws the page before the router puts `#play` in the bar, so
+  `settleSetupMemory` reads the address again once the page has opened; found with a headless browser, not by
+  the unit tests, which can't reproduce the router's order.
+- **The landing page** (spec 15): download in the first screen and the close, an overview of eight tiles, "Paint
+  the room your way" (every colorway, lights off and on, switched by radio chips and CSS alone), "Press Play on
+  your shelf" (Shelf for Windows), "Ready in a minute", three new questions, and words updated where Settings
+  replaced the account page. No script was added: Home is 221.3 of its 222 KB.
+- **Downloads** go through `/api/desktop/windows`, which reads the newest release's `latest.json` and redirects to
+  its installer, only on this repository's releases (`domain/desktop/release.ts`). Checked against GitHub: it
+  answered 0.18.0's installer.
+- **The rule**: `src/features/landing/coverage.ts` maps every numbered section of the spec to a landing part or a
+  reason; `coverage.test.ts` fails on a section added, renamed or removed without it (AGENTS.md, "Every feature is
+  mapped to the landing page"). `.claude/agents/landing-coverage.md` does the audit on request.
+
+**Checked here:** format, lint, types, translations, every unit and component test (3,397), the production build,
+Storybook's build, the JavaScript budgets, Lighthouse at a slowdown of 5.5 (home 94, accessibility 100, layout shift 0; the library
+read 91 and 87 on two runs, with its script unchanged), axe-core over the landing page, each setup step and Settings
+in both themes (no violations), and the flow by hand in a headless Chromium on a new account, at 1440 and 390, dark
+and light, English and Portuguese, with no console error and no sideways scroll. The design skills ran
+(`design-critique`, `accessibility-review`, `ux-copy`). **Not checked:** Steam linked from the new step (the test
+double answered "Steam did not confirm" to a direct call in `next dev`, as it did before this change; the unit
+tests cover the step with a link), Storybook's deployment, and no Playwright browser test, under the MVP rule. Nothing
+is committed: the owner commits (no bot commits).
+
 ## Colorways (11 Nov 2026)
 
 Issue 206: six colorways and one's own in Settings, Appearance, under Theme (spec 9; architecture section 25, row
