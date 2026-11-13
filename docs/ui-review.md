@@ -1,16 +1,38 @@
 # The UI/UX review
 
-Step 10, the final review, looks at every page Shelf has, one screen at a time, through three lenses: the
-critique, accessibility and the words. It is written for every agent and person. Claude Code can run each
-lens as a subagent (`.claude/agents/ui-review-*.md`, which only read this file) and its Design plugin's
-skills beside them; any other agent or person does the same sections by hand. Either way the report says
-which ran.
+The UI/UX review looks at what a person sees through three lenses: the critique, accessibility and the words.
+It runs in two places: on **every new feature**, before it merges (below), and in **step 10**, the final review,
+over every page Shelf has, one screen at a time. It is written for every agent and person. Claude Code can run
+the whole of it as one subagent (`.claude/agents/ui-review.md`, which only reads this file), with its Design
+plugin's skills beside each lens; any other agent or person does the same sections by hand. Either way the
+report says which ran.
 
-This is not [the design pass](design-pass.md). The design pass comes before a change; this review audits
-what is already there and ends in a list of findings the owner chooses from. A fix it leads to is a change
-anyone can see, so it gets its own design pass (AGENTS.md, "A change anyone can see").
+This is not [the design pass](design-pass.md). The design pass comes before the code and decides what to build;
+this review looks at what was built, in a browser, and ends in a list of findings.
 
-## The screens, in order
+## A new feature
+
+The owner's rule (13 Nov 2026): every feature anyone can see passes this review before it merges, and merging is
+deploying (Vercel builds `main`).
+
+**Feature → review → fix → review → deploy.**
+
+1. **Feature.** Built after its design pass, as AGENTS.md says.
+2. **Review.** Capture the screens the feature touches, in the states it adds (section 1), and run the three
+   lenses over them (section 2). A screen or state `pnpm ui:capture` doesn't know yet is added to its list in the
+   same change, with a scene for each new state (an open dialog, an error, an empty list), so the next review
+   finds it.
+3. **Fix.** Every Blocker and High is fixed in the same pull request. Medium too, unless the owner says it waits;
+   Low may wait. Whatever waits goes into an issue, linked from the pull request.
+4. **Review again.** Capture again and run the lenses over what changed, to see the fixes work and broke nothing.
+   Repeat 3 and 4 until no Blocker or High is left.
+5. **Deploy.** The pull request carries the review: the findings, what happened to each, and the issue for what
+   waits. Then it merges as AGENTS.md says.
+
+A change that only moves pixels inside one component (a color, a spacing) may run the review on that screen alone.
+A change nobody sees (a server job, a test) needs none.
+
+## Step 10: the screens, in order
 
 One report per row, in `docs/review/`, named by its number and screen (`00-sign-in-up.md`). A row is done
 when its report is written and the owner has chosen what to fix; the fixes are their own pull requests.
@@ -18,7 +40,7 @@ when its report is written and the owner has chosen what to fix; the fixes are t
 
 | #   | Screen                                                | Names for `ui:capture`                         | Status                |
 | --- | ----------------------------------------------------- | ---------------------------------------------- | --------------------- |
-| 00  | Sign in and sign up (the pilot)                       | `sign-in`, `sign-up`                           | [Report](review/00-sign-in-up.md), the owner to choose |
+| 00  | Sign in and sign up (the pilot)                       | `sign-in`, `sign-up`                           | [Report](review/00-sign-in-up.md); fixes wait in [#217](https://github.com/ldallacqua/shelf/issues/217) |
 | 01  | The library: toolbar, filters, each view, empty, full | `library`, `library-wall`, `library-list`, `library-banners`, `library-empty` | Not started |
 | 02  | A game's page, and the list beside it                 | `game`, `game-mine`                            | Not started           |
 | 03  | Organize: unsorted, hours, archived                   | `unsorted`, `hours`, `archived`                | Not started           |
@@ -138,7 +160,9 @@ A fix names the key and gives both new lines.
 
 ## 3. The report
 
-The one running the review joins the three lenses into `docs/review/<nn>-<screen>.md`: duplicates merged (one
+For a feature, the joined report goes in the pull request, in the shape below, and the second review adds what
+happened to each finding. For step 10, the one running the review joins the three lenses into
+`docs/review/<nn>-<screen>.md`: duplicates merged (one
 finding, both IDs), ordered by severity, each with its fix and effort, then what works and what wasn't
 checked. Link the report from the table above. Captures are not committed; the report says the commit they
 were taken on.
@@ -162,9 +186,9 @@ Captured on <commit>, <date>. Lenses run: critique, accessibility, words (and ho
 (The owner's choice, then each finding's outcome: fixed in #PR, left, or no change needed.)
 ```
 
-## 4. Fixing
+## 4. Fixing, in step 10
 
-The owner chooses which findings to fix. The fixes for one screen go on one branch, as their own pull request:
+A feature's fixes follow "A new feature" above. In step 10, the owner chooses which findings to fix. The fixes for one screen go on one branch, as their own pull request:
 each visible change with its design pass, its story, both languages, and the reference screenshots if the look
 changed on purpose. After the fix, capture again and compare the pictures; the report's last section records
 what happened to each finding.

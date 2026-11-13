@@ -94,8 +94,8 @@ branch, open its pull request and merge it once verified, without asking each ti
    commits). A `Co-Authored-By` line for the assistant is fine, as the history has.
 3. Before merging, `pnpm verify --skip-browser` passes on the branch's last commit (`--skip-linux` too
    when Docker isn't running, said in the pull request).
-4. The pull request says what the change was based on (its design pass), what ran and what didn't, and
-   names any admin job to run after merging.
+4. The pull request says what the change was based on (its design pass), what its UI/UX review found and what
+   happened to each finding, what ran and what didn't, and names any admin job to run after merging.
 5. Merge with a merge commit, as the history has (`gh pr merge --merge --delete-branch`), then check that
    Storybook's build of the merge went live (rule above).
 6. Never push to `main` directly, force-push a shared branch, skip a hook, or start the GitHub workflow.
@@ -161,11 +161,15 @@ however small: a new element, a moved one, a new state, an animation. The owner'
 4. **Give it a story.** Every new element has its component in Storybook, with each of its states.
 5. **Say why.** The spec's section and the pull request say what it was based on.
 
-**The UI/UX review** (step 10). Every page, one screen at a time, through the critique, accessibility and the
-words, ending in findings the owner chooses from: [docs/ui-review.md](docs/ui-review.md), for any agent.
-`pnpm ui:capture <screen>` takes the pictures and facts it judges, from `pnpm serve:test`; each screen's report
-goes in `docs/review/`. (Claude Code can run each lens as a subagent, `.claude/agents/ui-review-critique.md`,
-`ui-review-a11y.md` and `ui-review-copy.md`, which only read that file.)
+**Every feature passes the UI/UX review before it merges** (the owner's rule, 13 Nov 2026): **feature → review →
+fix → review → deploy.** Once a feature anyone can see is built, its screens are captured (`pnpm ui:capture`,
+against `pnpm serve:test`) and judged through the critique, accessibility and the words; every Blocker and High
+is fixed in the same pull request, Medium unless the owner says it waits; then the review runs again, until no
+Blocker or High is left. The pull request carries the findings and what happened to each, and an issue holds
+whatever waits. A new screen or state goes into `ui:capture`'s list in the same change. The procedure is
+[docs/ui-review.md](docs/ui-review.md), for any agent; it is also step 10's screen-by-screen review, whose
+reports are in `docs/review/`. (Claude Code can run the whole review as one subagent, `.claude/agents/ui-review.md`,
+which only reads that file.)
 
 **Text.** Every word a visitor reads comes from `messages/`. English is the source; add the
 key to both files or `pnpm i18n:check` fails. A literal string inside a component is a lint
@@ -357,8 +361,9 @@ clear nothing.
 
 **A new feature, then, touches four places in the same change:** its section of the spec; the landing page
 and `features/landing/coverage.ts`; setup and `features/start/coverage.ts`; and the FAQ, if it raises a
-question. Plus an admin job if production needs one (below), a story for each new element, and both
-languages. `pnpm exec vitest run src/features/landing src/features/start` says which map is behind.
+question. Plus an admin job if production needs one (below), a story for each new element, both
+languages, and the UI/UX review before it merges (above). `pnpm exec vitest run src/features/landing
+src/features/start` says which map is behind.
 
 **Download buttons** link to `DOWNLOAD_WINDOWS` (`/api/desktop/windows`, `domain/desktop/release.ts`),
 which reads the newest release's `latest.json` and sends the browser to its installer, only ever on
@@ -516,6 +521,8 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 - New behavior has a test. A bug fix has a test that failed before it.
 - A visual change had its design pass, and a new element has its story in Storybook (see
   [A change anyone can see](#how-things-are-done-here)).
+- A feature anyone can see passed the UI/UX review, was fixed and reviewed again, with no Blocker or High
+  left; the pull request carries the findings, and an issue what waits ([docs/ui-review.md](docs/ui-review.md)).
 - The landing page shows the feature, and still tells the truth about the ones it changed; its
   section is in `src/features/landing/coverage.ts` and that test passes.
 - Setting a shelf up offers it where it helps a new shelf, or `src/features/start/coverage.ts` says

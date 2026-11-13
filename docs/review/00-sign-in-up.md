@@ -65,4 +65,6 @@ IDs are the lenses' own (C critique, A accessibility, T words); one row where le
 
 ## Chosen to fix
 
-(The owner's choice, then each finding's outcome.)
+Deferred by the owner (13 Nov 2026): nothing is fixed yet. All sixteen wait in
+[#217](https://github.com/ldallacqua/shelf/issues/217), with the owner's decisions (3, 11, 16 and the severity
+scale) listed first. When they are fixed, each finding's outcome goes here.
