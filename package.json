@@ -27,6 +27,7 @@
     "fixtures:fetch": "tsx --conditions=react-server --env-file=.env.local scripts/fixtures-fetch.ts",
     "landing:demo": "tsx --conditions=react-server scripts/landing-demo.ts",
     "landing:share": "node scripts/landing-share.ts",
+    "ui:capture": "node scripts/ui-capture.ts",
     "tokens:colorways": "tsx scripts/colorways.ts",
     "test": "vitest run",
     "test:watch": "vitest",

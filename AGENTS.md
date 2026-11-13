@@ -53,6 +53,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm perf:js`                          | Each page's first-load JavaScript against its budget. Needs a running server.                                                              |
 | `pnpm perf:lighthouse`                  | Lighthouse, mobile profile. Needs a running server.                                                                                        |
 | `pnpm perf:3d`                          | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.                                |
+| `pnpm ui:capture <screen…>`             | A screen's pictures and facts for the UI/UX review ([how](docs/ui-review.md)). Needs `pnpm serve:test`; `--list` names them                |
 | `pnpm storybook`                        | The component workshop at http://localhost:6300                                                                                            |
 | `pnpm i18n:check`                       | Fails if the two languages disagree                                                                                                        |
 | `pnpm tokens:colorways`                 | After changing a colorway's seeds or the rules in `src/domain/colorway/`: writes `src/ui/tokens/colorways.css`                             |
@@ -93,8 +94,8 @@ branch, open its pull request and merge it once verified, without asking each ti
    commits). A `Co-Authored-By` line for the assistant is fine, as the history has.
 3. Before merging, `pnpm verify --skip-browser` passes on the branch's last commit (`--skip-linux` too
    when Docker isn't running, said in the pull request).
-4. The pull request says what the change was based on (its design pass), what ran and what didn't, and
-   names any admin job to run after merging.
+4. The pull request says what the change was based on (its design pass), what its UI/UX review found and what
+   happened to each finding, what ran and what didn't, and names any admin job to run after merging.
 5. Merge with a merge commit, as the history has (`gh pr merge --merge --delete-branch`), then check that
    Storybook's build of the merge went live (rule above).
 6. Never push to `main` directly, force-push a shared branch, skip a hook, or start the GitHub workflow.
@@ -159,6 +160,16 @@ however small: a new element, a moved one, a new state, an animation. The owner'
    has to make sense where it stands, not just be on the page.
 4. **Give it a story.** Every new element has its component in Storybook, with each of its states.
 5. **Say why.** The spec's section and the pull request say what it was based on.
+
+**Every feature passes the UI/UX review before it merges** (the owner's rule, 13 Nov 2026): **feature → review →
+fix → review → deploy.** Once a feature anyone can see is built, its screens are captured (`pnpm ui:capture`,
+against `pnpm serve:test`) and judged through the critique, accessibility and the words; every Blocker and High
+is fixed in the same pull request, Medium unless the owner says it waits; then the review runs again, until no
+Blocker or High is left. The pull request carries the findings and what happened to each, and an issue holds
+whatever waits. A new screen or state goes into `ui:capture`'s list in the same change. The procedure is
+[docs/ui-review.md](docs/ui-review.md), for any agent; it is also step 10's screen-by-screen review, whose
+reports are in `docs/review/`. (Claude Code can run the whole review as one subagent, `.claude/agents/ui-review.md`,
+which only reads that file.)
 
 **Text.** Every word a visitor reads comes from `messages/`. English is the source; add the
 key to both files or `pnpm i18n:check` fails. A literal string inside a component is a lint
@@ -350,8 +361,9 @@ clear nothing.
 
 **A new feature, then, touches four places in the same change:** its section of the spec; the landing page
 and `features/landing/coverage.ts`; setup and `features/start/coverage.ts`; and the FAQ, if it raises a
-question. Plus an admin job if production needs one (below), a story for each new element, and both
-languages. `pnpm exec vitest run src/features/landing src/features/start` says which map is behind.
+question. Plus an admin job if production needs one (below), a story for each new element, both
+languages, and the UI/UX review before it merges (above). `pnpm exec vitest run src/features/landing
+src/features/start` says which map is behind.
 
 **Download buttons** link to `DOWNLOAD_WINDOWS` (`/api/desktop/windows`, `domain/desktop/release.ts`),
 which reads the newest release's `latest.json` and sends the browser to its installer, only ever on
@@ -505,10 +517,13 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 
 - `pnpm check` passes, and the browser tests for what you touched pass.
 - No error in the browser console.
-- Both themes and both languages were looked at, at phone and desktop width.
+- Both themes and both languages were looked at, at phone and desktop width, and the layout at every main
+  breakpoint, 320 to 1920 (`pnpm ui:capture` takes them all), with nothing scrolling sideways.
 - New behavior has a test. A bug fix has a test that failed before it.
 - A visual change had its design pass, and a new element has its story in Storybook (see
   [A change anyone can see](#how-things-are-done-here)).
+- A feature anyone can see passed the UI/UX review, was fixed and reviewed again, with no Blocker or High
+  left; the pull request carries the findings, and an issue what waits ([docs/ui-review.md](docs/ui-review.md)).
 - The landing page shows the feature, and still tells the truth about the ones it changed; its
   section is in `src/features/landing/coverage.ts` and that test passes.
 - Setting a shelf up offers it where it helps a new shelf, or `src/features/start/coverage.ts` says

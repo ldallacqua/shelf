@@ -1,5 +1,30 @@
 # Handoff: 27 October 2026
 
+## The UI/UX review, and its rule for every feature (13 Nov 2026)
+
+Step 10 has started. The owner asked for a full UI/UX review, screen by screen, run by AI agents, and then made it
+a rule for every new feature: **feature → review → fix → review → deploy** (AGENTS.md, "Every feature passes the
+UI/UX review before it merges").
+
+- **The procedure** is [docs/ui-review.md](ui-review.md): the screens of step 10 in order, a capture taken the same
+  way every time, the critique, accessibility (WCAG 2.2 AA) and words lenses, one shape for findings, a severity
+  scale, and how a feature's review runs.
+- **`pnpm ui:capture <screen…>`** (`scripts/ui-capture.ts`) photographs a running `pnpm serve:test`. For each scene
+  it takes 13 pictures at every main breakpoint, 320 to 1920 (390 and 1440 in both themes and languages; the
+  others light and pt-BR, as the owner asked that the app be reviewed at every main width), and writes axe-core's results, the Tab order,
+  the words, headings, small targets and console errors to `.data/ui-review/`. `--list` names the screens. A new
+  screen or state goes into its list.
+- **Claude Code runs the whole review as one subagent**, `.claude/agents/ui-review.md`. The pilot ran three, one per
+  lens; the owner asked for one, to spend fewer tokens. Each lens took about 7 minutes and 160 to 200 thousand
+  tokens, so expect roughly half a million tokens for a screen.
+- **The pilot, sign in and sign up**, is [docs/review/00-sign-in-up.md](review/00-sign-in-up.md): axe found nothing,
+  and the review found 16 things. **Nothing is fixed**: the week's tokens were running out, so the owner deferred
+  the fixes to [#217](https://github.com/ldallacqua/shelf/issues/217). The owner decides 3 (a way back in for a
+  forgotten password), 11 ("nome de usuário" for "identificador") and 16 (a shelf beside sign-up), and whether a
+  failed AA criterion should always be a Blocker.
+- **Next:** #217's fixes, then screen 01, the library (`library`, `library-wall`, `library-list`,
+  `library-banners`, `library-empty`), and on down the table.
+
 ## Setup redesigned, the landing page caught up, and its rule enforced (12 Nov 2026)
 
 Branch `setup-and-landing`, on a Windows machine set up fresh for it (Git, Node 26 and pnpm installed by winget; the
