@@ -10,7 +10,8 @@ UI/UX review before it merges").
   way every time, the critique, accessibility (WCAG 2.2 AA) and words lenses, one shape for findings, a severity
   scale, and how a feature's review runs.
 - **`pnpm ui:capture <screen…>`** (`scripts/ui-capture.ts`) photographs a running `pnpm serve:test`. For each scene
-  it takes 8 pictures (390 and 1440, light and dark, en and pt-BR) and writes axe-core's results, the Tab order,
+  it takes 13 pictures at every main breakpoint, 320 to 1920 (390 and 1440 in both themes and languages; the
+  others light and pt-BR, as the owner asked that the app be reviewed at every main width), and writes axe-core's results, the Tab order,
   the words, headings, small targets and console errors to `.data/ui-review/`. `--list` names the screens. A new
   screen or state goes into its list.
 - **Claude Code runs the whole review as one subagent**, `.claude/agents/ui-review.md`. The pilot ran three, one per

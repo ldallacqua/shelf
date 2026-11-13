@@ -62,9 +62,13 @@ The lenses judge pictures and facts taken the same way every time, not a memory 
 2. `pnpm ui:capture <name…>` (or `--list` for the names). For each screen and each of its scenes (the page as
    it opens, and states worth seeing: an error, a filled form, an open menu), it writes to
    `.data/ui-review/<screen>/<scene>/`:
-   - `<width>-<theme>-<locale>.png`, the first screen, at 390 (a phone) and 1440 (a desktop), light and dark,
-     English and Portuguese: eight pictures. `…-full.png` beside it when the page is taller than one screen.
-   - `axe.json`: axe-core's violations for WCAG 2.2 A and AA and best practice, for each of the eight.
+   - `<width>-<theme>-<locale>.png`, the first screen at every main breakpoint, each where it turns on or a
+     device people use: 320 (the narrowest phone, WCAG's reflow width), 390 (a phone), 640 (`sm`), 820 (`md`,
+     a tablet), 1024 (`lg`, a tablet sideways or a small laptop), 1440 (`xl`, a desktop) and 1920 (`2xl`, a wide
+     monitor). Layout is what changes with the width, so 390 and 1440 are taken in light and dark, English and
+     Portuguese, and the others once, light and Portuguese, whose longer words break a layout first: thirteen
+     pictures. `…-full.png` beside each when the page is taller than one screen.
+   - `axe.json`: axe-core's violations for WCAG 2.2 A and AA and best practice, for each capture.
    - `focus.json`: Tab pressed from the top of the page, desktop, light, English: each stop's element, name,
      size, and whether a ring was drawn.
    - `text-en.txt`, `text-pt-BR.txt`: every word the page shows, in reading order.
@@ -108,8 +112,10 @@ components. Check, for the screen as it is:
   seconds? Is the one main action the most prominent?
 - **Use.** Can the person do what they came for, in as few steps as it needs? Is every control obviously one?
   Is every state (chosen, done, waiting, failed) said in words as well as shown?
-- **Hierarchy and layout.** One reading order; space groups what belongs together; alignment holds; nothing
-  crowded at 390, nothing lost in empty space at 1440; the longer Portuguese doesn't break a line it shouldn't.
+- **Hierarchy and layout.** One reading order; space groups what belongs together; alignment holds; at every
+  width, nothing crowded or cut off, nothing lost in empty space, nothing that scrolls sideways; the layout
+  changes where a breakpoint says and holds between them (look hardest at 320, 640 and 1024, where bands meet);
+  the longer Portuguese doesn't break a line it shouldn't.
 - **Consistency.** Built from `src/ui` and the tokens; the same thing looks and behaves the same as on the pages
   already reviewed; it reads as games, not books (ADR 002: covers face out, no serif); both themes are the same
   room with the lights on or off, and no text sits in the bright band behind the games.
@@ -136,7 +142,8 @@ finding unless it is a false positive, which the finding explains. Then what axe
   tied to its field, saying how to fix it (3.3.1, 3.3.3); no puzzle to sign in, paste and password managers
   work (3.3.8); nothing asked twice (3.3.7).
 - **Seeing.** Text 4.5:1 (3:1 large), controls and graphics 3:1, in both themes; state never by color alone;
-  readable at 200% zoom and at 320 CSS pixels wide (1.4.10); headings in order (`facts.json`).
+  readable at 200% zoom and at 320 CSS pixels wide with no sideways scroll (1.4.10: the 320 capture);
+  headings in order (`facts.json`).
 - **Motion.** Anything that moves has a calm version under reduced motion.
 
 The skill in Claude Code's Design plugin (`accessibility-review`) is written for WCAG 2.1: hold it to 2.2.

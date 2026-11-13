@@ -159,12 +159,32 @@ const screens: Screen[] = [
   { name: 'missing', path: '/u/sample/game/no-such-game', allowErrors: true },
 ]
 
+/**
+ * Every main breakpoint, each at a width where it turns on or a device people use. Layout is
+ * what changes with the width, so the full set (both themes, both languages) is taken at the
+ * phone and the desktop only, as the browser tests' projects have them; the others in light
+ * and Portuguese, whose longer words break a layout first.
+ */
 const widths = [
-  { width: 390, height: 844 },
-  { width: 1440, height: 900 },
+  // The narrowest phone, and WCAG's reflow width (1.4.10).
+  { width: 320, height: 640, full: false },
+  // The browser tests' phone.
+  { width: 390, height: 844, full: true },
+  // sm turns on: a big phone held sideways, a small tablet.
+  { width: 640, height: 800, full: false },
+  // md: the browser tests' tablet, upright.
+  { width: 820, height: 1180, full: false },
+  // lg turns on: a tablet held sideways, a small laptop; the list beside a game appears.
+  { width: 1024, height: 768, full: false },
+  // xl: the browser tests' desktop.
+  { width: 1440, height: 900, full: true },
+  // 2xl: a wide monitor.
+  { width: 1920, height: 1080, full: false },
 ] as const
 const themes = ['light', 'dark'] as const
 const locales = routing.locales
+/** Where a width is taken in one look only, that look. */
+const ONE_LOOK = { theme: 'light', locale: 'pt-BR' } as const
 /** A full-page picture stops here: past it, the first screens say enough. */
 const FULL_PAGE_LIMIT = 6000
 const FOCUS_STOPS = 60
@@ -432,9 +452,10 @@ async function captureScene(
     failed: [],
   }
 
-  for (const size of widths) {
+  for (const { full, ...size } of widths) {
     for (const theme of themes) {
       for (const locale of locales) {
+        if (!full && (theme !== ONE_LOOK.theme || locale !== ONE_LOOK.locale)) continue
         const combo: Combo = { ...size, theme, locale }
         const name = comboName(combo)
         let context: BrowserContext | undefined
@@ -512,8 +533,9 @@ function indexOf(screen: Screen, records: SceneRecord[], commit: string): string
     '',
     `Captured ${new Date().toISOString().slice(0, 16).replace('T', ' ')} on ${commit}, from ${BASE_URL}, as ${screen.who ?? 'visitor'}.`,
     'Read docs/ui-review.md for what to do with this. Pictures are the first screen; `-full` is the page, up to',
-    `${FULL_PAGE_LIMIT} pixels. Names are \`<width>-<theme>-<locale>\`. A seam in a \`-full\` picture where the`,
-    'first screen ends is the fixed wall behind the page, drawn once by the capture: not a fault.',
+    `${FULL_PAGE_LIMIT} pixels. Names are \`<width>-<theme>-<locale>\`. Widths: ${widths.map(({ width, full }) => `${width}${full ? ' (both themes, both languages)' : ''}`).join(', ')};`,
+    `the rest in ${ONE_LOOK.theme} and ${ONE_LOOK.locale}. A seam in a \`-full\` picture where the first screen ends is`,
+    'the fixed wall behind the page, drawn once by the capture: not a fault.',
   ]
   for (const record of records) {
     lines.push('', `## Scene: ${record.scene}`, '', `Address: \`/<locale>${record.address}\``, '')
@@ -533,7 +555,7 @@ function indexOf(screen: Screen, records: SceneRecord[], commit: string): string
         byRule.set(violation.id, entry)
       }
     }
-    if (byRule.size === 0) lines.push('No violations in any of the eight.')
+    if (byRule.size === 0) lines.push('No violations in any capture.')
     else {
       lines.push('| Rule | Impact | Help | In | First targets |', '| --- | --- | --- | --- | --- |')
       for (const { violation, where } of byRule.values()) {
@@ -544,8 +566,11 @@ function indexOf(screen: Screen, records: SceneRecord[], commit: string): string
     }
 
     lines.push('', '### Facts', '')
+    // One line a width: its light English capture, or its one look.
     for (const [combo, facts] of Object.entries(record.facts)) {
-      if (!combo.endsWith('-light-en')) continue
+      if (!combo.includes(`-${ONE_LOOK.theme}-`)) continue
+      const width = combo.split('-')[0]
+      if (!combo.endsWith('-en') && record.facts[`${width}-light-en`]) continue
       lines.push(
         `- **${combo}:** page ${facts.pageHeight}px tall, sideways scroll ${facts.sideways}px.`,
       )

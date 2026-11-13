@@ -517,7 +517,8 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 
 - `pnpm check` passes, and the browser tests for what you touched pass.
 - No error in the browser console.
-- Both themes and both languages were looked at, at phone and desktop width.
+- Both themes and both languages were looked at, at phone and desktop width, and the layout at every main
+  breakpoint, 320 to 1920 (`pnpm ui:capture` takes them all), with nothing scrolling sideways.
 - New behavior has a test. A bug fix has a test that failed before it.
 - A visual change had its design pass, and a new element has its story in Storybook (see
   [A change anyone can see](#how-things-are-done-here)).
