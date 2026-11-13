@@ -53,6 +53,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm perf:js`                          | Each page's first-load JavaScript against its budget. Needs a running server.                                                              |
 | `pnpm perf:lighthouse`                  | Lighthouse, mobile profile. Needs a running server.                                                                                        |
 | `pnpm perf:3d`                          | The 3D shelf's frame time, draw calls and textures on this machine's graphics card. Needs a running server.                                |
+| `pnpm ui:capture <screen…>`             | A screen's pictures and facts for the UI/UX review ([how](docs/ui-review.md)). Needs `pnpm serve:test`; `--list` names them                |
 | `pnpm storybook`                        | The component workshop at http://localhost:6300                                                                                            |
 | `pnpm i18n:check`                       | Fails if the two languages disagree                                                                                                        |
 | `pnpm tokens:colorways`                 | After changing a colorway's seeds or the rules in `src/domain/colorway/`: writes `src/ui/tokens/colorways.css`                             |
@@ -159,6 +160,12 @@ however small: a new element, a moved one, a new state, an animation. The owner'
    has to make sense where it stands, not just be on the page.
 4. **Give it a story.** Every new element has its component in Storybook, with each of its states.
 5. **Say why.** The spec's section and the pull request say what it was based on.
+
+**The UI/UX review** (step 10). Every page, one screen at a time, through the critique, accessibility and the
+words, ending in findings the owner chooses from: [docs/ui-review.md](docs/ui-review.md), for any agent.
+`pnpm ui:capture <screen>` takes the pictures and facts it judges, from `pnpm serve:test`; each screen's report
+goes in `docs/review/`. (Claude Code can run each lens as a subagent, `.claude/agents/ui-review-critique.md`,
+`ui-review-a11y.md` and `ui-review-copy.md`, which only read that file.)
 
 **Text.** Every word a visitor reads comes from `messages/`. English is the source; add the
 key to both files or `pnpm i18n:check` fails. A literal string inside a component is a lint
