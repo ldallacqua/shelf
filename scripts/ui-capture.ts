@@ -222,7 +222,10 @@ const screens: Screen[] = [
       {
         name: 'sort-menu',
         act: async (page) => {
-          await page.getByRole('button', { name: /^(Sort|Ordem)/ }).first().click()
+          await page
+            .getByRole('button', { name: /^(Sort|Ordem)/ })
+            .first()
+            .click()
           await page.getByRole('menu').waitFor()
         },
       },
