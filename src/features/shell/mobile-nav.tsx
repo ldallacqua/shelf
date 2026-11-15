@@ -16,7 +16,7 @@ import {
 } from '@/ui/dropdown-menu'
 import { Tip } from '@/ui/tooltip'
 
-import { isCurrent, navItems, placingItem } from './nav'
+import { isCurrent, navItems, ownItems, placingItem } from './nav'
 import { useNavHandle, useOwnHandle, useOwnWaiting } from './nav-handle'
 import { WaitingCount } from './waiting-count'
 
@@ -51,17 +51,19 @@ function Menu({ handle, pathname, className }: MenuProps) {
               </DropdownMenuItem>
             ))
           : null}
-        {waiting === undefined ? null : (
-          <DropdownMenuItem asChild>
-            <Link
-              href={placingItem.href}
-              aria-current={isCurrent(placingItem, pathname) ? 'page' : undefined}
-            >
-              {t(placingItem.label)}
-              <WaitingCount count={waiting} />
-            </Link>
-          </DropdownMenuItem>
-        )}
+        {waiting === undefined
+          ? null
+          : ownItems.map((item) => (
+              <DropdownMenuItem key={item.label} asChild>
+                <Link
+                  href={item.href}
+                  aria-current={isCurrent(item, pathname) ? 'page' : undefined}
+                >
+                  {t(item.label)}
+                  {item === placingItem ? <WaitingCount count={waiting} /> : null}
+                </Link>
+              </DropdownMenuItem>
+            ))}
         {visitor ? (
           <>
             {handle ? <DropdownMenuSeparator /> : null}

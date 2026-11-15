@@ -20,8 +20,13 @@ const locales = readdirSync(messages)
   .map((file) => file.replace(/\.json$/, ''))
 
 // `messages/app` holds the words only Shelf for Windows draws, and `messages/admin` the admin
-// page's, which no other page's HTML carries.
-const problems = [messages, join(messages, 'app'), join(messages, 'admin')].flatMap((directory) =>
+// page's, and `messages/duel` the duel's (spec 3.14), which no other page's HTML carries.
+const problems = [
+  messages,
+  join(messages, 'app'),
+  join(messages, 'admin'),
+  join(messages, 'duel'),
+].flatMap((directory) =>
   compareMessages(
     read(directory, SOURCE),
     Object.fromEntries(

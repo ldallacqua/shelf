@@ -52,7 +52,8 @@ address of their own (`/en/u/sample/shelves/short-ones`). The library can be rea
 `/api/v1`. A game opens over the shelf, its cover growing out of its box, or on a page of its
 own. Signed in, an account adds games one at a time or from a pasted list, and edits everything
 under "Mine" in place; an assistant can read the library through MCP and, once its account
-says yes, add and change games too. The finished games stand on a trophy wall. The design
+says yes, add and change games too. The finished games stand on a trophy wall, and the duel
+puts up to sixteen of the waiting ones face to face, two at a time, until one is left to play next. The design
 foundations from step 1 are at `/en/foundations`, unlisted.
 
 ## Credits

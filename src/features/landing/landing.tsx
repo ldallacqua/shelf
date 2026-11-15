@@ -4,9 +4,18 @@ import { AddDemo } from './add-demo'
 import { AskDemo } from './ask-demo'
 import { Assistant } from './assistant'
 import { Closing } from './closing'
-import { askGames, askMatches, demoGames, demoTrophies, everyCopy, platformSync } from './demo'
+import {
+  askGames,
+  askMatches,
+  demoDuel,
+  demoGames,
+  demoTrophies,
+  everyCopy,
+  platformSync,
+} from './demo'
 import type { DemoGame } from './demo-case'
 import { DesktopDemo, DesktopPoints } from './desktop-demo'
+import { DEMO_FACTS, DuelDemo } from './duel-demo'
 import { EveryCopy } from './every-copy'
 import { FinishedWall } from './finished-wall'
 import { Hero } from './hero'
@@ -57,6 +66,9 @@ const ON_THE_PC = [
   'firewatch',
 ]
 
+/** "Choose your next game": two of the example shelf's backlog, face to face. */
+const DUEL = ['outer-wilds', 'hades-ii'] as const
+
 const pick = (games: readonly DemoGame[], slugs: readonly string[]): DemoGame[] =>
   slugs.flatMap((slug) => games.find((game) => game.slug === slug) ?? [])
 
@@ -72,6 +84,7 @@ export function Landing() {
   const matches = askMatches()
   const trophies = demoTrophies()
   const synced = platformSync(FROM_STEAM, FROM_NINTENDO)
+  const duel = demoDuel(DUEL, DEMO_FACTS)
 
   const hero = Array.from({ length: HERO_GAMES }, (_, index) => games[(index * 17) % games.length])
   const typed = games.filter((game) => game.title.toLowerCase().includes(TYPED)).slice(0, 3)
@@ -161,6 +174,15 @@ export function Landing() {
         body={t('finished.body')}
       >
         <FinishedWall stats={trophies.stats} latest={trophies.latest} />
+      </Section>
+      <Section
+        id="duel"
+        flip
+        eyebrow={t('duel.eyebrow')}
+        title={t('duel.title')}
+        body={t('duel.body')}
+      >
+        <DuelDemo games={duel.games} facts={duel.facts} />
       </Section>
       <Section
         id="privacy"

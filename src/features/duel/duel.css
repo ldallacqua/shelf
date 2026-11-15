@@ -1,0 +1,596 @@
+/*
+ * The duel (spec 3.14): two games face to face, each under its own light, as the trophy wall
+ * lights a finished game. The light comes from the lighting tokens, so one rule serves both
+ * themes; a game's own color is data (`--case-led`).
+ */
+@layer components {
+  /* ---- Choosing the contenders ---- */
+
+  .duel-pool {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 40rem) {
+    .duel-pool {
+      grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+      gap: 1.25rem 1rem;
+    }
+  }
+
+  .duel-pick {
+    display: grid;
+    width: 100%;
+    gap: 0.375rem;
+    border-radius: var(--radius-control);
+    text-align: start;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .duel-pick-cover {
+    position: relative;
+    display: block;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border-radius: var(--radius-case);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.22),
+      0 0.5rem 1rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.6));
+    transition:
+      translate var(--motion-quick) var(--ease-settle),
+      box-shadow var(--motion-quick) var(--ease-settle),
+      opacity var(--motion-quick) var(--ease-settle);
+  }
+
+  /* Chosen: ringed in the accent and lit, with a tick, so the state shows by shape as well. */
+  .duel-pick[aria-pressed='true'] .duel-pick-cover {
+    box-shadow:
+      0 0 0 3px var(--accent),
+      0 0 calc(0.5rem + var(--glow) * 1rem) color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+
+  .duel-pick-tick {
+    position: absolute;
+    top: 0.375rem;
+    right: 0.375rem;
+    display: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    box-shadow: 0 0.125rem 0.375rem rgb(0 0 0 / 0.35);
+  }
+
+  .duel-pick[aria-pressed='true'] .duel-pick-tick {
+    display: grid;
+  }
+
+  .duel-pick[aria-disabled='true'] .duel-pick-cover {
+    opacity: 0.45;
+  }
+
+  @media (prefers-reduced-motion: no-preference) and (hover: hover) {
+    .duel-pick:not([aria-disabled='true']):is(:hover, :focus-visible) .duel-pick-cover {
+      translate: 0 -0.1875rem;
+    }
+  }
+
+  /* Leaves room under the page for the bar of what is chosen, below lg, and for focus to show above it. */
+  @media (max-width: 63.999rem) {
+    html:has(.duel-bar) {
+      scroll-padding-bottom: 6rem;
+    }
+  }
+
+  /* The bar: what is in and Clear on the left, Start on the right. */
+  .duel-bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .duel-bar-what {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+  }
+
+  .duel-bar-start {
+    flex: none;
+  }
+
+  /* The narrowest phones: two rows, so the count never breaks a word a line, Start the whole width. */
+  @media (max-width: 24rem) {
+    html:has(.duel-bar) {
+      scroll-padding-bottom: 8rem;
+    }
+
+    .duel-bar-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+    }
+
+    .duel-bar-what {
+      justify-content: space-between;
+    }
+  }
+
+  /* ---- Face to face ---- */
+
+  /* The lights reach past the games; past the page's edge they are clipped, never scrolled to. */
+  .duel-arena,
+  .duel-champion {
+    overflow-x: clip;
+  }
+
+  .duel-arena {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas:
+      'a vs b'
+      'facts facts facts';
+    gap: 1.25rem 0.75rem;
+    align-items: start;
+  }
+
+  @media (min-width: 40rem) {
+    .duel-arena {
+      gap: 1.75rem 1.5rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .duel-arena {
+      grid-template-columns: minmax(0, 1fr) minmax(19rem, 27rem) minmax(0, 1fr);
+      grid-template-areas: 'a facts b';
+      gap: 2rem;
+    }
+  }
+
+  /*
+   * Each game's parts in rows, the title's row taking what is left, so both Choose buttons stand at
+   * the same height whatever the titles' lengths. Beside the facts on a desktop, the two stand at
+   * the top instead, as tall as they are.
+   */
+  .duel-fighter {
+    display: grid;
+    grid-template-rows: auto 1fr auto auto;
+    justify-items: center;
+    align-self: stretch;
+    gap: 0.625rem;
+    min-width: 0;
+    text-align: center;
+  }
+
+  @media (min-width: 64rem) {
+    .duel-fighter {
+      align-self: start;
+    }
+  }
+
+  .duel-fighter[data-side='a'] {
+    grid-area: a;
+  }
+
+  .duel-fighter[data-side='b'] {
+    grid-area: b;
+  }
+
+  .duel-versus {
+    grid-area: vs;
+    align-self: center;
+    margin-top: -3rem;
+  }
+
+  /* Under the two games, the facts keep close to their names: a row as wide as a tablet strays. */
+  .duel-facts {
+    grid-area: facts;
+    min-width: 0;
+    width: 100%;
+    max-width: 36rem;
+    margin-inline: auto;
+  }
+
+  /* The niche each game stands in: a lamp above, its light falling on the wall, a plinth below. */
+  .duel-niche {
+    --pool-side: 1rem;
+    --pool-above: 1.25rem;
+    --pool-peak: calc(var(--led-strength) * (38% + var(--glow) * 32%));
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 12.5rem;
+    padding: 1.125rem 0.375rem 0;
+    isolation: isolate;
+  }
+
+  @media (min-width: 40rem) {
+    .duel-niche {
+      --pool-side: 2rem;
+      --pool-above: 2rem;
+      padding: 1.5rem 0.75rem 0;
+    }
+  }
+
+  /* Beside the facts, short enough that the two games and their buttons fit the first screen. */
+  @media (min-width: 64rem) {
+    .duel-arena .duel-niche {
+      max-width: 13.5rem;
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .duel-arena .duel-niche {
+      max-width: 15rem;
+    }
+  }
+
+  @media (min-width: 96rem) {
+    .duel-arena .duel-niche {
+      max-width: 17rem;
+    }
+  }
+
+  .duel-niche::before {
+    --pool-color: var(--case-led, var(--led));
+    content: '';
+    position: absolute;
+    inset: calc(var(--pool-above) * -1) calc(var(--pool-side) * -1) 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      50% 100% at 50% var(--pool-above),
+      color-mix(in srgb, var(--pool-color) var(--pool-peak), transparent) 0%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.75), transparent) 15%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.53), transparent) 30%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.34), transparent) 45%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.19), transparent) 60%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.08), transparent) 75%,
+      color-mix(in srgb, var(--pool-color) calc(var(--pool-peak) * 0.016), transparent) 90%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      rgb(0 0 0 / 0.14) calc(var(--pool-above) * 0.33),
+      rgb(0 0 0 / 0.47) calc(var(--pool-above) * 0.66),
+      #000 var(--pool-above)
+    );
+    transition: opacity var(--motion-base) var(--ease-settle);
+  }
+
+  .duel-niche::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 2.75rem;
+    height: 3px;
+    border-radius: 0 0 2px 2px;
+    translate: -50% 0;
+    background: color-mix(in srgb, var(--case-led, var(--led)) 70%, white);
+    box-shadow: 0 0 calc(0.25rem + var(--glow) * 0.875rem)
+      color-mix(in srgb, var(--case-led, var(--led)) calc(30% + var(--glow) * 50%), transparent);
+  }
+
+  .duel-cover {
+    display: block;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border-radius: var(--radius-case);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.28),
+      0 0.75rem 1.5rem rgb(0 0 0 / calc(var(--shadow-depth) * 0.8));
+  }
+
+  .duel-plinth {
+    display: block;
+    height: 0.4375rem;
+    margin-inline: -0.375rem;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--ledge-top) 0, var(--ledge) 2px, var(--ledge) 100%);
+    box-shadow: 0 0.375rem 0.75rem
+      color-mix(in srgb, var(--shadow-color) calc(var(--shadow-depth) * 100%), transparent);
+  }
+
+  /*
+   * A choice made: the game that goes on steps up into its light, the other dims and steps back.
+   * Under reduced motion, only the light and the dimming change.
+   */
+  .duel-fighter[data-outcome='lost'] .duel-niche {
+    opacity: 0.35;
+  }
+
+  .duel-fighter[data-outcome='lost'] .duel-niche::before {
+    opacity: 0;
+  }
+
+  .duel-fighter .duel-niche {
+    transition:
+      opacity var(--motion-base) var(--ease-settle),
+      translate var(--motion-base) var(--ease-settle),
+      scale var(--motion-base) var(--ease-settle);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .duel-fighter[data-outcome='won'] .duel-niche {
+      translate: 0 -0.5rem;
+    }
+
+    .duel-fighter[data-outcome='lost'] .duel-niche {
+      scale: 0.94;
+    }
+
+    /* The next two step into their places from either side. */
+    .duel-fighter[data-arrived] .duel-niche {
+      animation: duel-arrive var(--motion-slow) var(--ease-settle) both;
+    }
+
+    .duel-fighter[data-side='a'][data-arrived] .duel-niche {
+      --from: -1.5rem;
+    }
+
+    .duel-fighter[data-side='b'][data-arrived] .duel-niche {
+      --from: 1.5rem;
+    }
+  }
+
+  @keyframes duel-arrive {
+    from {
+      opacity: 0;
+      translate: var(--from, 0) 0;
+    }
+  }
+
+  /* VS, between the two: on a desktop it stands at the top of the facts. */
+  .duel-vs {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    box-shadow: 0 0 calc(0.25rem + var(--glow) * 1rem)
+      color-mix(in srgb, var(--accent) calc(15% + var(--glow) * 25%), transparent);
+  }
+
+  @media (min-width: 40rem) {
+    .duel-vs {
+      width: 3.5rem;
+      height: 3.5rem;
+      font-size: 1.125rem;
+    }
+  }
+
+  /* ---- The facts, side by side: each game's value toward the middle, its bar growing out ---- */
+
+  .duel-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  @media (min-width: 40rem) {
+    .duel-table {
+      font-size: 0.875rem;
+    }
+  }
+
+  .duel-table tbody tr + tr > * {
+    border-top: 1px solid var(--line);
+  }
+
+  .duel-table td,
+  .duel-table th[scope='row'] {
+    padding: 0.5rem 0;
+    vertical-align: middle;
+  }
+
+  .duel-table th[scope='row'] {
+    width: 34%;
+    padding-inline: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    /* A long name breaks between syllables, in the page's language, never inside one. */
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+
+  @media (min-width: 40rem) {
+    .duel-table th[scope='row'] {
+      width: 30%;
+      font-size: 0.6875rem;
+    }
+  }
+
+  .duel-table td[data-side='a'] {
+    text-align: end;
+  }
+
+  .duel-table td[data-side='b'] {
+    text-align: start;
+  }
+
+  .duel-value {
+    display: block;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .duel-value[data-empty] {
+    font-weight: 400;
+    color: var(--text-muted);
+  }
+
+  .duel-track {
+    display: flex;
+    height: 0.375rem;
+    margin-top: 0.3125rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--line) 70%, transparent);
+  }
+
+  td[data-side='a'] .duel-track {
+    justify-content: flex-end;
+  }
+
+  .duel-fill {
+    width: calc(var(--share, 0) * 100%);
+    border-radius: inherit;
+    background: var(--accent);
+    box-shadow: 0 0 calc(var(--glow) * 0.5rem) color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .duel-fill {
+      animation: duel-fill var(--motion-slow) var(--ease-settle) both;
+    }
+
+    td[data-side='a'] .duel-fill {
+      transform-origin: right;
+    }
+
+    td[data-side='b'] .duel-fill {
+      transform-origin: left;
+    }
+  }
+
+  @keyframes duel-fill {
+    from {
+      scale: 0 1;
+    }
+  }
+
+  /* ---- The bracket ---- */
+
+  .duel-rounds {
+    display: grid;
+    gap: 1.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 64rem) {
+    .duel-rounds {
+      grid-auto-columns: minmax(0, 1fr);
+      grid-auto-flow: column;
+      gap: 1rem;
+    }
+
+    .duel-round {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    /* Each round's duels stand between the two they came from, as a bracket is drawn. */
+    .duel-round .duel-matches {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      height: 100%;
+    }
+  }
+
+  .duel-matches {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 40rem) and (max-width: 63.999rem) {
+    .duel-matches {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .duel-match {
+    display: grid;
+    gap: 0.125rem;
+    padding: 0.375rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-control);
+    background: var(--surface);
+  }
+
+  .duel-match[data-current] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  /* ---- The game left ---- */
+
+  .duel-champion {
+    display: grid;
+    gap: 1.5rem 2.5rem;
+    align-items: center;
+  }
+
+  @media (min-width: 40rem) {
+    .duel-champion {
+      grid-template-columns: minmax(10rem, 15rem) minmax(0, 1fr);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .duel-champion {
+      grid-template-columns: 17rem minmax(0, 1fr);
+    }
+  }
+
+  .duel-champion .duel-niche {
+    max-width: 13rem;
+    margin-inline: auto;
+  }
+
+  /* On the narrowest phones, small enough that Start playing it stays on the first screen. */
+  @media (max-width: 24rem) {
+    .duel-champion .duel-niche {
+      max-width: 9.5rem;
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .duel-champion .duel-niche {
+      max-width: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .duel-champion .duel-niche {
+      animation: duel-rise var(--motion-cinematic) var(--ease-settle) both;
+    }
+  }
+
+  @keyframes duel-rise {
+    from {
+      opacity: 0;
+      translate: 0 1rem;
+    }
+  }
+}

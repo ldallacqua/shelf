@@ -12,7 +12,9 @@
  * BASE_URL). The owner's screens sign in as the sample shelf with the test
  * doubles' made-up owner, so they need the test doubles on; a new account's
  * screens sign one up through the real form, on the test database. A name that
- * starts with `/` captures that address as a visitor.
+ * starts with `/` captures that address as a visitor. `screen:scene,scene`
+ * captures only those scenes again, beside the screen's others, with an index of
+ * their own (`index-<scenes>.md`): for a review run again over what a fix touched.
  */
 import { execSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
@@ -53,6 +55,76 @@ const fill = (page: Page, name: string, value: string) =>
 
 /** A handle no other run has. */
 const freshHandle = () => `review-${Date.now().toString(36)}${randomBytes(2).toString('hex')}`
+
+/**
+ * The duel (spec 3.14), from choosing to the game left. Each picture starts from a fresh device, so
+ * each scene chooses its games again: the first of the backlog, in places drawn by a random that
+ * always draws the same, so every width shows the same duel. Setting a game to Playing is answered
+ * here, so the test database, and the next picture's backlog, stay as they were.
+ */
+async function chooseFirst(page: Page, count: number) {
+  await page.locator('.duel-pool').waitFor({ timeout: 20_000 })
+  const games = page.locator('.duel-pick')
+  for (let index = 0; index < count; index += 1) {
+    // Past the first screenful the list draws more on asking.
+    if ((await games.count()) <= index) {
+      await page.getByRole('button', { name: /^(Show|Mostrar mais)/ }).click()
+    }
+    // A seventeenth is marked unavailable, and still answers a press by saying the duel is full.
+    await games.nth(index).click({ force: index >= 16 })
+  }
+}
+
+const chooseEight = (page: Page) => chooseFirst(page, 8)
+
+async function startDuel(page: Page, count = 8) {
+  await chooseFirst(page, count)
+  await page.evaluate(() => {
+    let seed = 7
+    Math.random = () => (seed = (seed * 16807) % 2147483647) / 2147483647
+  })
+  // The bar below a wide screen and the panel beside the list each have Start: the one showing.
+  await page
+    .getByRole('button', { name: /^(Start the duel|Começar o duelo)$/ })
+    .filter({ visible: true })
+    .click()
+  await page.locator('.duel-arena').waitFor()
+}
+
+async function chooseLeft(page: Page, times: number) {
+  for (let pick = 0; pick < times; pick += 1) {
+    await page.keyboard.press('ArrowLeft')
+    // A choice shows for a moment before the next two step in.
+    await page.waitForTimeout(450)
+  }
+}
+
+async function toChampion(page: Page) {
+  await startDuel(page)
+  await chooseLeft(page, 7)
+  await page.locator('.duel-champion').waitFor()
+}
+
+/** Presses a status chip, by its name in either language. */
+const chip = (page: Page, name: RegExp) => page.getByRole('button', { name }).first().click()
+const BACKLOG = /^(Backlog|Na fila)/
+const PLAYING = /^(Playing|Jogando)/
+const WISHLIST = /^(Wishlist|Lista de desejos)/
+
+/** Two games' duel, the final, after choosing them some other way than from the backlog. */
+async function startFinal(page: Page) {
+  await page
+    .getByRole('button', { name: /^(Start the duel|Começar o duelo)$/ })
+    .filter({ visible: true })
+    .click()
+  await page.locator('.duel-arena').waitFor()
+}
+
+/** Answers a status change (Start playing it) with this, so the test database stays as it was. */
+const answerPatch = (page: Page, answer: { status: number; json: unknown }) =>
+  page.route('**/api/v1/entries/**', (route) =>
+    route.request().method() === 'PATCH' ? route.fulfill(answer) : route.continue(),
+  )
 
 const settingsPages = [
   'profile',
@@ -135,6 +207,123 @@ const screens: Screen[] = [
   { name: 'unsorted', path: '/account/unsorted', who: 'owner' },
   { name: 'hours', path: '/account/hours', who: 'owner' },
   { name: 'archived', path: '/account/archived', who: 'owner' },
+  {
+    name: 'duel',
+    path: '/account/duel',
+    who: 'owner',
+    scenes: [
+      { name: 'pick' },
+      { name: 'picked', act: chooseEight },
+      { name: 'fight', act: startDuel },
+      {
+        name: 'fight-later',
+        act: async (page) => {
+          await startDuel(page)
+          await chooseLeft(page, 4)
+        },
+      },
+      { name: 'champion', act: toChampion },
+      {
+        name: 'started',
+        act: async (page) => {
+          await answerPatch(page, { status: 200, json: { version: 999_999 } })
+          await toChampion(page)
+          await page.getByRole('button', { name: /^(Start playing it|Começar a jogar)$/ }).click()
+          await page.locator('.duel-champion [role="status"]:not(:empty)').waitFor()
+        },
+      },
+      {
+        name: 'start-failed',
+        expectedErrors: 'Saving is refused on purpose, which the browser logs.',
+        act: async (page) => {
+          await answerPatch(page, { status: 500, json: { error: 'failed' } })
+          await toChampion(page)
+          await page.getByRole('button', { name: /^(Start playing it|Começar a jogar)$/ }).click()
+          await page.locator('.duel-champion [role="status"]:not(:empty)').waitFor()
+        },
+      },
+      {
+        // The game left is one already being played: it says so, in words.
+        name: 'already-playing',
+        act: async (page) => {
+          await page.locator('.duel-pool').waitFor({ timeout: 20_000 })
+          await chip(page, PLAYING)
+          await chip(page, BACKLOG)
+          await chooseFirst(page, 2)
+          await startFinal(page)
+          await chooseLeft(page, 1)
+          await page.locator('.duel-champion').waitFor()
+        },
+      },
+      {
+        // A wished-for game against one owned: one Platforms row, "Wanted on" on one side.
+        name: 'wishlist',
+        act: async (page) => {
+          await page.locator('.duel-pool').waitFor({ timeout: 20_000 })
+          await chip(page, WISHLIST)
+          await chip(page, BACKLOG)
+          await chooseFirst(page, 1)
+          await chip(page, BACKLOG)
+          await chip(page, WISHLIST)
+          await chooseFirst(page, 1)
+          await startFinal(page)
+        },
+      },
+      {
+        // A shelf whose games all wait for a status: the duel leads to Organize.
+        name: 'unsorted',
+        act: async (page) => {
+          await page.route('**/api/v1/me/library', async (route) => {
+            const file = (await (await route.fetch()).json()) as { games: unknown[][] }
+            // A game's third place is its status, by its place in `statusCodes`: 5 is unsorted.
+            for (const row of file.games) row[2] = 5
+            await route.fulfill({ json: file })
+          })
+          await page.reload()
+          await page.getByRole('link', { name: /^(Go to Organize|Ir para Organizar)$/ }).waitFor()
+        },
+      },
+      {
+        name: 'confirm',
+        act: async (page) => {
+          await startDuel(page)
+          await chooseLeft(page, 1)
+          await page.getByRole('button', { name: /^(Change the games|Trocar os jogos)$/ }).click()
+          await page.getByRole('alertdialog').waitFor()
+        },
+      },
+      {
+        name: 'full',
+        act: async (page) => {
+          await chooseFirst(page, 17)
+        },
+      },
+      {
+        name: 'no-match',
+        act: async (page) => {
+          await page.locator('.duel-pool').waitFor({ timeout: 20_000 })
+          // The header has a search of its own on a wide screen.
+          await page
+            .getByRole('searchbox', { name: /^(Find a game|Encontrar um jogo)$/ })
+            .fill('zzzz')
+          await page.waitForTimeout(800)
+        },
+      },
+      { name: 'byes', act: (page) => startDuel(page, 5) },
+      { name: 'sixteen', act: (page) => startDuel(page, 16) },
+      {
+        name: 'failed',
+        expectedErrors: 'The library read is refused on purpose, which the browser logs.',
+        act: async (page) => {
+          await page.route('**/api/v1/me/library', (route) => route.abort())
+          await page.reload()
+          await page.locator('[role="alert"]').waitFor()
+        },
+      },
+    ],
+  },
+  { name: 'duel-empty', path: '/account/duel', who: 'new' },
+  { name: 'duel-visitor', path: '/account/duel' },
   {
     name: 'start',
     path: '/account/start',
@@ -221,17 +410,23 @@ async function settle(page: Page) {
       { timeout: 10_000 },
     )
     .catch(() => {})
+  // Fades and rises end on their own; one that is paused, or restarted as a scene comes into view
+  // (the landing's), never would: give up on those after a few seconds, as every wait here does.
   await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter(
-          (animation) =>
-            animation.timeline instanceof DocumentTimeline &&
-            animation.effect?.getComputedTiming().iterations !== Infinity,
-        )
-        .map((animation) => animation.finished.catch(() => {})),
-    ),
+    Promise.race([
+      Promise.all(
+        document
+          .getAnimations()
+          .filter(
+            (animation) =>
+              animation.timeline instanceof DocumentTimeline &&
+              animation.playState !== 'paused' &&
+              animation.effect?.getComputedTiming().iterations !== Infinity,
+          )
+          .map((animation) => animation.finished.catch(() => {})),
+      ),
+      new Promise((done) => setTimeout(done, 5_000)),
+    ]),
   )
   await page.waitForTimeout(400)
 }
@@ -629,16 +824,31 @@ if (asked.length === 0 || asked.includes('--list')) {
   process.exit(asked.length === 0 ? 1 : 0)
 }
 
-const chosen = asked.map((name): Screen => {
-  if (name.startsWith('/')) {
-    return { name: name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'home', path: name }
+/** A screen to capture, whole, or only the scenes named after it (`duel:full,no-match`). */
+type Asked = Screen & { only?: string[] }
+
+const chosen = asked.map((argument): Asked => {
+  if (argument.startsWith('/')) {
+    return {
+      name: argument.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'home',
+      path: argument,
+    }
   }
+  const [name = '', scenes] = argument.split(':')
   const screen = screens.find((candidate) => candidate.name === name)
   if (!screen) {
     console.error(`No screen named ${name}. pnpm ui:capture --list names them.`)
     process.exit(1)
   }
-  return screen
+  if (scenes === undefined) return screen
+  const only = scenes.split(',')
+  const known = (screen.scenes ?? [{ name: 'open' }]).map((scene) => scene.name)
+  const unknown = only.filter((scene) => !known.includes(scene))
+  if (unknown.length > 0) {
+    console.error(`${name} has no scene ${unknown.join(', ')}. Its scenes: ${known.join(', ')}.`)
+    process.exit(1)
+  }
+  return { ...screen, only }
 })
 
 const commit = execSync('git rev-parse --short HEAD').toString().trim()
@@ -647,20 +857,29 @@ const browser = await chromium.launch()
 try {
   for (const screen of chosen) {
     const folder = join(root, screen.name)
-    rmSync(folder, { recursive: true, force: true })
+    // Scenes captured again replace only their own folders; the screen's others stay.
+    if (screen.only) {
+      for (const scene of screen.only) rmSync(join(folder, scene), { recursive: true, force: true })
+    } else {
+      rmSync(folder, { recursive: true, force: true })
+    }
     mkdirSync(folder, { recursive: true })
     console.log(`${screen.name}: signing in as ${screen.who ?? 'visitor'}`)
     const session = await sessionFor(browser, screen.who ?? 'visitor', folder)
     const records: SceneRecord[] = []
-    for (const scene of screen.scenes ?? [{ name: 'open' }]) {
+    const scenes = (screen.scenes ?? [{ name: 'open' }]).filter(
+      (scene) => !screen.only || screen.only.includes(scene.name),
+    )
+    for (const scene of scenes) {
       console.log(`${screen.name}: ${scene.name}`)
       records.push(await captureScene(browser, screen, scene, session, folder))
     }
     if (session.state) rmSync(session.state, { force: true })
-    writeFileSync(join(folder, 'index.md'), indexOf(screen, records, commit))
+    const index = screen.only ? `index-${screen.only.join('-')}.md` : 'index.md'
+    writeFileSync(join(folder, index), indexOf(screen, records, commit))
     const failed = records.flatMap((record) => record.failed)
     console.log(
-      `${screen.name}: wrote ${join(folder, 'index.md')}${failed.length ? `, ${failed.length} not captured` : ''}`,
+      `${screen.name}: wrote ${join(folder, index)}${failed.length ? `, ${failed.length} not captured` : ''}`,
     )
   }
 } finally {

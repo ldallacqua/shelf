@@ -6,7 +6,7 @@ import { Suspense } from 'react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { cn } from '@/ui/cn'
 
-import { isCurrent, navItems, placingItem } from './nav'
+import { isCurrent, navItems, ownItems, placingItem } from './nav'
 import { useNavHandle, useOwnHandle, useOwnWaiting } from './nav-handle'
 import { WaitingCount } from './waiting-count'
 
@@ -48,18 +48,20 @@ function NavList({ handle, pathname }: { handle?: string; pathname?: string }) {
           </Link>
         </li>
       ))}
-      {waiting === undefined ? null : (
-        <li className="flex">
-          <Link
-            href={placingItem.href}
-            aria-current={isCurrent(placingItem, pathname) ? 'page' : undefined}
-            className={linkClass}
-          >
-            {t(placingItem.label)}
-            <WaitingCount count={waiting} />
-          </Link>
-        </li>
-      )}
+      {waiting === undefined
+        ? null
+        : ownItems.map((item) => (
+            <li key={item.label} className="flex">
+              <Link
+                href={item.href}
+                aria-current={isCurrent(item, pathname) ? 'page' : undefined}
+                className={linkClass}
+              >
+                {t(item.label)}
+                {item === placingItem ? <WaitingCount count={waiting} /> : null}
+              </Link>
+            </li>
+          ))}
     </ul>
   )
 }
@@ -75,7 +77,7 @@ function NavListForAccount() {
 /**
  * The header's links into a shelf, with the current page marked by a lit
  * line; on one's own, a link on to placing the games that wait for a status,
- * counting them. Until the address is known, the links to one's own shelf
+ * counting them, and one to the duel. Until the address is known, the links to one's own shelf
  * show, with none marked, and until the account is known, their ghosts.
  */
 export function NavLinks() {

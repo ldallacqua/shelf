@@ -37,6 +37,7 @@ export const setupCoverage: Record<string, readonly SetupStep[] | string> = {
   '3.11': RULE,
   '3.12': USE,
   '3.13': 'A content choice in Settings, Privacy & content, made when it matters to someone.',
+  '3.14': ['ready'],
   '4': ['bring'],
   '4.1': ['bring'],
   '4.2': ['bring'],
