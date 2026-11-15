@@ -106,7 +106,14 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // A game drawn twice, seen once (11 Nov 2026): measured 291.5 KB, from 291.3 (main the same
   // day). A cover drawn again keeps a file of it already on the page underneath (`Cover`), and the
   // library file's address carries its revision. The owner saw a game's page blink as it changed.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 291.8 },
+  // Step 10's review of the library (15 Nov 2026): measured 296.6 KB, from 291.1 (main the same
+  // day), for its 46 findings' fixes, a third of them WCAG's. A phone's one row of controls and
+  // its view menu, one Tab stop a shelf in the wall, the banners and the list (useRovingShelf),
+  // the shelf tabs' keys, the key to the marks' button (its list is fetched only when opened),
+  // the keyboard button, the filters' checkboxes, IGDB's vocabularies in the page's language
+  // (domain/query/vocab.ts) and four icons. Fetching the phone's menu on opening was weighed and
+  // left: about half a kilobyte, for a menu a phone opens first.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 297 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
