@@ -140,6 +140,14 @@ async function openFilters(page: Page) {
   await page.locator('[data-filter-panel]').waitFor()
 }
 
+/** Opens the key to a box's marks, by the totals, and waits for its list. */
+async function openMarksKey(page: Page) {
+  await page
+    .getByRole('button', { name: /^(What the marks mean|O que as marcas significam)$/ })
+    .click()
+  await page.getByRole('dialog').getByRole('term').first().waitFor()
+}
+
 const settingsPages = [
   'profile',
   'privacy',
@@ -230,6 +238,20 @@ const screens: Screen[] = [
         },
       },
       { name: 'grouped', path: `${SHELF}?group=status` },
+      { name: 'marks', act: openMarksKey },
+      {
+        // A phone's one menu for the view, the grouping and the wall's cover size. Wider, the
+        // controls stand on their own, and the scene is the page as it opens.
+        name: 'layout-menu',
+        act: async (page) => {
+          const button = page
+            .getByRole('button', { name: /^(View|Visualização): / })
+            .filter({ visible: true })
+          if ((await button.count()) === 0) return
+          await button.click()
+          await page.getByRole('menu').waitFor()
+        },
+      },
     ],
   },
   {
@@ -242,7 +264,11 @@ const screens: Screen[] = [
       { name: 'filtered', path: `${SHELF}?q=${encodeURIComponent(A_FILTER)}` },
     ],
   },
-  { name: 'library-wall', path: `${SHELF}?view=wall` },
+  {
+    name: 'library-wall',
+    path: `${SHELF}?view=wall`,
+    scenes: [{ name: 'open' }, { name: 'marks', act: openMarksKey }],
+  },
   { name: 'library-list', path: `${SHELF}?view=list` },
   { name: 'library-banners', path: `${SHELF}?view=banner` },
   { name: 'library-empty', path: '/u/{handle}', who: 'new' },

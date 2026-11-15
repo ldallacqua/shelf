@@ -6,7 +6,6 @@ import { lazy, Suspense, useState } from 'react'
 
 import { Button } from '@/ui/button'
 import { Dialog, DialogContent } from '@/ui/dialog'
-import { Ghosts } from '@/ui/ghosts'
 
 // The key's own drawing comes only when it is opened: the library's script stays as it was.
 const MarksList = lazy(() => import('./marks-list'))
@@ -37,7 +36,16 @@ export function MarksKey({ view }: { view: 'shelf' | 'wall' }) {
           closeLabel={t('marks.close')}
           size="sm"
         >
-          <Suspense fallback={<Ghosts lines={8} />}>
+          {/* Plain ghosts, not the module's: it would join the library's script for this alone. */}
+          <Suspense
+            fallback={
+              <div aria-hidden="true" className="grid gap-3">
+                {Array.from({ length: 8 }, (_, line) => (
+                  <span key={line} className="ghost h-8 w-full" />
+                ))}
+              </div>
+            }
+          >
             <MarksList view={view} />
           </Suspense>
         </DialogContent>
