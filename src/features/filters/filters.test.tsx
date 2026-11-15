@@ -191,7 +191,7 @@ describe('FilterChips', () => {
   it('says each condition in words, with "or" between groups', () => {
     const chips = chipsFor('genre:rpg -theme:horror OR zelda')!
     expect(chips).toHaveTextContent('Genre: Role-playing (RPG)')
-    expect(chips).toHaveTextContent('Not theme: Horror')
+    expect(chips).toHaveTextContent('Theme: not Horror')
     expect(chips).toHaveTextContent('or')
     expect(chips).toHaveTextContent('Title: zelda')
   })
@@ -230,7 +230,7 @@ describe('FilterChips', () => {
   it('removes one condition at a time', async () => {
     const onRemove = vi.fn()
     chipsFor('genre:rpg -theme:horror', onRemove)
-    await userEvent.click(screen.getByRole('button', { name: 'Remove Not theme: Horror' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Remove Theme: not Horror' }))
     expect(onRemove).toHaveBeenCalledWith(expect.objectContaining({ group: 0, index: 1 }))
   })
 

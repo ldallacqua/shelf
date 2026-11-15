@@ -7,7 +7,7 @@ import { filterFor, namesOf, type GameFacts } from '@/domain/library/game-page'
 import type { LibraryGame, LibraryPlatform, LibraryTag, Named } from '@/domain/library/library'
 import type { StoreName } from '@/domain/library/stores'
 import { filterWord, type ListKey } from '@/domain/query/keys'
-import { vocabKey } from '@/domain/query/vocab'
+import { staysEnglish, vocabKey } from '@/domain/query/vocab'
 import { Cover } from '@/features/library/cover'
 import { Duration } from '@/features/library/duration'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
@@ -178,11 +178,12 @@ export function GameDetail({
   const values = (key: ListKey, list: readonly Named[] | undefined, ids: readonly number[]) =>
     list
       ? namesOf(list, ids).map((named) => {
-          const own = vocabKey(key, filterWord(key, named.id, named.slug))
+          const word = filterWord(key, named.id, named.slug)
+          const own = vocabKey(key, word)
           return {
             named,
             name: own ? filters(own as 'vocab.genre.rpg') : named.name,
-            lang: own ? undefined : igdbLang,
+            lang: own && !staysEnglish(word) ? undefined : igdbLang,
             filter: filterFor(key, named),
           }
         })

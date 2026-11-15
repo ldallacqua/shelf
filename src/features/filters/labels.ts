@@ -12,7 +12,7 @@ import {
   type ListKey,
 } from '@/domain/query/keys'
 import type { Comparison, QueryNode, Term } from '@/domain/query/tree'
-import { vocabKey } from '@/domain/query/vocab'
+import { staysEnglish, vocabKey } from '@/domain/query/vocab'
 import { writeQuery } from '@/domain/query/write'
 
 /**
@@ -34,7 +34,7 @@ export const keyLabel = (key: FilterKey, { t }: Words): string => t(`keys.${key}
 export const isIgdbName = (key: ListKey, word: string): boolean =>
   !closedValues[key] &&
   !(platformKeys.includes(key) && platformFamilies.includes(word)) &&
-  vocabKey(key, word) === undefined
+  (vocabKey(key, word) === undefined || staysEnglish(word))
 
 /** A value as the panel and the chips show it. */
 export const valueLabel = (
@@ -117,10 +117,6 @@ export const comparisonLabel = (
   }
 }
 
-/** A label as it reads inside a sentence: "Not theme", but "Not IGDB rating". */
-const inSentence = (label: string): string =>
-  /^\p{Lu}\p{Ll}/u.test(label) ? label.charAt(0).toLowerCase() + label.slice(1) : label
-
 const termValues = (term: Term, index: LibraryIndex | undefined, words: Words): string[] =>
   isNumberKey(term.key) || isDateKey(term.key)
     ? (term.values as Comparison<number>[]).map((value) => comparisonLabel(term.key, value, words))
@@ -139,10 +135,8 @@ export const conditionLabel = (
     return t('chips.term', { key: keyLabel(node.key, words), values: values(node) })
   }
   if (node.type === 'not' && node.child.type === 'term') {
-    return t('chips.not', {
-      key: inSentence(keyLabel(node.child.key, words)),
-      values: values(node.child),
-    })
+    // "Theme: not Horror", the key first as on every chip (review 01, finding 43).
+    return t('chips.not', { key: keyLabel(node.child.key, words), values: values(node.child) })
   }
   if (node.type === 'text') return t('chips.text', { text: node.text })
   if (node.type === 'not' && node.child.type === 'text') {

@@ -176,6 +176,8 @@ function BannerGrid({
       className="banner-grid"
       aria-label={label}
       data-roving=""
+      // The shelf's stop while none of its games is drawn (`useRovingShelf`).
+      tabIndex={roving.gridTabIndex(from, to)}
       {...follow}
       onFocus={(event) => {
         follow.onFocus(event)

@@ -634,7 +634,7 @@
       "privateWords": "um cadeado: só o dono da estante vê",
       "shelf": {
         "playing": "um pouco à frente, com uma luz acima",
-        "backlog": "a caixa como ela é",
+        "backlog": "a caixa reta, sem marca",
         "completed": "um selo dourado no canto",
         "dropped": "encostado no vizinho",
         "someday": "mais ao fundo, na sombra",
@@ -651,7 +651,8 @@
         "someday": "um relógio",
         "retired": "∞, para um jogo sem fim",
         "wishlist": "um marcador",
-        "platforms": "as plataformas em que está, no pé da capa"
+        "platforms": "as plataformas em que está, no pé da capa",
+        "unsorted": "uma caixa de entrada: veio de uma sincronização e ainda não tem lugar"
       }
     }
   },
@@ -1317,7 +1318,7 @@
     "chips": {
       "label": "Filtros ativos",
       "term": "{key}: {values}",
-      "not": "Sem {key}: {values}",
+      "not": "{key}: exceto {values}",
       "text": "Título: {text}",
       "notText": "Fora do título: {text}",
       "or": "ou",
@@ -1352,7 +1353,7 @@
       "results": "{count, plural, =0 {Nenhum jogo encontrado} one {# jogo encontrado} other {# jogos encontrados}}",
       "loading": "Carregando a biblioteca…",
       "loadingKeywords": "Carregando as palavras-chave…",
-      "notValue": "sem {value}",
+      "notValue": "exceto {value}",
       "match": "{key}: qualquer um ou todos",
       "anyOf": "Qualquer um",
       "allOf": "Todos",
@@ -1379,7 +1380,7 @@
     },
     "noResults": {
       "label": "Nenhum jogo",
-      "title": "Nenhum jogo combina com estes filtros.",
+      "title": "Nenhum jogo encontrado com estes filtros.",
       "body": "Remova um filtro acima, ou limpe todos."
     },
     "vocab": {
@@ -1398,7 +1399,7 @@
         "strategy": "Estratégia",
         "tbs": "Estratégia por turnos",
         "tactical": "Tático",
-        "hack-and-slash": "Hack and slash/Beat 'em up",
+        "hack-and-slash": "Hack and slash, beat 'em up",
         "trivia": "Perguntas e respostas",
         "pinball": "Pinball",
         "adventure": "Aventura",
@@ -1507,7 +1508,7 @@
     "description": "Todas as teclas que a biblioteca entende.",
     "close": "Fechar",
     "keys": {
-      "arrows": "Jogo anterior ou próximo na prateleira",
+      "arrows": "Jogo anterior ou próximo",
       "ledges": "A fileira de cima ou de baixo",
       "shelves": "Prateleira anterior ou próxima",
       "ends": "Primeiro ou último jogo da prateleira",
@@ -1524,7 +1525,7 @@
       "help": "Mostrar esta lista"
     },
     "letters": "Atalhos de uma tecla",
-    "lettersHint": "Desligados, nenhuma tecla sozinha faz nada, nem / e ?. Esta lista continua no botão de teclado da barra."
+    "lettersHint": "Desligados, nenhuma tecla sozinha faz nada, nem / e ?. Esta lista continua no botão de teclado ao lado dos totais."
   },
   "Account": {
     "metaTitle": "Entrar",

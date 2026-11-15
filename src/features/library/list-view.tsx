@@ -45,7 +45,8 @@ function ListColumns() {
     <colgroup>
       <col className="w-15" />
       <col />
-      <col className="w-24 sm:w-44" />
+      {/* On a phone the platforms go without their format, and the title keeps the room. */}
+      <col className="w-16 sm:w-44" />
       <col className="w-12 sm:w-36" />
       <col className={`${MEDIUM_COLUMN} w-24`} />
       <col className={`${MEDIUM_COLUMN} w-20`} />
@@ -226,6 +227,8 @@ function ListTable({
         ref={body}
         data-grid-of={shelf.key}
         data-roving=""
+        // The shelf's stop while none of its games is drawn (`useRovingShelf`).
+        tabIndex={roving.gridTabIndex(from, to)}
         {...follow}
         onFocus={(event) => {
           follow.onFocus(event)
@@ -282,7 +285,10 @@ function ListTable({
                   <LockIcon aria-hidden="true" className="ml-1.5 inline size-3.5 text-muted" />
                 ) : null}
                 {game.year ? (
-                  <span className="block readout text-[0.625rem] text-muted">{game.year}</span>
+                  // On a phone the title takes two lines here instead: the year is in its name.
+                  <span className="block readout text-[0.625rem] text-muted max-sm:hidden">
+                    {game.year}
+                  </span>
                 ) : null}
               </td>
               <td className="text-muted">
@@ -295,7 +301,7 @@ function ListTable({
                         className="mr-2 inline-flex items-baseline gap-1 last:mr-0"
                       >
                         <span className="text-text">{on?.short}</span>
-                        <span className="readout text-[0.5625rem]">
+                        <span className="readout text-[0.5625rem] max-sm:hidden">
                           {t(`format.${owned.format}`)}
                         </span>
                       </span>

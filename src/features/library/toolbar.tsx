@@ -6,7 +6,6 @@ import {
   Columns4Icon,
   FlaskConicalIcon,
   GroupIcon,
-  KeyboardIcon,
   LayoutGridIcon,
   ListIcon,
   RectangleVerticalIcon,
@@ -65,8 +64,9 @@ type ToolbarProps = {
   sort?: ReactNode
   /** Whether only the games ready to play here are shown (spec 7.7): in the app, on my own shelf. */
   ready?: { on: boolean; onChange: (on: boolean) => void }
-  /** Opens the list of keyboard shortcuts, which is also where they are turned off and on. */
-  onShortcuts?: () => void
+  /** A phone's view menu's open state, so the G key opens it where the group menu isn't shown. */
+  layoutOpen?: boolean
+  onLayoutOpen?: (open: boolean) => void
 }
 
 const viewIcons = {
@@ -105,10 +105,10 @@ export function Toolbar({
   filters,
   sort,
   ready,
-  onShortcuts,
+  layoutOpen,
+  onLayoutOpen,
 }: ToolbarProps) {
   const t = useTranslations('Library')
-  const shortcuts = useTranslations('Shortcuts')
   const reasonId = useId()
 
   return (
@@ -147,6 +147,8 @@ export function Toolbar({
         density={density}
         onDensity={onDensity}
         experimental={experimental}
+        open={layoutOpen}
+        onOpenChange={onLayoutOpen}
       />
 
       {/* Wider, each control on its own. */}
@@ -273,31 +275,16 @@ export function Toolbar({
             {views.map((value) => {
               const Icon = viewIcons[value]
               return (
-                // Icons until lg, so the row holds every control from 640 up.
-                <Tip key={value} label={t(`view.${value}`)} className="lg:hidden">
+                // Icons until xl, so the row holds every control from 640 up, a filter's count too.
+                <Tip key={value} label={t(`view.${value}`)} className="xl:hidden">
                   <SegmentedItem value={value} aria-label={t(`view.${value}`)}>
                     <Icon aria-hidden="true" />
-                    <span className="max-lg:hidden">{t(`view.${value}`)}</span>
+                    <span className="max-xl:hidden">{t(`view.${value}`)}</span>
                   </SegmentedItem>
                 </Tip>
               )
             })}
           </Segmented>
-
-          {onShortcuts ? (
-            // The way to the list that is not a key, for a keyboard: where shortcuts are turned back on.
-            <Tip label={shortcuts('title')}>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={shortcuts('title')}
-                className="max-lg:hidden"
-                onClick={onShortcuts}
-              >
-                <KeyboardIcon aria-hidden="true" />
-              </Button>
-            </Tip>
-          ) : null}
         </div>
       </div>
     </div>
@@ -315,7 +302,7 @@ type LayoutMenuProps = Pick<
   | 'density'
   | 'onDensity'
   | 'experimental'
->
+> & { open?: boolean; onOpenChange?: (open: boolean) => void }
 
 /**
  * A phone's way to the view, the grouping and, per view, the covers' size: one button at the
@@ -331,22 +318,29 @@ export function LayoutMenu({
   density,
   onDensity,
   experimental = false,
+  open,
+  onOpenChange,
 }: LayoutMenuProps) {
   const t = useTranslations('Library')
   const Icon = viewIcons[view]
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="secondary"
-          className="flex-none gap-1 px-2.5 sm:hidden"
+          className="min-w-0 flex-none gap-1.5 px-2.5 sm:hidden"
           aria-label={t('layout.button', {
             view: t(`view.${view}`),
             group: t(`group.${group}`),
           })}
         >
           <Icon aria-hidden="true" />
+          {/* The grouping in words, as the sort shows its order: the menu holds it. The icon
+              alone where the row has no room for both. */}
+          <span aria-hidden="true" className="max-w-24 truncate max-[22rem]:hidden">
+            {t(`group.${group}`)}
+          </span>
           <ChevronDownIcon aria-hidden="true" className="text-muted" />
         </Button>
       </DropdownMenuTrigger>

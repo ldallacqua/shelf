@@ -634,7 +634,7 @@
       "privateWords": "a lock: only the shelf's owner sees it",
       "shelf": {
         "playing": "stands forward, a light above it",
-        "backlog": "a box as it stands",
+        "backlog": "a plain box, standing straight",
         "completed": "a gold seal on its corner",
         "dropped": "leans against its neighbor",
         "someday": "set back, in shade",
@@ -651,7 +651,8 @@
         "someday": "a clock",
         "retired": "∞, for a game with no end",
         "wishlist": "a bookmark",
-        "platforms": "the platforms it's on, at the cover's foot"
+        "platforms": "the platforms it's on, at the cover's foot",
+        "unsorted": "an inbox: came in from a sync, not placed yet"
       }
     }
   },
@@ -1317,7 +1318,7 @@
     "chips": {
       "label": "Active filters",
       "term": "{key}: {values}",
-      "not": "Not {key}: {values}",
+      "not": "{key}: not {values}",
       "text": "Title: {text}",
       "notText": "Not in the title: {text}",
       "or": "or",
@@ -1391,21 +1392,21 @@
         "platform": "Platform",
         "puzzle": "Puzzle",
         "racing": "Racing",
-        "rts": "Real Time Strategy (RTS)",
+        "rts": "Real-time strategy (RTS)",
         "rpg": "Role-playing (RPG)",
         "simulator": "Simulator",
         "sport": "Sport",
         "strategy": "Strategy",
         "tbs": "Turn-based strategy (TBS)",
         "tactical": "Tactical",
-        "hack-and-slash": "Hack and slash/Beat 'em up",
-        "trivia": "Quiz/Trivia",
+        "hack-and-slash": "Hack and slash, beat 'em up",
+        "trivia": "Quiz and trivia",
         "pinball": "Pinball",
         "adventure": "Adventure",
         "indie": "Indie",
         "arcade": "Arcade",
-        "visual-novel": "Visual Novel",
-        "card-and-board": "Card & Board Game",
+        "visual-novel": "Visual novel",
+        "card-and-board": "Card and board game",
         "moba": "MOBA"
       },
       "theme": {
@@ -1427,7 +1428,7 @@
         "open-world": "Open world",
         "warfare": "Warfare",
         "party": "Party",
-        "4x": "4X (explore, expand, exploit, and exterminate)",
+        "4x": "4X",
         "erotic": "Erotic",
         "mystery": "Mystery",
         "romance": "Romance"
@@ -1437,17 +1438,17 @@
         "multiplayer": "Multiplayer",
         "co-op": "Co-operative",
         "split-screen": "Split screen",
-        "mmo": "Massively Multiplayer Online (MMO)",
-        "battle-royale": "Battle Royale"
+        "mmo": "MMO",
+        "battle-royale": "Battle royale"
       },
       "perspective": {
         "first-person": "First person",
         "third-person": "Third person",
-        "isometric": "Bird view / Isometric",
+        "isometric": "Isometric",
         "side-view": "Side view",
         "text": "Text",
         "auditory": "Auditory",
-        "vr": "Virtual Reality"
+        "vr": "Virtual reality"
       }
     }
   },
@@ -1507,8 +1508,8 @@
     "description": "Every key the library answers to.",
     "close": "Close",
     "keys": {
-      "arrows": "Previous or next game on the ledge",
-      "ledges": "The ledge above or below",
+      "arrows": "Previous or next game",
+      "ledges": "The row above or below",
       "shelves": "Previous or next shelf",
       "ends": "First or last game of the shelf",
       "open": "Open the game in focus",
@@ -1524,7 +1525,7 @@
       "help": "Show this list"
     },
     "letters": "Single-key shortcuts",
-    "lettersHint": "Off, no key on its own does anything, / and ? included. This list stays at the keyboard button in the toolbar."
+    "lettersHint": "Off, no key on its own does anything, / and ? included. This list stays at the keyboard button by the totals."
   },
   "Account": {
     "metaTitle": "Sign in",

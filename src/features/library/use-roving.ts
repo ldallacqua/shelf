@@ -1,6 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+  type RefObject,
+} from 'react'
 
 import { revealRow } from './use-row-window'
 
@@ -11,7 +18,9 @@ const indexOf = (target: EventTarget | null): number | undefined => {
 
 /**
  * The shelf before or after this one that shows its games (not folded away), its Tab stop
- * focused: scrolled to first when none of its rows are in the page yet.
+ * focused. When that game isn't drawn yet, its grid takes focus first, before anything scrolls:
+ * the game focused now may leave the page as it does, and focus with it. The grid then draws its
+ * stop and hands focus on (`onFocus` below).
  */
 const leaveShelf = (grid: HTMLElement, direction: -1 | 1) => {
   const grids = [...document.querySelectorAll<HTMLElement>('[data-roving]')].filter(
@@ -19,12 +28,9 @@ const leaveShelf = (grid: HTMLElement, direction: -1 | 1) => {
   )
   const next = grids[grids.indexOf(grid) + direction]
   if (!next) return
-  const stop = () => next.querySelector<HTMLElement>('[data-index][tabindex="0"]')
-  const box = stop()
+  const box = next.querySelector<HTMLElement>('[data-index][tabindex="0"]')
   if (box) return box.focus()
-  next.scrollIntoView({ block: 'start', behavior: 'instant' })
-  // Its rows are drawn once the window has measured the scroll.
-  requestAnimationFrame(() => requestAnimationFrame(() => stop()?.focus()))
+  next.focus({ preventScroll: true })
 }
 
 /**
@@ -35,7 +41,12 @@ const leaveShelf = (grid: HTMLElement, direction: -1 | 1) => {
  * stop, so the same library took 50 Tabs in one view and over 400 in another (step 10's review,
  * 01, finding 20).
  *
- * The grid carries `data-roving` and `onFocus`; each game's control `data-index` and `onKeyDown`.
+ * A shelf far from the screen has no row drawn, so no game to stop at: its grid is the stop
+ * then, and taking focus it draws the game and hands focus to it. Without that, Tab went from
+ * the first shelf to the footer on a phone (finding 28).
+ *
+ * The grid carries `data-roving`, `tabIndex` (`gridTabIndex`) and `onFocus`; each game's control
+ * `data-index` and `onKeyDown`.
  */
 export function useRovingShelf(
   ref: RefObject<HTMLElement | null>,
@@ -46,6 +57,7 @@ export function useRovingShelf(
   const [stop, setStop] = useState(0)
   const focusNext = useRef<number | undefined>(undefined)
 
+  // A game asked for before it was drawn takes focus as soon as it is.
   useEffect(() => {
     if (focusNext.current === undefined) return
     const target = ref.current?.querySelector<HTMLElement>(`[data-index="${focusNext.current}"]`)
@@ -56,11 +68,18 @@ export function useRovingShelf(
   })
 
   const move = (to: number) => {
+    if (count === 0) return
     const target = Math.min(count - 1, Math.max(0, to))
-    focusNext.current = target
     setStop(target)
     const grid = ref.current
-    if (grid && !grid.querySelector(`[data-index="${target}"]`)) revealRow(grid, target)
+    const drawn = grid?.querySelector<HTMLElement>(`[data-index="${target}"]`)
+    if (drawn) {
+      focusNext.current = undefined
+      drawn.focus()
+      return
+    }
+    focusNext.current = target
+    if (grid) revealRow(grid, target)
   }
 
   const onKey = (event: KeyboardEvent<HTMLElement>) => {
@@ -89,7 +108,9 @@ export function useRovingShelf(
   })
   const [onKeyDown] = useState(() => (event: KeyboardEvent<HTMLElement>) => latest.current(event))
 
-  const onFocus = (event: { target: EventTarget | null }) => {
+  const onFocus = (event: FocusEvent<HTMLElement>) => {
+    // The grid itself: its stop isn't drawn. Draw it, and hand focus on.
+    if (event.target === event.currentTarget) return move(stop)
     const at = indexOf(event.target)
     if (at !== undefined) setStop(at)
   }
@@ -100,5 +121,8 @@ export function useRovingShelf(
    */
   const tabStop = (from: number, to: number) => (stop >= from && stop < to ? stop : from)
 
-  return { onKeyDown, onFocus, tabStop }
+  /** The grid is the shelf's stop while none of its games is drawn; focusable by script always. */
+  const gridTabIndex = (from: number, to: number) => (to > from ? -1 : 0)
+
+  return { onKeyDown, onFocus, tabStop, gridTabIndex }
 }

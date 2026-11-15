@@ -69,3 +69,20 @@ export const vocabKey = (key: ListKey, word: string): `vocab.${string}.${string}
   key in fixedVocab && (fixedVocab[key as FixedKey] as readonly string[]).includes(word)
     ? `vocab.${key}.${word}`
     : undefined
+
+/**
+ * Words the Portuguese keeps in English, not loan words a Brazilian reads as Portuguese: marked
+ * `lang="en"` as IGDB's own names are, so a voice says them in English (WCAG 3.1.2; step 10's
+ * review, 01, finding 40).
+ */
+const keptInEnglish: ReadonlySet<string> = new Set([
+  'point-and-click',
+  'hack-and-slash',
+  'visual-novel',
+  'battle-royale',
+  'sandbox',
+  'pinball',
+])
+
+/** Whether a word of IGDB's fixed vocabularies stays English in every language. */
+export const staysEnglish = (word: string): boolean => keptInEnglish.has(word)

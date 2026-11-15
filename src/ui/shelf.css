@@ -404,8 +404,10 @@
     scale: 1.05;
   }
 
+  /* Set back, in shade: faded as well, as a darker box hardly shows against the dark room. */
   .marks-box[data-status='someday'] {
-    scale: 0.92;
+    scale: 0.88;
+    opacity: 0.55;
     filter: brightness(0.78);
   }
 
@@ -1056,9 +1058,10 @@
    * First in the page for the keyboard, controls before what they control, and at the bottom of
    * a phone's screen for the thumb. Only where the screen is tall enough for the bar and a shelf
    * both: at 400% zoom (320 by 256) the bar and the full-screen shelf left no room for a single
-   * game, so a short screen draws the library as a page, its controls on top (WCAG 1.4.10).
+   * game, so a short screen draws the library as a page, its controls on top (WCAG 1.4.10). From
+   * 36rem, the height the 3D shelf asks too: at 30rem the shelf kept 88px, the tops of two covers.
    */
-  @media (max-width: 39.99rem) and (min-height: 30rem) {
+  @media (max-width: 39.99rem) and (min-height: 36rem) {
     .library-controls {
       position: sticky;
       bottom: 0;
@@ -1082,7 +1085,7 @@
     }
   }
 
-  @media (max-width: 39.99rem) and (max-height: 29.99rem) {
+  @media (max-width: 39.99rem) and (max-height: 35.99rem) {
     .library-controls {
       margin-top: 0.75rem;
     }
@@ -1202,7 +1205,7 @@
   }
 
   /* A phone tall enough to hold a shelf under the controls: see `.library-controls`. */
-  @media (max-width: 39.99rem) and (min-height: 30rem) {
+  @media (max-width: 39.99rem) and (min-height: 36rem) {
     /* The header is 3.5rem and a hairline. */
     .library[data-view='shelf'] {
       height: calc(100dvh - 3.5rem - 1px);
@@ -1287,6 +1290,31 @@
     }
   }
 
+  /*
+   * The status row scrolls sideways where the window is narrower than it: its right edge fades
+   * into the wall while there is more of it, so a word cut at the edge reads as more to come
+   * (step 10's review, 01, findings 22 and 37). No fade where it fits, or can't follow the scroll.
+   */
+  .status-row::after {
+    position: sticky;
+    right: 0;
+    flex: none;
+    width: 2rem;
+    margin-left: -2rem;
+    background: linear-gradient(to left, var(--wall), transparent);
+    content: '';
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .status-row::after {
+      animation: shelf-more linear both;
+      animation-range: calc(100% - 2rem) 100%;
+      animation-timeline: scroll(nearest inline);
+    }
+  }
+
   @keyframes shelf-more {
     from {
       opacity: 1;
@@ -1315,7 +1343,7 @@
     display: none;
   }
 
-  @media (max-width: 39.99rem) and (min-height: 30rem) {
+  @media (max-width: 39.99rem) and (min-height: 36rem) {
     .shelf-tabs {
       display: flex;
     }
@@ -1464,6 +1492,19 @@
     text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /*
+   * On a phone a title has two lines rather than one cut to five letters, in the year's place
+   * (step 10's review, 01, finding 35).
+   */
+  @media (width < 40rem) {
+    .game-table .game-link {
+      display: -webkit-box;
+      white-space: normal;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
   }
 
   /* A regroup or a change of view, when motion is not welcome: a short crossfade. */

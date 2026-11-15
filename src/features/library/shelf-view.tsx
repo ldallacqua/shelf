@@ -132,6 +132,8 @@ export function ShelfView({
   const tabs = useRef<HTMLElement>(null)
   /** The shelf in view on a phone. */
   const [current, setCurrent] = useState(0)
+  /** The tab chosen with the keyboard, while focus is among the tabs: where the pager is going. */
+  const [chosen, setChosen] = useState<number>()
 
   // Follow the swipe: the shelf nearest the pager's left edge is the current one.
   useEffect(() => {
@@ -185,29 +187,61 @@ export function ShelfView({
     firstBoxes,
   )
 
-  /** The tabs are one stop for Tab, as each shelf is: arrows, Home and End go between them. */
+  /**
+   * The tabs are one stop for Tab, as each shelf is: arrows, Home and End go between them. Tab
+   * goes on into the shelf chosen, not the one the pager is still gliding past, which undid the
+   * choice (step 10's review, 01, finding 32).
+   */
   const onTabKey = (event: KeyboardEvent<HTMLButtonElement>, at: number) => {
+    if (event.key === 'Tab' && !event.shiftKey) {
+      const panel = pager.current?.children[at]
+      const stopIn = () =>
+        panel?.querySelector<HTMLElement>('[data-shelf-body]:not([hidden]) .game-box[tabindex="0"]')
+      if (!panel) return
+      event.preventDefault()
+      // A shelf the pager hasn't reached may not have drawn its box yet.
+      let frames = 0
+      const enter = () => {
+        const box = stopIn()
+        if (box) box.focus()
+        else if ((frames += 1) < 90) requestAnimationFrame(enter)
+      }
+      enter()
+      return
+    }
     const last = shelves.length - 1
     const to = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: last }[event.key]
     if (to === undefined || to < 0 || to > last) return
     event.preventDefault()
+    setChosen(to)
     tabs.current?.querySelectorAll<HTMLElement>('.shelf-tab')[to]?.focus()
     goTo(to)
   }
+  const stopTab = chosen ?? current
 
   return (
     <div className="shelves">
       {shelves.length > 1 ? (
-        <nav ref={tabs} className="shelf-tabs" aria-label={t('shelf.tabs')}>
+        <nav
+          ref={tabs}
+          className="shelf-tabs"
+          aria-label={t('shelf.tabs')}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setChosen(undefined)
+          }}
+        >
           {shelves.map((shelf, index) => (
             <button
               key={shelf.key}
               type="button"
               className="shelf-tab"
               aria-current={index === current ? 'true' : undefined}
-              tabIndex={index === current ? 0 : -1}
+              tabIndex={index === stopTab ? 0 : -1}
               onKeyDown={(event) => onTabKey(event, index)}
-              onClick={() => goTo(index)}
+              onClick={() => {
+                setChosen(index)
+                goTo(index)
+              }}
             >
               {shelfName(shelf, t, true)}
               <span className="shelf-tab-count">{shelf.total}</span>

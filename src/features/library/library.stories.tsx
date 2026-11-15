@@ -239,7 +239,6 @@ export const Controls: Story = {
         onWallSize={() => undefined}
         dimension="2d"
         onDimension={() => undefined}
-        onShortcuts={() => undefined}
       />
     </div>
   ),

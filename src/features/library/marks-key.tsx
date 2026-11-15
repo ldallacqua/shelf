@@ -14,7 +14,14 @@ const MarksList = lazy(() => import('./marks-list'))
  * "What the marks mean", by the totals: a box says where a game stands by its look (spec 3.2),
  * and this says what each look means, for the shelf or the wall, whichever is shown.
  */
-export function MarksKey({ view }: { view: 'shelf' | 'wall' }) {
+export function MarksKey({
+  view,
+  mine = false,
+}: {
+  view: 'shelf' | 'wall' | 'list'
+  /** One's own shelf, whose private games carry a lock. */
+  mine?: boolean
+}) {
   const t = useTranslations('Library')
   const [open, setOpen] = useState(false)
 
@@ -46,7 +53,7 @@ export function MarksKey({ view }: { view: 'shelf' | 'wall' }) {
               </div>
             }
           >
-            <MarksList view={view} />
+            <MarksList view={view} mine={mine} />
           </Suspense>
         </DialogContent>
       </Dialog>

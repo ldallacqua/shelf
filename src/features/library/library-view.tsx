@@ -1,6 +1,6 @@
 'use client'
 
-import { BookmarkPlusIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { BookmarkPlusIcon, KeyboardIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsString, parseAsStringLiteral, useQueryState, useQueryStates } from 'nuqs'
 import {
@@ -230,6 +230,7 @@ export function LibraryView({
   const added = useTranslations('Add')
   const filters = useTranslations('Filters')
   const shelfWords = useTranslations('Shelves')
+  const shortcutWords = useTranslations('Shortcuts')
   const locale = useLocale()
   const router = useRouter()
 
@@ -308,6 +309,8 @@ export function LibraryView({
   const beside = useFiltersBeside()
   if (beside && panelOpen) setPanelOpen(false)
   const [groupMenu, setGroupMenu] = useState(false)
+  /** A phone's view menu, which holds the grouping where the group menu isn't shown. */
+  const [layoutMenu, setLayoutMenu] = useState(false)
   const [sortMenu, setSortMenu] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
@@ -558,7 +561,9 @@ export function LibraryView({
           } else setPanelOpen(true)
           break
         case 'g':
-          setGroupMenu(true)
+          // Below 640 the group menu's button isn't shown: the phone's view menu holds it.
+          if (window.matchMedia('(width < 40rem)').matches) setLayoutMenu(true)
+          else setGroupMenu(true)
           break
         case 's':
           setSortMenu(true)
@@ -795,7 +800,22 @@ export function LibraryView({
             ) : (
               stats
             )}
-            {view === 'shelf' || view === 'wall' ? <MarksKey view={view} /> : null}
+            {view === 'shelf' || view === 'wall' || view === 'list' ? (
+              <MarksKey view={view} mine={Boolean(actions)} />
+            ) : null}
+            {/* The way to the shortcuts that is not a key: where they are turned back on, at every
+                width (review 01, finding 31). */}
+            <Tip label={shortcutWords('title')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={shortcutWords('title')}
+                className="h-7 px-1.5 text-muted hover:text-text pointer-coarse:h-9"
+                onClick={() => setHelpOpen(true)}
+              >
+                <KeyboardIcon aria-hidden="true" />
+              </Button>
+            </Tip>
           </div>
         </div>
 
@@ -886,7 +906,8 @@ export function LibraryView({
             onDimension={switchTo}
             experimental={experimental}
             noThreeD={noThreeD}
-            onShortcuts={() => setHelpOpen(true)}
+            layoutOpen={layoutMenu}
+            onLayoutOpen={setLayoutMenu}
             ready={
               ready !== null
                 ? {

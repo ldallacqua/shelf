@@ -267,7 +267,7 @@ Phone:
 | Owned on more than one platform | A small count on the box's foot |
 
 A box's name says all of it in words. For the eye, "What the marks mean", by the totals on the
-shelf and the wall, opens a key: each state drawn as a box in small stands, or as the wall's mark
+shelf, the wall and the list, opens a key: each state drawn as a box in small stands, or as the wall's mark
 at a cover's foot, beside its words (step 10's review, 01, finding 11).
 
 **Which box a game shows.** Grouped by platform, each copy stands on its own platform's shelf
@@ -309,7 +309,7 @@ Built to feel best on a phone and on modest hardware. It is a design of its own,
   the wall at its foot while there is more of it. The controls are one row at the bottom, where
   a thumb reaches: Filters, the sort and its direction, and one menu for the view, the grouping
   and the wall's cover size (step 10's review, 01, finding 7: the first screen had left a
-  quarter of itself to the games). On a screen under 30rem tall (a phone at 400% zoom) the
+  quarter of itself to the games). On a screen under 36rem tall (a phone at 400% zoom, a phone held sideways) the
   shelves stack and the page scrolls, controls on top, as wider (WCAG 1.4.10).
 - **Boxes.** Covers toward you, each in its platform's case: real proportions, the plastic's
   color, a band across the top. Cases differ in height and width, so the row has a real
@@ -675,7 +675,8 @@ shelf's table only; a pointer sorts from any.
 
 Single-key shortcuts are off while typing in a field, and can be turned off entirely, `/` and
 `?` with the letters (WCAG 2.1.4). The list, and the switch, also open from the keyboard button
-at the toolbar's end, from 1024px, so turning them back on never needs a key.
+by the totals, at every width, so turning them back on never needs a key. Below 640px, `G` opens
+the phone's view menu, which holds the grouping.
 
 ### 3.12 Someday and Retired
 
