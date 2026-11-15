@@ -501,6 +501,9 @@
       "list": "List",
       "banner": "Banners"
     },
+    "layout": {
+      "button": "View: {view}. Group by: {group}"
+    },
     "group": {
       "label": "Group",
       "menu": "Group by",
@@ -580,7 +583,7 @@
       "third-party": "Third-party"
     },
     "shelf": {
-      "tabs": "Shelves",
+      "tabs": "Go to a shelf",
       "notOwned": "Not owned",
       "yearUnknown": "Year unknown",
       "all": "All games",
@@ -1420,8 +1423,8 @@
       "add": "Add a game, when signed in",
       "help": "Show this list"
     },
-    "letters": "Single-letter shortcuts",
-    "lettersHint": "Off, the letters do nothing; / and ? still work."
+    "letters": "Single-key shortcuts",
+    "lettersHint": "Off, no key on its own does anything, / and ? included. This list stays at the keyboard button in the toolbar."
   },
   "Account": {
     "metaTitle": "Sign in",

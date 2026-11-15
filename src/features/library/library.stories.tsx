@@ -237,8 +237,31 @@ export const Controls: Story = {
         onWallSize={() => undefined}
         dimension="2d"
         onDimension={() => undefined}
+        onShortcuts={() => undefined}
       />
     </div>
+  ),
+}
+
+/**
+ * On a phone: one row, so the games keep the screen. Filters and the sort keep their place; the
+ * view, the grouping and the wall's cover size are one menu at the row's end.
+ */
+export const ControlsOnAPhone: Story = {
+  globals: { viewport: { value: 'mobile1', isRotated: false } },
+  render: () => (
+    <Toolbar
+      view="wall"
+      group="platform"
+      density="covers"
+      wallSize="medium"
+      onView={() => undefined}
+      onGroup={() => undefined}
+      onDensity={() => undefined}
+      onWallSize={() => undefined}
+      dimension="2d"
+      onDimension={() => undefined}
+    />
   ),
 }
 

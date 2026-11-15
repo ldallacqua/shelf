@@ -1,6 +1,12 @@
 'use client'
 
-import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, ShuffleIcon } from 'lucide-react'
+import {
+  ArrowDownIcon,
+  ArrowDownWideNarrowIcon,
+  ArrowUpIcon,
+  ChevronDownIcon,
+  ShuffleIcon,
+} from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import { naturalSort, sortKeys, type Sort, type SortKey } from '@/domain/library/sort'
@@ -37,10 +43,13 @@ export function SortControl({ sort, onSort, onShuffle, open, onOpenChange }: Sor
     <div className="flex min-w-0 items-center gap-1 max-sm:flex-auto">
       <DropdownMenu open={open} onOpenChange={onOpenChange}>
         <DropdownMenuTrigger asChild>
-          <Button variant="secondary" className="min-w-0 max-sm:flex-auto max-sm:px-3">
-            <span className="readout text-[0.625rem] text-muted max-sm:sr-only">{t('label')}</span>
+          <Button variant="secondary" className="min-w-0 max-lg:px-3 max-sm:flex-auto">
+            {/* Below lg an icon says what the button changes, in less room than the word. */}
+            <ArrowDownWideNarrowIcon aria-hidden="true" className="text-muted lg:hidden" />
+            <span className="readout text-[0.625rem] text-muted max-lg:sr-only">{t('label')}</span>
             <span className="truncate">{t(`keys.${sort.key}`)}</span>
-            <ChevronDownIcon aria-hidden="true" className="text-muted" />
+            {/* On a phone the row is one line: the icon already says it opens choices. */}
+            <ChevronDownIcon aria-hidden="true" className="text-muted max-sm:hidden" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">

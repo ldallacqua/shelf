@@ -532,7 +532,9 @@ export function LibraryView({
     const onKey = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || typing(event.target)) return
       const now = keys.current
-      // `/` and `?` always work: `?` is where single letters are turned back on.
+      // Off means every key on its own, `/` and `?` too (WCAG 2.1.4): the toolbar's keyboard
+      // button opens the list that turns them back on.
+      if (!shortcutsOn()) return
       if (event.key === '/') {
         event.preventDefault()
         document.getElementById(SEARCH_ID)?.focus()
@@ -543,7 +545,6 @@ export function LibraryView({
         setHelpOpen(true)
         return
       }
-      if (!shortcutsOn()) return
       switch (event.key.toLowerCase()) {
         case 'f':
           // Beside the library the filters are already open: F takes focus to their first.
@@ -752,7 +753,7 @@ export function LibraryView({
        * the library's column, beside the filters (shelf.css). Narrower, none of the frames is a box.
        */}
       <div className="library-body">
-        <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5 filters-beside:pt-0">
+        <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-1 pt-3 pb-2 sm:gap-y-2 sm:pt-10 sm:pb-5 filters-beside:pt-0">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
             <h1 className="title text-2xl sm:text-5xl">{heading}</h1>
             {changed ? (
@@ -864,6 +865,7 @@ export function LibraryView({
             onDimension={switchTo}
             experimental={experimental}
             noThreeD={noThreeD}
+            onShortcuts={() => setHelpOpen(true)}
             ready={
               ready !== null
                 ? {
@@ -881,7 +883,10 @@ export function LibraryView({
                 onClick={() => setPanelOpen(true)}
               >
                 <SlidersHorizontalIcon aria-hidden="true" />
-                <span aria-hidden="true">{filters('openShort')}</span>
+                {/* On a phone the row is one line: the icon and its count, its name said in full. */}
+                <span aria-hidden="true" className="max-sm:hidden">
+                  {filters('openShort')}
+                </span>
                 {conditions > 0 ? (
                   <span
                     aria-hidden="true"

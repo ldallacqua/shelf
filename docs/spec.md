@@ -298,7 +298,15 @@ Built to feel best on a phone and on modest hardware. It is a design of its own,
 - **Layout, desktop and tablet.** Shelves stack down the page. Each wraps onto as many ledges
   as the width needs. The page scrolls normally.
 - **Layout, phone.** One shelf fills the screen. Swipe sideways for the next shelf; a row of
-  tabs at the top shows where you are. Scroll down through that shelf's ledges.
+  tabs at the top shows where you are. Scroll down through that shelf's ledges. The tabs are the
+  shelves' names in the headings' type, the current one underlined: they stand where the shelf's
+  heading stood, and don't look like the status row's pills, which filter. Tab stops at the
+  current one; arrows, Home and End move between them. A shelf longer than the screen fades into
+  the wall at its foot while there is more of it. The controls are one row at the bottom, where
+  a thumb reaches: Filters, the sort and its direction, and one menu for the view, the grouping
+  and the wall's cover size (step 10's review, 01, finding 7: the first screen had left a
+  quarter of itself to the games). On a screen under 30rem tall (a phone at 400% zoom) the
+  shelves stack and the page scrolls, controls on top, as wider (WCAG 1.4.10).
 - **Boxes.** Covers toward you, each in its platform's case: real proportions, the plastic's
   color, a band across the top. Cases differ in height and width, so the row has a real
   silhouette. In the compact option they stand spine-out instead, each spine wide enough to
@@ -655,7 +663,9 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | `A` | Add a game (signed in) |
 | `?` | Show this list |
 
-Single-letter shortcuts are off while typing in a field, and can be turned off entirely.
+Single-key shortcuts are off while typing in a field, and can be turned off entirely, `/` and
+`?` with the letters (WCAG 2.1.4). The list, and the switch, also open from the keyboard button
+at the toolbar's end, from 1024px, so turning them back on never needs a key.
 
 ### 3.12 Someday and Retired
 

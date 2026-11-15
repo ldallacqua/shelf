@@ -27,7 +27,7 @@ const KEYS = [
   ['help', '?'],
 ] as const
 
-/** `?`: every key the library answers to, and the switch that turns single letters off. */
+/** Every key the library answers to, and the switch that turns single keys off: from `?` or the toolbar. */
 export function ShortcutsDialog({
   open,
   onOpenChange,

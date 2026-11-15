@@ -391,7 +391,7 @@ describe('Toolbar', () => {
 
   it('offers the four groupings from a menu', async () => {
     const { onGroup } = setup()
-    await userEvent.click(screen.getByRole('button', { name: /Platform/ }))
+    await userEvent.click(screen.getByRole('button', { name: /^Group\s*Platform$/ }))
     const menu = screen.getByRole('menu')
     expect(
       within(menu)
@@ -400,6 +400,40 @@ describe('Toolbar', () => {
     ).toEqual(['Platform', 'Status', 'Year', 'None'])
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Year' }))
     expect(onGroup).toHaveBeenCalledWith('year')
+  })
+
+  it("gives a phone one menu for the view, the grouping and the wall's cover size", async () => {
+    const { onView, onGroup, onWallSize } = setup('wall')
+    const button = screen.getByRole('button', { name: 'View: Wall. Group by: Platform' })
+    await userEvent.click(button)
+    let menu = screen.getByRole('menu')
+    expect(
+      within(menu)
+        .getAllByRole('menuitemradio')
+        .map((entry) => entry.textContent),
+    ).toEqual([
+      'Shelf',
+      'Wall',
+      'List',
+      'Banners',
+      'Platform',
+      'Status',
+      'Year',
+      'None',
+      'Small covers',
+      'Medium covers',
+      'Large covers',
+    ])
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'List' }))
+    expect(onView).toHaveBeenCalledWith('list')
+    await userEvent.click(button)
+    menu = screen.getByRole('menu')
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Status' }))
+    expect(onGroup).toHaveBeenCalledWith('status')
+    await userEvent.click(button)
+    menu = screen.getByRole('menu')
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Large covers' }))
+    expect(onWallSize).toHaveBeenCalledWith('large')
   })
 
   it('offers covers or compact on the shelf only', async () => {

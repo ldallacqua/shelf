@@ -833,10 +833,14 @@
     justify-content: space-between;
     gap: 0.25rem;
     padding: 1.25rem 0.3125rem 0.3125rem;
-    background: linear-gradient(to top, rgb(0 0 0 / 0.78), transparent);
+    /*
+     * Full strength under the words, fading only above them: over a white cover a fade that
+     * reached the letters left them at 3:1. At 0.8 black the words keep 12:1 over any cover.
+     */
+    background: linear-gradient(to top, rgb(0 0 0 / 0.8) 0 1.375rem, transparent);
     color: #fff;
     font-family: var(--font-mono);
-    font-size: 0.5625rem;
+    font-size: 0.625rem;
     font-weight: 500;
     line-height: 0.875rem;
     letter-spacing: 0.04em;
@@ -1190,6 +1194,54 @@
       scroll-snap-align: start;
       scroll-snap-stop: always;
     }
+
+    /*
+     * The tabs above say the shelf's name and count, the current one marked: its own heading
+     * stays for a screen reader, out of sight, and the games take its room.
+     */
+    .shelf-panel > header {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /*
+     * More games below, under the bar: the shelf's foot fades into the wall while it can still
+     * scroll, so a shelf longer than the screen says so. Where an animation can't follow the
+     * scroll, there is no fade, rather than one over the last games for good.
+     */
+    .shelf-panel::after {
+      position: sticky;
+      bottom: 0;
+      display: block;
+      height: 2.5rem;
+      margin-top: -2.5rem;
+      background: linear-gradient(to top, var(--wall), transparent);
+      content: '';
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @supports (animation-timeline: scroll()) {
+      .shelf-panel::after {
+        animation: shelf-more linear both;
+        animation-range: calc(100% - 2.5rem) 100%;
+        animation-timeline: scroll(nearest);
+      }
+    }
+  }
+
+  @keyframes shelf-more {
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
   }
 
   /*
@@ -1216,28 +1268,35 @@
     }
   }
 
+  /*
+   * Names in the headings' type, not pills: the status row above is pills, and it filters; these
+   * only go to a shelf. The current one is the shelf's heading, in full ink and underlined.
+   */
   .shelf-tab {
     display: inline-flex;
     min-height: 2.25rem;
     flex: none;
-    align-items: center;
+    align-items: baseline;
     gap: 0.375rem;
-    padding: 0 0.75rem;
-    border: 1px solid transparent;
-    border-radius: 9999px;
+    padding: 0.5rem 0.5rem 0;
+    border-bottom: 2px solid transparent;
     color: var(--text-muted);
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
     white-space: nowrap;
     transition:
       color var(--motion-quick) var(--ease-settle),
-      background-color var(--motion-quick) var(--ease-settle),
       border-color var(--motion-quick) var(--ease-settle);
   }
 
+  .shelf-tab:first-child {
+    padding-left: 0;
+  }
+
   .shelf-tab[aria-current='true'] {
-    border-color: var(--line-strong);
-    background: var(--surface);
+    border-color: var(--accent);
     color: var(--text);
   }
 
@@ -1246,6 +1305,7 @@
     font-family: var(--font-mono);
     font-size: 0.625rem;
     font-weight: 500;
+    letter-spacing: 0;
   }
 
   /*

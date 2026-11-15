@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
@@ -185,6 +185,16 @@ export function ShelfView({
     firstBoxes,
   )
 
+  /** The tabs are one stop for Tab, as each shelf is: arrows, Home and End go between them. */
+  const onTabKey = (event: KeyboardEvent<HTMLButtonElement>, at: number) => {
+    const last = shelves.length - 1
+    const to = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: last }[event.key]
+    if (to === undefined || to < 0 || to > last) return
+    event.preventDefault()
+    tabs.current?.querySelectorAll<HTMLElement>('.shelf-tab')[to]?.focus()
+    goTo(to)
+  }
+
   return (
     <div className="shelves">
       {shelves.length > 1 ? (
@@ -195,6 +205,8 @@ export function ShelfView({
               type="button"
               className="shelf-tab"
               aria-current={index === current ? 'true' : undefined}
+              tabIndex={index === current ? 0 : -1}
+              onKeyDown={(event) => onTabKey(event, index)}
               onClick={() => goTo(index)}
             >
               {shelfName(shelf, t, true)}

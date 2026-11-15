@@ -501,6 +501,9 @@
       "list": "Lista",
       "banner": "Banners"
     },
+    "layout": {
+      "button": "Visualização: {view}. Agrupar por: {group}"
+    },
     "group": {
       "label": "Agrupar",
       "menu": "Agrupar por",
@@ -580,7 +583,7 @@
       "third-party": "Terceiros"
     },
     "shelf": {
-      "tabs": "Prateleiras",
+      "tabs": "Ir para uma prateleira",
       "notOwned": "Não tenho",
       "yearUnknown": "Ano desconhecido",
       "all": "Todos os jogos",
@@ -1420,8 +1423,8 @@
       "add": "Adicionar um jogo, com login",
       "help": "Mostrar esta lista"
     },
-    "letters": "Atalhos de uma letra",
-    "lettersHint": "Desligados, as letras não fazem nada; / e ? continuam funcionando."
+    "letters": "Atalhos de uma tecla",
+    "lettersHint": "Desligados, nenhuma tecla sozinha faz nada, nem / e ?. Esta lista continua no botão de teclado da barra."
   },
   "Account": {
     "metaTitle": "Entrar",
