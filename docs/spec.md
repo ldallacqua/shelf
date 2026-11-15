@@ -1339,6 +1339,11 @@ keeps the figure whole and not below nothing instead.
 
 **From IGDB**
 
+IGDB names its genres, themes, game modes and perspectives in English only. Shelf says them in
+the page's language, in the panel, the chips and a game's page ("Corrida", not "Racing"), from
+its own list of IGDB's fixed values (`domain/query/vocab.ts`); the filter text keeps the English
+word (`genre:racing`). Keywords, franchises, series and companies are names, and stay IGDB's.
+
 | Field | Key | Kind |
 | --- | --- | --- |
 | Genre | `genre` | List |

@@ -6,7 +6,8 @@ import { backdropSources } from '@/domain/igdb/images'
 import { filterFor, namesOf, type GameFacts } from '@/domain/library/game-page'
 import type { LibraryGame, LibraryPlatform, LibraryTag, Named } from '@/domain/library/library'
 import type { StoreName } from '@/domain/library/stores'
-import type { ListKey } from '@/domain/query/keys'
+import { filterWord, type ListKey } from '@/domain/query/keys'
+import { vocabKey } from '@/domain/query/vocab'
 import { Cover } from '@/features/library/cover'
 import { Duration } from '@/features/library/duration'
 import { dateOf, hoursOf, outOfTen } from '@/features/library/format'
@@ -159,6 +160,7 @@ export function GameDetail({
 }: GameDetailProps) {
   const t = useTranslations('Game')
   const library = useTranslations('Library')
+  const filters = useTranslations('Filters')
   const format = useFormatter()
   const locale = useLocale()
   // IGDB writes in English. On the Portuguese site that text is marked as
@@ -171,8 +173,20 @@ export function GameDetail({
 
   const names = facts?.names
   const developers = names ? namesOf(names.company, game.developers) : []
+  // A genre, theme, mode or perspective in the page's language, as the filters say it; any other
+  // name is IGDB's, in English.
   const values = (key: ListKey, list: readonly Named[] | undefined, ids: readonly number[]) =>
-    list ? namesOf(list, ids).map((named) => ({ named, filter: filterFor(key, named) })) : []
+    list
+      ? namesOf(list, ids).map((named) => {
+          const own = vocabKey(key, filterWord(key, named.id, named.slug))
+          return {
+            named,
+            name: own ? filters(own as 'vocab.genre.rpg') : named.name,
+            lang: own ? undefined : igdbLang,
+            filter: filterFor(key, named),
+          }
+        })
+      : []
 
   const ratio = game.coverRatio ? game.coverRatio / 100 : 0.75
   const backdrop = facts?.backdrop
@@ -524,11 +538,11 @@ export function GameDetail({
             const shown = values(key, list, ids)
             return shown.length > 0 ? (
               <Row key={key} label={label}>
-                <ul className="flex flex-wrap gap-1.5" lang={igdbLang}>
-                  {shown.map(({ named, filter }) => (
-                    <li key={named.id}>
+                <ul className="flex flex-wrap gap-1.5">
+                  {shown.map(({ named, name, lang, filter }) => (
+                    <li key={named.id} lang={lang}>
                       <FilterLink handle={handle} filter={filter}>
-                        {named.name}
+                        {name}
                       </FilterLink>
                     </li>
                   ))}

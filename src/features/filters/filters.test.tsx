@@ -8,6 +8,7 @@ import type { Sort } from '@/domain/library/sort'
 import { testGame, testLibrary } from '@/domain/library/testing'
 import { buildIndex } from '@/domain/query/evaluate'
 import { parseQuery } from '@/domain/query/parse'
+import { fixedVocab } from '@/domain/query/vocab'
 import { writeQuery } from '@/domain/query/write'
 import { messages, renderWithIntl } from '@/test/render'
 
@@ -193,6 +194,37 @@ describe('FilterChips', () => {
     expect(chips).toHaveTextContent('Not theme: Horror')
     expect(chips).toHaveTextContent('or')
     expect(chips).toHaveTextContent('Title: zelda')
+  })
+
+  it("says IGDB's genres, themes, modes and perspectives in the page's language", () => {
+    const parsed = parseQuery('genre:racing -theme:horror mode:co-op perspective:vr keyword:zelda')
+    renderWithIntl(
+      <FilterChips
+        tree={parsed.tree}
+        problems={parsed.problems}
+        index={index}
+        onRemove={() => {}}
+        onRemoveProblem={() => {}}
+        onClear={() => {}}
+      />,
+      'pt-BR',
+    )
+    const chips = screen.getByRole('group', { name: 'Filtros ativos' })
+    expect(chips).toHaveTextContent('Corrida')
+    expect(chips).toHaveTextContent('Terror')
+    expect(chips).toHaveTextContent('Cooperativo')
+    expect(chips).toHaveTextContent('Realidade virtual')
+    // A keyword is a name: IGDB's, as it is.
+    expect(chips).toHaveTextContent('zelda')
+  })
+
+  it('has words in both languages for every fixed IGDB value, and none for others', () => {
+    for (const locale of ['en', 'pt-BR'] as const) {
+      const vocab = messages[locale].Filters.vocab as Record<string, Record<string, string>>
+      for (const [key, words] of Object.entries(fixedVocab)) {
+        expect(Object.keys(vocab[key] ?? {}).sort(), `${locale} ${key}`).toEqual([...words].sort())
+      }
+    }
   })
 
   it('removes one condition at a time', async () => {

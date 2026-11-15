@@ -12,6 +12,7 @@ import {
   type ListKey,
 } from '@/domain/query/keys'
 import type { Comparison, QueryNode, Term } from '@/domain/query/tree'
+import { vocabKey } from '@/domain/query/vocab'
 import { writeQuery } from '@/domain/query/write'
 
 /**
@@ -31,7 +32,9 @@ export const keyLabel = (key: FilterKey, { t }: Words): string => t(`keys.${key}
 
 /** Whether a value's name comes from IGDB, in English, rather than from our own words. */
 export const isIgdbName = (key: ListKey, word: string): boolean =>
-  !closedValues[key] && !(platformKeys.includes(key) && platformFamilies.includes(word))
+  !closedValues[key] &&
+  !(platformKeys.includes(key) && platformFamilies.includes(word)) &&
+  vocabKey(key, word) === undefined
 
 /** A value as the panel and the chips show it. */
 export const valueLabel = (
@@ -61,6 +64,9 @@ export const valueLabel = (
     case 'platform':
       if (platformFamilies.includes(word)) return t(`values.family.${word as 'playstation'}`)
   }
+  // A genre, theme, mode or perspective in the page's language; IGDB names only English.
+  const own = vocabKey(key, word)
+  if (own) return t(own as 'vocab.genre.rpg')
   // A name from the library, or the word itself until the library has arrived.
   return index?.lists[key].get(word)?.name ?? word
 }
