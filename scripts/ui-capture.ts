@@ -126,6 +126,20 @@ const answerPatch = (page: Page, answer: { status: number; json: unknown }) =>
     route.request().method() === 'PATCH' ? route.fulfill(answer) : route.continue(),
   )
 
+/** A filter the sample shelf answers with a few games, so chips, counts and a short shelf show. */
+const A_FILTER = 'genre:rpg status:backlog'
+
+/**
+ * Opens the filters: a dialog below 96rem. From there up they stand beside the library already,
+ * with no button to press.
+ */
+async function openFilters(page: Page) {
+  const button = page.getByRole('button', { name: /^(Filters|Filtros)/ }).filter({ visible: true })
+  if ((await button.count()) === 0) return
+  await button.first().click()
+  await page.locator('[data-filter-panel]').waitFor()
+}
+
 const settingsPages = [
   'profile',
   'privacy',
@@ -197,7 +211,34 @@ const screens: Screen[] = [
       },
     ],
   },
-  { name: 'library', path: SHELF },
+  {
+    name: 'library',
+    path: SHELF,
+    scenes: [
+      { name: 'open' },
+      { name: 'filters', act: openFilters },
+      { name: 'filtered', path: `${SHELF}?q=${encodeURIComponent(A_FILTER)}` },
+      { name: 'no-match', path: `${SHELF}?q=zzzz` },
+      {
+        name: 'sort-menu',
+        act: async (page) => {
+          await page.getByRole('button', { name: /^(Sort|Ordem)/ }).first().click()
+          await page.getByRole('menu').waitFor()
+        },
+      },
+      { name: 'grouped', path: `${SHELF}?group=status` },
+    ],
+  },
+  {
+    // One's own shelf: Add, and saving a filter as a shelf.
+    name: 'library-mine',
+    path: SHELF,
+    who: 'owner',
+    scenes: [
+      { name: 'open' },
+      { name: 'filtered', path: `${SHELF}?q=${encodeURIComponent(A_FILTER)}` },
+    ],
+  },
   { name: 'library-wall', path: `${SHELF}?view=wall` },
   { name: 'library-list', path: `${SHELF}?view=list` },
   { name: 'library-banners', path: `${SHELF}?view=banner` },

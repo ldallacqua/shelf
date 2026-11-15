@@ -168,8 +168,8 @@ is fixed in the same pull request, Medium unless the owner says it waits; then t
 Blocker or High is left. The pull request carries the findings and what happened to each, and an issue holds
 whatever waits. A new screen or state goes into `ui:capture`'s list in the same change. The procedure is
 [docs/ui-review.md](docs/ui-review.md), for any agent; it is also step 10's screen-by-screen review, whose
-reports are in `docs/review/`. (Claude Code can run the whole review as one subagent, `.claude/agents/ui-review.md`,
-which only reads that file.)
+reports are in `docs/review/`. (Claude Code runs the whole review, all three lenses, as one subagent,
+`.claude/agents/ui-review.md`, which only reads that file; never one agent per lens.)
 
 **Text.** Every word a visitor reads comes from `messages/`. English is the source; add the
 key to both files or `pnpm i18n:check` fails. A literal string inside a component is a lint
