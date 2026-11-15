@@ -26,13 +26,18 @@ export function LibrarySkeleton({ title }: { title?: string }) {
       <div className="library-body">
         <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-1 pt-3 pb-2 sm:gap-y-2 sm:pt-10 sm:pb-5 filters-beside:pt-0">
           <h1 className="title text-2xl sm:text-5xl">{title ?? t('title')}</h1>
-          {/* The totals: three, wrapping where the real ones would. */}
-          <div aria-hidden="true" className="flex flex-wrap gap-x-3 gap-y-1 sm:gap-x-5">
-            {['w-20', 'w-24', 'w-24'].map((width, index) => (
-              <span key={width + index} className="flex h-6 items-center sm:h-7">
-                <span className={cn('ghost h-3.5', width)} style={ghostOrder(index)} />
-              </span>
-            ))}
+          {/* The totals: three, wrapping where the real ones would; then the marks' key. */}
+          <div aria-hidden="true" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 sm:gap-x-5">
+              {['w-20', 'w-24', 'w-24'].map((width, index) => (
+                <span key={width + index} className="flex h-6 items-center sm:h-7">
+                  <span className={cn('ghost h-3.5', width)} style={ghostOrder(index)} />
+                </span>
+              ))}
+            </div>
+            <span className="flex h-7 items-center pointer-coarse:h-9">
+              <span className="ghost h-3.5 w-40" style={ghostOrder(3)} />
+            </span>
           </div>
         </div>
         <p className="sr-only" role="status">

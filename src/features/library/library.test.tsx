@@ -21,6 +21,7 @@ import { dateOf, hoursOf, outOfTen } from './format'
 import { GameBox, platformFor, platformsOwned } from './game-box'
 import { LibrarySkeleton } from './library-skeleton'
 import { ListView } from './list-view'
+import { MarksKey } from './marks-key'
 import { markPageLive, pageIsLive, resetPageLive } from './live'
 import { resetPreviews } from './preview-queue'
 import {
@@ -990,5 +991,26 @@ describe('a cover, by when it joined the page', () => {
   it('filling its frame, says nothing of it', () => {
     const { container } = renderWithIntl(<Cover {...cover} fit="fill" />)
     expect(container.querySelector('.cover')).not.toHaveAttribute('data-fit')
+  })
+})
+
+describe('the key to the marks (review 01, finding 11)', () => {
+  it('opens from the totals and says what each mark on the shelf means', async () => {
+    renderWithIntl(<MarksKey view="shelf" />)
+    await userEvent.click(screen.getByRole('button', { name: 'What the marks mean' }))
+    const dialog = await screen.findByRole('dialog', { name: 'What the marks mean' })
+    expect(await within(dialog).findByText('a gold seal on its corner')).toBeInTheDocument()
+    expect(within(dialog).getByText('leans against its neighbor')).toBeInTheDocument()
+    expect(within(dialog).getByText('the cover alone, with no case')).toBeInTheDocument()
+  })
+
+  it("says the wall's marks on the wall, in Portuguese too", async () => {
+    renderWithIntl(<MarksKey view="wall" />, 'pt-BR')
+    await userEvent.click(screen.getByRole('button', { name: 'O que as marcas significam' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(await within(dialog).findByText('um círculo tracejado')).toBeInTheDocument()
+    expect(
+      within(dialog).getByText('as plataformas em que está, no pé da capa'),
+    ).toBeInTheDocument()
   })
 })

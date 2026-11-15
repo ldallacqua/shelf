@@ -379,6 +379,51 @@
       0 1px 3px rgb(0 0 0 / 0.5);
   }
 
+  /*
+   * The key to the marks (`features/library/marks-list.tsx`): a box in small, standing as a box
+   * of its status stands on the shelf, with the shelf's own marks on it.
+   */
+  .marks-swatch {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+  }
+
+  .marks-box {
+    position: relative;
+    display: block;
+    width: 1.375rem;
+    height: 1.875rem;
+    border: 1.5px solid var(--text-muted);
+    border-radius: 3px;
+    background: var(--surface-raised);
+  }
+
+  .marks-box[data-status='playing'] {
+    scale: 1.05;
+  }
+
+  .marks-box[data-status='someday'] {
+    scale: 0.92;
+    filter: brightness(0.78);
+  }
+
+  .marks-box[data-status='dropped'] {
+    rotate: 5deg;
+    transform-origin: 100% 100%;
+  }
+
+  .marks-box[data-status='wishlist'] {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  .marks-box[data-loose] {
+    border-color: transparent;
+    background: linear-gradient(160deg, var(--line-strong), var(--text-muted));
+  }
+
   /* Playing: a small live light above the box. */
   .game-live {
     position: absolute;

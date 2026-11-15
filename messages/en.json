@@ -621,6 +621,38 @@
       "title": "The library did not load.",
       "body": "Something went wrong on the way to the shelf. Your games are safe.",
       "retry": "Try again"
+    },
+    "marks": {
+      "open": "What the marks mean",
+      "title": "What the marks mean",
+      "description": "Each box shows where a game stands by how it looks. Its name says the same in words.",
+      "close": "Close",
+      "copies": "More than one platform",
+      "platforms": "Platforms",
+      "platformsSample": "PS5 · PC",
+      "private": "Private",
+      "privateWords": "a lock: only the shelf's owner sees it",
+      "shelf": {
+        "playing": "stands forward, a light above it",
+        "backlog": "a box as it stands",
+        "completed": "a gold seal on its corner",
+        "dropped": "leans against its neighbor",
+        "someday": "set back, in shade",
+        "retired": "a tag with ∞, for a game with no end",
+        "wishlist": "an outline, its cover faint",
+        "digital": "the cover alone, with no case",
+        "copies": "how many, at its foot"
+      },
+      "wall": {
+        "playing": "a play mark",
+        "backlog": "a dashed circle",
+        "completed": "a check",
+        "dropped": "a struck-out circle",
+        "someday": "a clock",
+        "retired": "∞, for a game with no end",
+        "wishlist": "a bookmark",
+        "platforms": "the platforms it's on, at the cover's foot"
+      }
     }
   },
   "Beside": {

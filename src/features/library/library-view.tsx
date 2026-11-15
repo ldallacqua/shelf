@@ -89,6 +89,7 @@ import { NothingReady } from './nothing-ready'
 import { useArrival } from './use-arrival'
 import type { Dimension } from './preferences'
 import { anchorIn2d, ShelfStage } from './shelf-stage'
+import { MarksKey } from './marks-key'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 import { useShelf } from './shelf'
@@ -785,13 +786,17 @@ export function LibraryView({
               </p>
             ) : null}
           </div>
-          {liveStats ? (
-            <StatsLine stats={liveStats} settle={false} />
-          ) : counted !== first && drawnQ === builtFor.q ? (
-            <StatsLine stats={counted.stats} settle={false} />
-          ) : (
-            stats
-          )}
+          {/* The totals, and where a box's look is put in words: the views with marks have it. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {liveStats ? (
+              <StatsLine stats={liveStats} settle={false} />
+            ) : counted !== first && drawnQ === builtFor.q ? (
+              <StatsLine stats={counted.stats} settle={false} />
+            ) : (
+              stats
+            )}
+            {view === 'shelf' || view === 'wall' ? <MarksKey view={view} /> : null}
+          </div>
         </div>
 
         <FilterPanel

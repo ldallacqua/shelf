@@ -266,6 +266,10 @@ Phone:
 | Owned only digitally | A cover with no case around it |
 | Owned on more than one platform | A small count on the box's foot |
 
+A box's name says all of it in words. For the eye, "What the marks mean", by the totals on the
+shelf and the wall, opens a key: each state drawn as a box in small stands, or as the wall's mark
+at a cover's foot, beside its words (step 10's review, 01, finding 11).
+
 **Which box a game shows.** Grouped by platform, each copy stands on its own platform's shelf
 in that platform's case. Otherwise the game shows one box: the copy I chose for display, or the
 first one I added.

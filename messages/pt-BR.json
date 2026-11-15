@@ -621,6 +621,38 @@
       "title": "A biblioteca não carregou.",
       "body": "Algo deu errado no caminho até a estante. Seus jogos estão seguros.",
       "retry": "Tentar de novo"
+    },
+    "marks": {
+      "open": "O que as marcas significam",
+      "title": "O que as marcas significam",
+      "description": "Cada caixa mostra pela aparência em que pé está o jogo. O nome dela diz o mesmo em palavras.",
+      "close": "Fechar",
+      "copies": "Mais de uma plataforma",
+      "platforms": "Plataformas",
+      "platformsSample": "PS5 · PC",
+      "private": "Privado",
+      "privateWords": "um cadeado: só o dono da estante vê",
+      "shelf": {
+        "playing": "um pouco à frente, com uma luz acima",
+        "backlog": "a caixa como ela é",
+        "completed": "um selo dourado no canto",
+        "dropped": "encostado no vizinho",
+        "someday": "mais ao fundo, na sombra",
+        "retired": "uma etiqueta com ∞, para um jogo sem fim",
+        "wishlist": "só o contorno, com a capa apagada",
+        "digital": "só a capa, sem a caixa",
+        "copies": "quantas, no pé da caixa"
+      },
+      "wall": {
+        "playing": "um sinal de play",
+        "backlog": "um círculo tracejado",
+        "completed": "um visto",
+        "dropped": "um círculo cortado",
+        "someday": "um relógio",
+        "retired": "∞, para um jogo sem fim",
+        "wishlist": "um marcador",
+        "platforms": "as plataformas em que está, no pé da capa"
+      }
     }
   },
   "Beside": {

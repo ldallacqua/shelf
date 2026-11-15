@@ -5,6 +5,8 @@ import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
 import type { Status } from '@/domain/library/values'
 
 import { LibrarySkeleton } from './library-skeleton'
+import MarksList from './marks-list'
+import { MarksKey } from './marks-key'
 import { PulledGame } from './pulled-game'
 import { ShelfGrid } from './shelf-grid'
 import { StatsLine } from './stats-line'
@@ -262,6 +264,37 @@ export const ControlsOnAPhone: Story = {
       dimension="2d"
       onDimension={() => undefined}
     />
+  ),
+}
+
+/**
+ * What the marks mean, by the totals: a button that opens the key (review 01, finding 11). Its
+ * list is fetched only when opened; below, it is drawn as the dialog shows it.
+ */
+export const MarksKeyButton: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <StatsLine stats={{ games: 230, finished: 79, hours: 4236 }} />
+      <MarksKey view="shelf" />
+    </div>
+  ),
+}
+
+/** The key for the shelf: each status as a box in small stands, beside its words. */
+export const MarksOnTheShelf: Story = {
+  render: () => (
+    <div className="max-w-sm">
+      <MarksList view="shelf" />
+    </div>
+  ),
+}
+
+/** The key for the wall: each status's mark at a cover's foot, and its platforms. */
+export const MarksOnTheWall: Story = {
+  render: () => (
+    <div className="max-w-sm">
+      <MarksList view="wall" />
+    </div>
   ),
 }
 
