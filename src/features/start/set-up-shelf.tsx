@@ -4,6 +4,7 @@ import { ArrowLeftIcon, ArrowRightIcon, LibraryBigIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useCallback, useEffect, useRef, useState, type ReactNode, type Ref } from 'react'
 
+import { duelStatuses } from '@/domain/duel/memory'
 import type { Standing } from '@/domain/library/placing'
 import {
   isSetupStep,
@@ -220,6 +221,10 @@ function Setup({
     ? Object.values(standing.tally).reduce((sum, count) => sum + count, 0)
     : undefined
   const unsorted = standing?.tally.unsorted ?? 0
+  // The games a duel could draw from (spec 3.14): what I mean to play, not unsorted or finished.
+  const duelable = standing
+    ? duelStatuses.reduce((sum, status) => sum + (standing.tally[status] ?? 0), 0)
+    : 0
   const waiting = rows?.reduce((sum, row) => sum + (row.link?.counts['needs-you'] ?? 0), 0) ?? 0
   const linked = (rows ?? []).flatMap((row) => (row.link ? [sync(`source.${row.source}`)] : []))
   const done = {
@@ -337,6 +342,7 @@ function Setup({
                   total={total}
                   games={showcase}
                   unsorted={unsorted}
+                  duelable={duelable}
                   linked={linked}
                   places={places}
                   shelfPublic={shelfPublic}

@@ -49,6 +49,7 @@ when its report is written and the owner has chosen what to fix; the fixes are t
 | 06  | Settings: the hub and its pages                       | `settings`, `settings-*`                       | Not started           |
 | 07  | A smart shelf, the trophy wall                        | `shelf`, `trophies`                            | Not started           |
 | 08  | Downloads, consent, privacy, terms, not found         | `downloads`, `consent`, `privacy`, `terms`, `missing` | Not started    |
+| 09  | The duel (spec 3.14): choosing, a duel, the game left  | `duel`, `duel-empty`, `duel-visitor`           | Reviewed as a feature in its pull request |
 
 Left out: `/admin` and `/foundations` (not for visitors), and the 3D shelf, behind Experimental views, which
 gets a pass of its own with `pnpm perf:3d` beside it.
@@ -74,6 +75,10 @@ The lenses judge pictures and facts taken the same way every time, not a memory 
    - `text-en.txt`, `text-pt-BR.txt`: every word the page shows, in reading order.
    - `facts.json`: headings in order, sideways scroll at each width, console errors, the smallest targets.
    - and `.data/ui-review/<screen>/index.md`, which lists all of it. A lens starts there.
+
+   To capture again only the scenes a fix touched, name them after the screen: `pnpm ui:capture
+   duel:full,no-match` replaces those scenes' folders, keeps the others, and lists what it took in an
+   index of its own (`index-full-no-match.md`).
 3. Covers come from the real image servers, as a visitor sees them; the script waits for them to paint.
 4. A `-full` picture may show a seam where the first screen ends: the wall behind the page is a fixed layer,
    which a full-page picture draws once. It is not a fault in the page.

@@ -97,6 +97,7 @@ language the browser asks for.
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once, or to archive or remove; Organize's first tab ([section 4.5](#45-placing-what-a-sync-brought-in)) |
 | `/en/account/hours` | The games whose stores report far past IGDB's time, to take idle time out of; Organize's second tab ([section 4.7](#47-hours-a-store-counted)) |
 | `/en/account/archived` | One's archived games, to bring back; Organize's third tab ([section 7.4](#74-archiving-a-game)) |
+| `/en/account/duel` | The duel: my games two at a time, in a bracket, until one is left to play next ([section 3.14](#314-the-duel-choosing-what-to-play-next)) |
 | `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it, Shelf for Windows' saves and downloads included; last, whose marks Steam, Nintendo, PlayStation and Xbox are |
 | `/en/terms` | The terms for using Shelf, its API and Shelf for Windows: one's account and shelf, fair use, other services, downloads, saves, what Shelf can't promise, and changes |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
@@ -761,6 +762,102 @@ mostrar esses games."
 - Switched off, they are back, and that survives a reload too.
 - No shelf has a button or a key for it, and the list of keys does not name one.
 
+### 3.14 The duel: choosing what to play next
+
+**Built 14 Nov 2026.** The owner asked on 14 Nov 2026 for a screen to help decide which game to
+play next: "Tipo um fight entre jogos [...] um comparativo entre games mesmo. [...] veja quantos
+jogos podem entrar em uma disputa e ir afunilando". It lives at `/account/duel`, my own games
+only, and the header names it **Duel** (Duelo), last among my own shelf's links.
+
+**What it was based on.** Choosing among many at once is the hard part: Iyengar and Lepper's jam
+study and the choice-overload work since find that more options at once make a choice harder and
+less satisfying, and a 2026 preprint ("Pairwise Beats All-at-Once") argues that meeting options two
+at a time keeps the better one at each step. Nielsen Norman Group's comparison tables say five
+items at most side by side, about two on a phone, with one row per attribute, the same attributes
+for every item, a way to see only differences, and sticky headers; Baymard adds grouping the rows
+and separating each one. Bracket makers (Bracket Fights, looked at in a browser) run a
+single-elimination bracket of a power of two and fill empty places with byes. Versus.com (looked at
+in a browser) sets two products face to face with VS between them and lists the biggest
+differences with each side's value. A fighting game's select screen sets two fighters' stats as
+bars growing out from the middle. Looked at and not opened: the paid parts of Baymard's mobile
+research.
+
+- **Two at a time, in a bracket.** Up to sixteen games go in, and every duel sends one on, so N
+  games take N − 1 duels: sixteen take fifteen, a few minutes. Past sixteen a duel would take too
+  long to finish in one sitting. A bracket holds a power of two; with fewer games, some go
+  straight to the second round (a bye, "Goes straight on"), spread through the first round so no
+  half of the bracket is all byes. The places are drawn at random: a bracket is a draw, not a
+  ranking. Rounds are named as tournaments name them: Round of 16, Quarterfinals, Semifinals,
+  Final (Oitavas de final, Quartas de final, Semifinal, Final).
+- **Choosing who goes in.** The games come from the statuses I choose ("Games with the status"),
+  as chips with their counts: Backlog and Someday first (what is waiting, as the trophy wall's
+  backlog counts it), and Wishlist, Playing and Dropped beside them; a status with no game is left
+  out, nothing finished or unsorted is offered, and when none of the statuses kept has a game, every
+  one that has is chosen. Covers in a grid, by title, each pressed to put it in or take it out, with
+  a tick and a ring when in; a search by title, whose count a screen reader hears once typing
+  pauses; Draw up to 4, 8 or 16 at random, which keeps the games chosen by hand and fills the rest;
+  and Chosen only. A duel holds sixteen, and a seventeenth pressed says so in words beside the count.
+  What is in stands beside the list on a wide screen, before it in the Tab order, each with a way to
+  take it out, the count and the duels it makes ("8 games · 7 duels"), Start the duel and Clear;
+  below that width it is a bar at the bottom of the screen with the count, Clear and Start, as the
+  library's phone toolbar stands. Games for adults stay out while this device hides them (3.13).
+  Forty-eight at a time, then Show 48 more, as Organize.
+- **Face to face.** The round and the duel's place in it ("Quarterfinals · Duel 2 of 4"), the
+  duels played of all of them, as words and a bar, Undo and Change the games (which asks first once
+  a duel was played, and keeps the games chosen). The two games stand under their own lights, as on
+  the trophy wall, with VS between them, each with its title, year and status, Choose, and Open its
+  page (named for its game); both Choose buttons stand at the same height whatever the titles.
+  Their facts sit between them on a desktop, and under them below that: **Time to beat** (IGDB's
+  normal playthrough, as a range from a hasty one where IGDB has both, as the library names it),
+  **IGDB rating** (out of 100, as the library sorts by it), **On your shelf** (since it was added),
+  **Played** (or Not started), **Released**, **Platforms** (each copy's platform and whether physical
+  or digital, or, for a wished-for game, where I want it), **Genres** (three at most) and **Modes**,
+  listed with commas. One row a fact, the same rows in the same order every duel, the fact's name in
+  the middle and each game's value toward it; the four that are measured have a bar growing out from
+  the middle, as long as the value is against the larger one (the rating against its whole scale).
+  A row neither game has is left out; one side without it says Not known, and draws no bar, which
+  would read as none. Nothing is called better: a shorter game isn't a better one, so the bars only
+  show which is more. Underneath it is a table, so a screen reader hears each fact and whose value
+  is whose.
+- **A choice.** For a moment the game going on steps up into its light and the other dims and
+  steps back; then the next two step in from either side. Under reduced motion only the light and
+  the dimming change. ← and → choose too, outside a field and while no menu or dialog is open.
+  Focus stays on the button pressed, and a screen reader hears who went on and who meets next
+  ("Hades goes on. Semifinals: Celeste or Inside."). The bracket under the duel shows every round:
+  who met whom, who went on (a tick, and the words), the duel being played (Now) and the ones still
+  to be decided; rounds stand side by side on a wide screen, each duel between the two it came
+  from, and one under another below that.
+- **The game left.** Its cover lit, its heading ("Your next game" and its title, where focus
+  comes), the duels it won and against whom, and the runner-up. **Start playing it** sets it to
+  Playing on my shelf (the editor's own write), said in words once saved, with focus going on to
+  its page's link, or that it couldn't be; a game already Playing says so instead, in words, not
+  as a button. Open its page, Undo the final (the last choice can be taken back like any other,
+  while the game left isn't Playing),
+  Duel again (the same games, a new draw) and Change the games (back to choosing, with these still
+  chosen). The bracket stays under it.
+- **Remembered on this device,** per account (`shelf:duel:{handle}`): the statuses, the games
+  chosen and the duel under way or just won, so a reload, a look at a game's page or Back returns
+  to it. A game taken off the shelf meanwhile ends the duel, saying so, with the others still
+  chosen.
+- **Its words come with its page** (`messages/duel/`), not with every page's HTML, as the admin
+  page's do. Built ahead as its heading and ghosts; a visitor is asked to sign in. A shelf with
+  nothing to choose from says what goes there and leads to the shelf, or, when its games only wait
+  for a status, says so and leads to Organize.
+- **Elsewhere:** the landing page's "What's next" part plays one duel of the example shelf with no
+  script, and the FAQ answers whether Shelf helps choose; setting a shelf up offers it in "What's
+  next" once two of its games could duel, ahead of all but Shelf for Windows when four or more
+  could (unsorted and finished games don't count).
+
+**Done when**
+
+- Two to sixteen games make a bracket that takes one duel fewer than its games, with byes spread
+  through the first round, and the last game left is named.
+- Every duel shows the same facts in the same order, and a screen reader hears them as a table.
+- Undo takes back the last choice; a reload keeps the duel where it was.
+- Start playing it sets the game to Playing, and says so.
+- At every width from 320 to 1920, nothing scrolls sideways, and on a desktop both games and their
+  Choose buttons fit the first screen.
+
 ---
 
 ## 4. Adding games
@@ -1157,9 +1254,10 @@ The page:
     (never an empty ledge on a shelf that has games: the owner, 12 Nov 2026, of 628 games behind an
     empty one), then what was set up in words (games and
     how many wait, platforms linked, the colors, public at `/u/{handle}` or private, with the
-    way to change it), **See my shelf**, and three things to do next: Shelf for Windows with its
-    download (first for someone who plays on a PC), the address an AI assistant connects to,
-    with a copy button, and a filter to try on the shelf.
+    way to change it), **See my shelf**, and three or four things to do next: Shelf for Windows
+    with its download (first for someone who plays on a PC), the address an AI assistant connects
+    to, with a copy button, a filter to try on the shelf, and, once two of my games could duel,
+    "Choose your first game" (3.14), next after Shelf for Windows (first off a PC) once four could.
 - **Beside the steps,** on a wide window, the shelf as it stands: a small lit ledge in the colors
   chosen with my own games on it, most played first, up to seven, read from my library file
   (`showcaseOf`: owned games with a cover, never one for adults); until that arrives, a case in a

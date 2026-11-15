@@ -13,6 +13,7 @@ import {
   MonitorIcon,
   ScanSearchIcon,
   SearchIcon,
+  SwordsIcon,
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -279,14 +280,16 @@ function AssistantAddress() {
 }
 
 /**
- * The end (spec 4.6): the shelf lighting up, what was set up, the way to it, and three things to
- * do next. Shelf for Windows leads those for someone who plays on a PC.
+ * The end (spec 4.6): the shelf lighting up, what was set up, the way to it, and three or four
+ * things to do next. Shelf for Windows leads those for someone who plays on a PC; the duel (spec
+ * 3.14) is offered once two games could duel, and comes next (first, off a PC) once four could.
  */
 export function ReadyStep({
   handle,
   total,
   games,
   unsorted,
+  duelable = 0,
   linked,
   places,
   shelfPublic,
@@ -296,6 +299,8 @@ export function ReadyStep({
   /** Some of my games to stand on its shelf, most played first (`showcaseOf`). */
   games?: readonly ShowcaseGame[]
   unsorted: number
+  /** Games a duel could draw from: waiting, wished for, being played or dropped (spec 3.14). */
+  duelable?: number
   linked: readonly string[]
   places: readonly PlayPlace[]
   shelfPublic: boolean
@@ -338,6 +343,28 @@ export function ReadyStep({
       </div>
     </Panel>
   )
+
+  const duel = (
+    <Panel key="duel" title={t('next.duel.title')} icon={SwordsIcon}>
+      <p className="text-pretty text-muted">{t('next.duel.body')}</p>
+      <div>
+        <Button variant="secondary" size="sm" asChild>
+          <Link href="/account/duel">{t('next.duel.go')}</Link>
+        </Button>
+      </div>
+    </Panel>
+  )
+  // A duel needs two games to offer, and leads the cards once there are a handful to choose between.
+  const canDuel = duelable >= 2
+  const choosing = duelable >= 4
+  const others = pc ? [desktop, filter, assistant] : [filter, assistant, desktop]
+  const cards = !canDuel
+    ? others
+    : !choosing
+      ? [...others, duel]
+      : pc
+        ? [desktop, duel, filter, assistant]
+        : [duel, ...others]
 
   const item = (done: boolean, words: ReactNode) => (
     <li className="flex gap-2.5">
@@ -413,8 +440,13 @@ export function ReadyStep({
         <h3 id="setup-next" className="title text-2xl">
           {t('next.title')}
         </h3>
-        <div className="grid gap-4 lg:grid-cols-3">
-          {pc ? [desktop, filter, assistant] : [filter, assistant, desktop]}
+        <div
+          className={cn(
+            'grid gap-4 [&>*]:content-start',
+            cards.length === 4 ? 'md:grid-cols-2 xl:grid-cols-4' : 'lg:grid-cols-3',
+          )}
+        >
+          {cards}
         </div>
       </section>
     </div>

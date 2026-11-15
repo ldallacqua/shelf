@@ -33,6 +33,19 @@ export const placingItem = {
   pages: ['/account/unsorted', '/account/hours', '/account/archived'],
 } as const satisfies { label: string; href: Pathname; pages: readonly Pathname[] }
 
+/**
+ * Last among one's own shelf's links: the duel, for choosing what to play next from one's own games
+ * (spec 3.14).
+ */
+export const duelItem = {
+  label: 'duel',
+  href: '/account/duel',
+  pages: ['/account/duel'],
+} as const satisfies { label: string; href: Pathname; pages: readonly Pathname[] }
+
+/** One's own shelf's links after the shelf's, in order: Organize, counting what waits, then the duel. */
+export const ownItems = [placingItem, duelItem] as const
+
 /** Whether the visitor is on this destination, or on a page under it, by the page's pathname template. */
 export function isCurrent(
   item: { pages: readonly Pathname[] },

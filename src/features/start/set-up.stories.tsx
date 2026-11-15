@@ -145,8 +145,25 @@ export const ReadyOnAPc: Story = {
       total={240}
       games={MINE}
       unsorted={12}
+      duelable={180}
       linked={['Steam']}
       places={['pc']}
+      shelfPublic
+    />
+  ),
+}
+
+/** Ready, games to choose between off a PC: the duel leads What’s next, four cards across. */
+export const ReadyToChoose: Story = {
+  render: () => (
+    <ReadyStep
+      handle="ana"
+      total={40}
+      games={MINE}
+      unsorted={0}
+      duelable={36}
+      linked={[]}
+      places={['switch']}
       shelfPublic
     />
   ),

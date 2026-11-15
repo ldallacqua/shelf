@@ -7,13 +7,15 @@ import adminEn from '@messages/admin/en.json'
 import adminPtBR from '@messages/admin/pt-BR.json'
 import appEn from '@messages/app/en.json'
 import appPtBR from '@messages/app/pt-BR.json'
+import duelEn from '@messages/duel/en.json'
+import duelPtBR from '@messages/duel/pt-BR.json'
 import en from '@messages/en.json'
 import ptBR from '@messages/pt-BR.json'
 
 export const messages = {
-  en: { ...en, ...appEn, ...adminEn },
-  'pt-BR': { ...ptBR, ...appPtBR, ...adminPtBR },
-} satisfies Record<Locale, typeof en & typeof appEn & typeof adminEn>
+  en: { ...en, ...appEn, ...adminEn, ...duelEn },
+  'pt-BR': { ...ptBR, ...appPtBR, ...adminPtBR, ...duelPtBR },
+} satisfies Record<Locale, typeof en & typeof appEn & typeof adminEn & typeof duelEn>
 
 /** Renders a component with the real translations for one language. */
 export function renderWithIntl(ui: ReactElement, locale: Locale = 'en'): RenderResult {

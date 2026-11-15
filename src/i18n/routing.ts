@@ -26,6 +26,8 @@ export const routing = defineRouting({
     '/account/unsorted': '/account/unsorted',
     '/account/hours': '/account/hours',
     '/account/archived': '/account/archived',
+    // The duel: my games two at a time, until one is left to play next (spec 3.14).
+    '/account/duel': '/account/duel',
     // Settings, a page each (issue 152): the account's, this device's, and Shelf for Windows'.
     '/settings': '/settings',
     '/settings/profile': '/settings/profile',

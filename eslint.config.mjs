@@ -49,6 +49,7 @@ const deviceStores = [
   'src/features/theme/colorway-store.ts',
   'src/features/theme/theme-script.tsx',
   'src/features/start/setup-memory.ts',
+  'src/features/duel/duel-memory.ts',
 ]
 const storageMessage =
   'Keep a device’s choice in a store module of its own (see deviceStores in eslint.config.mjs), which checks what it reads back and survives storage that is off or full.'

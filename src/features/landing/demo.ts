@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { ledFrom, NEUTRAL_PALETTE } from '@/domain/color/palette'
+import { factsOf, type Fact } from '@/domain/duel/facts'
 import type { LibraryCopy, LibraryGame } from '@/domain/library/library'
 import { trophyWall, type TrophyStats, type TrophyYear } from '@/domain/library/trophies'
 
@@ -91,6 +92,25 @@ export const demoTrophies = (): { stats: TrophyStats; latest: TrophyYear } => {
   const latest = wall.years[0]
   if (!latest) throw new Error('Nothing is finished on the example shelf: run pnpm landing:demo')
   return { stats: wall.stats, latest }
+}
+
+/**
+ * "Choose your next game": two of the example shelf's backlog face to face, with the facts the
+ * duel sets side by side that don't depend on the day the page was built.
+ */
+export const demoDuel = (
+  slugs: readonly [string, string],
+  keys: readonly Fact['key'][],
+): { games: [DemoGame, DemoGame]; facts: Fact[] } => {
+  const [a, b] = slugs.map((slug) => {
+    const game = bySlug.get(slug)
+    if (!game) throw new Error(`${slug} is not on the example shelf: run pnpm landing:demo`)
+    return game
+  }) as [LibraryGame, LibraryGame]
+  const facts = factsOf([a, b], demoLibrary.names, a.addedOn).filter(({ key }) =>
+    keys.includes(key),
+  )
+  return { games: [toDemo(a), toDemo(b)], facts }
 }
 
 /** IGDB's ids for PC, where every game from Steam goes, and the Switches, where Nintendo's do. */

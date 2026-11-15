@@ -10,6 +10,7 @@
     "library": "Library",
     "trophies": "Trophies",
     "placing": "Organize",
+    "duel": "Duel",
     "waiting": "{count, plural, one {# game waiting} other {# games waiting}}",
     "menu": "Menu",
     "igdbCredit": "Game data and covers from <link>IGDB.com</link> and Steam.",
@@ -282,6 +283,39 @@
       "body": "Mark a game finished and it goes up on your trophy wall, under its own light, in the year you finished it. Above it: how many, how many hours, and what you made of them. Steam’s achievements add up there too, the rarest kept in a vault, with your backlog, your taste and a card of your year to share.",
       "wall": "Games finished on the example shelf"
     },
+    "duel": {
+      "eyebrow": "What’s next",
+      "title": "Choose your next game, two at a time.",
+      "body": "Put up to sixteen games from your backlog in a bracket, or draw them at random. Each duel sets two side by side: how long each takes to beat, how IGDB rates it, how long it has waited. Choose one, and the bracket narrows until one is left to start.",
+      "round": "Quarterfinals",
+      "position": "Duel 3 of 4",
+      "question": "Which would you rather play next?",
+      "choose": "Choose {title}",
+      "chooseShort": "Choose",
+      "vs": "VS",
+      "facts": "{a} and {b} side by side",
+      "factColumn": "Fact",
+      "fact": {
+        "length": "Time to beat",
+        "score": "IGDB rating",
+        "released": "Released",
+        "genres": "Genres"
+      },
+      "length": "{hours, number} h",
+      "lengthRange": "{low, number}–{high, number} h",
+      "lengthLong": "about {hours, plural, one {# hour} other {# hours}}",
+      "lengthRangeLong": "{low, number} to {high, plural, one {# hour} other {# hours}}",
+      "scoreLong": "{rating, number} out of 100 on IGDB",
+      "unknown": "Not known",
+      "goesOn": "{title} goes on to the semifinals.",
+      "funnel": {
+        "label": "Games in each round",
+        "quarterfinal": "Quarters",
+        "semifinal": "Semis",
+        "final": "Final",
+        "next": "Next game"
+      }
+    },
     "look": {
       "eyebrow": "Colors",
       "title": "Paint the room your way.",
@@ -387,6 +421,10 @@
       "sync": {
         "q": "Can it bring in the games I already own?",
         "a": "From Steam and Nintendo, yes: link them right after signing up, or later in Settings. Every game you own on Steam comes onto your shelf with its hours and achievements; from Nintendo, every game you played on a Switch or a Switch 2, once you say whether each is a cartridge or a download. Both sync again once a day. New games come in unsorted, and one page lets you rate them, give each a status, and put right one taken for the wrong game. PlayStation and Xbox are next. Until then, paste a list of titles, one a line."
+      },
+      "duel": {
+        "q": "Can Shelf help me choose what to play next?",
+        "a": "Yes: the duel. Put up to sixteen games from your backlog in a bracket, or draw them at random, and choose between two at a time. Each duel sets them side by side: how long each takes to beat, how IGDB rates it, how long it has waited and how far you got. The one left can go straight to Playing."
       },
       "hours": {
         "q": "How does Shelf count my hours?",
@@ -1829,6 +1867,11 @@
           "body": "One line finds any game. This one finds something short in your backlog, for tonight.",
           "example": "status:backlog length:<10",
           "go": "Try it on my shelf"
+        },
+        "duel": {
+          "title": "Choose your first game",
+          "body": "Can’t decide where to start? Put a few of your games face to face, two at a time, until one is left.",
+          "go": "Start a duel"
         }
       }
     },

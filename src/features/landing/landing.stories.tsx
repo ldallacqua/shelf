@@ -1,9 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import { expect, userEvent, within } from 'storybook/test'
+
+import { factsOf } from '@/domain/duel/facts'
+import { testGame, testLibrary } from '@/domain/library/testing'
 
 import { DownloadFacts, DownloadForWindows } from '@/features/desktop/download-windows'
 
 import type { DemoGame } from './demo-case'
 import { DesktopDemo, DesktopPoints } from './desktop-demo'
+import { DEMO_FACTS, DuelDemo } from './duel-demo'
 import { LookDemo } from './look-demo'
 import { Overview } from './overview'
 import { StartSteps } from './start-steps'
@@ -12,7 +17,7 @@ import './landing.css'
 
 /**
  * The landing page's newer parts (spec 15): the overview under the first screen, the colors, Shelf
- * for Windows and the steps to a shelf of one's own. The page builds them from the example shelf
+ * for Windows, the duel and the steps to a shelf of one's own. The page builds them from the example shelf
  * on the server; here a few of its games stand in, as the page itself draws them.
  */
 const meta = {
@@ -84,3 +89,48 @@ export const DownloadButton: Story = {
 
 /** From signing up to a shelf of one's own. */
 export const GettingStarted: Story = { render: () => <StartSteps /> }
+
+/** Two of the example shelf's backlog face to face, as "Choose your next game" draws them. */
+const OUTER_WILDS = game(
+  'outer-wilds',
+  'Outer Wilds',
+  'co65ac',
+  ['#a3885a', '#4d4235', '#030203'],
+  0,
+)
+const HADES_II = game('hades-ii', 'Hades II', 'coaknx', ['#21614e', '#9fc1b2', '#081d19'], 0)
+const duelFacts = factsOf(
+  [
+    testGame('Outer Wilds', {
+      length: 1140,
+      hastyShare: 63,
+      igdbRating: 87,
+      year: 2019,
+      genres: [1, 2],
+    }),
+    testGame('Hades II', { length: 2580, igdbRating: 91, year: 2025, genres: [3, 4] }),
+  ],
+  testLibrary([], {
+    genre: [
+      { id: 1, name: 'Puzzle', slug: 'puzzle' },
+      { id: 2, name: 'Adventure', slug: 'adventure' },
+      { id: 3, name: 'Role-playing (RPG)', slug: 'role-playing-rpg' },
+      { id: 4, name: 'Hack and slash/Beat ’em up', slug: 'hack-and-slash-beat-em-up' },
+    ],
+  }).names,
+  '2026-01-01',
+).filter(({ key }) => (DEMO_FACTS as readonly string[]).includes(key))
+
+/**
+ * "Choose your next game": one duel, with no script. Choosing one lights it, dims the other and
+ * says which goes on; under it, the rounds a bracket of eight narrows through.
+ */
+export const Duel: Story = {
+  render: () => <DuelDemo games={[OUTER_WILDS, HADES_II]} facts={duelFacts} />,
+  play: async ({ canvasElement }) => {
+    const scene = within(canvasElement)
+    await userEvent.click(scene.getByRole('radio', { name: 'Choose Outer Wilds' }))
+    await expect(scene.getByRole('radio', { name: 'Choose Outer Wilds' })).toBeChecked()
+    await expect(scene.getByText('Outer Wilds goes on to the semifinals.')).toBeVisible()
+  },
+}

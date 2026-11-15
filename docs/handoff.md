@@ -1,5 +1,27 @@
 # Handoff: 27 October 2026
 
+## The duel: choosing what to play next (14 Nov 2026)
+
+The owner asked for a screen that sets games against each other to decide the next one to play, with
+professional UI/UX, researched, narrowing a field down, good at every breakpoint and through the UI review.
+Branch `game-duel`.
+
+- **What it is** ([spec 3.14](spec.md#314-the-duel-choosing-what-to-play-next)): `/account/duel`, my own games
+  only. Choose 2 to 16 games from chosen statuses (Backlog and Someday first), by hand or Draw 4, 8 or 16; then a
+  single-elimination bracket, two games face to face under their lights with their facts between them as mirrored
+  bars (to finish, players' score, time on the shelf, played, released, platform, genres, modes); then the game
+  left, which Start playing it sets to Playing. N games take N − 1 duels; byes spread through the first round.
+- **Where the code is:** the rules in `src/domain/duel/` (`bracket.ts`, `facts.ts`, `memory.ts`, `pool.ts`),
+  the page in `src/features/duel/`, its words in `messages/duel/` (loaded with its page only, as the admin's),
+  its memory on the device in `duel-memory.ts` (a store module, in `deviceStores`). The header's own links are
+  `ownItems` in `features/shell/nav.ts`: Organize, then Duel.
+- **Elsewhere:** the landing page's "What's next" part (`duel-demo.tsx`) plays one duel of the example shelf with
+  CSS alone (Home's script is at its budget), the FAQ's "duel" question, and a "Choose your first game" card in
+  setup's What's next. `pnpm ui:capture duel duel-empty duel-visitor` captures it (sixteen scenes).
+- **`ui:capture`** gained `screen:scene,scene`, which takes only those scenes again beside the rest (for a review
+  run again over a fix), and its wait for animations now gives up after 5 s: a landing part opened by its anchor
+  restarts its scenes, and the capture used to wait for them forever.
+
 ## The UI/UX review, and its rule for every feature (13 Nov 2026)
 
 Step 10 has started. The owner asked for a full UI/UX review, screen by screen, run by AI agents, and then made it

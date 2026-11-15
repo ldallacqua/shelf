@@ -253,6 +253,31 @@ describe('SetUpShelf', () => {
     )
   })
 
+  it('offers the duel once the shelf has games to choose between, first when it has a handful', async () => {
+    standing = { version: 4, tally: { ...EMPTY, backlog: 240 } }
+    at('/en/account/start#ready')
+    const { unmount } = renderWithIntl(<SetUpShelf />)
+    await stepTitle('Your shelf is ready.')
+    const next = () => screen.getByRole('region', { name: 'What’s next' })
+    await waitFor(() =>
+      // The part's own heading first, then each card's.
+      expect(within(next()).getAllByRole('heading', { level: 3 })[1]).toHaveTextContent(
+        'Choose your first game',
+      ),
+    )
+    expect(within(next()).getByRole('link', { name: 'Start a duel' })).toHaveAttribute(
+      'href',
+      '/en/account/duel',
+    )
+    unmount()
+
+    // An empty shelf has nothing to duel: no card leads to an empty duel.
+    standing = { version: 1, tally: EMPTY }
+    renderWithIntl(<SetUpShelf />)
+    await stepTitle('Your shelf is ready.')
+    expect(within(next()).queryByRole('link', { name: 'Start a duel' })).not.toBeInTheDocument()
+  })
+
   it('stands my own games on its shelves, the ones most played first, never an empty ledge', async () => {
     platforms = rowsOf(STEAM)
     standing = { version: 4, tally: { ...EMPTY, playing: 2, backlog: 1 } }

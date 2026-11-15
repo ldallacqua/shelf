@@ -10,6 +10,7 @@
     "library": "Biblioteca",
     "trophies": "Troféus",
     "placing": "Organizar",
+    "duel": "Duelo",
     "waiting": "{count, plural, one {# jogo esperando} other {# jogos esperando}}",
     "menu": "Menu",
     "igdbCredit": "Dados e capas dos jogos: <link>IGDB.com</link> e Steam.",
@@ -282,6 +283,39 @@
       "body": "Marque um jogo como zerado e ele vai para a sua parede de troféus, sob a própria luz, no ano em que você zerou. Acima, quantos, quantas horas e o que você achou deles. As conquistas da Steam também somam ali, as mais raras guardadas num cofre, com a sua fila, o seu gosto e um cartão do seu ano para compartilhar.",
       "wall": "Jogos zerados na estante de exemplo"
     },
+    "duel": {
+      "eyebrow": "O que vem agora",
+      "title": "Escolha seu próximo jogo, dois de cada vez.",
+      "body": "Coloque até dezesseis jogos da sua fila numa chave, ou sorteie. Cada duelo põe dois lado a lado: quanto tempo cada um leva para zerar, a nota no IGDB, há quanto tempo espera. Escolha um, e a chave afunila até sobrar um para começar.",
+      "round": "Quartas de final",
+      "position": "Duelo 3 de 4",
+      "question": "Qual você prefere jogar agora?",
+      "choose": "Escolher {title}",
+      "chooseShort": "Escolher",
+      "vs": "VS",
+      "facts": "{a} e {b} lado a lado",
+      "factColumn": "Dado",
+      "fact": {
+        "length": "Tempo para zerar",
+        "score": "Nota no IGDB",
+        "released": "Lançamento",
+        "genres": "Gêneros"
+      },
+      "length": "{hours, number} h",
+      "lengthRange": "{low, number}–{high, number} h",
+      "lengthLong": "cerca de {hours, plural, one {# hora} other {# horas}}",
+      "lengthRangeLong": "de {low, number} a {high, plural, one {# hora} other {# horas}}",
+      "scoreLong": "{rating, number} de 100 no IGDB",
+      "unknown": "Sem dado",
+      "goesOn": "{title} segue para a semifinal.",
+      "funnel": {
+        "label": "Jogos em cada fase",
+        "quarterfinal": "Quartas",
+        "semifinal": "Semifinal",
+        "final": "Final",
+        "next": "Próximo jogo"
+      }
+    },
     "look": {
       "eyebrow": "Cores",
       "title": "Pinte o cômodo do seu jeito.",
@@ -387,6 +421,10 @@
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",
         "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, em Configurações. Cada jogo que você tem na Steam chega à sua estante com as horas e as conquistas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um, e corrigir um jogo reconhecido errado. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
+      },
+      "duel": {
+        "q": "O Shelf me ajuda a escolher o que jogar agora?",
+        "a": "Sim: o duelo. Coloque até dezesseis jogos da sua fila numa chave, ou sorteie, e escolha entre dois de cada vez. Cada duelo põe os dois lado a lado: quanto tempo cada um leva para zerar, a nota no IGDB, há quanto tempo espera e até onde você chegou. O que sobrar pode ir direto para Jogando."
       },
       "hours": {
         "q": "Como o Shelf conta minhas horas?",
@@ -1829,6 +1867,11 @@
           "body": "Uma linha encontra qualquer jogo. Esta encontra algo curto na sua fila, para hoje à noite.",
           "example": "status:backlog length:<10",
           "go": "Experimentar na minha estante"
+        },
+        "duel": {
+          "title": "Escolha seu primeiro jogo",
+          "body": "Não sabe por onde começar? Coloque alguns dos seus jogos frente a frente, dois de cada vez, até sobrar um.",
+          "go": "Começar um duelo"
         }
       }
     },

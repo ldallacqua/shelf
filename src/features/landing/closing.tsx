@@ -12,6 +12,7 @@ const QUESTIONS = [
   'free',
   'data',
   'sync',
+  'duel',
   'desktop',
   'windows',
   'hours',

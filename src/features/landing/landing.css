@@ -351,3 +351,65 @@
     }
   }
 }
+
+/*
+ * "Choose your next game" (spec 3.14): one duel of the example shelf, played with no script. The
+ * two Chooses are radio buttons; the game chosen steps up into its light, the other dims, and a
+ * line says which goes on. In the scene the facts stand under the two games at every width.
+ */
+@layer components {
+  @media (min-width: 64rem) {
+    .duel-demo .duel-demo-arena {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-areas:
+        'a vs b'
+        'facts facts facts';
+      gap: 1.75rem 1.5rem;
+    }
+
+    .duel-demo .duel-fighter {
+      align-self: stretch;
+    }
+  }
+
+  .duel-demo .duel-niche {
+    max-width: 11rem;
+  }
+
+  .duel-demo-result {
+    display: none;
+  }
+
+  .duel-demo:has(input[value='a']:checked) .duel-demo-result[data-for='a'],
+  .duel-demo:has(input[value='b']:checked) .duel-demo-result[data-for='b'] {
+    display: block;
+  }
+
+  .duel-demo:has(input[value='a']:checked) [data-side='b'] .duel-niche,
+  .duel-demo:has(input[value='b']:checked) [data-side='a'] .duel-niche {
+    opacity: 0.35;
+  }
+
+  .duel-demo:has(input[value='a']:checked) [data-side='b'] .duel-niche::before,
+  .duel-demo:has(input[value='b']:checked) [data-side='a'] .duel-niche::before {
+    opacity: 0;
+  }
+
+  .duel-demo .duel-demo-choose:has(:checked) {
+    box-shadow:
+      0 0 0 2px var(--surface),
+      0 0 0 4px var(--accent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .duel-demo:has(input[value='a']:checked) [data-side='a'] .duel-niche,
+    .duel-demo:has(input[value='b']:checked) [data-side='b'] .duel-niche {
+      translate: 0 -0.5rem;
+    }
+
+    .duel-demo:has(input[value='a']:checked) [data-side='b'] .duel-niche,
+    .duel-demo:has(input[value='b']:checked) [data-side='a'] .duel-niche {
+      scale: 0.94;
+    }
+  }
+}
