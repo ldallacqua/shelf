@@ -11,7 +11,7 @@
     "trophies": "Troféus",
     "placing": "Organizar",
     "duel": "Duelo",
-    "waiting": "{count, plural, one {# jogo esperando} other {# jogos esperando}}",
+    "waiting": "{count, plural, =0 {# jogos esperando} one {# jogo esperando} other {# jogos esperando}}",
     "menu": "Menu",
     "igdbCredit": "Dados e capas dos jogos: <link>IGDB.com</link> e Steam.",
     "dismiss": "Dispensar",
@@ -238,7 +238,7 @@
       "onShelf": "Na sua estante",
       "physical": "Físico",
       "digital": "Digital",
-      "together": "Uma caixa, com {count, plural, one {# cópia} other {# cópias}} dentro"
+      "together": "Uma caixa, com {count, plural, =0 {# cópias} one {# cópia} other {# cópias}} dentro"
     },
     "add": {
       "eyebrow": "Adicionar",
@@ -258,7 +258,7 @@
       "where": "PC · Steam",
       "whereNintendo": "Switch · Nintendo · cartucho",
       "hours": "{hours} h",
-      "onShelf": "{count, plural, one {# jogo na sua estante} other {# jogos na sua estante}}",
+      "onShelf": "{count, plural, =0 {# jogos na sua estante} one {# jogo na sua estante} other {# jogos na sua estante}}",
       "daily": "De novo amanhã, sozinho"
     },
     "views": {
@@ -303,8 +303,8 @@
       },
       "length": "{hours, number} h",
       "lengthRange": "{low, number}–{high, number} h",
-      "lengthLong": "cerca de {hours, plural, one {# hora} other {# horas}}",
-      "lengthRangeLong": "de {low, number} a {high, plural, one {# hora} other {# horas}}",
+      "lengthLong": "cerca de {hours, plural, =0 {# horas} one {# hora} other {# horas}}",
+      "lengthRangeLong": "de {low, number} a {high, plural, =0 {# horas} one {# hora} other {# horas}}",
       "scoreLong": "{rating, number} de 100 no IGDB",
       "unknown": "Sem dado",
       "goesOn": "{title} segue para a semifinal.",
@@ -337,13 +337,13 @@
         "updates": "Atualiza sozinho enquanto está aberto"
       },
       "notes": "Notas da versão",
-      "window": "Shelf para Windows, com {title} pronto para jogar: {hours, plural, one {# hora jogada} other {# horas jogadas}} na Steam, os saves com backup no OneDrive",
+      "window": "Shelf para Windows, com {title} pronto para jogar: {hours, plural, =0 {# horas jogadas} one {# hora jogada} other {# horas jogadas}} na Steam, os saves com backup no OneDrive",
       "nav": {
         "library": "Biblioteca",
         "trophies": "Troféus"
       },
       "update": "Atualizar",
-      "where": "PC · Steam · {hours, plural, one {# hora jogada} other {# horas jogadas}}",
+      "where": "PC · Steam · {hours, plural, =0 {# horas jogadas} one {# hora jogada} other {# horas jogadas}}",
       "play": "Jogar",
       "saves": "Saves",
       "savesWhere": "OneDrive · há 2 h",
@@ -395,8 +395,8 @@
       "example": "Conversa de exemplo",
       "question": "Algo curto que eu ainda não comecei, para jogar no Switch?",
       "reading": "Lendo a sua estante",
-      "answer": "{count, plural, one {Um jogo da sua estante serve:} other {# jogos da sua estante servem:}}",
-      "pick": "{platform} · cerca de {hours, plural, one {# hora} other {# horas}}"
+      "answer": "{count, plural, =0 {# jogos da sua estante servem:} one {Um jogo da sua estante serve:} other {# jogos da sua estante servem:}}",
+      "pick": "{platform} · cerca de {hours, plural, =0 {# horas} one {# hora} other {# horas}}"
     },
     "closing": {
       "label": "Sua estante",
@@ -464,10 +464,10 @@
     },
     "metaTitle": "Biblioteca",
     "title": "Biblioteca",
-    "emptyTitle": "A estante está sendo abastecida.",
-    "emptyBody": "Os jogos vão ficar aqui em breve.",
+    "emptyTitle": "Ainda não há jogos nesta estante.",
+    "emptyBody": "Eles vão ficar aqui quando forem adicionados.",
     "emptyMineTitle": "Sua estante está vazia.",
-    "emptyMineBody": "Adicione um jogo, ou cole uma lista inteira, e ele vai ficar aqui.",
+    "emptyMineBody": "Adicione um jogo, ou cole uma lista inteira, e seus jogos vão ficar aqui.",
     "shelfTitle": "Estante de {name}",
     "privateTitle": "Uma estante privada",
     "atHandle": "@{handle}",
@@ -490,9 +490,9 @@
     "hoursShort": "{count, number} h",
     "stats": {
       "label": "Totais da biblioteca",
-      "games": "{count, plural, one {jogo} other {jogos}}",
-      "finished": "{count, plural, one {zerado} other {zerados}}",
-      "hours": "{count, plural, one {hora} other {horas}}"
+      "games": "{count, plural, =0 {jogos} one {jogo} other {jogos}}",
+      "finished": "{count, plural, =0 {zerados} one {zerado} other {zerados}}",
+      "hours": "{count, plural, =0 {horas} one {hora} other {horas}}"
     },
     "view": {
       "label": "Visualização",
@@ -529,7 +529,7 @@
     },
     "shelf3d": {
       "index": "Prateleiras ao longo da parede",
-      "tick": "{shelf}, {count, plural, one {# jogo} other {# jogos}}",
+      "tick": "{shelf}, {count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
       "fallback": {
         "unsupported": "O 3D não conseguiu abrir neste navegador, então a estante está em 2D.",
         "lost": "A estante 3D parou quando a placa de vídeo reiniciou, então a estante está em 2D.",
@@ -584,10 +584,10 @@
     },
     "shelf": {
       "tabs": "Ir para uma prateleira",
-      "notOwned": "Não tenho",
+      "notOwned": "Sem cópia",
       "yearUnknown": "Ano desconhecido",
       "all": "Todos os jogos",
-      "count": "{count, plural, one {# jogo} other {# jogos}}",
+      "count": "{count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
       "playing": "{count} jogando",
       "games": "Jogos na prateleira {shelf}",
       "fold": "Recolher a prateleira {shelf}",
@@ -596,9 +596,9 @@
     "box": {
       "titled": "{title} ({year})",
       "owned": "{title}, {platform}, {format}, {status}",
-      "notOwned": "{title}, não tenho, {status}",
-      "wanted": "{title}, não tenho, {status}, quero em {platform}{more, plural, =0 {} one { e mais #} other { e mais #}}",
-      "alsoOn": "{description}, tenho em {count} plataformas",
+      "notOwned": "{title}, sem cópia, {status}",
+      "wanted": "{title}, sem cópia, {status}, quer em {platform}{more, plural, =0 {} one { e mais #} other { e mais #}}",
+      "alsoOn": "{description}, em {count} plataformas",
       "private": "{description}, só você vê"
     },
     "list": {
@@ -606,7 +606,7 @@
       "title": "Título",
       "platforms": "Plataformas",
       "status": "Status",
-      "rating": "Minha nota",
+      "rating": "Nota",
       "igdb": "IGDB",
       "playtime": "Jogado",
       "added": "Adicionado",
@@ -635,7 +635,7 @@
       "clear": "Mostrar todos os jogos, não só: {filter}"
     },
     "count": "{count, number}",
-    "group": "{name}, {count, plural, one {um jogo} other {# jogos}}",
+    "group": "{name}, {count, plural, =0 {# jogos} one {um jogo} other {# jogos}}",
     "found": "{count, plural, =0 {Nenhum jogo encontrado.} one {Um jogo encontrado.} other {# jogos encontrados.}}",
     "empty": "Nenhum jogo daqui corresponde.",
     "failed": "Não foi possível ler esta lista.",
@@ -651,7 +651,7 @@
     "notFound": "Não há jogo neste endereço.",
     "notFoundBody": "Ele pode ter saído da estante, ou o endereço pode ter um erro de digitação.",
     "notFoundAction": "Ir para a biblioteca",
-    "hours": "{count, plural, one {# hora} other {# horas}}",
+    "hours": "{count, plural, =0 {# horas} one {# hora} other {# horas}}",
     "mine": "Meu",
     "status": "Status",
     "rating": "Minha nota",
@@ -693,7 +693,7 @@
         "unreachable": "A {source} não respondeu da última vez que elas foram lidas: estas são de {day}.",
         "private": "A {source} as mantém privadas agora: estas são de {day}."
       },
-      "added": "{count, plural, one {Uma conquista foi adicionada desde então, e é lida na próxima sincronização.} other {# conquistas foram adicionadas desde então, e são lidas na próxima sincronização.}}",
+      "added": "{count, plural, =0 {# conquistas foram adicionadas desde então, e são lidas na próxima sincronização.} one {Uma conquista foi adicionada desde então, e é lida na próxima sincronização.} other {# conquistas foram adicionadas desde então, e são lidas na próxima sincronização.}}",
       "earned": "{earned} de {total} desbloqueadas",
       "complete": "Todas as {total} desbloqueadas",
       "progressLabel": "Conquistas desbloqueadas na {source}",
@@ -720,7 +720,7 @@
         "recent": "Desbloqueadas há menos tempo",
         "rarest": "Mais raras primeiro"
       },
-      "reveal": "{count, plural, one {Mostrar a oculta} other {Mostrar as # ocultas}}",
+      "reveal": "{count, plural, =0 {Mostrar as # ocultas} one {Mostrar a oculta} other {Mostrar as # ocultas}}",
       "hiddenName": "Conquista oculta",
       "hiddenBody": "Os detalhes ficam ocultos até ela ser desbloqueada.",
       "unlockedOn": "Desbloqueada em {when}",
@@ -754,8 +754,8 @@
       "ofTen": "de 10",
       "positive": "positivas",
       "none": "Ainda sem notas",
-      "ratings": "{count, plural, one {{shown} avaliação} other {{shown} avaliações}}",
-      "reviews": "{count, plural, one {{shown} análise} other {{shown} análises}}",
+      "ratings": "{count, plural, =0 {{shown} avaliações} one {{shown} avaliação} other {{shown} avaliações}}",
+      "reviews": "{count, plural, =0 {{shown} análises} one {{shown} análise} other {{shown} análises}}",
       "steamWords": {
         "overwhelminglyPositive": "Extremamente positivas",
         "veryPositive": "Muito positivas",
@@ -807,9 +807,9 @@
     "long": {
       "none": "nenhum tempo",
       "under": "menos de um minuto",
-      "minutes": "{minutes, plural, one {# minuto} other {# minutos}}",
-      "hoursMinutes": "{hours, plural, one {# hora} other {# horas}} e {minutes, plural, one {# minuto} other {# minutos}}",
-      "hours": "{hours, plural, one {# hora} other {# horas}}"
+      "minutes": "{minutes, plural, =0 {# minutos} one {# minuto} other {# minutos}}",
+      "hoursMinutes": "{hours, plural, =0 {# horas} one {# hora} other {# horas}} e {minutes, plural, =0 {# minutos} one {# minuto} other {# minutos}}",
+      "hours": "{hours, plural, =0 {# horas} one {# hora} other {# horas}}"
     }
   },
   "PlayTime": {
@@ -831,7 +831,7 @@
     "more": "Opções do tempo de jogo",
     "idleMenu": "Tirar tempo parado…",
     "idleField": "Tempo parado",
-    "idleHint": "Sai do que {stores} {count, plural, one {informa} other {informam}}, nunca do que o Shelf para Windows contou.",
+    "idleHint": "Sai do que {stores} {count, plural, =0 {informam} one {informa} other {informam}}, nunca do que o Shelf para Windows contou.",
     "idleSave": "Salvar",
     "idleCancel": "Cancelar",
     "help": "Como o tempo de jogo é contado",
@@ -844,9 +844,9 @@
     "loading": "Carregando os troféus…",
     "metaTitle": "Troféus",
     "shelfMetaTitle": "Troféus de {name}",
-    "metaDescription": "{count, plural, one {# jogo zerado} other {# jogos zerados}} por {name}, cada um sob a própria luz, pelo ano em que foi zerado.",
+    "metaDescription": "{count, plural, =0 {# jogos zerados} one {# jogo zerado} other {# jogos zerados}} por {name}, cada um sob a própria luz, pelo ano em que foi zerado.",
     "shelfYearMetaTitle": "O {year} de {name} em jogos",
-    "yearMetaDescription": "{count, plural, one {# jogo zerado} other {# jogos zerados}} por {name} em {year}, e o que eles somam.",
+    "yearMetaDescription": "{count, plural, =0 {# jogos zerados} one {# jogo zerado} other {# jogos zerados}} por {name} em {year}, e o que eles somam.",
     "title": "Troféus",
     "emptyTitle": "Nenhum jogo zerado ainda.",
     "emptyBody": "Os jogos zerados ficarão aqui, cada um sob a própria luz.",
@@ -864,7 +864,7 @@
       "rating": "Nota média",
       "outOfTen": "de 10",
       "median": "Tempo mediano",
-      "hoursUnit": "{count, plural, one {hora} other {horas}}",
+      "hoursUnit": "{count, plural, =0 {horas} one {hora} other {horas}}",
       "dropped": "Abandonados"
     },
     "charts": {
@@ -882,7 +882,7 @@
       "themes": "Temas",
       "platforms": "Plataformas",
       "shareOf": "{share} dos começados",
-      "rankedSays": "{name}: {count, plural, one {# jogo zerado} other {# jogos zerados}}",
+      "rankedSays": "{name}: {count, plural, =0 {# jogos zerados} one {# jogo zerado} other {# jogos zerados}}",
       "rankBy": "Ordenar por",
       "by": {
         "finished": "Zerados",
@@ -916,8 +916,8 @@
       "hours": "{count, plural, =0 {Menos de uma hora} one {# hora} other {# horas}}",
       "outOfTen": "{value} de 10",
       "released": "Lançado em {year}",
-      "games": "{count, plural, one {# jogo} other {# jogos}}",
-      "months": "{count, plural, one {# mês seguido} other {# meses seguidos}}",
+      "games": "{count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
+      "months": "{count, plural, =0 {# meses seguidos} one {# mês seguido} other {# meses seguidos}}",
       "span": "de {from} a {to}",
       "longest": "Zerado mais longo",
       "platform": "Mais jogado no"
@@ -940,13 +940,13 @@
         "close": "Quase perfeito",
         "rarest": "Conquista mais rara"
       },
-      "record": "{year} já é o seu melhor ano: {count, plural, one {# jogo zerado} other {# jogos zerados}}, mais que os {best} de {bestYear}.",
-      "ahead": "Você zerou {count, plural, one {# jogo} other {# jogos}} este ano, {more} a mais que em todo o {lastYear}.",
-      "behind": "Com {count, plural, one {mais um jogo} other {mais # jogos}}, este ano empata com os {last} de {lastYear}.",
-      "anniversary": "{years, plural, one {Há um ano} other {Há # anos}}, neste mês, você zerou {title}.",
+      "record": "{year} já é o seu melhor ano: {count, plural, =0 {# jogos zerados} one {# jogo zerado} other {# jogos zerados}}, mais que os {best} de {bestYear}.",
+      "ahead": "Você zerou {count, plural, =0 {# jogos} one {# jogo} other {# jogos}} este ano, {more} a mais que em todo o {lastYear}.",
+      "behind": "Com {count, plural, =0 {mais # jogos} one {mais um jogo} other {mais # jogos}}, este ano empata com os {last} de {lastYear}.",
+      "anniversary": "{years, plural, =0 {Há # anos} one {Há um ano} other {Há # anos}}, neste mês, você zerou {title}.",
       "shift": "{genre} lidera o que você zerou em {year}, à frente do seu favorito de sempre, {favorite}.",
       "finisher": "Você zera {share} dos jogos de {genre} que começa, contra {overall} de tudo o que começa.",
-      "maker": "A desenvolvedora com a sua maior nota é {name}: {rating} de 10 em {count, plural, one {# jogo zerado} other {# jogos zerados}}.",
+      "maker": "A desenvolvedora com a sua maior nota é {name}: {rating} de 10 em {count, plural, =0 {# jogos zerados} one {# jogo zerado} other {# jogos zerados}}.",
       "versus": "Você dá notas {gap} {direction, select, higher {mais altas} other {mais baixas}} que os jogadores do IGDB, em {count} jogos.",
       "paceLonger": "Você leva {ratio} vezes o tempo de uma partida normal, segundo o IGDB, nos jogos que zera.",
       "paceShorter": "Você zera os jogos em {share} do tempo de uma partida normal, segundo o IGDB.",
@@ -954,11 +954,11 @@
       "ageNew": "{share} dos jogos que você zerou saíram menos de um ano antes de você zerá-los.",
       "unlocksBest": "Você desbloqueou {count} conquistas este ano, mais do que em qualquer ano antes: {bestYear} teve {best}.",
       "unlocksAhead": "Você desbloqueou {count} conquistas este ano, já mais do que as {last} de {lastYear} inteiro.",
-      "close": "{count, plural, one {Falta uma conquista} other {Faltam # conquistas}} para {title} ficar perfeito.",
+      "close": "{count, plural, =0 {Faltam # conquistas} one {Falta uma conquista} other {Faltam # conquistas}} para {title} ficar perfeito.",
       "rarest": "Sua conquista mais rara é {name}, em {title}: só {share} dos jogadores do Steam a têm."
     },
     "ratings": {
-      "spread": "{count, plural, one {# jogo com nota} other {# jogos com nota}}, por nota",
+      "spread": "{count, plural, =0 {# jogos com nota} one {# jogo com nota} other {# jogos com nota}}, por nota",
       "spreadCaption": "Jogos por nota",
       "spreadSays": "Nota {rating} ou {half}: {count, plural, =0 {nenhum} one {# jogo} other {# jogos}}",
       "spreadTen": "Nota 10: {count, plural, =0 {nenhum} one {# jogo} other {# jogos}}",
@@ -979,7 +979,7 @@
     },
     "series": {
       "title": "Séries",
-      "complete": "{count, plural, one {# zerada inteira} other {# zeradas inteiras}}",
+      "complete": "{count, plural, =0 {# zeradas inteiras} one {# zerada inteira} other {# zeradas inteiras}}",
       "progress": "{finished} de {total}",
       "whole": "Inteira",
       "inLibrary": "Ver na biblioteca"
@@ -996,8 +996,8 @@
       "from": "Do Steam, lidas em {date}",
       "unlocked": "Conquistas desbloqueadas",
       "unlockedIn": "Desbloqueadas em {year}",
-      "ofAvailable": "{percent} de {count, plural, one {# conquista} other {# conquistas}}",
-      "inGames": "em {count, plural, one {# jogo} other {# jogos}}",
+      "ofAvailable": "{percent} de {count, plural, =0 {# conquistas} one {# conquista} other {# conquistas}}",
+      "inGames": "em {count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
       "perfect": "Jogos perfeitos",
       "perfectIn": "Perfeitos em {year}",
       "perfectShare": "{share} dos jogos com uma conquista",
@@ -1011,23 +1011,23 @@
       "year": "Ano",
       "month": "Mês",
       "unlockedHead": "Desbloqueadas",
-      "yearSays": "{year}: {count, plural, one {# conquista desbloqueada} other {# conquistas desbloqueadas}}",
-      "monthSays": "{month}: {count, plural, one {# conquista desbloqueada} other {# conquistas desbloqueadas}}",
+      "yearSays": "{year}: {count, plural, =0 {# conquistas desbloqueadas} one {# conquista desbloqueada} other {# conquistas desbloqueadas}}",
+      "monthSays": "{month}: {count, plural, =0 {# conquistas desbloqueadas} one {# conquista desbloqueada} other {# conquistas desbloqueadas}}",
       "genres": "Desbloqueadas, por gênero",
       "genreSays": "{name}: {share} de {available} conquistas desbloqueadas, em {games} jogos",
-      "genreGames": "{count, plural, one {# jogo} other {# jogos}}",
+      "genreGames": "{count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
       "bestDay": "Melhor dia",
       "bestDayNote": "{count} desbloqueadas, a maioria em {title}",
       "streak": "Dias seguidos",
-      "days": "{count, plural, one {# dia} other {# dias}}",
+      "days": "{count, plural, =0 {# dias} one {# dia} other {# dias}}",
       "span": "{from} a {to}",
       "quickest": "Perfeito mais rápido",
       "slowest": "Perfeito mais demorado",
       "took": "{lasted} da primeira conquista à última, de {count}",
       "lastedHours": "{count, plural, =0 {Menos de uma hora} one {# hora} other {# horas}}",
-      "lastedDays": "{count, plural, one {# dia} other {# dias}}",
-      "lastedMonths": "{count, plural, one {# mês} other {# meses}}",
-      "lastedYears": "{count, plural, one {# ano} other {# anos}}",
+      "lastedDays": "{count, plural, =0 {# dias} one {# dia} other {# dias}}",
+      "lastedMonths": "{count, plural, =0 {# meses} one {# mês} other {# meses}}",
+      "lastedYears": "{count, plural, =0 {# anos} one {# ano} other {# anos}}",
       "milestones": "Marcos",
       "nth": "{nth}ª conquista",
       "firstPerfect": "Primeiro jogo perfeito",
@@ -1040,7 +1040,7 @@
       "rarities": "Conquistas por raridade",
       "rarity": "Raridade",
       "unlocksHead": "Conquistas",
-      "raritySays": "{rarity}, {range} dos jogadores do Steam: {count, plural, one {# conquista} other {# conquistas}}",
+      "raritySays": "{rarity}, {range} dos jogadores do Steam: {count, plural, =0 {# conquistas} one {# conquista} other {# conquistas}}",
       "names": {
         "ultra": "Ultrarrara",
         "very": "Muito rara",
@@ -1088,38 +1088,38 @@
       "inBacklog": "Na fila",
       "someday": "{count, plural, =0 {Nada para algum dia} other {Mais # para algum dia}}",
       "left": "Horas restantes",
-      "hoursUnit": "{count, plural, one {hora} other {horas}}",
-      "timed": "Estimativa do IGDB, de {timed} de {count, plural, one {# jogo} other {# jogos}}",
-      "timedRange": "Do tempo rápido ao normal do IGDB, de {timed} de {count, plural, one {# jogo} other {# jogos}}",
+      "hoursUnit": "{count, plural, =0 {horas} one {hora} other {horas}}",
+      "timed": "Estimativa do IGDB, de {timed} de {count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
+      "timedRange": "Do tempo rápido ao normal do IGDB, de {timed} de {count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
       "range": "{low} a {high}",
       "clear": "Para zerar a fila",
-      "monthsUnit": "{count, plural, one {mês} other {meses}}",
-      "pace": "No ritmo das {count, plural, one {# hora} other {# horas}} do que você zerou nos últimos doze meses",
+      "monthsUnit": "{count, plural, =0 {meses} one {mês} other {meses}}",
+      "pace": "No ritmo das {count, plural, =0 {# horas} one {# hora} other {# horas}} do que você zerou nos últimos doze meses",
       "quickest": "Mais rápidos de zerar",
       "bestRated": "Mais bem avaliados, ainda esperando",
       "oldest": "Lançados há mais tempo",
-      "hoursLeft": "{count, plural, one {Falta # hora} other {Faltam # horas}}",
+      "hoursLeft": "{count, plural, =0 {Faltam # horas} one {Falta # hora} other {Faltam # horas}}",
       "underAnHour": "Falta menos de uma hora",
       "igdbRating": "{value} no IGDB",
       "gameSays": "{title}, {said}",
       "genres": "Esperando, por gênero",
       "platforms": "Esperando, por plataforma",
-      "countSays": "{name}: {count, plural, one {# jogo esperando} other {# jogos esperando}}",
-      "unsorted": "{count, plural, one {Mais # jogo} other {Mais # jogos}} das sincronizações, ainda a definir",
+      "countSays": "{name}: {count, plural, =0 {# jogos esperando} one {# jogo esperando} other {# jogos esperando}}",
+      "unsorted": "{count, plural, =0 {Mais # jogos} one {Mais # jogo} other {Mais # jogos}} das sincronizações, ainda a definir",
       "gamesHead": "Jogos"
     },
     "card": {
       "label": "Troféus",
       "title": "Troféus de {name}",
       "yearTitle": "O {year} de {name} em jogos",
-      "finished": "{count, plural, one {jogo zerado} other {jogos zerados}}",
-      "finishedIn": "{count, plural, one {jogo zerado em {year}} other {jogos zerados em {year}}}",
-      "hours": "{count, plural, one {hora} other {horas}}",
+      "finished": "{count, plural, =0 {jogos zerados} one {jogo zerado} other {jogos zerados}}",
+      "finishedIn": "{count, plural, =0 {jogos zerados em {year}} one {jogo zerado em {year}} other {jogos zerados em {year}}}",
+      "hours": "{count, plural, =0 {horas} one {hora} other {horas}}",
       "genre": "Gênero nº 1",
-      "unlocked": "{count, plural, one {conquista} other {conquistas}}",
-      "perfect": "{count, plural, one {perfeito} other {perfeitos}}",
-      "alt": "Cartão de troféus de {name}: {count, plural, one {# jogo zerado} other {# jogos zerados}}",
-      "altYear": "O {year} de {name} em jogos: {count, plural, one {# jogo zerado} other {# jogos zerados}}"
+      "unlocked": "{count, plural, =0 {conquistas} one {conquista} other {conquistas}}",
+      "perfect": "{count, plural, =0 {perfeitos} one {perfeito} other {perfeitos}}",
+      "alt": "Cartão de troféus de {name}: {count, plural, =0 {# jogos zerados} one {# jogo zerado} other {# jogos zerados}}",
+      "altYear": "O {year} de {name} em jogos: {count, plural, =0 {# jogos zerados} one {# jogo zerado} other {# jogos zerados}}"
     },
     "share": {
       "title": "Compartilhar",
@@ -1142,7 +1142,7 @@
       "none": "Nenhum jogo zerado combina com isso."
     },
     "undated": "Dia não registrado",
-    "count": "{count, plural, one {# jogo} other {# jogos}}",
+    "count": "{count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
     "finishedOn": "Zerado em {date}",
     "hours": "{count, plural, =0 {Menos de uma hora} one {# hora} other {# horas}}",
     "rating": "{value} de 10",
@@ -1193,24 +1193,24 @@
       "label": "Buscar na biblioteca",
       "placeholder": "Busque títulos, ou filtre: genre:rpg -theme:horror",
       "clear": "Limpar a busca",
-      "ignored": "{count, plural, one {Uma parte não foi entendida e ficou de fora.} other {# partes não foram entendidas e ficaram de fora.}}",
+      "ignored": "{count, plural, =0 {# partes não foram entendidas e ficaram de fora.} one {Uma parte não foi entendida e ficou de fora.} other {# partes não foram entendidas e ficaram de fora.}}",
       "short": "Buscar na biblioteca"
     },
     "status": {
       "label": "Status",
       "all": "Todos",
-      "counted": "{status}, {count, plural, one {# jogo} other {# jogos}}"
+      "counted": "{status}, {count, plural, =0 {# jogos} one {# jogo} other {# jogos}}"
     },
     "open": "{count, plural, =0 {Filtros} one {Filtros, # ativo} other {Filtros, # ativos}}",
     "openShort": "Filtros",
     "keys": {
       "status": "Status",
-      "owned": "Plataforma que tenho",
-      "wanted": "Quero em",
+      "owned": "Com cópia em",
+      "wanted": "Quer em",
       "format": "Formato",
       "store": "Loja",
-      "copies": "Plataformas que tenho",
-      "rating": "Minha nota",
+      "copies": "Plataformas com cópia",
+      "rating": "Nota",
       "hours": "Tempo jogado",
       "completed": "Zerado em",
       "added": "Adicionado em",
@@ -1246,7 +1246,7 @@
       },
       "has": {
         "notes": "Anotações",
-        "rating": "Minha nota",
+        "rating": "Nota",
         "playtime": "Tempo jogado",
         "cover": "Uma capa"
       },
@@ -1315,9 +1315,9 @@
       "removeGroup": "Remover o grupo {number}",
       "addGroup": "Adicionar um grupo, ligado por ou",
       "asText": "Também neste grupo, escrito como texto. Mude no campo de busca:",
-      "mine": "Meus",
+      "mine": "Nesta estante",
       "igdb": "Do IGDB",
-      "results": "{count, plural, =0 {Nenhum jogo combina} one {# jogo combina} other {# jogos combinam}}",
+      "results": "{count, plural, =0 {Nenhum jogo encontrado} one {# jogo encontrado} other {# jogos encontrados}}",
       "loading": "Carregando a biblioteca…",
       "loadingKeywords": "Carregando as palavras-chave…",
       "notValue": "sem {value}",
@@ -1329,8 +1329,8 @@
       "nothingFound": "Nada com esse nome.",
       "nothing": "Nada para escolher nesta biblioteca.",
       "value": {
-        "off": "{value}, {count, plural, one {# jogo} other {# jogos}}",
-        "exclude": "{value}, {count, plural, one {# jogo} other {# jogos}}, excluído"
+        "off": "{value}, {count, plural, =0 {# jogos} one {# jogo} other {# jogos}}",
+        "exclude": "{value}, {count, plural, =0 {# jogos} one {# jogo} other {# jogos}}, excluído"
       },
       "exclude": "Excluir {value}",
       "more": "Mostrar mais {count}",
@@ -1352,16 +1352,16 @@
     }
   },
   "Sort": {
-    "label": "Ordem",
+    "label": "Ordenar",
     "menu": "Ordenar por",
     "keys": {
       "title": "Título",
-      "added": "Data em que adicionei",
+      "added": "Adicionado em",
       "released": "Data de lançamento",
-      "rating": "Minha nota",
+      "rating": "Nota",
       "igdb": "Nota no IGDB",
       "hours": "Tempo jogado",
-      "completed": "Data em que zerei",
+      "completed": "Zerado em",
       "status": "Status",
       "length": "Tempo para zerar",
       "color": "Cor",
@@ -1371,8 +1371,8 @@
     "descending": "{key}, decrescente",
     "reverse": "Inverter a ordem",
     "shuffle": "Embaralhar de novo",
-    "result": "{count, plural, one {# jogo, ordenado por {order}} other {# jogos, ordenados por {order}}}",
-    "shuffled": "{count, plural, one {# jogo, embaralhado} other {# jogos, embaralhados}}"
+    "result": "{count, plural, =0 {# jogos, ordenados por {order}} one {# jogo, ordenado por {order}} other {# jogos, ordenados por {order}}}",
+    "shuffled": "{count, plural, =0 {# jogos, embaralhados} one {# jogo, embaralhado} other {# jogos, embaralhados}}"
   },
   "Shelves": {
     "open": "Prateleiras",
@@ -1694,7 +1694,7 @@
       "unsorted": "A definir",
       "hours": "Horas das lojas",
       "archived": "Arquivados",
-      "count": "{count, plural, one {# jogo} other {# jogos}}"
+      "count": "{count, plural, =0 {# jogos} one {# jogo} other {# jogos}}"
     },
     "storeHours": {
       "metaTitle": "Horas das lojas",
@@ -1734,17 +1734,17 @@
       "added": "Adicionados por último"
     },
     "select": "Selecionar {title}",
-    "selectAll": "{count, plural, one {Selecionar o # jogo} other {Selecionar todos os # jogos}}",
-    "underAnHour": "{count, plural, one {Selecionar o # jogo com menos de uma hora} other {Selecionar os # jogos com menos de uma hora}}",
-    "selected": "{count, plural, one {# jogo selecionado} other {# jogos selecionados}}",
+    "selectAll": "{count, plural, =0 {Selecionar todos os # jogos} one {Selecionar o # jogo} other {Selecionar todos os # jogos}}",
+    "underAnHour": "{count, plural, =0 {Selecionar os # jogos com menos de uma hora} one {Selecionar o # jogo com menos de uma hora} other {Selecionar os # jogos com menos de uma hora}}",
+    "selected": "{count, plural, =0 {# jogos selecionados} one {# jogo selecionado} other {# jogos selecionados}}",
     "putThem": "Dar um status a eles:",
     "clear": "Limpar a seleção",
     "statusOf": "Status de {title}",
     "hours": "{hours, number} h jogadas",
     "lastPlayed": "jogado por último em {day}",
     "more": "Mostrar mais {count, number}",
-    "placedMany": "{count, plural, one {Status de # jogo: {status}.} other {Status de # jogos: {status}.}}",
-    "undoneMany": "{count, plural, one {# jogo voltou a ser como era.} other {# jogos voltaram a ser como eram.}}",
+    "placedMany": "{count, plural, =0 {Status de # jogos: {status}.} one {Status de # jogo: {status}.} other {Status de # jogos: {status}.}}",
+    "undoneMany": "{count, plural, =0 {# jogos voltaram a ser como eram.} one {# jogo voltou a ser como era.} other {# jogos voltaram a ser como eram.}}",
     "notPlaced": "Não deu para mudar o status de {title}. Tente de novo.",
     "notRated": "A nota de {title} não foi salva. Tente de novo.",
     "archiveTip": "Arquivar: some da estante e de todas as contas, com tudo guardado. Traga de volta na aba Arquivados, em Organizar.",
@@ -1757,7 +1757,7 @@
     "tally": "Seus jogos por status",
     "left": "{count, plural, =0 {Nada para organizar.} one {Falta # jogo para organizar.} other {Faltam # jogos para organizar.}}",
     "placedShare": "Jogos com status",
-    "toPlace": "{count, plural, one {# jogo para organizar} other {# jogos para organizar}}"
+    "toPlace": "{count, plural, =0 {# jogos para organizar} one {# jogo para organizar} other {# jogos para organizar}}"
   },
   "Start": {
     "metaTitle": "Monte sua estante",
@@ -1819,7 +1819,7 @@
         "paste": "Colar uma lista"
       },
       "onShelf": "{count, plural, =0 {Nenhum jogo na sua estante ainda.} one {# jogo na sua estante.} other {# jogos na sua estante.}}",
-      "waiting": "{count, plural, one {# jogo espera sua resposta aí em cima.} other {# jogos esperam sua resposta aí em cima.}}"
+      "waiting": "{count, plural, =0 {# jogos esperam sua resposta aí em cima.} one {# jogo espera sua resposta aí em cima.} other {# jogos esperam sua resposta aí em cima.}}"
     },
     "look": {
       "title": "Deixe com a sua cara",
@@ -1834,11 +1834,11 @@
       "lead": "Os jogos que uma plataforma traz ficam A definir até você dar um status a cada um: Jogando, Na fila, Zerado, Abandonado ou Lista de desejos. Dá para dar nota no mesmo lugar.",
       "waitingTitle": "Esperando um status",
       "nothingYet": "Nada para organizar ainda. Os jogos que chegarem sem status vão esperar aqui.",
-      "left": "{count, plural, one {# dos seus {total, number} jogos ainda está sem status.} other {# dos seus {total, number} jogos ainda estão sem status.}}",
+      "left": "{count, plural, =0 {# dos seus {total, number} jogos ainda estão sem status.} one {# dos seus {total, number} jogos ainda está sem status.} other {# dos seus {total, number} jogos ainda estão sem status.}}",
       "share": "Jogos com status",
       "go": "Organizar meus jogos",
       "later": "Deixar alguns para outro dia não tem problema: eles esperam lá, e o topo da página conta quantos.",
-      "none": "{count, plural, one {Seu # jogo tem status.} other {Todos os seus # jogos têm status.}}"
+      "none": "{count, plural, =0 {Todos os seus # jogos têm status.} one {Seu # jogo tem status.} other {Todos os seus # jogos têm status.}}"
     },
     "ready": {
       "eyebrow": "Tudo pronto",
@@ -1953,14 +1953,14 @@
     "progress": "{done, plural, =0 {Encontrando seus jogos…} other {Adicionados # de {total}…}}",
     "progressLabel": "Jogos adicionados da {source}",
     "achievements": {
-      "known": "{games, plural, =0 {Nenhuma conquista para ler ainda} other {Conquistas lidas de {known} de {games, plural, one {# jogo} other {# jogos}}}}",
+      "known": "{games, plural, =0 {Nenhuma conquista para ler ainda} other {Conquistas lidas de {known} de {games, plural, =0 {# jogos} one {# jogo} other {# jogos}}}}",
       "reading": "Lendo as conquistas: {known} de {games}…",
       "progressLabel": "Conquistas lidas da {source}",
       "private": "A {source} mantém suas conquistas privadas. Deixe Detalhes de jogos como Público <settings>nas configurações de privacidade da Steam</settings>; elas são lidas na próxima sincronização.",
       "unreachable": "A {source} não respondeu sobre as conquistas de alguns jogos. Elas são lidas de novo na próxima sincronização."
     },
     "done": "{count, plural, =0 {Tudo em dia com a {source}.} one {# jogo veio da {source}.} other {# jogos vieram da {source}.}}",
-    "waiting": "{count, plural, one {# jogo espera sua resposta.} other {# jogos esperam sua resposta.}}",
+    "waiting": "{count, plural, =0 {# jogos esperam sua resposta.} one {# jogo espera sua resposta.} other {# jogos esperam sua resposta.}}",
     "daily": "Sincronizar uma vez por dia",
     "disconnect": "Desconectar",
     "disconnectAsk": "Desconectar a {source}? Seus jogos continuam na sua estante, com as horas. O Shelf esquece o que a {source} listou e as suas respostas sobre isso.",
@@ -1975,16 +1975,16 @@
       "signed-out": "A Nintendo encerrou o acesso do Shelf, que dura cerca de dois anos. Entre de novo pela página da Nintendo."
     },
     "lists": {
-      "needs-you": "{count, plural, one {# jogo precisa de você} other {# jogos precisam de você}}",
-      "hidden": "{count, plural, one {# deixado de fora} other {# deixados de fora}}",
-      "not-seen": "{count, plural, one {# não está mais na {source}} other {# não estão mais na {source}}}"
+      "needs-you": "{count, plural, =0 {# jogos precisam de você} one {# jogo precisa de você} other {# jogos precisam de você}}",
+      "hidden": "{count, plural, =0 {# deixados de fora} one {# deixado de fora} other {# deixados de fora}}",
+      "not-seen": "{count, plural, =0 {# não estão mais na {source}} one {# não está mais na {source}} other {# não estão mais na {source}}}"
     },
     "help": {
       "needs-you": "O Shelf não teve certeza de quais jogos são estes. Encontre cada um, ou remova da lista, e o Shelf se lembra.",
       "hidden": "O Shelf deixa estes fora da sua estante, diga a {source} o que disser. Demos, playtests e programas vêm para cá sozinhos.",
       "not-seen": "Continuam na sua estante. A {source} parou de listá-los."
     },
-    "unfound": "{count, plural, one {O Shelf não achou este jogo} other {O Shelf não achou estes # jogos}}",
+    "unfound": "{count, plural, =0 {O Shelf não achou estes # jogos} one {O Shelf não achou este jogo} other {O Shelf não achou estes # jogos}}",
     "unfoundHelp": "Encontre cada um, ou remova da lista.",
     "alsoListed": "A {source} também lista como {titles}.",
     "loading": "Carregando…",
@@ -2125,7 +2125,7 @@
     "searchPlaceholder": "Um título, duas letras ou mais",
     "typeMore": "Digite duas letras ou mais.",
     "searching": "Buscando…",
-    "resultCount": "{count, plural, one {# jogo encontrado. Setas e Enter escolhem.} other {# jogos encontrados. Setas e Enter escolhem.}}",
+    "resultCount": "{count, plural, =0 {# jogos encontrados. Setas e Enter escolhem.} one {# jogo encontrado. Setas e Enter escolhem.} other {# jogos encontrados. Setas e Enter escolhem.}}",
     "steam": {
       "source": "da Steam",
       "title": "Título em todas as estantes",
@@ -2185,7 +2185,7 @@
       "failed": "Não deu certo. Tente de novo."
     },
     "first": "Adicione seu primeiro jogo",
-    "bringIn": "Trazer seus jogos de uma plataforma",
+    "bringIn": "Traga seus jogos de uma plataforma",
     "tabs": "Como adicionar",
     "one": "Um jogo",
     "list": {
@@ -2199,7 +2199,7 @@
       "matching": "Buscando {done} de {total}…",
       "waiting": "O IGDB pediu para irmos mais devagar. Esperando para continuar…",
       "cancel": "Cancelar",
-      "summary": "{total, plural, one {# linha} other {# linhas}}: {exact} exatas, {close} parecidas, {none} sem resultado.",
+      "summary": "{total, plural, =0 {# linhas} one {# linha} other {# linhas}}: {exact} exatas, {close} parecidas, {none} sem resultado.",
       "everyRow": "Em todas as linhas",
       "noChange": "Escolha…",
       "status": "Situação",
@@ -2226,9 +2226,9 @@
       "add": "{count, plural, =0 {Adicionar jogos} one {Adicionar # jogo} other {Adicionar # jogos}}",
       "adding": "Adicionando {done} de {total}…",
       "startOver": "Começar de novo",
-      "added": "{count, plural, one {# jogo adicionado.} other {# jogos adicionados.}}",
-      "failedRows": "{count, plural, one {# jogo não pôde ser adicionado. Ele continua aqui, com o motivo.} other {# jogos não puderam ser adicionados. Eles continuam aqui, com o motivo.}}",
-      "undone": "{count, plural, one {# jogo saiu da estante de novo.} other {# jogos saíram da estante de novo.}}"
+      "added": "{count, plural, =0 {# jogos adicionados.} one {# jogo adicionado.} other {# jogos adicionados.}}",
+      "failedRows": "{count, plural, =0 {# jogos não puderam ser adicionados. Eles continuam aqui, com o motivo.} one {# jogo não pôde ser adicionado. Ele continua aqui, com o motivo.} other {# jogos não puderam ser adicionados. Eles continuam aqui, com o motivo.}}",
+      "undone": "{count, plural, =0 {# jogos saíram da estante de novo.} one {# jogo saiu da estante de novo.} other {# jogos saíram da estante de novo.}}"
     }
   },
   "Stores": {
@@ -2236,8 +2236,8 @@
     "whereToBuy": "Onde comprar",
     "have": "Tenho aqui",
     "want": "Quero aqui",
-    "more": "{count, plural, one {Mais # loja} other {Mais # lojas}}",
-    "all": "{count, plural, one {Ver # loja} other {Ver # lojas}}",
+    "more": "{count, plural, =0 {Mais # lojas} one {Mais # loja} other {Mais # lojas}}",
+    "all": "{count, plural, =0 {Ver # lojas} one {Ver # loja} other {Ver # lojas}}",
     "fewer": "Menos lojas",
     "newTab": "(abre em uma nova aba)",
     "which": "Em qual loja?",

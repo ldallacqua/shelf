@@ -1,7 +1,8 @@
 /**
  * pnpm i18n:check
  * Fails if any language is missing a text, has one English lacks, has an empty
- * one, or disagrees with English about a text's placeholders.
+ * one, disagrees with English about a text's placeholders, or would say zero in the
+ * singular where the language does (Portuguese: "0 jogo").
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'

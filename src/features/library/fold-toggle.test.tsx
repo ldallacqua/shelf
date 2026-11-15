@@ -22,7 +22,7 @@ const shelf = (key = 'platform:167', name = 'PS5') => (
 describe('folding a shelf away', () => {
   it('hides its games, says so, and shows them again', async () => {
     renderWithIntl(shelf())
-    const fold = screen.getByRole('button', { name: 'Fold the PS5 shelf away' })
+    const fold = screen.getByRole('button', { name: 'Hide the PS5 shelf' })
     expect(fold).toHaveAttribute('aria-expanded', 'true')
     expect(fold).toHaveAttribute('aria-controls', 'platform:167-games')
 
@@ -43,7 +43,7 @@ describe('folding a shelf away', () => {
         {shelf('platform:130', 'Switch')}
       </>,
     )
-    await userEvent.click(screen.getByRole('button', { name: 'Fold the Switch shelf away' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Hide the Switch shelf' }))
     expect(JSON.parse(window.localStorage.getItem(COLLAPSED_KEY)!)).toEqual(['platform:130'])
     unmount()
 

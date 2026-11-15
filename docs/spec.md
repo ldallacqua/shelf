@@ -638,7 +638,7 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | Loading | The wall and ledges first, then boxes arriving in a short stagger. Blurred color placeholders stand in for covers. |
 | Loading, anywhere | A skeleton, always: ghosts in the size and shape of what is coming, in the place it will stand, around whatever words are already known. No page says "Loading" in words or shows a spinner; a screen reader alone is told. A button says what it is doing once pressed (Saving…), and a long job counts its way (Adding 3 of 40…): neither is something loading. |
 | Empty library, signed in | An illustration of an empty lit ledge, Add your first game, and Bring your games from a platform, which leads to the page that sets a new shelf up ([section 4.6](#46-setting-a-new-shelf-up)) |
-| Empty library, visitor | The same ledge and one line saying the shelf is being stocked |
+| Empty library, visitor | The same ledge and one line saying the shelf has no games yet, and that they will stand there once added: no promise of when |
 | No results | "No games match these filters", the active filters as removable chips, and Clear all |
 | A cover fails to load | The generated spine colors with the title set in type |
 | The library fails to load | What happened, and Try again |
@@ -1357,7 +1357,7 @@ keeps the figure whole and not below nothing instead.
 | Time to beat | `length` | Range, hours |
 | Kind of game | `kind` | List: main, remake, remaster, expanded, port |
 
-**Mine**
+**On this shelf** (the panel's heading; it said "Mine", the owner's word, which a visitor read as theirs, and the panel says "Rating" for my rating, as the list and the sort do)
 
 | Field | Key | Kind |
 | --- | --- | --- |

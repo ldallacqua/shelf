@@ -480,7 +480,7 @@ describe('StatsLine', () => {
     renderWithIntl(<StatsLine stats={{ games: 230, finished: 79, hours: 4236 }} />)
     const totals = screen.getByRole('group', { name: 'Library totals' })
     expect(totals).toHaveTextContent('230 games')
-    expect(totals).toHaveTextContent('79 finished')
+    expect(totals).toHaveTextContent('79 completed')
     expect(totals).toHaveTextContent('4,236 hours')
   })
 
@@ -506,14 +506,14 @@ describe('EmptyLibrary', () => {
     </ShelfProvider>
   )
 
-  it('says whose shelf is being stocked, in both languages, with nothing for a visitor to do', () => {
+  it('says whose shelf has no games yet, in both languages, with nothing for a visitor to do', () => {
     const { unmount } = renderWithIntl(onShelf(<EmptyLibrary />))
     expect(screen.getByRole('heading', { level: 1, name: "Sample's shelf" })).toBeInTheDocument()
-    expect(screen.getByText('The shelf is being stocked.')).toBeInTheDocument()
+    expect(screen.getByText('No games on this shelf yet.')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     unmount()
     renderWithIntl(onShelf(<EmptyLibrary />), 'pt-BR')
-    expect(screen.getByText('A estante está sendo abastecida.')).toBeInTheDocument()
+    expect(screen.getByText('Ainda não há jogos nesta estante.')).toBeInTheDocument()
   })
 })
 

@@ -238,13 +238,13 @@ describe('SortControl', () => {
 
   it('starts a key the way it is usually wanted: a rating highest first', async () => {
     const { onSort } = sortControl({ key: 'title', descending: false })
-    await userEvent.click(screen.getByRole('menuitemradio', { name: 'My rating' }))
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Rating' }))
     expect(onSort).toHaveBeenCalledWith({ key: 'rating', descending: true })
   })
 
   it('reverses with its button, which says which way it runs now', async () => {
     const { onSort } = sortControl({ key: 'rating', descending: true })
-    await userEvent.click(screen.getByRole('button', { name: 'My rating, descending' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Rating, descending' }))
     expect(onSort).toHaveBeenCalledWith({ key: 'rating', descending: false })
   })
 
@@ -280,7 +280,7 @@ describe('ResultStatus', () => {
     const rating: Sort = { key: 'rating', descending: true }
     rerender(intl(<ResultStatus q="genre:rpg" sort={rating} count={42} />))
     settle()
-    expect(said()).toHaveTextContent('42 games, sorted by My rating, descending')
+    expect(said()).toHaveTextContent('42 games, sorted by Rating, descending')
 
     // Back where it opened is a change too.
     rerender(intl(<ResultStatus q="" sort={{ key: 'random', descending: false }} count={1} />))
