@@ -22,7 +22,7 @@ import {
   type Completion,
 } from '@/domain/library/remembered'
 import type { SmartShelf } from '@/domain/library/shelves'
-import { writeSort, type Sort } from '@/domain/library/sort'
+import { DEFAULT_SORT, writeSort, type Sort } from '@/domain/library/sort'
 import { libraryStats } from '@/domain/library/stats'
 import { occasionalStatuses, type Status } from '@/domain/library/values'
 import {
@@ -79,6 +79,7 @@ import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { Tip } from '@/ui/tooltip'
 
 import { GhostShelves } from './ghosts'
 import { GhostList, ListView } from './list-view'
@@ -121,6 +122,9 @@ const viewParam = parseAsStringLiteral(views)
 
 /** Whether the address names the view, the grouping or the sort: read as written, even if wrong. */
 const arrangingParams = { view: parseAsString, group: parseAsString, sort: parseAsString }
+
+/** The order the library opens in, as an address writes it. */
+const DEFAULT_SORT_TEXT = writeSort(DEFAULT_SORT)
 
 const never = () => () => {}
 
@@ -726,6 +730,11 @@ export function LibraryView({
   const changed =
     shelf !== undefined &&
     (query.q !== shelf.query || sortText !== shelf.sort || group !== shelf.group)
+  // The whole library, filtered, sorted or grouped other than its own way: something to save as
+  // a shelf. As it opens there is nothing to save but a copy of itself (review 01, finding 12).
+  const saveable = shelf
+    ? changed
+    : query.q !== '' || sortText !== DEFAULT_SORT_TEXT || group !== DEFAULT_GROUPING
 
   const viewProps = {
     shelves,
@@ -808,17 +817,24 @@ export function LibraryView({
               />
               <ShelvesMenu shelves={smartShelves} current={shelf?.slug} />
               {/* On a phone the owner's buttons are icons, so the search keeps its width. */}
-              {actions && (!shelf || changed) ? (
-                <Button
-                  variant="primary"
-                  className="flex-none max-sm:px-3"
-                  onClick={() => setSaveOpen(true)}
+              {actions && saveable ? (
+                // Its words for a pointer where only the icon shows.
+                <Tip
+                  label={shelf ? shelfWords('saveChanges') : shelfWords('saveShelf')}
+                  className="sm:hidden"
                 >
-                  <BookmarkPlusIcon aria-hidden="true" />
-                  <span className="max-sm:sr-only">
-                    {shelf ? shelfWords('saveChanges') : shelfWords('saveShelf')}
-                  </span>
-                </Button>
+                  <Button
+                    // A changed shelf's changes are what is in hand; a filtered library, one choice of many.
+                    variant={shelf ? 'primary' : 'secondary'}
+                    className="flex-none max-sm:px-3"
+                    onClick={() => setSaveOpen(true)}
+                  >
+                    <BookmarkPlusIcon aria-hidden="true" />
+                    <span className="max-sm:sr-only">
+                      {shelf ? shelfWords('saveChanges') : shelfWords('saveShelf')}
+                    </span>
+                  </Button>
+                </Tip>
               ) : null}
               {actions && shelf && !changed ? (
                 <Button

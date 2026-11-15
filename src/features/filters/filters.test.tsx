@@ -288,12 +288,12 @@ describe('ResultStatus', () => {
     expect(said()).toHaveTextContent('1 game, shuffled')
   })
 
-  it('leaves no match to the empty shelf to say', () => {
+  it('says when nothing matches, in the region that was always there', () => {
     vi.useFakeTimers()
     const { rerender } = render(intl(<ResultStatus q="" sort={title} count={230} />))
     rerender(intl(<ResultStatus q="zzz" sort={title} count={0} />))
     settle()
-    expect(said()).toBeEmptyDOMElement()
+    expect(said()).toHaveTextContent('No games match these filters.')
   })
 })
 
@@ -317,20 +317,40 @@ describe('ListSection', () => {
     return onChange
   }
 
-  it('with a mouse, a value cycles: off, included, excluded, off (spec 5.2)', async () => {
+  it('a value is a box to check: checked includes it (spec 5.2)', async () => {
+    const onChange = section()
+    const box = screen.getByRole('checkbox', { name: 'Role-playing (RPG), 86 games' })
+    expect(box).toHaveAttribute('aria-checked', 'false')
+    await userEvent.click(box)
+    expect(onChange).toHaveBeenCalledWith({ include: ['rpg'], all: false, exclude: [] })
+  })
+
+  it('checked again, a value is taken off, never excluded by a second click', async () => {
     const onChange = section(['rpg'])
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Role-playing (RPG), 86 games, included' }),
-    )
+    const box = screen.getByRole('checkbox', { name: 'Role-playing (RPG), 86 games' })
+    expect(box).toHaveAttribute('aria-checked', 'true')
+    await userEvent.click(box)
+    expect(onChange).toHaveBeenCalledWith({ include: [], all: false, exclude: [] })
+  })
+
+  it('leaves a value out with the minus beside it, and says so', async () => {
+    const onChange = section()
+    const exclude = screen.getByRole('button', { name: 'Exclude Role-playing (RPG)' })
+    expect(exclude).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.click(exclude)
     expect(onChange).toHaveBeenCalledWith({ include: [], all: false, exclude: ['rpg'] })
   })
 
-  it('on touch, each value has its own include and exclude buttons', async () => {
-    const onChange = section()
-    const include = screen.getByRole('button', { name: 'Include Role-playing (RPG), 86 games' })
-    expect(include).toHaveAttribute('aria-pressed', 'false')
-    await userEvent.click(screen.getByRole('button', { name: 'Exclude Role-playing (RPG)' }))
-    expect(onChange).toHaveBeenCalledWith({ include: [], all: false, exclude: ['rpg'] })
+  it('an excluded value says it, and checking it includes it instead', async () => {
+    const onChange = section([], ['rpg'])
+    expect(screen.getByRole('button', { name: 'Exclude Role-playing (RPG)' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Role-playing (RPG), 86 games, excluded' }),
+    )
+    expect(onChange).toHaveBeenCalledWith({ include: ['rpg'], all: false, exclude: [] })
   })
 
   it('offers any or all once two values are included', async () => {
@@ -341,7 +361,7 @@ describe('ListSection', () => {
 
   it('dims a value that would match nothing', () => {
     section()
-    const strategy = screen.getByRole('button', { name: 'Strategy, 0 games' }).closest('li')
+    const strategy = screen.getByRole('checkbox', { name: 'Strategy, 0 games' }).closest('li')
     expect(strategy).toHaveAttribute('data-empty')
   })
 })
@@ -370,7 +390,7 @@ describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
   it('on a wide window is a column of its own, counting, and never a dialog', () => {
     renderWithIntl(panel(true, true))
     expect(within(column()).getByText('1 game matches')).toBeInTheDocument()
-    expect(within(column()).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
+    expect(within(column()).getByRole('checkbox', { name: 'Backlog, 1 game' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     // Its edges' fades are drawing, not content.
     const edges = column().querySelectorAll('.filters-edge')
@@ -394,7 +414,7 @@ describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
     // Nothing is on its way, so no ghost says so: a page settles once its ghosts are gone.
     expect(hidden.querySelector('.ghost')).not.toBeInTheDocument()
     const dialog = screen.getByRole('dialog', { name: 'Filters' })
-    expect(within(dialog).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('checkbox', { name: 'Backlog, 1 game' })).toBeInTheDocument()
     // Its count and Clear stay at its foot, outside what scrolls.
     expect(dialog.querySelector('[data-dialog-footer]')).toHaveTextContent('1 game matches')
   })
@@ -403,7 +423,7 @@ describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
     const onChange = vi.fn()
     const onClear = vi.fn()
     const { rerender } = render(intl(panel(true, false, { onChange, onClear })))
-    await userEvent.click(within(column()).getByRole('button', { name: 'Backlog, 1 game' }))
+    await userEvent.click(within(column()).getByRole('checkbox', { name: 'Backlog, 1 game' }))
     expect(writeQuery(onChange.mock.calls[0]![0])).toBe('status:backlog')
     rerender(intl(panel(true, false, { onChange, onClear, tree: onChange.mock.calls[0]![0] })))
     await userEvent.click(within(column()).getByRole('button', { name: 'Clear all' }))
@@ -416,7 +436,7 @@ describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
     await userEvent.click(within(dialog).getByText('Theme'))
     rerender(intl(panel(true, false)))
     expect(column().querySelector('details[data-filter="theme"]')).toHaveAttribute('open')
-    expect(within(column()).getByRole('button', { name: 'Horror, 1 game' })).toBeInTheDocument()
+    expect(within(column()).getByRole('checkbox', { name: 'Horror, 1 game' })).toBeInTheDocument()
   })
 
   it('starts with a way past every filter, to the search field', async () => {

@@ -25,12 +25,18 @@ import { ghostOrder } from '@/ui/ghost'
 /** Rows drawn before the layout is measured, over all the tables: two screens of them. */
 const FIRST_ROWS = 30
 
-/** Columns a phone has no room for. Their content is in the game's details instead. */
-const WIDE = 'hidden lg:table-cell'
-const MEDIUM = 'hidden md:table-cell'
+/**
+ * Columns a narrow list has no room for. Their content is in the game's details instead. They
+ * come by the list's own width, not the window's, so the title always keeps about 14rem: the
+ * window's left it 4px at 1024, and starved it wherever the filters stand beside (step 10's
+ * review, 01, finding 9). The cover, platforms and status take 23.75rem; the three numbers add
+ * 17rem, the two dates 18rem.
+ */
+const MEDIUM = 'hidden @min-[55rem]:table-cell'
+const WIDE = 'hidden @min-[73rem]:table-cell'
 /** The same, for the <col> that sizes each of those columns. */
-const WIDE_COLUMN = 'hidden lg:[display:table-column]'
-const MEDIUM_COLUMN = 'hidden md:[display:table-column]'
+const MEDIUM_COLUMN = 'hidden @min-[55rem]:[display:table-column]'
+const WIDE_COLUMN = 'hidden @min-[73rem]:[display:table-column]'
 
 /** The list's columns and their widths. */
 function ListColumns() {
@@ -314,7 +320,7 @@ function GhostRow({ index }: { index: number }) {
 /** The list before its shelves are known: two shelves' names and rows. */
 export function GhostList() {
   return (
-    <div className="pb-6" aria-hidden="true">
+    <div className="@container pb-6" aria-hidden="true">
       {[8, 4].map((count, shelf) => (
         <section key={shelf} className="mt-8 first:mt-4">
           <GhostHeading className="pb-1" />
@@ -353,7 +359,7 @@ export function ListView({
   )
 
   return (
-    <div className="pb-6">
+    <div className="@container pb-6">
       {shelves.map((shelf, index) => {
         const name = shelfName(shelf, t)
         const headingId = `list-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`

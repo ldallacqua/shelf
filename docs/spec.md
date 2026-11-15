@@ -1383,8 +1383,10 @@ Survivor" is a series), so they are two filters.
 Three levels, each a superset of the one before.
 
 **Level 1: the panel.** Each value of a list filter has three states: off, include, exclude.
-On a desktop, clicking a value cycles through them. On touch, each value has explicit include
-and exclude buttons, because a hidden cycle is not discoverable. On a window 1536px wide or
+Each value is a box to check, which includes it, and a minus button beside it, which leaves it
+out; the same with a mouse and on touch. A click that cycled through the three looked like a
+checkbox and wasn't one: a second click, meant to untick, excluded (step 10's review, 01,
+finding 8). On a window 1536px wide or
 more the panel is a column left of the library, always open and in view as the shelves scroll;
 narrower, it is a dialog the Filters button opens (13, Dialogs). The two are one panel: a section open in one
 is open in the other, and the filter is the same either way.

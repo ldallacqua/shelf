@@ -1306,7 +1306,7 @@
     },
     "panel": {
       "title": "Filters",
-      "description": "Each value is off, included or excluded. Changes apply at once.",
+      "description": "Check a value to include it; the minus beside it leaves it out. Changes apply at once.",
       "close": "Close filters",
       "skip": "Skip the filters",
       "groups": "Match any of these groups",
@@ -1330,10 +1330,8 @@
       "nothing": "Nothing to pick in this library.",
       "value": {
         "off": "{value}, {count, plural, one {# game} other {# games}}",
-        "include": "{value}, {count, plural, one {# game} other {# games}}, included",
         "exclude": "{value}, {count, plural, one {# game} other {# games}}, excluded"
       },
-      "include": "Include {value}, {count, plural, one {# game} other {# games}}",
       "exclude": "Exclude {value}",
       "more": "Show {count} more",
       "fewer": "Show fewer",
@@ -1343,7 +1341,9 @@
       "to": "To",
       "notANumber": "Type a number.",
       "notADate": "Type a year, a month or a day: 2025, 2025-06 or 2025-06-14.",
-      "dateHint": "A year, a month or a day: 2025, 2025-06 or 2025-06-14."
+      "dateHint": "A year, a month or a day: 2025, 2025-06 or 2025-06-14.",
+      "show": "{count, plural, =0 {No games to show} one {Show # game} other {Show # games}}",
+      "showGames": "Show the games"
     },
     "noResults": {
       "label": "No games",

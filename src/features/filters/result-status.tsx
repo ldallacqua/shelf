@@ -11,7 +11,9 @@ const SETTLE_MS = 700
 /**
  * Says what a filter or a sort leaves on the shelves (spec 13): "42 games,
  * sorted by My rating, descending". Silent for the address the page opened
- * at, and when nothing matches, which the empty shelf says itself.
+ * at. When nothing matches it says so here, in the region that was always in
+ * the page: the empty shelf arrives already filled, and a region that arrives
+ * filled is often not read out (step 10's review, 01, finding 21).
  */
 export function ResultStatus({
   q,
@@ -24,6 +26,7 @@ export function ResultStatus({
   count?: number
 }) {
   const t = useTranslations('Sort')
+  const filters = useTranslations('Filters')
   const asked = `${q}\n${writeSort(sort)}`
   /** The filter and sort the page opened at, until either changes. */
   const opened = useRef<string | undefined>(asked)
@@ -42,9 +45,12 @@ export function ResultStatus({
   useEffect(() => {
     if (asked === opened.current || words === undefined) return
     opened.current = undefined
-    const timer = setTimeout(() => setSaid(count === 0 ? '' : words), SETTLE_MS)
+    const timer = setTimeout(
+      () => setSaid(count === 0 ? filters('noResults.title') : words),
+      SETTLE_MS,
+    )
     return () => clearTimeout(timer)
-  }, [asked, words, count])
+  }, [asked, words, count, filters])
 
   return (
     <p className="sr-only" role="status">
