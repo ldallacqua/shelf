@@ -17,6 +17,7 @@ import { dateOf, outOfTen } from './format'
 import { platformFor } from './game-box'
 import { GhostHeading } from './ghosts'
 import { StatusMark } from './status-mark'
+import { useRovingShelf } from './use-roving'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
 import { useFollowOnHover } from './follow-hover'
@@ -56,7 +57,15 @@ function ListColumns() {
 }
 
 /** Clicking a heading sorts by it; clicking it again reverses it (spec 3.8). */
-type Sorting = { sort?: Sort; onSort?: (sort: Sort) => void }
+type Sorting = {
+  sort?: Sort
+  onSort?: (sort: Sort) => void
+  /**
+   * Whether Tab stops at the headings: only in the first shelf's table, as the toolbar's Sort
+   * does the same. A pointer sorts from any of them.
+   */
+  inTabOrder?: boolean
+}
 
 function Heading({
   sortKey,
@@ -65,6 +74,7 @@ function Heading({
   children,
   className,
   number,
+  inTabOrder = true,
 }: Sorting & { sortKey: SortKey; children: ReactNode; className?: string; number?: boolean }) {
   const active = sort?.key === sortKey
   const direction = active ? (sort.descending ? 'descending' : 'ascending') : undefined
@@ -79,6 +89,7 @@ function Heading({
         <button
           type="button"
           className="game-sort"
+          tabIndex={inTabOrder ? undefined : -1}
           onClick={() =>
             onSort(active ? { ...sort, descending: !sort.descending } : naturalSort(sortKey))
           }
@@ -116,6 +127,7 @@ function ListTable({
   onOpen,
   sort,
   onSort,
+  inTabOrder,
 }: ListTableProps) {
   const t = useTranslations('Library')
   const format = useFormatter()
@@ -141,6 +153,8 @@ function ListTable({
 
   // With following on, the room takes the colors of the row in focus.
   const follow = useFollowOnHover((index) => shelf.items[index]?.game.colors)
+  const roving = useRovingShelf(body, shelf.items.length)
+  const stop = roving.tabStop(from, to)
 
   return (
     <table className="game-table" aria-rowcount={shelf.total + 1}>
@@ -151,31 +165,73 @@ function ListTable({
           <th scope="col">
             <span className="sr-only">{t('list.cover')}</span>
           </th>
-          <Heading sortKey="title" sort={sort} onSort={onSort}>
+          <Heading sortKey="title" sort={sort} onSort={onSort} inTabOrder={inTabOrder}>
             {t('list.title')}
           </Heading>
           <th scope="col">{t('list.platforms')}</th>
-          <Heading sortKey="status" sort={sort} onSort={onSort}>
+          <Heading sortKey="status" sort={sort} onSort={onSort} inTabOrder={inTabOrder}>
             <span className="max-sm:sr-only">{t('list.status')}</span>
           </Heading>
-          <Heading sortKey="rating" sort={sort} onSort={onSort} number className={MEDIUM}>
+          <Heading
+            sortKey="rating"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            number
+            className={MEDIUM}
+          >
             {t('list.rating')}
           </Heading>
-          <Heading sortKey="igdb" sort={sort} onSort={onSort} number className={MEDIUM}>
+          <Heading
+            sortKey="igdb"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            number
+            className={MEDIUM}
+          >
             {t('list.igdb')}
           </Heading>
-          <Heading sortKey="hours" sort={sort} onSort={onSort} number className={MEDIUM}>
+          <Heading
+            sortKey="hours"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            number
+            className={MEDIUM}
+          >
             {t('list.playtime')}
           </Heading>
-          <Heading sortKey="added" sort={sort} onSort={onSort} className={WIDE}>
+          <Heading
+            sortKey="added"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            className={WIDE}
+          >
             {t('list.added')}
           </Heading>
-          <Heading sortKey="completed" sort={sort} onSort={onSort} className={WIDE}>
+          <Heading
+            sortKey="completed"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            className={WIDE}
+          >
             {t('list.completed')}
           </Heading>
         </tr>
       </thead>
-      <tbody ref={body} data-grid-of={shelf.key} {...follow}>
+      <tbody
+        ref={body}
+        data-grid-of={shelf.key}
+        data-roving=""
+        {...follow}
+        onFocus={(event) => {
+          follow.onFocus(event)
+          roving.onFocus(event)
+        }}
+      >
         {/* Rows that are not near the screen are not in the page; these keep their place.
             One cell each: one across all nine would make columns of those a phone hides,
             and they would take the title's room. */}
@@ -213,6 +269,9 @@ function ListTable({
                 <button
                   type="button"
                   className="game-link"
+                  data-index={index}
+                  tabIndex={index === stop ? 0 : -1}
+                  onKeyDown={roving.onKeyDown}
                   data-flip={copy ? `${game.slug}:${copy.platform}` : game.slug}
                   aria-label={describe(item, platform)}
                   onClick={() => onOpen({ key: shelf.key, index })}
@@ -388,6 +447,7 @@ export function ListView({
                 onOpen={onOpen}
                 sort={sort}
                 onSort={onSort}
+                inTabOrder={index === 0}
               />
             </FoldBody>
           </section>

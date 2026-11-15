@@ -2,7 +2,7 @@
 
 import { LockIcon, StarIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
-import { memo, useRef, type CSSProperties } from 'react'
+import { memo, useRef, type CSSProperties, type KeyboardEvent } from 'react'
 
 import { ledFrom } from '@/domain/color/palette'
 import type { ShelfItem } from '@/domain/library/group'
@@ -17,6 +17,7 @@ import { FoldBody, FoldToggle } from './fold-toggle'
 import { outOfTen } from './format'
 import { platformFor } from './game-box'
 import { StatusMark } from './status-mark'
+import { useRovingShelf } from './use-roving'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
 import { useFollowOnHover } from './follow-hover'
@@ -41,6 +42,9 @@ type BannerCellProps = {
   platforms: ReadonlyMap<number, LibraryPlatform>
   enter: boolean
   eager: boolean
+  /** Where Tab stops on its shelf: one banner a shelf (`useRovingShelf`). */
+  tabbable: boolean
+  onKeyDown: (event: KeyboardEvent<HTMLElement>) => void
   onOpen: (box: OpenBox) => void
 }
 
@@ -57,6 +61,8 @@ const BannerCell = memo(function BannerCell({
   platforms,
   enter,
   eager,
+  tabbable,
+  onKeyDown,
   onOpen,
 }: BannerCellProps) {
   const t = useTranslations('Library')
@@ -80,6 +86,9 @@ const BannerCell = memo(function BannerCell({
       <button
         type="button"
         className="banner-box"
+        data-index={index}
+        tabIndex={tabbable ? 0 : -1}
+        onKeyDown={onKeyDown}
         data-status={game.status}
         data-flip={copy ? `${game.slug}:${copy.platform}` : game.slug}
         // A wide banner doesn't grow into a tall cover: the page opens as any other does.
@@ -155,6 +164,7 @@ function BannerGrid({
 
   // With following on, the room takes the colors of the banner in focus.
   const follow = useFollowOnHover((index) => shelf.items[index]?.game.colors)
+  const roving = useRovingShelf(ref, shelf.items.length, rowWindow?.columns)
 
   return (
     // Safari stops calling a list a list once its bullets are styled away; the role says it again.
@@ -165,7 +175,12 @@ function BannerGrid({
       data-grid-of={shelf.key}
       className="banner-grid"
       aria-label={label}
+      data-roving=""
       {...follow}
+      onFocus={(event) => {
+        follow.onFocus(event)
+        roving.onFocus(event)
+      }}
       // Rows that are not near the screen are not in the page; padding keeps their place.
       style={{ paddingTop: before, paddingBottom: after }}
     >
@@ -184,6 +199,8 @@ function BannerGrid({
             platforms={platforms}
             enter={enter}
             eager={index < eager}
+            tabbable={index === roving.tabStop(from, to)}
+            onKeyDown={roving.onKeyDown}
             onOpen={onOpen}
           />
         )

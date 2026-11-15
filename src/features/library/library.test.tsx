@@ -803,6 +803,47 @@ describe('the wall (issue 193)', () => {
     )
     expect(fits).toEqual(['fill', 'whole', 'whole'])
   })
+
+  it('stops Tab once a shelf, and moves along it with arrows, Home and End (review 01, 20)', async () => {
+    const first = ['Alpha', 'Bravo', 'Charlie'].map((title) =>
+      item({ slug: title.toLowerCase(), title }),
+    )
+    const second = ['Delta', 'Echo'].map((title) => item({ slug: title.toLowerCase(), title }))
+    renderWithIntl(
+      <WallView
+        shelves={[
+          { kind: 'year', key: 'year:2020', year: 2020, items: first, total: first.length },
+          { kind: 'year', key: 'year:2021', year: 2021, items: second, total: second.length },
+        ]}
+        platforms={platforms}
+        onOpen={vi.fn()}
+        enter={false}
+        firstBoxes={5}
+        size="medium"
+      />,
+    )
+    const cover = (title: string) =>
+      screen.getByRole('button', { name: (name) => name.startsWith(`${title} (`) })
+    // One stop a shelf: the first cover of each.
+    expect(cover('Alpha')).toHaveAttribute('tabindex', '0')
+    expect(cover('Bravo')).toHaveAttribute('tabindex', '-1')
+    expect(cover('Delta')).toHaveAttribute('tabindex', '0')
+
+    cover('Alpha').focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(cover('Bravo')).toHaveFocus()
+    expect(cover('Bravo')).toHaveAttribute('tabindex', '0')
+    expect(cover('Alpha')).toHaveAttribute('tabindex', '-1')
+    await userEvent.keyboard('{End}')
+    expect(cover('Charlie')).toHaveFocus()
+    await userEvent.keyboard('{Home}')
+    expect(cover('Alpha')).toHaveFocus()
+    // Tab leaves the shelf: the next one's fold button, then its one stop.
+    await userEvent.tab()
+    expect(screen.getAllByRole('button', { name: /^Hide the .* shelf$/ })[1]).toHaveFocus()
+    await userEvent.tab()
+    expect(cover('Delta')).toHaveFocus()
+  })
 })
 
 describe('the banner view', () => {

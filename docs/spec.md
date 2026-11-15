@@ -663,6 +663,12 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | `A` | Add a game (signed in) |
 | `?` | Show this list |
 
+In every view a shelf is one Tab stop: the shelf, the wall, the banners and the list alike, the
+arrows, Home, End, Page Up and Page Down moving inside and between shelves. Every game used to be
+a stop outside the shelf view, so the same library took 50 Tabs in one view and over 400 in
+another (step 10's review, 01, finding 20). The list's column headings are stops in the first
+shelf's table only; a pointer sorts from any.
+
 Single-key shortcuts are off while typing in a field, and can be turned off entirely, `/` and
 `?` with the letters (WCAG 2.1.4). The list, and the switch, also open from the keyboard button
 at the toolbar's end, from 1024px, so turning them back on never needs a key.

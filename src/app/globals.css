@@ -238,11 +238,17 @@
     font-family: var(--font-sans);
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    /*
-     * The header stays at the top as the page scrolls (3.5rem and a hairline): whatever Tab,
-     * Shift+Tab or a link's hash moves to stops clear of it, never under it (WCAG 2.4.11).
-     */
-    scroll-padding-top: calc(3.5rem + 1px + 0.5rem);
+  }
+
+  /*
+   * The header stays at the top as the page scrolls (3.5rem and a hairline): whatever Tab,
+   * Shift+Tab or a link's hash moves to in the page stops clear of it, never under it
+   * (WCAG 2.4.11). A margin on what moves, not a padding on the page: with the page's, a bar's
+   * own buttons, which always stand where the padding is, moved the page each time one was
+   * focused.
+   */
+  main :where(*) {
+    scroll-margin-top: calc(3.5rem + 1px + 0.5rem);
   }
 
   body {

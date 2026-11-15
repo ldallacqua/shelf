@@ -700,8 +700,8 @@
    * no cover shows through a pinned label.
    */
   /* A shelf's label pinned under the header covers what scrolls up to it too (WCAG 2.4.11). */
-  html:has(.wall-label) {
-    scroll-padding-top: calc(3.5rem + 1px + 3rem);
+  .wall-grid :where(*) {
+    scroll-margin-top: calc(3.5rem + 1px + 3rem);
   }
 
   .wall-label {
@@ -1026,9 +1026,14 @@
       backdrop-filter: blur(12px);
     }
 
-    /* What Tab moves to is scrolled clear of the bar, not left under it (WCAG 2.4.11). */
-    html:has(.library-controls) {
-      scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    /* What Tab moves to is scrolled clear of the bar, not left under it (WCAG 2.4.11): all but
+     * the bar's own controls, which stand in it, and would move the page at each focus. */
+    .library :where(*) {
+      scroll-margin-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+
+    .library-controls :where(*) {
+      scroll-margin-bottom: 0;
     }
   }
 
@@ -1187,6 +1192,9 @@
     }
 
     .shelf-panel {
+      /* Holds its heading out of sight (below): placed by the page instead, the headings of the
+       * shelves beside this one stood outside the pager, and the page scrolled sideways. */
+      position: relative;
       flex: 0 0 100%;
       height: 100%;
       padding-inline: 1rem;
