@@ -699,6 +699,11 @@
    * beneath. Where an animation cannot follow the scroll, the band stays, so
    * no cover shows through a pinned label.
    */
+  /* A shelf's label pinned under the header covers what scrolls up to it too (WCAG 2.4.11). */
+  html:has(.wall-label) {
+    scroll-padding-top: calc(3.5rem + 1px + 3rem);
+  }
+
   .wall-label {
     position: sticky;
     top: 3.5rem;
@@ -998,28 +1003,34 @@
     flex-direction: column;
   }
 
-  /* First in the page for the keyboard; at the bottom of a phone's screen for the thumb. */
-  .library-controls {
-    position: sticky;
-    bottom: 0;
-    z-index: 30;
-    order: 99;
-    margin-inline: -1rem;
-    padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
-    border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-    background: color-mix(in srgb, var(--wall) 88%, transparent);
-    backdrop-filter: blur(12px);
+  /*
+   * First in the page for the keyboard, controls before what they control, and at the bottom of
+   * a phone's screen for the thumb. Only where the screen is tall enough for the bar and a shelf
+   * both: at 400% zoom (320 by 256) the bar and the full-screen shelf left no room for a single
+   * game, so a short screen draws the library as a page, its controls on top (WCAG 1.4.10).
+   */
+  @media (max-width: 39.99rem) and (min-height: 30rem) {
+    .library-controls {
+      position: sticky;
+      bottom: 0;
+      z-index: 30;
+      order: 99;
+      margin-inline: -1rem;
+      padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+      border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+      background: color-mix(in srgb, var(--wall) 88%, transparent);
+      backdrop-filter: blur(12px);
+    }
+
+    /* What Tab moves to is scrolled clear of the bar, not left under it (WCAG 2.4.11). */
+    html:has(.library-controls) {
+      scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
   }
 
-  @media (min-width: 40rem) {
+  @media (max-width: 39.99rem) and (max-height: 29.99rem) {
     .library-controls {
-      position: static;
-      order: 0;
-      margin-inline: 0;
-      padding: 0;
-      border-top: 0;
-      background: none;
-      backdrop-filter: none;
+      margin-top: 0.75rem;
     }
   }
 
@@ -1136,7 +1147,8 @@
     }
   }
 
-  @media (max-width: 39.99rem) {
+  /* A phone tall enough to hold a shelf under the controls: see `.library-controls`. */
+  @media (max-width: 39.99rem) and (min-height: 30rem) {
     /* The header is 3.5rem and a hairline. */
     .library[data-view='shelf'] {
       height: calc(100dvh - 3.5rem - 1px);
@@ -1180,9 +1192,12 @@
     }
   }
 
-  /* The shelves by name, on a phone: where you are, and a way to jump. */
+  /*
+   * The shelves by name, on a phone where they stand side by side: where you are, and a way to
+   * jump. Elsewhere they stand one under another, and the page scrolls through them.
+   */
   .shelf-tabs {
-    display: flex;
+    display: none;
     flex: none;
     gap: 0.25rem;
     margin-inline: -1rem;
@@ -1195,9 +1210,9 @@
     display: none;
   }
 
-  @media (min-width: 40rem) {
+  @media (max-width: 39.99rem) and (min-height: 30rem) {
     .shelf-tabs {
-      display: none;
+      display: flex;
     }
   }
 

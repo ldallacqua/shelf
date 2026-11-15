@@ -18,7 +18,8 @@ export function EmptyLibrary() {
   const mine = useIsMine(handle)
 
   return (
-    <>
+    // Named for `globals.css`, which takes the header's search away: there is nothing to search yet.
+    <div className="library-empty contents">
       <h1 className="pt-10 title text-3xl sm:pt-14 sm:text-5xl">
         {name ? t('shelfTitle', { name }) : t('title')}
       </h1>
@@ -28,6 +29,6 @@ export function EmptyLibrary() {
         body={t(mine ? 'emptyMineBody' : 'emptyBody')}
         action={<AddFirstGame />}
       />
-    </>
+    </div>
   )
 }
