@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
@@ -9,7 +9,7 @@ import { shareFirstBoxes } from '@/domain/library/view'
 import { caseShapes } from '@/ui/game-case'
 
 import { describeBox, shelfName } from './describe'
-import { FoldBody, FoldToggle } from './fold-toggle'
+import { FoldBody, FoldToggle, foldedAway } from './fold-toggle'
 import { EAGER_COVERS } from './opening-covers'
 import type { Density } from './preferences'
 import { ShelfGrid } from './shelf-grid'
@@ -25,6 +25,12 @@ const sizeOf = (shelf: DrawnShelf): { slot: number; tall: number } => {
 }
 
 type ShelfViewProps = ViewProps & { density: Density }
+
+/** A shelf's Tab stop, if its games are drawn: none while it is folded away, wider than a phone. */
+const stopOf = (panel: Element | undefined): HTMLElement | undefined => {
+  const box = panel?.querySelector<HTMLElement>('[data-shelf-body] .game-box[tabindex="0"]')
+  return box && !foldedAway(box) ? box : undefined
+}
 
 type ShelfSectionProps = {
   shelf: DrawnShelf
@@ -73,8 +79,12 @@ function ShelfSection({
       data-scroll-root=""
       data-shelf={shelf.key}
       aria-labelledby={headingId}
+      // Where Tab from its phone tab lands when no game of it is drawn in time (`onTabKey`).
+      tabIndex={-1}
     >
-      <header className="flex items-baseline gap-3 pt-3 pb-1 sm:pt-0">
+      {/* The counts go under the name when it needs the room, not into narrow columns beside it
+          (step 10's review, 01, finding 54). */}
+      <header className="flex flex-wrap items-baseline gap-x-3 pt-3 pb-1 sm:pt-0">
         <FoldToggle shelfKey={shelf.key} name={name} controls={`${headingId}-games`} />
         <h2 id={headingId} className="title text-lg sm:text-xl">
           {name}
@@ -132,6 +142,11 @@ export function ShelfView({
   const tabs = useRef<HTMLElement>(null)
   /** The shelf in view on a phone. */
   const [current, setCurrent] = useState(0)
+  /** The tab chosen with the keyboard, while focus is among the tabs: where the pager is going. */
+  const [chosen, setChosen] = useState<number>()
+  // Arrived: from here the strip follows the swipe again. A tapped tab keeps focus, so the choice
+  // outlived the glide, and the strip stopped following (step 10's review, 01, finding 62).
+  if (chosen !== undefined && chosen === current) setChosen(undefined)
 
   // Follow the swipe: the shelf nearest the pager's left edge is the current one.
   useEffect(() => {
@@ -153,13 +168,15 @@ export function ShelfView({
     }
   }, [])
 
-  // Keep the current tab in sight.
+  // Keep the current tab in sight; while the keyboard has chosen one, that one, as the pager
+  // glides past the shelves between (step 10's review, 01, finding 52).
+  const inSight = chosen ?? current
   useEffect(() => {
-    const tab = tabs.current?.querySelector<HTMLElement>('[aria-current="true"]')
     const strip = tabs.current
+    const tab = strip?.querySelectorAll<HTMLElement>('.shelf-tab')[inSight]
     if (!tab || !strip) return
     strip.scrollTo({ left: tab.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2 })
-  }, [current])
+  }, [inSight])
 
   const goTo = (index: number) => {
     const element = pager.current
@@ -172,9 +189,7 @@ export function ShelfView({
   const leave = (from: number, direction: -1 | 1) => {
     const panels = pager.current?.children
     for (let at = from + direction; panels && at >= 0 && at < panels.length; at += direction) {
-      const box = panels[at]?.querySelector<HTMLElement>(
-        '[data-shelf-body]:not([hidden]) .game-box[tabindex="0"]',
-      )
+      const box = stopOf(panels[at])
       if (box) return box.focus()
     }
   }
@@ -185,17 +200,61 @@ export function ShelfView({
     firstBoxes,
   )
 
+  /**
+   * The tabs are one stop for Tab, as each shelf is: arrows, Home and End go between them. Tab
+   * goes on into the shelf chosen, not the one the pager is still gliding past, which undid the
+   * choice (step 10's review, 01, finding 32).
+   */
+  const onTabKey = (event: KeyboardEvent<HTMLButtonElement>, at: number) => {
+    if (event.key === 'Tab' && !event.shiftKey) {
+      const panel = pager.current?.children[at]
+      if (!(panel instanceof HTMLElement)) return
+      event.preventDefault()
+      // A shelf the pager hasn't reached may not have drawn its box yet. If it never does, focus
+      // goes to the shelf itself rather than staying here (finding 47).
+      let frames = 0
+      const enter = () => {
+        const box = stopOf(panel)
+        if (box) box.focus()
+        else if ((frames += 1) < 90) requestAnimationFrame(enter)
+        else panel.focus()
+      }
+      enter()
+      return
+    }
+    const last = shelves.length - 1
+    const to = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: last }[event.key]
+    if (to === undefined || to < 0 || to > last) return
+    event.preventDefault()
+    setChosen(to)
+    tabs.current?.querySelectorAll<HTMLElement>('.shelf-tab')[to]?.focus()
+    goTo(to)
+  }
+  const stopTab = chosen ?? current
+
   return (
     <div className="shelves">
       {shelves.length > 1 ? (
-        <nav ref={tabs} className="shelf-tabs" aria-label={t('shelf.tabs')}>
+        <nav
+          ref={tabs}
+          className="shelf-tabs"
+          aria-label={t('shelf.tabs')}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setChosen(undefined)
+          }}
+        >
           {shelves.map((shelf, index) => (
             <button
               key={shelf.key}
               type="button"
               className="shelf-tab"
               aria-current={index === current ? 'true' : undefined}
-              onClick={() => goTo(index)}
+              tabIndex={index === stopTab ? 0 : -1}
+              onKeyDown={(event) => onTabKey(event, index)}
+              onClick={() => {
+                setChosen(index)
+                goTo(index)
+              }}
             >
               {shelfName(shelf, t, true)}
               <span className="shelf-tab-count">{shelf.total}</span>

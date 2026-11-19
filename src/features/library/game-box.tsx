@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckIcon, InfinityIcon, LockIcon } from 'lucide-react'
+import { CheckIcon, InboxIcon, InfinityIcon, LockIcon } from 'lucide-react'
 import { memo, type CSSProperties, type KeyboardEvent } from 'react'
 
 import { fromHex, ledFrom } from '@/domain/color/palette'
@@ -208,6 +208,12 @@ export const GameBox = memo(function GameBox({
       {game.status === 'retired' && density === 'covers' ? (
         <span className="game-tag" aria-hidden="true">
           <InfinityIcon />
+        </span>
+      ) : null}
+      {/* Waiting to be placed, as the wall's inbox says: it stood as Backlog does (review 01, 55). */}
+      {game.status === 'unsorted' && density === 'covers' ? (
+        <span className="game-tag" aria-hidden="true">
+          <InboxIcon />
         </span>
       ) : null}
       {/* Only its own account sees it, and so only it ever sees this (spec 11.1). */}

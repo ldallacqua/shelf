@@ -263,8 +263,13 @@ Phone:
 | Retired | A small matte square tag on the cover's corner, with an infinity sign (3.12) |
 | Dropped | Leans against its neighbor |
 | Wishlist | An outlined placeholder with a faint cover, not a solid box |
+| Unsorted | A small matte square tag on the cover's corner, with an inbox, as the wall's mark: brought in by a sync, waiting to be placed (4.5) |
 | Owned only digitally | A cover with no case around it |
 | Owned on more than one platform | A small count on the box's foot |
+
+A box's name says all of it in words. For the eye, "What the marks mean", by the totals on the
+shelf, the wall and the list, opens a key: each state drawn as a box in small stands, or as the wall's mark
+at a cover's foot, beside its words (step 10's review, 01, finding 11).
 
 **Which box a game shows.** Grouped by platform, each copy stands on its own platform's shelf
 in that platform's case. Otherwise the game shows one box: the copy I chose for display, or the
@@ -298,7 +303,15 @@ Built to feel best on a phone and on modest hardware. It is a design of its own,
 - **Layout, desktop and tablet.** Shelves stack down the page. Each wraps onto as many ledges
   as the width needs. The page scrolls normally.
 - **Layout, phone.** One shelf fills the screen. Swipe sideways for the next shelf; a row of
-  tabs at the top shows where you are. Scroll down through that shelf's ledges.
+  tabs at the top shows where you are. Scroll down through that shelf's ledges. The tabs are the
+  shelves' names in the headings' type, the current one underlined: they stand where the shelf's
+  heading stood, and don't look like the status row's pills, which filter. Tab stops at the
+  current one; arrows, Home and End move between them. A shelf longer than the screen fades into
+  the wall at its foot while there is more of it. The controls are one row at the bottom, where
+  a thumb reaches: Filters, the sort and its direction, and one menu for the view, the grouping
+  and the wall's cover size (step 10's review, 01, finding 7: the first screen had left a
+  quarter of itself to the games). On a screen under 36rem tall (a phone at 400% zoom, a phone held sideways) the
+  shelves stack and the page scrolls, controls on top, as wider (WCAG 1.4.10).
 - **Boxes.** Covers toward you, each in its platform's case: real proportions, the plastic's
   color, a band across the top. Cases differ in height and width, so the row has a real
   silhouette. In the compact option they stand spine-out instead, each spine wide enough to
@@ -630,7 +643,7 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | Loading | The wall and ledges first, then boxes arriving in a short stagger. Blurred color placeholders stand in for covers. |
 | Loading, anywhere | A skeleton, always: ghosts in the size and shape of what is coming, in the place it will stand, around whatever words are already known. No page says "Loading" in words or shows a spinner; a screen reader alone is told. A button says what it is doing once pressed (Saving…), and a long job counts its way (Adding 3 of 40…): neither is something loading. |
 | Empty library, signed in | An illustration of an empty lit ledge, Add your first game, and Bring your games from a platform, which leads to the page that sets a new shelf up ([section 4.6](#46-setting-a-new-shelf-up)) |
-| Empty library, visitor | The same ledge and one line saying the shelf is being stocked |
+| Empty library, visitor | The same ledge and one line saying the shelf has no games yet, and that they will stand there once added: no promise of when |
 | No results | "No games match these filters", the active filters as removable chips, and Clear all |
 | A cover fails to load | The generated spine colors with the title set in type |
 | The library fails to load | What happened, and Try again |
@@ -655,7 +668,16 @@ current filter. Numbers count up once when first seen, and are still under reduc
 | `A` | Add a game (signed in) |
 | `?` | Show this list |
 
-Single-letter shortcuts are off while typing in a field, and can be turned off entirely.
+In every view a shelf is one Tab stop: the shelf, the wall, the banners and the list alike, the
+arrows, Home, End, Page Up and Page Down moving inside and between shelves. Every game used to be
+a stop outside the shelf view, so the same library took 50 Tabs in one view and over 400 in
+another (step 10's review, 01, finding 20). The list's column headings are stops in the first
+shelf's table only; a pointer sorts from any.
+
+Single-key shortcuts are off while typing in a field, and can be turned off entirely, `/` and
+`?` with the letters (WCAG 2.1.4). The list, and the switch, also open from the keyboard button
+by the totals, at every width, so turning them back on never needs a key. Below 640px, `G` opens
+the phone's view menu, which holds the grouping.
 
 ### 3.12 Someday and Retired
 
@@ -1329,6 +1351,11 @@ keeps the figure whole and not below nothing instead.
 
 **From IGDB**
 
+IGDB names its genres, themes, game modes and perspectives in English only. Shelf says them in
+the page's language, in the panel, the chips and a game's page ("Corrida", not "Racing"), from
+its own list of IGDB's fixed values (`domain/query/vocab.ts`); the filter text keeps the English
+word (`genre:racing`). Keywords, franchises, series and companies are names, and stay IGDB's.
+
 | Field | Key | Kind |
 | --- | --- | --- |
 | Genre | `genre` | List |
@@ -1347,7 +1374,7 @@ keeps the figure whole and not below nothing instead.
 | Time to beat | `length` | Range, hours |
 | Kind of game | `kind` | List: main, remake, remaster, expanded, port |
 
-**Mine**
+**On this shelf** (the panel's heading; it said "Mine", the owner's word, which a visitor read as theirs, and the panel says "Rating" for my rating, as the list and the sort do)
 
 | Field | Key | Kind |
 | --- | --- | --- |
@@ -1373,8 +1400,10 @@ Survivor" is a series), so they are two filters.
 Three levels, each a superset of the one before.
 
 **Level 1: the panel.** Each value of a list filter has three states: off, include, exclude.
-On a desktop, clicking a value cycles through them. On touch, each value has explicit include
-and exclude buttons, because a hidden cycle is not discoverable. On a window 1536px wide or
+Each value is a box to check, which includes it, and a minus button beside it, which leaves it
+out; the same with a mouse and on touch. A click that cycled through the three looked like a
+checkbox and wasn't one: a second click, meant to untick, excluded (step 10's review, 01,
+finding 8). On a window 1536px wide or
 more the panel is a column left of the library, always open and in view as the shelves scroll;
 narrower, it is a dialog the Filters button opens (13, Dialogs). The two are one panel: a section open in one
 is open in the other, and the filter is the same either way.

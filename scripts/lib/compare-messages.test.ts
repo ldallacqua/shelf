@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { argumentsOf, compareMessages, flatten } from './compare-messages.ts'
+import { argumentsOf, compareMessages, flatten, zeroAsOne } from './compare-messages.ts'
 
 describe('flatten', () => {
   it('turns nested messages into dotted paths', () => {
@@ -63,5 +63,31 @@ describe('compareMessages', () => {
   it('reports a placeholder that was renamed or dropped', () => {
     const problems = compareMessages(en, { pt: { A: { title: 'Olá {nome}', body: 'Texto' } } })
     expect(problems).toMatchObject([{ locale: 'pt', key: 'A.title', kind: 'placeholders' }])
+  })
+
+  it('reports a Portuguese plural that would say zero in the singular', () => {
+    const counted = { A: { games: '{count, plural, one {# game} other {# games}}' } }
+    expect(
+      compareMessages(counted, {
+        'pt-BR': { A: { games: '{count, plural, one {# jogo} other {# jogos}}' } },
+      }),
+    ).toMatchObject([{ locale: 'pt-BR', key: 'A.games', kind: 'zero' }])
+    expect(
+      compareMessages(counted, {
+        'pt-BR': { A: { games: '{count, plural, =0 {# jogos} one {# jogo} other {# jogos}}' } },
+      }),
+    ).toEqual([])
+  })
+})
+
+describe('zeroAsOne', () => {
+  it('finds a plural with one and no =0, nested too', () => {
+    expect(zeroAsOne('{n, plural, one {# hora} other {# horas}}')).toBe(true)
+    expect(zeroAsOne('{n, plural, =0 {nada} one {# hora} other {# horas}}')).toBe(false)
+    expect(zeroAsOne('{n, plural, other {zerados}}')).toBe(false)
+    expect(zeroAsOne('{a, select, x {{n, plural, one {# jogo} other {# jogos}}} other {}}')).toBe(
+      true,
+    )
+    expect(zeroAsOne('Sem plural, {name}')).toBe(false)
   })
 })

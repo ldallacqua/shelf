@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { Button } from './button'
@@ -149,5 +149,45 @@ describe('ConfirmInPlace', () => {
     await user.click(screen.getByRole('button', { name: 'Restore now' }))
     expect(onConfirm).toHaveBeenCalledOnce()
     expect(screen.queryByRole('group')).toBeNull()
+  })
+})
+
+describe('a body that outgrows the screen (review 01, finding 29)', () => {
+  const tall = (body: ReactNode) => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    )
+    // jsdom lays nothing out: the body says it holds 500px in 100.
+    const height = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(500)
+    const client = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(100)
+    render(
+      <Dialog open>
+        <DialogContent title="What the marks mean" closeLabel="Close">
+          {body}
+        </DialogContent>
+      </Dialog>,
+    )
+    return () => {
+      height.mockRestore()
+      client.mockRestore()
+      vi.unstubAllGlobals()
+    }
+  }
+
+  it('takes focus itself, named by the title, when nothing in it can', () => {
+    const restore = tall(<p>Words to read, and more words.</p>)
+    const region = screen.getByRole('region', { name: 'What the marks mean' })
+    expect(region).toHaveAttribute('tabindex', '0')
+    restore()
+  })
+
+  it('stays out of the Tab order when something in it takes focus', () => {
+    const restore = tall(<button type="button">Choose</button>)
+    expect(screen.queryByRole('region')).toBeNull()
+    restore()
   })
 })

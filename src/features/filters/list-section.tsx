@@ -1,6 +1,6 @@
 'use client'
 
-import { BanIcon, CheckIcon, MinusIcon, PlusIcon } from 'lucide-react'
+import { BanIcon, CheckIcon, MinusIcon } from 'lucide-react'
 import { useFormatter, useLocale, useTranslations } from 'next-intl'
 import { useId, useState } from 'react'
 
@@ -10,6 +10,7 @@ import { platformFamilies, platformKeys, type ListKey } from '@/domain/query/key
 import type { ListCondition } from '@/domain/query/panel'
 import { cn } from '@/ui/cn'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
+import { Tip } from '@/ui/tooltip'
 
 /** How many values a long list shows before its search box is needed (spec 5.4). */
 export const TOP_VALUES = 8
@@ -47,9 +48,6 @@ export const withState = (condition: ListCondition, word: string, state: State):
       : condition.exclude.filter((value) => value !== word),
 })
 
-/** On a desktop a value cycles: off, included, excluded, off (spec 5.2). */
-const NEXT: Record<State, State> = { off: 'include', include: 'exclude', exclude: 'off' }
-
 type ListSectionProps = {
   filterKey: ListKey
   label: string
@@ -67,9 +65,10 @@ type ListSectionProps = {
  * excluded. Values that would match nothing are dimmed and sink to the
  * bottom. A long list shows its top eight and a search box (spec 5.4).
  *
- * With a mouse, clicking a value cycles its state. On touch, a hidden cycle
- * is not discoverable, so each value has its own include and exclude
- * buttons instead.
+ * Each value is a box to check, which includes it, and a minus button beside
+ * it, which leaves it out: the same with a mouse and on touch. A click that
+ * cycled off, included, excluded looked like a checkbox and wasn't one: a
+ * second click, meant to untick, excluded (step 10's review, 01, finding 8).
  */
 export function ListSection({
   filterKey,
@@ -166,15 +165,24 @@ export function ListSection({
                 data-empty={value.count === 0 && state === 'off' ? '' : undefined}
                 className="flex items-center gap-1 data-empty:text-muted"
               >
+                {/* The row is a box to check: checked includes the value, checked again takes it off. */}
                 <button
                   type="button"
-                  // With a mouse the row itself is the control; on touch the two buttons are.
+                  role="checkbox"
+                  aria-checked={state === 'include'}
                   className={cn(
-                    'flex min-h-9 flex-1 items-center gap-2.5 rounded-control px-2 text-left text-sm pointer-coarse:hidden',
+                    'flex min-h-9 flex-1 items-center gap-2.5 rounded-control px-2 text-left text-sm pointer-coarse:min-h-11',
                     'transition-colors duration-quick ease-settle hover:bg-text/8',
                   )}
-                  aria-label={t(`panel.value.${state}`, { value: name, count: value.count })}
-                  onClick={() => onChange(withState(condition, value.word, NEXT[state]))}
+                  aria-label={t(`panel.value.${state === 'exclude' ? 'exclude' : 'off'}`, {
+                    value: name,
+                    count: value.count,
+                  })}
+                  onClick={() =>
+                    onChange(
+                      withState(condition, value.word, state === 'include' ? 'off' : 'include'),
+                    )
+                  }
                 >
                   <StateMark state={state} />
                   <span
@@ -185,29 +193,8 @@ export function ListSection({
                   </span>
                   <span className="readout text-[0.625rem] text-muted">{count}</span>
                 </button>
-                <span className="flex min-h-11 flex-1 items-center gap-2 px-1 text-sm pointer-fine:hidden">
-                  <span
-                    lang={lang}
-                    className={cn('min-w-0 flex-1 truncate', state === 'exclude' && 'line-through')}
-                  >
-                    {name}
-                  </span>
-                  <span className="readout text-[0.625rem] text-muted">{count}</span>
-                </span>
-                <span className="flex gap-1 pointer-fine:hidden">
-                  <button
-                    type="button"
-                    aria-pressed={state === 'include'}
-                    aria-label={t('panel.include', { value: name, count: value.count })}
-                    onClick={() =>
-                      onChange(
-                        withState(condition, value.word, state === 'include' ? 'off' : 'include'),
-                      )
-                    }
-                    className={toggleClass}
-                  >
-                    <PlusIcon aria-hidden="true" className="size-4" />
-                  </button>
+                {/* Leaving a value out is a button of its own, in sight, never a second click. */}
+                <Tip label={t('panel.exclude', { value: name })}>
                   <button
                     type="button"
                     aria-pressed={state === 'exclude'}
@@ -217,11 +204,11 @@ export function ListSection({
                         withState(condition, value.word, state === 'exclude' ? 'off' : 'exclude'),
                       )
                     }
-                    className={toggleClass}
+                    className={excludeClass}
                   >
                     <MinusIcon aria-hidden="true" className="size-4" />
                   </button>
-                </span>
+                </Tip>
               </li>
             )
           })}
@@ -241,9 +228,10 @@ export function ListSection({
   )
 }
 
-const toggleClass = cn(
-  'inline-flex size-11 items-center justify-center rounded-control border border-line-strong text-muted',
-  'aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent',
+const excludeClass = cn(
+  'inline-flex size-8 flex-none items-center justify-center rounded-control border border-transparent text-muted',
+  'transition-colors duration-quick ease-settle hover:border-line-strong hover:text-text pointer-coarse:size-11 pointer-coarse:border-line-strong',
+  'aria-pressed:border-text aria-pressed:bg-text aria-pressed:text-wall',
 )
 
 /** Off, included or excluded, by shape: an empty box, a check, a bar. Never by color alone. */

@@ -2,7 +2,7 @@
 
 import { LockIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { memo, useRef, type CSSProperties } from 'react'
+import { memo, useRef, type CSSProperties, type KeyboardEvent } from 'react'
 
 import { ledFrom } from '@/domain/color/palette'
 import { coverFit, ratioOfCover } from '@/domain/library/cover-fit'
@@ -17,6 +17,7 @@ import { platformFor } from './game-box'
 import { GhostHeading } from './ghosts'
 import type { WallSize } from './preferences'
 import { StatusMark } from './status-mark'
+import { useRovingShelf } from './use-roving'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
 import { useFollowOnHover } from './follow-hover'
@@ -45,6 +46,9 @@ type WallCellProps = {
   size: WallSize
   enter: boolean
   eager: boolean
+  /** Where Tab stops on its shelf: one cover a shelf (`useRovingShelf`). */
+  tabbable: boolean
+  onKeyDown: (event: KeyboardEvent<HTMLElement>) => void
   onOpen: (box: OpenBox) => void
 }
 
@@ -63,6 +67,8 @@ const WallCell = memo(function WallCell({
   size,
   enter,
   eager,
+  tabbable,
+  onKeyDown,
   onOpen,
 }: WallCellProps) {
   const t = useTranslations('Library')
@@ -89,6 +95,9 @@ const WallCell = memo(function WallCell({
       <button
         type="button"
         className="wall-box"
+        data-index={index}
+        tabIndex={tabbable ? 0 : -1}
+        onKeyDown={onKeyDown}
         data-status={game.status}
         data-flip={copy ? `${game.slug}:${copy.platform}` : game.slug}
         aria-label={describeBox(item, platform, t)}
@@ -141,6 +150,7 @@ function WallGrid({
   const rowWindow = useRowWindow(ref, shelf.total)
   // With following on, the room takes the colors of the cover in focus.
   const follow = useFollowOnHover((index) => shelf.items[index]?.game.colors)
+  const roving = useRovingShelf(ref, shelf.items.length, rowWindow?.columns)
 
   // Every place on the shelf, the ones whose covers come with the library file included: those hold ghosts.
   const from = rowWindow ? rowWindow.start * rowWindow.columns : 0
@@ -161,7 +171,14 @@ function WallGrid({
       className="wall-grid"
       data-size={size}
       aria-label={label}
+      data-roving=""
+      // The shelf's stop while none of its games is drawn (`useRovingShelf`).
+      tabIndex={roving.gridTabIndex(from, to)}
       {...follow}
+      onFocus={(event) => {
+        follow.onFocus(event)
+        roving.onFocus(event)
+      }}
       // Rows that are not near the screen are not in the page; padding keeps their place.
       style={{ paddingTop: before, paddingBottom: after }}
     >
@@ -181,6 +198,8 @@ function WallGrid({
             size={size}
             enter={enter}
             eager={index < eager}
+            tabbable={index === roving.tabStop(from, to)}
+            onKeyDown={roving.onKeyDown}
             onOpen={onOpen}
           />
         )

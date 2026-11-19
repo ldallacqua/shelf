@@ -240,6 +240,17 @@
     text-size-adjust: 100%;
   }
 
+  /*
+   * The header stays at the top as the page scrolls (3.5rem and a hairline): whatever Tab,
+   * Shift+Tab or a link's hash moves to in the page stops clear of it, never under it
+   * (WCAG 2.4.11). A margin on what moves, not a padding on the page: with the page's, a bar's
+   * own buttons, which always stand where the padding is, moved the page each time one was
+   * focused.
+   */
+  main :where(*) {
+    scroll-margin-top: calc(3.5rem + 1px + 0.5rem);
+  }
+
   body {
     display: flex;
     min-height: 100dvh;
@@ -280,13 +291,15 @@
 
 /*
  * The header's search opens the library. On the library itself, and on a smart shelf, the
- * library's own field filters as you type, so the header's steps aside.
+ * library's own field filters as you type, so the header's steps aside. On a shelf with no game
+ * yet there is nothing to search, so it isn't offered there either.
  *
  * Only a library that is shown counts, here and below: Next.js keeps a page left by a link in
  * the document, hidden by `display: none` on its frame (React's Activity), so that Back finds
  * it as it was. Matched by that hiding, the library left behind is not this page's.
  */
-html:has(.library:not([style*='display: none'] .library)) .site-search {
+html:has(.library:not([style*='display: none'] .library)) .site-search,
+html:has(.library-empty:not([style*='display: none'] .library-empty)) .site-search {
   display: none;
 }
 

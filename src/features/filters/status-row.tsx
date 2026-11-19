@@ -57,7 +57,8 @@ export function StatusRow({ value, counts, onShelf, onChange }: StatusRowProps) 
       onValueChange={onChange}
       // The group itself scrolls, edge to edge on a phone: the keyboard reaches what scrolls.
       className={cn(
-        'max-w-full [scrollbar-width:none] overflow-x-auto border-transparent bg-transparent p-0',
+        // `status-row` (shelf.css): its edge fades while more of it is out of sight.
+        'status-row max-w-full [scrollbar-width:none] overflow-x-auto border-transparent bg-transparent p-0',
         'max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] max-sm:max-w-none max-sm:px-4',
         'filters-beside:hidden',
       )}

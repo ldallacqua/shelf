@@ -5,6 +5,7 @@ import {
   ChevronDownIcon,
   Columns4Icon,
   FlaskConicalIcon,
+  GroupIcon,
   LayoutGridIcon,
   ListIcon,
   RectangleVerticalIcon,
@@ -12,10 +13,10 @@ import {
   Rows3Icon,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 
 import { groupings, type Grouping } from '@/domain/library/group'
-import type { View } from '@/domain/library/view'
+import { views, type View } from '@/domain/library/view'
 import { Button } from '@/ui/button'
 import { cn } from '@/ui/cn'
 import {
@@ -24,6 +25,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu'
 import { Segmented, SegmentedItem } from '@/ui/segmented'
@@ -62,6 +64,9 @@ type ToolbarProps = {
   sort?: ReactNode
   /** Whether only the games ready to play here are shown (spec 7.7): in the app, on my own shelf. */
   ready?: { on: boolean; onChange: (on: boolean) => void }
+  /** A phone's view menu's open state, so the G key opens it where the group menu isn't shown. */
+  layoutOpen?: boolean
+  onLayoutOpen?: (open: boolean) => void
 }
 
 const viewIcons = {
@@ -77,6 +82,10 @@ const densityIcons = { covers: RectangleVerticalIcon, compact: Columns4Icon } as
  * per view, how large covers are, or, with experimental views on, how the
  * shelf is drawn and how boxes stand. Filters, sort, view and grouping live
  * in the address; the others belong to this device.
+ *
+ * On a phone they are one row at the foot of the screen, so the games keep
+ * the room (spec 3.4): what is shown and in what order, then one menu for how
+ * it is laid out. Wider, each control stands on its own.
  */
 export function Toolbar({
   view,
@@ -96,6 +105,8 @@ export function Toolbar({
   filters,
   sort,
   ready,
+  layoutOpen,
+  onLayoutOpen,
 }: ToolbarProps) {
   const t = useTranslations('Library')
   const reasonId = useId()
@@ -104,11 +115,10 @@ export function Toolbar({
     <div
       role="toolbar"
       aria-label={t('toolbar')}
-      // On a phone, two rows: what is shown, then how. The buttons give up padding, not their labels.
-      className="library-controls flex flex-wrap items-center gap-2 sm:mt-3 sm:gap-3 max-sm:[&_[data-slot=segmented-item]]:px-2.5"
+      className="library-controls flex items-center gap-2 sm:mt-3 sm:flex-wrap lg:gap-3"
     >
-      {/* What is shown, and in what order: a phone's first row. */}
-      <div className="flex min-w-0 items-center gap-2 max-sm:w-full sm:contents">
+      {/* What is shown, and in what order. */}
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:contents">
         {filters}
         {sort}
         {ready ? (
@@ -126,12 +136,29 @@ export function Toolbar({
         ) : null}
       </div>
 
-      {/* How it is laid out: a phone's second row. */}
-      <div className="flex min-w-0 items-center gap-2 max-sm:w-full sm:contents">
+      {/* How it is laid out: on a phone, one menu. */}
+      <LayoutMenu
+        view={view}
+        onView={onView}
+        group={group}
+        onGroup={onGroup}
+        wallSize={wallSize}
+        onWallSize={onWallSize}
+        density={density}
+        onDensity={onDensity}
+        experimental={experimental}
+        open={layoutOpen}
+        onOpenChange={onLayoutOpen}
+      />
+
+      {/* Wider, each control on its own. */}
+      <div className="contents max-sm:hidden">
         <DropdownMenu open={groupOpen} onOpenChange={onGroupOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="secondary" className="min-w-0 max-sm:flex-auto max-sm:px-3">
-              <span className="readout text-[0.625rem] text-muted max-sm:sr-only">
+            <Button variant="secondary" className="min-w-0 max-lg:px-3">
+              {/* Below lg an icon says what the button changes, in less room than the word. */}
+              <GroupIcon aria-hidden="true" className="text-muted lg:hidden" />
+              <span className="readout text-[0.625rem] text-muted max-lg:sr-only">
                 {t('group.label')}
               </span>
               <span className="truncate">{t(`group.${group}`)}</span>
@@ -153,13 +180,13 @@ export function Toolbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="ml-auto flex flex-none items-center gap-2 sm:gap-3">
+        <div className="ml-auto flex flex-none items-center gap-2 lg:gap-3">
           {view === 'shelf' && experimental ? (
             // Unfinished (issue 63), and said so: offered only once this device asked for them.
             <div
               role="group"
               aria-label={t('experimental.label')}
-              className="flex items-center gap-2 sm:gap-3"
+              className="flex items-center gap-2 lg:gap-3"
             >
               {/* Its words for a pointer where only the flask shows; the group already says them. */}
               <Tip label={t('experimental.label')} className="lg:hidden">
@@ -218,17 +245,11 @@ export function Toolbar({
                 value={density}
                 onValueChange={onDensity}
               >
-                {densities.map((value) => {
-                  const Icon = densityIcons[value]
-                  return (
-                    <Tip key={value} label={t(`density.${value}`)} className="sm:hidden">
-                      <SegmentedItem value={value} aria-label={t(`density.${value}`)}>
-                        <Icon aria-hidden="true" className="sm:hidden" />
-                        <span className="max-sm:hidden">{t(`density.${value}`)}</span>
-                      </SegmentedItem>
-                    </Tip>
-                  )
-                })}
+                {densities.map((value) => (
+                  <SegmentedItem key={value} value={value}>
+                    {t(`density.${value}`)}
+                  </SegmentedItem>
+                ))}
               </Segmented>
             </div>
           ) : null}
@@ -251,13 +272,14 @@ export function Toolbar({
           ) : null}
 
           <Segmented aria-label={t('view.label')} value={view} onValueChange={onView}>
-            {(Object.keys(viewIcons) as View[]).map((value) => {
+            {views.map((value) => {
               const Icon = viewIcons[value]
               return (
-                <Tip key={value} label={t(`view.${value}`)} className="md:hidden">
+                // Icons until xl, so the row holds every control from 640 up, a filter's count too.
+                <Tip key={value} label={t(`view.${value}`)} className="xl:hidden">
                   <SegmentedItem value={value} aria-label={t(`view.${value}`)}>
                     <Icon aria-hidden="true" />
-                    <span className="max-md:hidden">{t(`view.${value}`)}</span>
+                    <span className="max-xl:hidden">{t(`view.${value}`)}</span>
                   </SegmentedItem>
                 </Tip>
               )
@@ -266,5 +288,153 @@ export function Toolbar({
         </div>
       </div>
     </div>
+  )
+}
+
+type LayoutMenuProps = Pick<
+  ToolbarProps,
+  | 'view'
+  | 'onView'
+  | 'group'
+  | 'onGroup'
+  | 'wallSize'
+  | 'onWallSize'
+  | 'density'
+  | 'onDensity'
+  | 'experimental'
+> & { open?: boolean; onOpenChange?: (open: boolean) => void }
+
+/**
+ * A phone's way to the view, the grouping and, per view, the covers' size: one button at the
+ * row's end, drawn as the view it shows, so what is shown and in what order keep their words.
+ *
+ * Opened by anything but its button (the G key, which changes the grouping), it starts at the
+ * grouping chosen, not at the first view (step 10's review, 01, finding 53).
+ */
+export function LayoutMenu({
+  view,
+  onView,
+  group,
+  onGroup,
+  wallSize,
+  onWallSize,
+  density,
+  onDensity,
+  experimental = false,
+  open,
+  onOpenChange,
+}: LayoutMenuProps) {
+  const t = useTranslations('Library')
+  const Icon = viewIcons[view]
+  /** Whether the menu was opened by its button. */
+  const byButton = useRef(false)
+  useEffect(() => {
+    if (!open) {
+      byButton.current = false
+      return
+    }
+    if (byButton.current) return
+    // After the menu has put focus on its first item.
+    const frame = requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>('[data-grouping] [role="menuitemradio"][aria-checked="true"]')
+        ?.focus(),
+    )
+    return () => cancelAnimationFrame(frame)
+  }, [open])
+
+  return (
+    <DropdownMenu
+      open={open}
+      onOpenChange={(next) => {
+        byButton.current = next
+        onOpenChange?.(next)
+      }}
+    >
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="secondary"
+          className="min-w-0 flex-none gap-1.5 px-2.5 sm:hidden"
+          aria-label={t('layout.button', {
+            view: t(`view.${view}`),
+            group: t(`group.${group}`),
+          })}
+        >
+          <Icon aria-hidden="true" />
+          {/* The grouping in words, as the sort shows its order: the menu holds it. The icon
+              alone where the row has no room for both. */}
+          <span aria-hidden="true" className="max-w-24 truncate max-[22rem]:hidden">
+            {t(`group.${group}`)}
+          </span>
+          <ChevronDownIcon aria-hidden="true" className="text-muted" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-56">
+        <DropdownMenuLabel>{t('view.label')}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={view} onValueChange={(value) => onView(value as View)}>
+          {views.map((value) => {
+            const ViewIcon = viewIcons[value]
+            return (
+              <DropdownMenuRadioItem key={value} value={value}>
+                <ViewIcon aria-hidden="true" className="size-4 text-muted" />
+                {t(`view.${value}`)}
+              </DropdownMenuRadioItem>
+            )
+          })}
+        </DropdownMenuRadioGroup>
+
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t('group.menu')}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          data-grouping=""
+          value={group}
+          onValueChange={(value) => onGroup(value as Grouping)}
+        >
+          {groupings.map((value) => (
+            <DropdownMenuRadioItem key={value} value={value}>
+              {t(`group.${value}`)}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+
+        {view === 'wall' ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>{t('wallSize.label')}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={wallSize}
+              onValueChange={(value) => onWallSize(value as WallSize)}
+            >
+              {wallSizes.map((value) => (
+                <DropdownMenuRadioItem key={value} value={value}>
+                  {t(`wallSize.${value}`)}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </>
+        ) : null}
+
+        {view === 'shelf' && experimental ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>{t('density.label')}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={density}
+              onValueChange={(value) => onDensity(value as Density)}
+            >
+              {densities.map((value) => {
+                const DensityIcon = densityIcons[value]
+                return (
+                  <DropdownMenuRadioItem key={value} value={value}>
+                    <DensityIcon aria-hidden="true" className="size-4 text-muted" />
+                    {t(`density.${value}`)}
+                  </DropdownMenuRadioItem>
+                )
+              })}
+            </DropdownMenuRadioGroup>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

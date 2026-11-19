@@ -379,6 +379,56 @@
       0 1px 3px rgb(0 0 0 / 0.5);
   }
 
+  /*
+   * The key to the marks (`features/library/marks-list.tsx`): a box in small, standing as a box
+   * of its status stands on the shelf, with the shelf's own marks on it.
+   */
+  .marks-swatch {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+  }
+
+  /*
+   * Filled in a mid tone, as a cover fills a box, so a box in shade shows it: on the room's own
+   * color, Someday's darker box hardly showed (step 10's review, 01, findings 38 and 55).
+   */
+  .marks-box {
+    position: relative;
+    display: block;
+    width: 1.375rem;
+    height: 1.875rem;
+    border: 1.5px solid var(--text-muted);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--text-muted) 45%, var(--surface-raised));
+  }
+
+  .marks-box[data-status='playing'] {
+    scale: 1.05;
+  }
+
+  /* Set back, in shade: as a Someday box stands on the shelf (`.game-box[data-status='someday']`). */
+  .marks-box[data-status='someday'] {
+    scale: 0.92;
+    filter: brightness(0.78);
+  }
+
+  .marks-box[data-status='dropped'] {
+    rotate: 5deg;
+    transform-origin: 100% 100%;
+  }
+
+  .marks-box[data-status='wishlist'] {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  .marks-box[data-loose] {
+    border-color: transparent;
+    background: linear-gradient(160deg, var(--line-strong), var(--text-muted));
+  }
+
   /* Playing: a small live light above the box. */
   .game-live {
     position: absolute;
@@ -655,11 +705,14 @@
     }
   }
 
-  @media (width < 40rem) {
-    [data-shelf-body][hidden] {
-      display: block;
+  /* A folded shelf's games, wider than a phone only (`FoldBody`). */
+  @media (width >= 40rem) {
+    [data-shelf-body][data-folded] {
+      display: none;
     }
+  }
 
+  @media (width < 40rem) {
     /*
      * A phone's shelves don't fold. The toggle stays where it is, unseen and
      * out of reach, not with no box at all: axe reads a box at the page's
@@ -699,6 +752,11 @@
    * beneath. Where an animation cannot follow the scroll, the band stays, so
    * no cover shows through a pinned label.
    */
+  /* A shelf's label pinned under the header covers what scrolls up to it too (WCAG 2.4.11). */
+  .wall-grid :where(*) {
+    scroll-margin-top: calc(3.5rem + 1px + 3rem);
+  }
+
   .wall-label {
     position: sticky;
     top: 3.5rem;
@@ -828,10 +886,14 @@
     justify-content: space-between;
     gap: 0.25rem;
     padding: 1.25rem 0.3125rem 0.3125rem;
-    background: linear-gradient(to top, rgb(0 0 0 / 0.78), transparent);
+    /*
+     * Full strength under the words, fading only above them: over a white cover a fade that
+     * reached the letters left them at 3:1. At 0.8 black the words keep 12:1 over any cover.
+     */
+    background: linear-gradient(to top, rgb(0 0 0 / 0.8) 0 1.375rem, transparent);
     color: #fff;
     font-family: var(--font-mono);
-    font-size: 0.5625rem;
+    font-size: 0.625rem;
     font-weight: 500;
     line-height: 0.875rem;
     letter-spacing: 0.04em;
@@ -998,28 +1060,40 @@
     flex-direction: column;
   }
 
-  /* First in the page for the keyboard; at the bottom of a phone's screen for the thumb. */
-  .library-controls {
-    position: sticky;
-    bottom: 0;
-    z-index: 30;
-    order: 99;
-    margin-inline: -1rem;
-    padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
-    border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-    background: color-mix(in srgb, var(--wall) 88%, transparent);
-    backdrop-filter: blur(12px);
+  /*
+   * First in the page for the keyboard, controls before what they control, and at the bottom of
+   * a phone's screen for the thumb. Only where the screen is tall enough for the bar and a shelf
+   * both: at 400% zoom (320 by 256) the bar and the full-screen shelf left no room for a single
+   * game, so a short screen draws the library as a page, its controls on top (WCAG 1.4.10). From
+   * 36rem, the height the 3D shelf asks too: at 30rem the shelf kept 88px, the tops of two covers.
+   */
+  @media (max-width: 39.99rem) and (min-height: 36rem) {
+    .library-controls {
+      position: sticky;
+      bottom: 0;
+      z-index: 30;
+      order: 99;
+      margin-inline: -1rem;
+      padding: 0.5rem 1rem calc(0.5rem + env(safe-area-inset-bottom));
+      border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+      background: color-mix(in srgb, var(--wall) 88%, transparent);
+      backdrop-filter: blur(12px);
+    }
+
+    /* What Tab moves to is scrolled clear of the bar, not left under it (WCAG 2.4.11): all but
+     * the bar's own controls, which stand in it, and would move the page at each focus. */
+    .library :where(*) {
+      scroll-margin-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+    }
+
+    .library-controls :where(*) {
+      scroll-margin-bottom: 0;
+    }
   }
 
-  @media (min-width: 40rem) {
+  @media (max-width: 39.99rem) and (max-height: 35.99rem) {
     .library-controls {
-      position: static;
-      order: 0;
-      margin-inline: 0;
-      padding: 0;
-      border-top: 0;
-      background: none;
-      backdrop-filter: none;
+      margin-top: 0.75rem;
     }
   }
 
@@ -1136,7 +1210,8 @@
     }
   }
 
-  @media (max-width: 39.99rem) {
+  /* A phone tall enough to hold a shelf under the controls: see `.library-controls`. */
+  @media (max-width: 39.99rem) and (min-height: 36rem) {
     /* The header is 3.5rem and a hairline. */
     .library[data-view='shelf'] {
       height: calc(100dvh - 3.5rem - 1px);
@@ -1171,6 +1246,9 @@
     }
 
     .shelf-panel {
+      /* Holds its heading out of sight (below): placed by the page instead, the headings of the
+       * shelves beside this one stood outside the pager, and the page scrolled sideways. */
+      position: relative;
       flex: 0 0 100%;
       height: 100%;
       padding-inline: 1rem;
@@ -1178,11 +1256,99 @@
       scroll-snap-align: start;
       scroll-snap-stop: always;
     }
+
+    /*
+     * The tabs above say the shelf's name and count, the current one marked: its own heading
+     * stays for a screen reader, out of sight, and the games take its room.
+     */
+    .shelf-panel > header {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /*
+     * More games below, under the bar: the shelf's foot fades into the wall while it can still
+     * scroll, so a shelf longer than the screen says so. Where an animation can't follow the
+     * scroll, there is no fade, rather than one over the last games for good.
+     */
+    .shelf-panel::after {
+      position: sticky;
+      bottom: 0;
+      display: block;
+      height: 2.5rem;
+      margin-top: -2.5rem;
+      background: linear-gradient(to top, var(--wall), transparent);
+      content: '';
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @supports (animation-timeline: scroll()) {
+      .shelf-panel::after {
+        animation: shelf-more linear both;
+        animation-range: calc(100% - 2.5rem) 100%;
+        animation-timeline: scroll(nearest);
+      }
+    }
   }
 
-  /* The shelves by name, on a phone: where you are, and a way to jump. */
+  /*
+   * The status row scrolls sideways where the window is narrower than it: its right edge fades
+   * into the wall while there is more of it, so a word cut at the edge reads as more to come
+   * (step 10's review, 01, findings 22 and 37). No fade where it fits, or can't follow the scroll.
+   */
+  .status-row::after {
+    position: sticky;
+    right: 0;
+    flex: none;
+    /* The row centers its items, and an empty one had no height: the fade wasn't drawn (51). */
+    align-self: stretch;
+    width: 2rem;
+    margin-left: -2rem;
+    background: linear-gradient(to left, var(--wall), transparent);
+    content: '';
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /*
+   * On a phone the row runs edge to edge, past its padding: the fade does too, not 16px short of
+   * the screen's edge (step 10's review, 01, finding 64).
+   */
+  @media (width < 40rem) {
+    .status-row::after {
+      right: -1rem;
+    }
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .status-row::after {
+      animation: shelf-more linear both;
+      animation-range: calc(100% - 2rem) 100%;
+      animation-timeline: scroll(nearest inline);
+    }
+  }
+
+  @keyframes shelf-more {
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
+  }
+
+  /*
+   * The shelves by name, on a phone where they stand side by side: where you are, and a way to
+   * jump. Elsewhere they stand one under another, and the page scrolls through them.
+   */
   .shelf-tabs {
-    display: flex;
+    display: none;
     flex: none;
     gap: 0.25rem;
     margin-inline: -1rem;
@@ -1195,34 +1361,41 @@
     display: none;
   }
 
-  @media (min-width: 40rem) {
+  @media (max-width: 39.99rem) and (min-height: 36rem) {
     .shelf-tabs {
-      display: none;
+      display: flex;
     }
   }
 
+  /*
+   * Names in the headings' type, not pills: the status row above is pills, and it filters; these
+   * only go to a shelf. The current one is the shelf's heading, in full ink and underlined.
+   */
   .shelf-tab {
     display: inline-flex;
     min-height: 2.25rem;
     flex: none;
-    align-items: center;
+    align-items: baseline;
     gap: 0.375rem;
-    padding: 0 0.75rem;
-    border: 1px solid transparent;
-    border-radius: 9999px;
+    padding: 0.5rem 0.5rem 0;
+    border-bottom: 2px solid transparent;
     color: var(--text-muted);
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
     white-space: nowrap;
     transition:
       color var(--motion-quick) var(--ease-settle),
-      background-color var(--motion-quick) var(--ease-settle),
       border-color var(--motion-quick) var(--ease-settle);
   }
 
+  .shelf-tab:first-child {
+    padding-left: 0;
+  }
+
   .shelf-tab[aria-current='true'] {
-    border-color: var(--line-strong);
-    background: var(--surface);
+    border-color: var(--accent);
     color: var(--text);
   }
 
@@ -1231,6 +1404,7 @@
     font-family: var(--font-mono);
     font-size: 0.625rem;
     font-weight: 500;
+    letter-spacing: 0;
   }
 
   /*
@@ -1336,6 +1510,29 @@
     text-align: left;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /*
+   * On a phone the cells keep less room to their sides, for the title (step 10's review, 01,
+   * finding 50).
+   */
+  @media (width < 40rem) {
+    .game-table :is(th, td) {
+      padding-inline: 0.5rem;
+    }
+  }
+
+  /*
+   * On the narrowest phones a title has two lines rather than one cut to five letters, in the
+   * year's place (step 10's review, 01, findings 35 and 50).
+   */
+  @media (width < 30rem) {
+    .game-table .game-link {
+      display: -webkit-box;
+      white-space: normal;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
   }
 
   /* A regroup or a change of view, when motion is not welcome: a short crossfade. */

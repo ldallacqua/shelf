@@ -3,9 +3,9 @@
 import { useSyncExternalStore } from 'react'
 
 /**
- * Whether single-letter shortcuts are on (spec 3.11): they can be turned
- * off entirely, for this device. `/` and `?` always work, so the list that
- * turns them back on can always be found.
+ * Whether single-key shortcuts are on (spec 3.11): they can be turned off
+ * entirely, for this device, `/` and `?` with the letters (WCAG 2.1.4). The
+ * list that turns them back on is also a button in the toolbar.
  */
 
 const KEY = 'shelf:shortcuts'

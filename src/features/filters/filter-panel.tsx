@@ -378,10 +378,17 @@ export function FilterPanel({
           data-filter-panel=""
           footer={
             <>
-              <p role="status" className="text-sm">
+              {/* The count is in the button; this says it as it changes. */}
+              <p role="status" className="sr-only">
                 {results}
               </p>
               {clear}
+              {/* Changes apply at once, behind the dialog: this is the way back to them. */}
+              <Button variant="primary" onClick={() => onOpenChange(false)}>
+                {matching === undefined
+                  ? t('panel.showGames')
+                  : t('panel.show', { count: matching })}
+              </Button>
             </>
           }
         >

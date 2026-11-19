@@ -24,15 +24,20 @@ export function LibrarySkeleton({ title }: { title?: string }) {
   return (
     <div className="library" data-view="shelf" aria-busy="true">
       <div className="library-body">
-        <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5 filters-beside:pt-0">
+        <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-1 pt-3 pb-2 sm:gap-y-2 sm:pt-10 sm:pb-5 filters-beside:pt-0">
           <h1 className="title text-2xl sm:text-5xl">{title ?? t('title')}</h1>
-          {/* The totals: three, wrapping where the real ones would. */}
-          <div aria-hidden="true" className="flex flex-wrap gap-x-5 gap-y-1">
-            {['w-20', 'w-24', 'w-24'].map((width, index) => (
-              <span key={width + index} className="flex h-6 items-center sm:h-7">
-                <span className={cn('ghost h-3.5', width)} style={ghostOrder(index)} />
-              </span>
-            ))}
+          {/* The totals: three, wrapping where the real ones would; then the marks' key. */}
+          <div aria-hidden="true" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 sm:gap-x-5">
+              {['w-20', 'w-24', 'w-24'].map((width, index) => (
+                <span key={width + index} className="flex h-6 items-center sm:h-7">
+                  <span className={cn('ghost h-3.5', width)} style={ghostOrder(index)} />
+                </span>
+              ))}
+            </div>
+            <span className="flex h-7 items-center pointer-coarse:h-9">
+              <span className="ghost h-3.5 w-40" style={ghostOrder(3)} />
+            </span>
           </div>
         </div>
         <p className="sr-only" role="status">
@@ -73,22 +78,22 @@ export function LibrarySkeleton({ title }: { title?: string }) {
               ))}
             </div>
           </div>
-          {/* The toolbar: under the search on a wide screen, two rows at the bottom on a phone. */}
+          {/* The toolbar: under the search on a wide screen, one row at the bottom on a phone. */}
           <div
             aria-hidden="true"
-            className="library-controls grid gap-2 sm:mt-3 sm:flex sm:flex-wrap sm:items-center sm:gap-3"
+            className="library-controls flex items-center gap-2 sm:mt-3 sm:flex-wrap lg:gap-3"
           >
-            <div className="flex gap-2 sm:contents">
-              <span className={cn('ghost w-22 flex-none sm:w-24 filters-beside:hidden', BUTTON)} />
-              <span className={cn('ghost flex-1 sm:w-31 sm:flex-none', BUTTON)} />
-              <span className={cn('ghost w-10 flex-none pointer-coarse:w-11', BUTTON)} />
-            </div>
-            <div className="flex gap-2 sm:contents">
-              <span className={cn('ghost flex-1 sm:w-40 sm:flex-none', BUTTON)} />
-              <span className={cn('ghost w-20 flex-none sm:ml-auto sm:w-23', GROUP)} />
-              <span className={cn('ghost w-30 flex-none sm:w-40', GROUP)} />
-              <span className={cn('ghost w-58 flex-none max-sm:hidden', GROUP)} />
-            </div>
+            {/* Filters, the sort and its direction. */}
+            <span
+              className={cn('ghost w-10 flex-none min-[44rem]:w-24 filters-beside:hidden', BUTTON)}
+            />
+            <span className={cn('ghost flex-1 sm:w-31 sm:flex-none', BUTTON)} />
+            <span className={cn('ghost w-10 flex-none pointer-coarse:w-11', BUTTON)} />
+            {/* A phone's one menu for the layout; wider, the grouping, the views and the keys. */}
+            <span className={cn('ghost w-13 flex-none sm:hidden', BUTTON)} />
+            <span className={cn('ghost w-32 flex-none max-sm:hidden lg:w-40', BUTTON)} />
+            <span className={cn('ghost w-38 flex-none max-sm:hidden sm:ml-auto lg:w-90', GROUP)} />
+            <span className={cn('ghost w-10 flex-none max-lg:hidden', BUTTON)} />
           </div>
           <GhostShelves />
         </div>

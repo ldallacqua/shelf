@@ -9,7 +9,7 @@ export type Messages = { [key: string]: string | Messages }
 export type Problem = {
   locale: string
   key: string
-  kind: 'missing' | 'extra' | 'empty' | 'placeholders'
+  kind: 'missing' | 'extra' | 'empty' | 'placeholders' | 'zero'
   detail?: string
 }
 
@@ -48,6 +48,47 @@ export function argumentsOf(text: string): string[] {
   return [...names].sort()
 }
 
+/**
+ * Whether a text has a plural whose `one` would also be said for zero, with no `=0` of its own.
+ * In Portuguese Intl puts 0 in `one`, so "{count, plural, one {# jogo} …}" said "0 jogo"
+ * (step 10's review, 01, finding 15).
+ */
+export function zeroAsOne(text: string): boolean {
+  const close = (open: number): number => {
+    let depth = 0
+    for (let index = open; index < text.length; index += 1) {
+      if (text[index] === '{') depth += 1
+      else if (text[index] === '}' && --depth === 0) return index
+    }
+    return text.length
+  }
+  for (const match of text.matchAll(/\{\s*[A-Za-z_][\w-]*\s*,\s*plural\s*,/g)) {
+    const end = close(match.index)
+    const keys: string[] = []
+    let at = match.index + match[0].length
+    while (at < end) {
+      while (/\s/.test(text[at] ?? '')) at += 1
+      if (at >= end) break
+      const start = at
+      while (at < end && !/[\s{]/.test(text[at] ?? '')) at += 1
+      keys.push(text.slice(start, at))
+      while (/\s/.test(text[at] ?? '')) at += 1
+      at = close(at) + 1
+    }
+    if (keys.includes('one') && !keys.includes('=0')) return true
+  }
+  return false
+}
+
+/** Languages whose plural rule says `one` for zero, as Portuguese does. */
+const zeroIsOne = (locale: string): boolean => {
+  try {
+    return new Intl.PluralRules(locale).select(0) === 'one'
+  } catch {
+    return false
+  }
+}
+
 export function compareMessages(
   source: Messages,
   others: Record<string, Messages>,
@@ -72,6 +113,9 @@ export function compareMessages(
       if (translated.trim() === '') {
         problems.push({ locale, key, kind: 'empty' })
         continue
+      }
+      if (zeroIsOne(locale) && zeroAsOne(translated)) {
+        problems.push({ locale, key, kind: 'zero', detail: 'give the plural an =0 branch' })
       }
       const expected = argumentsOf(text).join(' ')
       const found = argumentsOf(translated).join(' ')
