@@ -12,6 +12,7 @@ import {
 } from 'react'
 
 import { cn } from '@/ui/cn'
+import { Tip } from '@/ui/tooltip'
 
 /**
  * What a menu's item, a button or a key opens over the page (ADR 009, decision 3): the one layer above
@@ -212,12 +213,14 @@ function DialogContent({
           >
             {title}
           </Primitive.Title>
-          {/* First in the dialog, where focus starts, and at the top, so nothing scrolls away. No
-              tip: an X closes every dialog, and Escape spent on a tip took two to close one
-              (step 10's review, 01, finding 58). */}
-          <Primitive.Close aria-label={closeLabel} className={cn(dialogButton, 'ml-auto')}>
-            <XIcon aria-hidden="true" className="size-4" />
-          </Primitive.Close>
+          {/* First in the dialog, where focus starts, and at the top, so nothing scrolls away. Its
+              tip shows to a pointer only: on focus, Escape closed the tip first, and a dialog took
+              two (step 10's review, 01, finding 58). */}
+          <Tip label={closeLabel} hoverOnly>
+            <Primitive.Close aria-label={closeLabel} className={cn(dialogButton, 'ml-auto')}>
+              <XIcon aria-hidden="true" className="size-4" />
+            </Primitive.Close>
+          </Tip>
         </div>
         {description ? (
           <Primitive.Description className="sr-only">{description}</Primitive.Description>

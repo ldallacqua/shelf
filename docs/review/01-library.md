@@ -389,7 +389,7 @@ All of them, in `d8cd564` and `5026dd8` on `fix-01-library`:
 | 55 | Fixed. Someday's swatch is drawn as its box stands (smaller, in shade, not faded), and every swatch is filled in a mid tone, as a cover fills a box, so the shade shows. Unsorted gets the wall's inbox as a tag on the shelf's box (2D, with covers), and its row in the shelf's key; spec 3.2 says so. |
 | 56 | Fixed. Each term holds the mark and its name, the definition its words (a subgrid keeps the mark beside both lines). |
 | 57 | Fixed. The switch's hint is its `aria-describedby`. |
-| 58 | Fixed. A dialog's Close has no tip, in every dialog. |
+| 58 | Fixed. A dialog's Close shows its tip to a pointer only, never on focus (`Tip`'s `hoverOnly`), so one Escape closes the dialog; checked live at 320 by 256. Dropping the tip, as proposed, put 1.1 KB on every page (the shared files split anew), so it stays. |
 | 59 | Fixed, with the words proposed. |
 | 60 | Fixed, with the words proposed. |
 | 61 | Fixed, with the words proposed. |
@@ -495,5 +495,7 @@ were fixed all the same:
 | 63 | Fixed. `BoxStates` has an Unsorted box, and so do the wall's and the list's stories that share its games. |
 | 64 | Fixed. Below 640 the fade reaches the screen's edge (`right: -1rem`). |
 
-The fourth review's two notes stay open: the game page's screenshot viewer keeps a tip on its Close (row 02's review),
-and a long title at 320 may still end in "…" after two lines (50 gave it 8px more).
+The fourth review's two notes stay open: the game page's screenshot viewer has a Close and a tip of its own (row 02's
+review), and a long title at 320 may still end in "…" after two lines (50 gave it 8px more).
+
+The library's JavaScript budget goes from 297 to 298 KB (measured 297.7), with its reason in `scripts/lib/budgets.ts`.

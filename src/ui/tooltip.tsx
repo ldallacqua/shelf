@@ -65,6 +65,7 @@ const listen = () => {
 type TriggerProps = {
   children: ReactNode
   describes: boolean
+  hoverOnly: boolean
   ref?: Ref<HTMLElement>
   onFocus?: (event: FocusEvent<HTMLElement>) => void
   'aria-describedby'?: string
@@ -79,6 +80,7 @@ type TriggerProps = {
 function Trigger({
   children,
   describes,
+  hoverOnly,
   onFocus,
   'aria-describedby': description,
   'data-state': _,
@@ -89,7 +91,7 @@ function Trigger({
       {...props}
       {...(describes && description ? { 'aria-describedby': description } : {})}
       onFocus={(event: FocusEvent<HTMLElement>) => {
-        if (!movedByKeys) event.preventDefault()
+        if (!movedByKeys || hoverOnly) event.preventDefault()
         onFocus?.(event)
       }}
     >
@@ -110,6 +112,11 @@ type TipProps = {
    * once.
    */
   describes?: boolean
+  /**
+   * Shown to a pointer only, never on focus: for a control whose Escape matters more than its
+   * words, such as a dialog's Close, where Escape spent on the tip took two to close the dialog.
+   */
+  hoverOnly?: boolean
   side?: 'top' | 'right' | 'bottom' | 'left'
   align?: 'start' | 'center' | 'end'
   /** For the tip itself: `md:hidden` where the control's own words show from that width. */
@@ -120,6 +127,7 @@ function Tip({
   label,
   children,
   describes = false,
+  hoverOnly = false,
   side = 'top',
   align = 'center',
   className,
@@ -129,7 +137,9 @@ function Tip({
   const tip = (
     <Primitive.Root>
       <Primitive.Trigger asChild>
-        <Trigger describes={describes}>{children}</Trigger>
+        <Trigger describes={describes} hoverOnly={hoverOnly}>
+          {children}
+        </Trigger>
       </Primitive.Trigger>
       <Primitive.Portal>
         <Primitive.Content

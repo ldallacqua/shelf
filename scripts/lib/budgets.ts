@@ -113,7 +113,14 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // the keyboard button, the filters' checkboxes, IGDB's vocabularies in the page's language
   // (domain/query/vocab.ts) and four icons. Fetching the phone's menu on opening was weighed and
   // left: about half a kilobyte, for a menu a phone opens first.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 297 },
+  // Its third and fourth reviews (19 Nov 2026): measured 297.7 KB, from 296.6, for a Blocker
+  // and two Highs of WCAG's and twelve smaller findings: a grid with no row drawn scrolling to its
+  // game (revealRow, useRovingShelf), a folded shelf shown on a phone, the list's platforms a line
+  // each, the phone's menu starting at the grouping on G, the strip following the tab chosen, and
+  // Unsorted's tag on the shelf (lucide's inbox). Home, Trophies and the game page stay as they
+  // were: dropping the dialog Close's tip, as finding 58 first proposed, put 1.1 KB on every page,
+  // as the shared files split anew, so the tip stays and shows to a pointer only.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 298 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
