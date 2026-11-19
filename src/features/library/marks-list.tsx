@@ -73,7 +73,7 @@ export default function MarksList({
    */
   const row = (mark: ReactNode, name: string, words: string) => (
     <div key={name} className="col-span-2 grid grid-cols-subgrid grid-rows-[auto_auto]">
-      <dt className="col-span-2 row-span-2 grid grid-cols-subgrid grid-rows-subgrid">
+      <dt className="col-span-2 col-start-1 row-span-2 row-start-1 grid grid-cols-subgrid grid-rows-subgrid">
         <span className="row-span-2 flex items-center justify-center">{mark}</span>
         <span className="font-semibold">{name}</span>
       </dt>
