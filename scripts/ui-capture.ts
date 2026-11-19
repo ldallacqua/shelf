@@ -15,6 +15,8 @@
  * starts with `/` captures that address as a visitor. `screen:scene,scene`
  * captures only those scenes again, beside the screen's others, with an index of
  * their own (`index-<scenes>.md`): for a review run again over what a fix touched.
+ * A scene's looks are taken four at a time (`UI_CAPTURE_WORKERS`), and the whole
+ * page only in a scene that opens nothing (no `act`).
  */
 import { execSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
@@ -444,6 +446,17 @@ const themes = ['light', 'dark'] as const
 const locales = routing.locales
 /** Where a width is taken in one look only, that look. */
 const ONE_LOOK = { theme: 'light', locale: 'pt-BR' } as const
+/** Every look a scene is taken in: the full set at the phone and the desktop, one look elsewhere. */
+const combos: Combo[] = widths.flatMap(({ full, ...size }) =>
+  themes.flatMap((theme) =>
+    locales
+      .filter(() => full || theme === ONE_LOOK.theme)
+      .filter((locale) => full || locale === ONE_LOOK.locale)
+      .map((locale) => ({ ...size, theme, locale })),
+  ),
+)
+/** Looks taken at once. More is faster until the machine runs short; `UI_CAPTURE_WORKERS` sets it. */
+const WORKERS = Math.max(1, Number(process.env.UI_CAPTURE_WORKERS) || 4)
 /** A full-page picture stops here: past it, the first screens say enough. */
 const FULL_PAGE_LIMIT = 6000
 const FOCUS_STOPS = 60
@@ -695,6 +708,107 @@ type SceneRecord = {
   failed: string[]
 }
 
+/** What one look at a scene gave: its pictures, facts and axe's findings, or why it failed. */
+type Shot = {
+  name: string
+  pictures: string[]
+  facts?: Facts
+  axe?: AxeViolation[]
+  focus?: FocusStop[]
+  errors: string[]
+  failed?: string
+}
+
+async function captureCombo(
+  browser: Browser,
+  screen: Screen,
+  scene: Scene,
+  session: Session,
+  out: string,
+  path: string,
+  combo: Combo,
+): Promise<Shot> {
+  const { width, height, theme, locale } = combo
+  const size = { width, height }
+  const name = comboName(combo)
+  const shot: Shot = { name, pictures: [], errors: [] }
+  let context: BrowserContext | undefined
+  try {
+    context = await newContext(browser, combo, session)
+    const page = await context.newPage()
+    page.on('console', (message) => {
+      if (message.type() === 'error' && !screen.allowErrors) {
+        shot.errors.push(`${name}: ${message.text().slice(0, 200)}`)
+      }
+    })
+    page.on('pageerror', (error) =>
+      shot.errors.push(`${name}: uncaught ${error.message.slice(0, 200)}`),
+    )
+    await page.goto(`${BASE_URL}/${locale}${path}`)
+    await settle(page)
+    if (scene.act) {
+      await scene.act(page)
+      await settle(page)
+    }
+
+    await page.screenshot({ path: join(out, `${name}.png`) })
+    shot.pictures.push(`${name}.png`)
+    const facts = await readFacts(page)
+    shot.facts = facts
+    // The whole page only as it opens: with a menu or a dialog open, what lies below is the same
+    // page the scene without it shows.
+    if (!scene.act && facts.pageHeight > size.height + 40) {
+      // Below the first screen, lazy images load only once scrolled to.
+      await page.evaluate(async (limit) => {
+        for (let y = 0; y < Math.min(document.body.scrollHeight, limit); y += 600) {
+          window.scrollTo(0, y)
+          await new Promise((done) => setTimeout(done, 120))
+        }
+        window.scrollTo(0, 0)
+      }, FULL_PAGE_LIMIT)
+      await settle(page)
+      await page.screenshot({
+        path: join(out, `${name}-full.png`),
+        fullPage: true,
+        clip: {
+          x: 0,
+          y: 0,
+          width: size.width,
+          height: Math.min(facts.pageHeight, FULL_PAGE_LIMIT),
+        },
+      })
+      shot.pictures.push(`${name}-full.png`)
+    }
+    shot.axe = await runAxe(page)
+
+    if (size.width === 1440 && theme === 'light') {
+      const words = await page.evaluate(() => document.body.innerText)
+      writeFileSync(join(out, `text-${locale}.txt`), words)
+      if (locale === 'en') shot.focus = await walkFocus(page)
+    }
+  } catch (error) {
+    shot.failed = `${name}: ${(error as Error).message.split('\n')[0]}`
+  } finally {
+    await context?.close()
+  }
+  return shot
+}
+
+/** Runs `task` over `items`, at most `workers` at a time, and gives the results in their order. */
+async function inTurns<T, R>(items: T[], workers: number, task: (item: T) => Promise<R>) {
+  const results: R[] = []
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const at = next
+      next += 1
+      results[at] = await task(items[at]!)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(workers, items.length) }, worker))
+  return results
+}
+
 async function captureScene(
   browser: Browser,
   screen: Screen,
@@ -717,71 +831,18 @@ async function captureScene(
     failed: [],
   }
 
-  for (const { full, ...size } of widths) {
-    for (const theme of themes) {
-      for (const locale of locales) {
-        if (!full && (theme !== ONE_LOOK.theme || locale !== ONE_LOOK.locale)) continue
-        const combo: Combo = { ...size, theme, locale }
-        const name = comboName(combo)
-        let context: BrowserContext | undefined
-        try {
-          context = await newContext(browser, combo, session)
-          const page = await context.newPage()
-          page.on('console', (message) => {
-            if (message.type() === 'error' && !screen.allowErrors) {
-              record.errors.push(`${name}: ${message.text().slice(0, 200)}`)
-            }
-          })
-          page.on('pageerror', (error) =>
-            record.errors.push(`${name}: uncaught ${error.message.slice(0, 200)}`),
-          )
-          await page.goto(`${BASE_URL}/${locale}${path}`)
-          await settle(page)
-          if (scene.act) {
-            await scene.act(page)
-            await settle(page)
-          }
-
-          await page.screenshot({ path: join(out, `${name}.png`) })
-          record.pictures.push(`${name}.png`)
-          const facts = await readFacts(page)
-          record.facts[name] = facts
-          if (facts.pageHeight > size.height + 40) {
-            // Below the first screen, lazy images load only once scrolled to.
-            await page.evaluate(async (limit) => {
-              for (let y = 0; y < Math.min(document.body.scrollHeight, limit); y += 600) {
-                window.scrollTo(0, y)
-                await new Promise((done) => setTimeout(done, 120))
-              }
-              window.scrollTo(0, 0)
-            }, FULL_PAGE_LIMIT)
-            await settle(page)
-            await page.screenshot({
-              path: join(out, `${name}-full.png`),
-              fullPage: true,
-              clip: {
-                x: 0,
-                y: 0,
-                width: size.width,
-                height: Math.min(facts.pageHeight, FULL_PAGE_LIMIT),
-              },
-            })
-            record.pictures.push(`${name}-full.png`)
-          }
-          record.axe[name] = await runAxe(page)
-
-          if (size.width === 1440 && theme === 'light') {
-            const words = await page.evaluate(() => document.body.innerText)
-            writeFileSync(join(out, `text-${locale}.txt`), words)
-            if (locale === 'en') record.focus = await walkFocus(page)
-          }
-        } catch (error) {
-          record.failed.push(`${name}: ${(error as Error).message.split('\n')[0]}`)
-        } finally {
-          await context?.close()
-        }
-      }
-    }
+  // Several looks at once, each in its own browser context: one at a time, a review's capture
+  // took a quarter of an hour. Put back in order after, so the index reads the same every run.
+  const shots = await inTurns(combos, WORKERS, (combo) =>
+    captureCombo(browser, screen, scene, session, out, path, combo),
+  )
+  for (const shot of shots) {
+    record.pictures.push(...shot.pictures)
+    if (shot.facts) record.facts[shot.name] = shot.facts
+    if (shot.axe) record.axe[shot.name] = shot.axe
+    if (shot.focus) record.focus = shot.focus
+    record.errors.push(...shot.errors)
+    if (shot.failed) record.failed.push(shot.failed)
   }
 
   writeFileSync(join(out, 'axe.json'), JSON.stringify(record.axe, null, 2))
