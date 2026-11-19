@@ -47,7 +47,7 @@ when its report is written and the owner has chosen what to fix; the fixes are t
 | #   | Screen                                                | Names for `ui:capture`                         | Status                |
 | --- | ----------------------------------------------------- | ---------------------------------------------- | --------------------- |
 | 00  | Sign in and sign up (the pilot)                       | `sign-in`, `sign-up`                           | [Report](review/00-sign-in-up.md); fixes wait in [#217](https://github.com/ldallacqua/shelf/issues/217) |
-| 01  | The library: toolbar, filters, each view, empty, full | `library`, `library-mine`, `library-wall`, `library-list`, `library-banners`, `library-empty` | [Report](review/01-library.md); the owner chooses the fixes |
+| 01  | The library: toolbar, filters, each view, empty, full | `library`, `library-mine`, `library-wall`, `library-list`, `library-banners`, `library-empty` | [Report](review/01-library.md); every finding fixed in #221, reviewed four times |
 | 02  | A game's page, and the list beside it                 | `game`, `game-mine`                            | Not started           |
 | 03  | Organize: unsorted, hours, archived                   | `unsorted`, `hours`, `archived`                | Not started           |
 | 04  | Setting a shelf up                                    | `start`                                        | Not started           |
