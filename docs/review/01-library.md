@@ -395,3 +395,105 @@ All of them, in `d8cd564` and `5026dd8` on `fix-01-library`:
 | 61 | Fixed, with the words proposed. |
 
 The phone's far shelf panels are no longer an axe hit (46): a panel is focusable by script now (47).
+
+## Fourth review
+
+Captured on the build of 5026dd8, 19 Nov 2026: d8cd564's fixes, plus 5026dd8, which sets each of the key's terms at the
+top of its row. The indexes name d8cd564, but the retaken `marks` pictures show 5026dd8's change. As the procedure's step
+4 now says (74bc8c5), only the scenes the fixes touched were taken again, with `pnpm ui:capture` against
+`pnpm serve:test`: `library` (`open`, `marks`, `layout-menu`), `library-wall` (`open`, `marks`), and `library-list` and
+`library-banners` (`open`). The fixes didn't touch the others (`filtered`, `no-match`, `sort-menu`, `grouped`,
+`library-mine`, `library-empty`). No scene failed, there was no console error, and nothing scrolls sideways. axe-core
+found only `region` on the phone's view menu (27). The far phone panels' `scrollable-region-focusable` (46) is gone.
+
+Lenses run: critique, accessibility (WCAG 2.2 AA) and words, one after the other, by one Claude Code agent (the
+`ui-review` subagent). It checked each of 47 to 61 against its outcome above, and read the diff of `d8cd564` and
+`5026dd8` (`src/`, `messages/`, `docs/spec.md`). The Design plugin's skills weren't available in this session, so each
+lens followed [the procedure's](../ui-review.md) checklists by hand. Live checks used headless Playwright (Chromium)
+scripts against the same server, kept outside the repository, and ran only where a fix changes behavior:
+
+- 47: PS4 folded at 1280 by its button, then every view at 390 by 844 and 320 by 200, and Tab from its phone tab;
+- 48: six Tabs from PlayStation 5, then six Shift+Tabs, in the wall, the list and the banners at 390 by 844 and 320 by
+  256;
+- 49: five Page Downs, then five Page Ups, in the same three views at 390 by 844 and 1440 by 900, and at 1440 with PS4
+  folded, in the wall and the shelf;
+- 52: End on the phone's tabs with motion, the strip read every 100 ms while the pager glided, then Tab. Also a tab
+  tapped (touch events) or clicked, then the pager swiped or scrolled sideways;
+- 53: G at 390 in the shelf, in the wall grouped by status and in the Portuguese list grouped by year, then the arrows
+  and Escape.
+
+50, 51 and 54 to 61 were judged from the captures and the code.
+
+Of 47 to 61, fourteen work as the table says: 47 to 50 and 52 to 61 (54 from the code). One is only partly fixed:
+
+- 51: the fade is drawn now, but below 640 it stops 16px short of the screen's edge (64).
+
+52's fix brought 62, and 55's new state has no story of its own (63). Two notes on outcomes that hold:
+
+- 58: no dialog that `src/ui/dialog.tsx` draws has a tip on its Close, but the game page's screenshot viewer
+  (`screenshot-viewer.tsx`, row 02's screen) still has one;
+- 50: at 320 a title gets 8px more room (100px of text, 92 before), so the longest titles may still end at two lines
+  with "…". This wasn't measured again.
+
+| # | IDs | Severity | Where | What | Why | Fix | Effort |
+| - | --- | -------- | ----- | ---- | --- | --- | ------ |
+| 62 | C24 | Medium | Shelf view on a phone (390 by 844), the shelf tabs: a tab tapped (touch) or clicked, then the shelves swiped or scrolled sideways. Found live | The strip stops following the shelf in view. After a tap on PS4 and four swipes, the pager shows PlayStation 2's games, but the strip still shows PS5 to PSP, and PS2's tab, the current one, is cut off at the right edge. On the full-screen shelf the tabs are the shelf's only visible name, so nothing in sight says which shelf this is. It lasts until focus leaves the tabs. Cause: 52's fix keeps the chosen tab in view (`chosen ?? current`), and a tapped or clicked tab keeps focus (Chrome focuses a button on tap, and a swipe doesn't move focus), so `chosen` never ends. Before the fix the strip followed `current`. | Nielsen 1 (visibility of status); spec 3.4, "a row of tabs shows where you are". Brought by 52's fix | `shelf-view.tsx`: `chosen` ends once the pager arrives (`useEffect(() => { if (chosen === current) setChosen(undefined) }, [chosen, current])`), so End's glide still keeps the chosen tab and a swipe afterwards is followed again. Or end it when the pager is taken in hand (`pointerdown` or `wheel` on `.shelf-pager`). A test: click a tab, scroll the pager two shelves on, and the current tab is in the strip's view | S |
+| 63 | C25 | Medium | Storybook, `library.stories.tsx`, `BoxStates` (from the code) | The box's new Unsorted state, its inbox tag (55), has no story. `BoxStates` is "one of every state a box can be in (spec 3.2)", and spec 3.2 now lists Unsorted, but its `states` stop at Retired. The only story with the tag is the key's (`MarksOnTheShelf`), where it sits on a swatch. | AGENTS.md, "Give it a story": every new element, with each of its states. By the letter of the scale, a broken AGENTS.md rule is a Blocker. Rated Medium because the tag itself is in Storybook, in the key's story; only the box's list of states falls short | `library.stories.tsx`: `stand(game(9, 'unsorted'))` in `states`, and Unsorted in `BoxStates`' comment | S |
+| 64 | C26 | Low | The status row below 640 (`library/open/320-light-pt-BR`, `390-dark-pt-BR`, `390-light-en`) | 51's fade is drawn now, but it stops 16px short of the screen's edge. Below 640 the row runs edge to edge with 16px of padding (`max-sm:-mx-4 … max-sm:px-4` in `status-row.tsx`), and the sticky fade (`right: 0`) stops at the padding's edge, not the screen's. Whatever passes under those 16px is drawn at full strength beyond the fade. At 320, "Zerado" reads "Ze" dimmed, then "rad" bright to the edge; at 390, "Ab" is bright after a dark band. That reads as a glitch more than as more to come. From 640, where the row has no padding, it fades as meant ("Lista de desejos"). | Alignment; nothing lost at an edge. 51's fix, incomplete | `shelf.css`: below 40rem, `.status-row::after { right: -1rem }` (the row's own padding), so the fade ends at the screen's edge | S |
+
+### What works
+
+- Checked live and working as the table says:
+  - 47: PS4, folded at 1280, stays hidden there. Below 640 it shows its games in all four views, at 390 by 844 and at
+    320 by 200, and Tab from its phone tab focuses its first game, in sight.
+  - 48: every Tab and Shift+Tab, 72 in all, landed on a game with its centre in sight, never on a grid.
+  - 49: every Page Down and Page Up, 60 in all, landed on a game of the next or previous shelf, in sight. At 1440, a
+    folded shelf is passed over in the wall and the shelf.
+  - 52: through End's glide, about a second and a half, the focused tab never left the strip's view. Tab then entered
+    the last shelf, with a game in sight.
+  - 53: G starts at the grouping checked ("Platform", "Status", "Ano"), the arrows go on from it, and Escape gives
+    focus back to the menu's button. Opened by its button, the menu still starts at the first view.
+- From the captures and the code:
+  - 50: one platform a line ("PS5" over "PC") at 320 and 390, and from 640 with the format words ("PS5 FÍSICO" over
+    "PC DIGITAL"). The year is back at 640, and from 480 by the code.
+  - 51: at 640 in Portuguese, "Lista de desejos" fades into the wall, and Filters as its icon keeps the controls to one
+    row.
+  - 54: the heading wraps (`flex-wrap`), so the counts go under the name and not into columns (from the code).
+  - 55: Someday's swatch stands as its box does (0.92, brightness 0.78), filled in a mid tone, so it reads darker and
+    smaller than Backlog in both themes. The shelf's key has Unsorted with its inbox tag, and a box with covers draws
+    the same tag, as Retired's does.
+  - 56: each term holds the mark and its name, and the definition holds the words. Since 5026dd8 the name stands at the
+    top of its row, in both keys, both themes and both languages, and `text-en.txt` reads the name, then the words.
+  - 57: the `Switch` passes its props to its input, so the hint describes the switch itself.
+  - 58: no dialog that `src/ui/dialog.tsx` draws has a tip on its Close.
+  - 59 to 61: the words proposed, in both languages.
+- No new axe rule, no console error in the captures or the live checks, and no sideways scroll.
+
+### Not checked
+
+- Screen-reader speech: the key's terms (56), the switch's description (57), the list's named row group (48).
+- An Unsorted game on the shelf, and a game on three platforms (the list's "+1"): the sample has neither, so both are
+  from the code.
+- These weren't checked live, as this round kept them to the captures and the code: how many list titles are still cut
+  at 320 (50), the shelf heading at 320 by 568 (54), and the filtered toolbar from 640 to 703 (51). `filtered` wasn't
+  captured again.
+- Touch, beyond 62's swipes. iOS Safari doesn't focus a button on tap, so 62 may not happen on an iPhone; only Chromium
+  was run. Firefox has no `animation-timeline`, so it draws no fade (51, 64), by design.
+- Storybook wasn't opened: 63 is from the stories' code.
+- Windows forced colors, text spacing, a phone's system text size, the stress set, and the game page's screenshot viewer
+  (row 02).
+- Other products weren't opened.
+
+### Fixed after the fourth review
+
+No Blocker or High was left, so the review ends here (docs/ui-review.md, "A new feature", step 4). The three found
+were fixed all the same:
+
+| # | Outcome |
+| - | ------- |
+| 62 | Fixed. The keyboard's or a tap's choice ends once the pager arrives, and the strip follows the swipe again. Checked live at 390: after a tap on PS4 and four swipes, the current tab stayed in the strip's view. |
+| 63 | Fixed. `BoxStates` has an Unsorted box, and so do the wall's and the list's stories that share its games. |
+| 64 | Fixed. Below 640 the fade reaches the screen's edge (`right: -1rem`). |
+
+The fourth review's two notes stay open: the game page's screenshot viewer keeps a tip on its Close (row 02's review),
+and a long title at 320 may still end in "…" after two lines (50 gave it 8px more).

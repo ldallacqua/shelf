@@ -94,6 +94,7 @@ const states: ShelfItem[] = [
   stand(game(4, 'wishlist', { copies: [] })),
   stand(game(7, 'someday')),
   stand(game(8, 'retired')),
+  stand(game(9, 'unsorted')),
   stand(game(5, 'backlog', { copies: [{ platform: 167, format: 'digital' }] })),
   stand(
     game(6, 'completed', {
@@ -122,7 +123,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Backlog, playing, completed, dropped, wishlist, someday, retired, a download, and a game owned twice. */
+/**
+ * Backlog, playing, completed, dropped, wishlist, someday, retired, unsorted, a download, and a game
+ * owned twice.
+ */
 export const BoxStates: Story = {
   render: () => (
     <ShelfGrid

@@ -144,6 +144,9 @@ export function ShelfView({
   const [current, setCurrent] = useState(0)
   /** The tab chosen with the keyboard, while focus is among the tabs: where the pager is going. */
   const [chosen, setChosen] = useState<number>()
+  // Arrived: from here the strip follows the swipe again. A tapped tab keeps focus, so the choice
+  // outlived the glide, and the strip stopped following (step 10's review, 01, finding 62).
+  if (chosen !== undefined && chosen === current) setChosen(undefined)
 
   // Follow the swipe: the shelf nearest the pager's left edge is the current one.
   useEffect(() => {
