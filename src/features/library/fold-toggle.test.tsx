@@ -10,6 +10,13 @@ import { PreferenceScript } from './preference-script'
 
 /** Folding a shelf away (spec 3.7), remembered on this device. */
 
+/**
+ * Whether a shelf's games are folded away. The CSS that hides them, wider than a phone only,
+ * isn't in these tests: a phone shows a folded shelf's games (step 10's review, 01, finding 47).
+ */
+const folded = (text: string) =>
+  screen.getByText(text).closest('[data-shelf-body]')?.hasAttribute('data-folded')
+
 const shelf = (key = 'platform:167', name = 'PS5') => (
   <section data-shelf={key}>
     <FoldToggle shelfKey={key} name={name} controls={`${key}-games`} />
@@ -27,12 +34,15 @@ describe('folding a shelf away', () => {
     expect(fold).toHaveAttribute('aria-controls', 'platform:167-games')
 
     await userEvent.click(fold)
-    expect(screen.queryByText('The PS5 games')).not.toBeVisible()
+    expect(folded('The PS5 games')).toBe(true)
+    expect(screen.getByText('The PS5 games').closest('[data-shelf-body]')).not.toHaveAttribute(
+      'hidden',
+    )
     const unfold = screen.getByRole('button', { name: 'Show the PS5 shelf' })
     expect(unfold).toHaveAttribute('aria-expanded', 'false')
 
     await userEvent.click(unfold)
-    expect(screen.getByText('The PS5 games')).toBeVisible()
+    expect(folded('The PS5 games')).toBe(false)
     expect(window.localStorage.getItem(COLLAPSED_KEY)).toBeNull()
   })
 
@@ -53,8 +63,8 @@ describe('folding a shelf away', () => {
         {shelf('platform:130', 'Switch')}
       </>,
     )
-    expect(screen.getByText('The PS5 games')).toBeVisible()
-    expect(screen.queryByText('The Switch games')).not.toBeVisible()
+    expect(folded('The PS5 games')).toBe(false)
+    expect(folded('The Switch games')).toBe(true)
     await userEvent.click(screen.getByRole('button', { name: 'Show the Switch shelf' }))
   })
 })

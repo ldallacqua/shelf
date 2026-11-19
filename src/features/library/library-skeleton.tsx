@@ -84,7 +84,9 @@ export function LibrarySkeleton({ title }: { title?: string }) {
             className="library-controls flex items-center gap-2 sm:mt-3 sm:flex-wrap lg:gap-3"
           >
             {/* Filters, the sort and its direction. */}
-            <span className={cn('ghost w-10 flex-none sm:w-24 filters-beside:hidden', BUTTON)} />
+            <span
+              className={cn('ghost w-10 flex-none min-[44rem]:w-24 filters-beside:hidden', BUTTON)}
+            />
             <span className={cn('ghost flex-1 sm:w-31 sm:flex-none', BUTTON)} />
             <span className={cn('ghost w-10 flex-none pointer-coarse:w-11', BUTTON)} />
             {/* A phone's one menu for the layout; wider, the grouping, the views and the keys. */}

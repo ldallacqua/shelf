@@ -135,8 +135,11 @@ export function useRowWindow(
 
 /**
  * Scrolls a windowed grid so the row holding `index` is in the middle of
- * what can be seen: its box may not be in the page until then. The grid is
- * found by its `data-grid-of`. False when the grid could not be measured.
+ * what can be seen: its box may not be in the page until then. False when no
+ * row could be measured, as none is drawn: the grid's top is scrolled to then,
+ * so its first rows are drawn, and it can be asked again once they are. Before,
+ * nothing scrolled, and focus waited on a grid far off the screen for a row
+ * that never came (step 10's review, 01, findings 48 and 49).
  */
 export const revealRow = (grid: HTMLElement, index: number): boolean => {
   const style = getComputedStyle(grid)
@@ -146,7 +149,10 @@ export const revealRow = (grid: HTMLElement, index: number): boolean => {
     const cell = grid.querySelector<HTMLElement>('[data-cell]')
     pitch = cell ? cell.getBoundingClientRect().height + (Number.parseFloat(style.rowGap) || 0) : 0
   }
-  if (!pitch) return false
+  if (!pitch) {
+    grid.scrollIntoView({ block: 'start', inline: 'start', behavior: 'instant' })
+    return false
+  }
   const root = scrollRootOf(grid)
   // On a phone the shelves stand side by side: this one first.
   grid.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'instant' })

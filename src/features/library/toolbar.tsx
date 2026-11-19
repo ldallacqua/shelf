@@ -13,7 +13,7 @@ import {
   Rows3Icon,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 
 import { groupings, type Grouping } from '@/domain/library/group'
 import { views, type View } from '@/domain/library/view'
@@ -307,6 +307,9 @@ type LayoutMenuProps = Pick<
 /**
  * A phone's way to the view, the grouping and, per view, the covers' size: one button at the
  * row's end, drawn as the view it shows, so what is shown and in what order keep their words.
+ *
+ * Opened by anything but its button (the G key, which changes the grouping), it starts at the
+ * grouping chosen, not at the first view (step 10's review, 01, finding 53).
  */
 export function LayoutMenu({
   view,
@@ -323,9 +326,31 @@ export function LayoutMenu({
 }: LayoutMenuProps) {
   const t = useTranslations('Library')
   const Icon = viewIcons[view]
+  /** Whether the menu was opened by its button. */
+  const byButton = useRef(false)
+  useEffect(() => {
+    if (!open) {
+      byButton.current = false
+      return
+    }
+    if (byButton.current) return
+    // After the menu has put focus on its first item.
+    const frame = requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>('[data-grouping] [role="menuitemradio"][aria-checked="true"]')
+        ?.focus(),
+    )
+    return () => cancelAnimationFrame(frame)
+  }, [open])
 
   return (
-    <DropdownMenu open={open} onOpenChange={onOpenChange}>
+    <DropdownMenu
+      open={open}
+      onOpenChange={(next) => {
+        byButton.current = next
+        onOpenChange?.(next)
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           variant="secondary"
@@ -360,7 +385,11 @@ export function LayoutMenu({
 
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{t('group.menu')}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={group} onValueChange={(value) => onGroup(value as Grouping)}>
+        <DropdownMenuRadioGroup
+          data-grouping=""
+          value={group}
+          onValueChange={(value) => onGroup(value as Grouping)}
+        >
           {groupings.map((value) => (
             <DropdownMenuRadioItem key={value} value={value}>
               {t(`group.${value}`)}

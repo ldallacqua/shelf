@@ -1,14 +1,18 @@
 'use client'
 
-import { CheckIcon, InfinityIcon, LockIcon } from 'lucide-react'
+import { CheckIcon, InboxIcon, InfinityIcon, LockIcon } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
 
 import type { Status } from '@/domain/library/values'
 import { StatusMark } from './status-mark'
 
-/** The statuses with a mark on the shelf, in the order a shelf shows them most. */
-const shelfMarks = [
+/**
+ * Every status has a mark, in the order a shelf shows them most. Unsorted, which a sync's games
+ * are, last: on the shelf it once had none, and stood as Backlog does (step 10's review, 01,
+ * finding 55).
+ */
+const marks = [
   'playing',
   'backlog',
   'completed',
@@ -16,10 +20,8 @@ const shelfMarks = [
   'someday',
   'retired',
   'wishlist',
+  'unsorted',
 ] as const satisfies readonly Status[]
-
-/** The wall's and the list's: the same, and Unsorted's inbox, which a sync's games carry. */
-const iconMarks = [...shelfMarks, 'unsorted'] as const satisfies readonly Status[]
 
 /** A box in small, standing as a box of that status stands, with the shelf's own marks on it. */
 function Swatch({ status, loose }: { status?: Status; loose?: boolean }) {
@@ -35,6 +37,11 @@ function Swatch({ status, loose }: { status?: Status; loose?: boolean }) {
         {status === 'retired' ? (
           <span className="game-tag">
             <InfinityIcon />
+          </span>
+        ) : null}
+        {status === 'unsorted' ? (
+          <span className="game-tag">
+            <InboxIcon />
           </span>
         ) : null}
       </span>
@@ -59,21 +66,26 @@ export default function MarksList({
   const t = useTranslations('Library')
   const format = useFormatter()
 
+  /**
+   * A term is the mark and its name, its words the definition. The term held only the mark, which
+   * is hidden from a screen reader, so it met a list of empty terms (finding 56). The mark stands
+   * beside both lines, in a column as wide as the widest.
+   */
   const row = (mark: ReactNode, name: string, words: string) => (
-    <div key={name} className="contents">
-      <dt className="flex justify-center">{mark}</dt>
-      <dd>
-        <span className="block font-semibold">{name}</span>
-        <span className="block text-muted">{words}</span>
-      </dd>
+    <div key={name} className="col-span-2 grid grid-cols-subgrid grid-rows-[auto_auto]">
+      <dt className="col-span-2 row-span-2 grid grid-cols-subgrid grid-rows-subgrid">
+        <span className="row-span-2 flex items-center justify-center">{mark}</span>
+        <span className="font-semibold">{name}</span>
+      </dt>
+      <dd className="col-start-2 row-start-2 text-muted">{words}</dd>
     </div>
   )
 
   return (
-    <dl className="grid grid-cols-[minmax(2.5rem,auto)_1fr] items-center gap-x-4 gap-y-3 text-sm">
+    <dl className="grid grid-cols-[minmax(2.5rem,auto)_1fr] gap-x-4 gap-y-3 text-sm">
       {view === 'shelf' ? (
         <>
-          {shelfMarks.map((status) =>
+          {marks.map((status) =>
             row(<Swatch status={status} />, t(`status.${status}`), t(`marks.shelf.${status}`)),
           )}
           {row(<Swatch loose />, t('format.digital'), t('marks.shelf.digital'))}
@@ -89,7 +101,7 @@ export default function MarksList({
         </>
       ) : (
         <>
-          {iconMarks.map((status) =>
+          {marks.map((status) =>
             row(
               // Its word is beside it: hidden here, so it isn't said twice.
               <span aria-hidden="true">

@@ -263,6 +263,7 @@ Phone:
 | Retired | A small matte square tag on the cover's corner, with an infinity sign (3.12) |
 | Dropped | Leans against its neighbor |
 | Wishlist | An outlined placeholder with a faint cover, not a solid box |
+| Unsorted | A small matte square tag on the cover's corner, with an inbox, as the wall's mark: brought in by a sync, waiting to be placed (4.5) |
 | Owned only digitally | A cover with no case around it |
 | Owned on more than one platform | A small count on the box's foot |
 

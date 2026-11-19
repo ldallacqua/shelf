@@ -602,6 +602,7 @@
       "private": "{description}, só você vê"
     },
     "list": {
+      "morePlatforms": "+{count}",
       "cover": "Capa",
       "title": "Título",
       "platforms": "Plataformas",
@@ -631,7 +632,7 @@
       "platforms": "Plataformas",
       "platformsSample": "PS5 · PC",
       "private": "Privado",
-      "privateWords": "um cadeado: só o dono da estante vê",
+      "privateWords": "um cadeado: só você vê",
       "shelf": {
         "playing": "um pouco à frente, com uma luz acima",
         "backlog": "a caixa reta, sem marca",
@@ -640,6 +641,7 @@
         "someday": "mais ao fundo, na sombra",
         "retired": "uma etiqueta com ∞, para um jogo sem fim",
         "wishlist": "só o contorno, com a capa apagada",
+        "unsorted": "uma etiqueta com uma caixa de entrada: veio de uma sincronização e ainda não tem lugar",
         "digital": "só a capa, sem a caixa",
         "copies": "quantas, no pé da caixa"
       },
@@ -1320,7 +1322,7 @@
       "term": "{key}: {values}",
       "not": "{key}: exceto {values}",
       "text": "Título: {text}",
-      "notText": "Fora do título: {text}",
+      "notText": "Título: sem {text}",
       "or": "ou",
       "remove": "Remover {condition}",
       "ignored": "Não entendido, ficou de fora:",
@@ -1525,7 +1527,7 @@
       "help": "Mostrar esta lista"
     },
     "letters": "Atalhos de uma tecla",
-    "lettersHint": "Desligados, nenhuma tecla sozinha faz nada, nem / e ?. Esta lista continua no botão de teclado ao lado dos totais."
+    "lettersHint": "Desligados, nenhuma tecla sozinha faz nada, nem / nem ?. Abra esta lista de novo pelo botão de teclado junto à contagem de jogos."
   },
   "Account": {
     "metaTitle": "Entrar",

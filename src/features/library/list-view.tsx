@@ -5,7 +5,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { useRef, type ReactNode } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
-import { thumbnailOf, type LibraryPlatform } from '@/domain/library/library'
+import { thumbnailOf, type LibraryCopy, type LibraryPlatform } from '@/domain/library/library'
 import { naturalSort, type Sort, type SortKey } from '@/domain/library/sort'
 import { shareFirstBoxes } from '@/domain/library/view'
 
@@ -43,10 +43,10 @@ const WIDE_COLUMN = 'hidden @min-[73rem]:[display:table-column]'
 function ListColumns() {
   return (
     <colgroup>
-      <col className="w-15" />
+      <col className="w-13 sm:w-15" />
       <col />
       {/* On a phone the platforms go without their format, and the title keeps the room. */}
-      <col className="w-16 sm:w-44" />
+      <col className="w-18 sm:w-44" />
       <col className="w-12 sm:w-36" />
       <col className={`${MEDIUM_COLUMN} w-24`} />
       <col className={`${MEDIUM_COLUMN} w-20`} />
@@ -225,6 +225,8 @@ function ListTable({
       </thead>
       <tbody
         ref={body}
+        // Named as the wall's and the banners' grids are: it can hold focus (finding 48).
+        aria-label={caption}
         data-grid-of={shelf.key}
         data-roving=""
         // The shelf's stop while none of its games is drawn (`useRovingShelf`).
@@ -285,31 +287,15 @@ function ListTable({
                   <LockIcon aria-hidden="true" className="ml-1.5 inline size-3.5 text-muted" />
                 ) : null}
                 {game.year ? (
-                  // On a phone the title takes two lines here instead: the year is in its name.
-                  <span className="block readout text-[0.625rem] text-muted max-sm:hidden">
+                  // On the narrowest phones the title takes two lines here instead: the year is
+                  // in its name.
+                  <span className="block readout text-[0.625rem] text-muted max-[30rem]:hidden">
                     {game.year}
                   </span>
                 ) : null}
               </td>
               <td className="text-muted">
-                {game.copies.length > 0 ? (
-                  game.copies.map((owned) => {
-                    const on = platforms.get(owned.platform)
-                    return (
-                      <span
-                        key={`${owned.platform}:${owned.format}`}
-                        className="mr-2 inline-flex items-baseline gap-1 last:mr-0"
-                      >
-                        <span className="text-text">{on?.short}</span>
-                        <span className="readout text-[0.5625rem] max-sm:hidden">
-                          {t(`format.${owned.format}`)}
-                        </span>
-                      </span>
-                    )
-                  })
-                ) : (
-                  <span>{t('list.none')}</span>
-                )}
+                <Platforms copies={game.copies} platforms={platforms} />
               </td>
               <td>
                 <StatusMark
@@ -342,6 +328,45 @@ function ListTable({
       </tbody>
     </table>
   )
+}
+
+/**
+ * A game's platforms, one a line: two fit the row's height, so a third goes as a count. One was
+ * cut to "PS5 …" on a phone, even where the title had room (step 10's review, 01, finding 50).
+ * Wider than a phone each says its formats.
+ */
+function Platforms({
+  copies,
+  platforms,
+}: {
+  copies: LibraryCopy[]
+  platforms: ReadonlyMap<number, LibraryPlatform>
+}) {
+  const t = useTranslations('Library')
+  const format = useFormatter()
+  if (copies.length === 0) return <span>{t('list.none')}</span>
+  const formats = new Map<number, LibraryCopy['format'][]>()
+  for (const copy of copies) {
+    formats.set(copy.platform, [...(formats.get(copy.platform) ?? []), copy.format])
+  }
+  const lines = [...formats]
+  const more = lines.length - 2
+  return lines.slice(0, 2).map(([platform, kinds], line) => (
+    <span key={platform} className="flex items-baseline gap-1">
+      <span className="min-w-0 truncate text-text">{platforms.get(platform)?.short}</span>
+      <span className="truncate readout text-[0.5625rem] max-sm:hidden">
+        {format.list(
+          kinds.map((kind) => t(`format.${kind}`)),
+          { type: 'unit' },
+        )}
+      </span>
+      {line === 1 && more > 0 ? (
+        <span className="flex-none readout text-[0.625rem]">
+          {t('list.morePlatforms', { count: more })}
+        </span>
+      ) : null}
+    </span>
+  ))
 }
 
 /** A row-shaped place in the list, for a game on its way. */

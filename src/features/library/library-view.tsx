@@ -920,13 +920,14 @@ export function LibraryView({
               <Button
                 variant="secondary"
                 // Where the filters stand beside the library, there is nothing to open.
-                className="flex-none max-sm:px-3 filters-beside:hidden"
+                className="flex-none max-[44rem]:px-3 filters-beside:hidden"
                 aria-label={filters('open', { count: conditions })}
                 onClick={() => setPanelOpen(true)}
               >
                 <SlidersHorizontalIcon aria-hidden="true" />
-                {/* On a phone the row is one line: the icon and its count, its name said in full. */}
-                <span aria-hidden="true" className="max-sm:hidden">
+                {/* On a phone, and up to where the views fit beside it, the row is one line: the
+                    icon and its count, its name said in full (step 10's review, 01, finding 51). */}
+                <span aria-hidden="true" className="max-[44rem]:hidden">
                   {filters('openShort')}
                 </span>
                 {conditions > 0 ? (

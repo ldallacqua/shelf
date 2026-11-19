@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { useRef } from 'react'
 import { describe, expect, it } from 'vitest'
 
@@ -40,9 +40,10 @@ describe('useRovingShelf (review 01, findings 20, 28 and 30)', () => {
     expect(screen.getByRole('list', { name: 'A shelf' })).toHaveAttribute('tabindex', '-1')
   })
 
-  it('hands focus from the grid to its stop, once the stop is drawn', () => {
+  it('hands focus from the grid to its stop, once the stop is drawn', async () => {
     render(<Shelf drawn={3} />)
     act(() => screen.getByRole('list', { name: 'A shelf' }).focus())
-    expect(screen.getByRole('button', { name: 'Game 1' })).toHaveFocus()
+    // On the next frame, after the browser's own scroll to the grid (finding 48).
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Game 1' })).toHaveFocus())
   })
 })

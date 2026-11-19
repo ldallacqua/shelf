@@ -65,6 +65,8 @@ export function ShortcutsDialog({
         <div className="mt-6 flex items-center gap-3 border-t border-line pt-4">
           <Switch
             id={switchId}
+            // The hint says what turning them off does, and how to turn them back on (review 01, 57).
+            aria-describedby={`${switchId}-hint`}
             checked={on}
             onChange={(event) => setShortcutsOn(event.target.checked)}
           />
@@ -72,7 +74,9 @@ export function ShortcutsDialog({
             {t('letters')}
           </label>
         </div>
-        <p className="mt-2 text-xs text-muted">{t('lettersHint')}</p>
+        <p id={`${switchId}-hint`} className="mt-2 text-xs text-muted">
+          {t('lettersHint')}
+        </p>
       </DialogContent>
     </Dialog>
   )

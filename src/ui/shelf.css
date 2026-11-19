@@ -390,6 +390,10 @@
     place-items: center;
   }
 
+  /*
+   * Filled in a mid tone, as a cover fills a box, so a box in shade shows it: on the room's own
+   * color, Someday's darker box hardly showed (step 10's review, 01, findings 38 and 55).
+   */
   .marks-box {
     position: relative;
     display: block;
@@ -397,17 +401,16 @@
     height: 1.875rem;
     border: 1.5px solid var(--text-muted);
     border-radius: 3px;
-    background: var(--surface-raised);
+    background: color-mix(in srgb, var(--text-muted) 45%, var(--surface-raised));
   }
 
   .marks-box[data-status='playing'] {
     scale: 1.05;
   }
 
-  /* Set back, in shade: faded as well, as a darker box hardly shows against the dark room. */
+  /* Set back, in shade: as a Someday box stands on the shelf (`.game-box[data-status='someday']`). */
   .marks-box[data-status='someday'] {
-    scale: 0.88;
-    opacity: 0.55;
+    scale: 0.92;
     filter: brightness(0.78);
   }
 
@@ -702,11 +705,14 @@
     }
   }
 
-  @media (width < 40rem) {
-    [data-shelf-body][hidden] {
-      display: block;
+  /* A folded shelf's games, wider than a phone only (`FoldBody`). */
+  @media (width >= 40rem) {
+    [data-shelf-body][data-folded] {
+      display: none;
     }
+  }
 
+  @media (width < 40rem) {
     /*
      * A phone's shelves don't fold. The toggle stays where it is, unseen and
      * out of reach, not with no box at all: axe reads a box at the page's
@@ -1299,6 +1305,8 @@
     position: sticky;
     right: 0;
     flex: none;
+    /* The row centers its items, and an empty one had no height: the fade wasn't drawn (51). */
+    align-self: stretch;
     width: 2rem;
     margin-left: -2rem;
     background: linear-gradient(to left, var(--wall), transparent);
@@ -1495,10 +1503,20 @@
   }
 
   /*
-   * On a phone a title has two lines rather than one cut to five letters, in the year's place
-   * (step 10's review, 01, finding 35).
+   * On a phone the cells keep less room to their sides, for the title (step 10's review, 01,
+   * finding 50).
    */
   @media (width < 40rem) {
+    .game-table :is(th, td) {
+      padding-inline: 0.5rem;
+    }
+  }
+
+  /*
+   * On the narrowest phones a title has two lines rather than one cut to five letters, in the
+   * year's place (step 10's review, 01, findings 35 and 50).
+   */
+  @media (width < 30rem) {
     .game-table .game-link {
       display: -webkit-box;
       white-space: normal;

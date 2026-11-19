@@ -602,6 +602,7 @@
       "private": "{description}, only you see it"
     },
     "list": {
+      "morePlatforms": "+{count}",
       "cover": "Cover",
       "title": "Title",
       "platforms": "Platforms",
@@ -631,7 +632,7 @@
       "platforms": "Platforms",
       "platformsSample": "PS5 · PC",
       "private": "Private",
-      "privateWords": "a lock: only the shelf's owner sees it",
+      "privateWords": "a lock: only you see it",
       "shelf": {
         "playing": "stands forward, a light above it",
         "backlog": "a plain box, standing straight",
@@ -640,6 +641,7 @@
         "someday": "set back, in shade",
         "retired": "a tag with ∞, for a game with no end",
         "wishlist": "an outline, its cover faint",
+        "unsorted": "a tag with an inbox: came in from a sync, not placed yet",
         "digital": "the cover alone, with no case",
         "copies": "how many, at its foot"
       },
@@ -1320,7 +1322,7 @@
       "term": "{key}: {values}",
       "not": "{key}: not {values}",
       "text": "Title: {text}",
-      "notText": "Not in the title: {text}",
+      "notText": "Title: not {text}",
       "or": "or",
       "remove": "Remove {condition}",
       "ignored": "Not understood, so ignored:",
@@ -1525,7 +1527,7 @@
       "help": "Show this list"
     },
     "letters": "Single-key shortcuts",
-    "lettersHint": "Off, no key on its own does anything, / and ? included. This list stays at the keyboard button by the totals."
+    "lettersHint": "When off, no key on its own does anything, not even / or ?. Open this list again from the keyboard button by the game count."
   },
   "Account": {
     "metaTitle": "Sign in",

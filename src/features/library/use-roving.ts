@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from 'react'
 
+import { foldedAway } from './fold-toggle'
 import { revealRow } from './use-row-window'
 
 const indexOf = (target: EventTarget | null): number | undefined => {
@@ -24,7 +25,7 @@ const indexOf = (target: EventTarget | null): number | undefined => {
  */
 const leaveShelf = (grid: HTMLElement, direction: -1 | 1) => {
   const grids = [...document.querySelectorAll<HTMLElement>('[data-roving]')].filter(
-    (each) => !each.closest('[hidden]'),
+    (each) => !foldedAway(each),
   )
   const next = grids[grids.indexOf(grid) + direction]
   if (!next) return
@@ -56,14 +57,22 @@ export function useRovingShelf(
 ) {
   const [stop, setStop] = useState(0)
   const focusNext = useRef<number | undefined>(undefined)
+  /** Set when the grid's top was scrolled to, no row being drawn to measure the game's row by. */
+  const roughly = useRef(false)
 
-  // A game asked for before it was drawn takes focus as soon as it is.
+  // A game asked for before it was drawn takes focus as soon as it is. Scrolled roughly, the
+  // grid is asked again once a row is drawn to measure by.
   useEffect(() => {
-    if (focusNext.current === undefined) return
-    const target = ref.current?.querySelector<HTMLElement>(`[data-index="${focusNext.current}"]`)
+    const want = focusNext.current
+    const grid = ref.current
+    if (want === undefined || !grid) return
+    const target = grid.querySelector<HTMLElement>(`[data-index="${want}"]`)
     if (target) {
       focusNext.current = undefined
+      roughly.current = false
       target.focus()
+    } else if (roughly.current && grid.querySelector('[data-cell]')) {
+      roughly.current = !revealRow(grid, want)
     }
   })
 
@@ -79,7 +88,7 @@ export function useRovingShelf(
       return
     }
     focusNext.current = target
-    if (grid) revealRow(grid, target)
+    if (grid) roughly.current = !revealRow(grid, target)
   }
 
   const onKey = (event: KeyboardEvent<HTMLElement>) => {
@@ -109,8 +118,15 @@ export function useRovingShelf(
   const [onKeyDown] = useState(() => (event: KeyboardEvent<HTMLElement>) => latest.current(event))
 
   const onFocus = (event: FocusEvent<HTMLElement>) => {
-    // The grid itself: its stop isn't drawn. Draw it, and hand focus on.
-    if (event.target === event.currentTarget) return move(stop)
+    const grid = event.currentTarget
+    if (event.target === grid) {
+      // The grid itself: its stop isn't drawn. Draw it, and hand focus on: after the browser has
+      // scrolled to what took focus, the middle of a tall grid, which would undo this.
+      requestAnimationFrame(() => {
+        if (document.activeElement === grid) move(stop)
+      })
+      return
+    }
     const at = indexOf(event.target)
     if (at !== undefined) setStop(at)
   }

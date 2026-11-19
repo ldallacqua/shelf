@@ -37,7 +37,7 @@ import {
 } from './preferences'
 import { ShelfProvider } from './shelf'
 import { StatsLine } from './stats-line'
-import { Toolbar } from './toolbar'
+import { LayoutMenu, Toolbar } from './toolbar'
 import { WallView } from './wall-view'
 import { BannerView } from './banner-view'
 
@@ -437,6 +437,26 @@ describe('Toolbar', () => {
     expect(onWallSize).toHaveBeenCalledWith('large')
   })
 
+  it('starts the phone menu at the grouping when the G key opens it (review 01, finding 53)', async () => {
+    renderWithIntl(
+      <LayoutMenu
+        open
+        view="wall"
+        onView={vi.fn()}
+        group="status"
+        onGroup={vi.fn()}
+        wallSize="medium"
+        onWallSize={vi.fn()}
+        density="covers"
+        onDensity={vi.fn()}
+      />,
+    )
+    const menu = screen.getByRole('menu')
+    await waitFor(() =>
+      expect(within(menu).getByRole('menuitemradio', { name: 'Status' })).toHaveFocus(),
+    )
+  })
+
   it('offers covers or compact on the shelf only', async () => {
     const { onDensity } = setup('shelf')
     await userEvent.click(screen.getByRole('radio', { name: 'Compact' }))
@@ -576,8 +596,32 @@ describe('ListView', () => {
       'pt-BR',
     )
     const cell = screen.getByText('Switch').closest('td')!
-    expect(cell).toHaveTextContent('PS5FísicoSwitchFísicoPCDigital')
+    // One platform a line; a third goes as a count, as two lines fill the row (review 01, 50).
+    expect(cell).toHaveTextContent('PS5FísicoSwitchFísico+1')
     expect(cell).not.toHaveTextContent('Disco')
+  })
+
+  it('puts one line to a platform, its formats together', () => {
+    const entry = item({
+      copies: [
+        { platform: 167, format: 'physical' },
+        { platform: 167, format: 'digital' },
+        { platform: 130, format: 'physical' },
+      ],
+    })
+    renderWithIntl(
+      <ListView
+        shelves={[{ kind: 'all', key: 'all', items: [entry], total: 1 }]}
+        platforms={new Map([...platforms, [130, nintendoSwitch]])}
+        onOpen={vi.fn()}
+        enter={false}
+        firstBoxes={12}
+      />,
+    )
+    const lines = [...screen.getByText('Switch').closest('td')!.children].map(
+      (line) => line.textContent,
+    )
+    expect(lines).toEqual(['PS5Physical, Digital', 'SwitchPhysical'])
   })
 
   it('draws a row’s thumbnail from IGDB’s small file where the cover is Steam’s', () => {
@@ -1002,6 +1046,35 @@ describe('the key to the marks (review 01, finding 11)', () => {
     expect(await within(dialog).findByText('a gold seal on its corner')).toBeInTheDocument()
     expect(within(dialog).getByText('leans against its neighbor')).toBeInTheDocument()
     expect(within(dialog).getByText('the cover alone, with no case')).toBeInTheDocument()
+  })
+
+  it('names each mark in its term, Unsorted too (findings 55 and 56)', async () => {
+    renderWithIntl(<MarksKey view="shelf" />)
+    await userEvent.click(screen.getByRole('button', { name: 'What the marks mean' }))
+    const dialog = await screen.findByRole('dialog', { name: 'What the marks mean' })
+    await within(dialog).findByText('a gold seal on its corner')
+    // What a screen reader hears of each: the drawn mark is hidden from it.
+    const heard = (element: HTMLElement) => {
+      const copy = element.cloneNode(true) as HTMLElement
+      for (const hidden of copy.querySelectorAll('[aria-hidden="true"]')) hidden.remove()
+      return copy.textContent
+    }
+    const terms = within(dialog).getAllByRole('term').map(heard)
+    expect(terms).toEqual([
+      'Playing',
+      'Backlog',
+      'Completed',
+      'Dropped',
+      'Someday',
+      'Retired',
+      'Wishlist',
+      'Unsorted',
+      'Digital',
+      'More than one platform',
+    ])
+    expect(within(dialog).getAllByRole('definition')[7]).toHaveTextContent(
+      'a tag with an inbox: came in from a sync, not placed yet',
+    )
   })
 
   it("says the wall's marks on the wall, in Portuguese too", async () => {

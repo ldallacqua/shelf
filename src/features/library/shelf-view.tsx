@@ -9,7 +9,7 @@ import { shareFirstBoxes } from '@/domain/library/view'
 import { caseShapes } from '@/ui/game-case'
 
 import { describeBox, shelfName } from './describe'
-import { FoldBody, FoldToggle } from './fold-toggle'
+import { FoldBody, FoldToggle, foldedAway } from './fold-toggle'
 import { EAGER_COVERS } from './opening-covers'
 import type { Density } from './preferences'
 import { ShelfGrid } from './shelf-grid'
@@ -25,6 +25,12 @@ const sizeOf = (shelf: DrawnShelf): { slot: number; tall: number } => {
 }
 
 type ShelfViewProps = ViewProps & { density: Density }
+
+/** A shelf's Tab stop, if its games are drawn: none while it is folded away, wider than a phone. */
+const stopOf = (panel: Element | undefined): HTMLElement | undefined => {
+  const box = panel?.querySelector<HTMLElement>('[data-shelf-body] .game-box[tabindex="0"]')
+  return box && !foldedAway(box) ? box : undefined
+}
 
 type ShelfSectionProps = {
   shelf: DrawnShelf
@@ -73,8 +79,12 @@ function ShelfSection({
       data-scroll-root=""
       data-shelf={shelf.key}
       aria-labelledby={headingId}
+      // Where Tab from its phone tab lands when no game of it is drawn in time (`onTabKey`).
+      tabIndex={-1}
     >
-      <header className="flex items-baseline gap-3 pt-3 pb-1 sm:pt-0">
+      {/* The counts go under the name when it needs the room, not into narrow columns beside it
+          (step 10's review, 01, finding 54). */}
+      <header className="flex flex-wrap items-baseline gap-x-3 pt-3 pb-1 sm:pt-0">
         <FoldToggle shelfKey={shelf.key} name={name} controls={`${headingId}-games`} />
         <h2 id={headingId} className="title text-lg sm:text-xl">
           {name}
@@ -155,13 +165,15 @@ export function ShelfView({
     }
   }, [])
 
-  // Keep the current tab in sight.
+  // Keep the current tab in sight; while the keyboard has chosen one, that one, as the pager
+  // glides past the shelves between (step 10's review, 01, finding 52).
+  const inSight = chosen ?? current
   useEffect(() => {
-    const tab = tabs.current?.querySelector<HTMLElement>('[aria-current="true"]')
     const strip = tabs.current
+    const tab = strip?.querySelectorAll<HTMLElement>('.shelf-tab')[inSight]
     if (!tab || !strip) return
     strip.scrollTo({ left: tab.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2 })
-  }, [current])
+  }, [inSight])
 
   const goTo = (index: number) => {
     const element = pager.current
@@ -174,9 +186,7 @@ export function ShelfView({
   const leave = (from: number, direction: -1 | 1) => {
     const panels = pager.current?.children
     for (let at = from + direction; panels && at >= 0 && at < panels.length; at += direction) {
-      const box = panels[at]?.querySelector<HTMLElement>(
-        '[data-shelf-body]:not([hidden]) .game-box[tabindex="0"]',
-      )
+      const box = stopOf(panels[at])
       if (box) return box.focus()
     }
   }
@@ -195,16 +205,16 @@ export function ShelfView({
   const onTabKey = (event: KeyboardEvent<HTMLButtonElement>, at: number) => {
     if (event.key === 'Tab' && !event.shiftKey) {
       const panel = pager.current?.children[at]
-      const stopIn = () =>
-        panel?.querySelector<HTMLElement>('[data-shelf-body]:not([hidden]) .game-box[tabindex="0"]')
-      if (!panel) return
+      if (!(panel instanceof HTMLElement)) return
       event.preventDefault()
-      // A shelf the pager hasn't reached may not have drawn its box yet.
+      // A shelf the pager hasn't reached may not have drawn its box yet. If it never does, focus
+      // goes to the shelf itself rather than staying here (finding 47).
       let frames = 0
       const enter = () => {
-        const box = stopIn()
+        const box = stopOf(panel)
         if (box) box.focus()
         else if ((frames += 1) < 90) requestAnimationFrame(enter)
+        else panel.focus()
       }
       enter()
       return
