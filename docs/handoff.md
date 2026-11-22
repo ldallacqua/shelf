@@ -1171,7 +1171,7 @@ resumes it with another assistant. What is known so far:
 - **This folder is linked to the Vercel project** (`.vercel/`, ignored). `vercel link` also
   wrote a `VERCEL_OIDC_TOKEN` into `.env.local` and added `.env*` to `.gitignore`; both were
   taken out again. Run `vercel env pull` and `vercel link` with care for the same reason.
-- **Next.js is 16.4.1,** for critical security fixes in 16.4.0. 16.4.2 is out.
+- **Next.js is 16.4.5,** for its security fixes (22 Nov 2026; `docs/architecture.md` says which). 16.4.6 is out.
 - **The owner allows merging to `main` without asking** while the project is a proof of
   concept (15 Oct 2026). Still stop at every ⏸ (after step 8, and the final review).
 - **Next: step 8, the landing page** (⏸ after it): a product page that sells "create your
