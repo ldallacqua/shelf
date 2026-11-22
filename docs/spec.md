@@ -416,7 +416,9 @@ choice, it is not in the address, and it works in both 2D and 3D.
 ### 3.8 Wall and List
 
 **Wall.** Covers in a grid, the Letterboxd way: dense, with almost no chrome. Three sizes. A
-status mark and platform marks appear on each cover. Shelf labels stay pinned while their games
+status mark and platform marks appear on a cover while it is pointed at or reached by the keyboard,
+as small pills at its foot; at rest the cover stands whole, with no band over it (the owner, 22 Nov
+2026). Shelf labels stay pinned while their games
 scroll past, on a phone too. At rest a label sits on the wall like the shelf's and the list's
 headings; only once pinned does it take a band of wall color, so no cover shows through it. The
 trophy wall's year labels do the same.

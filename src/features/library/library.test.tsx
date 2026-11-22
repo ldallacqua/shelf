@@ -1083,7 +1083,9 @@ describe('the key to the marks (review 01, finding 11)', () => {
     const dialog = await screen.findByRole('dialog')
     expect(await within(dialog).findByText('um círculo tracejado')).toBeInTheDocument()
     expect(
-      within(dialog).getByText('as plataformas em que está, no pé da capa'),
+      within(dialog).getByText(
+        /^as plataformas em que está, no pé da capa. Essas marcas aparecem ao apontar/,
+      ),
     ).toBeInTheDocument()
   })
 })

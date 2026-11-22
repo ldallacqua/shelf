@@ -876,21 +876,21 @@
     outline-offset: -1.5px;
   }
 
-  /* Marks along the foot of a wall cover: status on the left, platforms on the right. */
+  /*
+   * Marks at the foot of a wall cover: status on the left, platforms on the right. At rest the
+   * cover stands whole, the way a game library's grid of capsules does (the owner, 22 Nov 2026):
+   * the marks come up only while the cover is pointed at or reached by the keyboard. The box's
+   * name says all of them in words either way (`describeBox`).
+   */
   .wall-marks {
     position: absolute;
     inset: auto 0 0;
     z-index: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 0.25rem;
-    padding: 1.25rem 0.3125rem 0.3125rem;
-    /*
-     * Full strength under the words, fading only above them: over a white cover a fade that
-     * reached the letters left them at 3:1. At 0.8 black the words keep 12:1 over any cover.
-     */
-    background: linear-gradient(to top, rgb(0 0 0 / 0.8) 0 1.375rem, transparent);
+    padding: 0.3125rem;
     color: #fff;
     font-family: var(--font-mono);
     font-size: 0.625rem;
@@ -899,6 +899,33 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--motion-quick) var(--ease-settle);
+  }
+
+  .wall-box:is(:hover, :focus-visible) .wall-marks {
+    opacity: 1;
+  }
+
+  /*
+   * Each mark a small pill of its own, no band across the cover. At 0.8 black under the words
+   * they keep 12:1 over any cover, white ones included.
+   */
+  .wall-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0.125rem 0.3125rem;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.8);
+  }
+
+  .wall-mark-platforms {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .wall-marks svg {
@@ -907,7 +934,7 @@
     flex: none;
   }
 
-  .wall-grid[data-size='small'] .wall-marks span {
+  .wall-grid[data-size='small'] .wall-mark-platforms {
     display: none;
   }
 

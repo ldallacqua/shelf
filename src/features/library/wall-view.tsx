@@ -114,10 +114,15 @@ const WallCell = memo(function WallCell({
           small={size !== 'large'}
           fit={fit}
         />
+        {/* Out of sight until the cover is pointed at or reached: its name says all of it in words. */}
         <span className="wall-marks" aria-hidden="true">
-          <StatusMark status={game.status} label={t(`status.${game.status}`)} iconOnly />
-          {game.private ? <LockIcon className="size-3.5 flex-none" /> : null}
-          <span className="truncate">{owned.join(' · ')}</span>
+          <span className="wall-mark">
+            <StatusMark status={game.status} label={t(`status.${game.status}`)} iconOnly />
+            {game.private ? <LockIcon className="size-3.5 flex-none" /> : null}
+          </span>
+          {owned.length > 0 ? (
+            <span className="wall-mark wall-mark-platforms">{owned.join(' · ')}</span>
+          ) : null}
         </span>
       </button>
     </li>
@@ -269,8 +274,8 @@ function WallSection({ shelf, ...grid }: Omit<WallGridProps, 'label'>) {
 
 /**
  * The wall: covers in a dense grid with almost no chrome, the Letterboxd
- * way. A status mark and platform marks sit on each cover, and each shelf's
- * label stays pinned while its games scroll past (spec 3.8).
+ * way. A status mark and platform marks come up on a cover pointed at or
+ * reached, and each shelf's label stays pinned while its games scroll past (spec 3.8).
  */
 export function WallView({ shelves, platforms, onOpen, enter, firstBoxes, size }: WallViewProps) {
   const shares = shareFirstBoxes(
