@@ -292,7 +292,7 @@ export const MarksOnTheShelf: Story = {
   ),
 }
 
-/** The key for the wall: each status's mark at a cover's foot, shown while it is pointed at or reached, and its platforms. */
+/** The key for the wall: each status's mark at a cover's foot, and its platforms, shown while it is pointed at or reached. */
 export const MarksOnTheWall: Story = {
   render: () => (
     <div className="max-w-sm">

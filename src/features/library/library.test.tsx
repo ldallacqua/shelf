@@ -819,7 +819,7 @@ describe('the wall (issue 193)', () => {
   })
   afterEach(() => vi.unstubAllGlobals())
 
-  it('fills a frame with a 2:3 cover, and draws a 3:4 one or a version’s unknown one whole', () => {
+  it('fills the 7:10 frame with a 2:3 or a 3:4 cover, and draws a wide one or a version’s unknown one whole', () => {
     const items = [
       item({
         slug: 'capsule',
@@ -828,6 +828,7 @@ describe('the wall (issue 193)', () => {
         coverRatio: 67,
       }),
       item({ slug: 'igdb', title: 'From IGDB', cover: 'co1abc', coverRatio: 75 }),
+      item({ slug: 'wide', title: 'A wide one', cover: 'co3ghi', coverRatio: 100 }),
       {
         ...item({ slug: 'port', title: 'A port', cover: 'co1abc', coverRatio: 67 }),
         copy: { platform: ps5.id, format: 'digital' as const, cover: 'co2def' },
@@ -846,7 +847,42 @@ describe('the wall (issue 193)', () => {
     const fits = [...container.querySelectorAll('.wall-cell .cover')].map(
       (cover) => cover.getAttribute('data-fit') ?? 'fill',
     )
-    expect(fits).toEqual(['fill', 'whole', 'whole'])
+    expect(fits).toEqual(['fill', 'fill', 'whole', 'whole'])
+  })
+
+  it('keeps a status mark on every cover, and leaves a shelf’s own platform out of its marks', () => {
+    const both = item({
+      slug: 'both',
+      title: 'On both',
+      copies: [
+        { platform: ps5.id, format: 'physical' },
+        { platform: pc.id, format: 'digital' },
+      ],
+    })
+    const wall = (shelf: Parameters<typeof WallView>[0]['shelves'][number]) =>
+      renderWithIntl(
+        <WallView
+          shelves={[shelf]}
+          platforms={platforms}
+          onOpen={vi.fn()}
+          enter={false}
+          firstBoxes={1}
+          size="medium"
+        />,
+      ).container
+    const all = wall({ kind: 'all', key: 'all', items: [both], total: 1 })
+    expect(all.querySelector('.wall-mark svg')).not.toBeNull()
+    expect(all.querySelector('.wall-mark-platforms')).toHaveTextContent(/^PS5\s· PC$/)
+    cleanup()
+    const onPs5 = wall({
+      kind: 'platform',
+      key: `platform:${ps5.id}`,
+      platform: ps5,
+      items: [both],
+      total: 1,
+    })
+    expect(onPs5.querySelector('.wall-mark svg')).not.toBeNull()
+    expect(onPs5.querySelector('.wall-mark-platforms')).toHaveTextContent(/^PC$/)
   })
 
   it('stops Tab once a shelf, and moves along it with arrows, Home and End (review 01, 20)', async () => {
@@ -1084,7 +1120,7 @@ describe('the key to the marks (review 01, finding 11)', () => {
     expect(await within(dialog).findByText('um círculo tracejado')).toBeInTheDocument()
     expect(
       within(dialog).getByText(
-        /^as plataformas em que está, no pé da capa. Essas marcas aparecem ao apontar/,
+        /^as plataformas em que está, no pé da capa quando você passa o mouse sobre ela/,
       ),
     ).toBeInTheDocument()
   })

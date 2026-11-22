@@ -652,8 +652,8 @@
         "dropped": "a struck-out circle",
         "someday": "a clock",
         "retired": "∞, for a game with no end",
-        "wishlist": "a bookmark",
-        "platforms": "the platforms it's on, at the cover's foot. These marks show while you point at a cover or reach it with the keyboard",
+        "wishlist": "a bookmark; its cover faint, in a dashed outline",
+        "platforms": "the platforms it's on, at the cover's foot when you point at it or Tab to it; on a touch screen, open the game to see them",
         "unsorted": "an inbox: came in from a sync, not placed yet"
       }
     }
