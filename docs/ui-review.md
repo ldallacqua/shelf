@@ -2,10 +2,11 @@
 
 The UI/UX review looks at what a person sees through three lenses: the critique, accessibility and the words.
 It runs in two places: on **every new feature**, before it merges (below), and in **step 10**, the final review,
-over every page Shelf has, one screen at a time. It is written for every agent and person. Claude Code can run
-the whole of it as one subagent (`.claude/agents/ui-review.md`, which only reads this file), with its Design
-plugin's skills beside each lens; any other agent or person does the same sections by hand. Either way the
-report says which ran.
+over every page Shelf has, one screen at a time. It is written for every agent and person. Claude Code runs
+the whole of it, capture and all three lenses, in one subagent (`.claude/agents/ui-review.md`, which only reads
+this file), with its Design plugin's skills beside each lens; never one agent per lens (the owner's rule, 14 Nov
+2026; the pilot's three were before it). Any other agent or person does the same sections by hand. Either way
+the report says which ran.
 
 This is not [the design pass](design-pass.md). The design pass comes before the code and decides what to build;
 this review looks at what was built, in a browser, and ends in a list of findings.
@@ -41,7 +42,7 @@ when its report is written and the owner has chosen what to fix; the fixes are t
 | #   | Screen                                                | Names for `ui:capture`                         | Status                |
 | --- | ----------------------------------------------------- | ---------------------------------------------- | --------------------- |
 | 00  | Sign in and sign up (the pilot)                       | `sign-in`, `sign-up`                           | [Report](review/00-sign-in-up.md); fixes wait in [#217](https://github.com/ldallacqua/shelf/issues/217) |
-| 01  | The library: toolbar, filters, each view, empty, full | `library`, `library-wall`, `library-list`, `library-banners`, `library-empty` | Not started |
+| 01  | The library: toolbar, filters, each view, empty, full | `library`, `library-mine`, `library-wall`, `library-list`, `library-banners`, `library-empty` | [Report](review/01-library.md); the owner chooses the fixes |
 | 02  | A game's page, and the list beside it                 | `game`, `game-mine`                            | Not started           |
 | 03  | Organize: unsorted, hours, archived                   | `unsorted`, `hours`, `archived`                | Not started           |
 | 04  | Setting a shelf up                                    | `start`                                        | Not started           |
