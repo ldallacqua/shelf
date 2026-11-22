@@ -5,6 +5,8 @@ import type { LibraryGame, LibraryPlatform } from '@/domain/library/library'
 import type { Status } from '@/domain/library/values'
 
 import { LibrarySkeleton } from './library-skeleton'
+import MarksList from './marks-list'
+import { MarksKey } from './marks-key'
 import { PulledGame } from './pulled-game'
 import { ShelfGrid } from './shelf-grid'
 import { StatsLine } from './stats-line'
@@ -92,6 +94,7 @@ const states: ShelfItem[] = [
   stand(game(4, 'wishlist', { copies: [] })),
   stand(game(7, 'someday')),
   stand(game(8, 'retired')),
+  stand(game(9, 'unsorted')),
   stand(game(5, 'backlog', { copies: [{ platform: 167, format: 'digital' }] })),
   stand(
     game(6, 'completed', {
@@ -120,7 +123,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Backlog, playing, completed, dropped, wishlist, someday, retired, a download, and a game owned twice. */
+/**
+ * Backlog, playing, completed, dropped, wishlist, someday, retired, unsorted, a download, and a game
+ * owned twice.
+ */
 export const BoxStates: Story = {
   render: () => (
     <ShelfGrid
@@ -238,6 +244,59 @@ export const Controls: Story = {
         dimension="2d"
         onDimension={() => undefined}
       />
+    </div>
+  ),
+}
+
+/**
+ * On a phone: one row, so the games keep the screen. Filters and the sort keep their place; the
+ * view, the grouping and the wall's cover size are one menu at the row's end.
+ */
+export const ControlsOnAPhone: Story = {
+  globals: { viewport: { value: 'mobile1', isRotated: false } },
+  render: () => (
+    <Toolbar
+      view="wall"
+      group="platform"
+      density="covers"
+      wallSize="medium"
+      onView={() => undefined}
+      onGroup={() => undefined}
+      onDensity={() => undefined}
+      onWallSize={() => undefined}
+      dimension="2d"
+      onDimension={() => undefined}
+    />
+  ),
+}
+
+/**
+ * What the marks mean, by the totals: a button that opens the key (review 01, finding 11). Its
+ * list is fetched only when opened; below, it is drawn as the dialog shows it.
+ */
+export const MarksKeyButton: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <StatsLine stats={{ games: 230, finished: 79, hours: 4236 }} />
+      <MarksKey view="shelf" />
+    </div>
+  ),
+}
+
+/** The key for the shelf: each status as a box in small stands, beside its words. */
+export const MarksOnTheShelf: Story = {
+  render: () => (
+    <div className="max-w-sm">
+      <MarksList view="shelf" />
+    </div>
+  ),
+}
+
+/** The key for the wall: each status's mark at a cover's foot, and its platforms. */
+export const MarksOnTheWall: Story = {
+  render: () => (
+    <div className="max-w-sm">
+      <MarksList view="wall" />
     </div>
   ),
 }

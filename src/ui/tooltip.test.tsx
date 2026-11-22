@@ -47,6 +47,28 @@ describe('Tip', () => {
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
   })
 
+  it('shows to a pointer only where it is asked to, so Escape goes to the dialog (review 01, 58)', async () => {
+    render(
+      <>
+        <button type="button">Before</button>
+        <Tip label="Close" hoverOnly>
+          <button type="button" aria-label="Close">
+            ×
+          </button>
+        </Tip>
+      </>,
+    )
+    await userEvent.tab()
+    await userEvent.tab()
+    const close = screen.getByRole('button', { name: 'Close' })
+    expect(close).toHaveFocus()
+    await new Promise((done) => setTimeout(done, 500))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    await userEvent.hover(close)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Close')
+    await userEvent.unhover(close)
+  })
+
   it('stays hidden for focus a dialog or a menu puts on the control', async () => {
     render(<Shuffle />)
     await userEvent.click(screen.getByRole('button', { name: 'Before' }))

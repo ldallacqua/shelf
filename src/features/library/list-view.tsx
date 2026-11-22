@@ -5,7 +5,7 @@ import { useFormatter, useTranslations } from 'next-intl'
 import { useRef, type ReactNode } from 'react'
 
 import type { ShelfItem } from '@/domain/library/group'
-import { thumbnailOf, type LibraryPlatform } from '@/domain/library/library'
+import { thumbnailOf, type LibraryCopy, type LibraryPlatform } from '@/domain/library/library'
 import { naturalSort, type Sort, type SortKey } from '@/domain/library/sort'
 import { shareFirstBoxes } from '@/domain/library/view'
 
@@ -17,6 +17,7 @@ import { dateOf, outOfTen } from './format'
 import { platformFor } from './game-box'
 import { GhostHeading } from './ghosts'
 import { StatusMark } from './status-mark'
+import { useRovingShelf } from './use-roving'
 import { useRowWindow } from './use-row-window'
 import type { DrawnShelf, OpenBox, ViewProps } from './view-props'
 import { useFollowOnHover } from './follow-hover'
@@ -25,20 +26,27 @@ import { ghostOrder } from '@/ui/ghost'
 /** Rows drawn before the layout is measured, over all the tables: two screens of them. */
 const FIRST_ROWS = 30
 
-/** Columns a phone has no room for. Their content is in the game's details instead. */
-const WIDE = 'hidden lg:table-cell'
-const MEDIUM = 'hidden md:table-cell'
+/**
+ * Columns a narrow list has no room for. Their content is in the game's details instead. They
+ * come by the list's own width, not the window's, so the title always keeps about 14rem: the
+ * window's left it 4px at 1024, and starved it wherever the filters stand beside (step 10's
+ * review, 01, finding 9). The cover, platforms and status take 23.75rem; the three numbers add
+ * 17rem, the two dates 18rem.
+ */
+const MEDIUM = 'hidden @min-[55rem]:table-cell'
+const WIDE = 'hidden @min-[73rem]:table-cell'
 /** The same, for the <col> that sizes each of those columns. */
-const WIDE_COLUMN = 'hidden lg:[display:table-column]'
-const MEDIUM_COLUMN = 'hidden md:[display:table-column]'
+const MEDIUM_COLUMN = 'hidden @min-[55rem]:[display:table-column]'
+const WIDE_COLUMN = 'hidden @min-[73rem]:[display:table-column]'
 
 /** The list's columns and their widths. */
 function ListColumns() {
   return (
     <colgroup>
-      <col className="w-15" />
+      <col className="w-13 sm:w-15" />
       <col />
-      <col className="w-24 sm:w-44" />
+      {/* On a phone the platforms go without their format, and the title keeps the room. */}
+      <col className="w-18 sm:w-44" />
       <col className="w-12 sm:w-36" />
       <col className={`${MEDIUM_COLUMN} w-24`} />
       <col className={`${MEDIUM_COLUMN} w-20`} />
@@ -50,7 +58,15 @@ function ListColumns() {
 }
 
 /** Clicking a heading sorts by it; clicking it again reverses it (spec 3.8). */
-type Sorting = { sort?: Sort; onSort?: (sort: Sort) => void }
+type Sorting = {
+  sort?: Sort
+  onSort?: (sort: Sort) => void
+  /**
+   * Whether Tab stops at the headings: only in the first shelf's table, as the toolbar's Sort
+   * does the same. A pointer sorts from any of them.
+   */
+  inTabOrder?: boolean
+}
 
 function Heading({
   sortKey,
@@ -59,6 +75,7 @@ function Heading({
   children,
   className,
   number,
+  inTabOrder = true,
 }: Sorting & { sortKey: SortKey; children: ReactNode; className?: string; number?: boolean }) {
   const active = sort?.key === sortKey
   const direction = active ? (sort.descending ? 'descending' : 'ascending') : undefined
@@ -73,6 +90,7 @@ function Heading({
         <button
           type="button"
           className="game-sort"
+          tabIndex={inTabOrder ? undefined : -1}
           onClick={() =>
             onSort(active ? { ...sort, descending: !sort.descending } : naturalSort(sortKey))
           }
@@ -110,6 +128,7 @@ function ListTable({
   onOpen,
   sort,
   onSort,
+  inTabOrder,
 }: ListTableProps) {
   const t = useTranslations('Library')
   const format = useFormatter()
@@ -135,6 +154,8 @@ function ListTable({
 
   // With following on, the room takes the colors of the row in focus.
   const follow = useFollowOnHover((index) => shelf.items[index]?.game.colors)
+  const roving = useRovingShelf(body, shelf.items.length)
+  const stop = roving.tabStop(from, to)
 
   return (
     <table className="game-table" aria-rowcount={shelf.total + 1}>
@@ -145,31 +166,77 @@ function ListTable({
           <th scope="col">
             <span className="sr-only">{t('list.cover')}</span>
           </th>
-          <Heading sortKey="title" sort={sort} onSort={onSort}>
+          <Heading sortKey="title" sort={sort} onSort={onSort} inTabOrder={inTabOrder}>
             {t('list.title')}
           </Heading>
           <th scope="col">{t('list.platforms')}</th>
-          <Heading sortKey="status" sort={sort} onSort={onSort}>
+          <Heading sortKey="status" sort={sort} onSort={onSort} inTabOrder={inTabOrder}>
             <span className="max-sm:sr-only">{t('list.status')}</span>
           </Heading>
-          <Heading sortKey="rating" sort={sort} onSort={onSort} number className={MEDIUM}>
+          <Heading
+            sortKey="rating"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            number
+            className={MEDIUM}
+          >
             {t('list.rating')}
           </Heading>
-          <Heading sortKey="igdb" sort={sort} onSort={onSort} number className={MEDIUM}>
+          <Heading
+            sortKey="igdb"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            number
+            className={MEDIUM}
+          >
             {t('list.igdb')}
           </Heading>
-          <Heading sortKey="hours" sort={sort} onSort={onSort} number className={MEDIUM}>
+          <Heading
+            sortKey="hours"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            number
+            className={MEDIUM}
+          >
             {t('list.playtime')}
           </Heading>
-          <Heading sortKey="added" sort={sort} onSort={onSort} className={WIDE}>
+          <Heading
+            sortKey="added"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            className={WIDE}
+          >
             {t('list.added')}
           </Heading>
-          <Heading sortKey="completed" sort={sort} onSort={onSort} className={WIDE}>
+          <Heading
+            sortKey="completed"
+            sort={sort}
+            onSort={onSort}
+            inTabOrder={inTabOrder}
+            className={WIDE}
+          >
             {t('list.completed')}
           </Heading>
         </tr>
       </thead>
-      <tbody ref={body} data-grid-of={shelf.key} {...follow}>
+      <tbody
+        ref={body}
+        // Named as the wall's and the banners' grids are: it can hold focus (finding 48).
+        aria-label={caption}
+        data-grid-of={shelf.key}
+        data-roving=""
+        // The shelf's stop while none of its games is drawn (`useRovingShelf`).
+        tabIndex={roving.gridTabIndex(from, to)}
+        {...follow}
+        onFocus={(event) => {
+          follow.onFocus(event)
+          roving.onFocus(event)
+        }}
+      >
         {/* Rows that are not near the screen are not in the page; these keep their place.
             One cell each: one across all nine would make columns of those a phone hides,
             and they would take the title's room. */}
@@ -207,6 +274,9 @@ function ListTable({
                 <button
                   type="button"
                   className="game-link"
+                  data-index={index}
+                  tabIndex={index === stop ? 0 : -1}
+                  onKeyDown={roving.onKeyDown}
                   data-flip={copy ? `${game.slug}:${copy.platform}` : game.slug}
                   aria-label={describe(item, platform)}
                   onClick={() => onOpen({ key: shelf.key, index })}
@@ -217,28 +287,15 @@ function ListTable({
                   <LockIcon aria-hidden="true" className="ml-1.5 inline size-3.5 text-muted" />
                 ) : null}
                 {game.year ? (
-                  <span className="block readout text-[0.625rem] text-muted">{game.year}</span>
+                  // On the narrowest phones the title takes two lines here instead: the year is
+                  // in its name.
+                  <span className="block readout text-[0.625rem] text-muted max-[30rem]:hidden">
+                    {game.year}
+                  </span>
                 ) : null}
               </td>
               <td className="text-muted">
-                {game.copies.length > 0 ? (
-                  game.copies.map((owned) => {
-                    const on = platforms.get(owned.platform)
-                    return (
-                      <span
-                        key={`${owned.platform}:${owned.format}`}
-                        className="mr-2 inline-flex items-baseline gap-1 last:mr-0"
-                      >
-                        <span className="text-text">{on?.short}</span>
-                        <span className="readout text-[0.5625rem]">
-                          {t(`format.${owned.format}`)}
-                        </span>
-                      </span>
-                    )
-                  })
-                ) : (
-                  <span>{t('list.none')}</span>
-                )}
+                <Platforms copies={game.copies} platforms={platforms} />
               </td>
               <td>
                 <StatusMark
@@ -271,6 +328,45 @@ function ListTable({
       </tbody>
     </table>
   )
+}
+
+/**
+ * A game's platforms, one a line: two fit the row's height, so a third goes as a count. One was
+ * cut to "PS5 …" on a phone, even where the title had room (step 10's review, 01, finding 50).
+ * Wider than a phone each says its formats.
+ */
+function Platforms({
+  copies,
+  platforms,
+}: {
+  copies: LibraryCopy[]
+  platforms: ReadonlyMap<number, LibraryPlatform>
+}) {
+  const t = useTranslations('Library')
+  const format = useFormatter()
+  if (copies.length === 0) return <span>{t('list.none')}</span>
+  const formats = new Map<number, LibraryCopy['format'][]>()
+  for (const copy of copies) {
+    formats.set(copy.platform, [...(formats.get(copy.platform) ?? []), copy.format])
+  }
+  const lines = [...formats]
+  const more = lines.length - 2
+  return lines.slice(0, 2).map(([platform, kinds], line) => (
+    <span key={platform} className="flex items-baseline gap-1">
+      <span className="min-w-0 truncate text-text">{platforms.get(platform)?.short}</span>
+      <span className="truncate readout text-[0.5625rem] max-sm:hidden">
+        {format.list(
+          kinds.map((kind) => t(`format.${kind}`)),
+          { type: 'unit' },
+        )}
+      </span>
+      {line === 1 && more > 0 ? (
+        <span className="flex-none readout text-[0.625rem]">
+          {t('list.morePlatforms', { count: more })}
+        </span>
+      ) : null}
+    </span>
+  ))
 }
 
 /** A row-shaped place in the list, for a game on its way. */
@@ -314,7 +410,7 @@ function GhostRow({ index }: { index: number }) {
 /** The list before its shelves are known: two shelves' names and rows. */
 export function GhostList() {
   return (
-    <div className="pb-6" aria-hidden="true">
+    <div className="@container pb-6" aria-hidden="true">
       {[8, 4].map((count, shelf) => (
         <section key={shelf} className="mt-8 first:mt-4">
           <GhostHeading className="pb-1" />
@@ -353,7 +449,7 @@ export function ListView({
   )
 
   return (
-    <div className="pb-6">
+    <div className="@container pb-6">
       {shelves.map((shelf, index) => {
         const name = shelfName(shelf, t)
         const headingId = `list-${shelf.key.replace(/[^a-z0-9]+/gi, '-')}`
@@ -382,6 +478,7 @@ export function ListView({
                 onOpen={onOpen}
                 sort={sort}
                 onSort={onSort}
+                inTabOrder={index === 0}
               />
             </FoldBody>
           </section>

@@ -464,10 +464,10 @@
     },
     "metaTitle": "Library",
     "title": "Library",
-    "emptyTitle": "The shelf is being stocked.",
-    "emptyBody": "Games will stand here soon.",
+    "emptyTitle": "No games on this shelf yet.",
+    "emptyBody": "They will stand here once they are added.",
     "emptyMineTitle": "Your shelf is empty.",
-    "emptyMineBody": "Add a game, or paste a whole list, and it will stand here.",
+    "emptyMineBody": "Add a game, or paste a whole list, and your games will stand here.",
     "shelfTitle": "{name}'s shelf",
     "privateTitle": "A private shelf",
     "atHandle": "@{handle}",
@@ -491,7 +491,7 @@
     "stats": {
       "label": "Library totals",
       "games": "{count, plural, one {game} other {games}}",
-      "finished": "{count, plural, other {finished}}",
+      "finished": "{count, plural, other {completed}}",
       "hours": "{count, plural, one {hour} other {hours}}"
     },
     "view": {
@@ -500,6 +500,9 @@
       "wall": "Wall",
       "list": "List",
       "banner": "Banners"
+    },
+    "layout": {
+      "button": "View: {view}. Group by: {group}"
     },
     "group": {
       "label": "Group",
@@ -580,14 +583,14 @@
       "third-party": "Third-party"
     },
     "shelf": {
-      "tabs": "Shelves",
+      "tabs": "Go to a shelf",
       "notOwned": "Not owned",
       "yearUnknown": "Year unknown",
       "all": "All games",
       "count": "{count, plural, one {# game} other {# games}}",
       "playing": "{count} playing",
       "games": "Games on the {shelf} shelf",
-      "fold": "Fold the {shelf} shelf away",
+      "fold": "Hide the {shelf} shelf",
       "unfold": "Show the {shelf} shelf"
     },
     "box": {
@@ -599,11 +602,12 @@
       "private": "{description}, only you see it"
     },
     "list": {
+      "morePlatforms": "+{count}",
       "cover": "Cover",
       "title": "Title",
       "platforms": "Platforms",
       "status": "Status",
-      "rating": "My rating",
+      "rating": "Rating",
       "igdb": "IGDB",
       "playtime": "Played",
       "added": "Added",
@@ -618,6 +622,40 @@
       "title": "The library did not load.",
       "body": "Something went wrong on the way to the shelf. Your games are safe.",
       "retry": "Try again"
+    },
+    "marks": {
+      "open": "What the marks mean",
+      "title": "What the marks mean",
+      "description": "Each box shows where a game stands by how it looks. Its name says the same in words.",
+      "close": "Close",
+      "copies": "More than one platform",
+      "platforms": "Platforms",
+      "platformsSample": "PS5 · PC",
+      "private": "Private",
+      "privateWords": "a lock: only you see it",
+      "shelf": {
+        "playing": "stands forward, a light above it",
+        "backlog": "a plain box, standing straight",
+        "completed": "a gold seal on its corner",
+        "dropped": "leans against its neighbor",
+        "someday": "set back, in shade",
+        "retired": "a tag with ∞, for a game with no end",
+        "wishlist": "an outline, its cover faint",
+        "unsorted": "a tag with an inbox: came in from a sync, not placed yet",
+        "digital": "the cover alone, with no case",
+        "copies": "how many, at its foot"
+      },
+      "wall": {
+        "playing": "a play mark",
+        "backlog": "a dashed circle",
+        "completed": "a check",
+        "dropped": "a struck-out circle",
+        "someday": "a clock",
+        "retired": "∞, for a game with no end",
+        "wishlist": "a bookmark",
+        "platforms": "the platforms it's on, at the cover's foot",
+        "unsorted": "an inbox: came in from a sync, not placed yet"
+      }
     }
   },
   "Beside": {
@@ -1207,7 +1245,7 @@
       "format": "Format",
       "store": "Store",
       "copies": "Platforms owned",
-      "rating": "My rating",
+      "rating": "Rating",
       "hours": "Playtime",
       "completed": "Completed",
       "added": "Added",
@@ -1243,7 +1281,7 @@
       },
       "has": {
         "notes": "Notes",
-        "rating": "My rating",
+        "rating": "Rating",
         "playtime": "Playtime",
         "cover": "A cover"
       },
@@ -1282,9 +1320,9 @@
     "chips": {
       "label": "Active filters",
       "term": "{key}: {values}",
-      "not": "Not {key}: {values}",
+      "not": "{key}: not {values}",
       "text": "Title: {text}",
-      "notText": "Not in the title: {text}",
+      "notText": "Title: not {text}",
       "or": "or",
       "remove": "Remove {condition}",
       "ignored": "Not understood, so ignored:",
@@ -1303,7 +1341,7 @@
     },
     "panel": {
       "title": "Filters",
-      "description": "Each value is off, included or excluded. Changes apply at once.",
+      "description": "Check a value to include it; the minus beside it leaves it out. Changes apply at once.",
       "close": "Close filters",
       "skip": "Skip the filters",
       "groups": "Match any of these groups",
@@ -1312,7 +1350,7 @@
       "removeGroup": "Remove group {number}",
       "addGroup": "Add a group, joined by or",
       "asText": "Also in this group, written as text. Change these in the search field:",
-      "mine": "Mine",
+      "mine": "On this shelf",
       "igdb": "From IGDB",
       "results": "{count, plural, =0 {No games match} one {# game matches} other {# games match}}",
       "loading": "Loading the library…",
@@ -1321,16 +1359,14 @@
       "match": "{key}: match any or all",
       "anyOf": "Any of",
       "allOf": "All of",
-      "find": "Find a {key}",
+      "find": "Find in {key}",
       "findPlaceholder": "Find…",
       "nothingFound": "Nothing by that name.",
       "nothing": "Nothing to pick in this library.",
       "value": {
         "off": "{value}, {count, plural, one {# game} other {# games}}",
-        "include": "{value}, {count, plural, one {# game} other {# games}}, included",
         "exclude": "{value}, {count, plural, one {# game} other {# games}}, excluded"
       },
-      "include": "Include {value}, {count, plural, one {# game} other {# games}}",
       "exclude": "Exclude {value}",
       "more": "Show {count} more",
       "fewer": "Show fewer",
@@ -1340,12 +1376,82 @@
       "to": "To",
       "notANumber": "Type a number.",
       "notADate": "Type a year, a month or a day: 2025, 2025-06 or 2025-06-14.",
-      "dateHint": "A year, a month or a day: 2025, 2025-06 or 2025-06-14."
+      "dateHint": "A year, a month or a day: 2025, 2025-06 or 2025-06-14.",
+      "show": "{count, plural, =0 {No games to show} one {Show # game} other {Show # games}}",
+      "showGames": "Show the games"
     },
     "noResults": {
       "label": "No games",
       "title": "No games match these filters.",
       "body": "Remove a filter above, or clear them all."
+    },
+    "vocab": {
+      "genre": {
+        "point-and-click": "Point-and-click",
+        "fighting": "Fighting",
+        "shooter": "Shooter",
+        "music": "Music",
+        "platform": "Platform",
+        "puzzle": "Puzzle",
+        "racing": "Racing",
+        "rts": "Real-time strategy (RTS)",
+        "rpg": "Role-playing (RPG)",
+        "simulator": "Simulator",
+        "sport": "Sport",
+        "strategy": "Strategy",
+        "tbs": "Turn-based strategy (TBS)",
+        "tactical": "Tactical",
+        "hack-and-slash": "Hack and slash, beat 'em up",
+        "trivia": "Quiz and trivia",
+        "pinball": "Pinball",
+        "adventure": "Adventure",
+        "indie": "Indie",
+        "arcade": "Arcade",
+        "visual-novel": "Visual novel",
+        "card-and-board": "Card and board game",
+        "moba": "MOBA"
+      },
+      "theme": {
+        "action": "Action",
+        "fantasy": "Fantasy",
+        "science-fiction": "Science fiction",
+        "horror": "Horror",
+        "thriller": "Thriller",
+        "survival": "Survival",
+        "historical": "Historical",
+        "stealth": "Stealth",
+        "comedy": "Comedy",
+        "business": "Business",
+        "drama": "Drama",
+        "non-fiction": "Non-fiction",
+        "sandbox": "Sandbox",
+        "educational": "Educational",
+        "kids": "Kids",
+        "open-world": "Open world",
+        "warfare": "Warfare",
+        "party": "Party",
+        "4x": "4X",
+        "erotic": "Erotic",
+        "mystery": "Mystery",
+        "romance": "Romance"
+      },
+      "mode": {
+        "single-player": "Single player",
+        "multiplayer": "Multiplayer",
+        "co-op": "Co-operative",
+        "split-screen": "Split screen",
+        "mmo": "MMO",
+        "battle-royale": "Battle royale"
+      },
+      "perspective": {
+        "first-person": "First person",
+        "third-person": "Third person",
+        "isometric": "Isometric",
+        "side-view": "Side view",
+        "text": "Text",
+        "auditory": "Auditory",
+        "vr": "Virtual reality"
+      }
     }
   },
   "Sort": {
@@ -1355,7 +1461,7 @@
       "title": "Title",
       "added": "Date added",
       "released": "Release date",
-      "rating": "My rating",
+      "rating": "Rating",
       "igdb": "IGDB rating",
       "hours": "Playtime",
       "completed": "Completion date",
@@ -1404,8 +1510,8 @@
     "description": "Every key the library answers to.",
     "close": "Close",
     "keys": {
-      "arrows": "Previous or next game on the ledge",
-      "ledges": "The ledge above or below",
+      "arrows": "Previous or next game",
+      "ledges": "The row above or below",
       "shelves": "Previous or next shelf",
       "ends": "First or last game of the shelf",
       "open": "Open the game in focus",
@@ -1420,8 +1526,8 @@
       "add": "Add a game, when signed in",
       "help": "Show this list"
     },
-    "letters": "Single-letter shortcuts",
-    "lettersHint": "Off, the letters do nothing; / and ? still work."
+    "letters": "Single-key shortcuts",
+    "lettersHint": "When off, no key on its own does anything, not even / or ?. Open this list again from the keyboard button by the game count."
   },
   "Account": {
     "metaTitle": "Sign in",

@@ -21,6 +21,7 @@ import { dateOf, hoursOf, outOfTen } from './format'
 import { GameBox, platformFor, platformsOwned } from './game-box'
 import { LibrarySkeleton } from './library-skeleton'
 import { ListView } from './list-view'
+import { MarksKey } from './marks-key'
 import { markPageLive, pageIsLive, resetPageLive } from './live'
 import { resetPreviews } from './preview-queue'
 import {
@@ -36,7 +37,7 @@ import {
 } from './preferences'
 import { ShelfProvider } from './shelf'
 import { StatsLine } from './stats-line'
-import { Toolbar } from './toolbar'
+import { LayoutMenu, Toolbar } from './toolbar'
 import { WallView } from './wall-view'
 import { BannerView } from './banner-view'
 
@@ -391,7 +392,7 @@ describe('Toolbar', () => {
 
   it('offers the four groupings from a menu', async () => {
     const { onGroup } = setup()
-    await userEvent.click(screen.getByRole('button', { name: /Platform/ }))
+    await userEvent.click(screen.getByRole('button', { name: /^Group\s*Platform$/ }))
     const menu = screen.getByRole('menu')
     expect(
       within(menu)
@@ -400,6 +401,60 @@ describe('Toolbar', () => {
     ).toEqual(['Platform', 'Status', 'Year', 'None'])
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Year' }))
     expect(onGroup).toHaveBeenCalledWith('year')
+  })
+
+  it("gives a phone one menu for the view, the grouping and the wall's cover size", async () => {
+    const { onView, onGroup, onWallSize } = setup('wall')
+    const button = screen.getByRole('button', { name: 'View: Wall. Group by: Platform' })
+    await userEvent.click(button)
+    let menu = screen.getByRole('menu')
+    expect(
+      within(menu)
+        .getAllByRole('menuitemradio')
+        .map((entry) => entry.textContent),
+    ).toEqual([
+      'Shelf',
+      'Wall',
+      'List',
+      'Banners',
+      'Platform',
+      'Status',
+      'Year',
+      'None',
+      'Small covers',
+      'Medium covers',
+      'Large covers',
+    ])
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'List' }))
+    expect(onView).toHaveBeenCalledWith('list')
+    await userEvent.click(button)
+    menu = screen.getByRole('menu')
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Status' }))
+    expect(onGroup).toHaveBeenCalledWith('status')
+    await userEvent.click(button)
+    menu = screen.getByRole('menu')
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Large covers' }))
+    expect(onWallSize).toHaveBeenCalledWith('large')
+  })
+
+  it('starts the phone menu at the grouping when the G key opens it (review 01, finding 53)', async () => {
+    renderWithIntl(
+      <LayoutMenu
+        open
+        view="wall"
+        onView={vi.fn()}
+        group="status"
+        onGroup={vi.fn()}
+        wallSize="medium"
+        onWallSize={vi.fn()}
+        density="covers"
+        onDensity={vi.fn()}
+      />,
+    )
+    const menu = screen.getByRole('menu')
+    await waitFor(() =>
+      expect(within(menu).getByRole('menuitemradio', { name: 'Status' })).toHaveFocus(),
+    )
   })
 
   it('offers covers or compact on the shelf only', async () => {
@@ -446,7 +501,7 @@ describe('StatsLine', () => {
     renderWithIntl(<StatsLine stats={{ games: 230, finished: 79, hours: 4236 }} />)
     const totals = screen.getByRole('group', { name: 'Library totals' })
     expect(totals).toHaveTextContent('230 games')
-    expect(totals).toHaveTextContent('79 finished')
+    expect(totals).toHaveTextContent('79 completed')
     expect(totals).toHaveTextContent('4,236 hours')
   })
 
@@ -472,14 +527,14 @@ describe('EmptyLibrary', () => {
     </ShelfProvider>
   )
 
-  it('says whose shelf is being stocked, in both languages, with nothing for a visitor to do', () => {
+  it('says whose shelf has no games yet, in both languages, with nothing for a visitor to do', () => {
     const { unmount } = renderWithIntl(onShelf(<EmptyLibrary />))
     expect(screen.getByRole('heading', { level: 1, name: "Sample's shelf" })).toBeInTheDocument()
-    expect(screen.getByText('The shelf is being stocked.')).toBeInTheDocument()
+    expect(screen.getByText('No games on this shelf yet.')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     unmount()
     renderWithIntl(onShelf(<EmptyLibrary />), 'pt-BR')
-    expect(screen.getByText('A estante está sendo abastecida.')).toBeInTheDocument()
+    expect(screen.getByText('Ainda não há jogos nesta estante.')).toBeInTheDocument()
   })
 })
 
@@ -541,8 +596,32 @@ describe('ListView', () => {
       'pt-BR',
     )
     const cell = screen.getByText('Switch').closest('td')!
-    expect(cell).toHaveTextContent('PS5FísicoSwitchFísicoPCDigital')
+    // One platform a line; a third goes as a count, as two lines fill the row (review 01, 50).
+    expect(cell).toHaveTextContent('PS5FísicoSwitchFísico+1')
     expect(cell).not.toHaveTextContent('Disco')
+  })
+
+  it('puts one line to a platform, its formats together', () => {
+    const entry = item({
+      copies: [
+        { platform: 167, format: 'physical' },
+        { platform: 167, format: 'digital' },
+        { platform: 130, format: 'physical' },
+      ],
+    })
+    renderWithIntl(
+      <ListView
+        shelves={[{ kind: 'all', key: 'all', items: [entry], total: 1 }]}
+        platforms={new Map([...platforms, [130, nintendoSwitch]])}
+        onOpen={vi.fn()}
+        enter={false}
+        firstBoxes={12}
+      />,
+    )
+    const lines = [...screen.getByText('Switch').closest('td')!.children].map(
+      (line) => line.textContent,
+    )
+    expect(lines).toEqual(['PS5Physical, Digital', 'SwitchPhysical'])
   })
 
   it('draws a row’s thumbnail from IGDB’s small file where the cover is Steam’s', () => {
@@ -769,6 +848,47 @@ describe('the wall (issue 193)', () => {
     )
     expect(fits).toEqual(['fill', 'whole', 'whole'])
   })
+
+  it('stops Tab once a shelf, and moves along it with arrows, Home and End (review 01, 20)', async () => {
+    const first = ['Alpha', 'Bravo', 'Charlie'].map((title) =>
+      item({ slug: title.toLowerCase(), title }),
+    )
+    const second = ['Delta', 'Echo'].map((title) => item({ slug: title.toLowerCase(), title }))
+    renderWithIntl(
+      <WallView
+        shelves={[
+          { kind: 'year', key: 'year:2020', year: 2020, items: first, total: first.length },
+          { kind: 'year', key: 'year:2021', year: 2021, items: second, total: second.length },
+        ]}
+        platforms={platforms}
+        onOpen={vi.fn()}
+        enter={false}
+        firstBoxes={5}
+        size="medium"
+      />,
+    )
+    const cover = (title: string) =>
+      screen.getByRole('button', { name: (name) => name.startsWith(`${title} (`) })
+    // One stop a shelf: the first cover of each.
+    expect(cover('Alpha')).toHaveAttribute('tabindex', '0')
+    expect(cover('Bravo')).toHaveAttribute('tabindex', '-1')
+    expect(cover('Delta')).toHaveAttribute('tabindex', '0')
+
+    cover('Alpha').focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(cover('Bravo')).toHaveFocus()
+    expect(cover('Bravo')).toHaveAttribute('tabindex', '0')
+    expect(cover('Alpha')).toHaveAttribute('tabindex', '-1')
+    await userEvent.keyboard('{End}')
+    expect(cover('Charlie')).toHaveFocus()
+    await userEvent.keyboard('{Home}')
+    expect(cover('Alpha')).toHaveFocus()
+    // Tab leaves the shelf: the next one's fold button, then its one stop.
+    await userEvent.tab()
+    expect(screen.getAllByRole('button', { name: /^Hide the .* shelf$/ })[1]).toHaveFocus()
+    await userEvent.tab()
+    expect(cover('Delta')).toHaveFocus()
+  })
 })
 
 describe('the banner view', () => {
@@ -915,5 +1035,55 @@ describe('a cover, by when it joined the page', () => {
   it('filling its frame, says nothing of it', () => {
     const { container } = renderWithIntl(<Cover {...cover} fit="fill" />)
     expect(container.querySelector('.cover')).not.toHaveAttribute('data-fit')
+  })
+})
+
+describe('the key to the marks (review 01, finding 11)', () => {
+  it('opens from the totals and says what each mark on the shelf means', async () => {
+    renderWithIntl(<MarksKey view="shelf" />)
+    await userEvent.click(screen.getByRole('button', { name: 'What the marks mean' }))
+    const dialog = await screen.findByRole('dialog', { name: 'What the marks mean' })
+    expect(await within(dialog).findByText('a gold seal on its corner')).toBeInTheDocument()
+    expect(within(dialog).getByText('leans against its neighbor')).toBeInTheDocument()
+    expect(within(dialog).getByText('the cover alone, with no case')).toBeInTheDocument()
+  })
+
+  it('names each mark in its term, Unsorted too (findings 55 and 56)', async () => {
+    renderWithIntl(<MarksKey view="shelf" />)
+    await userEvent.click(screen.getByRole('button', { name: 'What the marks mean' }))
+    const dialog = await screen.findByRole('dialog', { name: 'What the marks mean' })
+    await within(dialog).findByText('a gold seal on its corner')
+    // What a screen reader hears of each: the drawn mark is hidden from it.
+    const heard = (element: HTMLElement) => {
+      const copy = element.cloneNode(true) as HTMLElement
+      for (const hidden of copy.querySelectorAll('[aria-hidden="true"]')) hidden.remove()
+      return copy.textContent
+    }
+    const terms = within(dialog).getAllByRole('term').map(heard)
+    expect(terms).toEqual([
+      'Playing',
+      'Backlog',
+      'Completed',
+      'Dropped',
+      'Someday',
+      'Retired',
+      'Wishlist',
+      'Unsorted',
+      'Digital',
+      'More than one platform',
+    ])
+    expect(within(dialog).getAllByRole('definition')[7]).toHaveTextContent(
+      'a tag with an inbox: came in from a sync, not placed yet',
+    )
+  })
+
+  it("says the wall's marks on the wall, in Portuguese too", async () => {
+    renderWithIntl(<MarksKey view="wall" />, 'pt-BR')
+    await userEvent.click(screen.getByRole('button', { name: 'O que as marcas significam' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(await within(dialog).findByText('um círculo tracejado')).toBeInTheDocument()
+    expect(
+      within(dialog).getByText('as plataformas em que está, no pé da capa'),
+    ).toBeInTheDocument()
   })
 })

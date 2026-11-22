@@ -2,7 +2,14 @@
 
 import { XIcon } from 'lucide-react'
 import { Dialog as Primitive } from 'radix-ui'
-import { type ComponentProps, type ReactNode, type RefObject, useRef } from 'react'
+import {
+  type ComponentProps,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import { cn } from '@/ui/cn'
 import { Tip } from '@/ui/tooltip'
@@ -47,6 +54,70 @@ type DialogContentProps = Omit<ComponentProps<typeof Primitive.Content>, 'title'
    * that control goes with what opened it, as a menu's item does.
    */
   returnFocus?: FocusTarget
+}
+
+/** What Tab can stop at inside a dialog's body. */
+const TABBABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+
+/**
+ * The part that scrolls. When its words outgrow the screen and nothing in it can take focus (a key,
+ * a list to read), it takes focus itself, named by the dialog's title, so Tab reaches it and the
+ * arrows scroll it: the dialog's trap moves only among what is tabbable, and a keyboard read 3 of the
+ * marks' key's 11 rows at 400% zoom (WCAG 2.1.1; step 10's review, 01, finding 29).
+ */
+function DialogBody({
+  label,
+  footer,
+  children,
+}: {
+  label: string | undefined
+  footer: boolean
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [stop, setStop] = useState(false)
+
+  useEffect(() => {
+    const body = ref.current
+    if (!body || typeof ResizeObserver === 'undefined') return
+    const check = () =>
+      setStop(body.scrollHeight > body.clientHeight + 1 && !body.querySelector(TABBABLE))
+    const sizes = new ResizeObserver(check)
+    const watch = () => {
+      sizes.disconnect()
+      sizes.observe(body)
+      for (const child of body.children) sizes.observe(child)
+      check()
+    }
+    // What it holds may arrive later (a part fetched when opened), and change its size.
+    const changes = new MutationObserver(watch)
+    changes.observe(body, { childList: true, subtree: true })
+    watch()
+    return () => {
+      sizes.disconnect()
+      changes.disconnect()
+    }
+  }, [])
+
+  return (
+    <div
+      ref={ref}
+      data-dialog-body=""
+      tabIndex={stop ? 0 : undefined}
+      role={stop && label ? 'region' : undefined}
+      aria-label={stop ? label : undefined}
+      className={cn(
+        // A bar that sticks to its foot goes down over the 1.5rem (`-bottom-6 -mb-6`).
+        'scrollbar-quiet min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-1',
+        // Its ring inside its edge, where the scroll would cut it.
+        'focus-visible:outline-offset-[-2px]',
+        footer ? 'pb-5' : 'pb-6',
+      )}
+    >
+      {children}
+    </div>
+  )
 }
 
 const target = (to: FocusTarget | undefined) => (typeof to === 'function' ? to() : to?.current)
@@ -142,8 +213,10 @@ function DialogContent({
           >
             {title}
           </Primitive.Title>
-          {/* First in the dialog, where focus starts, and at the top, so nothing scrolls away. */}
-          <Tip label={closeLabel}>
+          {/* First in the dialog, where focus starts, and at the top, so nothing scrolls away. Its
+              tip shows to a pointer only: on focus, Escape closed the tip first, and a dialog took
+              two (step 10's review, 01, finding 58). */}
+          <Tip label={closeLabel} hoverOnly>
             <Primitive.Close aria-label={closeLabel} className={cn(dialogButton, 'ml-auto')}>
               <XIcon aria-hidden="true" className="size-4" />
             </Primitive.Close>
@@ -152,16 +225,9 @@ function DialogContent({
         {description ? (
           <Primitive.Description className="sr-only">{description}</Primitive.Description>
         ) : null}
-        <div
-          data-dialog-body=""
-          className={cn(
-            // A bar that sticks to its foot goes down over the 1.5rem (`-bottom-6 -mb-6`).
-            'scrollbar-quiet min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-1',
-            footer ? 'pb-5' : 'pb-6',
-          )}
-        >
+        <DialogBody label={typeof title === 'string' ? title : undefined} footer={Boolean(footer)}>
           {children}
-        </div>
+        </DialogBody>
         {footer ? (
           <div
             data-dialog-footer=""

@@ -5,13 +5,13 @@ import { Button } from '@/ui/button'
 
 /**
  * No game matches (spec 3.10). The conditions stay above as chips, each
- * removable; Clear all takes them all away.
+ * removable; Clear all takes them all away. `ResultStatus` says it aloud.
  */
 export function NoResults({ onClear }: { onClear: () => void }) {
   const t = useTranslations('Filters')
 
   return (
-    <div role="status">
+    <div>
       <EmptyLedge
         label={t('noResults.label')}
         title={t('noResults.title')}

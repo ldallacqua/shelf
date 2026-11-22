@@ -8,6 +8,7 @@ import type { Sort } from '@/domain/library/sort'
 import { testGame, testLibrary } from '@/domain/library/testing'
 import { buildIndex } from '@/domain/query/evaluate'
 import { parseQuery } from '@/domain/query/parse'
+import { fixedVocab } from '@/domain/query/vocab'
 import { writeQuery } from '@/domain/query/write'
 import { messages, renderWithIntl } from '@/test/render'
 
@@ -190,15 +191,46 @@ describe('FilterChips', () => {
   it('says each condition in words, with "or" between groups', () => {
     const chips = chipsFor('genre:rpg -theme:horror OR zelda')!
     expect(chips).toHaveTextContent('Genre: Role-playing (RPG)')
-    expect(chips).toHaveTextContent('Not theme: Horror')
+    expect(chips).toHaveTextContent('Theme: not Horror')
     expect(chips).toHaveTextContent('or')
     expect(chips).toHaveTextContent('Title: zelda')
+  })
+
+  it("says IGDB's genres, themes, modes and perspectives in the page's language", () => {
+    const parsed = parseQuery('genre:racing -theme:horror mode:co-op perspective:vr keyword:zelda')
+    renderWithIntl(
+      <FilterChips
+        tree={parsed.tree}
+        problems={parsed.problems}
+        index={index}
+        onRemove={() => {}}
+        onRemoveProblem={() => {}}
+        onClear={() => {}}
+      />,
+      'pt-BR',
+    )
+    const chips = screen.getByRole('group', { name: 'Filtros ativos' })
+    expect(chips).toHaveTextContent('Corrida')
+    expect(chips).toHaveTextContent('Terror')
+    expect(chips).toHaveTextContent('Cooperativo')
+    expect(chips).toHaveTextContent('Realidade virtual')
+    // A keyword is a name: IGDB's, as it is.
+    expect(chips).toHaveTextContent('zelda')
+  })
+
+  it('has words in both languages for every fixed IGDB value, and none for others', () => {
+    for (const locale of ['en', 'pt-BR'] as const) {
+      const vocab = messages[locale].Filters.vocab as Record<string, Record<string, string>>
+      for (const [key, words] of Object.entries(fixedVocab)) {
+        expect(Object.keys(vocab[key] ?? {}).sort(), `${locale} ${key}`).toEqual([...words].sort())
+      }
+    }
   })
 
   it('removes one condition at a time', async () => {
     const onRemove = vi.fn()
     chipsFor('genre:rpg -theme:horror', onRemove)
-    await userEvent.click(screen.getByRole('button', { name: 'Remove Not theme: Horror' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Remove Theme: not Horror' }))
     expect(onRemove).toHaveBeenCalledWith(expect.objectContaining({ group: 0, index: 1 }))
   })
 
@@ -238,13 +270,13 @@ describe('SortControl', () => {
 
   it('starts a key the way it is usually wanted: a rating highest first', async () => {
     const { onSort } = sortControl({ key: 'title', descending: false })
-    await userEvent.click(screen.getByRole('menuitemradio', { name: 'My rating' }))
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Rating' }))
     expect(onSort).toHaveBeenCalledWith({ key: 'rating', descending: true })
   })
 
   it('reverses with its button, which says which way it runs now', async () => {
     const { onSort } = sortControl({ key: 'rating', descending: true })
-    await userEvent.click(screen.getByRole('button', { name: 'My rating, descending' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Rating, descending' }))
     expect(onSort).toHaveBeenCalledWith({ key: 'rating', descending: false })
   })
 
@@ -280,7 +312,7 @@ describe('ResultStatus', () => {
     const rating: Sort = { key: 'rating', descending: true }
     rerender(intl(<ResultStatus q="genre:rpg" sort={rating} count={42} />))
     settle()
-    expect(said()).toHaveTextContent('42 games, sorted by My rating, descending')
+    expect(said()).toHaveTextContent('42 games, sorted by Rating, descending')
 
     // Back where it opened is a change too.
     rerender(intl(<ResultStatus q="" sort={{ key: 'random', descending: false }} count={1} />))
@@ -288,12 +320,12 @@ describe('ResultStatus', () => {
     expect(said()).toHaveTextContent('1 game, shuffled')
   })
 
-  it('leaves no match to the empty shelf to say', () => {
+  it('says when nothing matches, in the region that was always there', () => {
     vi.useFakeTimers()
     const { rerender } = render(intl(<ResultStatus q="" sort={title} count={230} />))
     rerender(intl(<ResultStatus q="zzz" sort={title} count={0} />))
     settle()
-    expect(said()).toBeEmptyDOMElement()
+    expect(said()).toHaveTextContent('No games match these filters.')
   })
 })
 
@@ -317,20 +349,40 @@ describe('ListSection', () => {
     return onChange
   }
 
-  it('with a mouse, a value cycles: off, included, excluded, off (spec 5.2)', async () => {
+  it('a value is a box to check: checked includes it (spec 5.2)', async () => {
+    const onChange = section()
+    const box = screen.getByRole('checkbox', { name: 'Role-playing (RPG), 86 games' })
+    expect(box).toHaveAttribute('aria-checked', 'false')
+    await userEvent.click(box)
+    expect(onChange).toHaveBeenCalledWith({ include: ['rpg'], all: false, exclude: [] })
+  })
+
+  it('checked again, a value is taken off, never excluded by a second click', async () => {
     const onChange = section(['rpg'])
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Role-playing (RPG), 86 games, included' }),
-    )
+    const box = screen.getByRole('checkbox', { name: 'Role-playing (RPG), 86 games' })
+    expect(box).toHaveAttribute('aria-checked', 'true')
+    await userEvent.click(box)
+    expect(onChange).toHaveBeenCalledWith({ include: [], all: false, exclude: [] })
+  })
+
+  it('leaves a value out with the minus beside it, and says so', async () => {
+    const onChange = section()
+    const exclude = screen.getByRole('button', { name: 'Exclude Role-playing (RPG)' })
+    expect(exclude).toHaveAttribute('aria-pressed', 'false')
+    await userEvent.click(exclude)
     expect(onChange).toHaveBeenCalledWith({ include: [], all: false, exclude: ['rpg'] })
   })
 
-  it('on touch, each value has its own include and exclude buttons', async () => {
-    const onChange = section()
-    const include = screen.getByRole('button', { name: 'Include Role-playing (RPG), 86 games' })
-    expect(include).toHaveAttribute('aria-pressed', 'false')
-    await userEvent.click(screen.getByRole('button', { name: 'Exclude Role-playing (RPG)' }))
-    expect(onChange).toHaveBeenCalledWith({ include: [], all: false, exclude: ['rpg'] })
+  it('an excluded value says it, and checking it includes it instead', async () => {
+    const onChange = section([], ['rpg'])
+    expect(screen.getByRole('button', { name: 'Exclude Role-playing (RPG)' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Role-playing (RPG), 86 games, excluded' }),
+    )
+    expect(onChange).toHaveBeenCalledWith({ include: ['rpg'], all: false, exclude: [] })
   })
 
   it('offers any or all once two values are included', async () => {
@@ -341,7 +393,7 @@ describe('ListSection', () => {
 
   it('dims a value that would match nothing', () => {
     section()
-    const strategy = screen.getByRole('button', { name: 'Strategy, 0 games' }).closest('li')
+    const strategy = screen.getByRole('checkbox', { name: 'Strategy, 0 games' }).closest('li')
     expect(strategy).toHaveAttribute('data-empty')
   })
 })
@@ -370,7 +422,7 @@ describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
   it('on a wide window is a column of its own, counting, and never a dialog', () => {
     renderWithIntl(panel(true, true))
     expect(within(column()).getByText('1 game matches')).toBeInTheDocument()
-    expect(within(column()).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
+    expect(within(column()).getByRole('checkbox', { name: 'Backlog, 1 game' })).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     // Its edges' fades are drawing, not content.
     const edges = column().querySelectorAll('.filters-edge')
@@ -394,7 +446,7 @@ describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
     // Nothing is on its way, so no ghost says so: a page settles once its ghosts are gone.
     expect(hidden.querySelector('.ghost')).not.toBeInTheDocument()
     const dialog = screen.getByRole('dialog', { name: 'Filters' })
-    expect(within(dialog).getByRole('button', { name: 'Backlog, 1 game' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('checkbox', { name: 'Backlog, 1 game' })).toBeInTheDocument()
     // Its count and Clear stay at its foot, outside what scrolls.
     expect(dialog.querySelector('[data-dialog-footer]')).toHaveTextContent('1 game matches')
   })
@@ -403,7 +455,7 @@ describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
     const onChange = vi.fn()
     const onClear = vi.fn()
     const { rerender } = render(intl(panel(true, false, { onChange, onClear })))
-    await userEvent.click(within(column()).getByRole('button', { name: 'Backlog, 1 game' }))
+    await userEvent.click(within(column()).getByRole('checkbox', { name: 'Backlog, 1 game' }))
     expect(writeQuery(onChange.mock.calls[0]![0])).toBe('status:backlog')
     rerender(intl(panel(true, false, { onChange, onClear, tree: onChange.mock.calls[0]![0] })))
     await userEvent.click(within(column()).getByRole('button', { name: 'Clear all' }))
@@ -416,7 +468,7 @@ describe('FilterPanel: beside the library, or in a dialog (issue #62)', () => {
     await userEvent.click(within(dialog).getByText('Theme'))
     rerender(intl(panel(true, false)))
     expect(column().querySelector('details[data-filter="theme"]')).toHaveAttribute('open')
-    expect(within(column()).getByRole('button', { name: 'Horror, 1 game' })).toBeInTheDocument()
+    expect(within(column()).getByRole('checkbox', { name: 'Horror, 1 game' })).toBeInTheDocument()
   })
 
   it('starts with a way past every filter, to the search field', async () => {

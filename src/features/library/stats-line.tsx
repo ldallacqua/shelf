@@ -47,7 +47,7 @@ export function StatsLine({
     <div
       role="group"
       aria-label={t('stats.label')}
-      className="flex flex-wrap items-baseline gap-x-5 gap-y-1 readout text-[0.6875rem] text-muted"
+      className="flex flex-wrap items-baseline gap-x-3 gap-y-1 readout text-[0.6875rem] text-muted sm:gap-x-5"
     >
       <Stat value={stats.games} unit={t('stats.games', { count: stats.games })} settle={settle} />
       <Stat

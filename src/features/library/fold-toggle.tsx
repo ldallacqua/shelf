@@ -40,7 +40,19 @@ export function FoldToggle({
   )
 }
 
-/** A shelf's games, folded away when this device has folded the shelf. */
+/** Whether what holds `element` is folded away here: wider than a phone, by CSS. */
+export const foldedAway = (element: Element): boolean => {
+  const body = element.closest('[data-shelf-body]')
+  return body !== null && getComputedStyle(body).display === 'none'
+}
+
+/**
+ * A shelf's games, folded away when this device has folded the shelf: wider than a phone only,
+ * by CSS (`shelf.css`). A phone shows one shelf at a time and can't unfold one, so a shelf folded
+ * on a wider screen shows its games there. The `hidden` attribute did that by the letter, but
+ * Tailwind's preflight hides `[hidden]` with `!important`, so the shelf drew nothing on a phone,
+ * in a narrow window or at 250% zoom (step 10's review, 01, finding 47).
+ */
 export function FoldBody({
   shelfKey,
   id,
@@ -53,7 +65,7 @@ export function FoldBody({
 }) {
   const folded = useCollapsed().has(shelfKey)
   return (
-    <div id={id} data-shelf-body="" hidden={folded}>
+    <div id={id} data-shelf-body="" data-folded={folded ? '' : undefined}>
       {children}
     </div>
   )

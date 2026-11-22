@@ -1,6 +1,6 @@
 'use client'
 
-import { BookmarkPlusIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { BookmarkPlusIcon, KeyboardIcon, PencilIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { parseAsString, parseAsStringLiteral, useQueryState, useQueryStates } from 'nuqs'
 import {
@@ -22,7 +22,7 @@ import {
   type Completion,
 } from '@/domain/library/remembered'
 import type { SmartShelf } from '@/domain/library/shelves'
-import { writeSort, type Sort } from '@/domain/library/sort'
+import { DEFAULT_SORT, writeSort, type Sort } from '@/domain/library/sort'
 import { libraryStats } from '@/domain/library/stats'
 import { occasionalStatuses, type Status } from '@/domain/library/values'
 import {
@@ -79,6 +79,7 @@ import { notify } from '@/features/shell/notices'
 import type { Anchor, FallbackReason, Shelf3DHandle } from '@/features/shelf-3d/shelf-3d'
 import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
+import { Tip } from '@/ui/tooltip'
 
 import { GhostShelves } from './ghosts'
 import { GhostList, ListView } from './list-view'
@@ -88,6 +89,7 @@ import { NothingReady } from './nothing-ready'
 import { useArrival } from './use-arrival'
 import type { Dimension } from './preferences'
 import { anchorIn2d, ShelfStage } from './shelf-stage'
+import { MarksKey } from './marks-key'
 import { StatsLine } from './stats-line'
 import { Toolbar } from './toolbar'
 import { useShelf } from './shelf'
@@ -121,6 +123,9 @@ const viewParam = parseAsStringLiteral(views)
 
 /** Whether the address names the view, the grouping or the sort: read as written, even if wrong. */
 const arrangingParams = { view: parseAsString, group: parseAsString, sort: parseAsString }
+
+/** The order the library opens in, as an address writes it. */
+const DEFAULT_SORT_TEXT = writeSort(DEFAULT_SORT)
 
 const never = () => () => {}
 
@@ -225,6 +230,7 @@ export function LibraryView({
   const added = useTranslations('Add')
   const filters = useTranslations('Filters')
   const shelfWords = useTranslations('Shelves')
+  const shortcutWords = useTranslations('Shortcuts')
   const locale = useLocale()
   const router = useRouter()
 
@@ -303,6 +309,8 @@ export function LibraryView({
   const beside = useFiltersBeside()
   if (beside && panelOpen) setPanelOpen(false)
   const [groupMenu, setGroupMenu] = useState(false)
+  /** A phone's view menu, which holds the grouping where the group menu isn't shown. */
+  const [layoutMenu, setLayoutMenu] = useState(false)
   const [sortMenu, setSortMenu] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
@@ -532,7 +540,9 @@ export function LibraryView({
     const onKey = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || typing(event.target)) return
       const now = keys.current
-      // `/` and `?` always work: `?` is where single letters are turned back on.
+      // Off means every key on its own, `/` and `?` too (WCAG 2.1.4): the toolbar's keyboard
+      // button opens the list that turns them back on.
+      if (!shortcutsOn()) return
       if (event.key === '/') {
         event.preventDefault()
         document.getElementById(SEARCH_ID)?.focus()
@@ -543,7 +553,6 @@ export function LibraryView({
         setHelpOpen(true)
         return
       }
-      if (!shortcutsOn()) return
       switch (event.key.toLowerCase()) {
         case 'f':
           // Beside the library the filters are already open: F takes focus to their first.
@@ -552,7 +561,9 @@ export function LibraryView({
           } else setPanelOpen(true)
           break
         case 'g':
-          setGroupMenu(true)
+          // Below 640 the group menu's button isn't shown: the phone's view menu holds it.
+          if (window.matchMedia('(width < 40rem)').matches) setLayoutMenu(true)
+          else setGroupMenu(true)
           break
         case 's':
           setSortMenu(true)
@@ -725,6 +736,11 @@ export function LibraryView({
   const changed =
     shelf !== undefined &&
     (query.q !== shelf.query || sortText !== shelf.sort || group !== shelf.group)
+  // The whole library, filtered, sorted or grouped other than its own way: something to save as
+  // a shelf. As it opens there is nothing to save but a copy of itself (review 01, finding 12).
+  const saveable = shelf
+    ? changed
+    : query.q !== '' || sortText !== DEFAULT_SORT_TEXT || group !== DEFAULT_GROUPING
 
   const viewProps = {
     shelves,
@@ -752,7 +768,7 @@ export function LibraryView({
        * the library's column, beside the filters (shelf.css). Narrower, none of the frames is a box.
        */}
       <div className="library-body">
-        <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-2 pt-4 pb-3 sm:pt-10 sm:pb-5 filters-beside:pt-0">
+        <div className="library-head flex flex-none flex-wrap items-end justify-between gap-x-6 gap-y-1 pt-3 pb-2 sm:gap-y-2 sm:pt-10 sm:pb-5 filters-beside:pt-0">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
             <h1 className="title text-2xl sm:text-5xl">{heading}</h1>
             {changed ? (
@@ -775,13 +791,32 @@ export function LibraryView({
               </p>
             ) : null}
           </div>
-          {liveStats ? (
-            <StatsLine stats={liveStats} settle={false} />
-          ) : counted !== first && drawnQ === builtFor.q ? (
-            <StatsLine stats={counted.stats} settle={false} />
-          ) : (
-            stats
-          )}
+          {/* The totals, and where a box's look is put in words: the views with marks have it. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {liveStats ? (
+              <StatsLine stats={liveStats} settle={false} />
+            ) : counted !== first && drawnQ === builtFor.q ? (
+              <StatsLine stats={counted.stats} settle={false} />
+            ) : (
+              stats
+            )}
+            {view === 'shelf' || view === 'wall' || view === 'list' ? (
+              <MarksKey view={view} mine={Boolean(actions)} />
+            ) : null}
+            {/* The way to the shortcuts that is not a key: where they are turned back on, at every
+                width (review 01, finding 31). */}
+            <Tip label={shortcutWords('title')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={shortcutWords('title')}
+                className="h-7 px-1.5 text-muted hover:text-text pointer-coarse:h-9"
+                onClick={() => setHelpOpen(true)}
+              >
+                <KeyboardIcon aria-hidden="true" />
+              </Button>
+            </Tip>
+          </div>
         </div>
 
         <FilterPanel
@@ -807,17 +842,24 @@ export function LibraryView({
               />
               <ShelvesMenu shelves={smartShelves} current={shelf?.slug} />
               {/* On a phone the owner's buttons are icons, so the search keeps its width. */}
-              {actions && (!shelf || changed) ? (
-                <Button
-                  variant="primary"
-                  className="flex-none max-sm:px-3"
-                  onClick={() => setSaveOpen(true)}
+              {actions && saveable ? (
+                // Its words for a pointer where only the icon shows.
+                <Tip
+                  label={shelf ? shelfWords('saveChanges') : shelfWords('saveShelf')}
+                  className="sm:hidden"
                 >
-                  <BookmarkPlusIcon aria-hidden="true" />
-                  <span className="max-sm:sr-only">
-                    {shelf ? shelfWords('saveChanges') : shelfWords('saveShelf')}
-                  </span>
-                </Button>
+                  <Button
+                    // A changed shelf's changes are what is in hand; a filtered library, one choice of many.
+                    variant={shelf ? 'primary' : 'secondary'}
+                    className="flex-none max-sm:px-3"
+                    onClick={() => setSaveOpen(true)}
+                  >
+                    <BookmarkPlusIcon aria-hidden="true" />
+                    <span className="max-sm:sr-only">
+                      {shelf ? shelfWords('saveChanges') : shelfWords('saveShelf')}
+                    </span>
+                  </Button>
+                </Tip>
               ) : null}
               {actions && shelf && !changed ? (
                 <Button
@@ -864,6 +906,8 @@ export function LibraryView({
             onDimension={switchTo}
             experimental={experimental}
             noThreeD={noThreeD}
+            layoutOpen={layoutMenu}
+            onLayoutOpen={setLayoutMenu}
             ready={
               ready !== null
                 ? {
@@ -876,12 +920,16 @@ export function LibraryView({
               <Button
                 variant="secondary"
                 // Where the filters stand beside the library, there is nothing to open.
-                className="flex-none max-sm:px-3 filters-beside:hidden"
+                className="flex-none max-[44rem]:px-3 filters-beside:hidden"
                 aria-label={filters('open', { count: conditions })}
                 onClick={() => setPanelOpen(true)}
               >
                 <SlidersHorizontalIcon aria-hidden="true" />
-                <span aria-hidden="true">{filters('openShort')}</span>
+                {/* On a phone, and up to where the views fit beside it, the row is one line: the
+                    icon and its count, its name said in full (step 10's review, 01, finding 51). */}
+                <span aria-hidden="true" className="max-[44rem]:hidden">
+                  {filters('openShort')}
+                </span>
                 {conditions > 0 ? (
                   <span
                     aria-hidden="true"
