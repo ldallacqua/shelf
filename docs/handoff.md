@@ -1,9 +1,10 @@
 # Handoff: 27 October 2026
 
-## A design specialist before every visible change, previews reviewed by eye, and no asking to merge (22 Nov 2026)
+## Four of the owner's rules (22 Nov 2026)
 
-Three of the owner's rules from the same day, written where every agent reads them (the owner asked that every rule
-live in a place no one AI owns). Branches `docs/design-specialist-rule` and `docs/never-ask-to-merge`.
+Four of the owner's rules from the same day, written where every agent reads them (the owner asked that every rule
+live in a place no one AI owns). Branches `docs/design-specialist-rule`, `docs/never-ask-to-merge` and
+`docs/browser-tests-off`.
 
 - **A design specialist plans before anyone builds.** The owner: a reviewer after the fact is not enough; a UI/UX
   and art-direction specialist has to work out the best way to make each visual change first. AGENTS.md ("A change
@@ -19,6 +20,11 @@ live in a place no one AI owns). Branches `docs/design-specialist-rule` and `doc
   auto-merge; the owner: no need to ask, always turn on auto-merge and Auto-fix. AGENTS.md (rules 3 and 4 of
   "Committing, pull requests and merging") now says so: a draft only while its UI/UX review runs or a question
   that changes what gets built is open, then ready and auto-merge at once, without waiting for the owner's look.
+- **No browser tests while Shelf is an MVP, by hand either.** An agent set out to run them on the owner's computer, as
+  AGENTS.md said to run them by hand when a change needed them; the owner: they aren't run during the MVP. AGENTS.md
+  (beside "CI on GitHub is the gate", and "Done means") and [testing.md](testing.md#continuous-integration) now say
+  not to run them, wait for them or update their reference screenshots until the owner turns them back on.
+  `pnpm ui:capture` and headless looks at a page still run.
 
 ## CI is the gate (22 Nov 2026)
 
@@ -29,8 +35,9 @@ game ran). Branch `ci-gate`.
 - **The workflow** (`.github/workflows/ci.yml`) runs on every pull request into `main` and on `main` after each
   merge: Checks (format to unit tests); Build, budgets and Lighthouse; Storybook; Desktop, the Rust tests on
   Windows, when `desktop/` changed; and Gate, the one check `main`'s protection requires. A change to docs alone
-  skips the build and Storybook. The browser tests run by hand only, for now (`gh workflow run ci.yml --ref
-  <branch> -f browsers=true`). What runs and why: [testing.md](testing.md#continuous-integration).
+  skips the build and Storybook. The browser tests were left to run by hand (`gh workflow run ci.yml --ref
+  <branch> -f browsers=true`); later the same day, not at all while Shelf is an MVP (top of this file). What
+  runs and why: [testing.md](testing.md#continuous-integration).
 - **`main` is protected:** pull requests only, Gate required, no force-push or deletion, the owner's account
   included. Auto-merge is allowed and a merged branch is deleted.
 - **Every pull request** gets `gh pr merge <number> --auto --merge` once it is ready (a draft while its UI/UX
