@@ -28,6 +28,25 @@
   line-gap-override: 0%;
 }
 
+/*
+ * Archivo's stand-in while it loads (`ui/fonts`). next/font's own is Arial alone, scaled so
+ * its average character is as wide as Archivo's. A device without Arial (Linux, Android)
+ * skipped it for its wider system sans, so the landing page's words took more lines and the
+ * shelf below them moved when Archivo arrived: a layout shift of 0.13 on CI. Liberation Sans
+ * and Arimo have Arial's widths, and Roboto is within 0.2 % of them, so one scaling fits all
+ * four: Archivo's 0.44 em average over Arial's 0.4458, and Archivo's height at that size.
+ */
+@font-face {
+  font-family: 'Archivo Stand-in';
+  src:
+    local('Arial'), local('ArialMT'), local('Liberation Sans'), local('LiberationSans'),
+    local('Arimo'), local('Arimo-Regular'), local('Roboto'), local('Roboto-Regular');
+  size-adjust: 98.7%;
+  ascent-override: 88.96%;
+  descent-override: 21.28%;
+  line-gap-override: 0%;
+}
+
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 @custom-variant pointer-coarse (@media (pointer: coarse));
 /* Shelf for Windows' window without a Windows bar, where Shelf's header is the bar (features/desktop/window-script.tsx). */

@@ -232,6 +232,14 @@ export const lighthouseBudgets = {
  * Lighthouse's stock 4 times the runner gives 180 ms. So CI sets
  * LIGHTHOUSE_SLOWDOWN=4, and the home page's blocked time, about 180 ms,
  * is the check that the two still agree.
+ *
+ * Since CI became the gate (22 Nov 2026), its runners have come in more than
+ * one speed. The same build at the same 4 times: a runner of benchmark 2512
+ * blocked the home page for 242 ms and scored the library 88; one of 3511
+ * blocked it for 178 ms and scored the library 97. So CI also names the
+ * benchmark its 4 times is for, LIGHTHOUSE_SLOWDOWN_AT=3500, the runner whose
+ * home page blocks for about the 180 ms above, and a slower runner is slowed
+ * less, in proportion (a runner of 2512 by 2.9 times).
  */
 export const cpuSlowdownFor = (benchmarkIndex: number): number | undefined => {
   if (!Number.isFinite(benchmarkIndex) || benchmarkIndex < 150) return undefined

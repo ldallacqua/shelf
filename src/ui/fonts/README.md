@@ -18,6 +18,19 @@ So Martian Mono's stand-in is a system monospace instead, defined in `globals.cs
 New, Menlo, Lucida Console, or the monospace of Linux or Android, whichever the device has.
 Each is 0.6 em wide, so at 116.67% every character is exactly as wide as Martian Mono's.
 
+## Archivo's stand-in
+
+next/font's stand-in for Archivo is Arial alone, and Linux and Android have no Arial. There
+the browser skipped it for the system's own sans, which is wider, so the landing page's words
+took more lines until Archivo arrived and the example shelf under them moved up: a layout
+shift of 0.13 on CI's Linux runner (22 Nov 2026), which a phone would see too.
+
+So Archivo's stand-in is defined in `globals.css` instead, as Martian Mono's is: Arial,
+Liberation Sans (Linux), Arimo (ChromeOS) or Roboto (Android), whichever the device has.
+The first three share Arial's widths and Roboto is within 0.2 % of them, so the scaling
+next/font worked out for Arial fits each: 98.7 %, with Archivo's height above and below the
+baseline at that size.
+
 ## Why the title font is a file in this folder
 
 Archivo's width axis is what makes a title wide. The whole family with that axis is 88 KB,
