@@ -850,22 +850,24 @@ from `main` to https://shelf-storybook.vercel.app, a Vercel project of its own
 
 ## 18. Continuous integration
 
-Free minutes are finite (2,000 a month while the repository is private), and one full run on
-GitHub took about 75. So **nothing runs on GitHub by itself**: every check runs on the local
-machine before a pull request merges, with `pnpm verify`, and GitHub's workflow is kept for
-running by hand.
+**CI on GitHub is the gate** (the owner's rule, 22 Nov 2026): every pull request into `main`
+runs `.github/workflows/ci.yml`, `main` is protected and takes a pull request only once its
+Gate check passes, and pull requests merge themselves then. The repository is public, so its
+minutes are free. The browser tests run by hand for now, too slow for every pull request.
+What runs and why: [docs/testing.md](testing.md#continuous-integration).
 
 | What | When | Steps | About |
 | --- | --- | --- | --- |
 | `pnpm verify --quick` | While working, as often as useful | Format, lint, typecheck, translation check, unit and component tests, build, bundle checks. End-to-end smoke: Chromium at phone and desktop. | 4 min |
-| `pnpm verify` | Before merging a pull request | All of the above; all nine browser projects; a Linux pass in Playwright's Docker image (WebKit at three widths, reference screenshots); Lighthouse; Storybook build | 20 min |
-| CI workflow | Only by hand (Actions → CI → Run workflow) | Everything, Lighthouse alone, or new reference screenshots | 75 min for everything |
+| `pnpm verify` | When a change wants more than CI runs | All of the above; all nine browser projects; a Linux pass in Playwright's Docker image (WebKit at three widths, reference screenshots); Lighthouse; Storybook build | 20 min |
+| CI, the gate | Every pull request into `main`, and `main` after each merge | Format to unit tests; build, JavaScript budgets, Lighthouse, Storybook (not for docs alone); the desktop app's Rust tests when `desktop/` changed | Side by side |
+| CI by hand | Actions → CI → Run workflow | The gate's jobs plus all nine browser projects, or new reference screenshots | |
 
 **Why a Linux pass.** The Linux build of WebKit, which GitHub's runners use, is not Safari: in
 step 3 a dozen blurred-glass labels hung it while Safari was fine. Text also renders
 differently on Linux, so the reference screenshots are made and compared there.
 
-**"Done" for a build step** means `pnpm verify` passes on the step's last commit, and the
+**"Done" for a build step** means its pull request merges through CI's gate, and the
 summary carries screenshots at phone and desktop in both themes, taken by Playwright.
 
 Neither needs **secrets**: both build against a SQLite file and the mocks.
@@ -1005,7 +1007,7 @@ Two notes on order:
 | 3 | Vercel refuses a deployment over commit authorship (for example, the co-author line on my commits) | Low; the documented check is on the author | Drop the co-author line, or deploy from GitHub Actions with a Vercel token |
 | 4 | next-intl's use of Next's new root parameters has an edge case with Cache Components | Low | next-intl's older `setRequestLocale` path, which it still supports |
 | 5 | `<ViewTransition>` behaves differently in Safari or Firefox | Medium | It is an enhancement. Without it, the page changes with a crossfade. |
-| 6 | GitHub Actions minutes run out mid-month | Medium in a heavy month | Fewer full runs; or make the repository public |
+| 6 | GitHub Actions minutes run out mid-month | None while the repository is public (it is) | Fewer jobs per pull request; or the local `pnpm verify` |
 | 7 | Texture memory is too high on an older laptop | Medium | Smaller atlases and fewer cover levels, chosen automatically from measured frame time |
 | 8 | Two open branches migrate the shared preview database differently | Low; work is one branch at a time | `pnpm db:reset:preview` rebuilds it from fixtures |
 | 9 | The page frame is instant but the first boxes take a cold-start round trip to the function | Medium | Keep a ready-made copy of the library file in the database, rebuilt on each write, so a cold start is one read |
@@ -1085,6 +1087,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| CI is the gate (22 Nov 2026) | **Every pull request into `main` runs CI on GitHub, `main` is protected (pull requests only, the Gate check required, the owner's account included) and pull requests merge themselves once it passes (section 18).** Checks, then build, budgets, Lighthouse and Storybook side by side, the desktop app's Rust tests when `desktop/` changed; the browser tests by hand. `pnpm verify` stays, for more than CI runs. | The owner: the tests and Lighthouse "can start running in CI", so nothing depends on their computer running them, with auto-merge and Auto-fix on every pull request. Lighthouse on the owner's computer read 77 to 91 for the same build while a game ran. The repository is public now, so the minutes that kept CI off cost nothing. |
 | Next.js 16.4.5 (22 Nov 2026) | **Next.js 16.4.5,** from 16.4.1, and `eslint-config-next` with it. Not 16.4.6, which fixes nothing for security and starts compressing route handlers' answers. | 16.4.5 is a security release: seven moderate advisories, four of them in `'use cache'` and Cache Components, which Shelf uses (a fallback shell poisoned by a request's placeholder params; a cache answer shared across users for binary arguments; two leaks across root params, which Shelf's cached reads don't meet, as none reads the locale). Every build of 16.4.1 also stopped once on Next.js's notice asking for the upgrade. |
 | Following, in every view, gliding | **The wall, the list and the banners follow the game in focus as the shelf does, and the room glides to a game's colors, every part together (spec 9, issue 206).** `useFollowOnHover` (`features/library/follow-hover.ts`) puts one set of pointer and focus handlers on each grid and reads which game from the place a cell already names (`aria-posinset`, a row's `aria-rowindex`), so nothing draws again on hover and the memoized cells keep their props. `restOn` in `follow-game.tsx` waits 350 ms on a game and 600 ms after leaving, and starts the wait again only for another game. The change glides for `--motion-slow` under `data-colors-changing` (theme.css), which transitions every colorway token on `<html>` and keeps every element's own color transitions waiting (`transition-property` limited to what moves), so buttons, the filters, the chosen view and the logo glide with the walls instead of snapping or lagging. The first glide's frames are watched: more than two over 50 ms, and the device changes at once from then on; under reduced motion always. | The owner: following "doesn't do anything in mural, lista or banner", and "the color transition in some components are rough … they transition instantly. We need to add a soft transition color". The rooms changed at once, while the few parts with transitions of their own faded on their own clock. Gliding the whole page was measured as about eleven dropped frames per change with the processor four times slower, hence the watch. |
 | Following the game | **With "Follow the game" on (Settings, Appearance, under the colorways), the room takes the colors of the game in focus: a game's page as it opens, and on the shelf the game the pointer rests on (350 ms) or the keyboard reaches (spec 9, issue 206).** The game's three cover colors become seeds (accent, the most common color as the room, `ledFrom` as the light) for `colorsOf`, pastel when the colorway chosen is (`data-follow="pastel"`). `useFollowGame` (`features/theme/follow-game.tsx`) is what the shelf grid and `GameDetail` carry; the arithmetic is `follow-paint.ts`, imported the first time a game is followed, which lays `--game-{theme}-{token}` on `<html>` and sets `data-game`; colorways.css's `game` blocks come last, so they win over any colorway, pure black too. It changes at once and never glides, and the shelf leaves it out for a touch screen and under reduced motion. The device keeps it (`shelf:colors:follow`) and the theme script sets `data-follow`. The trophies, the wall, the list and the banners don't follow. | The owner: "change the pallete dynamically depending on the game selected", on a game's page and as games are hovered in the library. Measured on the library with the processor four times slower: a shelf's LED gliding (today's hover) dropped no frames; the whole room gliding to a game's colors dropped about eleven per change (p95 83 ms), and changing at once about one (p95 33 ms); with a normal processor both were smooth. Hence at once, after a rest. The trophies' script is at 214.9 KB of its 215. |
