@@ -6,6 +6,8 @@ import { ghostOrder } from '@/ui/ghost'
 
 import { GhostShelves } from './ghosts'
 
+import '@/features/filters/filter-column.css'
+
 /** A control's place: a button's height, or a group of buttons'. */
 const BUTTON = 'h-10 rounded-control pointer-coarse:h-11'
 const GROUP = 'h-[2.625rem] rounded-control pointer-coarse:h-[2.875rem]'
@@ -20,6 +22,7 @@ const GROUP = 'h-[2.625rem] rounded-control pointer-coarse:h-[2.875rem]'
  */
 export function LibrarySkeleton({ title }: { title?: string }) {
   const t = useTranslations('Library')
+  const filters = useTranslations('Filters')
 
   return (
     <div className="library" data-view="shelf" aria-busy="true">
@@ -67,8 +70,8 @@ export function LibrarySkeleton({ title }: { title?: string }) {
               />
               <span className={cn('ghost w-16 flex-none', BUTTON)} />
             </div>
-            {/* The status row, but where the filters stand beside the library. */}
-            <div className="flex h-[2.375rem] items-center gap-1 overflow-hidden pointer-coarse:h-[2.625rem] filters-beside:hidden">
+            {/* The status row, but where the filters stand beside the library, unless hidden there. */}
+            <div className="flex h-[2.375rem] items-center gap-1 overflow-hidden pointer-coarse:h-[2.625rem] filters-beside:hidden filters-beside:filters-hidden:flex">
               {['w-11', 'w-18', 'w-19', 'w-23', 'w-19', 'w-21'].map((width, index) => (
                 <span
                   key={width + index}
@@ -83,10 +86,22 @@ export function LibrarySkeleton({ title }: { title?: string }) {
             aria-hidden="true"
             className="library-controls flex items-center gap-2 sm:mt-3 sm:flex-wrap lg:gap-3"
           >
-            {/* Filters, the sort and its direction. */}
+            {/* Filters, or where they stand beside the library, the button that hides them; the sort
+                and its direction. */}
             <span
               className={cn('ghost w-10 flex-none min-[44rem]:w-24 filters-beside:hidden', BUTTON)}
             />
+            {/* As wide as its words, in this language and for the choice on this device. */}
+            <span
+              className={cn(
+                'ghost hidden flex-none items-center gap-2 px-3 text-sm font-medium filters-beside:inline-flex',
+                BUTTON,
+              )}
+            >
+              <span className="size-4" />
+              <span className="invisible filters-hidden:hidden">{filters('hide')}</span>
+              <span className="invisible hidden filters-hidden:inline">{filters('show')}</span>
+            </span>
             <span className={cn('ghost flex-1 sm:w-31 sm:flex-none', BUTTON)} />
             <span className={cn('ghost w-10 flex-none pointer-coarse:w-11', BUTTON)} />
             {/* A phone's one menu for the layout; wider, the grouping, the views and the keys. */}

@@ -275,11 +275,19 @@ export function Toolbar({
             {views.map((value) => {
               const Icon = viewIcons[value]
               return (
-                // Icons until xl, so the row holds every control from 640 up, a filter's count too.
-                <Tip key={value} label={t(`view.${value}`)} className="xl:hidden">
+                // Icons until xl, so the row holds every control from 640 up, a filter's count too;
+                // and again from 96rem, where the filters' column first stands beside the library
+                // and Hide filters joins the row, until 100rem leaves the words room again.
+                <Tip
+                  key={value}
+                  label={t(`view.${value}`)}
+                  className="xl:max-[96rem]:hidden min-[100rem]:hidden"
+                >
                   <SegmentedItem value={value} aria-label={t(`view.${value}`)}>
                     <Icon aria-hidden="true" />
-                    <span className="max-xl:hidden">{t(`view.${value}`)}</span>
+                    <span className="max-xl:hidden min-[96rem]:max-[100rem]:hidden">
+                      {t(`view.${value}`)}
+                    </span>
                   </SegmentedItem>
                 </Tip>
               )

@@ -57,6 +57,11 @@ import { mentions, type QueryNode } from '@/domain/query/tree'
 import { FILTERS_BESIDE, useFiltersBeside } from '@/features/filters/beside'
 import { FilterChips } from '@/features/filters/filter-chips'
 import { FILTERS_ID, FilterPanel } from '@/features/filters/filter-panel'
+import {
+  FiltersToggle,
+  showFiltersColumn,
+  useFiltersColumn,
+} from '@/features/filters/filters-toggle'
 import { NoResults } from '@/features/filters/no-results'
 import { ResultStatus } from '@/features/filters/result-status'
 import { SaveShelf } from '@/features/filters/save-shelf'
@@ -308,6 +313,8 @@ export function LibraryView({
   // dialog open as the window widens is closed, not left to open again as it narrows.
   const beside = useFiltersBeside()
   if (beside && panelOpen) setPanelOpen(false)
+  // There, the column may be hidden on this device: then it holds nothing, and counts nothing.
+  const filtersColumn = useFiltersColumn()
   const [groupMenu, setGroupMenu] = useState(false)
   /** A phone's view menu, which holds the grouping where the group menu isn't shown. */
   const [layoutMenu, setLayoutMenu] = useState(false)
@@ -555,9 +562,13 @@ export function LibraryView({
       }
       switch (event.key.toLowerCase()) {
         case 'f':
-          // Beside the library the filters are already open: F takes focus to their first.
+          // Beside the library the filters are already open: F takes focus to their first. A
+          // column hidden on this device is shown first, and its sections are drawn by the next frame.
           if (window.matchMedia(FILTERS_BESIDE).matches) {
-            document.getElementById(FILTERS_ID)?.querySelector<HTMLElement>('summary')?.focus()
+            showFiltersColumn()
+            requestAnimationFrame(() =>
+              document.getElementById(FILTERS_ID)?.querySelector<HTMLElement>('summary')?.focus(),
+            )
           } else setPanelOpen(true)
           break
         case 'g':
@@ -822,7 +833,7 @@ export function LibraryView({
         <FilterPanel
           open={panelOpen}
           onOpenChange={setPanelOpen}
-          beside={beside}
+          beside={beside && filtersColumn !== 'hidden'}
           tree={parsed.tree}
           index={index}
           matching={matching?.length}
@@ -917,28 +928,32 @@ export function LibraryView({
                 : undefined
             }
             filters={
-              <Button
-                variant="secondary"
-                // Where the filters stand beside the library, there is nothing to open.
-                className="flex-none max-[44rem]:px-3 filters-beside:hidden"
-                aria-label={filters('open', { count: conditions })}
-                onClick={() => setPanelOpen(true)}
-              >
-                <SlidersHorizontalIcon aria-hidden="true" />
-                {/* On a phone, and up to where the views fit beside it, the row is one line: the
+              <>
+                <Button
+                  variant="secondary"
+                  // Where the filters stand beside the library, there is nothing to open: there, the
+                  // button beside it hides their column and brings it back.
+                  className="flex-none max-[44rem]:px-3 filters-beside:hidden"
+                  aria-label={filters('open', { count: conditions })}
+                  onClick={() => setPanelOpen(true)}
+                >
+                  <SlidersHorizontalIcon aria-hidden="true" />
+                  {/* On a phone, and up to where the views fit beside it, the row is one line: the
                     icon and its count, its name said in full (step 10's review, 01, finding 51). */}
-                <span aria-hidden="true" className="max-[44rem]:hidden">
-                  {filters('openShort')}
-                </span>
-                {conditions > 0 ? (
-                  <span
-                    aria-hidden="true"
-                    className="-mr-1 rounded-full bg-accent px-1.5 readout text-[0.625rem] text-on-accent"
-                  >
-                    {conditions}
+                  <span aria-hidden="true" className="max-[44rem]:hidden">
+                    {filters('openShort')}
                   </span>
-                ) : null}
-              </Button>
+                  {conditions > 0 ? (
+                    <span
+                      aria-hidden="true"
+                      className="-mr-1 rounded-full bg-accent px-1.5 readout text-[0.625rem] text-on-accent"
+                    >
+                      {conditions}
+                    </span>
+                  ) : null}
+                </Button>
+                <FiltersToggle count={conditions} className="hidden filters-beside:inline-flex" />
+              </>
             }
             sort={
               <SortControl

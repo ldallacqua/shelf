@@ -1,15 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 
 import { Ghost } from '@/ui/ghost'
+import { PanelToggle } from '@/ui/panel-toggle'
 
-import { SidebarToggleView } from './sidebar-toggle'
-
+/** The game page's Hide list, on the toggle it shares with the library's Hide filters. */
 function ToggleExample({ shown: initial }: { shown: boolean }) {
+  const t = useTranslations('Beside')
   const [shown, setShown] = useState(initial)
   return (
-    <div className="grid gap-4">
-      <SidebarToggleView shown={shown} onToggle={() => setShown(!shown)} />
+    <div className="grid justify-items-start gap-4">
+      <PanelToggle shown={shown} onToggle={() => setShown(!shown)} controls="game-library-list">
+        {t(shown ? 'hide' : 'show')}
+      </PanelToggle>
       <div
         id="game-library-list"
         hidden={!shown}
@@ -27,12 +31,10 @@ function ToggleExample({ shown: initial }: { shown: boolean }) {
 
 const meta = {
   title: 'Library/Beside the game/Visibility',
-  component: SidebarToggleView,
-  args: { shown: true, onToggle: () => {} },
-  render: ({ shown }) => <ToggleExample shown={shown} />,
-} satisfies Meta<typeof SidebarToggleView>
+  component: PanelToggle,
+} satisfies Meta<typeof PanelToggle>
 export default meta
-type Story = StoryObj<typeof meta>
+type Story = StoryObj
 
-export const ListShown: Story = {}
-export const ListHidden: Story = { args: { shown: false } }
+export const ListShown: Story = { render: () => <ToggleExample shown /> }
+export const ListHidden: Story = { render: () => <ToggleExample shown={false} /> }

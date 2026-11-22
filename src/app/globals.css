@@ -64,6 +64,9 @@
 }
 /* Where the library's filters stand in a column beside it: FILTERS_BESIDE in features/filters/beside.ts. */
 @custom-variant filters-beside (@media (width >= 96rem));
+/* The library's filters, or the list beside a game, hidden on this device (features/library/preferences.ts). */
+@custom-variant filters-hidden (html[data-library-filters='hidden'] &);
+@custom-variant game-list-hidden (html[data-game-list='hidden'] &);
 
 @theme inline {
   --color-wall: var(--wall);

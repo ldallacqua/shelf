@@ -1238,6 +1238,9 @@
     },
     "open": "{count, plural, =0 {Filters} one {Filters, # active} other {Filters, # active}}",
     "openShort": "Filters",
+    "hide": "Hide filters",
+    "show": "Show filters",
+    "showActive": "{count, plural, =0 {Show filters} one {Show filters, # active} other {Show filters, # active}}",
     "keys": {
       "status": "Status",
       "owned": "Platform owned",
