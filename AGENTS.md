@@ -98,12 +98,16 @@ CI's gate passes:
    (`git config user.name` and `user.email`), never a bot's (rule 6: Vercel deploys only the owner's
    commits). A `Co-Authored-By` line for the assistant is fine, as the history has.
 3. Turn auto-merge on, with a merge commit as the history has: `gh pr merge <number> --auto --merge`.
-   GitHub merges when the Gate check passes and deletes the branch. Only once the pull request is ready:
-   one still in its UI/UX review (rule below) or waiting on the owner's answer is opened as a draft, and
-   auto-merge goes on when it is ready. Never merge around the gate (`--admin`).
-4. Turn on whatever watches the pull request and fixes it. In Claude's desktop app, that is Auto-fix on
-   the pull request: a CI failure, a merge conflict or a review comment wakes the session to fix it. An
-   agent without one watches the run itself (`gh pr checks <number> --watch`) and fixes what fails.
+   GitHub merges when the Gate check passes and deletes the branch. **Never ask the owner first** (the
+   owner's rule, 22 Nov 2026): marking the pull request ready, auto-merge and Auto-fix (rule 4) are the
+   agent's to turn on, every time. A pull request is a draft only while its UI/UX review (rule below) still
+   runs, or while it waits on a question to the owner that changes what gets built; as soon as that is done
+   it is marked ready (`gh pr ready <number>`) and auto-merge goes on, without waiting for the owner to look
+   at it or say yes. Never merge around the gate (`--admin`).
+4. Turn on whatever watches the pull request and fixes it, without asking. In Claude's desktop app, that is
+   Auto-fix on the pull request: a CI failure, a merge conflict or a review comment wakes the session to fix
+   it. An agent without one, or whose tool refuses to turn it on, watches the run itself
+   (`gh pr checks <number> --watch`) and fixes what fails.
 5. The pull request says what the change was based on (its design pass, and the design specialist's plan),
    what its UI/UX review found and what happened to each finding, what ran outside CI and what didn't, how
    to look at it on the preview (below), and names any admin job to run after merging.
@@ -137,8 +141,9 @@ not a bug to fix. Look at the change on the public sample shelf of 230 games ins
 shelf), with `?view=wall`, `?view=list` or `?view=banner`, and a game's page at `/u/sample/game/<slug>`. What
 only an account's owner sees (Settings, Organize, the Add button) can't be seen there: take it locally on
 `pnpm dev` with `SHELF_MOCKS=1` (above), which the server refuses on Vercel, and put the screenshots in the pull
-request. A pull request waiting on the owner's eye links the preview's sample pages that show the change, and
-says what to try there (hover a cover, open a menu), so the owner can review from a phone.
+request. Every pull request with a visible change links the preview's sample pages that show it, and says what
+to try there (hover a cover, open a menu), so the owner can look from a phone; it does not wait for them to
+(rule 3 above).
 
 **Lint holds a few of these rules** (`eslint.config.mjs`): the import boundaries, words only from
 `messages/`, no `title` tooltips, no "Loading" words or spinners, no link to one release's installer, and
