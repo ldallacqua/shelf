@@ -18,11 +18,12 @@ deploying (Vercel builds `main`).
 
 **Feature → review → fix → review → deploy.**
 
-1. **Feature.** Built after its design pass, as AGENTS.md says.
+1. **Feature.** Built after its design pass, from the design specialist's plan, as AGENTS.md says.
 2. **Review.** Capture the screens the feature touches, in the states it adds (section 1), and run the three
-   lenses over them (section 2). A screen or state `pnpm ui:capture` doesn't know yet is added to its list in the
-   same change, with a scene for each new state (an open dialog, an error, an empty list), so the next review
-   finds it.
+   lenses over them (section 2), with the design specialist's plan beside them: what was built should do what
+   it planned, or the pull request says why not. A screen or state `pnpm ui:capture` doesn't know yet is
+   added to its list in the same change, with a scene for each new state (an open dialog, an error, an empty
+   list), so the next review finds it.
 3. **Fix.** Every Blocker and High is fixed in the same pull request. Medium too, unless the owner says it waits;
    Low may wait. Whatever waits goes into an issue, linked from the pull request.
 4. **Review again.** Capture again only the scenes the fixes touched (`pnpm ui:capture screen:scene,scene`,

@@ -1,5 +1,21 @@
 # Handoff: 27 October 2026
 
+## A design specialist before every visible change, and previews reviewed by eye (22 Nov 2026)
+
+Two of the owner's rules from the same day, written where every agent reads them (the owner asked that every rule
+live in a place no one AI owns). Branch `docs/design-specialist-rule`.
+
+- **A design specialist plans before anyone builds.** The owner: a reviewer after the fact is not enough; a UI/UX
+  and art-direction specialist has to work out the best way to make each visual change first. AGENTS.md ("A change
+  anyone can see") holds the rule, and [design-pass.md](design-pass.md#who-does-it-and-what-it-hands-over) who does
+  it, what it is given and the plan it hands over. Claude Code runs it as the `design-pass` subagent
+  (`.claude/agents/design-pass.md`, which only reads that file); any other agent does it as a step of its own,
+  before the code. The UI/UX review after building still runs, against the plan too.
+- **Reviewing a pull request by eye.** The owner tried a preview, signed in, and got "A entrada ainda não está
+  configurada neste servidor.": previews have no sign-in on purpose. AGENTS.md ("Reviewing a pull request by eye,
+  without signing in") says to look on the public sample shelf, `<preview>/u/sample?view=wall` and the like, and
+  that a pull request waiting on the owner links those pages.
+
 ## CI is the gate (22 Nov 2026)
 
 The owner asked for the tests and Lighthouse to run in CI, `main` locked, and auto-merge and Auto-fix on every

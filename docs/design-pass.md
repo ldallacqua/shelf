@@ -5,6 +5,33 @@ see"). It is written for every agent and person: an agent that has design tools 
 run them as well, but these checklists are the standard, and the pull request says which parts
 ran and what they changed.
 
+## Who does it, and what it hands over
+
+The owner's rule (22 Nov 2026): before anyone builds a change anyone can see, a UI/UX and
+art-direction specialist works out the best way to make it. A review after building is not enough
+on its own; someone has to think about how to do the task before it is done.
+
+- **Who.** One whose only job here is the design, not the one about to write the code, so the
+  plan isn't bent toward what is quickest to build. An agent that can start a helper agent hands
+  the pass to one, with this file as its procedure (Claude Code: `.claude/agents/design-pass.md`).
+  An agent that can't does sections 1 to 4 as a step of its own, writes the plan below, and only
+  then opens the code. A person does the same.
+- **What it is given.** What was asked, in the owner's words; screenshots of the screen as it is
+  now, at phone and desktop width; the files that draw it; the spec's section; and this file.
+- **What it hands over: a plan**, short enough to read in two minutes:
+  1. The problem in one sentence, and who it is for.
+  2. Two or three ways to do it, what good products do (section 1), and the one chosen, with why.
+  3. Where it stands on the page, and what it moves or replaces.
+  4. What it is built from: the components in `src/ui` and the tokens; anything new, and why
+     nothing here would do.
+  5. Every state (section 2), the motion and its calm version, both themes, a phone.
+  6. Its words in English and Brazilian Portuguese (section 4), and the accessibility it needs
+     (section 3).
+  7. What the review after building should check most.
+- **Then.** The code follows the plan. Anything that changes while building goes back to the plan
+  first, and the plan's new version is the one the pull request carries. The UI/UX review
+  ([ui-review.md](ui-review.md)) then judges what was built, against the plan too.
+
 ## 1. Look at it
 
 - Open how two or three good products do the same thing, in a browser: layout is seen, not read.

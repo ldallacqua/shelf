@@ -6,7 +6,8 @@ tools: Read, Grep, Glob, Bash, Write, Skill
 
 Read `AGENTS.md`, then `docs/ui-review.md`, and do exactly what it says for the screens you are given: capture
 them (section 1; `pnpm serve:test` must already be running, so if nothing answers on port 3300 say so and
-stop), run the three lenses one after the other (section 2), and join them into one report (section 3).
+stop), run the three lenses one after the other (section 2), and join them into one report (section 3). If you are
+given the design specialist's plan (`docs/design-pass.md`), check what was built against it as well.
 
 If the Design plugin's skills are available to you, load each with its lens and use its method as well:
 `design:design-critique`, `design:accessibility-review` (held to WCAG 2.2, not 2.1) and `design:ux-copy`. The
