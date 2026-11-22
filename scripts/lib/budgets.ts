@@ -140,7 +140,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // ways to add one, handed to the header, and `imageUrl` reading a Steam image's path (ADR 006).
   // A game drawn twice, seen once (11 Nov 2026): measured 214.7 KB, from 214.4 (main the same
   // day). The shared `Cover` keeps a file of a cover already on the page under one drawn again.
-  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 215.0 },
+  // CI is the gate (22 Nov 2026): measured 215.1 KB on GitHub's Linux runner (Node 24), where the
+  // owner's Windows computer (Node 26) had read 214.9 for the same main. No code changed; the
+  // number now follows CI's measure, which is the one that counts.
+  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 215.5 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
   // screenshots and their viewer, and the way back to the library.
   // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf

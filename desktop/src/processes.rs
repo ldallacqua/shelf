@@ -370,14 +370,15 @@ mod tests {
                 std::env::temp_dir().join(format!("shelf-processes-{name}-{}", std::process::id()));
             let _ = fs::remove_dir_all(&folder);
             fs::create_dir_all(&folder).unwrap();
+            // `cargo test` builds the stand-in into the profile's folder (target/debug/examples),
+            // somewhere above the test program: one folder up from deps/ in older Cargo, three
+            // from build/<package>/<hash>/out/ in newer.
             let stand_in = std::env::current_exe()
                 .unwrap()
-                .parent()
-                .unwrap()
-                .parent()
-                .unwrap()
-                .join("examples")
-                .join("stand_in.exe");
+                .ancestors()
+                .map(|above| above.join("examples").join("stand_in.exe"))
+                .find(|path| path.exists())
+                .expect("examples/stand_in.exe, which cargo test builds beside the tests");
             fs::copy(stand_in, folder.join("game.exe")).unwrap();
             Folder(folder)
         }
