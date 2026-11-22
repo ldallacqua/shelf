@@ -1,9 +1,9 @@
 # Handoff: 27 October 2026
 
-## A design specialist before every visible change, and previews reviewed by eye (22 Nov 2026)
+## A design specialist before every visible change, previews reviewed by eye, and no asking to merge (22 Nov 2026)
 
-Two of the owner's rules from the same day, written where every agent reads them (the owner asked that every rule
-live in a place no one AI owns). Branch `docs/design-specialist-rule`.
+Three of the owner's rules from the same day, written where every agent reads them (the owner asked that every rule
+live in a place no one AI owns). Branches `docs/design-specialist-rule` and `docs/never-ask-to-merge`.
 
 - **A design specialist plans before anyone builds.** The owner: a reviewer after the fact is not enough; a UI/UX
   and art-direction specialist has to work out the best way to make each visual change first. AGENTS.md ("A change
@@ -14,7 +14,11 @@ live in a place no one AI owns). Branch `docs/design-specialist-rule`.
 - **Reviewing a pull request by eye.** The owner tried a preview, signed in, and got "A entrada ainda não está
   configurada neste servidor.": previews have no sign-in on purpose. AGENTS.md ("Reviewing a pull request by eye,
   without signing in") says to look on the public sample shelf, `<preview>/u/sample?view=wall` and the like, and
-  that a pull request waiting on the owner links those pages.
+  that every pull request with a visible change links those pages.
+- **Never ask the owner to merge.** An agent asked the owner before marking a pull request ready and turning on
+  auto-merge; the owner: no need to ask, always turn on auto-merge and Auto-fix. AGENTS.md (rules 3 and 4 of
+  "Committing, pull requests and merging") now says so: a draft only while its UI/UX review runs or a question
+  that changes what gets built is open, then ready and auto-merge at once, without waiting for the owner's look.
 
 ## CI is the gate (22 Nov 2026)
 
@@ -30,7 +34,8 @@ game ran). Branch `ci-gate`.
 - **`main` is protected:** pull requests only, Gate required, no force-push or deletion, the owner's account
   included. Auto-merge is allowed and a merged branch is deleted.
 - **Every pull request** gets `gh pr merge <number> --auto --merge` once it is ready (a draft while its UI/UX
-  review runs or it waits on the owner) and, in Claude's app, Auto-fix (AGENTS.md, rules 3 and 4).
+  review runs; never asking the owner first, since later the same day) and, in Claude's app, Auto-fix (AGENTS.md,
+  rules 3 and 4).
 - `pnpm verify` stays, for when a change wants more than CI runs.
 
 ## The duel: choosing what to play next (14 Nov 2026)
