@@ -42,9 +42,18 @@ const warmUp = await lighthouse(`${BASE_URL}${budgets.paths[0]}`, {
   onlyAudits: ['first-contentful-paint'],
 })
 const benchmark = warmUp?.lhr.environment.benchmarkIndex ?? 0
-// CI names its slowdown; see the workflow for why the benchmark misleads there.
+// CI names its slowdown; see the workflow for why the benchmark misleads there. With
+// LIGHTHOUSE_SLOWDOWN_AT, the slowdown named is for a machine of that benchmark, and a slower
+// or faster one is slowed in proportion: GitHub's runners come in more than one speed.
 const named = Number(process.env.LIGHTHOUSE_SLOWDOWN)
-const slowdown = named > 0 ? named : cpuSlowdownFor(benchmark)
+const namedAt = Number(process.env.LIGHTHOUSE_SLOWDOWN_AT)
+const proportional = named > 0 && namedAt > 0 && benchmark > 0
+const slowdown =
+  named > 0
+    ? proportional
+      ? Math.max(1, (named * benchmark) / namedAt)
+      : named
+    : cpuSlowdownFor(benchmark)
 if (slowdown === undefined) {
   throw new Error(
     `This machine is too slow to stand in for a mid-range phone (benchmark ${Math.round(benchmark)}).`,
@@ -54,7 +63,11 @@ if (slowdown === undefined) {
 console.log(`Lighthouse, mobile profile, at ${BASE_URL}`)
 console.log(
   `This machine's benchmark is ${Math.round(benchmark)}: processor slowed ${slowdown.toFixed(1)} times` +
-    (named > 0 ? ', as LIGHTHOUSE_SLOWDOWN says\n' : ', worked out from the benchmark\n'),
+    (proportional
+      ? `, LIGHTHOUSE_SLOWDOWN's ${named} for a benchmark of ${namedAt}, in proportion\n`
+      : named > 0
+        ? ', as LIGHTHOUSE_SLOWDOWN says\n'
+        : ', worked out from the benchmark\n'),
 )
 
 type Run = NonNullable<Awaited<ReturnType<typeof lighthouse>>>

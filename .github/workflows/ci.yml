@@ -144,8 +144,11 @@ jobs:
           # the machine's benchmark, but that times a single core, and this
           # runner's are shared by the server, the browser and Lighthouse:
           # the benchmark says 8 times, which measured twice as slow as the
-          # phone the targets are for. See scripts/lib/budgets.ts.
+          # phone the targets are for. And runners come in more than one
+          # speed, so the 4 times are for a runner of benchmark 3500 and a
+          # slower one is slowed less, in proportion. See scripts/lib/budgets.ts.
           LIGHTHOUSE_SLOWDOWN: 4
+          LIGHTHOUSE_SLOWDOWN_AT: 3500
 
       - name: The server's log
         if: failure()

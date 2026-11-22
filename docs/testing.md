@@ -295,7 +295,7 @@ merge. Its jobs run side by side:
 | --- | --- | --- |
 | What changed | Reads the files the change touches | Always |
 | Checks | Format, lint, types, translations, unit and component tests | Always |
-| Build, budgets and Lighthouse | The sample database, a production build served with the IGDB test doubles, the JavaScript budgets, Lighthouse (mobile profile, `LIGHTHOUSE_SLOWDOWN=4`, see `scripts/lib/budgets.ts`) | Unless only `docs/` or Markdown files changed |
+| Build, budgets and Lighthouse | The sample database, a production build served with the IGDB test doubles, the JavaScript budgets, Lighthouse (mobile profile, the processor slowed 4 times on a runner of benchmark 3500 and in proportion on others, see `scripts/lib/budgets.ts`) | Unless only `docs/` or Markdown files changed |
 | Storybook | The Storybook build | Unless only `docs/` or Markdown files changed |
 | Desktop | The desktop app's Rust tests, on Windows | When `desktop/` changed |
 | Gate | Passes when every job above passed or was skipped | Always: the one check `main`'s protection names |
