@@ -169,15 +169,24 @@ await page.addInitScript(() => {
 The scene's lists beside the canvas are what a test drives: the same names and order as the
 2D boxes, as buttons with `data-box`. The canvas itself is hidden from assistive technology.
 
-## Before merging: `pnpm verify`
+## Before merging: CI's gate
 
-**CI on GitHub runs nothing by itself.** Actions minutes on a private repository are
-limited, and the full set of checks took about 75 of the month's 2,000 each time, so every
-check runs on the local machine instead. **It runs once, before a pull request merges**,
-on the branch's last commit: not at each commit or push, which the owner asked for so the
-long run does not hold work up (21 Oct 2026). While working, run the tests for what you
-are changing. A build step is done when its pull request merges with `pnpm verify`
-passing.
+**CI on GitHub is the gate** (the owner's rule, 22 Nov 2026). Every pull request into `main`
+runs `.github/workflows/ci.yml`; `main` is protected and takes a pull request only once its
+**Gate** check passes, and a pull request merges itself then (auto-merge, AGENTS.md).
+Nothing has to run on the local machine before a merge, so no check waits for the owner's
+computer to be free. While working, run what helps: the tests for what you are changing, a
+type check, `pnpm verify --quick`. A build step is done when its pull request merges
+through the gate. What CI runs, and what it leaves out, is under
+[Continuous integration](#continuous-integration).
+
+**The browser tests do not run in CI for now** (the owner's rule, 22 Nov 2026): too slow for
+every pull request. Before that, none ran at all until the MVP (23 Oct 2026). Run them by
+hand when a change needs them, here or on GitHub (below), and say so in the pull request.
+
+### `pnpm verify`, on this machine
+
+Every check, run locally, for when a change wants more than CI runs, or an answer sooner:
 
 ```sh
 pnpm verify                       # everything; about 20 minutes
@@ -187,9 +196,8 @@ pnpm verify --skip-browser        # no browser tests and no Docker pass: until t
 pnpm verify --update-screenshots  # the Linux pass makes new reference screenshots
 ```
 
-**Until the MVP is done, the browser tests do not run** (the owner's rule, 23 Oct 2026): a
-run took 27 minutes at 3 workers, and at 8 the tests that change the library outran the one
-test server. Merges use `pnpm verify --skip-browser`. The browser tests run at half the
+**The browser tests are slow:** a run took 27 minutes at 3 workers, and at 8 the tests that
+change the library outran the one test server. The browser tests run at half the
 machine's threads, the tests that change the library at most three at a time
 (`playwright.config.ts`); that arrangement is untried, and is the first thing to run when
 they come back.
@@ -212,10 +220,6 @@ pass is still the one that counts for WebKit; and a test that needs a folder Nod
 to is skipped, because Windows ignores a folder's mode bits. Line endings are pinned to LF in
 `.gitattributes`, since Git for Windows otherwise checks files out with CRLF and every file
 fails the format check.
-
-The workflow in `.github/workflows/ci.yml` is still there, for the odd time a check is wanted
-on GitHub's own machines: Actions → CI → Run workflow, or
-`gh workflow run ci.yml --ref <branch>` (add `-f only=lighthouse` for Lighthouse alone).
 
 ## Running the browser tests
 
@@ -284,11 +288,33 @@ pass writes its own inside the container and throws it away; rerun the failing f
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs only by hand (Actions → CI → Run workflow). Nothing runs on a
-push or a pull request: see [Before merging](#before-merging-pnpm-verify). By hand it can run
-everything (about 75 minutes of the month's 2,000), Lighthouse and the Storybook build alone,
-or make new reference screenshots and offer them as a download. It never commits: on
-Vercel's free plan a commit made by a bot does not deploy.
+`.github/workflows/ci.yml` runs on every pull request into `main`, and on `main` after each
+merge. Its jobs run side by side:
+
+| Job | What it runs | When |
+| --- | --- | --- |
+| What changed | Reads the files the change touches | Always |
+| Checks | Format, lint, types, translations, unit and component tests | Always |
+| Build, budgets and Lighthouse | The sample database, a production build served with the IGDB test doubles, the JavaScript budgets, Lighthouse (mobile profile, `LIGHTHOUSE_SLOWDOWN=4`, see `scripts/lib/budgets.ts`) | Unless only `docs/` or Markdown files changed |
+| Storybook | The Storybook build | Unless only `docs/` or Markdown files changed |
+| Desktop | The desktop app's Rust tests, on Windows | When `desktop/` changed |
+| Gate | Passes when every job above passed or was skipped | Always: the one check `main`'s protection names |
+
+A change to the workflow or its actions runs every job. Not in CI: the browser tests (above),
+`pnpm verify`'s Linux pass in Docker (it held browser tests, and the runner is Linux
+already) and `pnpm perf:3d` (it needs a graphics card). `main`'s own runs keep the caches
+warm: a pull request's run reads caches made on `main`, never another pull request's. The
+repository is public, so Actions minutes are free.
+
+By hand (Actions → CI → Run workflow, or `gh workflow run ci.yml --ref <branch>`): the jobs
+above plus the browser tests in three engines at three widths (`-f browsers=true`), or only
+new reference screenshots, offered as a download (`-f screenshots=true`). It never commits:
+on Vercel's free plan a commit made by a bot does not deploy.
+
+**`main`'s protection** (Settings → Branches): pull requests only, the Gate check required, no
+force-push and no deletion, with the owner's account held to it too. A branch need not be up
+to date with `main` to merge. Auto-merge is allowed on the repository, and a merged branch
+is deleted.
 
 ## Speed
 

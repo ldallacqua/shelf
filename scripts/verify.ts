@@ -1,10 +1,10 @@
 /**
  * pnpm verify
  *
- * Every check, run on this machine. CI on GitHub runs nothing by itself:
- * Actions minutes on a private repository are limited, and the full set of
- * checks took about 75 of the month's 2,000 each time. A build step is done
- * when this passes on its last commit.
+ * Every check, run on this machine. The gate before a merge is CI on GitHub
+ * (.github/workflows/ci.yml, the owner's rule of 22 Nov 2026); this is for
+ * when a change wants more than CI runs, the browser tests above all, or an
+ * answer sooner.
  *
  *   1. Format, lint, types, translations, unit and component tests (pnpm check),
  *      and the desktop app's Rust tests where Rust is installed

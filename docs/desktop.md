@@ -216,8 +216,8 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
 
 ## 4. The steps
 
-One pull request each, merged before the next starts, `pnpm verify --skip-browser` passing on
-its last commit, and this guide, the spec and architecture section 25 changed with it. A step
+One pull request each, merged before the next starts through CI's gate (its Desktop job runs
+the Rust tests), and this guide, the spec and architecture section 25 changed with it. A step
 the owner has to answer is marked **Asks**.
 
 ### Step 1: Play on Steam, on the site
