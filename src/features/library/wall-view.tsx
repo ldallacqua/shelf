@@ -5,7 +5,13 @@ import { useTranslations } from 'next-intl'
 import { memo, useRef, type CSSProperties, type KeyboardEvent } from 'react'
 
 import { ledFrom } from '@/domain/color/palette'
-import { coverFit, ratioOfCover } from '@/domain/library/cover-fit'
+import {
+  WALL_FILL_WITHIN,
+  WALL_FRAME,
+  coverFit,
+  ratioOfCover,
+  ratioOfVersionCover,
+} from '@/domain/library/cover-fit'
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 import { shareFirstBoxes } from '@/domain/library/view'
@@ -43,6 +49,8 @@ type WallCellProps = {
   shelfKey: string
   total: number
   platforms: ReadonlyMap<number, LibraryPlatform>
+  /** The platform its shelf is for, when the wall is grouped by platform: said by the shelf's name, so left out of its marks. */
+  shelfPlatform: number | undefined
   size: WallSize
   enter: boolean
   eager: boolean
@@ -64,6 +72,7 @@ const WallCell = memo(function WallCell({
   shelfKey,
   total,
   platforms,
+  shelfPlatform,
   size,
   enter,
   eager,
@@ -75,11 +84,14 @@ const WallCell = memo(function WallCell({
   const { game, copy } = item
   const platform = platformFor(item, platforms)
   const owned = [...new Set(game.copies.map((held) => held.platform))]
+    .filter((id) => id !== shelfPlatform)
     .map((id) => platforms.get(id)?.short)
     .filter((short) => short !== undefined)
-  // A version's own cover has no shape in the library file: Steam's is a capsule, IGDB's unknown.
+  // A version's own cover has no shape in the library file: Steam's is a capsule, IGDB's taken as 3:4.
   const fit = coverFit(
-    copy?.cover ? ratioOfCover(copy.cover) : ratioOfCover(game.cover, game.coverRatio),
+    copy?.cover ? ratioOfVersionCover(copy.cover) : ratioOfCover(game.cover, game.coverRatio),
+    WALL_FRAME,
+    WALL_FILL_WITHIN,
   )
 
   return (
@@ -114,10 +126,18 @@ const WallCell = memo(function WallCell({
           small={size !== 'large'}
           fit={fit}
         />
+        {/* Its name says all of these in words. The platforms show only while pointed at or reached. */}
         <span className="wall-marks" aria-hidden="true">
-          <StatusMark status={game.status} label={t(`status.${game.status}`)} iconOnly />
-          {game.private ? <LockIcon className="size-3.5 flex-none" /> : null}
-          <span className="truncate">{owned.join(' · ')}</span>
+          <span className="wall-mark">
+            <StatusMark status={game.status} label={t(`status.${game.status}`)} iconOnly />
+            {game.private ? <LockIcon className="size-3.5 flex-none" /> : null}
+          </span>
+          {owned.length > 0 ? (
+            // Each name kept whole, and each dot with the name before it: a long list wraps between platforms.
+            <span className="wall-mark wall-mark-platforms">
+              {owned.map((short) => short.replaceAll(' ', '\u00a0')).join('\u00a0· ')}
+            </span>
+          ) : null}
         </span>
       </button>
     </li>
@@ -195,6 +215,7 @@ function WallGrid({
             shelfKey={shelf.key}
             total={shelf.total}
             platforms={platforms}
+            shelfPlatform={shelf.kind === 'platform' ? shelf.platform.id : undefined}
             size={size}
             enter={enter}
             eager={index < eager}
@@ -269,8 +290,8 @@ function WallSection({ shelf, ...grid }: Omit<WallGridProps, 'label'>) {
 
 /**
  * The wall: covers in a dense grid with almost no chrome, the Letterboxd
- * way. A status mark and platform marks sit on each cover, and each shelf's
- * label stays pinned while its games scroll past (spec 3.8).
+ * way. A small status mark sits in each cover's corner, its platforms come up
+ * beside it while it is pointed at or reached, and each shelf's label stays pinned while its games scroll past (spec 3.8).
  */
 export function WallView({ shelves, platforms, onOpen, enter, firstBoxes, size }: WallViewProps) {
   const shares = shareFirstBoxes(

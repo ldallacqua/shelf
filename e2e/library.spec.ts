@@ -190,11 +190,15 @@ test.describe('the address is the state (spec 2)', () => {
 })
 
 test.describe('the wall and the list', () => {
-  test('the wall shows a status mark and platforms on each cover', async ({ page }) => {
+  test('the wall shows a status mark on each cover, and its other platforms', async ({ page }) => {
     await openLibrary(page, '/en/u/sample?view=wall')
     const first = page.getByRole('list', { name: 'Games on the PlayStation 5 shelf' })
     await expect(first.getByRole('button').first()).toHaveAccessibleName(/^Astro Bot/)
-    await expect(first.locator('.wall-marks').first()).toContainText('PS5')
+    await expect(first.locator('.wall-mark').first()).toBeVisible()
+    // The shelf's own platform is its name; a cover lists only the others.
+    await expect(first.locator('.wall-marks').first()).not.toContainText('PS5')
+    const baldur = first.getByRole('button', { name: /^Baldur/ })
+    await expect(baldur.locator('.wall-mark-platforms')).toHaveText('PC')
 
     await page.getByRole('radio', { name: 'Large covers' }).click()
     await expect(page.locator('.wall-grid').first()).toHaveAttribute('data-size', 'large')

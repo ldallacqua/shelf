@@ -652,8 +652,8 @@
         "dropped": "um círculo cortado",
         "someday": "um relógio",
         "retired": "∞, para um jogo sem fim",
-        "wishlist": "um marcador",
-        "platforms": "as plataformas em que está, no pé da capa",
+        "wishlist": "um marcador; a capa apagada, com contorno tracejado",
+        "platforms": "as plataformas em que está, no pé da capa quando você passa o mouse sobre ela ou chega nela com Tab; numa tela de toque, abra o jogo para vê-las",
         "unsorted": "uma caixa de entrada: veio de uma sincronização e ainda não tem lugar"
       }
     }
