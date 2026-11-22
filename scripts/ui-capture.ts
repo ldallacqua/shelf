@@ -142,6 +142,20 @@ async function openFilters(page: Page) {
   await page.locator('[data-filter-panel]').waitFor()
 }
 
+/**
+ * Where the filters stand beside the library (from 1536px), hides their column with the toolbar's
+ * button, which then says Show filters (spec 12). Narrower, there is no column, and the scene is
+ * the page as it opens.
+ */
+async function hideFilters(page: Page) {
+  const button = page
+    .getByRole('button', { name: /^(Hide filters|Esconder filtros)$/ })
+    .filter({ visible: true })
+  if ((await button.count()) === 0) return
+  await button.click()
+  await page.getByRole('button', { name: /^(Show filters|Mostrar filtros)/ }).waitFor()
+}
+
 /** Opens the key to a box's marks, by the totals, and waits for its list. */
 async function openMarksKey(page: Page) {
   await page
@@ -227,6 +241,7 @@ const screens: Screen[] = [
     scenes: [
       { name: 'open' },
       { name: 'filters', act: openFilters },
+      { name: 'filters-hidden', act: hideFilters },
       { name: 'filtered', path: `${SHELF}?q=${encodeURIComponent(A_FILTER)}` },
       { name: 'no-match', path: `${SHELF}?q=zzzz` },
       {

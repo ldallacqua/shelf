@@ -1,9 +1,11 @@
 import { fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { NextIntlClientProvider } from 'next-intl'
+import { renderToString } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { preferenceScript } from '@/features/library/preferences'
-import { renderWithIntl } from '@/test/render'
+import { messages, renderWithIntl } from '@/test/render'
 
 import { ListControls } from './list-controls'
 import { SidebarToggle } from './sidebar-toggle'
@@ -27,6 +29,20 @@ describe('the game list controls', () => {
     expect(button).toHaveAccessibleName('Hide list')
     expect(button).toHaveAttribute('aria-expanded', 'true')
     expect(localStorage.getItem('shelf:game-list')).toBeNull()
+  })
+
+  it('built ahead, holds both its words, for the choice on <html> to pick before the first paint', () => {
+    const holder = document.createElement('div')
+    holder.innerHTML = renderToString(
+      <NextIntlClientProvider locale="en" messages={messages.en} timeZone="UTC">
+        <SidebarToggle />
+      </NextIntlClientProvider>,
+    )
+    const [hide, show] = holder.querySelectorAll('button > span')
+    expect(hide).toHaveTextContent('Hide list')
+    expect(hide).toHaveClass('game-list-hidden:hidden')
+    expect(show).toHaveTextContent('Show list')
+    expect(show).toHaveClass('hidden', 'game-list-hidden:inline')
   })
 
   it('puts Ready to play last and exposes its selected state', () => {

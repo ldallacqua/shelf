@@ -1,0 +1,24 @@
+/*
+ * The filters' column hidden on this device (spec 12): where it stands beside the library
+ * (shelf.css, from 96rem), the title and the library take the whole width, and the toolbar's
+ * Show filters brings it back (`filters-toggle.tsx`). The choice is put on <html> before the
+ * first paint, so a page built ahead never shows the column to take it away. Narrower, the
+ * filters are a dialog, and the choice changes nothing. As the list beside a game, it changes at
+ * once: moving the columns would lay every shelf out again on each frame.
+ */
+@layer components {
+  @media (width >= 96rem) {
+    html[data-library-filters='hidden'] {
+      & .library-body {
+        grid-template-areas:
+          'head'
+          'main';
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      & .library-filters {
+        display: none;
+      }
+    }
+  }
+}

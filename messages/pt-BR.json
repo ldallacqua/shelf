@@ -1238,6 +1238,9 @@
     },
     "open": "{count, plural, =0 {Filtros} one {Filtros, # ativo} other {Filtros, # ativos}}",
     "openShort": "Filtros",
+    "hide": "Esconder filtros",
+    "show": "Mostrar filtros",
+    "showActive": "{count, plural, =0 {Mostrar filtros} one {Mostrar filtros, # ativo} other {Mostrar filtros, # ativos}}",
     "keys": {
       "status": "Status",
       "owned": "Com cópia em",

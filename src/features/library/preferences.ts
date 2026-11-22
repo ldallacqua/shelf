@@ -122,6 +122,18 @@ export const besidePreference: Preference<'shown' | 'hidden'> = {
   fallback: 'shown',
 }
 
+/**
+ * The library's filters can give their column's room to the shelves, where they stand beside them
+ * (from 96rem, `FILTERS_BESIDE`); narrower, they are a dialog and this changes nothing. Apart from
+ * the list beside a game: each button hides only what it names.
+ */
+export const filtersPreference: Preference<'shown' | 'hidden'> = {
+  storageKey: 'shelf:library-filters',
+  attribute: 'library-filters',
+  values: ['shown', 'hidden'],
+  fallback: 'shown',
+}
+
 /** Muted trailers may play on this desktop only after its owner chooses it in a game's gallery. */
 export const autoplayPreference: Preference<'off' | 'on'> = {
   storageKey: 'shelf:media-autoplay',
@@ -139,6 +151,7 @@ const preferences = [
   adultPreference,
   readyPreference,
   besidePreference,
+  filtersPreference,
   autoplayPreference,
 ] as const
 

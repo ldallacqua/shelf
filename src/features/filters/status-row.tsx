@@ -60,7 +60,8 @@ export function StatusRow({ value, counts, onShelf, onChange }: StatusRowProps) 
         // `status-row` (shelf.css): its edge fades while more of it is out of sight.
         'status-row max-w-full [scrollbar-width:none] overflow-x-auto border-transparent bg-transparent p-0',
         'max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] max-sm:max-w-none max-sm:px-4',
-        'filters-beside:hidden',
+        // Beside the library the column has the statuses; hidden there, the row stands in again.
+        'filters-beside:hidden filters-beside:filters-hidden:flex',
       )}
     >
       <SegmentedItem value="all" className="shrink-0">

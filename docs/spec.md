@@ -230,8 +230,8 @@ Phone:
 
 | Control | Does |
 | --- | --- |
-| Status row | One tap filters to a status. The commonest filter gets the shortest path. Unsorted is in it only while a shelf has unsorted games, and Someday and Retired only while it has a game in one (3.12). Not shown from 1536px, where the filters' column has the statuses (12). |
-| Filters | Opens the filter panel. Shows how many conditions are active. Not shown from 1536px, where the panel stands beside the library (12). |
+| Status row | One tap filters to a status. The commonest filter gets the shortest path. Unsorted is in it only while a shelf has unsorted games, and Someday and Retired only while it has a game in one (3.12). Not shown from 1536px, where the filters' column has the statuses (12), unless that column is hidden. |
+| Filters | Opens the filter panel. Shows how many conditions are active. Not shown from 1536px, where the panel stands beside the library (12) and Hide filters takes its place. |
 | Group | None, platform, status, year |
 | Sort | The sort key and direction |
 | Shelf, Wall, List | Switches view |
@@ -2533,7 +2533,14 @@ they were 1360. Only the library's pages widen; every other page keeps 1440px. T
 totals head the shelves' side, so the column starts just under the header and is whole on the
 first screen; it stays in view as the shelves scroll, its list scrolling inside it with a slim
 scrollbar, and an edge with more of the list past it fades. The status row is not shown there:
-the column's Status section, open from the start and counting, does its work. Between 1536 and
+the column's Status section, open from the start and counting, does its work. A Hide filters
+button, first in the toolbar where the Filters button stands on a narrower window, gives the
+column's room to the shelves, and the status row comes back in its place; the same button, now
+Show filters and counting the conditions on as the Filters button does, brings it back, and so
+does F, which then goes to the column. Up to 1600px the views are icons with their tips, as below
+1280px, so the toolbar keeps one row with the button in it. The choice is kept on the device,
+apart from the list beside a game's (Hide list), and is on the page before its first paint, so
+the column never shows to be taken away. It changes at once, as the list does. Between 1536 and
 about 1785px the column takes a little of the shelves' room. The
 breakpoint is where the shelves keep about as much room beside the column as a 1200px laptop
 gives them, so a 1080p screen at 125% scaling has it and a 1440px one does not. Browser zoom
