@@ -36,6 +36,16 @@ const STEAM_CAPSULE = 67
 export const ratioOfCover = (cover: string | undefined, known?: number): number | undefined =>
   known ?? (cover && isSteamImage(cover) ? STEAM_CAPSULE : undefined)
 
+/** Width over height of an IGDB cover, times 100: 3:4, as IGDB asks for. */
+const IGDB_COVER = 75
+
+/**
+ * A version's own cover on the wall (22 Nov 2026). The library file keeps no shape for it: from
+ * Steam it is a capsule, and from IGDB it is taken as 3:4, the shape IGDB asks for, so it fills
+ * the wall's frame like the game's own cover rather than standing in bands.
+ */
+export const ratioOfVersionCover = (cover: string): number => ratioOfCover(cover) ?? IGDB_COVER
+
 export type CoverFit = 'fill' | 'whole'
 
 /** Whether a cover fills its frame or is drawn whole inside it. A shape not known is drawn whole. */

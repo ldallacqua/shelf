@@ -5,7 +5,13 @@ import { useTranslations } from 'next-intl'
 import { memo, useRef, type CSSProperties, type KeyboardEvent } from 'react'
 
 import { ledFrom } from '@/domain/color/palette'
-import { WALL_FILL_WITHIN, WALL_FRAME, coverFit, ratioOfCover } from '@/domain/library/cover-fit'
+import {
+  WALL_FILL_WITHIN,
+  WALL_FRAME,
+  coverFit,
+  ratioOfCover,
+  ratioOfVersionCover,
+} from '@/domain/library/cover-fit'
 import type { ShelfItem } from '@/domain/library/group'
 import type { LibraryPlatform } from '@/domain/library/library'
 import { shareFirstBoxes } from '@/domain/library/view'
@@ -81,9 +87,9 @@ const WallCell = memo(function WallCell({
     .filter((id) => id !== shelfPlatform)
     .map((id) => platforms.get(id)?.short)
     .filter((short) => short !== undefined)
-  // A version's own cover has no shape in the library file: Steam's is a capsule, IGDB's unknown.
+  // A version's own cover has no shape in the library file: Steam's is a capsule, IGDB's taken as 3:4.
   const fit = coverFit(
-    copy?.cover ? ratioOfCover(copy.cover) : ratioOfCover(game.cover, game.coverRatio),
+    copy?.cover ? ratioOfVersionCover(copy.cover) : ratioOfCover(game.cover, game.coverRatio),
     WALL_FRAME,
     WALL_FILL_WITHIN,
   )

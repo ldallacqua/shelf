@@ -819,7 +819,7 @@ describe('the wall (issue 193)', () => {
   })
   afterEach(() => vi.unstubAllGlobals())
 
-  it('fills the 7:10 frame with a 2:3 or a 3:4 cover, and draws a wide one or a version’s unknown one whole', () => {
+  it('fills the 7:10 frame with a 2:3 or a 3:4 cover, a version’s own IGDB cover too, and draws a wide one whole', () => {
     const items = [
       item({
         slug: 'capsule',
@@ -847,7 +847,7 @@ describe('the wall (issue 193)', () => {
     const fits = [...container.querySelectorAll('.wall-cell .cover')].map(
       (cover) => cover.getAttribute('data-fit') ?? 'fill',
     )
-    expect(fits).toEqual(['fill', 'fill', 'whole', 'whole'])
+    expect(fits).toEqual(['fill', 'fill', 'whole', 'fill'])
   })
 
   it('keeps a status mark on every cover, and leaves a shelf’s own platform out of its marks', () => {

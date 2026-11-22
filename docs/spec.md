@@ -428,7 +428,9 @@ trophy wall's year labels do the same.
 Steam's capsules and so of most covers since ADR 010. A cover of that shape, or within a twentieth
 of it, fills its frame. On the wall the frame is 7:10 (22 Nov 2026), between Steam's 2:3 and IGDB's
 3:4, and a cover within 11% of it fills it: both shapes lose about 3% a side, so a logo that runs
-to the cover's edge may touch it, and no row of covers is striped by bands. Any other, such as IGDB's 3:4 elsewhere, stands whole inside it, centered, over a
+to the cover's edge may touch it, and no row of covers is striped by bands. A version's own cover,
+whose shape the library file doesn't keep, is taken there as a capsule from Steam and as 3:4 from
+IGDB, so it fills the frame too. Any other, such as IGDB's 3:4 elsewhere, stands whole inside it, centered, over a
 blur of itself a little darker, so nothing is cut from a logo or a title and every row keeps one
 height. The owner, on 10 Nov 2026, of a cover cut short on the wall and whole on its page: "I
 think the proportion of the game covers inside the 'mural' view is wrong." Add a game keeps
