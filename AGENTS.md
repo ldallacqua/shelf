@@ -78,11 +78,15 @@ component tests, the build, the JavaScript budgets, Lighthouse and the Storybook
 the desktop app's Rust tests when `desktop/` changed; a change to docs alone skips the build
 ([what runs, and why](docs/testing.md#continuous-integration)). The repository is public,
 so its minutes are free. A build step is done when its pull request merges through the gate.
-While working, run what helps: the tests for what you are changing, a type check, `pnpm
-verify --quick`. **The browser tests (Playwright) do not run in CI for now** (the owner's
-rule, 22 Nov 2026: too slow for every pull request; before that none ran until the MVP, 23
-Oct 2026). When a change needs them, run them by hand (`pnpm e2e`, or on GitHub `gh workflow
-run ci.yml --ref <branch> -f browsers=true`) and say so in the pull request.
+While working, run what helps: the tests for what you are changing, a type check, `pnpm check`.
+**The browser tests (Playwright) are off while Shelf is an MVP** (the owner's rules, 22 Nov
+2026): not in CI, too slow for every pull request, and not by hand either, on this machine or
+on GitHub. Don't run them (`pnpm e2e`, `pnpm verify` without `--skip-browser`, the smoke tests
+in `pnpm verify --quick`, the `browsers=true` run), don't wait for them, and don't update their
+reference screenshots, until the owner turns them back on; the pull request says they were
+skipped. Looking at a page with a headless Chromium script (below) and `pnpm ui:capture` for the
+UI/UX review are not browser tests, and still run. Before 22 Nov none ran until the MVP (23 Oct
+2026); [testing.md](docs/testing.md#continuous-integration) has the rest.
 
 A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app reads its
 libraries from `.data/shelf.db`, which is not committed. A database seeded before accounts
@@ -554,7 +558,7 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 ## Done means
 
 - CI's gate passes on the pull request (`pnpm check`, the build, the budgets, Lighthouse). The browser tests
-  are not in it for now: run the ones for what you touched by hand when it matters.
+  are off while Shelf is an MVP (above): not run, not waited for.
 - No error in the browser console.
 - Both themes and both languages were looked at, at phone and desktop width, and the layout at every main
   breakpoint, 320 to 1920 (`pnpm ui:capture` takes them all), with nothing scrolling sideways.
@@ -567,8 +571,8 @@ drawn for what may never come, as the owner's Add button is to a visitor.
   section is in `src/features/landing/coverage.ts` and that test passes.
 - Setting a shelf up offers it where it helps a new shelf, or `src/features/start/coverage.ts` says
   why not, and that test passes.
-- Reference screenshots are updated if the look changed on purpose
-  ([how](docs/testing.md#reference-screenshots)).
+- Reference screenshots wait with the browser tests (above); once those are back, they are updated if the
+  look changed on purpose ([how](docs/testing.md#reference-screenshots)).
 - One commit per build step, with a message that says what changed and why.
 - After merging: Storybook's build of the merge went live, and the pull request named any admin job to run
   ([the two rules above](#how-things-are-done-here)).

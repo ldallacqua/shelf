@@ -176,13 +176,15 @@ runs `.github/workflows/ci.yml`; `main` is protected and takes a pull request on
 **Gate** check passes, and a pull request merges itself then (auto-merge, AGENTS.md).
 Nothing has to run on the local machine before a merge, so no check waits for the owner's
 computer to be free. While working, run what helps: the tests for what you are changing, a
-type check, `pnpm verify --quick`. A build step is done when its pull request merges
-through the gate. What CI runs, and what it leaves out, is under
-[Continuous integration](#continuous-integration).
+type check, `pnpm check` (not `pnpm verify --quick`, whose smoke tests are browser tests). A
+build step is done when its pull request merges through the gate. What CI runs, and what it
+leaves out, is under [Continuous integration](#continuous-integration).
 
-**The browser tests do not run in CI for now** (the owner's rule, 22 Nov 2026): too slow for
-every pull request. Before that, none ran at all until the MVP (23 Oct 2026). Run them by
-hand when a change needs them, here or on GitHub (below), and say so in the pull request.
+**The browser tests are off while Shelf is an MVP** (the owner's rules, 22 Nov 2026): not in CI,
+too slow for every pull request, and not by hand either. No agent runs them, here or on GitHub,
+waits for them, or updates their reference screenshots, until the owner turns them back on; the
+pull request says they were skipped. Before that, none ran at all until the MVP (23 Oct 2026).
+The rest of this file says how they run, for when they are back.
 
 ### `pnpm verify`, on this machine
 
