@@ -10,6 +10,8 @@
  *
  * Start the server first: pnpm build && pnpm start
  */
+import { mkdirSync, writeFileSync } from 'node:fs'
+
 import { chromium } from '@playwright/test'
 import lighthouse from 'lighthouse'
 import { throttling as lighthouseThrottling } from 'lighthouse/core/config/constants.js'
@@ -17,6 +19,8 @@ import { throttling as lighthouseThrottling } from 'lighthouse/core/config/const
 import { BASE_URL, cpuSlowdownFor, lighthouseBudgets as budgets } from './lib/budgets.ts'
 
 const PORT = 9333
+/** Where a page that misses a target leaves its whole report. */
+const REPORTS = '.data/lighthouse'
 
 /** Lighthouse's own slow-4G numbers. Only the processor's slowdown is ours to set. */
 const mobileThrottling = lighthouseThrottling.mobileSlow4G
@@ -122,7 +126,56 @@ for (const path of budgets.paths) {
     const shown = unit === 's' ? `${(value / 1000).toFixed(2)} s` : `${Math.round(value)} ms`
     console.log(`  ${name.padEnd(14)} ${shown.padEnd(30)} ${Math.round((score ?? 0) * 100)}/100`)
   }
+  if (checks.some(([, , passed]) => !passed)) explain(result.lhr, path, { performance, shift })
   console.log()
+}
+
+/**
+ * What Lighthouse blames for a miss, so a run on CI can be read from its log alone, and the
+ * whole report kept in REPORTS (CI offers that folder as a download when it fails).
+ */
+function explain(
+  lhr: Run['lhr'],
+  path: string,
+  { performance, shift }: { performance: number; shift: number },
+) {
+  type Item = Record<string, unknown>
+  const items = (audit: string): Item[] =>
+    (lhr.audits[audit]?.details as { items?: Item[] } | undefined)?.items ?? []
+  if (shift > budgets.cumulativeLayoutShift) {
+    console.log('  What shifted, largest first:')
+    for (const item of items('layout-shifts').slice(0, 5)) {
+      const node = item.node as { selector?: string; snippet?: string } | undefined
+      console.log(
+        `    ${Number(item.score ?? 0).toFixed(3)}  ${node?.selector ?? 'unknown element'}  ${node?.snippet?.slice(0, 140) ?? ''}`,
+      )
+      const causes = (item.subItems as { items?: Item[] } | undefined)?.items ?? []
+      for (const cause of causes) {
+        const extra = cause.extra as { value?: unknown; snippet?: string } | undefined
+        console.log(
+          `           because: ${String(cause.cause)} ${String(extra?.value ?? extra?.snippet ?? '')}`,
+        )
+      }
+    }
+  }
+  if (performance < budgets.performance) {
+    console.log('  The longest tasks:')
+    for (const item of items('long-tasks').slice(0, 6)) {
+      console.log(
+        `    ${String(Math.round(Number(item.duration ?? 0))).padStart(5)} ms  ${String(item.url ?? '')}`,
+      )
+    }
+    console.log('  Scripts by time spent, most first:')
+    for (const item of items('bootup-time').slice(0, 6)) {
+      console.log(
+        `    ${String(Math.round(Number(item.total ?? 0))).padStart(5)} ms  ${String(item.url ?? '')}`,
+      )
+    }
+  }
+  mkdirSync(REPORTS, { recursive: true })
+  const file = `${REPORTS}/${path.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}.json`
+  writeFileSync(file, JSON.stringify(lhr))
+  console.log(`  The whole report: ${file}`)
 }
 
 await browser.close()
