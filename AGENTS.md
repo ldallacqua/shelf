@@ -104,9 +104,9 @@ CI's gate passes:
 4. Turn on whatever watches the pull request and fixes it. In Claude's desktop app, that is Auto-fix on
    the pull request: a CI failure, a merge conflict or a review comment wakes the session to fix it. An
    agent without one watches the run itself (`gh pr checks <number> --watch`) and fixes what fails.
-5. The pull request says what the change was based on (its design pass), what its UI/UX review found and what
-   happened to each finding, what ran outside CI and what didn't, and names any admin job to run after
-   merging.
+5. The pull request says what the change was based on (its design pass, and the design specialist's plan),
+   what its UI/UX review found and what happened to each finding, what ran outside CI and what didn't, how
+   to look at it on the preview (below), and names any admin job to run after merging.
 6. Once it merges, check that Vercel's builds of the merge went live, the site's and Storybook's (Storybook's
    rule, below).
 7. Never push to `main` directly, force-push a shared branch, or skip a hook.
@@ -127,6 +127,18 @@ reloading a page (it has, while sign-ins wrote to `.data/shelf.db`), look at it 
 `pnpm serve:test` instead, as the browser tests do; signed in as the sample shelf with the test doubles'
 made-up owner (`src/server/mocks/owner.ts`) it has 230 games. Give covers a few seconds to paint before
 a screenshot. A dev server left running slows Lighthouse: stop it before `pnpm verify`.
+
+**Reviewing a pull request by eye, without signing in.** Vercel builds a preview of every push; its address
+is on the pull request (Vercel's comment and check). A preview asks for a Vercel login (Vercel's protection) and
+then has **no sign-in of its own, on purpose**: no `BETTER_AUTH_SECRET` and no database of its own
+([architecture, section 21](docs/architecture.md#21-environments-and-settings)), so signing in there answers
+"Sign-in is not set up on this server yet." ("A entrada ainda não está configurada neste servidor."). That is
+not a bug to fix. Look at the change on the public sample shelf of 230 games instead: `<preview>/u/sample` (the
+shelf), with `?view=wall`, `?view=list` or `?view=banner`, and a game's page at `/u/sample/game/<slug>`. What
+only an account's owner sees (Settings, Organize, the Add button) can't be seen there: take it locally on
+`pnpm dev` with `SHELF_MOCKS=1` (above), which the server refuses on Vercel, and put the screenshots in the pull
+request. A pull request waiting on the owner's eye links the preview's sample pages that show the change, and
+says what to try there (hover a cover, open a menu), so the owner can review from a phone.
 
 **Lint holds a few of these rules** (`eslint.config.mjs`): the import boundaries, words only from
 `messages/`, no `title` tooltips, no "Loading" words or spinners, no link to one release's installer, and
@@ -159,6 +171,16 @@ Lint enforces these imports, and that three.js is imported only inside
 
 **A change anyone can see.** Anything with a visual effect gets a design pass before its code,
 however small: a new element, a moved one, a new state, an animation. The owner's rule, 1 Nov 2026.
+
+**A design specialist plans it before anyone builds it** (the owner's rule, 22 Nov 2026). The pass is
+done by a UI/UX and art-direction specialist whose only job is to work out the best way to make the
+change: where it stands, which component, its states, its motion and its words. It ends in a written
+plan ([what the plan holds](docs/design-pass.md#who-does-it-and-what-it-hands-over)), and the code
+follows that plan; a change of course while building goes back to the plan first. An agent that can start
+a helper of its own gives the pass to one (Claude Code: the `design-pass` subagent,
+`.claude/agents/design-pass.md`, which only reads that file); an agent that can't does the pass as a step of
+its own, writes the plan down and only then opens the code. A reviewer after the fact is not enough on its
+own: the UI/UX review after building (below) still runs, and judges what was built against the plan.
 
 1. **Research it.** Open how good products do the same thing in a browser (text searches say little
    about layout), and read UI/UX guidance on the question at hand. Note what could not be looked at.
@@ -532,8 +554,8 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 - Both themes and both languages were looked at, at phone and desktop width, and the layout at every main
   breakpoint, 320 to 1920 (`pnpm ui:capture` takes them all), with nothing scrolling sideways.
 - New behavior has a test. A bug fix has a test that failed before it.
-- A visual change had its design pass, and a new element has its story in Storybook (see
-  [A change anyone can see](#how-things-are-done-here)).
+- A visual change had its design pass, planned by a design specialist before the code, and a new element has
+  its story in Storybook (see [A change anyone can see](#how-things-are-done-here)).
 - A feature anyone can see passed the UI/UX review, was fixed and reviewed again, with no Blocker or High
   left; the pull request carries the findings, and an issue what waits ([docs/ui-review.md](docs/ui-review.md)).
 - The landing page shows the feature, and still tells the truth about the ones it changed; its
