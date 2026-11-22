@@ -1,5 +1,22 @@
 # Handoff: 27 October 2026
 
+## CI is the gate (22 Nov 2026)
+
+The owner asked for the tests and Lighthouse to run in CI, `main` locked, and auto-merge and Auto-fix on every
+pull request, so nothing waits on their computer (Lighthouse there had read 77 to 91 for the same build while a
+game ran). Branch `ci-gate`.
+
+- **The workflow** (`.github/workflows/ci.yml`) runs on every pull request into `main` and on `main` after each
+  merge: Checks (format to unit tests); Build, budgets and Lighthouse; Storybook; Desktop, the Rust tests on
+  Windows, when `desktop/` changed; and Gate, the one check `main`'s protection requires. A change to docs alone
+  skips the build and Storybook. The browser tests run by hand only, for now (`gh workflow run ci.yml --ref
+  <branch> -f browsers=true`). What runs and why: [testing.md](testing.md#continuous-integration).
+- **`main` is protected:** pull requests only, Gate required, no force-push or deletion, the owner's account
+  included. Auto-merge is allowed and a merged branch is deleted.
+- **Every pull request** gets `gh pr merge <number> --auto --merge` once it is ready (a draft while its UI/UX
+  review runs or it waits on the owner) and, in Claude's app, Auto-fix (AGENTS.md, rules 3 and 4).
+- `pnpm verify` stays, for when a change wants more than CI runs.
+
 ## The duel: choosing what to play next (14 Nov 2026)
 
 The owner asked for a screen that sets games against each other to decide the next one to play, with
@@ -1374,7 +1391,7 @@ resumes it with another assistant. What is known so far:
    fill (`src/features/library/first-touch.ts`, `waiting` in `use-row-window.ts`, `runsOf`
    in `shelf-layout.ts`). Until then they keep only the box Tab stops at. Checked by hand: a
    tap fills the neighbour shelf from 1 box to 15; a swipe fills the one after.
-3. **CI runs only by hand.** `.github/workflows/ci.yml` has no push or pull-request trigger
+3. **CI runs only by hand.** (No longer: CI is the gate since 22 Nov 2026, top of this file.) `.github/workflows/ci.yml` has no push or pull-request trigger
    any more. The owner's decision: Actions minutes are limited (a full run cost about 75 of
    2,000 a month). **Do not start the workflow on GitHub unless the owner asks.**
 4. **`pnpm verify`** (`scripts/verify.ts`) runs every check on the local machine instead:

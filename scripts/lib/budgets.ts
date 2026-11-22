@@ -140,7 +140,10 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // ways to add one, handed to the header, and `imageUrl` reading a Steam image's path (ADR 006).
   // A game drawn twice, seen once (11 Nov 2026): measured 214.7 KB, from 214.4 (main the same
   // day). The shared `Cover` keeps a file of a cover already on the page under one drawn again.
-  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 215.0 },
+  // CI is the gate (22 Nov 2026): measured 215.1 KB on GitHub's Linux runner (Node 24), where the
+  // owner's Windows computer (Node 26) had read 214.9 for the same main. No code changed; the
+  // number now follows CI's measure, which is the one that counts.
+  { path: '/en/u/sample/trophies', name: 'Trophies', kilobytes: 215.5 },
   // Step 6: measured 201.6 KB. The shell, plus the game's page: the cover, the
   // screenshots and their viewer, and the way back to the library.
   // Accounts: measured 215.3 KB, from 206.3. The header's 3 KB, the shelf
@@ -229,6 +232,14 @@ export const lighthouseBudgets = {
  * Lighthouse's stock 4 times the runner gives 180 ms. So CI sets
  * LIGHTHOUSE_SLOWDOWN=4, and the home page's blocked time, about 180 ms,
  * is the check that the two still agree.
+ *
+ * Since CI became the gate (22 Nov 2026), its runners have come in more than
+ * one speed. The same build at the same 4 times: a runner of benchmark 2512
+ * blocked the home page for 242 ms and scored the library 88; one of 3511
+ * blocked it for 178 ms and scored the library 97. So CI also names the
+ * benchmark its 4 times is for, LIGHTHOUSE_SLOWDOWN_AT=3500, the runner whose
+ * home page blocks for about the 180 ms above, and a slower runner is slowed
+ * less, in proportion (a runner of 2512 by 2.9 times).
  */
 export const cpuSlowdownFor = (benchmarkIndex: number): number | undefined => {
   if (!Number.isFinite(benchmarkIndex) || benchmarkIndex < 150) return undefined

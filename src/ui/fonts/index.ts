@@ -8,11 +8,15 @@ import localFont from 'next/font/local'
  * axis, which is what the page would otherwise wait for.
  */
 
-// The interface: Archivo at its normal width, every weight.
+// The interface: Archivo at its normal width, every weight. Until it arrives, its stand-in is
+// whichever of Arial, Liberation Sans, Arimo or Roboto the device has, scaled to its width
+// (`globals.css`, and README.md here), not Arial alone, which Linux and Android lack.
 export const archivo = Archivo({
   subsets: ['latin'],
   variable: '--font-archivo',
   display: 'swap',
+  adjustFontFallback: false,
+  fallback: ['Archivo Stand-in'],
 })
 
 // Titles: Archivo cut to one wide, heavy style. See README.md in this folder.

@@ -1,38 +1,58 @@
 name: CI
 
-# Run by hand only: Actions → CI → Run workflow. Nothing here runs on a push
-# or a pull request. Actions minutes on a private repository are limited, and
-# the full set of checks took about 75 of the month's 2,000 each time, so
-# every check runs on the Mac before a push instead: `pnpm verify`
-# (docs/testing.md). This stays for the odd time a check is wanted on
-# GitHub's own Linux machines.
+# The gate (the owner's rule, 22 Nov 2026). Every pull request into main runs
+# this, and main is protected: it takes pull requests only, and only once the
+# Gate job below passes. Pull requests merge themselves when it does
+# (auto-merge). The repository is public, so Actions minutes cost nothing.
 #
-#   everything   format, lint, types, translations, unit and component tests,
-#                build, JavaScript budgets, the @smoke browser tests; then all
-#                nine browser projects, reference screenshots, Lighthouse and
-#                Storybook
-#   lighthouse   Lighthouse and the Storybook build only
-#   screenshots  ticked: new reference screenshots, offered as a download
+#   What changed  which of the jobs below this change needs
+#   Checks        format, lint, types, translations, unit and component tests
+#   Build         the sample database, a production build, the JavaScript
+#                 budgets, Lighthouse (mobile profile)
+#   Storybook     the Storybook build
+#   Desktop       the desktop app's Rust tests, on Windows
+#   Gate          passes when every job above passed or was skipped; the one
+#                 check main's protection names
+#
+# What does not run, and why:
+#   - The browser tests (Playwright) are too slow for every pull request for
+#     now (the owner's rule, 22 Nov 2026). By hand: Actions → CI → Run
+#     workflow, with "browsers" ticked.
+#   - A change to docs/ or to Markdown files alone skips Build and Storybook:
+#     nothing they check changed. Checks still runs (the format check reads
+#     Markdown, and two unit tests read docs/spec.md).
+#   - Desktop runs only when desktop/ changed.
+#   - A change to this workflow or its actions runs every job.
+#   - pnpm verify's Linux pass in Docker held browser tests only, and this
+#     runner is Linux already. The 3D frame time needs a graphics card.
+#
+# Runs on main too, after each merge: a pull request's run can read caches
+# made on main but not another pull request's, so main's runs keep pnpm's,
+# Next.js's and Playwright's caches warm for the next pull request.
 #
 # No job needs a secret: everything runs against a local build, a SQLite file
 # seeded from the fixtures, and test doubles for IGDB.
 
 on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
-      screenshots:
-        description: Make new reference screenshots instead of comparing
+      browsers:
+        description: Also run the browser tests, three engines at three widths
         type: boolean
         default: false
-      only:
-        description: Run one part of the checks
-        type: choice
-        options: [everything, lighthouse]
-        default: everything
+      screenshots:
+        description: Only make new reference screenshots, offered as a download
+        type: boolean
+        default: false
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # A new push to a pull request replaces its older run; main's runs all finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -42,9 +62,47 @@ env:
   STORYBOOK_DISABLE_TELEMETRY: 1
 
 jobs:
-  quick:
-    name: Quick checks
-    if: ${{ !inputs.screenshots && inputs.only == 'everything' }}
+  changes:
+    name: What changed
+    if: ${{ !inputs.screenshots }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      app: ${{ steps.diff.outputs.app }}
+      desktop: ${{ steps.diff.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - name: Read the changed files
+        id: diff
+        shell: bash
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # A pull request's run checks out the merge of the branch into main,
+          # whose first parent is main: the difference is what the branch changes.
+          case "$GITHUB_EVENT_NAME" in
+            pull_request) files=$(git diff --name-only HEAD^1 HEAD) || files=ALL ;;
+            push) files=$(git diff --name-only "$BEFORE" HEAD 2>/dev/null) || files=ALL ;;
+            *) files=ALL ;;
+          esac
+          if [ "$files" = ALL ] || grep -q '^\.github/' <<< "$files"; then
+            app=true
+            desktop=true
+          else
+            app=false
+            desktop=false
+            grep -qvE '^(docs|desktop)/|^[^/]+\.md$' <<< "$files" && app=true
+            grep -q '^desktop/' <<< "$files" && desktop=true
+          fi
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "desktop=$desktop" >> "$GITHUB_OUTPUT"
+          printf 'Changed:\n%s\n\nBuild and Storybook: %s. Desktop: %s.\n' "$files" "$app" "$desktop"
+
+  checks:
+    name: Checks
+    if: ${{ !inputs.screenshots }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -62,6 +120,15 @@ jobs:
       - name: Unit and component tests
         run: pnpm test
 
+  build:
+    name: Build, budgets and Lighthouse
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       - uses: ./.github/actions/build
       - uses: ./.github/actions/browsers
         with:
@@ -70,23 +137,63 @@ jobs:
       - uses: ./.github/actions/serve
       - name: JavaScript budgets
         run: pnpm perf:js
-      - name: End-to-end smoke tests
-        run: pnpm e2e --project=chromium-phone --project=chromium-desktop --grep @smoke --grep-invert @visual
+      - name: Lighthouse, mobile profile
+        run: pnpm perf:lighthouse
         env:
-          BASE_URL: http://localhost:3300
+          # Lighthouse's stock slowdown. The script would work one out from
+          # the machine's benchmark, but that times a single core, and this
+          # runner's are shared by the server, the browser and Lighthouse:
+          # the benchmark says 8 times, which measured twice as slow as the
+          # phone the targets are for. And runners come in more than one
+          # speed, so the 4 times are for a runner of benchmark 3500 and a
+          # slower one is slowed less, in proportion. See scripts/lib/budgets.ts.
+          LIGHTHOUSE_SLOWDOWN: 4
+          LIGHTHOUSE_SLOWDOWN_AT: 3500
 
-      - uses: actions/upload-artifact@v7
+      - name: The server's log
+        if: failure()
+        run: cat server.log
+      - name: Lighthouse's reports of the pages that missed
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: quick-report
-          path: |
-            playwright-report/
-            test-results/
+          name: lighthouse-reports
+          path: .data/lighthouse/
+          if-no-files-found: ignore
           retention-days: 7
 
-  full:
-    name: Full · ${{ matrix.browser }}
-    if: ${{ !inputs.screenshots && inputs.only == 'everything' }}
+  storybook:
+    name: Storybook
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Storybook builds
+        run: pnpm storybook:build --quiet
+
+  desktop:
+    name: Desktop
+    needs: changes
+    if: ${{ needs.changes.outputs.desktop == 'true' }}
+    # Shelf for Windows (ADR 005): its Rust side, tested where it runs.
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: desktop
+      - name: The Rust side's tests
+        run: cargo test --manifest-path desktop/Cargo.toml --locked
+
+  browsers:
+    name: Browser tests · ${{ matrix.browser }}
+    needs: changes
+    # By hand only, for now: too slow for every pull request.
+    if: ${{ inputs.browsers }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -114,37 +221,33 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: full-report-${{ matrix.browser }}
+          name: browser-report-${{ matrix.browser }}
           path: |
             playwright-report/
             test-results/
           retention-days: 7
 
-  speed:
-    name: Full · Lighthouse and Storybook
-    if: ${{ !inputs.screenshots }}
+  gate:
+    name: Gate
+    # Runs when a job it waits for failed too, so a failure fails the gate
+    # instead of leaving it unreported. A cancelled run (replaced by a newer
+    # push) reports nothing; the newer run does.
+    if: ${{ !cancelled() && !inputs.screenshots }}
+    needs: [changes, checks, build, storybook, desktop, browsers]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
-      - uses: ./.github/actions/build
-      - uses: ./.github/actions/browsers
-        with:
-          browsers: chromium
-
-      - uses: ./.github/actions/serve
-      - name: Lighthouse, mobile profile
-        run: pnpm perf:lighthouse
+      - name: Every job passed or was skipped
         env:
-          # Lighthouse's stock slowdown. The script would work one out from
-          # the machine's benchmark, but that times a single core, and this
-          # runner's two are shared by the server, the browser and Lighthouse:
-          # the benchmark says 8 times, which measured twice as slow as the
-          # phone the targets are for. See scripts/lib/budgets.ts.
-          LIGHTHOUSE_SLOWDOWN: 4
-      - name: Storybook builds
-        run: pnpm storybook:build --quiet
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          for result in $RESULTS; do
+            case "$result" in
+              success | skipped) ;;
+              *) echo "A job did not pass."; exit 1 ;;
+            esac
+          done
 
   screenshots:
     name: Reference screenshots

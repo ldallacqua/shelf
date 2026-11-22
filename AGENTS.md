@@ -46,7 +46,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm dev`                              | The app at http://localhost:3300                                                                                                           |
 | `pnpm build` then `pnpm start`          | A production build, same port                                                                                                              |
 | `pnpm check`                            | Format, lint, types, translations, unit and component tests                                                                                |
-| `pnpm verify`                           | Every check, as CI used to run them: build, browsers, Linux pass in Docker, Lighthouse. Run before merging.                                |
+| `pnpm verify`                           | Every check on this machine: build, browsers, Linux pass in Docker, Lighthouse. Optional: CI is the gate                                   |
 | `pnpm test`                             | Unit and component tests (Vitest)                                                                                                          |
 | `pnpm e2e`                              | Browser tests (Playwright) against a production build. Add `--project=chromium-desktop` to run one of the nine.                            |
 | `pnpm serve:test`                       | The build as the browser tests use it: test doubles on, serving a migrated copy of the database (`.data/e2e.db`)                           |
@@ -69,36 +69,47 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm desktop:release`                  | Publishes the desktop app's version in `tauri.conf.json` as a release, signed; from a clean `main` only                                    |
 | `pnpm desktop:check`                    | The desktop app against `pnpm serve:test`, its pages read beside a plain Chromium's. Needs a running server                                |
 
-Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI runs nothing by itself**
-(Actions minutes are limited). **Run every test once, before merging a pull request**, not
-at each commit or push: the full run is long, and the owner asked that it not hold work up
-(21 Oct 2026). While working, run what helps: the tests for what you are changing, a type
-check. Before merging, `pnpm verify` must pass on the branch's last commit, and the pull
-request says what it ran. A build step is done when its pull request merges that way. Never
-start the workflow on GitHub unless the owner asks. **Until the MVP is done, no Playwright
-browser tests run** (the owner's rule, 23 Oct 2026): verify runs as `pnpm verify
---skip-browser`, and the pull request says the browser tests were skipped. Unit tests,
-Lighthouse and the rest still run.
+Node 24 and pnpm 10 are pinned (`.nvmrc`, `packageManager`). **CI on GitHub is the gate**
+(the owner's rule, 22 Nov 2026), so nothing depends on the owner's computer: every pull
+request into `main` runs `.github/workflows/ci.yml`, and `main` is protected, so a pull
+request merges only once its **Gate** check passes, and nothing reaches `main` any other
+way, the owner's account included. CI runs format, lint, types, translations, unit and
+component tests, the build, the JavaScript budgets, Lighthouse and the Storybook build, and
+the desktop app's Rust tests when `desktop/` changed; a change to docs alone skips the build
+([what runs, and why](docs/testing.md#continuous-integration)). The repository is public,
+so its minutes are free. A build step is done when its pull request merges through the gate.
+While working, run what helps: the tests for what you are changing, a type check, `pnpm
+verify --quick`. **The browser tests (Playwright) do not run in CI for now** (the owner's
+rule, 22 Nov 2026: too slow for every pull request; before that none ran until the MVP, 23
+Oct 2026). When a change needs them, run them by hand (`pnpm e2e`, or on GitHub `gh workflow
+run ci.yml --ref <branch> -f browsers=true`) and say so in the pull request.
 
 A fresh clone needs `pnpm seed` once before `pnpm dev` or `pnpm build`: the app reads its
 libraries from `.data/shelf.db`, which is not committed. A database seeded before accounts
 (ADR 004) has no sample account: seed it again.
 
-**Committing, pull requests and merging** (the owner's rule, 12 Nov 2026). An agent may commit, push a
-branch, open its pull request and merge it once verified, without asking each time:
+**Committing, pull requests and merging** (the owner's rules, 12 and 22 Nov 2026). An agent may commit,
+push a branch and open its pull request without asking each time, and the pull request merges itself once
+CI's gate passes:
 
 1. Work on a branch of its own, never on `main`. One commit per step, its message saying what changed
    and why.
 2. Commit as the owner: their own Git identity, as `git log` shows it, set in this repository's config
    (`git config user.name` and `user.email`), never a bot's (rule 6: Vercel deploys only the owner's
    commits). A `Co-Authored-By` line for the assistant is fine, as the history has.
-3. Before merging, `pnpm verify --skip-browser` passes on the branch's last commit (`--skip-linux` too
-   when Docker isn't running, said in the pull request).
-4. The pull request says what the change was based on (its design pass), what its UI/UX review found and what
-   happened to each finding, what ran and what didn't, and names any admin job to run after merging.
-5. Merge with a merge commit, as the history has (`gh pr merge --merge --delete-branch`), then check that
-   Storybook's build of the merge went live (rule above).
-6. Never push to `main` directly, force-push a shared branch, skip a hook, or start the GitHub workflow.
+3. Turn auto-merge on, with a merge commit as the history has: `gh pr merge <number> --auto --merge`.
+   GitHub merges when the Gate check passes and deletes the branch. Only once the pull request is ready:
+   one still in its UI/UX review (rule below) or waiting on the owner's answer is opened as a draft, and
+   auto-merge goes on when it is ready. Never merge around the gate (`--admin`).
+4. Turn on whatever watches the pull request and fixes it. In Claude's desktop app, that is Auto-fix on
+   the pull request: a CI failure, a merge conflict or a review comment wakes the session to fix it. An
+   agent without one watches the run itself (`gh pr checks <number> --watch`) and fixes what fails.
+5. The pull request says what the change was based on (its design pass), what its UI/UX review found and what
+   happened to each finding, what ran outside CI and what didn't, and names any admin job to run after
+   merging.
+6. Once it merges, check that Vercel's builds of the merge went live, the site's and Storybook's (Storybook's
+   rule, below).
+7. Never push to `main` directly, force-push a shared branch, or skip a hook.
 
 **On Windows.** Clone to a short path (`Documents\shelf`, not a deep folder): with `node_modules` past
 Windows' 260 characters, esbuild's install fails. Set `git config core.longpaths true` for the reference
@@ -515,7 +526,8 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 
 ## Done means
 
-- `pnpm check` passes, and the browser tests for what you touched pass.
+- CI's gate passes on the pull request (`pnpm check`, the build, the budgets, Lighthouse). The browser tests
+  are not in it for now: run the ones for what you touched by hand when it matters.
 - No error in the browser console.
 - Both themes and both languages were looked at, at phone and desktop width, and the layout at every main
   breakpoint, 320 to 1920 (`pnpm ui:capture` takes them all), with nothing scrolling sideways.
