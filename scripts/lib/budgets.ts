@@ -120,7 +120,13 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // Unsorted's tag on the shelf (lucide's inbox). Home, Trophies and the game page stay as they
   // were: dropping the dialog Close's tip, as finding 58 first proposed, put 1.1 KB on every page,
   // as the shared files split anew, so the tip stays and shows to a pointer only.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 298 },
+  // Hide filters (22 Nov 2026): measured 298.8 KB, from 297.7 (main the same day, both on CI's
+  // runner). The button that hides the filters' column beside the library and brings it back
+  // (`FiltersToggle`, on the shared `PanelToggle`, with lucide's PanelLeft new to this page), the
+  // device's choice it reads and writes, and F showing a hidden column before focusing it. The
+  // owner asked for it. It stands in the toolbar on the first screen, so none of it can be fetched
+  // later; the game page, which shares `PanelToggle`, went from 232.6 to 232.8, within its budget.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 299 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).
