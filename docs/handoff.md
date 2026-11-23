@@ -1,5 +1,7 @@
 # Handoff: 27 October 2026
 
+> **23 Nov 2026: the product is now Save State** (two words; [ADR 011](adr/011-save-state.md)). "Shelf" in the older text below, and in the decision records and reports, means it. A person's shelf, the Shelf view and the code's internal names keep theirs.
+
 ## Four of the owner's rules (22 Nov 2026)
 
 Four of the owner's rules from the same day, written where every agent reads them (the owner asked that every rule

@@ -2,7 +2,7 @@
 
 The UI/UX review looks at what a person sees through three lenses: the critique, accessibility and the words.
 It runs in two places: on **every new feature**, before it merges (below), and in **step 10**, the final review,
-over every page Shelf has, one screen at a time. It is written for every agent and person. Claude Code runs
+over every page Save State has, one screen at a time. It is written for every agent and person. Claude Code runs
 the whole of it, capture and all three lenses, in one subagent (`.claude/agents/ui-review.md`, which only reads
 this file), with its Design plugin's skills beside each lens; never one agent per lens (the owner's rule, 14 Nov
 2026; the pilot's three were before it). Any other agent or person does the same sections by hand. Either way
@@ -171,11 +171,11 @@ screen's keys in `messages/en.json` and `messages/pt-BR.json` (and `messages/app
 [the design pass's copy list](design-pass.md#4-copy):
 
 - **Clear:** says exactly what happens; no jargon; the same word for the same thing as everywhere else
-  (Organize, Settings, shelf, Shelf for Windows).
+  (Organize, Settings, shelf, Save State for Windows).
 - **Short:** the fewest words that carry it; one idea a sentence.
 - **Useful:** a button starts with a verb and names its outcome; an empty state says what goes there and how to
   start; an error says what happened, why, and what to do.
-- **Shelf's voice:** plain, concrete, calm; no hype, no exclamation marks; "you" on the site.
+- **Save State's voice:** plain, concrete, calm; no hype, no exclamation marks; "you" on the site.
 - **Portuguese:** the same meaning, not word for word, natural to a Brazilian; consistent with itself; fits
   where the English fits (buttons, narrow places, the phone).
 

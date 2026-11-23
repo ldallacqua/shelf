@@ -1,4 +1,4 @@
-# Shelf: setup checklist
+# Save State: setup checklist
 
 - **Date:** 12 Oct 2026
 - **Reads with:** [the architecture](architecture.md)
@@ -104,7 +104,7 @@ deployed previews and for production.
 **Until you do this**, previews still work: each one is built with the sample library inside
 it, and production shows an empty library. That is enough to review steps 2 to 6. It is not
 enough for step 7, because a library added through sign-in has to be kept somewhere, and
-Shelf refuses to save into the built-in sample.
+Save State refuses to save into the built-in sample.
 
 1. Go to [turso.tech](https://turso.tech) and sign up with GitHub. The free plan needs no
    card.
@@ -219,9 +219,9 @@ call, so nothing breaks while it is missing; IGDB's records just are not refresh
 
 | Name | Environment | Value |
 | --- | --- | --- |
-| `STEAM_API_KEY` | Production | Shelf's Steam Web API key |
+| `STEAM_API_KEY` | Production | Save State's Steam Web API key |
 
-The key is Shelf's, not your account's: it reads the games of whoever links Steam on their
+The key is Save State's, not your account's: it reads the games of whoever links Steam on their
 account page, through Steam's own sign-in. It never signs anyone in.
 
 1. Signed in to Steam in your own browser, open https://steamcommunity.com/dev/apikey. For
@@ -257,8 +257,8 @@ Privacy Settings) and press **Sync now**.
 | --- | --- | --- |
 | `PLATFORM_TOKEN_KEY` | Production | 32 random bytes, in base64 |
 
-Linking Nintendo gives Shelf a session that reads the person's play history for about two
-years. Shelf keeps it sealed with this key, so the database alone cannot be used to read
+Linking Nintendo gives Save State a session that reads the person's play history for about two
+years. Save State keeps it sealed with this key, so the database alone cannot be used to read
 anyone's Nintendo account. Nothing else is needed: Nintendo has no key to apply for.
 
 In a terminal of your own, from this folder:
@@ -282,7 +282,7 @@ has to sign in on Nintendo's page again.
 on Nintendo's page**. Sign in there; when Nintendo shows **Select this account**, copy the
 button's link instead of pressing it (right-click, Copy link address; on a phone, press and
 hold), and paste it into the card. Your Switch games arrive under "games need you", each with
-the game Shelf took it for: say **Cartridge** or **Download**, or answer them all at once.
+the game Save State took it for: say **Cartridge** or **Download**, or answer them all at once.
 
 ---
 

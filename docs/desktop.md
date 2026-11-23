@@ -1,6 +1,6 @@
-# Shelf for Windows: the desktop app
+# Save State for Windows: the desktop app
 
-The desktop app is the same Shelf in a window of its own, with one thing a browser cannot do:
+The desktop app is the same Save State in a window of its own, with one thing a browser cannot do:
 **Play**. It starts a game from the file chosen for it on this computer, or through Steam. Why
 it is built this way is [ADR 005](adr/005-desktop-app.md); what it does, for the person using
 it, is [spec 7.7](spec.md#77-playing-a-game). This guide is how to use it, build it, and the
@@ -23,10 +23,10 @@ steps it is built in.
    [this repository's latest release](https://github.com/ldallacqua/shelf/releases/latest).
    Windows warns the first time, since the installer is not signed (ADR 005): **More info**,
    then **Run anyway**. Then it asks nothing: a small window shows while it installs, for this
-   Windows account only and without administrator, and Shelf opens.
+   Windows account only and without administrator, and Save State opens.
    **It updates itself:** each time it starts, a small window looks for a newer version and
-   installs it before opening Shelf. Left open, or in the tray, it also looks every hour: a
-   version it finds shows **Update** in Shelf's header, and Restart and update installs it.
+   installs it before opening Save State. Left open, or in the tray, it also looks every hour: a
+   version it finds shows **Update** in Save State's header, and Restart and update installs it.
 2. **Sign in** as on the site. The app remembers it, as a browser does, for seven days after
    the last use.
 3. **On a game of your own,** under Mine:
@@ -46,11 +46,11 @@ steps it is built in.
 
 8. **Download sources,** on Settings' Download sources page, are lists of games to download in the format
    Hydra uses (ADR 007, spec 7.10). Paste a source's address; adding one downloads nothing. Add only
-   sources you trust: Shelf can't check where their links lead.
+   sources you trust: Save State can't check where their links lead.
 9. **Find a download,** in the ⋯ menu beside Play on a game of your own once you have a source, lists what your
    sources have with every word of the game's name. Choose one and a folder. It goes on with the window
    closed to the tray, and **Downloads**, from the icon in the header, shows how far along it is, with Pause and
-   Cancel. Shelf never starts what it downloads.
+   Cancel. Save State never starts what it downloads.
 10. **Real-Debrid,** on Settings' Download services page, signs in with a code you enter on its own page, and needs an
     account of your own. Then Find a download also offers **Through Real-Debrid**, for magnets and file
     hosts. It has to fetch a magnet first, which can take a while, and the card shows how far along it is.
@@ -61,14 +61,14 @@ steps it is built in.
     (PCGamingWiki's list, through the Ludusavi manifest) and keep snapshots of them on this computer, with
     their history (ADR 008, spec 7.12). Turn them on, **Back up now**, and **Restore** any snapshot: what is
     here is kept as a backup first, and nothing is done while the game runs. A folder the list doesn't know is
-    added by hand. Nothing is sent to Shelf. On Settings' Saves page, **Where they go** takes a folder of
+    added by hand. Nothing is sent to Save State. On Settings' Saves page, **Where they go** takes a folder of
     yours (one OneDrive, Google Drive for desktop or Dropbox syncs, a network drive, a USB drive): choose the
     same on each PC, and a game's Saves offers another PC's newer snapshot, or asks which copy to keep when
     both changed. The limits are there too. Once a game's saves are on, they are backed up when it closes,
     and **Play** looks first: it takes another PC's newer snapshot, or stops and asks when two copies
     differ. A Windows notification says when something needs you after a session. Where they go can also
     be your OneDrive or Google Drive: **Sign in** there opens Microsoft's or Google's page in your browser,
-    and Shelf reaches only its own folder in it. Choose the same on each PC.
+    and Save State reaches only its own folder in it. Choose the same on each PC.
 
 What the app keeps on this computer is the files chosen, in
 `%APPDATA%\com.ldallacqua.shelf\launchers.json`, the sources, in `sources.json` and `sources\` beside it,
@@ -76,7 +76,7 @@ the list of downloads, in `downloads.json`, and the saves: what was decided for 
 the list of where games save in `save-manifest.json`, the snapshots in `saves\{entry}\`, what was there
 before each restore in `save-backups\{entry}\`, those waiting for a folder that can't be reached in
 `saves-waiting\{entry}\`, what was read of OneDrive or Google Drive in `saves-cloud\`, and while a restore
-runs, `save-restore.json`. In a folder you chose, Shelf keeps its own, `Shelf saves`; in OneDrive, `Apps ›
+runs, `save-restore.json`. In a folder you chose, Save State keeps its own, `Shelf saves`; in OneDrive, `Apps ›
 Shelf`; in Google Drive, `Shelf saves`. A sign-in to either is in Windows' Credential Manager, as
 Real-Debrid's is.
 Uninstalling leaves those, and everything downloaded, in the folders you chose; delete the app's folder
@@ -117,15 +117,15 @@ ignores `SHELF_URL` and opens production only.
 desktop/
   Cargo.toml, build.rs   The Rust program, shelf-desktop
   tauri.conf.json        The app: name, identifier, window, installer
-  capabilities/          What the local page may ask (Shelf's origin gets its own in lib.rs)
-  splash/                The one local page, the splash: an update, then Shelf, or "Shelf can't
+  capabilities/          What the local page may ask (Save State's origin gets its own in lib.rs)
+  splash/                The one local page, the splash: an update, then Save State, or "Save State can't
                          be reached" with Try again
   installer/             The installer's template: Tauri's, with its pages taken out
                          and its one page drawn as the splash
   icons/                 Made from src/app/icon.svg by the Tauri CLI's `icon` command, Windows' only
   src/
     main.rs, lib.rs      The window, and what the app keeps while it runs
-    commands.rs          What Shelf's pages may ask, each checking what it is given
+    commands.rs          What Save State's pages may ask, each checking what it is given
     ids.rs               What an entry's id and a Steam app id may be
     navigation.rs        Which addresses stay in the window (unit-tested)
     launchers.rs         The files chosen, kept in launchers.json
@@ -182,10 +182,10 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
   signature without its version.
 - The splash may ask `start`, and move and close its own window; nothing else.
 - No plugin's JavaScript API is allowed to any page.
-- Shelf's origin may also use Tauri's window commands for the window it is in: minimize,
+- Save State's origin may also use Tauri's window commands for the window it is in: minimize,
   maximize, close, whether it is maximized, and dragging. The app's own page may minimize,
   close and move its window.
-- The window keeps Shelf's pages and the platforms' sign-in pages (`navigation.rs`); any other
+- The window keeps Save State's pages and the platforms' sign-in pages (`navigation.rs`); any other
   address goes to the default browser; `steam://rungameid/` and `steam://install/` go to Steam,
   and every other scheme is dropped.
 
@@ -241,14 +241,14 @@ What a browser can already do, and what the app builds on.
 
 **Done when** a game the Steam sync brought in opens Steam from its page in a browser.
 
-### Step 2: The app opens Shelf
+### Step 2: The app opens Save State
 
 **Built 25 Oct 2026.**
 
 - [x] `desktop/`: Tauri 2, one window (1280 by 800, at least 960 by 600, its size and place
       remembered) on the build's address, the app's name and icon, one instance (a second start
       brings the first to the front), an NSIS installer for the current user (1.4 MB).
-- [x] `navigation.rs` with its tests; the app's own page, which opens Shelf once its server
+- [x] `navigation.rs` with its tests; the app's own page, which opens Save State once its server
       answers within ten seconds and otherwise says it can't be reached, with Try again.
 - [x] A capability for the address the build opens, added by `lib.rs` when the app starts (a
       file cannot know a development build's `SHELF_URL`), and `desktop_info`.
@@ -257,7 +257,7 @@ What a browser can already do, and what the app builds on.
       when `cargo` is there and says so when it is not.
 - [x] `pnpm desktop:check` ([section 5](#5-checking-it)).
 - The site's bridge (`src/features/desktop/bridge.ts`) waits for step 3, its first user: the
-  check calls `desktop_info` from Shelf's page itself.
+  check calls `desktop_info` from Save State's page itself.
 
 **Done when,** against `pnpm serve:test`, signed in as the made-up owner, the app shows the
 same as a browser on: the shelf (2D, 3D, wall, list), a game's page and panel with Mine and its
@@ -304,22 +304,22 @@ Where installers live was theirs to answer: this repository, made public.
 **Built 25 Oct 2026.**
 
 - [x] The window without Windows' bar (`decorations(false)`; Windows keeps its edges, shadow,
-      rounded corners and snapping), and the app's line that tells Shelf's pages so
+      rounded corners and snapping), and the app's line that tells Save State's pages so
       (`window.__SHELF_WINDOW__ = 'frameless'`, before any of the page's scripts), mirrored on
-      `<html>` as `data-window="frameless"` by Shelf's head script before the first paint.
-- [x] Shelf's header as the bar: `data-tauri-drag-region="deep"` (its empty parts move the
+      `<html>` as `data-window="frameless"` by Save State's head script before the first paint.
+- [x] Save State's header as the bar: `data-tauri-drag-region="deep"` (its empty parts move the
       window, a double click maximizes it), room kept at its right end, and minimize, maximize
       (restore, when maximized) and close there, as wide as Windows draws them, close turning
-      red. Through the bridge, Tauri's window commands, allowed to Shelf's origin: `minimize`,
+      red. Through the bridge, Tauri's window commands, allowed to Save State's origin: `minimize`,
       `toggle_maximize`, `close`, `is_maximized`, `start_dragging`, `internal_toggle_maximize`.
 - [x] The page's scrollbar in the app: Windows' would run beside the close button, so it is
-      hidden there and a thin one of Shelf's is drawn below the header, over the page, shown
+      hidden there and a thin one of Save State's is drawn below the header, over the page, shown
       while the page scrolls or the pointer is on it, and draggable.
 - [x] Tests: the controls are drawn only in a window without a bar, and each asks its command;
       the scrollbar follows the page.
 
-**Done when** the window has one bar, Shelf's: it moves, maximizes, restores, minimizes and
-closes from the header, resizes from its edges, and Shelf's name shows once. An app from step 3,
+**Done when** the window has one bar, Save State's: it moves, maximizes, restores, minimizes and
+closes from the header, resizes from its edges, and Save State's name shows once. An app from step 3,
 which has Windows' bar, shows no second set of controls. Checked by `pnpm desktop:check`, which
 finds the controls in the header, maximizes and restores the window from it, and still reads
 every page as a browser does. A development build no longer takes the single-instance lock,
@@ -363,11 +363,11 @@ the sample's 230 games, Bloodborne and two whose Steam apps this computer has in
       the installer's passive mode.
 - [x] The splash: a small window of the app's own, first at every start. It looks for an update
       (a few seconds at most), downloads one showing how far, installs it and starts the new
-      version; then opens Shelf in the main window, unseen until its page is there, and closes.
-      Shelf not answering: it says so, with Try again and Close. A development build skips
+      version; then opens Save State in the main window, unseen until its page is there, and closes.
+      Save State not answering: it says so, with Try again and Close. A development build skips
       the update.
 - [x] The installer in one step: a template of our own (`desktop/installer/`), Tauri 2.12.4's
-      without its pages. One small window like the splash while it installs, then Shelf opens;
+      without its pages. One small window like the splash while it installs, then Save State opens;
       an update runs the same.
 - [x] While it runs (9 Nov 2026): every hour, from half an hour after it starts, the app looks
       and downloads; the header shows **Update**, whose Restart and update installs it
@@ -379,11 +379,11 @@ the sample's 230 games, Bloodborne and two whose Steam apps this computer has in
 - [x] Version 0.2.0, the first released. It is installed by hand once over 0.1.0, which has no
       updater; every later version arrives by itself.
 
-**Done when** the installer opens Shelf without a click, and a newer release published is
+**Done when** the installer opens Save State without a click, and a newer release published is
 installed at the next start without one. Checked: the installer, built under another name so
-the owner's Shelf was left alone, installs with no question, shows the splash's window (Shelf's
+the owner's Save State was left alone, installs with no question, shows the splash's window (Save State's
 icon, "INSTALANDO O SHELF", the bar, in Windows' dark), and opens the app; `pnpm desktop:check`
-sees the splash open Shelf and go, and say Shelf can't be reached when nothing answers. An
+sees the splash open Save State and go, and say Save State can't be reached when nothing answers. An
 update arriving is seen only with a second release: 0.2.0 is the first.
 
 Two things the window kept were fixed on the way: the size and place it remembers no longer
@@ -431,7 +431,7 @@ Issue 102; what counts as evidence, and the limits, are ADR 005, section 11.
 - [x] `pnpm desktop:check` plays a stand-in through a script in the real app: Play to Stop, Stop,
       ended from outside, and Force stop behind its question.
 - [ ] By hand, on a game from a file and a Steam game: Play to Stop, Stop, closing it from the
-      game, starting it outside Shelf, and Windows waking up. No test may do this: no script
+      game, starting it outside Save State, and Windows waking up. No test may do this: no script
       starts a real game or opens Steam.
 
 **Done when** the owner has seen those on an installed version.
@@ -507,11 +507,11 @@ ADR 008's phase 4; spec 7.12.
 
 ADR 008's phase 5; spec 7.12.
 
-**Built 8 Nov 2026,** and offered by a release only once Shelf is registered with each service.
+**Built 8 Nov 2026,** and offered by a release only once Save State is registered with each service.
 
 - [x] `saves/remote.rs`: a service as a folder of snapshots, read once and kept in `saves-cloud\`, written
       from `saves-waiting\`, archive first; `saves/cloud.rs`: OneDrive's app folder (Microsoft Graph) and
-      what Shelf made in Google Drive (`drive.file`), sent in pieces, tokens refreshed, refusals read as
+      what Save State made in Google Drive (`drive.file`), sent in pieces, tokens refreshed, refusals read as
       out of reach, signed out or full; `saves/sign_in.rs`: the service's page in the browser, PKCE, and an
       address on this computer to come back to.
 - [x] Commands: `sign_in_save_cloud`, `cancel_save_sign_in`, `use_save_cloud`, `sign_out_save_cloud`; and
@@ -546,8 +546,8 @@ ADR 008's phase 5; spec 7.12.
       ended it there). The check's files were put in each one's recycle bin. On the very first OneDrive
       sign-in the two snapshots went up only with the next backup, most likely while OneDrive was making
       `Apps › Shelf`; it didn't happen again.
-- [ ] **By the owner: publishing Shelf at Google.** Left in Testing, only test users can sign in, and
-      Google ends each sign-in after seven days: Shelf then says it is signed out, and Sign in again
+- [ ] **By the owner: publishing Save State at Google.** Left in Testing, only test users can sign in, and
+      Google ends each sign-in after seven days: Save State then says it is signed out, and Sign in again
       brings it back. Publishing asks, under **Branding**, for a home page, a privacy policy and terms of
       service (`/privacy`, `/terms`) on an authorized domain, which Google doesn't take on `vercel.app`:
       it needs a domain of Shelf's own, added to Vercel. Then **Remove** the logo (a logo makes Google
@@ -593,8 +593,8 @@ the place changes, from a service too ([issue 170](https://github.com/ldallacqua
 | What happens | Why, and what to do |
 | --- | --- |
 | Windows says it protected the PC | The installer is not signed: More info, Run anyway |
-| "Shelf can't be reached" | No internet, or the site is down: Try again when it is back |
-| An update never arrives | The app looks at `latest.json` on this repository's latest release, for five seconds at each start: if GitHub is slow it goes on to Shelf and tries the next time. A release whose signature is not made with the key in `.env.local` is refused by every installed app |
+| "Save State can't be reached" | No internet, or the site is down: Try again when it is back |
+| An update never arrives | The app looks at `latest.json` on this repository's latest release, for five seconds at each start: if GitHub is slow it goes on to Save State and tries the next time. A release whose signature is not made with the key in `.env.local` is refused by every installed app |
 | The key in `.env.local` is lost | Installed apps cannot be updated any more: make a new key, put its public half in `tauri.conf.json`, and install that version by hand once |
 | Play says the file is gone | The game moved or was uninstalled: Choose the file again |
 | Play shows while the game is open | Nothing ties what is running to the game: its launcher left, and the game is in another folder. Choose the game's own file instead of its launcher |
@@ -603,7 +603,7 @@ the place changes, from a service too ([issue 170](https://github.com/ldallacqua
 | Stop says Windows did not let it | The game runs as administrator, or is protected. Close it from the game |
 | A game opens and closes at once | It needs another folder or arguments: point at its launcher, or at a shortcut (`.lnk`) that has them |
 | Steam opens on the game's page, not the game | Steam does that for a game with several ways to start: pick one there once |
-| A game's hours don't grow | Shelf for Windows wasn't running (look in the tray), the game wasn't in front, or a session is still open: hours arrive when the game closes |
+| A game's hours don't grow | Save State for Windows wasn't running (look in the tray), the game wasn't in front, or a session is still open: hours arrive when the game closes |
 | Hours stop on a controller | Time away is decided from what Windows shows of the controller: with HidHide or similar hiding it, only keys and the mouse count |
 | The app opens blank | WebView2 is missing or broken: Windows Update, or Microsoft's WebView2 installer |
 | `cargo` not found, though Rust is installed | A stray `"` in Windows' PATH (the owner's has one after `C:\Program Files\dotnet`) hides every folder after it from cmd and from Rust. The `desktop:` scripts tidy PATH for what they start; remove the quote in Windows' environment variables to fix it everywhere |

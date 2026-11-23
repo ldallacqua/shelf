@@ -17,7 +17,7 @@ const mapped = Object.entries(landingCoverage)
 
 describe('the landing page’s map of the spec', () => {
   it('reads the spec’s numbered sections', () => {
-    expect(spec.get('1')).toBe('What Shelf is')
+    expect(spec.get('1')).toBe('What Save State is')
     expect(spec.get('4.2a')).toBe('A game IGDB does not have')
     expect(spec.get('17a')).toBe('The admin page')
     expect(spec.size).toBeGreaterThan(50)
@@ -27,7 +27,7 @@ describe('the landing page’s map of the spec', () => {
     const entry = landingCoverage[number]
     expect(
       entry,
-      `Spec section ${number} "${title}" is new. Show it on the landing page and map it in src/features/landing/coverage.ts, or say there why a visitor wouldn't choose Shelf for it.`,
+      `Spec section ${number} "${title}" is new. Show it on the landing page and map it in src/features/landing/coverage.ts, or say there why a visitor wouldn't choose Save State for it.`,
     ).toBeDefined()
     expect(entry?.title, `Spec section ${number} was renamed: update its entry`).toBe(title)
   })

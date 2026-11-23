@@ -1,4 +1,4 @@
-# Shelf
+# Save State
 
 A personal game library that feels like standing in front of your own lit shelf.
 
@@ -34,10 +34,10 @@ how it is tested is in [`docs/testing.md`](docs/testing.md).
 | Step 8 | Landing page | Done |
 | Step 9 | The trophy wall; phone and tablet, accessibility and speed passes; the daily refresh | Done |
 | Sync | Steam, then Nintendo, then PlayStation and Xbox: [`docs/adr/003-platform-sync.md`](docs/adr/003-platform-sync.md); placing what a sync brought in ([spec 4.5](docs/spec.md#45-placing-what-a-sync-brought-in)); setting a new shelf up ([spec 4.6](docs/spec.md#46-setting-a-new-shelf-up)) | Steam and Nintendo done and in use; Steam's achievements on each game's page; the page for placing their games and the one that sets a new shelf up built; PlayStation and Xbox next ([handoff](docs/handoff.md)) |
-| Desktop | Shelf for Windows, which plays the games from their files or through Steam: [`docs/adr/005-desktop-app.md`](docs/adr/005-desktop-app.md), built in the steps of [`docs/desktop.md`](docs/desktop.md) | Built: Play on Steam on the site, the app, Play in it from a file or through Steam, its own title bar, Ready to play, updates and the installer in one step. Installer on [the latest release](https://github.com/ldallacqua/shelf/releases/latest). Next, hours |
+| Desktop | Save State for Windows, which plays the games from their files or through Steam: [`docs/adr/005-desktop-app.md`](docs/adr/005-desktop-app.md), built in the steps of [`docs/desktop.md`](docs/desktop.md) | Built: Play on Steam on the site, the app, Play in it from a file or through Steam, its own title bar, Ready to play, updates and the installer in one step. Installer on [the latest release](https://github.com/ldallacqua/shelf/releases/latest). Next, hours |
 | Step 10 | Final review: the UI/UX review, screen by screen ([how](docs/ui-review.md)) | Started: the pilot, sign in and sign up, reviewed; its fixes wait in [#217](https://github.com/ldallacqua/shelf/issues/217) |
 
-What is on screen today: a landing page that shows what Shelf does with an example shelf, and,
+What is on screen today: a landing page that shows what Save State does with an example shelf, and,
 for anyone who signs up, a page that sets their shelf up, then a library of their own at
 `/en/u/{handle}`, as a lit shelf, a wall
 of covers or a list, grouped by platform, status or year. A Steam library comes in through

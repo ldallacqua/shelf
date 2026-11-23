@@ -1,4 +1,4 @@
-# Shelf: product and UX spec
+# Save State: product and UX spec
 
 - **Status:** approved, and amended on 12 Oct 2026 by [ADR 002](adr/002-visual-direction.md).
   Written and built on 25 Oct 2026: two statuses (3.12), hiding adult games (3.13), archiving a
@@ -8,7 +8,7 @@
 - **Date:** 12 Oct 2026
 - **Builds on:** [research](research.md) and [ADR 001](adr/001-game-entry-model.md)
 
-This document says what Shelf does and how it behaves. How it is built (versions, services,
+This document says what Save State does and how it behaves. How it is built (versions, services,
 hosting) is Phase 3.
 
 **Visual direction.** This spec was written around my first recommendation, Vitrine. That
@@ -21,7 +21,7 @@ have been rewritten to match; everything else is as approved.
 
 ## Contents
 
-1. [What Shelf is](#1-what-shelf-is)
+1. [What Save State is](#1-what-save-state-is)
 2. [Pages and addresses](#2-pages-and-addresses)
 3. [The library](#3-the-library)
 4. [Adding games](#4-adding-games)
@@ -43,7 +43,7 @@ have been rewritten to match; everything else is as approved.
 
 ---
 
-## 1. What Shelf is
+## 1. What Save State is
 
 A game library for anyone. It does two things: add games, and browse them on a shelf with
 strong filters and sorting. Anyone can sign up for a shelf of their own, public or private
@@ -75,7 +75,7 @@ language the browser asks for.
 
 | Address | What it is |
 | --- | --- |
-| `/en` | Landing page: what Shelf is, told with an example shelf ([section 15](#15-landing-page)) |
+| `/en` | Landing page: what Save State is, told with an example shelf ([section 15](#15-landing-page)) |
 | `/en/foundations` | The design foundations, for reference: unlisted, not indexed |
 | `/en/u/{handle}` | An account's library. Filters, sort, grouping and view live in the query string. |
 | `/en/u/{handle}/shelves/{name}` | A saved smart shelf: the library with a stored filter, sort and grouping |
@@ -89,17 +89,17 @@ language the browser asks for.
 | `/en/settings/platforms` | The account's: the platforms it syncs from ([section 4.4](#44-from-a-store-or-console)) |
 | `/en/settings/security` | The account's: the password, signing out everywhere, and, last, deleting the account |
 | `/en/settings/appearance` | This device's: the theme, the colors ([section 9](#9-themes)), the language and experimental views (3.6) |
-| `/en/settings/app` | In Shelf for Windows alone: starting with Windows, and this computer's name (7.3). A browser is told the page is the app's |
-| `/en/settings/download-sources` | In Shelf for Windows alone: download sources (7.10) |
-| `/en/settings/download-services` | In Shelf for Windows alone: Real-Debrid, one card per service (7.10) |
-| `/en/downloads` | In Shelf for Windows alone: what is being downloaded on this computer (7.10). A browser goes home |
+| `/en/settings/app` | In Save State for Windows alone: starting with Windows, and this computer's name (7.3). A browser is told the page is the app's |
+| `/en/settings/download-sources` | In Save State for Windows alone: download sources (7.10) |
+| `/en/settings/download-services` | In Save State for Windows alone: Real-Debrid, one card per service (7.10) |
+| `/en/downloads` | In Save State for Windows alone: what is being downloaded on this computer (7.10). A browser goes home |
 | `/en/account/start` | Setting a new shelf up, where signing up leads: the platforms to bring games in from, and the way to placing them ([section 4.6](#46-setting-a-new-shelf-up)) |
 | `/en/account/unsorted` | One's unsorted games, to rate and give a status, one at a time or many at once, or to archive or remove; Organize's first tab ([section 4.5](#45-placing-what-a-sync-brought-in)) |
 | `/en/account/hours` | The games whose stores report far past IGDB's time, to take idle time out of; Organize's second tab ([section 4.7](#47-hours-a-store-counted)) |
 | `/en/account/archived` | One's archived games, to bring back; Organize's third tab ([section 7.4](#74-archiving-a-game)) |
 | `/en/account/duel` | The duel: my games two at a time, in a bracket, until one is left to play next ([section 3.14](#314-the-duel-choosing-what-to-play-next)) |
-| `/en/privacy` | What Shelf keeps about a person, where, who sees it, and how to remove it, Shelf for Windows' saves and downloads included; last, whose marks Steam, Nintendo, PlayStation and Xbox are |
-| `/en/terms` | The terms for using Shelf, its API and Shelf for Windows: one's account and shelf, fair use, other services, downloads, saves, what Shelf can't promise, and changes |
+| `/en/privacy` | What Save State keeps about a person, where, who sees it, and how to remove it, Save State for Windows' saves and downloads included; last, whose marks Steam, Nintendo, PlayStation and Xbox are |
+| `/en/terms` | The terms for using Save State, its API and Save State for Windows: one's account and shelf, fair use, other services, downloads, saves, what Save State can't promise, and changes |
 | `/llms.txt` | A plain-text guide to the site for AI tools |
 
 The addresses from before accounts (`/en/library`, `/en/game/…`, `/en/shelves/…`,
@@ -128,7 +128,7 @@ experimental views on ([section 3.6](#36-switching-2d-and-3d)).
 **The library opens the way I left it** (issue 149). The view, grouping and sort I last chose in
 the toolbar are remembered on this device, for every shelf, mine or anyone's, and a library
 address that names none of the three opens arranged that way: the header's link, a bookmark of
-`/en/u/{handle}`, a new tab, Shelf for Windows starting. The remembered parts are then written
+`/en/u/{handle}`, a new tab, Save State for Windows starting. The remembered parts are then written
 into the address, in place, without a new step in history, so the address still says exactly what
 is shown. An address that names any of them shows only what it names, and opening it remembers
 nothing: only the toolbar does. A shuffle is remembered as a shuffle, with a new seed each time,
@@ -156,7 +156,7 @@ On one's own shelf, an Add button. **Footer:** credit to IGDB.com, Privacy, and 
 
 One area (issue 152), each page an address of its own, under three headings that say whose the
 choices are: **Account** (Profile, Privacy & content, Platforms, Security), the same wherever I
-sign in; **This device** (Appearance), only in this browser; and **Shelf for Windows** (App,
+sign in; **This device** (Appearance), only in this browser; and **Save State for Windows** (App,
 Download sources, Download services, Saves), only in the app, whose code and words only the app fetches
 (ADR 007, decision 4). Beside each setting's title a small tag says **Account** or **This device**,
 instead of the body text explaining it; hiding adult games sits in Privacy & content, where people
@@ -166,7 +166,7 @@ tagged as this device's.
 On a wide window a side list stands beside each page, the current one marked by a lit line and
 `aria-current`; narrower, a page opens with the way back to the list of every page, `/en/settings`,
 which is where the account menu's **Settings** leads. A page of the app's opened in a browser says it
-is Shelf for Windows' and offers the way back, rather than "not found". Switches act at once; forms
+is Save State for Windows' and offers the way back, rather than "not found". Switches act at once; forms
 have a Save button. Deleting the account is last on Security, in a bordered box with a warning.
 
 Based on: Hydra's settings (read from its code: a side list of categories with icons, group
@@ -191,7 +191,7 @@ Desktop:
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
-│ Shelf    Library   Trophies      [ Search ]   Add   ◐   PT  │
+│ Save State Library   Trophies   [ Search ]   Add   ◐   PT  │
 ├────────────────────────────────────────────────────────────┤
 │ 214 games     61 finished     2,340 hours                   │
 │                                                            │
@@ -213,7 +213,7 @@ Phone:
 
 ```text
 ┌──────────────────────────┐
-│ Shelf              ◐  PT │
+│ Save State         ◐  PT │
 │ PS4 38   Switch 27   PC  │  shelf tabs: swipe sideways
 ├──────────────────────────┤
 │ ▮▮▮▮▮▮▮▮▮▮▮              │
@@ -353,7 +353,7 @@ I turn on **Experimental views** (Visualizações experimentais) in my settings,
 a line that says they are unfinished and may look or work wrong.
 
 - It belongs to this device, like the theme: off in a fresh browser, kept over a reload and
-  over a restart of Shelf for Windows.
+  over a restart of Save State for Windows.
 - While it is off, the shelf is 2D with covers. Neither pair of buttons is shown, `D` does
   nothing and is not in the list of keys, and a choice of 3D or compact stored before cannot
   bring either back, from the first paint on.
@@ -614,7 +614,7 @@ explore the games behind it."
   of what is waiting (once ten rated it), and the released longest ago; and what is waiting by
   genre and by platform, five each. Every figure and game leads to its games. Games a sync
   brought in and nobody placed are in neither, and counted under it as a way to them. How the
-  backlog grew is not shown: a game's day on the shelf is the day it came to Shelf, not the
+  backlog grew is not shown: a game's day on the shelf is the day it came to Save State, not the
   day it was bought, so no shelf has that history yet.
 - **Every chart has its table,** folded under it, and a tooltip on hover and on focus; nothing
   is said by color alone. They are drawn without a script.
@@ -756,7 +756,7 @@ mostrar esses games."
 
 - **Adult** means a game IGDB gives the theme Erotic, or that the ESRB rates Adults Only (AO), or
   whose page on Steam's store is marked for adults (ADR 010).
-  Shelf keeps IGDB's themes already; age ratings are fetched with every game from then on, and
+  Save State keeps IGDB's themes already; age ratings are fetched with every game from then on, and
   for the games already cached as the daily refresh reaches them, about a hundred a day, so an
   Adults Only game not Erotic too is known within days. The ESRB gives AO for violence too
   (Hatred, Thrill Kill): those count, as the owner asked for Adults Only.
@@ -873,8 +873,8 @@ research.
   nothing to choose from says what goes there and leads to the shelf, or, when its games only wait
   for a status, says so and leads to Organize.
 - **Elsewhere:** the landing page's "What's next" part plays one duel of the example shelf with no
-  script, and the FAQ answers whether Shelf helps choose; setting a shelf up offers it in "What's
-  next" once two of its games could duel, ahead of all but Shelf for Windows when four or more
+  script, and the FAQ answers whether Save State helps choose; setting a shelf up offers it in "What's
+  next" once two of its games could duel, ahead of all but Save State for Windows when four or more
   could (unsorted and finished games don't count).
 
 **Done when**
@@ -967,7 +967,7 @@ isso." And: "eu não queria ter que colocar todas as informações do jogo na m�
 - A page that is **not a game** (a soundtrack, a DLC, a demo, software), or that Steam does not show,
   says so.
 - **From Steam:** the title, the cover, the day it came out, what it runs on, its developers and
-  publishers, its short description, and its tags and categories as Shelf's genres, themes, modes and
+  publishers, its short description, and its tags and categories as Save State's genres, themes, modes and
   perspectives. Its screenshots, and its library art as a backdrop. **Not from Steam:** a rating, a length, a franchise, videos. They stay empty.
 - **A game Steam marks for adults** counts as adult (3.13), so "Hide adult games" hides it. The form
   says so. Its library art stands dimmed behind its cover, as on any game, and is in no public API
@@ -1002,11 +1002,11 @@ A game IGDB **does** have is drawn from its Steam page too, before IGDB's record
 In Settings, on **Platforms** ([ADR 003](adr/003-platform-sync.md)), and as the
 first step of setting a new shelf up ([section 4.6](#46-setting-a-new-shelf-up)): the same
 cards in both. Steam and Nintendo are built; PlayStation and Xbox come next, and the page says
-so. Every store and console is named in words: Shelf draws none of their logos, which their
+so. Every store and console is named in words: Save State draws none of their logos, which their
 owners do not allow, beyond Valve's own sign-in button.
 
 1. **Link.** "Sign in through Steam", Valve's own button, goes to Steam's own sign-in page and
-   back. Shelf never sees the Steam password. Steam has to show the account's game details
+   back. Save State never sees the Steam password. Steam has to show the account's game details
    publicly; the card says where that is set, and links to Steam's own privacy settings, in a
    tab of its own. Steam's sign-in comes back to the page it left.
    An empty shelf leads to these cards too, beside "Add your first game".
@@ -1026,7 +1026,7 @@ owners do not allow, beyond Valve's own sign-in button.
      calls each one, and **Ask again** brings it back for good. A mode Steam lists apart from
      its game (a multiplayer, a zombies mode) goes on that game's copy, hours and all.
    - **Steam's hours** go on the copy, in Steam's own row. A game shows the larger of what
-     Shelf for Windows counted and Steam's hours, less any time I said it sat idle (4.7), so
+     Save State for Windows counted and Steam's hours, less any time I said it sat idle (4.7), so
      nothing is counted twice; the editor shows Steam's hours beside the copy.
 3. **What IGDB has nothing for** is read from Steam's store and put on the shelf as a game of
    its own (4.2a), once a game is all Steam says it is. **What is left** (no store page, not a
@@ -1050,7 +1050,7 @@ owners do not allow, beyond Valve's own sign-in button.
    daily sync, as it may have some after its release. Each game's page shows them (section 7.8).
 6. **One game by itself,** without reading the rest (the owner, 1 Nov 2026: "So aquele jogo que abriu
    e fechou. Não precisa syncar tudo"): Steam is asked about that game's apps alone, its copy and
-   hours brought up to date, its achievements read at once. When a game **closes** in Shelf for Windows
+   hours brought up to date, its achievements read at once. When a game **closes** in Save State for Windows
    (7.7), with the next look of the app's page, which happens within a minute with a window open, and
    when the window next opens otherwise; and when a game **leaves the wishlist** (7.5). A game not on
    the shelf waits for a sync, as its hours do. Opening a game asks nothing: nothing has changed yet.
@@ -1060,8 +1060,8 @@ owners do not allow, beyond Valve's own sign-in button.
 | --- | --- |
 | Steam's game details are private | "Steam is not showing your games", with a link to where to change it |
 | Steam keeps the achievements private | "Steam keeps your achievements private", with the same link; no game is shown as having none unlocked |
-| Steam keeps one game's achievements from Shelf (a game no longer owned) | That game is read as none unlocked, as Steam counts it; the others are read, and nothing says the account is private |
-| Steam keeps a game's own list from Shelf for its content (adult games, some mature ones) | Its unlocks are read from Steam's count of them, each "Unlocked, day not known": Steam gives no days there |
+| Steam keeps one game's achievements from Save State (a game no longer owned) | That game is read as none unlocked, as Steam counts it; the others are read, and nothing says the account is private |
+| Steam keeps a game's own list from Save State for its content (adult games, some mature ones) | Its unlocks are read from Steam's count of them, each "Unlocked, day not known": Steam gives no days there |
 | Steam fails on one game's achievements | The others are kept; that game is read again an hour later, or with the next sync |
 | Steam does not answer | Said on the card; the next sync tries again |
 | A very large library | The rest of the games come with the next step, or the next sync, past 2,000 an hour |
@@ -1086,18 +1086,18 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
    **Sign in on Nintendo's page** (a new tab); when Nintendo shows "Select this account", do not
    press it, copy its link (right-click, or press and hold on a phone); paste it into the card
    and **Link Nintendo**. The second step is also drawn: the button, with the menu open on
-   "Copy link address". The drawing is Shelf's own, with nothing of Nintendo's page in it, and
+   "Copy link address". The drawing is Save State's own, with nothing of Nintendo's page in it, and
    is hidden from assistive technology, since the words say it all. A wrong paste says what was wrong: not the button's link, a link from
    another sign-in, or one Nintendo no longer takes (each works once, for a few minutes).
-   Shelf never sees the Nintendo password; it keeps the session Nintendo gives, sealed.
+   Save State never sees the Nintendo password; it keeps the session Nintendo gives, sealed.
 2. **The first sync** starts once linked. Nintendo lists what was played, not what is owned,
    so nothing goes on the shelf by itself: every game is matched by title on the consoles that
-   play it, and waits under "9 games need you" with the game Shelf took it for, its cover and
+   play it, and waits under "9 games need you" with the game Save State took it for, its cover and
    year. **Cartridge** or **Download**, each with its picture, puts it on the shelf; **Not
    this game** opens Find it; **Remove from list**. One line answers every match at once: "All 7
-   games Shelf found are: **Cartridges** / **Downloads**". A game I find becomes the match,
+   games Save State found are: **Cartridges** / **Downloads**". A game I find becomes the match,
    and waits the same way.
-   The matched games come first; those Shelf could not find follow, under "Shelf could not
+   The matched games come first; those Save State could not find follow, under "Save State could not
    find these 2 games", each with Find it and Remove from list. The card says "9 games
    wait for your answer", never "up to date" while any do.
    - A game Nintendo lists under two names (Warframe for Nintendo Switch, and Warframe) is
@@ -1113,7 +1113,7 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
    - A game already on the shelf gains the copy, never a second box; a new one starts
      unsorted, or playing if played these two weeks. Nintendo's hours go on the copy, as
      Steam's do.
-3. **Afterwards** as Steam: Sync now, once a day, Disconnect. When Nintendo ends Shelf's
+3. **Afterwards** as Steam: Sync now, once a day, Disconnect. When Nintendo ends Save State's
    session (it lasts about two years), the card says so and shows the three steps again;
    signing in again keeps every answer.
 
@@ -1249,12 +1249,12 @@ on:
   question only when the answer changes what follows, show progress and what is ahead, let every
   step be skipped, and end on what to do next. Products looked at: Playnite and GOG Galaxy (a
   game library's ways in, platform by platform), Letterboxd's import (a pasted or uploaded list,
-  matches checked before they land), and Shelf's own first version, used as a new account.
+  matches checked before they land), and Save State's own first version, used as a new account.
 - **What the first version lacked,** seen as a new account: every platform's instructions at once,
   Nintendo's copy-and-paste for someone with no Switch, adding by title as a small link after
   them (the only way in for PlayStation, Xbox and boxes on a shelf), the second step out of sight
-  under the first, no sense of where it ends, and nothing of what makes Shelf Shelf (its colors,
-  Shelf for Windows, an assistant) before being dropped on the shelf.
+  under the first, no sense of where it ends, and nothing of what makes Save State itself (its colors,
+  Save State for Windows, an assistant) before being dropped on the shelf.
 - **The design skills ran:** `design-critique` on the first version and on this one,
   `accessibility-review` and `ux-copy` on this one.
 
@@ -1283,10 +1283,10 @@ The page:
     (never an empty ledge on a shelf that has games: the owner, 12 Nov 2026, of 628 games behind an
     empty one), then what was set up in words (games and
     how many wait, platforms linked, the colors, public at `/u/{handle}` or private, with the
-    way to change it), **See my shelf**, and three or four things to do next: Shelf for Windows
+    way to change it), **See my shelf**, and three or four things to do next: Save State for Windows
     with its download (first for someone who plays on a PC), the address an AI assistant connects
     to, with a copy button, a filter to try on the shelf, and, once two of my games could duel,
-    "Choose your first game" (3.14), next after Shelf for Windows (first off a PC) once four could.
+    "Choose your first game" (3.14), next after Save State for Windows (first off a PC) once four could.
 - **Beside the steps,** on a wide window, the shelf as it stands: a small lit ledge in the colors
   chosen with my own games on it, most played first, up to seven, read from my library file
   (`showcaseOf`: owned games with a cover, never one for adults); until that arrives, a case in a
@@ -1334,9 +1334,9 @@ idle cannot be known from outside, so I say it, and only where I want to.
   with the way to the shelf.
 - **Never a doubt about me.** Nothing on the shelf, a game's page or the trophies marks a
   game's hours as high, and the list says what the stores count, not that anything is wrong.
-  What Shelf for Windows counted has no time away in it: never offered, never with time taken off.
+  What Save State for Windows counted has no time away in it: never offered, never with time taken off.
 - **No margin of error is made up.** No figure says ±: a share of idle time would be a guess
-  dressed as a measure. The trophy page's hours say what they are instead: what Shelf for Windows
+  dressed as a measure. The trophy page's hours say what they are instead: what Save State for Windows
   and the platforms count.
 
 While building it, a check in the database on the new column would have made the migration
@@ -1358,7 +1358,7 @@ keeps the figure whole and not below nothing instead.
 
 **From IGDB**
 
-IGDB names its genres, themes, game modes and perspectives in English only. Shelf says them in
+IGDB names its genres, themes, game modes and perspectives in English only. Save State says them in
 the page's language, in the panel, the chips and a game's page ("Corrida", not "Racing"), from
 its own list of IGDB's fixed values (`domain/query/vocab.ts`); the filter text keeps the English
 word (`genre:racing`). Keywords, franchises, series and companies are names, and stay IGDB's.
@@ -1553,9 +1553,9 @@ whole move takes at most 600ms. Under reduced motion it is a 150ms crossfade.
 | **Heading** | Title, year, developer |
 | **Stores** | Where it is sold, with a link to its page there (section 7.9) |
 | **Mine** | Status, my rating, platforms owned with format, playtime, date added, date completed, tags, notes |
-| **Scores** | What others think of it, a place to a column: IGDB, Steam, and people on Shelf (section 7.11) |
-| **About** | The long description of its page on Steam's store, its headings, lists, pictures and clips drawn by Shelf; without one, Steam's short description or IGDB's summary, and IGDB's storyline, in their paragraphs. A long one shows its first paragraph and about a screen's worth, and the rest behind **Read more**, opened in place |
-| **Videos and screenshots** | Immediately after Scores, a large 16:9 selected frame with thumbnails beneath, ahead of About. Named gameplay comes first; at most two videos precede the screenshots, with the remaining videos after them. A thumbnail selects in place; pressing the large screenshot opens the full-screen viewer (arrow keys, swipe, pinch to zoom). Videos play inline from YouTube with its controls; public video posters are fetched through Shelf's image service. Thumbnails carry no words, as on Steam's store page: a video's is marked by a play icon, and its name, numbered to tell similarly named trailers apart, is on its poster on the stage; a screenshot shows no name, its number is for screen readers alone (the owner's call, 11 Nov 2026) |
+| **Scores** | What others think of it, a place to a column: IGDB, Steam, and people on Save State (section 7.11) |
+| **About** | The long description of its page on Steam's store, its headings, lists, pictures and clips drawn by Save State; without one, Steam's short description or IGDB's summary, and IGDB's storyline, in their paragraphs. A long one shows its first paragraph and about a screen's worth, and the rest behind **Read more**, opened in place |
+| **Videos and screenshots** | Immediately after Scores, a large 16:9 selected frame with thumbnails beneath, ahead of About. Named gameplay comes first; at most two videos precede the screenshots, with the remaining videos after them. A thumbnail selects in place; pressing the large screenshot opens the full-screen viewer (arrow keys, swipe, pinch to zoom). Videos play inline from YouTube with its controls; public video posters are fetched through Save State's image service. Thumbnails carry no words, as on Steam's store page: a video's is marked by a play icon, and its name, numbered to tell similarly named trailers apart, is on its poster on the stage; a screenshot shows no name, its number is for screen readers alone (the owner's call, 11 Nov 2026) |
 | **Achievements** | For a game a sync brought in from Steam: how many are unlocked, and each one (section 7.8) |
 | **Details** | Genres, themes, modes, perspectives, franchise, series, publisher, release dates (one line a date, with every platform it came out on that day), time to beat |
 | **Versions** | The editions and ports linked to this entry (signed in) |
@@ -1587,7 +1587,7 @@ folding into a minus, and simply appear under reduced motion. Beside a wide page
 and its skeleton share this wrapper, so a long record cannot push all discovery content several screens
 down on a narrow page. The same page is still drawn by the server and the library during navigation.
 
-Basis: the owner's Steam/Hydra examples, live Shelf game pages,
+Basis: the owner's Steam/Hydra examples, live Save State game pages,
 Steam and GOG's pages, [Steamworks trailer guidance](https://partner.steamgames.com/doc/store/trailer),
 [WCAG Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide),
 [YouTube's player API](https://developers.google.com/youtube/iframe_api_reference) and
@@ -1606,7 +1606,7 @@ point where we don't have the data." A game with a page on Steam's store takes f
 - **The summary,** its short description.
 - **About,** its long description (built 11 Nov 2026, ADR 010 decision 11). The owner, the same day: "can we
   grab the full description of a game from steam [...] just fallback to igdb in case we can't". The store
-  writes it in BBCode; Shelf reads its headings, paragraphs, set words, lists and pictures into blocks it
+  writes it in BBCode; Save State reads its headings, paragraphs, set words, lists and pictures into blocks it
   draws itself, so no markup of the store's reaches the page and no link leads anywhere. A picture is kept
   only when it is a file on Steam's own servers, and drawn at its own size, never wider than the column; it
   has no words of its own, so a description that is only pictures is led by the summary. A clip that stands
@@ -1695,7 +1695,7 @@ the versions, and archiving or removing.
 
 - **Status** changes take effect on the shelf at once: the box changes posture.
 - **Completed** sets the completion date to the day a linked platform (Steam, Nintendo, any
-  that syncs) or Shelf for Windows last saw the game played, editable. The owner, 28 Oct 2026: "I
+  that syncs) or Save State for Windows last saw the game played, editable. The owner, 28 Oct 2026: "I
   don't remember most of the time when I finished my games", and the last play is nearer the
   finish than the day it was marked. A line under the date says that, with no day chosen, the
   last play's counts; the day itself is under the play time (#153). A game nothing saw played
@@ -1711,32 +1711,32 @@ the versions, and archiving or removing.
     than a minute", never "0 h" (`durationOf`, #148). The list's column says the same; the trophy
     page keeps whole hours, as its figures are totals across games. Under it, muted, **Last
     played** and its day, for any status: the latest of what a linked platform saw and the end of
-    the latest session Shelf for Windows counted. With nothing counted, one quiet line, "No play
-    time yet", and a second saying it is counted by Shelf for Windows and my **linked platforms**,
+    the latest session Save State for Windows counted. With nothing counted, one quiet line, "No play
+    time yet", and a second saying it is counted by Save State for Windows and my **linked platforms**,
     a link to them in Settings.
   - **By platform,** the largest first: the platform of the copy the hours are on, not the
-    source (`playTimeOf`). Shelf for Windows' hours are always on the PC. One row per platform,
+    source (`playTimeOf`). Save State for Windows' hours are always on the PC. One row per platform,
     with what it adds to the total and a thin bar of one hue for its share; under it, smaller and
     muted, each source and what it reports. With a single platform there is no row nor bar, only
     its sources. A source that saw the same play as another on the platform, whose hours count
     instead, carries the tag **Same play, not added**; pressing it says which and that the larger
     counts. On a PC that is Steam's and the app's hours, and would be Xbox's on a PC copy (PC Game
     Pass, #73); a console's hours always add. A linked platform whose last sync failed carries
-    **May be behind**. The hours change in place when a game closes in Shelf for Windows, without
-    undoing an edit on its way. Hours from every computer with Shelf for Windows add up, and each
+    **May be behind**. The hours change in place when a game closes in Save State for Windows, without
+    undoing an edit on its way. Hours from every computer with Save State for Windows add up, and each
     session knows which of them it came from; I name each computer in Settings, **This
     computer**, in the app alone (ADR 005, section 12).
   - **Idle time** (4.7): **⋯** beside the heading holds **Remove idle time…**, offered only while
     a store reports hours and none is set. It opens a small dialog: **Idle time** in hours, a
-    line saying it comes off what the stores report and never off what Shelf for Windows counted,
+    line saying it comes off what the stores report and never off what Save State for Windows counted,
     and Save. Once set it is a row at the end, "Idle time removed − 2 h", with **Edit**, and every
     platform's figure is what is left: idle time comes off the PC's stores first, then the
     largest console's.
-  - **(i)** beside the heading opens how it is counted, in three points (Shelf for Windows counts
+  - **(i)** beside the heading opens how it is counted, in three points (Save State for Windows counts
     a game in front and in use and stops after 5 minutes without input; stores report totals that
     include time left open; the same play never counts twice and every computer adds up), and a
     link to the question in the FAQ.
-  - **What Shelf for Windows counts** (ADR 005, section 12): a PC game while it is in front and in
+  - **What Save State for Windows counts** (ADR 005, section 12): a PC game while it is in front and in
     use, however it was opened, for as long as the app runs, which it does in the tray from when
     Windows starts unless I turn that off. Consoles keep their platform's hours.
   - **A visitor** sees the total alone, in the game's facts. Which platforms, which sources and
@@ -1892,7 +1892,7 @@ mostre jogos instalados. Igual o botão da steam "Exibir apenas jogos prontos pa
 possivel queria que o instalador fosse mais paracido com o do discord. Que não tem que ficar
 clicando setup setup, next, next. E sim aparecesse uma splashzinha."
 
-- **Shelf for Windows** ([ADR 005](adr/005-desktop-app.md)) is the same Shelf in a window of
+- **Save State for Windows** ([ADR 005](adr/005-desktop-app.md)) is the same Save State in a window of
   its own: the same pages, the same sign-in, the same data, served by the same server. What it
   adds is Play.
 - **Play** (Jogar) is the first thing under Mine, on my own shelf only, never to a visitor: on a line
@@ -1922,9 +1922,9 @@ clicando setup setup, next, next. E sim aparecesse uma splashzinha."
   after a question that says what is not saved is lost. When something may be running that the
   app can't tell or can't touch, the button says **Running** (Em execução) or **Open** (Aberto)
   with why, and offers no Stop. A browser shows none of this.
-- **The files chosen stay on this computer.** Shelf's server never sees them, and another
+- **The files chosen stay on this computer.** Save State's server never sees them, and another
   computer keeps its own.
-- **Its own title bar.** The app's window has no Windows bar: Shelf's header is the bar, with
+- **Its own title bar.** The app's window has no Windows bar: Save State's header is the bar, with
   minimize, maximize and close at its right end. Dragging the header moves the window, and a
   double click maximizes it.
 - **Ready to play** (Prontos para jogar), on my own shelf, in the app: a button among the
@@ -1932,10 +1932,10 @@ clicando setup setup, next, next. E sim aparecesse uma splashzinha."
   only games ready to play" does: a file chosen and still there, or a Steam app installed here.
   It is this computer's choice and stays until pressed again. Counts, filters and sorting work
   on what it leaves; with nothing ready, the shelf says so and offers to show every game.
-- **Installing** asks nothing: a small window with Shelf's mark shows while it installs, then
-  Shelf opens.
+- **Installing** asks nothing: a small window with Save State's mark shows while it installs, then
+  Save State opens.
 - **Updates come by themselves.** Each time the app starts, a small window looks for a newer
-  version; it downloads and installs one, saying how far it is, then opens Shelf.
+  version; it downloads and installs one, saying how far it is, then opens Save State.
 - **The installer is public,** on this repository's releases.
 - **Hours,** built after Play: the time a game started from its file is open is added to its
   PC copy, as a store's hours are, but paused once no key, mouse or controller has moved for
@@ -1952,11 +1952,11 @@ clicando setup setup, next, next. E sim aparecesse uma splashzinha."
 - A Steam game starts through Steam, and nothing a page sends can start anything but a file I
   chose or Steam.
 - A visitor sees no Play, and a phone no Play on Steam.
-- The window has one bar, Shelf's, and Shelf's name once; it moves, maximizes, minimizes and
+- The window has one bar, Save State's, and Save State's name once; it moves, maximizes, minimizes and
   closes from the header.
 - Ready to play leaves exactly the games with a file that is still there or a Steam app
   installed, in every view, with counts to match.
-- The installer opens Shelf without a click, and a newer release is installed at the next start
+- The installer opens Save State without a click, and a newer release is installed at the next start
   without one.
 
 ---
@@ -1977,7 +1977,7 @@ screenshots, asked for as the page opens (never part of the library file).
 - **One told in full, under the icons:** Steam's artwork, its name and description, and in
   words whether it is unlocked and when ("Unlocked Oct 10, 2025", or "Unlocked, day not known"
   when Steam does not say; never a made-up date), and how rare it is: "2.1% of Steam players",
-  Steam's own share, not Shelf's. It opens on the rarest one unlocked, or the first when none
+  Steam's own share, not Save State's. It opens on the rarest one unlocked, or the first when none
   is; choosing another icon tells that one. The icons take one stop of the keyboard, and the
   arrow keys move between them, up and down by the row as drawn.
 - **As a list,** one choice away (Icons or List): each told in full, locked ones dimmed and
@@ -2053,7 +2053,7 @@ onde veio o game é importante".
 
 ### 7.10 Download sources
 
-In Shelf for Windows alone, on Settings' Download sources page. Why it is built this way:
+In Save State for Windows alone, on Settings' Download sources page. Why it is built this way:
 [ADR 007](adr/007-download-sources.md).
 
 - **Adding one.** I paste the address of a list in the format Hydra uses, and the app reads it and keeps
@@ -2091,7 +2091,7 @@ In Shelf for Windows alone, on Settings' Download sources page. Why it is built 
 - **Real-Debrid** is a card on Settings' Download services page, the shape every other service's
   card will take. **Sign in** shows a code, large, to enter on
   its own page, which opens in the browser; it moves on by itself once entered, and a code that runs out
-  says so. Signed in, it says who and until when Premium lasts, with Sign out, which asks. Shelf never sees
+  says so. Signed in, it says who and until when Premium lasts, with Sign out, which asks. Save State never sees
   the password, and no page sees what the sign-in gives.
 - **Through Real-Debrid** stands first beside Download once signed in, since what it opens is likelier to be a
   file. A magnet is fetched to its servers first: the card says **Real-Debrid is getting it** with how far.
@@ -2109,7 +2109,7 @@ In Shelf for Windows alone, on Settings' Download sources page. Why it is built 
   press it, since it takes the time and the disk. The card says it is reading the archive, then how far along
   it is, with Stop extracting, which asks and says the archive stays. It comes out into a folder beside the
   archive, named for it, and the archive stays too.
-- **When it can't,** the card says which: a password (Shelf doesn't ask for one), paths that would leave the
+- **When it can't,** the card says which: a password (Save State doesn't ask for one), paths that would leave the
   folder or links (nothing is extracted, and it says to be careful with it), damaged or unreadable, a part
   missing, no room, can't write, or the app closing first. Try again is there for what another go could change.
 - **Choose the game's file** comes first once it is extracted, or at once when it wasn't an archive, on what was
@@ -2143,12 +2143,12 @@ game bem bonitinho [...] vamos mostrar notas de varios lugares diferentes".
 - **One panel, a place to a column,** in the look of the stores' card; narrower than 34rem, a place to a
   line. Adding another place means adding one more column.
 - **Never one number.** A share of people who recommend a game (Steam) is not a mark out of a hundred
-  (IGDB) or out of ten (Shelf), so each keeps its own scale and they are not averaged. IsThereAnyDeal
+  (IGDB) or out of ten (Save State), so each keeps its own scale and they are not averaged. IsThereAnyDeal
   shows the same mix as bars, and the eye still compares them.
 - **Who and how many:** under each number, who it speaks for and how many it rests on, as Rotten
   Tomatoes puts its count under each score. Counts are short ("393 mil"). Steam's own words ("Muito
   positivas") stand where the others name who is speaking; under ten reviews Steam has none.
-- **The bar** is what makes it Shelf's and not a table: twenty segments, like a game's health bar, lit in
+- **The bar** is what makes it Save State's and not a table: twenty segments, like a game's health bar, lit in
   the accent and glowing with the shelf's LEDs, so it is strongest with the room's lights off. Whole
   segments only, rounded down: full means a hundred. It is decoration for the eye: the number and words
   are what a screen reader gets. It fills once as the page opens, and under reduced motion it is simply
@@ -2157,11 +2157,11 @@ game bem bonitinho [...] vamos mostrar notas de varios lugares diferentes".
 - **Where they come from.** IGDB's as ever. Steam's from its store, once a day, for every game with a page
   there (named by IGDB's ids or by a Steam link among its stores), and right after a game is added, once
   the answer has gone; across its editions the most reviewed. A visitor never reaches Steam. A game's name leads to
-  where its score came from, in a tab of its own, and neither is a logo. Shelf's is the average of what
+  where its score came from, in a tab of its own, and neither is a logo. Save State's is the average of what
   public shelves gave it, from every entry holding any of its versions: no private shelf, no game kept
   private, nothing archived, and only the sum and the count ever leave the database. A page shows it as
   of the last time that shelf changed or a score of the game moved.
-- **Nothing yet:** Shelf's place stands empty and says "No ratings yet", to show it is coming. With no score
+- **Nothing yet:** Save State's place stands empty and says "No ratings yet", to show it is coming. With no score
   from anywhere, the section is not drawn.
 - **Looked at:** Backloggd and Letterboxd (an average over a histogram of their own, which only one's own
   ratings can give), OpenCritic (a ring for each score, stacked), IsThereAnyDeal (a bar for each source),
@@ -2171,7 +2171,7 @@ game bem bonitinho [...] vamos mostrar notas de varios lugares diferentes".
 
 ### 7.12 Saves
 
-In Shelf for Windows alone, for a game whose file is chosen on this computer. Why it is built this way, and
+In Save State for Windows alone, for a game whose file is chosen on this computer. Why it is built this way, and
 what comes next (a folder or a cloud of my own, and the same saves on every PC): [ADR 008](adr/008-save-sync.md).
 What it shows first, and what moved one step back: [ADR 009](adr/009-game-page-and-dialogs.md), decision 5.
 
@@ -2193,12 +2193,12 @@ What it shows first, and what moved one step back: [ADR 009](adr/009-game-page-a
   under it, and **Back up now**; "Backed up 2 hours ago, on this computer only", with **Choose where they
   go**; "Backed up on this computer 1 hour ago. It goes to Google Drive as soon as it can"; "Changed since
   the last backup" or "Not backed up yet", with Back up now first; "Google Drive can't be reached now, so
-  new backups wait on this computer"; "Shelf is signed out of OneDrive" with **Sign in again in Settings**;
+  new backups wait on this computer"; "Save State is signed out of OneDrive" with **Sign in again in Settings**;
   "OneDrive is full" with **Choose another place in Settings**; "No saves found for this game yet" when
   finding them is the task. While a backup or a restore runs, its bar stands there instead. It never says a
   backup reached a place it is still waiting to go to.
 - **Off until I turn it on.** The switch, on one line. While it is off, what it does is said under it:
-  backups on this computer, with their history, and nothing sent to Shelf. Turned on, a first backup is
+  backups on this computer, with their history, and nothing sent to Save State. Turned on, a first backup is
   made at once, unless the game is running. When the list says stores carry the game's saves, it names
   them, for a copy bought there, while it is off.
 - **History,** newest first, the newest three, and **All 12** for the rest: each on one line, when and which
@@ -2242,8 +2242,8 @@ What it shows first, and what moved one step back: [ADR 009](adr/009-game-page-a
 - **Where they go, as a list** (ADR 008's phase 5): this computer only, a folder of mine, OneDrive and
   Google Drive, a row each, the one in use marked **In use**, as Windows' settings list accounts. Each row
   says what it is and what using it takes: Keep them on this computer only, Choose a folder, or **Sign in
-  to OneDrive**, which opens Microsoft's page in my browser while the row says Shelf is waiting, with
-  Cancel. Signed in, the row names the account and where Shelf keeps them (Apps › Shelf in OneDrive,
+  to OneDrive**, which opens Microsoft's page in my browser while the row says Save State is waiting, with
+  Cancel. Signed in, the row names the account and where Save State keeps them (Apps › Shelf in OneDrive,
   Shelf saves in Google Drive), with **Use** and **Sign out**. A service that took the sign-in back says
   so, with Sign in again, and so does a button in the app's header until it is fixed. A build not
   registered with a service doesn't list it.
@@ -2255,7 +2255,7 @@ What it shows first, and what moved one step back: [ADR 009](adr/009-game-page-a
   game (20, never fewer than 3) and the largest one (500 MB).
 - **Words.** "Backup" and "history", in both languages, for what the app and its files call a snapshot, the
   Windows notifications the app writes itself included (from 0.18.0).
-- **It isn't on the landing page yet,** as nothing of Shelf for Windows is there; it goes with the app's part.
+- **It isn't on the landing page yet,** as nothing of Save State for Windows is there; it goes with the app's part.
 
 Based on: Steam's Cloud help (a switch per game in its properties, a Cloud status beside Play, and the
 window that offers two copies with their dates), Xbox's save dialogs (one sentence, then two or three
@@ -2332,7 +2332,7 @@ fade and the LEDs come up, or the reverse. Under reduced motion it is immediate.
 
 Apart from the theme, this device keeps a **colorway** (issue 206): the paint on the walls, the
 shelves and the buttons, and the color of the LEDs at rest. Each works in both themes. Six are vivid:
-Violet, Shelf's own and the default; Ocean; Ember; Arcade; Crimson; Graphite. Five are pastel: Lilac,
+Violet, Save State's own and the default; Ocean; Ember; Arcade; Crimson; Graphite. Five are pastel: Lilac,
 Mint, Peach, Sky, Rose. And one's own. They are chosen in
 Settings, Appearance, under Theme, and like the theme they are on the device, for anyone, and
 applied before the first paint. Choosing one repaints the page as a change of light, about a
@@ -2345,7 +2345,7 @@ green of "playing", scrims over art, the gold seal of a finished game, and the p
 server draws (the trophy card, the landing page's share pictures).
 
 Every colorway is worked out from three colors by the same rules (`domain/colorway/derive.ts`):
-its accent, a tint for the room, and its light. The walls keep Shelf's own lightness and take the
+its accent, a tint for the room, and its light. The walls keep Save State's own lightness and take the
 room's hue; the accent keeps its hue, deeper with the lights on and paler with them off; every pair
 of colors the interface uses is moved until it reaches its contrast, in both themes. So a preset
 is three colors, and so is one's own.
@@ -2384,12 +2384,12 @@ still makes the walls black, and a pastel colorway makes the games' colors paste
 **One's own** is the last card, "Your own". Chosen the first time, it starts from the colorway on
 screen; under the cards it then opens its three colors, Accent, Room and Light, each the device's own
 color picker with the color written beside it and what it is for. The page is the preview: each
-color repaints it as it is picked. The words say that Shelf keeps each color's hue and sets how light
+color repaints it as it is picked. The words say that Save State keeps each color's hue and sets how light
 or dark it is, which is why what is picked may come out deeper or paler, and "Start again from Ocean"
 (the preset it started from) puts its three colors back. Choosing a preset keeps one's own for
 coming back to. The device keeps it worked out, every color of both themes, so the theme script
 paints a page in it before the first paint, and anything in storage that is not a whole set of
-colors leaves the page in Shelf's own.
+colors leaves the page in Save State's own.
 
 **The picker** is a card per colorway: a corner of the room in it (its wall, a button, a line of
 text, a lit shelf), drawn in the theme that is on, then its name and a few words ("Blue, with cyan
@@ -2630,7 +2630,7 @@ reduced motion.
 
 ## 15. Landing page
 
-A product page, for people who have not made a shelf yet (ADR 004): what Shelf does, shown
+A product page, for people who have not made a shelf yet (ADR 004): what Save State does, shown
 working, part by part, with one call to action, **Create your shelf**. It is built from an
 **example shelf**, labelled as one: 61 games from the sample library, real IGDB covers, with
 what was done with each invented (`pnpm landing:demo`). No account's games are ever on it.
@@ -2645,7 +2645,7 @@ what was done with each invented (`pnpm landing:demo`). No account's games are e
 | **5. Bring your Steam library** | Games arriving from Steam one by one, each with its hours, then the count, and "Again tomorrow, by itself". |
 | **6. Shelf, wall or list** | The same games three ways, turning by itself until the visitor picks one; covers travel between the shelf and the wall. |
 | **Paint the room your way** | The example shelf in each colorway (9), lights off and on side by side, chosen by a row of chips. The chips are radio buttons and every room is drawn ahead; CSS shows the checked one, so it needs no script. |
-| **Press Play on your shelf** | Shelf for Windows (7.7, 7.12) as a picture of its window: a game ready to play with its hours and where its saves are, Ready to play, the shelf under it. Beside it what the app does, **Download for Windows** with its facts, and the release notes. Never its downloads (7.10). |
+| **Press Play on your shelf** | Save State for Windows (7.7, 7.12) as a picture of its window: a game ready to play with its hours and where its saves are, Ready to play, the shelf under it. Beside it what the app does, **Download for Windows** with its facts, and the release notes. Never its downloads (7.10). |
 | **7. How far you got** | A glimpse of the trophy wall: its stats counting up (finished, this year, hours, the average rating), over the example shelf's latest year of trophies, each under its own light. |
 | **A closer look** | The game page's real screenshot gallery, using a game from the example shelf: select a thumbnail, open full screen and zoom. It links nowhere: the example shelf is drawn on this page alone, with no shelf of its own in production to open the game on. Its words describe scores, trailers and the full description, and the FAQ explains the optional muted autoplay. |
 | **8. Yours to show, or to keep** | Public or private, as sign-up offers them, and that notes stay private unless marked public. |
@@ -2669,7 +2669,7 @@ names an old version.
 - **A link to it** shows its first screen in the dark, in the link's language: the eyebrow,
   the headline and the lit shelf (`pnpm landing:share`).
 - **It follows the product.** Every later step that adds something a visitor would choose
-  Shelf for adds its part here, and a step that changes what a part shows changes the part.
+  Save State for adds its part here, and a step that changes what a part shows changes the part.
   Step 9's trophy wall, for one, turned part 7 into a glimpse of the wall itself, and the
   Steam sync added part 5.
 
@@ -2743,10 +2743,10 @@ Not built now. The design leaves room for each.
 | Export and import, backups | Stable ids; every table holds plain data; filters are text |
 | Importing from the reference app | Entries link to IGDB ids, which the reference app also stores |
 | PlayStation, Xbox and Nintendo sync | Steam is built ([section 4.4](#44-from-a-store-or-console)). The others plug into the same matcher and memory; how each is read: [ADR 003](adr/003-platform-sync.md) |
-| Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Shelf and needs the internet, and its guide lists playing offline as a later step |
+| Offline use | The library is one loaded data set filtered on the device; the desktop app ([section 7.7](#77-playing-a-game)) shows the hosted Save State and needs the internet, and its guide lists playing offline as a later step |
 | Games not on IGDB | A game record does not require an IGDB id |
 | Extracting what is downloaded | Downloads are built ([section 7.10](#710-download-sources)); the phases are in [ADR 007](adr/007-download-sources.md) |
-| Saves through OneDrive and Google Drive | Built ([section 7.12](#712-saves), [ADR 008](adr/008-save-sync.md)'s phase 5); offered once Shelf is registered with each, which only the owner can do. S3-compatible storage comes after |
+| Saves through OneDrive and Google Drive | Built ([section 7.12](#712-saves), [ADR 008](adr/008-save-sync.md)'s phase 5); offered once Save State is registered with each, which only the owner can do. S3-compatible storage comes after |
 | Editions and regions | A copy can already name its exact version; region is one more attribute |
 | Merging two entries | A row move in the model, as separating a version is ([section 7.6](#76-separating-a-version)) |
 | DLC, replays, subscriptions | Noted in ADR 001 |
@@ -2810,14 +2810,14 @@ Made on 25 Oct 2026 for playing a game (7.7), with the owner's choice of Tauri:
 
 | # | Decision | Alternative |
 | --- | --- | --- |
-| 32 | The app opens the hosted Shelf, so it shows exactly what the site does | A copy of the site inside the app, with a server of its own |
+| 32 | The app opens the hosted Save State, so it shows exactly what the site does | A copy of the site inside the app, with a server of its own |
 | 33 | A game's file is kept on the computer that chose it, never on the server | Kept with the account, for every computer |
 | 34 | In a browser, Play on Steam only for a game the Steam sync brought in | Also for a game IGDB lists on Steam, which may be owned elsewhere |
 | 35 | A chosen file wins over Steam | Steam first, for a game owned there |
 | 36 | The app counts hours only for games it starts from a file | Every game it starts, Steam's too, which would count them twice |
 | 37 | Windows only, at first | Mac and Linux too, untested |
 | 38 | The installer is not signed, and Windows warns once | A signing service, open to individuals in the USA and Canada only |
-| 39 | Shelf's header is the app's title bar | Windows' bar above the header, and the name twice |
+| 39 | Save State's header is the app's title bar | Windows' bar above the header, and the name twice |
 | 40 | Ready to play is this computer's choice, kept on it | A filter in the address, which means nothing on another computer |
 | 41 | Installers and updates are releases of this repository, made public by the owner | A public repository of installers only, the code staying private |
-| 42 | The app looks for an update as it starts, and installs it before opening Shelf | Asking first, or updating while Shelf is open |
+| 42 | The app looks for an update as it starts, and installs it before opening Save State | Asking first, or updating while Save State is open |

@@ -65,7 +65,7 @@ export const setupCoverage: Record<string, readonly SetupStep[] | string> = {
   '7.7': ['ready'],
   '7.8': 'Achievements come with Steam’s sync, which step 2 offers.',
   '7.9': USE,
-  '7.10': 'Shelf for Windows alone, set up in the app, and never shown before it.',
+  '7.10': 'Save State for Windows alone, set up in the app, and never shown before it.',
   '7.11': USE,
   '7.12': ['ready'],
   '8': 'Internals: how the data is kept.',
