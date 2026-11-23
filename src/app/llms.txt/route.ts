@@ -9,22 +9,22 @@ import { siteUrl } from '@/server/site-url'
  */
 export function GET() {
   const site = siteUrl()
-  const text = `# Shelf
+  const text = `# Save State
 
-> Shelf keeps every game a person owns on one lit shelf: physical and digital, every console. Each account has one shelf at ${site}/en/u/{handle}, public or private. Game information comes from IGDB.com.
+> Save State is a game library: every game a person owns, on one lit shelf, physical and digital, every console. Each account has one shelf at ${site}/en/u/{handle}, public or private. Game information comes from IGDB.com.
 
 Shelves are read by their handle. A public shelf can be read by anyone, with no key; a private one answers 404, as a shelf no account has does. Writing acts on one's own shelf and needs that account's sign-in.
 
 ## Pages
 
-- [Landing page](${site}/en): what Shelf is, with an example shelf
+- [Landing page](${site}/en): what Save State is, with an example shelf
 - [Create a shelf](${site}/en/sign-up)
 - ${site}/en/u/{handle}: a shelf. The query string holds its filter (q), sort, grouping (group) and view (shelf, wall, list or banner)
 - ${site}/en/u/{handle}/game/{slug}: a game on a shelf
 - ${site}/en/u/{handle}/trophies: the shelf's trophy wall: every game finished, by the year it was finished, with stats
 - ${site}/en/settings/platforms: one's platforms, where a Steam library is linked through Steam's own sign-in, and a Nintendo play history through Nintendo's, each synced once a day
-- [Privacy](${site}/en/privacy): what Shelf keeps, and how to remove it
-- [Terms](${site}/en/terms): the terms for using Shelf, its API and Shelf for Windows
+- [Privacy](${site}/en/privacy): what Save State keeps, and how to remove it
+- [Terms](${site}/en/terms): the terms for using Save State, its API and Save State for Windows
 - Every page is also in Brazilian Portuguese, under /pt-BR instead of /en
 
 ## API

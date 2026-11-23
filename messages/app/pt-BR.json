@@ -1,7 +1,7 @@
 {
   "ThisComputer": {
     "title": "Este computador",
-    "intro": "O Shelf para Windows anota de qual dos seus computadores veio cada sessão de jogo. Dê um nome a este para diferenciá-los. Só você vê.",
+    "intro": "O Save State para Windows anota de qual dos seus computadores veio cada sessão de jogo. Dê um nome a este para diferenciá-los. Só você vê.",
     "name": "Nome",
     "unnamed": "Computador {number}",
     "hint": "Vazio, ele se chama {unnamed}. Nunca o nome do seu computador no Windows.",
@@ -18,7 +18,7 @@
     "intro": "Listas de jogos para baixar, no formato que o Hydra usa. Elas ficam neste computador e são lidas de novo uma vez por dia enquanto o app está aberto, e adicionar uma não baixa nada.",
     "address": "Endereço da fonte",
     "addressHint": "https://…/source.json",
-    "warning": "Qualquer pessoa pode escrever uma fonte, e o Shelf não consegue verificar para onde os links dela levam. Um programa vindo dela roda com o seu acesso a este computador. Adicione só fontes em que você confia, para jogos que você tem o direito de baixar.",
+    "warning": "Qualquer pessoa pode escrever uma fonte, e o Save State não consegue verificar para onde os links dela levam. Um programa vindo dela roda com o seu acesso a este computador. Adicione só fontes em que você confia, para jogos que você tem o direito de baixar.",
     "add": "Adicionar fonte",
     "adding": "Lendo…",
     "added": "{name} adicionada, com {count, plural, =0 {# downloads} one {# download} other {# downloads}}. Nada foi baixado.",
@@ -28,7 +28,7 @@
     "downloads": "{count, plural, =0 {# downloads} one {# download} other {# downloads}}",
     "links": "{magnets, number} por link magnet, {web, number} por link da web",
     "leftOutLabel": "Deixados de fora",
-    "leftOut": "{count, plural, =0 {# deixados de fora: nada neles que o Shelf possa usar} one {# deixado de fora: nada nele que o Shelf possa usar} other {# deixados de fora: nada neles que o Shelf possa usar}}",
+    "leftOut": "{count, plural, =0 {# deixados de fora: nada neles que o Save State possa usar} one {# deixado de fora: nada nele que o Save State possa usar} other {# deixados de fora: nada neles que o Save State possa usar}}",
     "readLabel": "Última leitura",
     "read": "Lida {when}",
     "lastReadFailed": "A última leitura falhou, e a lista que ela tem continua. {why}",
@@ -39,7 +39,7 @@
     "readAllHelp": "As que só atendem navegadores abrem em uma janela, uma por vez. Se ela pedir alguma confirmação, é você quem responde. Fechar a janela para por ali.",
     "readAllDone": "{read, number} lidas.{failed, plural, =0 {} one { # falhou: o cartão dela diz por quê.} other { # falharam: os cartões delas dizem por quê.}}",
     "readAllStopped": "{read, number} lidas. Você fechou a janela, então as outras ficaram como estavam.",
-    "windowTitle": "O Shelf está lendo uma fonte. Se isto pedir alguma confirmação, responda aqui.",
+    "windowTitle": "O Save State está lendo uma fonte. Se isto pedir alguma confirmação, responda aqui.",
     "chooseAgain": "Escolher o arquivo de novo",
     "addFile": "De um arquivo salvo",
     "fileTitle": "Uma fonte que você salvou",
@@ -53,11 +53,11 @@
     "removeConfirm": "Remover fonte",
     "removeCancel": "Manter",
     "errors": {
-      "invalid": "Esse não é um endereço https que o Shelf possa ler. Endereços deste computador ou da rede dele não são lidos.",
+      "invalid": "Esse não é um endereço https que o Save State possa ler. Endereços deste computador ou da rede dele não são lidos.",
       "duplicate": "Essa fonte já está aqui.",
-      "unreachable": "O Shelf não conseguiu se conectar a esse endereço. Confira e tente de novo.",
+      "unreachable": "O Save State não conseguiu se conectar a esse endereço. Confira e tente de novo.",
       "name": "Este computador não encontrou esse endereço: o nome dele não leva a lugar nenhum daqui. Confira se está escrito certo.",
-      "secure": "O Shelf não conseguiu fazer uma conexão segura com esse endereço.",
+      "secure": "O Save State não conseguiu fazer uma conexão segura com esse endereço.",
       "slow": "Esse endereço demorou demais para responder. Tente mais tarde.",
       "refused": "Esse endereço respondeu sem o arquivo. Confira e tente de novo.",
       "browser": "Esse endereço só atende navegadores. Ler todas abre uma janela para ele.",
@@ -87,7 +87,7 @@
     "perSecond": "{size}/s",
     "speedAndLeft": "{speed}, cerca de {left} restantes",
     "finished": "Concluído: {size}.",
-    "nothingRuns": "O Shelf não inicia o que baixa. Confira antes e abra você mesmo, se confiar.",
+    "nothingRuns": "O Save State não inicia o que baixa. Confira antes e abra você mesmo, se confiar.",
     "extract": "Extrair",
     "extracting": "Extraindo",
     "reading": "Lendo o arquivo compactado…",
@@ -95,12 +95,12 @@
     "extractProgress": "Andamento da extração de {title}",
     "extractWhy": {
       "interrupted": "O app fechou antes de terminar. Tentar de novo recomeça do início.",
-      "password": "Este arquivo compactado precisa de uma senha, e o Shelf não pede senhas. Ele continua na pasta, para você abrir de outro jeito.",
+      "password": "Este arquivo compactado precisa de uma senha, e o Save State não pede senhas. Ele continua na pasta, para você abrir de outro jeito.",
       "unsafe": "Nada foi extraído: este arquivo compactado tem caminhos que sairiam da pasta dele, ou links. Tenha cuidado com ele.",
-      "damaged": "Este arquivo compactado está danificado, incompleto ou foi compactado de um jeito que o Shelf não lê. Ele continua na pasta.",
+      "damaged": "Este arquivo compactado está danificado, incompleto ou foi compactado de um jeito que o Save State não lê. Ele continua na pasta.",
       "volume": "Falta uma parte deste arquivo compactado. Coloque todas na mesma pasta e tente de novo.",
       "disk": "Este disco não tem espaço para o que há dentro dele.",
-      "write": "O Shelf não conseguiu gravar nessa pasta."
+      "write": "O Save State não conseguiu gravar nessa pasta."
     },
     "stopExtracting": "Parar a extração",
     "stopTitle": "Parar a extração de {title}?",
@@ -121,7 +121,7 @@
       "page": "Os links levam a páginas da web, não a arquivos. Em geral são de sites de hospedagem, que o Real-Debrid talvez consiga abrir.",
       "unreachable": "O link parou de responder. O que chegou fica guardado, e Tentar de novo continua se o arquivo não tiver mudado.",
       "disk": "Este disco não tem espaço para ele.",
-      "write": "O Shelf não conseguiu gravar nessa pasta.",
+      "write": "O Save State não conseguiu gravar nessa pasta.",
       "signedout": "O Real-Debrid não está mais conectado. Entre de novo nesta página e tente outra vez.",
       "premium": "O Real-Debrid precisa de uma conta Premium para isso.",
       "blocked": "Os filtros do Real-Debrid não permitem este.",
@@ -149,7 +149,7 @@
     "open": "Procurar download",
     "title": "Procurar download de {title}",
     "close": "Fechar",
-    "warning": "Das suas próprias fontes, que o Shelf não consegue verificar. Baixe só o que você tem o direito de baixar. Nada é iniciado sozinho.",
+    "warning": "Das suas próprias fontes, que o Save State não consegue verificar. Baixe só o que você tem o direito de baixar. Nada é iniciado sozinho.",
     "words": "Todas estas palavras",
     "search": "Buscar",
     "searching": "Buscando nas suas fontes",
@@ -173,9 +173,9 @@
   },
   "RealDebrid": {
     "title": "Real-Debrid",
-    "intro": "Com uma conta sua no Real-Debrid, o Shelf pode baixar links magnet e links de sites de hospedagem. Os termos dele não permitem baixar arquivos que infringem direitos autorais, e a conta é só sua.",
+    "intro": "Com uma conta sua no Real-Debrid, o Save State pode baixar links magnet e links de sites de hospedagem. Os termos dele não permitem baixar arquivos que infringem direitos autorais, e a conta é só sua.",
     "signIn": "Entrar no Real-Debrid",
-    "enterCode": "Digite este código na página do Real-Debrid. O Shelf nunca vê a sua senha.",
+    "enterCode": "Digite este código na página do Real-Debrid. O Save State nunca vê a sua senha.",
     "code": "O código a digitar",
     "openPage": "Abrir a página do Real-Debrid",
     "cancel": "Cancelar",
@@ -186,7 +186,7 @@
     "notPremium": "Esta conta não é Premium, então o Real-Debrid não aceita links magnet dela.",
     "signOut": "Sair do Real-Debrid",
     "signOutTitle": "Sair do Real-Debrid?",
-    "signOutBody": "O Shelf esquece o login e o encerra no Real-Debrid. O que você baixou continua aí.",
+    "signOutBody": "O Save State esquece o login e o encerra no Real-Debrid. O que você baixou continua aí.",
     "signOutConfirm": "Sair do Real-Debrid",
     "signOutCancel": "Continuar conectado",
     "errors": {
@@ -195,7 +195,7 @@
     }
   },
   "AppSettings": {
-    "group": "Shelf para Windows",
+    "group": "Save State para Windows",
     "pages": {
       "app": {
         "title": "App",
@@ -216,15 +216,15 @@
     },
     "startWithWindows": {
       "title": "Abrir com o Windows",
-      "label": "Abrir o Shelf para Windows na bandeja quando o Windows iniciar",
-      "body": "Assim um jogo aberto pela Steam é contado sem precisar abrir o Shelf antes. <link>Como as horas são contadas</link>",
-      "unavailable": "Só o Shelf para Windows instalado pode abrir com o Windows.",
-      "old": "Atualize o Shelf para Windows para mudar isto aqui. Até lá, fica no menu do ícone do Shelf na bandeja.",
+      "label": "Abrir o Save State para Windows na bandeja quando o Windows iniciar",
+      "body": "Assim um jogo aberto pela Steam é contado sem precisar abrir o Save State antes. <link>Como as horas são contadas</link>",
+      "unavailable": "Só o Save State para Windows instalado pode abrir com o Windows.",
+      "old": "Atualize o Save State para Windows para mudar isto aqui. Até lá, fica no menu do ícone do Save State na bandeja.",
       "failed": "O Windows não aceitou a mudança. Tente de novo."
     },
     "services": {
       "title": "Serviços",
-      "intro": "Um serviço baixa para você a partir dos links de uma fonte. Cada um é conectado só neste computador, e o Shelf só fica sabendo quem entrou."
+      "intro": "Um serviço baixa para você a partir dos links de uma fonte. Cada um é conectado só neste computador, e o Save State só fica sabendo quem entrou."
     }
   },
   "Saves": {
@@ -233,7 +233,7 @@
     "close": "Fechar",
     "loading": "Procurando os saves deste jogo",
     "switch": "Fazer backup dos saves deste jogo",
-    "intro": "O Shelf para Windows faz backup deles neste computador, guarda o histórico e põe qualquer backup de volta quando você pedir. Nada é enviado ao Shelf.",
+    "intro": "O Save State para Windows faz backup deles neste computador, guarda o histórico e põe qualquer backup de volta quando você pedir. Nada é enviado ao Save State.",
     "cloud": "{stores} guardam os saves deste jogo para cópias compradas lá. Se você joga uma dessas, a loja já cuida deles.",
     "stores": {
       "steam": "Steam",
@@ -260,7 +260,7 @@
     "gameFolder": "A pasta do jogo",
     "changeGameFolder": "Trocar",
     "gameFolderTitle": "Escolha a pasta de {title}",
-    "registry": "Este jogo também guarda saves no registro do Windows, que o Shelf ainda não copia.",
+    "registry": "Este jogo também guarda saves no registro do Windows, que o Save State ainda não copia.",
     "credit": "Onde os jogos salvam vem do <wiki>PCGamingWiki</wiki>, pelo <manifest>manifesto do Ludusavi</manifest>.",
     "history": "Histórico",
     "backUp": "Fazer backup agora",
@@ -289,9 +289,9 @@
     "backedUp": "Backup feito.",
     "unchanged": "Nada mudou desde o último backup.",
     "restored": "Os saves de {when} voltaram.",
-    "old": "Atualize o Shelf para Windows para guardar os saves deste jogo.",
+    "old": "Atualize o Save State para Windows para guardar os saves deste jogo.",
     "refusal": {
-      "running": "Feche {title} antes: o Shelf nunca mexe nos saves enquanto ele roda.",
+      "running": "Feche {title} antes: o Save State nunca mexe nos saves enquanto ele roda.",
       "busy": "Um backup ou uma restauração deste jogo está em andamento.",
       "empty": "Nenhum save foi encontrado para o backup. Adicione a pasta em que este jogo salva.",
       "large": "Estes saves passam do tamanho que um backup pode ter. Aumente o limite em Configurações, ou deixe uma pasta de fora.",
@@ -324,15 +324,15 @@
       "playTitle": "Escolha com quais saves jogar",
       "keepAndPlay": "Manter e jogar",
       "later": "Decidir depois",
-      "laterBody": "Jogar com o que está neste computador agora. Nada é mantido nem substituído, e o Shelf pergunta de novo na próxima vez."
+      "laterBody": "Jogar com o que está neste computador agora. Nada é mantido nem substituído, e o Save State pergunta de novo na próxima vez."
     },
     "beforePlay": {
       "unreachable": "O lugar dos seus saves não pode ser acessado, então {title} abriu com os saves deste computador.",
       "damaged": "O backup mais recente dos saves de {title} está danificado, então o jogo abriu com os saves deste computador.",
       "large": "Os saves de {title} passam do tamanho que um backup pode ter, então não foram conferidos antes de ele abrir.",
-      "failed": "O Shelf não conseguiu conferir os saves de {title}, então ele abriu com os saves deste computador.",
+      "failed": "O Save State não conseguiu conferir os saves de {title}, então ele abriu com os saves deste computador.",
       "busy": "Os saves de {title} ainda estão em backup ou sendo restaurados. Aperte Jogar de novo daqui a pouco.",
-      "signedOut": "O Shelf saiu da conta onde ficam seus saves, então {title} abriu com os saves deste computador. Entre de novo nas Configurações, em Saves.",
+      "signedOut": "O Save State saiu da conta onde ficam seus saves, então {title} abriu com os saves deste computador. Entre de novo nas Configurações, em Saves.",
       "full": "O lugar dos seus saves está cheio, então {title} abriu com os saves deste computador."
     },
     "row": "<time>{when}</time><muted> · {computer}</muted>",
@@ -369,7 +369,7 @@
       "changedFirst": "Ainda sem backup.",
       "unreachable": "O {place} não pode ser alcançado agora, então os backups novos esperam neste computador.",
       "unreachableFolder": "A sua pasta não pode ser alcançada agora, então os backups novos esperam neste computador.",
-      "signedOut": "O Shelf saiu da conta do {place}, então os backups novos esperam neste computador.",
+      "signedOut": "O Save State saiu da conta do {place}, então os backups novos esperam neste computador.",
       "full": "O {place} está cheio, então os backups novos esperam neste computador.",
       "setup": "Nenhum save encontrado para este jogo ainda. Adicione a pasta onde ele salva, em Onde estão.",
       "signIn": "Entrar de novo nas Configurações",
@@ -380,7 +380,7 @@
   },
   "SaveSettings": {
     "title": "Backups",
-    "intro": "Ligado na página de um jogo, o Shelf para Windows guarda backups dos saves dele neste computador. Estes limites valem para todos os jogos.",
+    "intro": "Ligado na página de um jogo, o Save State para Windows guarda backups dos saves dele neste computador. Estes limites valem para todos os jogos.",
     "kept": "Backups guardados por jogo",
     "keptHint": "Os mais antigos saem primeiro. Nunca menos que {fewest}.",
     "most": "Maior backup",
@@ -392,13 +392,13 @@
     "larger": "Maior",
     "saved": "Salvo.",
     "failed": "Não foi possível salvar o limite. Tente de novo.",
-    "old": "Atualize o Shelf para Windows para guardar os saves dos jogos.",
+    "old": "Atualize o Save State para Windows para guardar os saves dos jogos.",
     "place": {
       "title": "Para onde vão",
-      "intro": "Os backups ficam na pasta do app neste computador até você escolher uma pasta sua: uma que o OneDrive, o Google Drive para computador ou o Dropbox sincronizam, um drive de rede ou um pen drive. Escolha a mesma em cada um dos seus computadores e cada um vê os backups dos outros lá. O Shelf nunca os recebe.",
+      "intro": "Os backups ficam na pasta do app neste computador até você escolher uma pasta sua: uma que o OneDrive, o Google Drive para computador ou o Dropbox sincronizam, um drive de rede ou um pen drive. Escolha a mesma em cada um dos seus computadores e cada um vê os backups dos outros lá. O Save State nunca os recebe.",
       "here": "Só este computador",
       "hereHint": "Na pasta do próprio app.",
-      "thereHint": "O Shelf mantém uma pasta própria aqui, Shelf saves, e só acrescenta arquivos a ela.",
+      "thereHint": "O Save State mantém uma pasta própria aqui, Shelf saves, e só acrescenta arquivos a ela.",
       "away": "Não pode ser alcançada agora. Os backups novos esperam neste computador e vão para lá assim que der.",
       "choose": "Escolher uma pasta",
       "change": "Escolher outra",
@@ -408,13 +408,13 @@
       "forgotten": "Os backups ficam neste computador agora. O que está na pasta continua lá.",
       "refused": "Escolha uma pasta sua, não uma do Windows ou de um programa.",
       "failed": "Não foi possível usar essa pasta. Tente de novo, ou escolha outra.",
-      "old": "Atualize o Shelf para Windows para guardar os saves dos jogos.",
-      "introServices": "Os backups ficam na pasta do app neste computador até você escolher outro lugar: uma pasta sua (que um app de nuvem sincroniza, um drive de rede ou um pen drive), ou seu OneDrive ou Google Drive, com login feito daqui. Escolha o mesmo em cada um dos seus computadores e cada um vê os backups dos outros. Os servidores do Shelf nunca os recebem, nem o seu login.",
+      "old": "Atualize o Save State para Windows para guardar os saves dos jogos.",
+      "introServices": "Os backups ficam na pasta do app neste computador até você escolher outro lugar: uma pasta sua (que um app de nuvem sincroniza, um drive de rede ou um pen drive), ou seu OneDrive ou Google Drive, com login feito daqui. Escolha o mesmo em cada um dos seus computadores e cada um vê os backups dos outros. Os servidores do Save State nunca os recebem, nem o seu login.",
       "current": "Em uso",
       "folder": "Uma pasta sua",
       "folderHint": "Uma que o OneDrive, o Google Drive para computador ou o Dropbox sincronizam, um drive de rede ou um pen drive.",
-      "onedriveHint": "Entre pela página da Microsoft, no seu navegador. O Shelf só alcança a pasta dele lá, Aplicativos › Shelf.",
-      "googleHint": "Entre pela página do Google, no seu navegador. O Shelf só alcança o que ele mesmo criou lá.",
+      "onedriveHint": "Entre pela página da Microsoft, no seu navegador. O Save State só alcança a pasta dele lá, Aplicativos › Shelf.",
+      "googleHint": "Entre pela página do Google, no seu navegador. O Save State só alcança o que ele mesmo criou lá.",
       "onedriveWhere": "Em Aplicativos › Shelf, no seu OneDrive.",
       "googleWhere": "Em Shelf saves, no seu Google Drive.",
       "signedOut": "Fora da conta. Os backups novos esperam neste computador até você entrar de novo.",
@@ -429,17 +429,17 @@
       "signedOutDone": "Você saiu do {service} neste computador. Os outros continuam conectados, e o que está lá continua lá.",
       "signInRefused": "O {service} não fez o seu login. Tente de novo.",
       "signInUnreachable": "Não foi possível acessar o {service}. Confira a conexão e tente de novo.",
-      "waitingOnedrive": "Entre pela página da Microsoft, aberta no seu navegador. O Shelf está esperando.",
-      "waitingGoogle": "Entre pela página do Google, aberta no seu navegador. O Shelf está esperando."
+      "waitingOnedrive": "Entre pela página da Microsoft, aberta no seu navegador. O Save State está esperando.",
+      "waitingGoogle": "Entre pela página do Google, aberta no seu navegador. O Save State está esperando."
     }
   },
   "AppUpdate": {
     "button": "Atualizar",
-    "title": "O Shelf {version} está pronto",
-    "body": "O Shelf fecha e abre de novo, atualizado, em alguns segundos. As horas que ele está contando ficam guardadas.",
+    "title": "O Save State {version} está pronto",
+    "body": "O Save State fecha e abre de novo, atualizado, em alguns segundos. As horas que ele está contando ficam guardadas.",
     "downloads": "Os downloads em andamento pausam: retome-os em Downloads.",
-    "busy": "O Shelf está fazendo backup dos saves de um jogo. Tente de novo em instantes.",
-    "failed": "Não deu para atualizar agora. O Shelf atualiza na próxima vez que abrir.",
+    "busy": "O Save State está fazendo backup dos saves de um jogo. Tente de novo em instantes.",
+    "failed": "Não deu para atualizar agora. O Save State atualiza na próxima vez que abrir.",
     "later": "Depois",
     "restart": "Reiniciar e atualizar",
     "restarting": "Reiniciando…"
@@ -447,8 +447,8 @@
   "PlaceTrouble": {
     "signed-out": {
       "button": "{name} desconectado",
-      "title": "O Shelf saiu do {name}",
-      "body": "O {name} deixou de aceitar o login do Shelf. Os saves ficam só neste computador até você entrar de novo, e enquanto isso seus outros computadores não veem o que você jogar aqui."
+      "title": "O Save State saiu do {name}",
+      "body": "O {name} deixou de aceitar o login do Save State. Os saves ficam só neste computador até você entrar de novo, e enquanto isso seus outros computadores não veem o que você jogar aqui."
     },
     "full": {
       "button": "{name} cheio",

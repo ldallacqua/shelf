@@ -408,7 +408,7 @@ describe('changing an entry', () => {
     ])
   })
 
-  it('names my computers, numbering the rest in the order Shelf heard of them', async () => {
+  it('names my computers, numbering the rest in the order Save State heard of them', async () => {
     await recordPlaySessions(db, me, [{ ...session('a', 60), deviceId: 'desktop' }], 1)
     await nameDevice(db, me, 'notebook', 'Notebook', 2)
     await recordPlaySessions(db, me, [{ ...session('b', 60), deviceId: 'notebook' }], 3)
@@ -1126,7 +1126,7 @@ describe('the day a game was finished (spec 7.3)', () => {
     expect((await readOwnerGame(db, me, entry))?.lastPlayedOn).toBe('2025-06-01')
   })
 
-  it('is the day Shelf for Windows last counted it, for a game no platform lists', async () => {
+  it('is the day Save State for Windows last counted it, for a game no platform lists', async () => {
     await played('steam', pc, Date.parse('2024-03-10T20:00:00Z'))
     await recordPlaySessions(db, me, [
       {

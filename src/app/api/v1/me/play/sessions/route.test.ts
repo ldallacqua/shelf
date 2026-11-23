@@ -11,7 +11,7 @@ import { createTestDatabase, sampleLibraryId } from '@/test/database'
 import { POST } from './route'
 
 /**
- * What Shelf for Windows counted, the whole way (ADR 005, section 12): the app holds a session, the
+ * What Save State for Windows counted, the whole way (ADR 005, section 12): the app holds a session, the
  * page sends it, and the server keeps it. Every part is the real one but the app, which stands in
  * as the page sees it, and the network, which hands the request to the route.
  */
@@ -49,7 +49,7 @@ type Held = {
 
 let db: Db
 let entryId: string
-/** What the app holds: what it counted, until Shelf says it has it. */
+/** What the app holds: what it counted, until Save State says it has it. */
 let held: Held[]
 /** Answers the network is to lose on their way back, and those it lost. */
 let losing: number
@@ -112,8 +112,8 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('a session on its way from the app to Shelf', () => {
-  it('counts once when Shelf kept it but its answer was lost, and is sent again', async () => {
+describe('a session on its way from the app to Save State', () => {
+  it('counts once when Save State kept it but its answer was lost, and is sent again', async () => {
     const before = await secondsOf(entryId)
     held = [
       {
@@ -129,7 +129,7 @@ describe('a session on its way from the app to Shelf', () => {
     stop = startSendingPlayed()
     await vi.waitFor(() => expect(lost).toBe(1))
     await new Promise((done) => setTimeout(done))
-    // Shelf has it, but the page never heard: the app holds on to it, and offers it again.
+    // Save State has it, but the page never heard: the app holds on to it, and offers it again.
     expect(held).toHaveLength(1)
     expect(await secondsOf(entryId)).toBe(before + 600)
 

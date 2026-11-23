@@ -42,7 +42,9 @@ export const ShelfForWindowsOnly: Story = {
   args: {
     total: 47,
     lastPlayed: 'Nov 7, 2026',
-    platforms: [{ name: 'PC', minutes: 47, sources: [{ name: 'Shelf for Windows', minutes: 47 }] }],
+    platforms: [
+      { name: 'PC', minutes: 47, sources: [{ name: 'Save State for Windows', minutes: 47 }] },
+    ],
   },
 }
 
@@ -67,7 +69,7 @@ export const SteamAndShelfOverlapping: Story = {
         minutes: 8400,
         sources: [
           { name: 'Steam', minutes: 8400 },
-          { name: 'Shelf for Windows', minutes: 6, sameAs: 'Steam' },
+          { name: 'Save State for Windows', minutes: 6, sameAs: 'Steam' },
         ],
       },
     ],
@@ -86,7 +88,7 @@ export const PcAndAConsole: Story = {
         minutes: 8400,
         sources: [
           { name: 'Steam', minutes: 8400 },
-          { name: 'Shelf for Windows', minutes: 6, sameAs: 'Steam' },
+          { name: 'Save State for Windows', minutes: 6, sameAs: 'Steam' },
         ],
       },
       { name: 'Nintendo Switch', minutes: 365, sources: [{ name: 'Nintendo', minutes: 365 }] },
@@ -107,7 +109,7 @@ export const ThreePlatforms: Story = {
         minutes: 2100,
         sources: [
           { name: 'Xbox', minutes: 2100 },
-          { name: 'Shelf for Windows', minutes: 1290, sameAs: 'Xbox' },
+          { name: 'Save State for Windows', minutes: 1290, sameAs: 'Xbox' },
         ],
       },
       { name: 'PlayStation 5', minutes: 1080, sources: [{ name: 'PlayStation', minutes: 1080 }] },
@@ -129,7 +131,7 @@ export const IdleTimeSet: Story = {
         minutes: 8280,
         sources: [
           { name: 'Steam', minutes: 8400 },
-          { name: 'Shelf for Windows', minutes: 6, sameAs: 'Steam' },
+          { name: 'Save State for Windows', minutes: 6, sameAs: 'Steam' },
         ],
       },
       { name: 'Nintendo Switch', minutes: 365, sources: [{ name: 'Nintendo', minutes: 365 }] },
@@ -150,7 +152,7 @@ export const SourceBehind: Story = {
         minutes: 8400,
         sources: [
           { name: 'Steam', minutes: 8400, behind: true },
-          { name: 'Shelf for Windows', minutes: 6, sameAs: 'Steam' },
+          { name: 'Save State for Windows', minutes: 6, sameAs: 'Steam' },
         ],
       },
     ],
@@ -163,7 +165,7 @@ export const LessThanAMinute: Story = {
     total: 0.5,
     lastPlayed: 'Nov 7, 2026',
     platforms: [
-      { name: 'PC', minutes: 0.5, sources: [{ name: 'Shelf for Windows', minutes: 0.5 }] },
+      { name: 'PC', minutes: 0.5, sources: [{ name: 'Save State for Windows', minutes: 0.5 }] },
     ],
   },
 }

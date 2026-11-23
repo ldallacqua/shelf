@@ -8,7 +8,7 @@ const URL_0_18 =
 /** `latest.json` as `pnpm desktop:release` writes it. */
 const latest = (url: unknown) => ({
   version: '0.18.0',
-  notes: 'Shelf 0.18.0',
+  notes: 'Save State 0.18.0',
   pub_date: '2026-11-10T19:42:35Z',
   platforms: { 'windows-x86_64': { signature: 'c2lnbmF0dXJl', url } },
 })

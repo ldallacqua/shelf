@@ -26,17 +26,17 @@ describe('the side list', () => {
     expect(within(nav).getByText('This device')).toBeInTheDocument()
   })
 
-  it('in a browser, lists nothing of Shelf for Windows, and holds no place for it', () => {
+  it('in a browser, lists nothing of Save State for Windows, and holds no place for it', () => {
     setBridgeForTests(null)
     const { container } = renderWithIntl(<SettingsNav current="profile" />)
-    expect(screen.queryByText('Shelf for Windows')).not.toBeInTheDocument()
+    expect(screen.queryByText('Save State for Windows')).not.toBeInTheDocument()
     expect(container.querySelector('.ghost')).toBeNull()
   })
 
   it('in the app, lists its pages with its own words', async () => {
     setBridgeForTests(vi.fn())
     renderWithIntl(<SettingsNav current="download-services" />, 'pt-BR')
-    expect(await screen.findByText('Shelf para Windows')).toBeInTheDocument()
+    expect(await screen.findByText('Save State para Windows')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Serviços de download' })).toHaveAttribute(
       'aria-current',
       'page',

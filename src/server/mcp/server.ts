@@ -58,15 +58,15 @@ import { getShelves } from '@/server/services/shelves'
  * that account's own library, private or not (ADR 004).
  */
 
-const INFO = { name: 'shelf', title: 'Shelf', version: '1' }
+const INFO = { name: 'shelf', title: 'Save State', version: '1' }
 
 const LANGUAGE = `The filter language: words search titles; key:value pairs filter, such as status:backlog, genre:rpg, owned:ps5, format:physical, year:2015..2020, rating:>=9; a minus sign excludes (-theme:horror); OR and brackets combine: (owned:ps5 format:physical) OR rating:>=9. Ratings are the library's owner's, out of ten.`
 
-const PUBLIC_READS = `Shelf holds people's video game libraries, each a shelf of its own with a handle, as in shelf's address /u/{handle}: what they own, on which platforms, what they are playing, have finished, dropped or want. Every tool takes the shelf's handle; only public shelves answer. Read one with search_library, which takes the filter language the site uses, get_game for one game in full, list_filter_values for what each filter can take, and list_shelves for its saved smart shelves.
+const PUBLIC_READS = `Save State holds people's video game libraries, each a shelf of its own with a handle, as in the shelf's address /u/{handle}: what they own, on which platforms, what they are playing, have finished, dropped or want. Every tool takes the shelf's handle; only public shelves answer. Read one with search_library, which takes the filter language the site uses, get_game for one game in full, list_filter_values for what each filter can take, and list_shelves for its saved smart shelves.
 
 ${LANGUAGE}`
 
-const OWN_READS = `Shelf is a video game library, and this is yours: what you own, on which platforms, what you are playing, have finished, dropped or want. Read it with search_library, which takes the filter language the site uses, get_game for one game in full, list_filter_values for what each filter can take, and list_shelves for your saved smart shelves.
+const OWN_READS = `Save State is a video game library, and this is yours: what you own, on which platforms, what you are playing, have finished, dropped or want. Read it with search_library, which takes the filter language the site uses, get_game for one game in full, list_filter_values for what each filter can take, and list_shelves for your saved smart shelves.
 
 ${LANGUAGE}`
 

@@ -10,7 +10,7 @@ test.describe('switching language', () => {
     await expect(page).toHaveURL(/\/pt-BR\/u\/sample$/)
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR')
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Estante de Sample')
-    await expect(page).toHaveTitle('Estante de Sample · Shelf')
+    await expect(page).toHaveTitle('Estante de Sample · Save State')
 
     await page.getByRole('link', { name: 'EN: English' }).click()
     await expect(page).toHaveURL(/\/en\/u\/sample$/)

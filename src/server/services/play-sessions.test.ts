@@ -17,7 +17,7 @@ import { createTestDatabase, sampleLibraryId } from '@/test/database'
 import { appsPlayed, placeAndKeep } from './play-sessions'
 
 /**
- * What Shelf for Windows counted (ADR 005, section 12): the app knows a Steam game only by its
+ * What Save State for Windows counted (ADR 005, section 12): the app knows a Steam game only by its
  * app, and sends again whatever it never heard back about.
  */
 
@@ -50,7 +50,7 @@ beforeEach(async () => {
     .where(eq(games.slug, SLUG))
 })
 
-describe('what Shelf for Windows counted', () => {
+describe('what Save State for Windows counted', () => {
   it('finds a Steam app’s game, and adds to it', async () => {
     const before = (await tracked()) ?? 0
     expect(await placeAndKeep(db, sample, [sent('a', { steam: APP })])).toEqual(['a'])

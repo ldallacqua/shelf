@@ -5,7 +5,7 @@ import { callApi } from '@/features/owner/call-api'
 import { PLAYED_EVENT, startSendingPlayed } from './send-played'
 import { setBridgeForTests } from './tauri'
 
-/** What Shelf for Windows counted, on its way to Shelf (ADR 005, section 12). */
+/** What Save State for Windows counted, on its way to Save State (ADR 005, section 12). */
 
 vi.mock('@/features/owner/call-api', () => ({ callApi: vi.fn() }))
 
@@ -42,7 +42,7 @@ afterEach(() => {
 })
 
 describe('sending what the app counted', () => {
-  it('sends what has ended, and has the app let go of only what Shelf kept', async () => {
+  it('sends what has ended, and has the app let go of only what Save State kept', async () => {
     vi.mocked(callApi).mockResolvedValue({ ok: true, value: { kept: [SESSION.id], version: 3 } })
     stop = startSendingPlayed()
     await vi.waitFor(() => expect(kept).toEqual([[SESSION.id]]))
@@ -51,7 +51,7 @@ describe('sending what the app counted', () => {
     })
   })
 
-  it('holds on to everything when Shelf refuses, for the next try', async () => {
+  it('holds on to everything when Save State refuses, for the next try', async () => {
     vi.mocked(callApi).mockResolvedValue({ ok: false, reason: 'not-signed-in' })
     stop = startSendingPlayed()
     await vi.waitFor(() => expect(callApi).toHaveBeenCalled())
@@ -59,7 +59,7 @@ describe('sending what the app counted', () => {
     expect(kept).toEqual([])
   })
 
-  it('asks Shelf nothing with nothing to send', async () => {
+  it('asks Save State nothing with nothing to send', async () => {
     sessions = []
     stop = startSendingPlayed()
     await vi.waitFor(() => expect(app).toHaveBeenCalled())

@@ -60,7 +60,10 @@ describe('Header', () => {
     renderWithIntl(<Header />)
     const header = screen.getByRole('banner')
 
-    expect(within(header).getByRole('link', { name: 'Shelf, home' })).toHaveAttribute('href', '/en')
+    expect(within(header).getByRole('link', { name: 'Save State, home' })).toHaveAttribute(
+      'href',
+      '/en',
+    )
     const nav = within(header).getByRole('navigation', { name: 'Main' })
     expect(within(nav).getByRole('link', { name: 'Library' })).toHaveAttribute(
       'href',
@@ -173,7 +176,7 @@ describe('Header', () => {
     onShelf('/u/[handle]', '/pt-BR/u/sample', 'sample', 'pt-BR')
     renderWithIntl(<Header />, 'pt-BR')
 
-    expect(screen.getByRole('link', { name: 'Shelf, início' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Save State, início' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Biblioteca' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Troféus' })).toBeInTheDocument()

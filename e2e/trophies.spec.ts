@@ -68,7 +68,7 @@ test.describe('the trophy wall', () => {
 
   test('is offered to search engines, named for its shelf', async ({ page, request }) => {
     await page.goto(`/en${SHELF}/trophies`)
-    await expect(page).toHaveTitle("Sample's trophies · Shelf")
+    await expect(page).toHaveTitle("Sample's trophies · Save State")
     await expect(page.locator('meta[name="robots"]')).toHaveCount(0)
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       'content',

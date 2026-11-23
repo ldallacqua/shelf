@@ -72,7 +72,7 @@ const OWNER = [{ session: [] }]
 
 /** How a write is turned down. */
 const REFUSALS = {
-  400: { description: 'The body is not one Shelf can carry out', ...json('Error') },
+  400: { description: 'The body is not one Save State can carry out', ...json('Error') },
   401: { description: 'No session: sign in first', ...json('Error') },
   404: { description: 'No such game in your library', ...json('Error') },
   409: { description: 'That is there already', ...json('Error') },
@@ -175,7 +175,7 @@ export const openApiDocument = () => {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Shelf',
+      title: 'Save State',
       version: '1',
       description:
         'Game libraries, one an account, each a shelf with a handle: /u/{handle}. Reading a public shelf takes nothing; a private one answers 404. Writes are to your own library: they take the session cookie that signing in on the site sets, and answer 401 without it.',
@@ -439,7 +439,7 @@ export const openApiDocument = () => {
       '/me/play/sessions': {
         post: {
           summary:
-            'Keeps what Shelf for Windows counted of the games it saw played. A session sent again is the same session. Signed in.',
+            'Keeps what Save State for Windows counted of the games it saw played. A session sent again is the same session. Signed in.',
           security: OWNER,
           requestBody: { required: true, ...json('PlaySessions') },
           responses: {
@@ -451,7 +451,7 @@ export const openApiDocument = () => {
       '/me/devices': {
         get: {
           summary:
-            'The signed-in account’s computers with Shelf for Windows, by the app’s own random ids, and the names the account gave them. Signed in.',
+            'The signed-in account’s computers with Save State for Windows, by the app’s own random ids, and the names the account gave them. Signed in.',
           security: OWNER,
           responses: {
             200: { description: 'Computers', ...json('Devices') },
@@ -469,7 +469,7 @@ export const openApiDocument = () => {
               name: 'id',
               in: 'path',
               required: true,
-              description: 'Shelf for Windows’ own id for the computer',
+              description: 'Save State for Windows’ own id for the computer',
               schema: { type: 'string', format: 'uuid' },
             },
           ],
@@ -483,7 +483,7 @@ export const openApiDocument = () => {
       '/me/play': {
         get: {
           summary:
-            'Each of the signed-in account’s games, by its address, with its entry and its apps on Steam: what Ready to play in Shelf for Windows reads. Signed in.',
+            'Each of the signed-in account’s games, by its address, with its entry and its apps on Steam: what Ready to play in Save State for Windows reads. Signed in.',
           security: OWNER,
           responses: {
             200: { description: 'Games, to play', ...json('Playable') },

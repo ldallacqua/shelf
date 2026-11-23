@@ -1,11 +1,11 @@
 {
   "Meta": {
-    "siteName": "Shelf",
+    "siteName": "Save State",
     "description": "Uma biblioteca pessoal de jogos, guardada em uma estante iluminada para percorrer."
   },
   "Shell": {
     "skipToContent": "Pular para o conteúdo",
-    "home": "Shelf, início",
+    "home": "Save State, início",
     "mainNav": "Principal",
     "library": "Biblioteca",
     "trophies": "Troféus",
@@ -35,7 +35,7 @@
     "metaTitle": "Fundamentos",
     "eyebrow": "Referência de design",
     "title": "Fundamentos",
-    "lead": "Do que o Shelf é feito: luz, cor, tipografia e movimento, mostrados em caixas em branco.",
+    "lead": "Do que o Save State é feito: luz, cor, tipografia e movimento, mostrados em caixas em branco.",
     "hero": {
       "description": "Uma prateleira iluminada por trás com caixas de jogos em branco, de frente",
       "shelfLabel": "Caixas em branco",
@@ -154,7 +154,7 @@
     }
   },
   "Landing": {
-    "metaTitle": "Shelf: todos os seus jogos, em uma estante",
+    "metaTitle": "Save State: todos os seus jogos, em uma estante",
     "metaDescription": "Coloque todos os jogos que você tem em uma estante iluminada, físicos e digitais, de todos os consoles. Encontre o próximo para jogar com uma linha de texto. De graça.",
     "shareAlt": "“Todos os seus jogos, em uma estante.” ao lado de três prateleiras iluminadas de caixas de jogos.",
     "create": "Crie sua estante",
@@ -326,9 +326,9 @@
       "rooms": "A estante de exemplo em {name}, com as luzes apagadas e acesas"
     },
     "desktop": {
-      "eyebrow": "Shelf para Windows",
+      "eyebrow": "Save State para Windows",
       "title": "Aperte Jogar na sua estante.",
-      "body": "O Shelf para Windows coloca sua estante numa janela própria no seu PC, e abre seus jogos a partir dela.",
+      "body": "O Save State para Windows coloca sua estante numa janela própria no seu PC, e abre seus jogos a partir dela.",
       "points": {
         "play": "Jogue qualquer jogo pelo arquivo dele, ou pela Steam",
         "hours": "Horas contadas enquanto você joga, somadas em todos os PCs",
@@ -337,7 +337,7 @@
         "updates": "Atualiza sozinho enquanto está aberto"
       },
       "notes": "Notas da versão",
-      "window": "Shelf para Windows, com {title} pronto para jogar: {hours, plural, =0 {# horas jogadas} one {# hora jogada} other {# horas jogadas}} na Steam, os saves com backup no OneDrive",
+      "window": "Save State para Windows, com {title} pronto para jogar: {hours, plural, =0 {# horas jogadas} one {# hora jogada} other {# horas jogadas}} na Steam, os saves com backup no OneDrive",
       "nav": {
         "library": "Biblioteca",
         "trophies": "Troféus"
@@ -352,7 +352,7 @@
     "start": {
       "eyebrow": "Primeiros passos",
       "title": "Pronta em um minuto.",
-      "body": "Crie sua conta, e o Shelf guia você pelo resto. Qualquer passo pode esperar.",
+      "body": "Crie sua conta, e o Save State guia você pelo resto. Qualquer passo pode esperar.",
       "steps": {
         "create": {
           "title": "Crie sua estante",
@@ -416,19 +416,19 @@
       },
       "media": {
         "q": "Os vídeos dos jogos tocam sozinhos?",
-        "a": "Os vídeos esperam você apertar Play. No computador, você pode ligar a reprodução automática sem som; o Shelf lembra a escolha nesse dispositivo. No celular, com movimento reduzido ou economia de dados, os vídeos ficam parados até um toque. Os trailers tocam pelo YouTube."
+        "a": "Os vídeos esperam você apertar Play. No computador, você pode ligar a reprodução automática sem som; o Save State lembra a escolha nesse dispositivo. No celular, com movimento reduzido ou economia de dados, os vídeos ficam parados até um toque. Os trailers tocam pelo YouTube."
       },
       "sync": {
         "q": "Dá para trazer os jogos que eu já tenho?",
         "a": "Da Steam e da Nintendo, sim: conecte as duas logo depois de criar sua estante, ou mais tarde, em Configurações. Cada jogo que você tem na Steam chega à sua estante com as horas e as conquistas; da Nintendo, cada jogo que você jogou num Switch ou num Switch 2, assim que você disser se cada um é um cartucho ou um download. As duas sincronizam de novo uma vez por dia. Os jogos novos chegam a definir, e uma página deixa você dar a nota e um status a cada um, e corrigir um jogo reconhecido errado. PlayStation e Xbox vêm a seguir. Até lá, cole uma lista de títulos, um por linha."
       },
       "duel": {
-        "q": "O Shelf me ajuda a escolher o que jogar agora?",
+        "q": "O Save State me ajuda a escolher o que jogar agora?",
         "a": "Sim: o duelo. Coloque até dezesseis jogos da sua fila numa chave, ou sorteie, e escolha entre dois de cada vez. Cada duelo põe os dois lado a lado: quanto tempo cada um leva para zerar, a nota no IGDB, há quanto tempo espera e até onde você chegou. O que sobrar pode ir direto para Jogando."
       },
       "hours": {
-        "q": "Como o Shelf conta minhas horas?",
-        "a": "Não dá para digitar: elas vêm de onde você jogou. A Steam e a Nintendo informam as delas, e o PlayStation e o Xbox vão informar assim que puderem ser vinculados. No PC, o Shelf para Windows conta um jogo enquanto ele está na sua frente e você está usando, tenha aberto pelo Shelf ou pela Steam. As horas de todos os computadores com o Shelf para Windows se somam. Depois de 5 minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, ou AFK. Quando a Steam e o Shelf contam a mesma jogatina, aparece o maior dos dois, nunca os dois somados."
+        "q": "Como o Save State conta minhas horas?",
+        "a": "Não dá para digitar: elas vêm de onde você jogou. A Steam e a Nintendo informam as delas, e o PlayStation e o Xbox vão informar assim que puderem ser vinculados. No PC, o Save State para Windows conta um jogo enquanto ele está na sua frente e você está usando, tenha aberto pelo Save State ou pela Steam. As horas de todos os computadores com o Save State para Windows se somam. Depois de 5 minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, ou AFK. Quando a Steam e o Save State contam a mesma jogatina, aparece o maior dos dois, nunca os dois somados."
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
@@ -436,19 +436,19 @@
       },
       "desktop": {
         "q": "Tem um app para o meu computador?",
-        "a": "Tem: o Shelf para Windows, de graça, para Windows 10 e 11. Ele abre sua estante numa janela própria, abre seus jogos a partir dela, pelo arquivo ou pela Steam, conta suas horas enquanto você joga e faz backup dos seus saves. Ele se atualiza sozinho. Por enquanto, é só para Windows."
+        "a": "Tem: o Save State para Windows, de graça, para Windows 10 e 11. Ele abre sua estante numa janela própria, abre seus jogos a partir dela, pelo arquivo ou pela Steam, conta suas horas enquanto você joga e faz backup dos seus saves. Ele se atualiza sozinho. Por enquanto, é só para Windows."
       },
       "windows": {
         "q": "Por que o Windows avisa sobre o instalador?",
-        "a": "O instalador não é assinado com um certificado pago, então o Windows SmartScreen pode dizer que não o reconhece. Escolha Mais informações, depois Executar assim mesmo; ele pergunta só uma vez. Cada instalador é publicado na página de versões do repositório público do Shelf no GitHub, e cada atualização depois dele é assinada e conferida pelo app antes de instalar."
+        "a": "O instalador não é assinado com um certificado pago, então o Windows SmartScreen pode dizer que não o reconhece. Escolha Mais informações, depois Executar assim mesmo; ele pergunta só uma vez. Cada instalador é publicado na página de versões do repositório público do Save State no GitHub, e cada atualização depois dele é assinada e conferida pelo app antes de instalar."
       },
       "look": {
-        "q": "Dá para mudar a aparência do Shelf?",
+        "q": "Dá para mudar a aparência do Save State?",
         "a": "Dá: luzes acesas ou apagadas, onze paletas ou três cores suas, e preto puro para telas OLED. Você também pode deixar o cômodo ganhar as cores do jogo que está vendo. Cada escolha é deste dispositivo, em Configurações, Aparência."
       },
       "export": {
         "q": "Posso levar meus jogos comigo?",
-        "a": "Sua biblioteca inteira pode ser lida pela API do Shelf enquanto você está conectado. Uma exportação com um clique está nos planos."
+        "a": "Sua biblioteca inteira pode ser lida pela API do Save State enquanto você está conectado. Uma exportação com um clique está nos planos."
       }
     }
   },
@@ -783,8 +783,8 @@
       "igdbWho": "Crítica e jogadores",
       "steam": "Steam",
       "steamWho": "Jogadores na Steam",
-      "shelf": "Shelf",
-      "shelfWho": "Quem usa o Shelf",
+      "shelf": "Save State",
+      "shelfWho": "Quem usa o Save State",
       "ofHundred": "de 100",
       "ofTen": "de 10",
       "positive": "positivas",
@@ -850,11 +850,11 @@
   "PlayTime": {
     "heading": "Tempo de jogo",
     "empty": "Nenhum tempo de jogo ainda",
-    "emptyHint": "Contado pelo Shelf para Windows e pelas suas <link>plataformas vinculadas</link>.",
+    "emptyHint": "Contado pelo Save State para Windows e pelas suas <link>plataformas vinculadas</link>.",
     "lastPlayed": "Jogado pela última vez em {date}",
     "breakdown": "Tempo de jogo por plataforma",
     "pc": "PC",
-    "tracker": "Shelf para Windows",
+    "tracker": "Save State para Windows",
     "overlap": "Mesma jogatina, não somada",
     "overlapTip": "{source} e {other} viram a mesma jogatina. Vale o maior.",
     "behind": "Pode estar atrasado",
@@ -866,13 +866,13 @@
     "more": "Opções do tempo de jogo",
     "idleMenu": "Tirar tempo parado…",
     "idleField": "Tempo parado",
-    "idleHint": "Sai do que {stores} {count, plural, =0 {informam} one {informa} other {informam}}, nunca do que o Shelf para Windows contou.",
+    "idleHint": "Sai do que {stores} {count, plural, =0 {informam} one {informa} other {informam}}, nunca do que o Save State para Windows contou.",
     "idleSave": "Salvar",
     "idleCancel": "Cancelar",
     "help": "Como o tempo de jogo é contado",
-    "help1": "O Shelf para Windows conta um jogo enquanto ele está na frente e você está usando. Depois de {minutes} minutos sem tocar em nada, para de contar.",
+    "help1": "O Save State para Windows conta um jogo enquanto ele está na frente e você está usando. Depois de {minutes} minutos sem tocar em nada, para de contar.",
     "help2": "A Steam, a Nintendo e as outras informam o total delas, que inclui tempo com o jogo aberto e parado.",
-    "help3": "A mesma jogatina nunca conta duas vezes, e as horas de todos os computadores com o Shelf para Windows se somam.",
+    "help3": "A mesma jogatina nunca conta duas vezes, e as horas de todos os computadores com o Save State para Windows se somam.",
     "helpMore": "Mais no FAQ"
   },
   "Trophies": {
@@ -895,7 +895,7 @@
       "shareLine": "{share} dos jogos começados",
       "hours": "Horas jogadas",
       "hoursOn": "Horas neles",
-      "hoursNote": "O que o Shelf para Windows e suas plataformas contam",
+      "hoursNote": "O que o Save State para Windows e suas plataformas contam",
       "rating": "Nota média",
       "outOfTen": "de 10",
       "median": "Tempo mediano",
@@ -1704,7 +1704,7 @@
       "presets": {
         "violet": {
           "name": "Violeta",
-          "detail": "A do Shelf"
+          "detail": "A do Save State"
         },
         "ocean": {
           "name": "Oceano",
@@ -1751,7 +1751,7 @@
         "name": "Do seu jeito",
         "detail": "Três cores que você escolhe",
         "title": "Suas cores",
-        "body": "Escolha três cores. O Shelf mantém o tom de cada uma e acerta o quanto ela é clara ou escura, para tudo continuar legível com as luzes acesas e apagadas.",
+        "body": "Escolha três cores. O Save State mantém o tom de cada uma e acerta o quanto ela é clara ou escura, para tudo continuar legível com as luzes acesas e apagadas.",
         "accent": {
           "label": "Destaque",
           "hint": "Botões, links e o anel de foco"
@@ -1777,7 +1777,7 @@
     },
     "language": {
       "title": "Idioma",
-      "body": "O idioma em que o Shelf fala. O botão no topo também muda.",
+      "body": "O idioma em que o Save State fala. O botão no topo também muda.",
       "current": "(em uso)"
     },
     "setupAgain": {
@@ -1786,8 +1786,8 @@
       "side": "Configuração inicial"
     },
     "appOnly": {
-      "title": "Parte do Shelf para Windows",
-      "body": "Esta página fica no Shelf para Windows, o app que abre seus jogos e conta as horas deles num PC. Abra as Configurações por lá para vê-la.",
+      "title": "Parte do Save State para Windows",
+      "body": "Esta página fica no Save State para Windows, o app que abre seus jogos e conta as horas deles num PC. Abra as Configurações por lá para vê-la.",
       "back": "Todas as configurações"
     }
   },
@@ -1827,7 +1827,7 @@
     },
     "signInFirst": "Entre para organizar seus jogos.",
     "loading": "Carregando seus jogos…",
-    "failed": "O Shelf não conseguiu ler seus jogos. Tente de novo.",
+    "failed": "O Save State não conseguiu ler seus jogos. Tente de novo.",
     "retry": "Tentar de novo",
     "list": "Jogos a definir",
     "empty": "Nada esperando: todo jogo da sua estante tem um status.",
@@ -1872,7 +1872,7 @@
     "steps": "Passos da configuração",
     "stepOf": "Passo {number} de {total} · {name}",
     "doneName": "{name}, feito",
-    "failed": "O Shelf não conseguiu ler sua estante agora.",
+    "failed": "O Save State não conseguiu ler sua estante agora.",
     "retry": "Tentar de novo",
     "back": "Voltar",
     "next": "Continuar",
@@ -1916,10 +1916,10 @@
     },
     "bring": {
       "title": "Traga seus jogos",
-      "lead": "Conecte uma plataforma e o Shelf traz todos os jogos que você tem lá, com suas horas, e mantém tudo em dia uma vez por dia. O que ele não conseguir reconhecer espera no cartão da plataforma pela sua resposta.",
+      "lead": "Conecte uma plataforma e o Save State traz todos os jogos que você tem lá, com suas horas, e mantém tudo em dia uma vez por dia. O que ele não conseguir reconhecer espera no cartão da plataforma pela sua resposta.",
       "byHand": {
         "title": "Adicione jogos pelo título",
-        "forPlaces": "PlayStation, Xbox e jogos numa estante de verdade entram pelo título: busque um, ou cole uma lista inteira, um jogo por linha, e confira o que o Shelf encontrou.",
+        "forPlaces": "PlayStation, Xbox e jogos numa estante de verdade entram pelo título: busque um, ou cole uma lista inteira, um jogo por linha, e confira o que o Save State encontrou.",
         "body": "Mais algum? Busque um jogo, ou cole uma lista inteira, um jogo por linha.",
         "search": "Buscar um jogo",
         "paste": "Colar uma lista"
@@ -1961,7 +1961,7 @@
       "next": {
         "title": "E agora",
         "desktop": {
-          "title": "Shelf para Windows",
+          "title": "Save State para Windows",
           "body": "Aperte Jogar em qualquer jogo da sua estante, conte suas horas enquanto joga e mantenha seus saves com backup."
         },
         "assistant": {
@@ -2014,13 +2014,13 @@
     "intro": "Traga para a sua estante os jogos que você tem numa plataforma, e mantenha tudo em dia.",
     "later": "PlayStation e Xbox vêm a seguir.",
     "steam": {
-      "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam, e as conquistas na página do jogo. O Shelf sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega ao Shelf.",
+      "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam, e as conquistas na página do jogo. O Save State sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega ao Save State.",
       "public": "A Steam precisa mostrar os detalhes dos seus jogos: abra <settings>suas configurações de privacidade na Steam</settings> (na Steam, Editar perfil, depois Configurações de privacidade) e deixe Detalhes dos jogos como Público.",
       "signIn": "Entrar pela Steam"
     },
     "nintendo": {
-      "about": "O Shelf lê o histórico de jogo que a Nintendo guarda para a sua conta: cada jogo que você jogou num Switch ou num Switch 2, com as suas horas. A Nintendo lista o que você jogou, não o que você tem, então o Shelf pergunta uma vez se cada jogo é um cartucho ou um download. Sua senha da Nintendo nunca chega ao Shelf.",
-      "how": "A Nintendo não manda você de volta ao Shelf, então conectar leva um copiar e colar:",
+      "about": "O Save State lê o histórico de jogo que a Nintendo guarda para a sua conta: cada jogo que você jogou num Switch ou num Switch 2, com as suas horas. A Nintendo lista o que você jogou, não o que você tem, então o Save State pergunta uma vez se cada jogo é um cartucho ou um download. Sua senha da Nintendo nunca chega ao Save State.",
+      "how": "A Nintendo não manda você de volta ao Save State, então conectar leva um copiar e colar:",
       "again": "Entre de novo pela página da Nintendo e cole aqui o novo link:",
       "step1": "Entre pela página da Nintendo. Ela abre numa nova aba.",
       "signIn": "Entrar pela página da Nintendo",
@@ -2035,13 +2035,13 @@
         "unset": "A sincronização com a Nintendo ainda não está configurada neste servidor.",
         "unreachable": "A Nintendo não respondeu. Tente de novo daqui a pouco."
       },
-      "help": "A {source} lista o que você jogou, não o que você tem. Diga se cada jogo é um cartucho ou um download, ou que não é seu, e o Shelf se lembra.",
-      "matched": "O Shelf acha que é {title}",
-      "matchedYear": "O Shelf acha que é {title} ({year})",
+      "help": "A {source} lista o que você jogou, não o que você tem. Diga se cada jogo é um cartucho ou um download, ou que não é seu, e o Save State se lembra.",
+      "matched": "O Save State acha que é {title}",
+      "matchedYear": "O Save State acha que é {title} ({year})",
       "physical": "Cartucho",
       "digital": "Download",
       "notThis": "Não é este jogo",
-      "all": "{count, plural, other {Todos os # jogos que o Shelf achou são:}}",
+      "all": "{count, plural, other {Todos os # jogos que o Save State achou são:}}",
       "allPhysical": "Cartuchos",
       "allDigital": "Downloads",
       "picture": {
@@ -2049,7 +2049,7 @@
         "copy": "Copiar endereço do link"
       }
     },
-    "kept": "O que o Shelf guarda",
+    "kept": "O que o Save State guarda",
     "linkedAs": "Conectado a {name}",
     "syncedOn": "Última sincronização {when}",
     "never": "Ainda não sincronizado",
@@ -2069,7 +2069,7 @@
     "waiting": "{count, plural, =0 {# jogos esperam sua resposta.} one {# jogo espera sua resposta.} other {# jogos esperam sua resposta.}}",
     "daily": "Sincronizar uma vez por dia",
     "disconnect": "Desconectar",
-    "disconnectAsk": "Desconectar a {source}? Seus jogos continuam na sua estante, com as horas. O Shelf esquece o que a {source} listou e as suas respostas sobre isso.",
+    "disconnectAsk": "Desconectar a {source}? Seus jogos continuam na sua estante, com as horas. O Save State esquece o que a {source} listou e as suas respostas sobre isso.",
     "disconnected": "A {source} foi desconectada. Seus jogos continuam na sua estante.",
     "keep": "Manter",
     "linked": "Conectado. Trazendo seus jogos…",
@@ -2078,7 +2078,7 @@
       "private": "A Steam não está mostrando seus jogos. Deixe Detalhes dos jogos como Público nas suas <settings>configurações de privacidade da Steam</settings> e sincronize de novo.",
       "unreachable": "A {source} não respondeu. Tente de novo daqui a pouco.",
       "unset": "A sincronização com a {source} ainda não está configurada neste servidor.",
-      "signed-out": "A Nintendo encerrou o acesso do Shelf, que dura cerca de dois anos. Entre de novo pela página da Nintendo."
+      "signed-out": "A Nintendo encerrou o acesso do Save State, que dura cerca de dois anos. Entre de novo pela página da Nintendo."
     },
     "lists": {
       "needs-you": "{count, plural, =0 {# jogos precisam de você} one {# jogo precisa de você} other {# jogos precisam de você}}",
@@ -2086,11 +2086,11 @@
       "not-seen": "{count, plural, =0 {# não estão mais na {source}} one {# não está mais na {source}} other {# não estão mais na {source}}}"
     },
     "help": {
-      "needs-you": "O Shelf não teve certeza de quais jogos são estes. Encontre cada um, ou remova da lista, e o Shelf se lembra.",
-      "hidden": "O Shelf deixa estes fora da sua estante, diga a {source} o que disser. Demos, playtests e programas vêm para cá sozinhos.",
+      "needs-you": "O Save State não teve certeza de quais jogos são estes. Encontre cada um, ou remova da lista, e o Save State se lembra.",
+      "hidden": "O Save State deixa estes fora da sua estante, diga a {source} o que disser. Demos, playtests e programas vêm para cá sozinhos.",
       "not-seen": "Continuam na sua estante. A {source} parou de listá-los."
     },
-    "unfound": "{count, plural, =0 {O Shelf não achou estes # jogos} one {O Shelf não achou este jogo} other {O Shelf não achou estes # jogos}}",
+    "unfound": "{count, plural, =0 {O Save State não achou estes # jogos} one {O Save State não achou este jogo} other {O Save State não achou estes # jogos}}",
     "unfoundHelp": "Encontre cada um, ou remova da lista.",
     "alsoListed": "A {source} também lista como {titles}.",
     "loading": "Carregando…",
@@ -2124,10 +2124,10 @@
   },
   "Privacy": {
     "metaTitle": "Privacidade",
-    "metaDescription": "O que o Shelf guarda sobre você, onde, quem pode ver e como apagar.",
+    "metaDescription": "O que o Save State guarda sobre você, onde, quem pode ver e como apagar.",
     "title": "Privacidade",
     "updated": "Alterada em {date}",
-    "intro": "O Shelf guarda o que precisa para mostrar a sua estante, e nada para vender. Esta página diz o que é.",
+    "intro": "O Save State guarda o que precisa para mostrar a sua estante, e nada para vender. Esta página diz o que é.",
     "sections": {
       "account": {
         "title": "Sua conta",
@@ -2139,31 +2139,31 @@
       },
       "signIn": {
         "title": "Entrar na conta",
-        "body": "Enquanto você está conectado, um cookie mantém a sua sessão, e o Shelf guarda o endereço e o navegador de onde cada sessão veio, para você poder sair de todos os aparelhos. Um segundo cookie só diz se você está conectado. Suas escolhas para a estante, como o tema, ficam no seu navegador. Uma delas, como você arrumou a biblioteca da última vez (a visualização, o agrupamento e a ordem), fica num cookie, para o servidor do Shelf já desenhar a biblioteca assim quando você a abrir de novo."
+        "body": "Enquanto você está conectado, um cookie mantém a sua sessão, e o Save State guarda o endereço e o navegador de onde cada sessão veio, para você poder sair de todos os aparelhos. Um segundo cookie só diz se você está conectado. Suas escolhas para a estante, como o tema, ficam no seu navegador. Uma delas, como você arrumou a biblioteca da última vez (a visualização, o agrupamento e a ordem), fica num cookie, para o servidor do Save State já desenhar a biblioteca assim quando você a abrir de novo."
       },
       "steam": {
         "title": "Steam",
-        "body": "Se você conectar a Steam, o Shelf guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas, quando cada um foi jogado pela última vez e o que a loja da Steam diz que cada um é (um jogo, uma demo, um programa). Desses jogos, guarda as conquistas como a Steam as lista, quais você desbloqueou e quando, e quantos jogadores da Steam desbloquearam cada uma; as imagens delas são mostradas dos próprios servidores da Steam. O Shelf os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Shelf. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus, com as conquistas como foram lidas por último. Conectar outra conta Steam apaga essas."
+        "body": "Se você conectar a Steam, o Save State guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas, quando cada um foi jogado pela última vez e o que a loja da Steam diz que cada um é (um jogo, uma demo, um programa). Desses jogos, guarda as conquistas como a Steam as lista, quais você desbloqueou e quando, e quantos jogadores da Steam desbloquearam cada uma; as imagens delas são mostradas dos próprios servidores da Steam. O Save State os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Save State. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus, com as conquistas como foram lidas por último. Conectar outra conta Steam apaga essas."
       },
       "nintendo": {
         "title": "Nintendo",
-        "body": "Se você conectar a Nintendo, o Shelf guarda o id e o apelido da sua Conta Nintendo, os jogos que o seu histórico de jogo da Nintendo lista, com as horas jogadas e quando cada um foi jogado pela última vez, e o acesso que a Nintendo dá ao Shelf para lê-los. Esse acesso fica selado: o que está no banco de dados, sozinho, não serve para nada. A página da Nintendo o chama de “Nintendo Store”, porque o Shelf lê o histórico que esse app mostra. O Shelf lê o histórico quando você conecta a Nintendo ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Nintendo nunca chega ao Shelf. Desconectar a Nintendo apaga o acesso e o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
+        "body": "Se você conectar a Nintendo, o Save State guarda o id e o apelido da sua Conta Nintendo, os jogos que o seu histórico de jogo da Nintendo lista, com as horas jogadas e quando cada um foi jogado pela última vez, e o acesso que a Nintendo dá ao Save State para lê-los. Esse acesso fica selado: o que está no banco de dados, sozinho, não serve para nada. A página da Nintendo o chama de “Nintendo Store”, porque o Save State lê o histórico que esse app mostra. O Save State lê o histórico quando você conecta a Nintendo ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Nintendo nunca chega ao Save State. Desconectar a Nintendo apaga o acesso e o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
       },
       "desktop": {
-        "title": "Shelf para Windows",
-        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou, com um id aleatório que o app criou para aquele computador, que não diz nada dele, nem o nome dele no Windows. Para o Shelf ele envia só isso, e só de jogos que estão na sua estante. O Shelf guarda o nome que você dá a cada computador, e só você vê esse nome, ou qual computador jogou o quê. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
+        "title": "Save State para Windows",
+        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou, com um id aleatório que o app criou para aquele computador, que não diz nada dele, nem o nome dele no Windows. Para o Save State ele envia só isso, e só de jogos que estão na sua estante. O Save State guarda o nome que você dá a cada computador, e só você vê esse nome, ou qual computador jogou o quê. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
       },
       "saves": {
-        "title": "Saves, no Shelf para Windows",
-        "body": "Se você liga o backup de um jogo, o app faz backup dos arquivos de save dele no seu computador. Se você escolhe um lugar para eles, eles vão para lá também, para que seus outros computadores os encontrem: uma pasta sua, o OneDrive ou o Google Drive. O servidor do Shelf nunca recebe um save, nem nada desses serviços. No OneDrive e no Google Drive, você entra pela página da própria Microsoft ou do Google, o app no seu computador fala direto com o serviço, e o login fica guardado no Gerenciador de Credenciais do Windows daquele computador. Ele pede o mínimo que cada um oferece: no OneDrive, a pasta dele (Aplicativos › Shelf) e nada mais; no Google Drive, só os arquivos que o próprio Shelf criou, numa pasta chamada Shelf saves, e o seu e-mail, para mostrar qual conta está em uso. Lá ele guarda os snapshots (os seus arquivos de save, compactados, com uma lista deles) e um arquivo pequeno com o nome do jogo. O que o Shelf recebe do Google serve só para isso: nunca é vendido, nunca é compartilhado, nunca é usado para anúncios, e nenhuma pessoa o lê. O uso e a transferência de informações recebidas das APIs do Google pelo Shelf seguem a Política de Dados do Usuário dos Serviços de API do Google, incluindo os requisitos de Uso Limitado. Sair, nas Configurações, esquece o login naquele computador, e no Google também o encerra lá; o que está na pasta ou no serviço continua seu, para guardar ou apagar. Onde cada jogo guarda os saves é lido da lista do Ludusavi no GitHub; nada seu é enviado para lá."
+        "title": "Saves, no Save State para Windows",
+        "body": "Se você liga o backup de um jogo, o app faz backup dos arquivos de save dele no seu computador. Se você escolhe um lugar para eles, eles vão para lá também, para que seus outros computadores os encontrem: uma pasta sua, o OneDrive ou o Google Drive. O servidor do Save State nunca recebe um save, nem nada desses serviços. No OneDrive e no Google Drive, você entra pela página da própria Microsoft ou do Google, o app no seu computador fala direto com o serviço, e o login fica guardado no Gerenciador de Credenciais do Windows daquele computador. Ele pede o mínimo que cada um oferece: no OneDrive, a pasta dele (Aplicativos › Shelf) e nada mais; no Google Drive, só os arquivos que o próprio Save State criou, numa pasta chamada Shelf saves, e o seu e-mail, para mostrar qual conta está em uso. Lá ele guarda os snapshots (os seus arquivos de save, compactados, com uma lista deles) e um arquivo pequeno com o nome do jogo. O que o Save State recebe do Google serve só para isso: nunca é vendido, nunca é compartilhado, nunca é usado para anúncios, e nenhuma pessoa o lê. O uso e a transferência de informações recebidas das APIs do Google pelo Save State seguem a Política de Dados do Usuário dos Serviços de API do Google, incluindo os requisitos de Uso Limitado. Sair, nas Configurações, esquece o login naquele computador, e no Google também o encerra lá; o que está na pasta ou no serviço continua seu, para guardar ou apagar. Onde cada jogo guarda os saves é lido da lista do Ludusavi no GitHub; nada seu é enviado para lá."
       },
       "downloads": {
-        "title": "Downloads, no Shelf para Windows",
-        "body": "As fontes de download que você adiciona, os downloads que você começa e as pastas para onde eles vão ficam no seu computador. Se você entra no Real-Debrid, o login fica guardado no Gerenciador de Credenciais do Windows, e o app fala com o Real-Debrid do seu computador. O servidor do Shelf nunca vê uma fonte, um link, um download ou a sua conta do Real-Debrid."
+        "title": "Downloads, no Save State para Windows",
+        "body": "As fontes de download que você adiciona, os downloads que você começa e as pastas para onde eles vão ficam no seu computador. Se você entra no Real-Debrid, o login fica guardado no Gerenciador de Credenciais do Windows, e o app fala com o Real-Debrid do seu computador. O servidor do Save State nunca vê uma fonte, um link, um download ou a sua conta do Real-Debrid."
       },
       "where": {
         "title": "Onde fica guardado",
-        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Shelf, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá. As imagens dos vídeos são buscadas pelo serviço de imagens do Shelf; seu navegador não entra em contato com o YouTube para isso. Ao apertar Play, o vídeo usa o player do YouTube (youtube-nocookie.com), que então vê sua visita como as próprias páginas dele veriam. Se você escolher a reprodução automática sem som no computador, o YouTube é acessado quando um vídeo entra na tela. A escolha fica neste dispositivo; começa desligada e, no celular, com movimento reduzido ou economia de dados, o vídeo ainda espera um toque."
+        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Save State, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá. As imagens dos vídeos são buscadas pelo serviço de imagens do Save State; seu navegador não entra em contato com o YouTube para isso. Ao apertar Play, o vídeo usa o player do YouTube (youtube-nocookie.com), que então vê sua visita como as próprias páginas dele veriam. Se você escolher a reprodução automática sem som no computador, o YouTube é acessado quando um vídeo entra na tela. A escolha fica neste dispositivo; começa desligada e, no celular, com movimento reduzido ou economia de dados, o vídeo ainda espera um toque."
       },
       "delete": {
         "title": "Apagar",
@@ -2171,17 +2171,17 @@
       },
       "trademarks": {
         "title": "Marcas",
-        "body": "Steam e o logotipo Steam são marcas e/ou marcas registradas da Valve Corporation nos EUA e/ou em outros países. Nintendo e Nintendo Switch são marcas da Nintendo. PlayStation é marca ou marca registrada da Sony Interactive Entertainment Inc. Xbox é marca do grupo de empresas Microsoft. O Shelf só cita esses nomes para dizer de onde vêm os seus jogos, e não tem ligação com nenhuma dessas empresas, nem é endossado ou patrocinado por elas."
+        "body": "Steam e o logotipo Steam são marcas e/ou marcas registradas da Valve Corporation nos EUA e/ou em outros países. Nintendo e Nintendo Switch são marcas da Nintendo. PlayStation é marca ou marca registrada da Sony Interactive Entertainment Inc. Xbox é marca do grupo de empresas Microsoft. O Save State só cita esses nomes para dizer de onde vêm os seus jogos, e não tem ligação com nenhuma dessas empresas, nem é endossado ou patrocinado por elas."
       }
     },
     "account": "Suas configurações"
   },
   "Terms": {
     "metaTitle": "Termos",
-    "metaDescription": "Os termos de uso do Shelf, da API dele e do Shelf para Windows.",
+    "metaDescription": "Os termos de uso do Save State, da API dele e do Save State para Windows.",
     "title": "Termos de Serviço",
     "updated": "Alterados em {date}",
-    "intro": "Estes são os termos para usar o Shelf: o site, a API, o servidor MCP e o Shelf para Windows. Usar qualquer um deles significa aceitar estes termos. O Shelf é gratuito, novo e ainda está mudando; por isso os termos são curtos e dizem com clareza com o que você pode contar e com o que não pode.",
+    "intro": "Estes são os termos para usar o Save State: o site, a API, o servidor MCP e o Save State para Windows. Usar qualquer um deles significa aceitar estes termos. O Save State é gratuito, novo e ainda está mudando; por isso os termos são curtos e dizem com clareza com o que você pode contar e com o que não pode.",
     "sections": {
       "account": {
         "title": "Sua conta",
@@ -2189,35 +2189,35 @@
       },
       "shelf": {
         "title": "Sua estante",
-        "body": "O que você coloca no Shelf continua seu: seus jogos, notas, avaliações, tags e o resto. Ao colocar lá, você deixa o Shelf guardar e mostrar como você escolher: uma estante pública para qualquer pessoa, uma privada só para você. O Shelf não reivindica nada disso e não vende nada disso. O que ele guarda, e como, está na página de Privacidade."
+        "body": "O que você coloca no Save State continua seu: seus jogos, notas, avaliações, tags e o resto. Ao colocar lá, você deixa o Save State guardar e mostrar como você escolher: uma estante pública para qualquer pessoa, uma privada só para você. O Save State não reivindica nada disso e não vende nada disso. O que ele guarda, e como, está na página de Privacidade."
       },
       "use": {
         "title": "Uso justo",
-        "body": "Não use o Shelf para infringir a lei ou direitos de alguém, para acessar contas ou estantes privadas que não são suas, ou para sobrecarregá-lo, à mão ou com um programa. A API e o servidor MCP existem para serem usados, dentro do que eles permitem. Uma conta que faz essas coisas pode ser suspensa ou apagada."
+        "body": "Não use o Save State para infringir a lei ou direitos de alguém, para acessar contas ou estantes privadas que não são suas, ou para sobrecarregá-lo, à mão ou com um programa. A API e o servidor MCP existem para serem usados, dentro do que eles permitem. Uma conta que faz essas coisas pode ser suspensa ou apagada."
       },
       "services": {
         "title": "Outros serviços",
-        "body": "O Shelf funciona com serviços que não são dele: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive e Google Drive. Vincular ou usar um deles é entre você e ele, pelos termos dele, e o Shelf não responde pelo que ele faz ou deixa de fazer."
+        "body": "O Save State funciona com serviços que não são dele: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive e Google Drive. Vincular ou usar um deles é entre você e ele, pelos termos dele, e o Save State não responde pelo que ele faz ou deixa de fazer."
       },
       "desktop": {
-        "title": "Shelf para Windows",
+        "title": "Save State para Windows",
         "body": "O app é gratuito para instalar e usar com a sua conta. Ao abrir, ele procura uma versão mais nova no GitHub e a instala. Ele roda no seu computador com as suas permissões e faz lá só o que você pede: abrir um jogo, contar suas horas, baixar, fazer backup de saves ou restaurá-los."
       },
       "downloads": {
         "title": "Downloads",
-        "body": "O Shelf para Windows pode baixar um jogo de uma fonte que você adiciona, por um link ou pela sua própria conta do Real-Debrid. O Shelf não traz nenhuma fonte, não sugere nenhuma e não sabe dizer aonde um link leva: o que você adiciona e baixa é escolha sua, e responsabilidade sua. Baixe só o que você tem direito de baixar, e siga os termos do Real-Debrid quando usá-lo."
+        "body": "O Save State para Windows pode baixar um jogo de uma fonte que você adiciona, por um link ou pela sua própria conta do Real-Debrid. O Save State não traz nenhuma fonte, não sugere nenhuma e não sabe dizer aonde um link leva: o que você adiciona e baixa é escolha sua, e responsabilidade sua. Baixe só o que você tem direito de baixar, e siga os termos do Real-Debrid quando usá-lo."
       },
       "saves": {
         "title": "Saves",
-        "body": "Os backups dos seus saves são feitos no seu computador e guardados onde você escolher. O Shelf cuida para mantê-los inteiros, mas não pode prometer que nenhum vá se perder: guarde uma cópia do que você não pode perder. O que está na sua pasta, no OneDrive ou no Google Drive está na sua conta de lá, sob os termos e os limites daquele serviço."
+        "body": "Os backups dos seus saves são feitos no seu computador e guardados onde você escolher. O Save State cuida para mantê-los inteiros, mas não pode prometer que nenhum vá se perder: guarde uma cópia do que você não pode perder. O que está na sua pasta, no OneDrive ou no Google Drive está na sua conta de lá, sob os termos e os limites daquele serviço."
       },
       "warranty": {
         "title": "Sem garantias",
-        "body": "O Shelf é oferecido como está, de graça, sem a promessa de estar sempre no ar, de não ter erros ou de estar certo sobre um jogo ou as suas horas. Até onde a lei permite, o Shelf não responde por perdas causadas por usá-lo ou por não conseguir usá-lo, incluindo saves, arquivos e tempo perdidos."
+        "body": "O Save State é oferecido como está, de graça, sem a promessa de estar sempre no ar, de não ter erros ou de estar certo sobre um jogo ou as suas horas. Até onde a lei permite, o Save State não responde por perdas causadas por usá-lo ou por não conseguir usá-lo, incluindo saves, arquivos e tempo perdidos."
       },
       "changes": {
         "title": "Mudanças",
-        "body": "Estes termos mudam junto com o Shelf; a data no topo diz quando mudaram pela última vez. Usar o Shelf depois de uma mudança significa aceitar os novos termos. O Shelf também pode mudar ou encerrar um recurso, ou o serviço inteiro."
+        "body": "Estes termos mudam junto com o Save State; a data no topo diz quando mudaram pela última vez. Usar o Save State depois de uma mudança significa aceitar os novos termos. O Save State também pode mudar ou encerrar um recurso, ou o serviço inteiro."
       }
     },
     "privacy": "Privacidade"
@@ -2370,7 +2370,7 @@
     "gameStarting": "Abrindo…",
     "gameSyncing": "Sincronizando…",
     "gameSyncingShare": "Sincronizando… {share}%",
-    "syncingTip": "O Shelf está sincronizando os saves de {title}, e o Jogar volta assim que terminar. Se a conexão ficar parada por 30 segundos, o Shelf para de esperar e o que faltar vai depois.",
+    "syncingTip": "O Save State está sincronizando os saves de {title}, e o Jogar volta assim que terminar. Se a conexão ficar parada por 30 segundos, o Save State para de esperar e o que faltar vai depois.",
     "gameStop": "Parar",
     "gameStopping": "Parando…",
     "gameForceStop": "Forçar parada",
@@ -2379,14 +2379,14 @@
     "gameRunning": "{title} está em execução",
     "gameClosed": "{title} foi fechado",
     "gameUnverified": {
-      "steam": "A Steam diz que este jogo está em execução, mas o Shelf não sabe qual programa é o jogo, então não pode fechá-lo daqui. Feche pelo jogo ou pela Steam.",
-      "denied": "O Windows não deixa o Shelf verificar o programa deste jogo, então o Shelf não sabe se ele está em execução nem pode fechá-lo. Feche pelo jogo.",
-      "open": "O que o Shelf abriu continua aberto, mas o Shelf não sabe se o jogo em si está em execução, então não pode fechá-lo daqui."
+      "steam": "A Steam diz que este jogo está em execução, mas o Save State não sabe qual programa é o jogo, então não pode fechá-lo daqui. Feche pelo jogo ou pela Steam.",
+      "denied": "O Windows não deixa o Save State verificar o programa deste jogo, então o Save State não sabe se ele está em execução nem pode fechá-lo. Feche pelo jogo.",
+      "open": "O que o Save State abriu continua aberto, mas o Save State não sabe se o jogo em si está em execução, então não pode fechá-lo daqui."
     },
-    "stopRefused": "O Windows não deixou o Shelf fechar {title}. Feche pelo jogo.",
+    "stopRefused": "O Windows não deixou o Save State fechar {title}. Feche pelo jogo.",
     "stopNoAnswer": "{title} não está respondendo. Você pode tentar de novo ou forçar a parada.",
     "forceTitle": "Forçar a parada de {title}?",
-    "forceBody": "O Shelf vai encerrar o jogo na hora, sem deixar ele salvar. O que não estiver salvo será perdido.",
+    "forceBody": "O Save State vai encerrar o jogo na hora, sem deixar ele salvar. O que não estiver salvo será perdido.",
     "forceCancel": "Deixar aberto",
     "hourFewer": "Uma hora a menos",
     "hourMore": "Uma hora a mais",

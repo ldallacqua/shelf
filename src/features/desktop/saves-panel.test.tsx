@@ -234,7 +234,7 @@ describe('a game’s saves', () => {
     const { user, panel } = await opened()
     await user.click(within(panel).getByRole('button', { name: 'Back up now' }))
     expect(await within(panel).findByRole('alert')).toHaveTextContent(
-      'Close Made-up Game first: Shelf never touches its saves while it runs.',
+      'Close Made-up Game first: Save State never touches its saves while it runs.',
     )
   })
 
@@ -565,7 +565,7 @@ describe('a game’s saves, the important first (ADR 009, decision 5)', () => {
     const { panel } = await opened()
     expect(
       within(panel).getByText(
-        'Shelf is signed out of OneDrive, so new backups wait on this computer.',
+        'Save State is signed out of OneDrive, so new backups wait on this computer.',
       ),
     ).toBeVisible()
     expect(within(panel).getByRole('link', { name: 'Sign in again in Settings' })).toHaveAttribute(

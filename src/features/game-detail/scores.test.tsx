@@ -37,7 +37,7 @@ describe('Scores (spec 7.11)', () => {
     )
   })
 
-  it('says when nobody on Shelf has rated it yet', () => {
+  it('says when nobody on Save State has rated it yet', () => {
     renderWithIntl(<Scores level="h2" igdb={igdb} />)
     expect(screen.getByText('No ratings yet')).toBeInTheDocument()
   })
