@@ -95,14 +95,11 @@ test.describe('the landing page', () => {
     const robots = await request.get('/robots.txt')
     expect(await robots.text()).toMatch(/Disallow: \/api\/[\s\S]*Sitemap: .*\/sitemap\.xml/)
     const sitemap = await (await request.get('/sitemap.xml')).text()
-    for (const listed of [
-      '/en<',
-      '/en/sign-up<',
-      '/en/u/sample<',
-      '/en/u/sample/game/bloodborne<',
-    ]) {
+    for (const listed of ['/en<', '/en/sign-up<', '/en/u/sample<']) {
       expect(sitemap, listed).toContain(listed)
     }
+    // A game's page is reached from its shelf, not listed (architecture, section 25).
+    expect(sitemap).not.toContain('/game/')
     expect(sitemap).toContain('hreflang="pt-BR"')
     const guide = await request.get('/llms.txt')
     expect(guide.headers()['content-type']).toContain('text/plain')

@@ -126,7 +126,12 @@ export const javascriptBudgets: { path: string; name: string; kilobytes: number 
   // device's choice it reads and writes, and F showing a hidden column before focusing it. The
   // owner asked for it. It stands in the toolbar on the first screen, so none of it can be fetched
   // later; the game page, which shares `PanelToggle`, went from 232.6 to 232.8, within its budget.
-  { path: '/en/u/sample', name: 'Library', kilobytes: 299 },
+  // Clean wall covers (22 Nov 2026): measured 299.2 KB, from 298.8 (main after the merge, on CI's
+  // runner). The wall draws each cover whole in a 7:10 frame (`WALL_FRAME`, `cover-fit.ts`), keeps
+  // a status chip on every cover, and shows the other marks and the platforms on hover or focus.
+  // The owner asked for it. It merged after Hide filters without measuring against it, so main's
+  // gate failed from that merge until this raise; Home, Trophies and the game page did not move.
+  { path: '/en/u/sample', name: 'Library', kilobytes: 300 },
   // Step 3: measured 191.3 KB. Shell only.
   // Accounts: measured 201.4 KB, from 196.5. The header's 3 KB, and the shelf
   // pages' error boundary, which now covers this page too (1.9 KB).

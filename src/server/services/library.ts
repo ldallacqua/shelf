@@ -69,8 +69,8 @@ export const findLibrary = async (handle: string): Promise<LibraryInfo | undefin
   return found
 }
 
-/** A public shelf as the sitemap lists it: its handle, its games' addresses, and whether its trophy wall has any. */
-export type ListedShelf = { handle: string; games: string[]; trophies: boolean }
+/** A public shelf as the sitemap lists it: its handle, and whether its trophy wall has any. */
+export type ListedShelf = { handle: string; trophies: boolean }
 
 /** Every public shelf (ADR 004): the sitemap. A private one is never listed. */
 export const listPublicShelves = async (): Promise<ListedShelf[]> => {
@@ -86,13 +86,9 @@ export const listPublicShelves = async (): Promise<ListedShelf[]> => {
   for (const { id, handle } of owners) {
     if (!handle) continue
     cacheTag(libraryTag(id))
-    // The addresses the pages use, as the library's own read gives them.
+    // A finished game puts a trophy on the wall; the library's own read says which are.
     const { games } = await getLibrary(id)
-    listed.push({
-      handle,
-      games: games.map((game) => game.slug),
-      trophies: games.some((game) => game.status === 'completed'),
-    })
+    listed.push({ handle, trophies: games.some((game) => game.status === 'completed') })
   }
   return listed
 }
