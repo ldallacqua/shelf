@@ -135,8 +135,8 @@ run('gh', [
   '--title',
   `${productName} for Windows ${version}`,
   '--notes',
-  `Download ${installer} and run it: it installs for this Windows account and opens Shelf. ` +
+  `Download ${installer} and run it: it installs for this Windows account and opens Save State. ` +
     'Windows warns the first time, since the installer is not signed: More info, then Run anyway. ' +
-    'An installed Shelf finds this version by itself at its next start.',
+    'An installed Save State finds this version by itself at its next start.',
 ])
 console.log(`Released: https://github.com/${REPOSITORY}/releases/tag/${tag}`)

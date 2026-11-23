@@ -403,7 +403,7 @@ try {
       .contexts()
       .flatMap((context) => context.pages())
       .find((page) => page.url().startsWith(BASE_URL))
-  await until('the app opening Shelf', 30, async () => (await pageOfApp()) !== undefined)
+  await until('the app opening Save State', 30, async () => (await pageOfApp()) !== undefined)
   const shelf = (await pageOfApp())!
   // The splash opened Shelf in the main window, and goes once Shelf is there (ADR 005, section 9).
   const splashOf = (connected: Browser) =>
@@ -411,7 +411,7 @@ try {
       .contexts()
       .flatMap((context) => context.pages())
       .find((page) => page.url().includes('tauri.localhost'))
-  await until('the splash closing once Shelf is there', 20, async () => !splashOf(browser))
+  await until('the splash closing once Save State is there', 20, async () => !splashOf(browser))
   /** A picture of the app's page, when a person asked for them. */
   const shot = async (name: string) => {
     if (SHOTS) await shelf.screenshot({ path: join(SHOTS, `${name.replace(/[^\w-]+/g, '_')}.png`) })
@@ -434,8 +434,8 @@ try {
     return tauri ? await tauri.core.invoke('desktop_info') : undefined
   })
   if (info && typeof (info as { version?: unknown }).version === 'string')
-    pass(`its bridge answers Shelf's page (version ${(info as { version: string }).version})`)
-  else fail('its bridge did not answer Shelf’s page')
+    pass(`its bridge answers Save State's page (version ${(info as { version: string }).version})`)
+  else fail('its bridge did not answer Save State’s page')
 
   // The window has no Windows bar: Shelf's header is the bar, with the window's controls.
   // In English, whatever Windows' language, so the controls are found by their English names.
@@ -566,7 +566,7 @@ try {
   // Shelf for Windows' own pages (issue 152): drawn in the app, and only said to be its in a browser.
   await shelf.goto(`${BASE_URL}/en/settings/app`)
   const starting = shelf.getByRole('switch', {
-    name: 'Start Shelf for Windows in the tray when Windows starts',
+    name: 'Start Save State for Windows in the tray when Windows starts',
   })
   await starting.waitFor({ timeout: 20_000 })
   // A development build never writes to the registry: the switch is there, and may not be changed.
@@ -575,8 +575,10 @@ try {
   else fail('a debug build offers to change starting with Windows')
   await shot('settings-app')
   await browserPage.goto(`${BASE_URL}/en/settings/app`)
-  if (await browserPage.getByRole('heading', { name: 'Part of Shelf for Windows' }).isVisible())
-    pass('a browser is told the page is Shelf for Windows’')
+  if (
+    await browserPage.getByRole('heading', { name: 'Part of Save State for Windows' }).isVisible()
+  )
+    pass('a browser is told the page is Save State for Windows’')
   else fail('a browser opening the app’s page is not told whose it is')
 
   console.log('\nPlay, from a file')
@@ -650,11 +652,11 @@ try {
   await until('the page sending what was counted', 90, async () => {
     await shelf.evaluate(() => window.dispatchEvent(new Event('focus')))
     return kept.length > 0 && (await unsent()).length === 0
-  }).catch(() => fail(`what was counted did not reach Shelf: ${JSON.stringify(sent)}`))
+  }).catch(() => fail(`what was counted did not reach Save State: ${JSON.stringify(sent)}`))
   const session = sent?.sessions[0]
   if (session && 'entry' in session.game && session.seconds > 0 && kept.includes(session.id))
-    pass(`counted ${session.seconds} s of the game in front, and Shelf kept it`)
-  else fail(`counted ${JSON.stringify(sent)}, and Shelf kept ${JSON.stringify(kept)}`)
+    pass(`counted ${session.seconds} s of the game in front, and Save State kept it`)
+  else fail(`counted ${JSON.stringify(sent)}, and Save State kept ${JSON.stringify(kept)}`)
 
   console.log('\nSaves, on this computer (ADR 008)')
   // The list doesn't know the game, so its folder is added by hand, as a person would.
@@ -1189,7 +1191,7 @@ try {
     debrid.close()
   }
 
-  console.log('\nThe splash, with no Shelf to open')
+  console.log('\nThe splash, with no Save State to open')
   // A second app, on an address nothing answers, with a profile and a port of its own.
   const nowhere = mkdtempSync(join(tmpdir(), 'shelf-desktop-check-'))
   const lost = spawn(resolve('desktop/target/debug/shelf-desktop.exe'), [], {
@@ -1215,7 +1217,7 @@ try {
       .waitFor({ timeout: 20_000 })
     const words = await splash.locator('body').innerText()
     if (/can't be reached|Não foi possível abrir/.test(words))
-      pass('says Shelf can’t be reached, with Try again and Close')
+      pass('says Save State can’t be reached, with Try again and Close')
     else fail(`the splash said: ${words.replace(/\s+/g, ' ')}`)
     if (SHOTS) await splash.screenshot({ path: join(SHOTS, 'splash-unreachable.png') })
   } finally {
@@ -1296,7 +1298,7 @@ try {
       .contexts()
       .flatMap((context) => context.pages())
       .find((each) => each.url().startsWith(BASE_URL))
-  await until('Shelf in its window', 60, async () => pageAnew() !== undefined)
+  await until('Save State in its window', 60, async () => pageAnew() !== undefined)
   const library = pageAnew()!
   // The bare address, as the header's link opens it.
   await library.goto(`${BASE_URL}/en/u/sample`)

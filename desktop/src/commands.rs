@@ -625,7 +625,7 @@ pub async fn add_source(
     if kept.has_address(url.as_str()) {
         return Err(sources::Refusal::Duplicate);
     }
-    let ask = short(ask.as_deref().unwrap_or("Shelf"));
+    let ask = short(ask.as_deref().unwrap_or("Save State"));
     let Reading::Read { bytes, etag } = read_as_asked(&app, &url, None, &ask).await? else {
         // Asked with no `ETag`, nothing can answer that it has not changed.
         return Err(sources::Refusal::Unreachable);
@@ -714,7 +714,7 @@ pub async fn read_source_again(
     }
     let (address, etag) = kept.address(&id).ok_or(sources::Refusal::Missing)?;
     let url = sources::address(&address)?;
-    let ask = short(ask.as_deref().unwrap_or("Shelf"));
+    let ask = short(ask.as_deref().unwrap_or("Save State"));
     match read_as_asked(&app, &url, etag.as_deref(), &ask).await? {
         Reading::Unchanged => kept.touch(&id, now()),
         Reading::Read { bytes, etag } => {

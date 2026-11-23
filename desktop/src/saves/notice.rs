@@ -13,10 +13,10 @@ use super::{Needs, Refusal};
 pub fn words(portuguese: bool, needs: Needs) -> &'static str {
     match (portuguese, needs) {
         (false, Needs::Choice) => {
-            "Its saves differ between this computer and another. Shelf asks which to keep the next time you press Play."
+            "Its saves differ between this computer and another. Save State asks which to keep the next time you press Play."
         }
         (true, Needs::Choice) => {
-            "Os saves diferem entre este computador e outro. O Shelf pergunta qual manter na próxima vez que você apertar Jogar."
+            "Os saves diferem entre este computador e outro. O Save State pergunta qual manter na próxima vez que você apertar Jogar."
         }
         (false, Needs::Waiting) => {
             "Its saves were backed up on this computer only: where your saves go can’t be reached. They go there once it can."
@@ -25,10 +25,10 @@ pub fn words(portuguese: bool, needs: Needs) -> &'static str {
             "O backup dos saves ficou só neste computador: o lugar dos seus saves não pode ser acessado. Ele vai para lá quando puder."
         }
         (false, Needs::SignedOut) => {
-            "Its saves were backed up on this computer only: Shelf is signed out of where your saves go. Sign in again in Shelf’s Settings, under Saves."
+            "Its saves were backed up on this computer only: Save State is signed out of where your saves go. Sign in again in Save State’s Settings, under Saves."
         }
         (true, Needs::SignedOut) => {
-            "O backup dos saves ficou só neste computador: o Shelf saiu da conta onde ficam seus saves. Entre de novo nas Configurações do Shelf, em Saves."
+            "O backup dos saves ficou só neste computador: o Save State saiu da conta onde ficam seus saves. Entre de novo nas Configurações do Save State, em Saves."
         }
         (false, Needs::Full) => {
             "Its saves were backed up on this computer only: where your saves go is full. They go there once it has room."
@@ -37,10 +37,10 @@ pub fn words(portuguese: bool, needs: Needs) -> &'static str {
             "O backup dos saves ficou só neste computador: o lugar dos seus saves está cheio. Ele vai para lá quando houver espaço."
         }
         (false, Needs::Failed(Refusal::Large)) => {
-            "Its saves weren’t backed up: they’re larger than a backup may be. Raise the limit in Shelf’s Settings, under Saves."
+            "Its saves weren’t backed up: they’re larger than a backup may be. Raise the limit in Save State’s Settings, under Saves."
         }
         (true, Needs::Failed(Refusal::Large)) => {
-            "O backup dos saves não foi feito: eles passam do tamanho que um backup pode ter. Aumente o limite nas Configurações do Shelf, em Saves."
+            "O backup dos saves não foi feito: eles passam do tamanho que um backup pode ter. Aumente o limite nas Configurações do Save State, em Saves."
         }
         (false, Needs::Failed(_)) => {
             "Its saves weren’t backed up. Open Saves in Play’s menu on its page to try again."
@@ -65,12 +65,12 @@ pub fn place_words(portuguese: bool, service: Service, away: Away) -> (String, &
             "Os saves ficam só neste computador até haver espaço nele, e enquanto isso seus outros computadores não veem o que você jogar aqui.",
         ),
         (false, _) => (
-            format!("Shelf is signed out of {name}"),
-            "Saves stay on this computer until you sign in again, in Shelf’s Settings under Saves, and your other computers won’t see what you play here meanwhile.",
+            format!("Save State is signed out of {name}"),
+            "Saves stay on this computer until you sign in again, in Save State’s Settings under Saves, and your other computers won’t see what you play here meanwhile.",
         ),
         (true, _) => (
-            format!("O Shelf saiu do {name}"),
-            "Os saves ficam só neste computador até você entrar de novo, nas Configurações do Shelf, em Saves, e enquanto isso seus outros computadores não veem o que você jogar aqui.",
+            format!("O Save State saiu do {name}"),
+            "Os saves ficam só neste computador até você entrar de novo, nas Configurações do Save State, em Saves, e enquanto isso seus outros computadores não veem o que você jogar aqui.",
         ),
     }
 }
@@ -78,7 +78,7 @@ pub fn place_words(portuguese: bool, service: Service, away: Away) -> (String, &
 /// Shows it, headed by the game's title.
 pub fn show(app: &AppHandle, title: &str, needs: Needs) {
     let heading = if title.trim().is_empty() {
-        "Shelf"
+        "Save State"
     } else {
         title
     };
@@ -131,10 +131,10 @@ mod tests {
     #[test]
     fn a_service_s_trouble_names_it_and_says_what_to_do_in_both_languages() {
         let (heading, body) = place_words(false, Service::GoogleDrive, Away::SignedOut);
-        assert_eq!(heading, "Shelf is signed out of Google Drive");
+        assert_eq!(heading, "Save State is signed out of Google Drive");
         assert!(body.contains("sign in again"));
         let (heading, body) = place_words(true, Service::GoogleDrive, Away::SignedOut);
-        assert_eq!(heading, "O Shelf saiu do Google Drive");
+        assert_eq!(heading, "O Save State saiu do Google Drive");
         assert!(body.contains("entrar de novo"));
         assert_eq!(
             place_words(true, Service::OneDrive, Away::Full).0,
