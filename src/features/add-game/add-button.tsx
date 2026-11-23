@@ -68,14 +68,14 @@ function AddToShelf({ actions }: { actions: AddActions }) {
       <Button
         variant="primary"
         size="sm"
-        // Below md the header can't hold its word beside the account's menu (640, Portuguese).
-        className="mr-1 max-md:px-2.5"
+        // Below lg the header can't hold its word beside the nav links and the account's menu (768, Portuguese).
+        className="mr-1 max-lg:px-2.5"
         onPointerEnter={() => void loadDialog()}
         onFocus={() => void loadDialog()}
         onClick={openAddGame}
       >
         <PlusIcon aria-hidden="true" />
-        <span className="max-md:sr-only">{t('addButton')}</span>
+        <span className="max-lg:sr-only">{t('addButton')}</span>
       </Button>
       {AddGame ? <AddGame open={open} onOpenChange={setOpen} actions={actions} /> : null}
     </>

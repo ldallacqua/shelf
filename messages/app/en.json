@@ -219,7 +219,7 @@
       "label": "Start Save State for Windows in the tray when Windows starts",
       "body": "So a game opened from Steam is counted without opening Save State first. <link>How hours are counted</link>",
       "unavailable": "Only an installed Save State for Windows can start with Windows.",
-      "old": "Update Save State for Windows to change this here. Until then, it is in the menu of Save State’s icon in the tray.",
+      "old": "Update Save State for Windows to change this here. Until then, it is in the menu of the tray icon.",
       "failed": "Windows did not take the change. Try again."
     },
     "services": {
@@ -233,7 +233,7 @@
     "close": "Close",
     "loading": "Looking for this game’s saves",
     "switch": "Back up this game’s saves",
-    "intro": "Save State for Windows backs them up on this computer, keeps their history, and puts any backup back when you ask. Nothing is sent to Save State.",
+    "intro": "Save State for Windows backs them up on this computer, keeps their history, and puts any backup back when you ask. Nothing is sent to the site.",
     "cloud": "{stores} keep this game’s saves for copies bought there. If you play one of those, its store already carries them.",
     "stores": {
       "steam": "Steam",

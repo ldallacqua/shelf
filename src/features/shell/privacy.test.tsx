@@ -42,7 +42,7 @@ describe('Privacy', () => {
       name: 'Saves, in Save State for Windows',
     }).parentElement!
     expect(saves).toHaveTextContent('Save State’s server never receives a save')
-    expect(saves).toHaveTextContent('only the files Save State itself made')
+    expect(saves).toHaveTextContent('only the files the app itself made')
     expect(saves).toHaveTextContent(
       'adheres to the Google API Services User Data Policy, including the Limited Use requirements',
     )

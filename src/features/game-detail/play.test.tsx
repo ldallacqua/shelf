@@ -473,7 +473,7 @@ describe('Whether the game is running, in Save State for Windows (issue 102)', (
     expect(syncing).toHaveFocus()
     // How long it waits, said where it waits.
     expect((await screen.findAllByRole('tooltip'))[0]).toHaveTextContent(
-      'If the connection stalls for 30 seconds, Save State stops waiting',
+      'If the connection stalls for 30 seconds, it stops waiting',
     )
     await userEvent.click(syncing)
     expect(invoke).not.toHaveBeenCalledWith('play', expect.anything())

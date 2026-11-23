@@ -1,7 +1,7 @@
 {
   "Meta": {
     "siteName": "Save State",
-    "description": "A personal game library, kept on a lit shelf you can walk along."
+    "description": "Save State: a personal game library, kept on a lit shelf you can walk along."
   },
   "Shell": {
     "skipToContent": "Skip to content",
@@ -154,13 +154,13 @@
     }
   },
   "Landing": {
-    "metaTitle": "Save State: every game you own, on one shelf",
+    "metaTitle": "Save State: your game library, on one shelf",
     "metaDescription": "Put every game you own on one lit shelf, physical and digital, from every console. Find the next one to play with a line of text. Free.",
-    "shareAlt": "“Every game you own, on one shelf.” beside three lit shelves of game boxes.",
+    "shareAlt": "Save State: “Every game you own, on one shelf.” beside three lit shelves of game boxes.",
     "create": "Create your shelf",
     "toShelf": "Go to your shelf",
     "hero": {
-      "eyebrow": "For people with a lot of games",
+      "eyebrow": "Save State: your game library",
       "title": "Every game you own, on one shelf.",
       "lead": "Physical and digital, every console and every generation, lit like the shelf you always wanted. Find the next one to play in a second.",
       "facts": {
@@ -428,7 +428,7 @@
       },
       "hours": {
         "q": "How does Save State count my hours?",
-        "a": "You can’t type them in: they come from where you played. Steam and Nintendo report theirs, and PlayStation and Xbox will once they are linked. On a PC, Save State for Windows counts a game while it is in front of you and you are using it, whether you opened it from Save State or from Steam. Hours from every computer with Save State for Windows add up. After 5 minutes with no key, mouse or controller touched, that stretch doesn’t count: that is time away, or AFK. When Steam and Save State count the same play, the larger of the two shows, never both added together."
+        "a": "You can’t type them in: they come from where you played. Steam and Nintendo report theirs, and PlayStation and Xbox will once they are linked. On a PC, Save State for Windows counts a game while it is in front of you and you are using it, whether you opened it from the app or from Steam. Hours from every computer with the app add up. After 5 minutes with no key, mouse or controller touched, that stretch doesn’t count: that is time away, or AFK. When Steam and the app count the same play, the larger of the two shows, never both added together."
       },
       "who": {
         "q": "Who can see my shelf?",
@@ -2014,12 +2014,12 @@
     "intro": "Bring the games you own on a platform onto your shelf, and keep them in step.",
     "later": "PlayStation and Xbox come next.",
     "steam": {
-      "about": "Sign in through Steam, and every game you own there goes onto your shelf as a PC copy, with Steam’s hours on it, and its achievements on its page. Save State syncs again once a day. Your Steam password never reaches Save State.",
+      "about": "Sign in through Steam, and every game you own there goes onto your shelf as a PC copy, with Steam’s hours on it, and its achievements on its page. Save State syncs again once a day. Your Steam password never reaches it.",
       "public": "Steam has to show your game details: open <settings>your Steam privacy settings</settings> (in Steam, Edit Profile, then Privacy Settings) and set Game details to Public.",
       "signIn": "Sign in through Steam"
     },
     "nintendo": {
-      "about": "Save State reads the play history Nintendo keeps for your account: every game you have played on a Switch or a Switch 2, with your hours. Nintendo lists what you played, not what you own, so Save State asks once whether each game is a cartridge or a download. Your Nintendo password never reaches Save State.",
+      "about": "Save State reads the play history Nintendo keeps for your account: every game you have played on a Switch or a Switch 2, with your hours. Nintendo lists what you played, not what you own, so it asks once whether each game is a cartridge or a download. Your Nintendo password never reaches it.",
       "how": "Nintendo does not send you back to Save State, so linking takes one copy and paste:",
       "again": "Sign in on Nintendo’s page again, and paste the new link here:",
       "step1": "Sign in on Nintendo’s page. It opens in a new tab.",
@@ -2036,8 +2036,8 @@
         "unreachable": "Nintendo did not answer. Try again in a while."
       },
       "help": "{source} lists what you played, not what you own. Say whether each game is a cartridge or a download, or that it is not yours, and Save State remembers.",
-      "matched": "Save State thinks it is {title}",
-      "matchedYear": "Save State thinks it is {title} ({year})",
+      "matched": "Looks like {title}",
+      "matchedYear": "Looks like {title} ({year})",
       "physical": "Cartridge",
       "digital": "Download",
       "notThis": "Not this game",
@@ -2086,11 +2086,11 @@
       "not-seen": "{count, plural, other {# no longer on {source}}}"
     },
     "help": {
-      "needs-you": "Save State could not be sure which games these are. Find each one, or remove it from the list, and Save State remembers.",
+      "needs-you": "Save State could not be sure which games these are. Find each one, or remove it from the list, and it remembers.",
       "hidden": "Save State leaves these off your shelf, whatever {source} says. Demos, playtests and software come here by themselves.",
       "not-seen": "Still on your shelf. {source} stopped listing them."
     },
-    "unfound": "{count, plural, one {Save State could not find this game} other {Save State could not find these # games}}",
+    "unfound": "{count, plural, one {This game could not be found} other {These # games could not be found}}",
     "unfoundHelp": "Find each one, or remove it from the list.",
     "alsoListed": "{source} also lists it as {titles}.",
     "loading": "Loading…",
@@ -2139,23 +2139,23 @@
       },
       "signIn": {
         "title": "Signing in",
-        "body": "While you are signed in, a cookie keeps you signed in, and Save State keeps the address and the browser each session came from, so you can sign out everywhere. A second cookie only says whether you are signed in. Your choices for the shelf, such as the theme, stay in your browser. One of them, how you last arranged a library (its view, grouping and order), is a cookie, so that Save State’s server can draw the library that way when you open it again."
+        "body": "While you are signed in, a cookie keeps you signed in, and Save State keeps the address and the browser each session came from, so you can sign out everywhere. A second cookie only says whether you are signed in. Your choices for the shelf, such as the theme, stay in your browser. One of them, how you last arranged a library (its view, grouping and order), is a cookie, so that the server can draw the library that way when you open it again."
       },
       "steam": {
         "title": "Steam",
-        "body": "If you link Steam, Save State keeps your Steam account’s id and name, and the games Steam lists for it, with the hours played, when each was last played, and what Steam’s store calls each one (a game, a demo, software). For those games, it keeps their achievements as Steam lists them, which of them you unlocked and when, and how many of Steam’s players unlocked each; their artwork is shown from Steam’s own servers. Save State reads them when you link Steam or press Sync now, and once a day while daily sync is on. Your Steam password never reaches Save State. Disconnecting Steam deletes what Steam listed; the games it put on your shelf stay, as your own, with their achievements as last read. Linking another Steam account deletes those."
+        "body": "If you link Steam, Save State keeps your Steam account’s id and name, and the games Steam lists for it, with the hours played, when each was last played, and what Steam’s store calls each one (a game, a demo, software). For those games, it keeps their achievements as Steam lists them, which of them you unlocked and when, and how many of Steam’s players unlocked each; their artwork is shown from Steam’s own servers. It reads them when you link Steam or press Sync now, and once a day while daily sync is on. Your Steam password never reaches it. Disconnecting Steam deletes what Steam listed; the games it put on your shelf stay, as your own, with their achievements as last read. Linking another Steam account deletes those."
       },
       "nintendo": {
         "title": "Nintendo",
-        "body": "If you link Nintendo, Save State keeps your Nintendo Account’s id and nickname, the games your Nintendo play history lists, with the hours played and when each was last played, and the sign-in Nintendo gives Save State to read them. That sign-in is kept sealed: what is in the database alone cannot be used. Nintendo’s page names it “Nintendo Store”, as Save State reads the history that app shows. Save State reads the history when you link Nintendo or press Sync now, and once a day while daily sync is on. Your Nintendo password never reaches Save State. Disconnecting Nintendo deletes the sign-in and what Nintendo listed; the games it put on your shelf stay, as your own."
+        "body": "If you link Nintendo, Save State keeps your Nintendo Account’s id and nickname, the games your Nintendo play history lists, with the hours played and when each was last played, and the sign-in Nintendo gives it to read them. That sign-in is kept sealed: what is in the database alone cannot be used. Nintendo’s page names it “Nintendo Store”, as the service reads the history that app shows. The service reads the history when you link Nintendo or press Sync now, and once a day while daily sync is on. Your Nintendo password never reaches the service. Disconnecting Nintendo deletes the sign-in and what Nintendo listed; the games it put on your shelf stay, as your own."
       },
       "desktop": {
         "title": "Save State for Windows",
-        "body": "To count your hours on a PC, the app looks at which program is in front of you, and at whether a key, the mouse or a controller was touched, never at what was pressed. On your computer it keeps which game each stretch of play was, when it started and ended, and for how long you played, with a random id the app made for that computer, which says nothing of it, not even its name in Windows. To Save State it sends only that, and only for games on your shelf. Save State keeps the name you give each computer, and only you are ever shown it, or which computer played what. No other program’s name leaves your computer, and neither does the file chosen for a game. Removing a game deletes what was counted of it."
+        "body": "To count your hours on a PC, the app looks at which program is in front of you, and at whether a key, the mouse or a controller was touched, never at what was pressed. On your computer it keeps which game each stretch of play was, when it started and ended, and for how long you played, with a random id the app made for that computer, which says nothing of it, not even its name in Windows. To Save State it sends only that, and only for games on your shelf. The service keeps the name you give each computer, and only you are ever shown it, or which computer played what. No other program’s name leaves your computer, and neither does the file chosen for a game. Removing a game deletes what was counted of it."
       },
       "saves": {
         "title": "Saves, in Save State for Windows",
-        "body": "If you turn on backups for a game, the app backs up its save files on your computer. If you choose a place for them, they go there too, so your other computers can find them: a folder of yours, OneDrive or Google Drive. Save State’s server never receives a save, or anything from those services. For OneDrive and Google Drive, you sign in on Microsoft’s or Google’s own page, the app on your computer reaches the service itself, and the sign-in is kept in Windows’ Credential Manager on that computer. It asks for the least each one offers: in OneDrive, its own folder (Apps › Shelf) and nothing else; in Google Drive, only the files Save State itself made, in a folder named Shelf saves, and your email address, to show which account is in use. There it keeps the snapshots (your save files, zipped, with a list of them) and a small file naming the game. What Save State receives from Google is used for that alone: it is never sold, never shared, never used for ads, and no person reads it. Save State’s use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. Signing out in Settings forgets the sign-in on that computer, and at Google ends it there too; what is in the folder or the service stays yours, to keep or delete. Where each game keeps its saves is read from Ludusavi’s list on GitHub; nothing of yours is sent there."
+        "body": "If you turn on backups for a game, the app backs up its save files on your computer. If you choose a place for them, they go there too, so your other computers can find them: a folder of yours, OneDrive or Google Drive. Save State’s server never receives a save, or anything from those services. For OneDrive and Google Drive, you sign in on Microsoft’s or Google’s own page, the app on your computer reaches the service itself, and the sign-in is kept in Windows’ Credential Manager on that computer. It asks for the least each one offers: in OneDrive, its own folder (Apps › Shelf) and nothing else; in Google Drive, only the files the app itself made, in a folder named Shelf saves, and your email address, to show which account is in use. There it keeps the snapshots (your save files, zipped, with a list of them) and a small file naming the game. What the app receives from Google is used for that alone: it is never sold, never shared, never used for ads, and no person reads it. Save State’s use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. Signing out in Settings forgets the sign-in on that computer, and at Google ends it there too; what is in the folder or the service stays yours, to keep or delete. Where each game keeps its saves is read from Ludusavi’s list on GitHub; nothing of yours is sent there."
       },
       "downloads": {
         "title": "Downloads, in Save State for Windows",
@@ -2163,7 +2163,7 @@
       },
       "where": {
         "title": "Where it is kept",
-        "body": "In a database in São Paulo, Brazil (Turso), reached by Save State’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there. Public video posters are fetched by Save State’s image service; your browser does not contact YouTube for them. Pressing Play uses YouTube’s player (youtube-nocookie.com), which then sees your visit as its own pages would. If you choose muted autoplay on a desktop, YouTube is contacted when a video comes into view instead. That choice stays on this device; it is off by default, and phones, reduced motion and data saving still wait for a press."
+        "body": "In a database in São Paulo, Brazil (Turso), reached by Save State’s server, which runs there too (Vercel). The pages of a public shelf are also copied by Vercel’s network around the world so they load quickly. Game information comes from IGDB.com; nothing of yours is sent there. Public video posters are fetched by the site’s image service; your browser does not contact YouTube for them. Pressing Play uses YouTube’s player (youtube-nocookie.com), which then sees your visit as its own pages would. If you choose muted autoplay on a desktop, YouTube is contacted when a video comes into view instead. That choice stays on this device; it is off by default, and phones, reduced motion and data saving still wait for a press."
       },
       "delete": {
         "title": "Removing it",
@@ -2178,10 +2178,10 @@
   },
   "Terms": {
     "metaTitle": "Terms",
-    "metaDescription": "The terms for using Save State, its API and Save State for Windows.",
+    "metaDescription": "The terms for using Save State, its API and its app for Windows.",
     "title": "Terms of Service",
     "updated": "Last changed {date}",
-    "intro": "These are the terms for using Save State: its site, its API, its MCP server and Save State for Windows. Using any of them means you accept them. Save State is free, young and still changing, so they are short, and say plainly what you can count on and what you can’t.",
+    "intro": "These are the terms for using Save State: its site, its API, its MCP server and its app for Windows. Using any of them means you accept them. It is free, young and still changing, so they are short, and say plainly what you can count on and what you can’t.",
     "sections": {
       "account": {
         "title": "Your account",
@@ -2189,7 +2189,7 @@
       },
       "shelf": {
         "title": "Your shelf",
-        "body": "What you put on Save State stays yours: your games, notes, ratings, tags and the rest. By putting it there, you let Save State keep it and show it as you choose: a public shelf to anyone, a private one only to you. Save State claims none of it and sells none of it. What it keeps, and how, is on the Privacy page."
+        "body": "What you put on Save State stays yours: your games, notes, ratings, tags and the rest. By putting it there, you let the service keep it and show it as you choose: a public shelf to anyone, a private one only to you. The service claims none of it and sells none of it. What it keeps, and how, is on the Privacy page."
       },
       "use": {
         "title": "Using it fairly",
@@ -2197,7 +2197,7 @@
       },
       "services": {
         "title": "Other services",
-        "body": "Save State works with services that aren’t its own: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive and Google Drive. Linking or using one is between you and it, under its own terms, and Save State answers for none of what it does or stops doing."
+        "body": "Save State works with services that aren’t its own: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive and Google Drive. Linking or using one is between you and it, under its own terms, and the service answers for none of what it does or stops doing."
       },
       "desktop": {
         "title": "Save State for Windows",
@@ -2205,7 +2205,7 @@
       },
       "downloads": {
         "title": "Downloads",
-        "body": "Save State for Windows can download a game from a source you add, from a link or through your own Real-Debrid account. Save State ships no source, suggests none, and can’t tell what a link leads to: what you add and download is your choice, and yours to answer for. Download only what you have the right to, and keep to Real-Debrid’s terms when you use it."
+        "body": "Save State for Windows can download a game from a source you add, from a link or through your own Real-Debrid account. The app ships no source, suggests none, and can’t tell what a link leads to: what you add and download is your choice, and yours to answer for. Download only what you have the right to, and keep to Real-Debrid’s terms when you use it."
       },
       "saves": {
         "title": "Saves",
@@ -2213,11 +2213,11 @@
       },
       "warranty": {
         "title": "No promises",
-        "body": "Save State is offered as it is, for free, with no promise that it will always be there, be free of mistakes, or be right about a game or your hours. As far as the law allows, Save State is not liable for any loss from using it or from being unable to, lost saves, files and time included."
+        "body": "Save State is offered as it is, for free, with no promise that it will always be there, be free of mistakes, or be right about a game or your hours. As far as the law allows, the service is not liable for any loss from using it or from being unable to, lost saves, files and time included."
       },
       "changes": {
         "title": "Changes",
-        "body": "These terms change as Save State does; the date at the top says when they last did. Using Save State after a change means you accept the new terms. Save State may also change or end a feature, or the whole service."
+        "body": "These terms change as Save State does; the date at the top says when they last did. Using the service after a change means you accept the new terms. It may also change or end a feature, or the whole service."
       }
     },
     "privacy": "Privacy"
@@ -2370,7 +2370,7 @@
     "gameStarting": "Starting…",
     "gameSyncing": "Syncing…",
     "gameSyncingShare": "Syncing… {share}%",
-    "syncingTip": "Save State is syncing {title}’s saves, and Play comes back once that’s done. If the connection stalls for 30 seconds, Save State stops waiting and what’s left goes later.",
+    "syncingTip": "Save State is syncing {title}’s saves, and Play comes back once that’s done. If the connection stalls for 30 seconds, it stops waiting and what’s left goes later.",
     "gameStop": "Stop",
     "gameStopping": "Stopping…",
     "gameForceStop": "Force stop",
@@ -2380,8 +2380,8 @@
     "gameClosed": "{title} has closed",
     "gameUnverified": {
       "steam": "Steam says this game is running, but Save State can’t tell which program is the game, so it can’t close it from here. Close it from the game or from Steam.",
-      "denied": "Windows won’t let Save State check this game’s program, so Save State can’t tell whether it is running, or close it. Close it from the game.",
-      "open": "What Save State started is still open, but Save State can’t tell whether the game itself is running, so it can’t close it from here."
+      "denied": "Windows won’t let Save State check this game’s program, so it can’t tell whether it is running, or close it. Close it from the game.",
+      "open": "What Save State started is still open, but it can’t tell whether the game itself is running, so it can’t close it from here."
     },
     "stopRefused": "Windows did not let Save State close {title}. Close it from the game.",
     "stopNoAnswer": "{title} isn’t answering. You can try again, or force it to stop.",

@@ -1,7 +1,7 @@
 {
   "Meta": {
     "siteName": "Save State",
-    "description": "Uma biblioteca pessoal de jogos, guardada em uma estante iluminada para percorrer."
+    "description": "Save State: uma biblioteca pessoal de jogos, guardada em uma estante iluminada para percorrer."
   },
   "Shell": {
     "skipToContent": "Pular para o conteúdo",
@@ -154,13 +154,13 @@
     }
   },
   "Landing": {
-    "metaTitle": "Save State: todos os seus jogos, em uma estante",
+    "metaTitle": "Save State: sua biblioteca de jogos, em uma estante",
     "metaDescription": "Coloque todos os jogos que você tem em uma estante iluminada, físicos e digitais, de todos os consoles. Encontre o próximo para jogar com uma linha de texto. De graça.",
-    "shareAlt": "“Todos os seus jogos, em uma estante.” ao lado de três prateleiras iluminadas de caixas de jogos.",
+    "shareAlt": "Save State: “Todos os seus jogos, em uma estante.” ao lado de três prateleiras iluminadas de caixas de jogos.",
     "create": "Crie sua estante",
     "toShelf": "Ir para a sua estante",
     "hero": {
-      "eyebrow": "Para quem tem muitos jogos",
+      "eyebrow": "Save State: sua biblioteca de jogos",
       "title": "Todos os seus jogos, em uma estante.",
       "lead": "Físicos e digitais, de todos os consoles e de todas as gerações, iluminados como a estante que você sempre quis. Encontre o próximo para jogar em um segundo.",
       "facts": {
@@ -428,7 +428,7 @@
       },
       "hours": {
         "q": "Como o Save State conta minhas horas?",
-        "a": "Não dá para digitar: elas vêm de onde você jogou. A Steam e a Nintendo informam as delas, e o PlayStation e o Xbox vão informar assim que puderem ser vinculados. No PC, o Save State para Windows conta um jogo enquanto ele está na sua frente e você está usando, tenha aberto pelo Save State ou pela Steam. As horas de todos os computadores com o Save State para Windows se somam. Depois de 5 minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, ou AFK. Quando a Steam e o Save State contam a mesma jogatina, aparece o maior dos dois, nunca os dois somados."
+        "a": "Não dá para digitar: elas vêm de onde você jogou. A Steam e a Nintendo informam as delas, e o PlayStation e o Xbox vão informar assim que puderem ser vinculados. No PC, o Save State para Windows conta um jogo enquanto ele está na sua frente e você está usando, tenha aberto pelo app ou pela Steam. As horas de todos os computadores com o app se somam. Depois de 5 minutos sem tocar em tecla, mouse ou controle, esse trecho não conta: é tempo ausente, ou AFK. Quando a Steam e o app contam a mesma jogatina, aparece o maior dos dois, nunca os dois somados."
       },
       "who": {
         "q": "Quem pode ver a minha estante?",
@@ -2014,12 +2014,12 @@
     "intro": "Traga para a sua estante os jogos que você tem numa plataforma, e mantenha tudo em dia.",
     "later": "PlayStation e Xbox vêm a seguir.",
     "steam": {
-      "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam, e as conquistas na página do jogo. O Save State sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega ao Save State.",
+      "about": "Entre pela Steam, e cada jogo que você tem lá vai para a sua estante como uma cópia de PC, com as horas da Steam, e as conquistas na página do jogo. O Save State sincroniza de novo uma vez por dia. Sua senha da Steam nunca chega a ele.",
       "public": "A Steam precisa mostrar os detalhes dos seus jogos: abra <settings>suas configurações de privacidade na Steam</settings> (na Steam, Editar perfil, depois Configurações de privacidade) e deixe Detalhes dos jogos como Público.",
       "signIn": "Entrar pela Steam"
     },
     "nintendo": {
-      "about": "O Save State lê o histórico de jogo que a Nintendo guarda para a sua conta: cada jogo que você jogou num Switch ou num Switch 2, com as suas horas. A Nintendo lista o que você jogou, não o que você tem, então o Save State pergunta uma vez se cada jogo é um cartucho ou um download. Sua senha da Nintendo nunca chega ao Save State.",
+      "about": "O Save State lê o histórico de jogo que a Nintendo guarda para a sua conta: cada jogo que você jogou num Switch ou num Switch 2, com as suas horas. A Nintendo lista o que você jogou, não o que você tem, então ele pergunta uma vez se cada jogo é um cartucho ou um download. Sua senha da Nintendo nunca chega a ele.",
       "how": "A Nintendo não manda você de volta ao Save State, então conectar leva um copiar e colar:",
       "again": "Entre de novo pela página da Nintendo e cole aqui o novo link:",
       "step1": "Entre pela página da Nintendo. Ela abre numa nova aba.",
@@ -2036,8 +2036,8 @@
         "unreachable": "A Nintendo não respondeu. Tente de novo daqui a pouco."
       },
       "help": "A {source} lista o que você jogou, não o que você tem. Diga se cada jogo é um cartucho ou um download, ou que não é seu, e o Save State se lembra.",
-      "matched": "O Save State acha que é {title}",
-      "matchedYear": "O Save State acha que é {title} ({year})",
+      "matched": "Parece ser {title}",
+      "matchedYear": "Parece ser {title} ({year})",
       "physical": "Cartucho",
       "digital": "Download",
       "notThis": "Não é este jogo",
@@ -2086,11 +2086,11 @@
       "not-seen": "{count, plural, =0 {# não estão mais na {source}} one {# não está mais na {source}} other {# não estão mais na {source}}}"
     },
     "help": {
-      "needs-you": "O Save State não teve certeza de quais jogos são estes. Encontre cada um, ou remova da lista, e o Save State se lembra.",
+      "needs-you": "O Save State não teve certeza de quais jogos são estes. Encontre cada um, ou remova da lista, e ele se lembra.",
       "hidden": "O Save State deixa estes fora da sua estante, diga a {source} o que disser. Demos, playtests e programas vêm para cá sozinhos.",
       "not-seen": "Continuam na sua estante. A {source} parou de listá-los."
     },
-    "unfound": "{count, plural, =0 {O Save State não achou estes # jogos} one {O Save State não achou este jogo} other {O Save State não achou estes # jogos}}",
+    "unfound": "{count, plural, =0 {Estes # jogos não foram encontrados} one {Este jogo não foi encontrado} other {Estes # jogos não foram encontrados}}",
     "unfoundHelp": "Encontre cada um, ou remova da lista.",
     "alsoListed": "A {source} também lista como {titles}.",
     "loading": "Carregando…",
@@ -2139,23 +2139,23 @@
       },
       "signIn": {
         "title": "Entrar na conta",
-        "body": "Enquanto você está conectado, um cookie mantém a sua sessão, e o Save State guarda o endereço e o navegador de onde cada sessão veio, para você poder sair de todos os aparelhos. Um segundo cookie só diz se você está conectado. Suas escolhas para a estante, como o tema, ficam no seu navegador. Uma delas, como você arrumou a biblioteca da última vez (a visualização, o agrupamento e a ordem), fica num cookie, para o servidor do Save State já desenhar a biblioteca assim quando você a abrir de novo."
+        "body": "Enquanto você está conectado, um cookie mantém a sua sessão, e o Save State guarda o endereço e o navegador de onde cada sessão veio, para você poder sair de todos os aparelhos. Um segundo cookie só diz se você está conectado. Suas escolhas para a estante, como o tema, ficam no seu navegador. Uma delas, como você arrumou a biblioteca da última vez (a visualização, o agrupamento e a ordem), fica num cookie, para o servidor já desenhar a biblioteca assim quando você a abrir de novo."
       },
       "steam": {
         "title": "Steam",
-        "body": "Se você conectar a Steam, o Save State guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas, quando cada um foi jogado pela última vez e o que a loja da Steam diz que cada um é (um jogo, uma demo, um programa). Desses jogos, guarda as conquistas como a Steam as lista, quais você desbloqueou e quando, e quantos jogadores da Steam desbloquearam cada uma; as imagens delas são mostradas dos próprios servidores da Steam. O Save State os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega ao Save State. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus, com as conquistas como foram lidas por último. Conectar outra conta Steam apaga essas."
+        "body": "Se você conectar a Steam, o Save State guarda o id e o nome da sua conta Steam e os jogos que a Steam lista para ela, com as horas jogadas, quando cada um foi jogado pela última vez e o que a loja da Steam diz que cada um é (um jogo, uma demo, um programa). Desses jogos, guarda as conquistas como a Steam as lista, quais você desbloqueou e quando, e quantos jogadores da Steam desbloquearam cada uma; as imagens delas são mostradas dos próprios servidores da Steam. Ele os lê quando você conecta a Steam ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Steam nunca chega a ele. Desconectar a Steam apaga o que ela listou; os jogos que ela pôs na sua estante ficam, como seus, com as conquistas como foram lidas por último. Conectar outra conta Steam apaga essas."
       },
       "nintendo": {
         "title": "Nintendo",
-        "body": "Se você conectar a Nintendo, o Save State guarda o id e o apelido da sua Conta Nintendo, os jogos que o seu histórico de jogo da Nintendo lista, com as horas jogadas e quando cada um foi jogado pela última vez, e o acesso que a Nintendo dá ao Save State para lê-los. Esse acesso fica selado: o que está no banco de dados, sozinho, não serve para nada. A página da Nintendo o chama de “Nintendo Store”, porque o Save State lê o histórico que esse app mostra. O Save State lê o histórico quando você conecta a Nintendo ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Nintendo nunca chega ao Save State. Desconectar a Nintendo apaga o acesso e o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
+        "body": "Se você conectar a Nintendo, o Save State guarda o id e o apelido da sua Conta Nintendo, os jogos que o seu histórico de jogo da Nintendo lista, com as horas jogadas e quando cada um foi jogado pela última vez, e o acesso que a Nintendo dá a ele para lê-los. Esse acesso fica selado: o que está no banco de dados, sozinho, não serve para nada. A página da Nintendo o chama de “Nintendo Store”, porque o serviço lê o histórico que esse app mostra. O serviço lê o histórico quando você conecta a Nintendo ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Nintendo nunca chega ao serviço. Desconectar a Nintendo apaga o acesso e o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
       },
       "desktop": {
         "title": "Save State para Windows",
-        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou, com um id aleatório que o app criou para aquele computador, que não diz nada dele, nem o nome dele no Windows. Para o Save State ele envia só isso, e só de jogos que estão na sua estante. O Save State guarda o nome que você dá a cada computador, e só você vê esse nome, ou qual computador jogou o quê. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
+        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou, com um id aleatório que o app criou para aquele computador, que não diz nada dele, nem o nome dele no Windows. Para o Save State ele envia só isso, e só de jogos que estão na sua estante. O serviço guarda o nome que você dá a cada computador, e só você vê esse nome, ou qual computador jogou o quê. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
       },
       "saves": {
         "title": "Saves, no Save State para Windows",
-        "body": "Se você liga o backup de um jogo, o app faz backup dos arquivos de save dele no seu computador. Se você escolhe um lugar para eles, eles vão para lá também, para que seus outros computadores os encontrem: uma pasta sua, o OneDrive ou o Google Drive. O servidor do Save State nunca recebe um save, nem nada desses serviços. No OneDrive e no Google Drive, você entra pela página da própria Microsoft ou do Google, o app no seu computador fala direto com o serviço, e o login fica guardado no Gerenciador de Credenciais do Windows daquele computador. Ele pede o mínimo que cada um oferece: no OneDrive, a pasta dele (Aplicativos › Shelf) e nada mais; no Google Drive, só os arquivos que o próprio Save State criou, numa pasta chamada Shelf saves, e o seu e-mail, para mostrar qual conta está em uso. Lá ele guarda os snapshots (os seus arquivos de save, compactados, com uma lista deles) e um arquivo pequeno com o nome do jogo. O que o Save State recebe do Google serve só para isso: nunca é vendido, nunca é compartilhado, nunca é usado para anúncios, e nenhuma pessoa o lê. O uso e a transferência de informações recebidas das APIs do Google pelo Save State seguem a Política de Dados do Usuário dos Serviços de API do Google, incluindo os requisitos de Uso Limitado. Sair, nas Configurações, esquece o login naquele computador, e no Google também o encerra lá; o que está na pasta ou no serviço continua seu, para guardar ou apagar. Onde cada jogo guarda os saves é lido da lista do Ludusavi no GitHub; nada seu é enviado para lá."
+        "body": "Se você liga o backup de um jogo, o app faz backup dos arquivos de save dele no seu computador. Se você escolhe um lugar para eles, eles vão para lá também, para que seus outros computadores os encontrem: uma pasta sua, o OneDrive ou o Google Drive. O servidor do Save State nunca recebe um save, nem nada desses serviços. No OneDrive e no Google Drive, você entra pela página da própria Microsoft ou do Google, o app no seu computador fala direto com o serviço, e o login fica guardado no Gerenciador de Credenciais do Windows daquele computador. Ele pede o mínimo que cada um oferece: no OneDrive, a pasta dele (Aplicativos › Shelf) e nada mais; no Google Drive, só os arquivos que o próprio app criou, numa pasta chamada Shelf saves, e o seu e-mail, para mostrar qual conta está em uso. Lá ele guarda os snapshots (os seus arquivos de save, compactados, com uma lista deles) e um arquivo pequeno com o nome do jogo. O que o app recebe do Google serve só para isso: nunca é vendido, nunca é compartilhado, nunca é usado para anúncios, e nenhuma pessoa o lê. O uso e a transferência de informações recebidas das APIs do Google pelo Save State seguem a Política de Dados do Usuário dos Serviços de API do Google, incluindo os requisitos de Uso Limitado. Sair, nas Configurações, esquece o login naquele computador, e no Google também o encerra lá; o que está na pasta ou no serviço continua seu, para guardar ou apagar. Onde cada jogo guarda os saves é lido da lista do Ludusavi no GitHub; nada seu é enviado para lá."
       },
       "downloads": {
         "title": "Downloads, no Save State para Windows",
@@ -2163,7 +2163,7 @@
       },
       "where": {
         "title": "Onde fica guardado",
-        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Save State, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá. As imagens dos vídeos são buscadas pelo serviço de imagens do Save State; seu navegador não entra em contato com o YouTube para isso. Ao apertar Play, o vídeo usa o player do YouTube (youtube-nocookie.com), que então vê sua visita como as próprias páginas dele veriam. Se você escolher a reprodução automática sem som no computador, o YouTube é acessado quando um vídeo entra na tela. A escolha fica neste dispositivo; começa desligada e, no celular, com movimento reduzido ou economia de dados, o vídeo ainda espera um toque."
+        "body": "Num banco de dados em São Paulo (Turso), acessado pelo servidor do Save State, que também roda lá (Vercel). As páginas de uma estante pública também são copiadas pela rede da Vercel pelo mundo, para carregarem rápido. As informações dos jogos vêm do IGDB.com; nada seu é enviado para lá. As imagens dos vídeos são buscadas pelo serviço de imagens do site; seu navegador não entra em contato com o YouTube para isso. Ao apertar Play, o vídeo usa o player do YouTube (youtube-nocookie.com), que então vê sua visita como as próprias páginas dele veriam. Se você escolher a reprodução automática sem som no computador, o YouTube é acessado quando um vídeo entra na tela. A escolha fica neste dispositivo; começa desligada e, no celular, com movimento reduzido ou economia de dados, o vídeo ainda espera um toque."
       },
       "delete": {
         "title": "Apagar",
@@ -2178,10 +2178,10 @@
   },
   "Terms": {
     "metaTitle": "Termos",
-    "metaDescription": "Os termos de uso do Save State, da API dele e do Save State para Windows.",
+    "metaDescription": "Os termos de uso do Save State, da API dele e do app para Windows.",
     "title": "Termos de Serviço",
     "updated": "Alterados em {date}",
-    "intro": "Estes são os termos para usar o Save State: o site, a API, o servidor MCP e o Save State para Windows. Usar qualquer um deles significa aceitar estes termos. O Save State é gratuito, novo e ainda está mudando; por isso os termos são curtos e dizem com clareza com o que você pode contar e com o que não pode.",
+    "intro": "Estes são os termos para usar o Save State: o site, a API, o servidor MCP e o app para Windows. Usar qualquer um deles significa aceitar estes termos. Ele é gratuito, novo e ainda está mudando; por isso os termos são curtos e dizem com clareza com o que você pode contar e com o que não pode.",
     "sections": {
       "account": {
         "title": "Sua conta",
@@ -2189,7 +2189,7 @@
       },
       "shelf": {
         "title": "Sua estante",
-        "body": "O que você coloca no Save State continua seu: seus jogos, notas, avaliações, tags e o resto. Ao colocar lá, você deixa o Save State guardar e mostrar como você escolher: uma estante pública para qualquer pessoa, uma privada só para você. O Save State não reivindica nada disso e não vende nada disso. O que ele guarda, e como, está na página de Privacidade."
+        "body": "O que você coloca no Save State continua seu: seus jogos, notas, avaliações, tags e o resto. Ao colocar lá, você deixa o serviço guardar e mostrar como você escolher: uma estante pública para qualquer pessoa, uma privada só para você. O serviço não reivindica nada disso e não vende nada disso. O que ele guarda, e como, está na página de Privacidade."
       },
       "use": {
         "title": "Uso justo",
@@ -2197,7 +2197,7 @@
       },
       "services": {
         "title": "Outros serviços",
-        "body": "O Save State funciona com serviços que não são dele: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive e Google Drive. Vincular ou usar um deles é entre você e ele, pelos termos dele, e o Save State não responde pelo que ele faz ou deixa de fazer."
+        "body": "O Save State funciona com serviços que não são dele: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive e Google Drive. Vincular ou usar um deles é entre você e ele, pelos termos dele, e o serviço não responde pelo que ele faz ou deixa de fazer."
       },
       "desktop": {
         "title": "Save State para Windows",
@@ -2205,7 +2205,7 @@
       },
       "downloads": {
         "title": "Downloads",
-        "body": "O Save State para Windows pode baixar um jogo de uma fonte que você adiciona, por um link ou pela sua própria conta do Real-Debrid. O Save State não traz nenhuma fonte, não sugere nenhuma e não sabe dizer aonde um link leva: o que você adiciona e baixa é escolha sua, e responsabilidade sua. Baixe só o que você tem direito de baixar, e siga os termos do Real-Debrid quando usá-lo."
+        "body": "O Save State para Windows pode baixar um jogo de uma fonte que você adiciona, por um link ou pela sua própria conta do Real-Debrid. O app não traz nenhuma fonte, não sugere nenhuma e não sabe dizer aonde um link leva: o que você adiciona e baixa é escolha sua, e responsabilidade sua. Baixe só o que você tem direito de baixar, e siga os termos do Real-Debrid quando usá-lo."
       },
       "saves": {
         "title": "Saves",
@@ -2213,11 +2213,11 @@
       },
       "warranty": {
         "title": "Sem garantias",
-        "body": "O Save State é oferecido como está, de graça, sem a promessa de estar sempre no ar, de não ter erros ou de estar certo sobre um jogo ou as suas horas. Até onde a lei permite, o Save State não responde por perdas causadas por usá-lo ou por não conseguir usá-lo, incluindo saves, arquivos e tempo perdidos."
+        "body": "O Save State é oferecido como está, de graça, sem a promessa de estar sempre no ar, de não ter erros ou de estar certo sobre um jogo ou as suas horas. Até onde a lei permite, o serviço não responde por perdas causadas por usá-lo ou por não conseguir usá-lo, incluindo saves, arquivos e tempo perdidos."
       },
       "changes": {
         "title": "Mudanças",
-        "body": "Estes termos mudam junto com o Save State; a data no topo diz quando mudaram pela última vez. Usar o Save State depois de uma mudança significa aceitar os novos termos. O Save State também pode mudar ou encerrar um recurso, ou o serviço inteiro."
+        "body": "Estes termos mudam junto com o Save State; a data no topo diz quando mudaram pela última vez. Usar o serviço depois de uma mudança significa aceitar os novos termos. Ele também pode mudar ou encerrar um recurso, ou o serviço inteiro."
       }
     },
     "privacy": "Privacidade"
@@ -2370,7 +2370,7 @@
     "gameStarting": "Abrindo…",
     "gameSyncing": "Sincronizando…",
     "gameSyncingShare": "Sincronizando… {share}%",
-    "syncingTip": "O Save State está sincronizando os saves de {title}, e o Jogar volta assim que terminar. Se a conexão ficar parada por 30 segundos, o Save State para de esperar e o que faltar vai depois.",
+    "syncingTip": "O Save State está sincronizando os saves de {title}, e o Jogar volta assim que terminar. Se a conexão ficar parada por 30 segundos, ele para de esperar e o que faltar vai depois.",
     "gameStop": "Parar",
     "gameStopping": "Parando…",
     "gameForceStop": "Forçar parada",
@@ -2380,8 +2380,8 @@
     "gameClosed": "{title} foi fechado",
     "gameUnverified": {
       "steam": "A Steam diz que este jogo está em execução, mas o Save State não sabe qual programa é o jogo, então não pode fechá-lo daqui. Feche pelo jogo ou pela Steam.",
-      "denied": "O Windows não deixa o Save State verificar o programa deste jogo, então o Save State não sabe se ele está em execução nem pode fechá-lo. Feche pelo jogo.",
-      "open": "O que o Save State abriu continua aberto, mas o Save State não sabe se o jogo em si está em execução, então não pode fechá-lo daqui."
+      "denied": "O Windows não deixa o Save State verificar o programa deste jogo, então ele não sabe se ele está em execução nem pode fechá-lo. Feche pelo jogo.",
+      "open": "O que o Save State abriu continua aberto, mas ele não sabe se o jogo em si está em execução, então não pode fechá-lo daqui."
     },
     "stopRefused": "O Windows não deixou o Save State fechar {title}. Feche pelo jogo.",
     "stopNoAnswer": "{title} não está respondendo. Você pode tentar de novo ou forçar a parada.",

@@ -1097,8 +1097,8 @@ app shows: every game played on a Switch or a Switch 2, with its hours.
    this game** opens Find it; **Remove from list**. One line answers every match at once: "All 7
    games Save State found are: **Cartridges** / **Downloads**". A game I find becomes the match,
    and waits the same way.
-   The matched games come first; those Save State could not find follow, under "Save State could not
-   find these 2 games", each with Find it and Remove from list. The card says "9 games
+   The matched games come first; those it could not find follow, under "These 2 games could not be
+   found", each with Find it and Remove from list. The card says "9 games
    wait for your answer", never "up to date" while any do.
    - A game Nintendo lists under two names (Warframe for Nintendo Switch, and Warframe) is
      one row: "Nintendo also lists it as Warframe.", the hours of both, one answer for both,

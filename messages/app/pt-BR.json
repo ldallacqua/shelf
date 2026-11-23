@@ -219,7 +219,7 @@
       "label": "Abrir o Save State para Windows na bandeja quando o Windows iniciar",
       "body": "Assim um jogo aberto pela Steam é contado sem precisar abrir o Save State antes. <link>Como as horas são contadas</link>",
       "unavailable": "Só o Save State para Windows instalado pode abrir com o Windows.",
-      "old": "Atualize o Save State para Windows para mudar isto aqui. Até lá, fica no menu do ícone do Save State na bandeja.",
+      "old": "Atualize o Save State para Windows para mudar isto aqui. Até lá, fica no menu do ícone da bandeja.",
       "failed": "O Windows não aceitou a mudança. Tente de novo."
     },
     "services": {
@@ -233,7 +233,7 @@
     "close": "Fechar",
     "loading": "Procurando os saves deste jogo",
     "switch": "Fazer backup dos saves deste jogo",
-    "intro": "O Save State para Windows faz backup deles neste computador, guarda o histórico e põe qualquer backup de volta quando você pedir. Nada é enviado ao Save State.",
+    "intro": "O Save State para Windows faz backup deles neste computador, guarda o histórico e põe qualquer backup de volta quando você pedir. Nada é enviado ao site.",
     "cloud": "{stores} guardam os saves deste jogo para cópias compradas lá. Se você joga uma dessas, a loja já cuida deles.",
     "stores": {
       "steam": "Steam",

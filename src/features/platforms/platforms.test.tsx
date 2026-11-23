@@ -348,9 +348,7 @@ describe('Nintendo', () => {
     platforms = rows(null, NINTENDO)
     renderWithIntl(<Platforms handle="ana" />)
     await userEvent.click(await screen.findByText('3 games need you'))
-    expect(
-      await screen.findByText('Save State thinks it is Metroid Dread (2021)'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Looks like Metroid Dread (2021)')).toBeInTheDocument()
     const [cartridge] = screen.getAllByRole('button', { name: 'Cartridge' })
     expect(cartridge).toHaveAccessibleDescription(/Mario Kart 8 Deluxe/)
     await userEvent.click(cartridge!)
@@ -368,7 +366,7 @@ describe('Nintendo', () => {
     platforms = rows(null, NINTENDO)
     renderWithIntl(<Platforms handle="ana" />)
     await userEvent.click(await screen.findByText('3 games need you'))
-    await screen.findByRole('heading', { name: 'Save State could not find this game' })
+    await screen.findByRole('heading', { name: 'This game could not be found' })
     expect(screen.queryByRole('button', { name: 'Not a game' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Not mine' })).toBeNull()
     const remove = screen.getAllByRole('button', { name: 'Remove from list' })
@@ -386,7 +384,7 @@ describe('Nintendo', () => {
     platforms = rows(null, NINTENDO)
     renderWithIntl(<Platforms handle="ana" />)
     await userEvent.click(await screen.findByText('3 games need you'))
-    await screen.findByText('Save State thinks it is Metroid Dread (2021)')
+    await screen.findByText('Looks like Metroid Dread (2021)')
     const answers = [
       ...screen.getAllByRole('button', { name: 'Cartridge' }),
       ...screen.getAllByRole('button', { name: 'Download' }),
@@ -403,7 +401,7 @@ describe('Nintendo', () => {
     renderWithIntl(<Platforms handle="ana" />)
     await userEvent.click(await screen.findByText('3 games need you'))
     const heading = await screen.findByRole('heading', {
-      name: 'Save State could not find this game',
+      name: 'This game could not be found',
     })
     const after = (one: Node, other: Node) =>
       Boolean(one.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING)
@@ -421,9 +419,7 @@ describe('Nintendo', () => {
     ]
     renderWithIntl(<Platforms handle="ana" />)
     await userEvent.click(await screen.findByText('3 games need you'))
-    expect(
-      await screen.findAllByText('Save State thinks it is Mario Kart 8 Deluxe (2017)'),
-    ).toHaveLength(1)
+    expect(await screen.findAllByText('Looks like Mario Kart 8 Deluxe (2017)')).toHaveLength(1)
     expect(
       screen.getByText(
         'Nintendo also lists it as Mario Kart 8 Deluxe – Nintendo Switch 2 Edition.',
@@ -449,17 +445,17 @@ describe('Nintendo', () => {
     answerHeld = new Promise<void>((resolve) => (release = resolve))
     renderWithIntl(<Platforms handle="ana" />)
     await userEvent.click(await screen.findByText('3 games need you'))
-    await screen.findByText('Save State thinks it is Mario Kart 8 Deluxe (2017)')
+    await screen.findByText('Looks like Mario Kart 8 Deluxe (2017)')
     const [cartridge] = screen.getAllByRole('button', { name: 'Cartridge' })
     await userEvent.click(cartridge!)
-    expect(screen.queryByText('Save State thinks it is Mario Kart 8 Deluxe (2017)')).toBeNull()
-    expect(screen.getByText('Save State thinks it is Metroid Dread (2021)')).toBeInTheDocument()
+    expect(screen.queryByText('Looks like Mario Kart 8 Deluxe (2017)')).toBeNull()
+    expect(screen.getByText('Looks like Metroid Dread (2021)')).toBeInTheDocument()
     release()
     // Answered, the list is fetched again; the game stays off it.
     await waitFor(() =>
       expect(sent.filter((each) => each.path.endsWith('/items?list=needs-you'))).toHaveLength(2),
     )
-    expect(screen.queryByText('Save State thinks it is Mario Kart 8 Deluxe (2017)')).toBeNull()
+    expect(screen.queryByText('Looks like Mario Kart 8 Deluxe (2017)')).toBeNull()
   })
 
   it('puts a game back on the list, saying so, when the answer fails', async () => {
@@ -470,9 +466,7 @@ describe('Nintendo', () => {
     const [cartridge] = await screen.findAllByRole('button', { name: 'Cartridge' })
     await userEvent.click(cartridge!)
     expect(await screen.findByRole('alert')).toHaveTextContent('That did not work. Try again.')
-    expect(
-      screen.getByText('Save State thinks it is Mario Kart 8 Deluxe (2017)'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Looks like Mario Kart 8 Deluxe (2017)')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Cartridge' })[0]).toBeEnabled()
   })
 

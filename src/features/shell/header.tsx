@@ -39,10 +39,12 @@ export function Header({ add }: { add?: AddActions }) {
           className="-ml-1 flex items-center gap-2 self-center rounded-control px-1 py-1 title text-lg"
         >
           <LogoMark />
-          {meta('siteName')}
+          <span className="whitespace-nowrap max-[22rem]:hidden hinted:max-[26rem]:hidden">
+            {meta('siteName')}
+          </span>
         </Link>
 
-        <nav aria-label={t('mainNav')} className="ml-4 hidden sm:block">
+        <nav aria-label={t('mainNav')} className="ml-4 hidden md:block">
           <NavLinks />
         </nav>
 
@@ -53,7 +55,7 @@ export function Header({ add }: { add?: AddActions }) {
           <ThemeSwitch />
           <LanguageSwitch />
           <AccountMenu />
-          <MobileNav className="sm:hidden" />
+          <MobileNav className="md:hidden" />
         </div>
       </div>
       <WindowControls />

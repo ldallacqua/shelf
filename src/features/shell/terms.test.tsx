@@ -39,8 +39,8 @@ describe('Terms', () => {
       'No promises',
       'Changes',
     ])
-    expect(screen.getByText(/Save State ships no source, suggests none/)).toBeVisible()
-    expect(screen.getByText(/Last changed November 8, 2026/)).toBeVisible()
+    expect(screen.getByText(/The app ships no source, suggests none/)).toBeVisible()
+    expect(screen.getByText(/Last changed November 23, 2026/)).toBeVisible()
   })
 
   it('ends with the way to what Save State keeps', async () => {
@@ -51,7 +51,7 @@ describe('Terms', () => {
   it('says so in Portuguese', async () => {
     await draw('pt-BR')
     expect(screen.getAllByRole('heading', { level: 2 }).at(0)).toHaveTextContent('Sua conta')
-    expect(screen.getByText(/O Save State não traz nenhuma fonte/)).toBeVisible()
+    expect(screen.getByText(/O app não traz nenhuma fonte/)).toBeVisible()
     expect(screen.getByRole('link', { name: 'Privacidade' })).toBeVisible()
   })
 })
