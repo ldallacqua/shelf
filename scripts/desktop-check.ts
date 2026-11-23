@@ -57,6 +57,7 @@ import { crc32 } from 'node:zlib'
 import { chromium, type Browser, type Page } from '@playwright/test'
 
 import { BASE_URL } from './lib/budgets.ts'
+import { isProduction } from './lib/production.ts'
 import { rustEnv } from './lib/rust-env.ts'
 
 const PORT = 9333
@@ -144,7 +145,7 @@ async function until(what: string, seconds: number, ready: () => Promise<boolean
   throw new Error(`${what} did not happen within ${seconds} s`)
 }
 
-if (/^https:\/\/shelf-ldallacqua\.vercel\.app/.test(BASE_URL)) {
+if (isProduction(BASE_URL)) {
   console.error('Never against production: this signs in with a made-up password.')
   process.exit(1)
 }

@@ -1,5 +1,23 @@
 # Handoff: 27 October 2026
 
+## Moving to savestate.gg (23 Nov 2026)
+
+Production is moving to the owner's own domain, `https://savestate.gg`, with the product's new name, Save
+State (the name changes in a pull request of its own). Two branches, in this order, and the owner's steps
+between them: [setup, session G](setup.md#g-your-own-domain).
+
+- **First, the site** (`rebrand/domain-transition`): once the domain is production,
+  `shelf-ldallacqua.vercel.app` keeps signing people in (`FORMER_PRODUCTION_HOSTS`,
+  [architecture, section 21](architecture.md#21-environments-and-settings)); `pnpm desktop:check` refuses
+  both addresses. Nothing redirects: both addresses serve the site.
+- **Then the owner** moves the domain off the `save-state` project onto this one, redeploys and reconnects
+  the assistants (session G, steps 1 to 7). The domain hasn't moved yet.
+- **Then the app** (`rebrand/desktop-domain`, session G, step 8): release builds open `savestate.gg`, and the
+  window keeps, and gives the commands to, that origin and the old one, no others. Merged only after the
+  domain serves Shelf, then a desktop release, the owner's call.
+- **Later:** the old address redirects to the domain (step 10), once the installed apps have updated; until
+  then an app from before step 8 would be sent to the browser.
+
 ## Four of the owner's rules (22 Nov 2026)
 
 Four of the owner's rules from the same day, written where every agent reads them (the owner asked that every rule
