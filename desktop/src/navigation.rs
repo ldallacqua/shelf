@@ -1,5 +1,6 @@
 //! Where the window may go (ADR 005, section 6). Shelf's own pages stay in
-//! it, and so do the sign-in pages the account page sends to for linking a
+//! it, at its address and at the one production answered on before its
+//! domain, and so do the sign-in pages the account page sends to for linking a
 //! platform, whose way back is Shelf. Any other web address goes to the
 //! default browser, Steam's two links go to Steam, and anything else is
 //! dropped. Kept apart from the window so every rule has a test.
@@ -54,10 +55,11 @@ pub fn steam_link(url: &Url) -> bool {
     matches!(command, "rungameid" | "install") && crate::ids::steam_app(id)
 }
 
-/// Whether the window opens `url`, for the Shelf at `shelf`.
-pub fn decide(url: &Url, shelf: &Url) -> Decision {
+/// Whether the window opens `url`, for a Shelf whose own addresses are `own`:
+/// the one the build opens, and production's former ones (`own_addresses` in lib.rs).
+pub fn decide(url: &Url, own: &[Url]) -> Decision {
     // An origin is a scheme, a host and a port: Shelf's own pages, and nothing beside them.
-    if url.origin() == shelf.origin() {
+    if own.iter().any(|shelf| url.origin() == shelf.origin()) {
         return Decision::Stay;
     }
     if app_page(url) || url.scheme() == "about" || platform_sign_in(url) {
@@ -89,14 +91,29 @@ pub fn decide_new_window(url: &Url) -> Decision {
 mod tests {
     use super::*;
 
-    const SHELF: &str = "https://shelf-ldallacqua.vercel.app";
+    /// A release build's own addresses: production, and where it answered before.
+    const OWN: [&str; 2] = [
+        "https://savestate.gg",
+        "https://shelf-ldallacqua.vercel.app",
+    ];
 
     fn decide_for(address: &str) -> Decision {
-        decide(&Url::parse(address).unwrap(), &Url::parse(SHELF).unwrap())
+        let own: Vec<Url> = OWN.iter().map(|own| Url::parse(own).unwrap()).collect();
+        decide(&Url::parse(address).unwrap(), &own)
     }
 
     #[test]
     fn shelf_pages_stay() {
+        assert_eq!(decide_for("https://savestate.gg/en/u/lucas"), Decision::Stay);
+        assert_eq!(
+            decide_for("https://savestate.gg/api/v1/me/platforms/steam/return?x=1"),
+            Decision::Stay
+        );
+        assert_eq!(decide_for("https://SaveState.gg/en"), Decision::Stay);
+    }
+
+    #[test]
+    fn the_former_address_stays_too() {
         assert_eq!(
             decide_for("https://shelf-ldallacqua.vercel.app/en/u/lucas"),
             Decision::Stay
@@ -108,7 +125,17 @@ mod tests {
     }
 
     #[test]
-    fn another_scheme_or_port_of_shelf_is_not_shelf() {
+    fn another_scheme_port_or_host_of_shelf_is_not_shelf() {
+        assert_eq!(decide_for("http://savestate.gg/en"), Decision::Browser);
+        assert_eq!(decide_for("https://savestate.gg:8443/en"), Decision::Browser);
+        assert_eq!(decide_for("https://evil.savestate.gg/en"), Decision::Browser);
+        // `www` only redirects to the domain; nothing of Shelf's links there.
+        assert_eq!(decide_for("https://www.savestate.gg/en"), Decision::Browser);
+        assert_eq!(
+            decide_for("https://savestate.gg.evil.example/en"),
+            Decision::Browser
+        );
+        assert_eq!(decide_for("https://savestate.gg./en"), Decision::Browser);
         assert_eq!(
             decide_for("http://shelf-ldallacqua.vercel.app/en"),
             Decision::Browser
@@ -129,11 +156,13 @@ mod tests {
 
     #[test]
     fn the_local_server_is_shelf_when_the_build_opens_it() {
-        let local = Url::parse("http://localhost:3300").unwrap();
+        let local = [Url::parse("http://localhost:3300").unwrap()];
         let page = Url::parse("http://localhost:3300/en/u/sample").unwrap();
         assert_eq!(decide(&page, &local), Decision::Stay);
         let other = Url::parse("http://localhost:3000/").unwrap();
         assert_eq!(decide(&other, &local), Decision::Browser);
+        let production = Url::parse("https://savestate.gg/en").unwrap();
+        assert_eq!(decide(&production, &local), Decision::Browser);
     }
 
     #[test]
@@ -212,7 +241,7 @@ mod tests {
 
     #[test]
     fn a_new_window_is_never_opened() {
-        let shelf_page = Url::parse("https://shelf-ldallacqua.vercel.app/en").unwrap();
+        let shelf_page = Url::parse("https://savestate.gg/en").unwrap();
         assert_eq!(decide_new_window(&shelf_page), Decision::Browser);
         let steam = Url::parse("steam://install/10").unwrap();
         assert_eq!(decide_new_window(&steam), Decision::Steam);
