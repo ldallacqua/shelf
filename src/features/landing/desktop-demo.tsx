@@ -26,7 +26,7 @@ export function DesktopDemo({ game, shelf }: { game: DemoGame; shelf: readonly C
       className="desktop-window overflow-hidden rounded-panel border border-line-strong bg-wall"
     >
       <div className="flex h-10 items-center gap-4 border-b border-line bg-surface pl-3 text-[0.75rem]">
-        <LogoMark className="size-5 text-text" />
+        <LogoMark className="h-5 text-text" />
         <span className="font-medium">{t('nav.library')}</span>
         <span className="text-muted max-sm:hidden">{t('nav.trophies')}</span>
         <span className="ml-auto rounded-full bg-accent/20 px-2.5 py-0.5 font-medium">

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- The tile at 16px (the tray at 100%), drawn on whole pixels: src/app/icon.svg's strokes would
+       land on half pixels and blur. The S keeps its three bars, 2px each, with 2px between. -->
+  <rect width="16" height="16" rx="3.5" fill="#11131b" />
+  <path fill="#f2f4f8" d="M3 3H13V5H5V7H3ZM11 9H13V13H3V11H11Z" />
+  <rect x="3" y="7" width="10" height="2" fill="#7c5cff" />
+</svg>
