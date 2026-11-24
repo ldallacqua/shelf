@@ -56,7 +56,7 @@ pub fn steam_link(url: &Url) -> bool {
 }
 
 /// Whether the window opens `url`, for a Shelf whose own addresses are `own`:
-/// the one the build opens, and production's former ones (`own_addresses` in lib.rs).
+/// the one the build opens, and production's other ones (`own_addresses` in lib.rs).
 pub fn decide(url: &Url, own: &[Url]) -> Decision {
     // An origin is a scheme, a host and a port: Shelf's own pages, and nothing beside them.
     if own.iter().any(|shelf| url.origin() == shelf.origin()) {
@@ -91,8 +91,10 @@ pub fn decide_new_window(url: &Url) -> Decision {
 mod tests {
     use super::*;
 
-    /// A release build's own addresses: production, and where it answered before.
-    const OWN: [&str; 2] = [
+    /// A release build's own addresses: production, the bare domain that redirects to it, and
+    /// where it answered before.
+    const OWN: [&str; 3] = [
+        "https://www.savestate.gg",
         "https://savestate.gg",
         "https://shelf-ldallacqua.vercel.app",
     ];
@@ -104,12 +106,18 @@ mod tests {
 
     #[test]
     fn shelf_pages_stay() {
-        assert_eq!(decide_for("https://savestate.gg/en/u/lucas"), Decision::Stay);
+        assert_eq!(decide_for("https://www.savestate.gg/en/u/lucas"), Decision::Stay);
         assert_eq!(
-            decide_for("https://savestate.gg/api/v1/me/platforms/steam/return?x=1"),
+            decide_for("https://www.savestate.gg/api/v1/me/platforms/steam/return?x=1"),
             Decision::Stay
         );
-        assert_eq!(decide_for("https://SaveState.gg/en"), Decision::Stay);
+        assert_eq!(decide_for("https://WWW.SaveState.gg/en"), Decision::Stay);
+    }
+
+    #[test]
+    fn the_bare_domain_stays_so_its_redirect_does() {
+        assert_eq!(decide_for("https://savestate.gg/"), Decision::Stay);
+        assert_eq!(decide_for("https://savestate.gg/en/u/lucas"), Decision::Stay);
     }
 
     #[test]
@@ -126,15 +134,20 @@ mod tests {
 
     #[test]
     fn another_scheme_port_or_host_of_shelf_is_not_shelf() {
+        assert_eq!(decide_for("http://www.savestate.gg/en"), Decision::Browser);
         assert_eq!(decide_for("http://savestate.gg/en"), Decision::Browser);
-        assert_eq!(decide_for("https://savestate.gg:8443/en"), Decision::Browser);
+        assert_eq!(decide_for("https://www.savestate.gg:8443/en"), Decision::Browser);
         assert_eq!(decide_for("https://evil.savestate.gg/en"), Decision::Browser);
-        // `www` only redirects to the domain; nothing of Shelf's links there.
-        assert_eq!(decide_for("https://www.savestate.gg/en"), Decision::Browser);
+        assert_eq!(decide_for("https://evil.www.savestate.gg/en"), Decision::Browser);
+        assert_eq!(
+            decide_for("https://www.savestate.gg.evil.example/en"),
+            Decision::Browser
+        );
         assert_eq!(
             decide_for("https://savestate.gg.evil.example/en"),
             Decision::Browser
         );
+        assert_eq!(decide_for("https://www.savestate.gg./en"), Decision::Browser);
         assert_eq!(decide_for("https://savestate.gg./en"), Decision::Browser);
         assert_eq!(
             decide_for("http://shelf-ldallacqua.vercel.app/en"),
@@ -161,7 +174,7 @@ mod tests {
         assert_eq!(decide(&page, &local), Decision::Stay);
         let other = Url::parse("http://localhost:3000/").unwrap();
         assert_eq!(decide(&other, &local), Decision::Browser);
-        let production = Url::parse("https://savestate.gg/en").unwrap();
+        let production = Url::parse("https://www.savestate.gg/en").unwrap();
         assert_eq!(decide(&production, &local), Decision::Browser);
     }
 
@@ -241,7 +254,7 @@ mod tests {
 
     #[test]
     fn a_new_window_is_never_opened() {
-        let shelf_page = Url::parse("https://savestate.gg/en").unwrap();
+        let shelf_page = Url::parse("https://www.savestate.gg/en").unwrap();
         assert_eq!(decide_new_window(&shelf_page), Decision::Browser);
         let steam = Url::parse("steam://install/10").unwrap();
         assert_eq!(decide_new_window(&steam), Decision::Steam);
