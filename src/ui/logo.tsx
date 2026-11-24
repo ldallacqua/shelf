@@ -12,8 +12,9 @@ export const MARK = {
 
 /**
  * The mark: a squared S of three shelves, the middle one lit. The lit shelf is the colorway's
- * light in the dark, and its accent in the light, where some lights are too pale to show on the
- * wall. It is decoration next to the name, so it is hidden from assistive technology.
+ * light in the dark, and its accent in the light (`mark-shelf`), where some lights are too pale to
+ * show on the wall; in forced colors, the system's highlight, so it stays apart from the letter.
+ * It is decoration next to the name, so it is hidden from assistive technology.
  */
 function LogoMark({ className, ...props }: ComponentProps<'svg'>) {
   return (
@@ -25,7 +26,11 @@ function LogoMark({ className, ...props }: ComponentProps<'svg'>) {
       {...props}
     >
       <path d={MARK.letter} fill="currentColor" />
-      <path d={MARK.shelf} className="fill-accent dark:fill-led" />
+      <path
+        d={MARK.shelf}
+        fill="var(--accent)"
+        className="mark-shelf dark:fill-led forced-colors:fill-[Highlight]"
+      />
     </svg>
   )
 }
