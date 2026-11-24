@@ -941,7 +941,7 @@ of them, and leave Next.js's own inline scripts, 18 on the library page, needing
 
 | | Local | CI | Preview | Production |
 | --- | --- | --- | --- | --- |
-| Address | `http://localhost:3300` | Local to the runner | A new `*.vercel.app` per push | `https://shelf-ldallacqua.vercel.app` (proposed) |
+| Address | `http://localhost:3300` | Local to the runner | A new `*.vercel.app` per push | `https://savestate.gg`, once the owner moves it there ([setup, session G](setup.md#g-your-own-domain)); the former `https://shelf-ldallacqua.vercel.app` serves it too |
 | Database | `.data/shelf.db` | A fresh file | Turso `shelf-preview`. Until it is connected: a sample file built with the deployment. | Turso `shelf`. Until it is connected: an empty file. |
 | Data | `default`, or any set | `default` and `stress` | `default`, loaded if empty | Mine |
 | IGDB | Live for me; mocked with `SHELF_MOCKS=1` | Mocked | Live, when I add | Live, when I add |
@@ -961,14 +961,28 @@ of them, and leave Next.js's own inline scripts, 18 on the library page, needing
 | `STEAM_API_KEY` | Reading the games of an account linked through Steam | Steam sync |
 
 The site's own address comes from Vercel's built-in `VERCEL_PROJECT_PRODUCTION_URL`, so there
-is nothing to set for it, and sign-in uses the same value. Assistants need no setting either:
-the owner's MCP endpoint, its access tokens and their issuer are all at the deployment's own
-address (`siteUrl()`). Tokens are issued for one address, so on a preview an assistant connects
-to the deployment's `*.vercel.app` address, not the branch's. Each group of settings is checked
-with Zod when it is first needed (the database's when the database is opened, IGDB's when
-IGDB is called), and a missing one stops that call with a message naming it: the name, never
-the value. Checking everything at startup would refuse to run a preview that has no use for
-IGDB yet.
+is nothing to set for it, and sign-in uses the same value. Vercel sets it to the project's shortest
+production custom domain (a shorter one added later would become the site's address), and a
+deployment keeps the value it was built with: after a domain changes, production is redeployed.
+
+**An address production answered on before keeps signing people in.** Vercel goes on serving
+production at the project's `vercel.app` address after a domain of its own arrives, and Better
+Auth refuses any host it is not given, so in production its hosts add `FORMER_PRODUCTION_HOSTS`
+(`src/server/auth/hosts.ts`): today `shelf-ldallacqua.vercel.app`, where bookmarks, sessions and
+Shelf for Windows from before the domain still lead. An address leaves the list once it redirects
+to the domain. Cookies stay the address's own, so each address is signed in to once.
+
+Assistants need no setting either: the owner's MCP endpoint, its access tokens and their issuer
+are all at the deployment's own address (`siteUrl()`). Tokens are issued for one address, so on a
+preview an assistant connects to the deployment's `*.vercel.app` address, not the branch's, and in
+production to the domain, not a former address. An assistant connected before the domain is
+connected again; the endpoint doesn't accept the old issuer and audience for a while, which would
+mean a second issuer in Better Auth's metadata to save the owner one sign-in.
+
+Each group of settings is checked with Zod when it is first needed (the database's when the
+database is opened, IGDB's when IGDB is called), and a missing one stops that call with a message
+naming it: the name, never the value. Checking everything at startup would refuse to run a preview
+that has no use for IGDB yet.
 
 [The setup checklist](setup.md) has the click-by-click steps.
 
@@ -1089,6 +1103,7 @@ above.
 
 | When | Change | Why |
 | --- | --- | --- |
+| Own domain (23 Nov 2026) | **Production moves to `https://savestate.gg`, the owner's own domain, and `https://shelf-ldallacqua.vercel.app` keeps serving it and signing people in (section 21).** Better Auth's hosts add `FORMER_PRODUCTION_HOSTS` in production; `pnpm desktop:check` refuses both addresses. The owner moves the domain from the `save-state` project and redeploys ([setup, session G](setup.md#g-your-own-domain)); every absolute address (sitemap, `robots.txt`, `llms.txt`, the OpenAPI servers, JSON-LD, shared pictures, the MCP issuer and resource) follows `VERCEL_PROJECT_PRODUCTION_URL` by itself. Shelf for Windows follows in a release once the domain serves Shelf, keeping both origins; the old address redirects only after that release has reached the installed apps. Assistants connect again. | The product is renamed Save State, and the domain is the owner's. Vercel names one production address and Better Auth throws for a host it isn't given, so without the list the old address, where installed apps, bookmarks and sessions are, would stop signing in the moment the domain became production. The app hands its commands (Play, saves, downloads) to pages of the origins it names, so it can't name `savestate.gg` while that still serves another project; and a redirect now would send every app from before that release out to the browser. |
 | Sitemap without games (23 Nov 2026) | **`sitemap.xml` lists each public shelf and its trophy wall, but no longer its games' pages (section 16).** A game's page is still public and may be indexed from its shelf's links; `listPublicShelves` no longer gathers their addresses. | Vercel's Hobby plan counted 140K of its 200K ISR writes in 30 days (written in 8 KB units), twice the reads. Each page the cache stores weighs 1.3 to 1.6 MB (its HTML, its React payload and its segments, each carrying the inlined stylesheet and the messages), and the sitemap handed crawlers 602 game pages in two languages, written again after each of about five deployments a day. Shrinking the pages was measured first: linking the stylesheet in place of inlining it cut 60% of what a build stores but cost about a second of first paint on a phone's speed and three of Lighthouse's four pages their 90, and telling Tailwind to read only `src/` cut 1.3% of the stylesheet. The game pages mostly repeat a store's description and bring few visitors; the landing page, sign-up and the shelves stay listed. Per-route ISR figures need Observability Plus, so which crawlers wrote is not measured. |
 | CI is the gate (22 Nov 2026) | **Every pull request into `main` runs CI on GitHub, `main` is protected (pull requests only, the Gate check required, the owner's account included) and pull requests merge themselves once it passes (section 18).** Checks, then build, budgets, Lighthouse and Storybook side by side, the desktop app's Rust tests when `desktop/` changed; the browser tests by hand. `pnpm verify` stays, for more than CI runs. | The owner: the tests and Lighthouse "can start running in CI", so nothing depends on their computer running them, with auto-merge and Auto-fix on every pull request. Lighthouse on the owner's computer read 77 to 91 for the same build while a game ran. The repository is public now, so the minutes that kept CI off cost nothing. |
 | Next.js 16.4.5 (22 Nov 2026) | **Next.js 16.4.5,** from 16.4.1, and `eslint-config-next` with it. Not 16.4.6, which fixes nothing for security and starts compressing route handlers' answers. | 16.4.5 is a security release: seven moderate advisories, four of them in `'use cache'` and Cache Components, which Shelf uses (a fallback shell poisoned by a request's placeholder params; a cache answer shared across users for binary arguments; two leaks across root params, which Shelf's cached reads don't meet, as none reads the locale). Every build of 16.4.1 also stopped once on Next.js's notice asking for the upgrade. |
