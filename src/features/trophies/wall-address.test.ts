@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { wallAddress } from './wall-address'
+import { seenAnotherWay, wallAddress } from './wall-address'
 
 describe('the trophy page’s address (issue 68)', () => {
   it('takes a year with something to finish in it, a filter, a ranking and a rarity', () => {
@@ -28,5 +28,15 @@ describe('the trophy page’s address (issue 68)', () => {
 
   it('keeps a long filter to the length the library takes', () => {
     expect(wallAddress({ q: 'a'.repeat(1200) }, 2026).q).toHaveLength(1000)
+  })
+
+  it('tells a year from the wall seen another way, which is not listed', () => {
+    const at = (query: Record<string, string>) => seenAnotherWay(wallAddress(query, 2026))
+    expect(at({})).toBe(false)
+    expect(at({ year: '2025' })).toBe(false)
+    expect(at({ year: '2025', by: 'finished' })).toBe(false)
+    expect(at({ q: 'genre:rpg' })).toBe(true)
+    expect(at({ year: '2025', by: 'hours' })).toBe(true)
+    expect(at({ rarity: 'rare' })).toBe(true)
   })
 })
