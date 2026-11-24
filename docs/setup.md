@@ -23,6 +23,7 @@ Three rules I keep throughout:
 | [D](#d-daily-refresh) | Paste 1 setting | Build step 9 | 2 min |
 | [E](#e-steam-sync) | Get a Steam key, paste 1 setting | Steam sync | 5 min |
 | [F](#f-nintendo-sync) | Paste 1 setting, random | Nintendo sync | 2 min |
+| [G](#g-your-own-domain) | Move `savestate.gg` to this project, redeploy, reconnect assistants | After the old address is kept for sign-in | 20 min, plus DNS |
 
 Steps 2, 3, 4, 5, 6, 8 and 10 need nothing from you but review.
 
@@ -66,9 +67,9 @@ to open.
 
 ### Either way
 
-- **The address** will be `https://shelf-ldallacqua.vercel.app`. It was free when I checked on
-  12 Oct 2026. If you prefer another name, tell me before session C, because the GitHub
-  sign-in addresses below contain it.
+- **The address** was `https://shelf-ldallacqua.vercel.app`, free when I checked on 12 Oct 2026.
+  Production moves to your own domain, `https://www.savestate.gg`, in [session G](#g-your-own-domain);
+  the `vercel.app` address keeps serving it.
 - **Why "with GitHub" matters.** On the free plan Vercel only deploys commits whose author is
   the account owner, and it checks that through the linked GitHub account. Commits in this
   repository are authored as `ldallacqua`.
@@ -180,8 +181,10 @@ generate it into the file without displaying it.
 
 **Check it worked:** on production, **Create your shelf** makes an account and opens its empty
 shelf, and the **Add** button appears on it. A wrong password is turned away with a plain
-message. To let an assistant in, add `https://shelf-ldallacqua.vercel.app/api/mcp/owner` to
-it as an MCP server: it sends you to sign in, then asks you to say yes.
+message. To let an assistant in, add `https://www.savestate.gg/api/mcp/owner` to it as an MCP server
+(`https://shelf-ldallacqua.vercel.app/api/mcp/owner` until [session G](#g-your-own-domain) is done):
+it sends you to sign in, then asks you to say yes. Only production's own address works, since tokens
+are issued for one.
 
 ---
 
@@ -225,8 +228,9 @@ The key is Save State's, not your account's: it reads the games of whoever links
 account page, through Steam's own sign-in. It never signs anyone in.
 
 1. Signed in to Steam in your own browser, open https://steamcommunity.com/dev/apikey. For
-   the domain name, give `shelf-ldallacqua.vercel.app`. Agree to the Steam Web API Terms of
-   Use, and Steam shows the key. (Steam gives keys only to accounts with Steam Guard on that
+   the domain name, give `savestate.gg` (a key made before [session G](#g-your-own-domain) gave
+   `shelf-ldallacqua.vercel.app`; step 6 there says what to do). Agree to the Steam Web API Terms
+   of Use, and Steam shows the key. (Steam gives keys only to accounts with Steam Guard on that
    have spent at least 5 US dollars.)
 2. In a terminal of your own, from this folder, run the command below and paste the key when
    it asks:
@@ -286,12 +290,100 @@ the game Save State took it for: say **Cartridge** or **Download**, or answer th
 
 ---
 
+## G. Your own domain
+
+**When:** once the pull request that keeps sign-in working on the old address
+(`rebrand/domain-transition`) has merged and production runs it. Moving the domain before then
+breaks signing in on `shelf-ldallacqua.vercel.app`.
+
+Production moves from `https://shelf-ldallacqua.vercel.app` to `https://www.savestate.gg`, with the
+bare `savestate.gg` redirecting to it. The domain belonged to another of your Vercel projects,
+`save-state`, the app before this one. The code needs
+nothing more. The site's address is Vercel's `VERCEL_PROJECT_PRODUCTION_URL`, which Vercel sets
+to "the shortest production custom domain", so the sitemap, `robots.txt`, `llms.txt`, the API's
+description, the pictures a shared link shows and the assistants' sign-in all move with it. The
+old address keeps serving production and signing people in
+([architecture, section 21](architecture.md#21-environments-and-settings)), so nothing anyone saved
+stops working.
+
+Do steps 1 to 3 back to back: between them `savestate.gg` answers nothing, then answers with
+sign-in failing.
+
+1. **Take the domain off `save-state`.** Vercel, project `save-state`, **Settings**, **Domains**:
+   remove `savestate.gg` and `www.savestate.gg`. That project keeps its own `*.vercel.app`
+   address. If Vercel offers to move the domain over when you add it in step 2, that does steps 1
+   and 2 at once.
+2. **Give it to this project, as production.** Project `shelf-ldallacqua`, **Settings**,
+   **Domains**, **Add**: `savestate.gg`, for **Production**, and accept what Vercel suggests: add
+   `www.savestate.gg` too, with the bare domain **redirecting to `www`** (308, permanent).
+   `www.savestate.gg` is then the address that serves production and the one Vercel names; the
+   rest of this session says `www`. The other way round (the bare domain serving, `www`
+   redirecting) works as well, since Save State for Windows treats both as its own. The
+   DNS already points at Vercel for `save-state`; if Vercel shows **Invalid Configuration** or asks
+   for a TXT record to prove the domain is yours, add exactly what it shows at your DNS provider.
+   Leave `shelf-ldallacqua.vercel.app` as it is, with no redirect (step 10 says when).
+3. **Redeploy production.** **Deployments**, the newest production deployment, **⋯**,
+   **Redeploy**. A deployment keeps the values it was built with, Vercel's own included, so until
+   a new build the site still believes its address is the old one: `www.savestate.gg` shows pages,
+   but signing in there fails with an error, while the old address works.
+4. **Check that the address moved.** On both addresses, `/robots.txt` has the line
+   `Sitemap: https://www.savestate.gg/sitemap.xml`, and
+   `https://www.savestate.gg/.well-known/oauth-protected-resource/api/mcp/owner` names its resource
+   as `https://www.savestate.gg/api/mcp/owner`. Then sign in on
+   `https://www.savestate.gg/en/sign-in`, and on the old address. Each address keeps its own sign-in
+   (a cookie belongs to the address that set it), so the new one asks once; the old one stays
+   signed in.
+5. **Reconnect your assistants.** In each assistant that uses Save State, remove the MCP server
+   `https://shelf-ldallacqua.vercel.app/api/mcp/owner` and add
+   `https://www.savestate.gg/api/mcp/owner`: the address that serves, not the bare domain, because
+   an assistant checks that the server's own description names the address it was given.
+   It sends you to sign in, then asks you to say yes, as the first time. The old connection stopped
+   at step 3: its tokens were issued by the old address, for the old address.
+6. **Steam's key.** Its domain name is for Steam's records: Save State's server calls Steam with the key
+   directly, so the key goes on working after the move. To have it say `savestate.gg`, open
+   https://steamcommunity.com/dev/apikey; if the domain can't be edited there, revoke the key,
+   register a new one for `savestate.gg`, paste it into Vercel as in [session E](#e-steam-sync)
+   (`vercel env rm STEAM_API_KEY production` first) and redeploy. Steam sync is off from the revoke
+   to the redeploy.
+7. **Google Search Console.** At https://search.google.com/search-console, add a **Domain**
+   property for `savestate.gg` (it covers `www` too), proved with the TXT record Google gives, at
+   your DNS provider. Under **Sitemaps**, submit `https://www.savestate.gg/sitemap.xml`. Google's Change
+   of Address tool needs the old site to redirect and to be a property of yours, which a
+   `vercel.app` address can't be without a file in the site, so leave it: the redirect of step 10
+   moves what Google indexed.
+8. **Save State for Windows.** Installed apps open the old address until a release says otherwise. Once
+   step 4 checks out, merge the pull request that moves the app to `www.savestate.gg`
+   (`rebrand/desktop-domain`), then raise the version and publish a release
+   ([the desktop guide](desktop.md), `pnpm desktop:release`). Each app updates at its next start
+   and opens `www.savestate.gg`, where it asks for a sign-in once more. Never before step 4: that
+   release gives the app's commands (Play, saves, downloads) to pages on `www.savestate.gg` and
+   `savestate.gg`, which must be this project's by then.
+9. **Google Drive in the app** can now be published at Google: its branding wants a home page, a
+   privacy policy and terms on a domain of Save State's own, which `savestate.gg` is
+   ([the desktop guide, step 12](desktop.md)).
+10. **Later, not now: send the old address to the new one.** Once step 8's release has been out a
+    while and every PC you use has started on it, redirect `shelf-ldallacqua.vercel.app` to
+    `www.savestate.gg`, permanently: in **Settings**, **Domains**, edit that address to redirect to
+    `www.savestate.gg` (308), or, if Vercel won't redirect its own address, a `redirects()` rule in
+    `next.config.ts` matching that host. Search engines, links and bookmarks then all land on the
+    domain. **The cost:** an app from before step 8's release that hasn't started since (closed to
+    the tray, it runs for days), or couldn't update, still opens the old address, and its window
+    keeps only that one, so the redirect sends its pages to the default browser. Play, saves and
+    downloads stop working in it until it starts again and updates. Once redirected, the old address
+    can leave `FORMER_PRODUCTION_HOSTS` (`src/server/auth/hosts.ts`).
+
+**Check it worked:** step 4, then the app of step 8 opening `www.savestate.gg` with Play working.
+
+---
+
 ## Good to know
 
 - **A changed setting takes effect on the next deployment.** After pasting values, tell me and
   I push, or press **Redeploy** in Vercel.
 - **If a deployment is refused over the commit author,** tell me. The fix is on my side.
-- **A custom domain later** is added in Vercel. Nothing in the code changes.
+- **A domain of Save State's own** is more than adding it in Vercel: a deployment learns its address
+  only when it is built, and sign-in, assistants and Save State for Windows each know the address.
+  [Session G](#g-your-own-domain) moves production to `savestate.gg`.
 - **Free limits** are in [the architecture, section 3](architecture.md#3-services-and-their-free-limits).
   None of these services can bill you on its free plan as set up here.
 

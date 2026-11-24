@@ -98,7 +98,7 @@ to forget the rest.
 | Command | Does |
 | --- | --- |
 | `pnpm desktop:dev` | The app against the local server, `http://localhost:3300`, rebuilt when its Rust changes. Start `pnpm serve:test` (or `pnpm dev`) first. |
-| `pnpm desktop:build` | The installer, a release build that opens production: `desktop/target/release/bundle/nsis/Shelf_<version>_x64-setup.exe` |
+| `pnpm desktop:build` | The installer, a release build that opens production, `https://www.savestate.gg`: `desktop/target/release/bundle/nsis/Shelf_<version>_x64-setup.exe` |
 | `pnpm desktop:test` | The Rust side's tests (`cargo test`) |
 | `pnpm desktop:release` | From a clean `main` that is GitHub's: the installer for the version in `tauri.conf.json`, signed with the key in `.env.local`, and `latest.json`, published as the release `desktop-v{version}`, which every installed app finds at its next start ([step 6](#step-6-updates-and-the-installer-in-one-step)) |
 | `pnpm desktop:check` | The app against `pnpm serve:test`, driven through its web view's debugging port: signs in as the made-up owner and checks that the pages show what a browser shows ([section 5](#5-checking-it)) |
@@ -107,7 +107,12 @@ The first build compiles Tauri and its dependencies, about five minutes; later o
 seconds. `desktop/target/` is the build's own and is not committed.
 
 **Another address:** `SHELF_URL=https://… pnpm desktop:dev` opens that one. A release build
-ignores `SHELF_URL` and opens production only.
+ignores `SHELF_URL` and opens production only, `https://www.savestate.gg`. It takes production's
+other addresses as Save State's own too (`own_addresses` in `lib.rs`): the bare `https://savestate.gg`,
+which redirects to `www` (and would serve the site if the owner made it the main address), and the
+address production had before its domain, `https://shelf-ldallacqua.vercel.app`, which an app older
+than the domain opens. A link or a redirect between them stays in the window. A development build's
+address has no such others.
 
 ## 3. How it is made
 
@@ -117,7 +122,7 @@ ignores `SHELF_URL` and opens production only.
 desktop/
   Cargo.toml, build.rs   The Rust program, shelf-desktop
   tauri.conf.json        The app: name, identifier, window, installer
-  capabilities/          What the local page may ask (Save State's origin gets its own in lib.rs)
+  capabilities/          What the local page may ask (Save State's origins get theirs in lib.rs)
   splash/                The one local page, the splash: an update, then Save State, or "Save State can't
                          be reached" with Try again
   installer/             The installer's template: Tauri's, with its pages taken out
@@ -172,9 +177,10 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
 
 ### Rules that keep it safe
 
-- Only the address the build opens may call a command: the capability `lib.rs` adds when the
-  app starts names that address in its `remote` URLs, and `build.rs` lists every command, so
-  none is allowed without one.
+- Only Save State's own addresses may call a command: the one the build opens and, in a release
+  build, the one production had before its domain (`own_addresses`), each origin exactly, with no
+  pattern but its paths. The capability `lib.rs` adds when the app starts names them in its
+  `remote` URLs, and `build.rs` lists every command, so none is allowed without one.
 - A path comes only from the file picker. No command takes one.
 - An update is installed only when its signature is made with the app's key and names the
   version `latest.json` announces (`requireSignedVersion`): a `latest.json` that pairs a newer
@@ -182,12 +188,13 @@ digits, `-` and `_`, up to 64) or Steam app ids (digits), and refuses anything e
   signature without its version.
 - The splash may ask `start`, and move and close its own window; nothing else.
 - No plugin's JavaScript API is allowed to any page.
-- Save State's origin may also use Tauri's window commands for the window it is in: minimize,
+- Save State's origins may also use Tauri's window commands for the window they are in: minimize,
   maximize, close, whether it is maximized, and dragging. The app's own page may minimize,
   close and move its window.
-- The window keeps Save State's pages and the platforms' sign-in pages (`navigation.rs`); any other
-  address goes to the default browser; `steam://rungameid/` and `steam://install/` go to Steam,
-  and every other scheme is dropped.
+- The window keeps Save State's pages, at any of its three addresses, and the platforms' sign-in
+  pages (`navigation.rs`); any other address, a lookalike included (`http://`, another port, another
+  subdomain or a longer name), goes to the default browser; `steam://rungameid/` and
+  `steam://install/` go to Steam, and every other scheme is dropped.
 
 ### The site's side
 
@@ -550,8 +557,10 @@ ADR 008's phase 5; spec 7.12.
       Google ends each sign-in after seven days: Save State then says it is signed out, and Sign in again
       brings it back. Publishing asks, under **Branding**, for a home page, a privacy policy and terms of
       service (`/privacy`, `/terms`) on an authorized domain, which Google doesn't take on `vercel.app`:
-      it needs a domain of Shelf's own, added to Vercel. Then **Remove** the logo (a logo makes Google
-      review the app first) and **Publish app** under Audience: these scopes need no review.
+      `savestate.gg`, Save State's own since the owner moved it to this project (setup, session G), with
+      `https://www.savestate.gg`, `https://www.savestate.gg/en/privacy` and `https://www.savestate.gg/en/terms`.
+      Then **Remove** the logo (a logo makes Google review the app first) and **Publish app** under
+      Audience: these scopes need no review.
 - [ ] A release with them (`pnpm desktop:release` reads them, and says which services it built in, never
       their values), then by hand on two PCs: sign in to the same service on each, play on one and press
       Play on the other.

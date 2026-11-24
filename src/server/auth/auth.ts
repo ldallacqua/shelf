@@ -11,6 +11,7 @@ import { revalidateTag } from 'next/cache'
 
 import { NAME_MAX, PASSWORD_MAX, PASSWORD_MIN } from '@/domain/accounts/account'
 import { HANDLE_MAX, HANDLE_MIN, isHandle } from '@/domain/accounts/handle'
+import { ownHosts } from '@/server/auth/hosts'
 import { database } from '@/server/db/client'
 import {
   accounts,
@@ -79,16 +80,6 @@ export const MCP_OWNER_PATH = '/api/mcp/owner'
  */
 export const mcpResource = (): string => `${siteUrl()}${MCP_OWNER_PATH}`
 export const authIssuer = (): string => `${siteUrl()}/api/auth`
-
-/** The addresses this deployment answers on, which sign-in may send people back to. */
-const ownHosts = (): string[] => {
-  const hosts = [
-    process.env.VERCEL_PROJECT_PRODUCTION_URL,
-    process.env.VERCEL_BRANCH_URL,
-    process.env.VERCEL_URL,
-  ].filter((host): host is string => Boolean(host?.trim()))
-  return onVercel() ? hosts : [...hosts, `localhost:${process.env.PORT ?? '3300'}`]
-}
 
 const createAuth = () => {
   const env = authEnv()

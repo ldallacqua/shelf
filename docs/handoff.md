@@ -2,6 +2,26 @@
 
 > **23 Nov 2026: the product is now Save State** (two words; [ADR 011](adr/011-save-state.md)). "Shelf" in the older text below, and in the decision records and reports, means it. A person's shelf, the Shelf view and the code's internal names keep theirs.
 
+## Moving to savestate.gg (23 Nov 2026)
+
+Production is moving to the owner's own domain, `https://www.savestate.gg` (the bare `savestate.gg`
+redirects to it, as Vercel suggested when the owner added it), with the product's new name, Save State (the
+name changes in a pull request of its own). Two branches, in this order, and the owner's steps between them:
+[setup, session G](setup.md#g-your-own-domain).
+
+- **First, the site** (`rebrand/domain-transition`): once the domain is production,
+  `shelf-ldallacqua.vercel.app` keeps signing people in (`FORMER_PRODUCTION_HOSTS`,
+  [architecture, section 21](architecture.md#21-environments-and-settings)); `pnpm desktop:check` refuses
+  both addresses. Nothing redirects: both addresses serve the site.
+- **Then the owner** moves the domain off the `save-state` project onto this one, redeploys and reconnects
+  the assistants (session G, steps 1 to 7). Done on 23 Nov 2026: `www.savestate.gg` serves production, and
+  sign-in answers there and on the old address.
+- **Then the app** (`rebrand/desktop-domain`, session G, step 8): release builds open `www.savestate.gg`, and
+  the window keeps, and gives the commands to, that origin, the bare domain and the old address, no others.
+  Merged once the domain served Save State; a desktop release is the owner's call.
+- **Later:** the old address redirects to the domain (step 10), once the installed apps have updated; until
+  then an app from before step 8 would be sent to the browser.
+
 ## Four of the owner's rules (22 Nov 2026)
 
 Four of the owner's rules from the same day, written where every agent reads them (the owner asked that every rule

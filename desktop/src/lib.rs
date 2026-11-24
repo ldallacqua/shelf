@@ -43,8 +43,18 @@ use launchers::Launchers;
 use navigation::Decision;
 use tracker::Tracker;
 
-/// The Shelf a release build opens.
-const PRODUCTION: &str = "https://shelf-ldallacqua.vercel.app";
+/// The Shelf a release build opens: the domain's address that serves the site (setup, session G).
+const PRODUCTION: &str = "https://www.savestate.gg";
+
+/// Production's other addresses. The bare domain redirects to `www`, and would serve the site
+/// itself if the owner made it the main address. `vercel.app` is where production answered before
+/// it had a domain, and still does: an app from before the domain opens it. A link or a redirect
+/// may lead from one to another. Their pages are Shelf's own, so a release build's window keeps
+/// them and gives them the commands.
+const OTHER_PRODUCTION: &[&str] = &[
+    "https://savestate.gg",
+    "https://shelf-ldallacqua.vercel.app",
+];
 
 /// Run in every page before its own scripts: the window has no Windows bar,
 /// so Shelf's header is the bar and draws the window's controls (ADR 005,
@@ -87,6 +97,22 @@ fn shelf_url() -> Url {
         }
     }
     Url::parse(PRODUCTION).expect("the production address is an address")
+}
+
+/// Shelf's own addresses, for the Shelf this build opens: that one, and when it is production,
+/// production's other addresses. The window keeps their pages and gives them the commands, each
+/// origin exactly; a development build's own address has no others.
+fn own_addresses(shelf: &Url) -> Vec<Url> {
+    let mut own = vec![shelf.clone()];
+    let production = Url::parse(PRODUCTION).expect("the production address is an address");
+    if shelf.origin() == production.origin() {
+        own.extend(
+            OTHER_PRODUCTION
+                .iter()
+                .map(|address| Url::parse(address).expect("another address is an address")),
+        );
+    }
+    own
 }
 
 /// In a development build, `SHELF_DATA_DIR` keeps the web view's profile (and
@@ -245,6 +271,7 @@ async fn update(app: &AppHandle, steps: &Channel<Step>) {
 
 /// The splash, which asks `start`, which opens Shelf when it is time.
 fn open_splash(app: &AppHandle, shelf: Url) -> tauri::Result<()> {
+    let own = own_addresses(&shelf);
     let mut splash = WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("index.html".into()))
         .title("Save State")
         .inner_size(320.0, 360.0)
@@ -252,7 +279,7 @@ fn open_splash(app: &AppHandle, shelf: Url) -> tauri::Result<()> {
         .maximizable(false)
         .decorations(false)
         .center()
-        .on_navigation(move |url| navigation::decide(url, &shelf) == Decision::Stay);
+        .on_navigation(move |url| navigation::decide(url, &own) == Decision::Stay);
     if let Some(dir) = data_dir() {
         splash = splash.data_directory(dir);
     }
@@ -289,7 +316,7 @@ fn open_main(app: &AppHandle, shelf: Url) -> tauri::Result<()> {
     }
     let navigating = app.clone();
     let opening = app.clone();
-    let rules = shelf.clone();
+    let rules = own_addresses(&shelf);
     let mut window = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(shelf))
         .title("Save State")
         .inner_size(1280.0, 800.0)
@@ -440,12 +467,14 @@ pub fn run() {
         ])
         .setup(|app| {
             let shelf = shelf_url();
-            // Shelf's own pages, and no other remote page, may ask for commands.
+            // Shelf's own pages, and no other remote page, may ask for commands: each of its
+            // origins exactly (`own_addresses`), its paths the only part left open.
+            let pages = own_addresses(&shelf).iter().fold(
+                CapabilityBuilder::new("shelf").window("main").local(false),
+                |pages, own| pages.remote(format!("{}/*", own.origin().ascii_serialization())),
+            );
             app.add_capability(
-                CapabilityBuilder::new("shelf")
-                    .window("main")
-                    .local(false)
-                    .remote(format!("{}/*", shelf.origin().ascii_serialization()))
+                pages
                     .permission("allow-desktop-info")
                     .permission("allow-launcher")
                     .permission("allow-choose-launcher")
@@ -627,4 +656,38 @@ pub fn run() {
             }
             _ => {}
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn production_owns_both_domain_addresses_and_its_former_one() {
+        let own = own_addresses(&Url::parse(PRODUCTION).unwrap());
+        let own: Vec<&str> = own.iter().map(Url::as_str).collect();
+        assert_eq!(
+            own,
+            [
+                "https://www.savestate.gg/",
+                "https://savestate.gg/",
+                "https://shelf-ldallacqua.vercel.app/",
+            ]
+        );
+    }
+
+    #[test]
+    fn any_other_shelf_owns_only_itself() {
+        for address in [
+            "http://localhost:3300",
+            "https://shelf-ldallacqua.vercel.app",
+            "https://savestate.gg",
+            "http://www.savestate.gg",
+            "https://www.savestate.gg.evil.example",
+        ] {
+            let shelf = Url::parse(address).unwrap();
+            let own = own_addresses(&shelf);
+            assert_eq!(own, vec![shelf.clone()]);
+        }
+    }
 }
