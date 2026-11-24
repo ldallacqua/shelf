@@ -2,7 +2,7 @@
  * pnpm landing:share
  *
  * Writes the landing page's share pictures, `public/share/{locale}.jpg`: what a
- * link to Shelf shows in a chat or a post. Each is the page's own first screen
+ * link to Save State shows in a chat or a post. Each is the page's own first screen
  * in the dark, its lights on, cut to the eyebrow, the headline and the shelf of
  * real covers, at the size those cards are drawn (1200 by 630).
  *
@@ -21,8 +21,11 @@ const out = resolve('public/share')
 mkdirSync(out, { recursive: true })
 
 // A card is a picture, not a page: no header, nothing that looks like it could be pressed.
+// The eyebrow carries the name, the only place the picture does, and a card is seen far
+// smaller than it is drawn, so here it is twice its size on the page.
 const PICTURE_ONLY = `
   body > header, #landing-title ~ * { display: none !important; }
+  #top p:has(+ #landing-title) { font-size: 1.375rem !important; }
 `
 
 const browser = await chromium.launch()

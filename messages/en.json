@@ -448,7 +448,7 @@
       },
       "export": {
         "q": "Can I take my games with me?",
-        "a": "Your whole library can be read through Save State's API while you are signed in. A one-click export is planned."
+        "a": "Your whole library can be read through Save State’s API while you are signed in. A one-click export is planned."
       }
     }
   },
@@ -2147,11 +2147,11 @@
       },
       "nintendo": {
         "title": "Nintendo",
-        "body": "If you link Nintendo, Save State keeps your Nintendo Account’s id and nickname, the games your Nintendo play history lists, with the hours played and when each was last played, and the sign-in Nintendo gives it to read them. That sign-in is kept sealed: what is in the database alone cannot be used. Nintendo’s page names it “Nintendo Store”, as the service reads the history that app shows. The service reads the history when you link Nintendo or press Sync now, and once a day while daily sync is on. Your Nintendo password never reaches the service. Disconnecting Nintendo deletes the sign-in and what Nintendo listed; the games it put on your shelf stay, as your own."
+        "body": "If you link Nintendo, Save State keeps your Nintendo Account’s id and nickname, the games your Nintendo play history lists, with the hours played and when each was last played, and the sign-in Nintendo gives it to read them. That sign-in is kept sealed: what is in the database alone cannot be used. Nintendo’s page names it “Nintendo Store”, because Save State reads the history that app shows: when you link Nintendo or press Sync now, and once a day while daily sync is on. Your Nintendo password never reaches Save State. Disconnecting Nintendo deletes the sign-in and what Nintendo listed; the games it put on your shelf stay, as your own."
       },
       "desktop": {
         "title": "Save State for Windows",
-        "body": "To count your hours on a PC, the app looks at which program is in front of you, and at whether a key, the mouse or a controller was touched, never at what was pressed. On your computer it keeps which game each stretch of play was, when it started and ended, and for how long you played, with a random id the app made for that computer, which says nothing of it, not even its name in Windows. To Save State it sends only that, and only for games on your shelf. The service keeps the name you give each computer, and only you are ever shown it, or which computer played what. No other program’s name leaves your computer, and neither does the file chosen for a game. Removing a game deletes what was counted of it."
+        "body": "To count your hours on a PC, the app looks at which program is in front of you, and at whether a key, the mouse or a controller was touched, never at what was pressed. On your computer it keeps which game each stretch of play was, when it started and ended, and for how long you played, with a random id the app made for that computer, which says nothing of it, not even its name in Windows. To Save State it sends only that, and only for games on your shelf. Save State keeps the name you give each computer, and only you are ever shown it, or which computer played what. No other program’s name leaves your computer, and neither does the file chosen for a game. Removing a game deletes what was counted of it."
       },
       "saves": {
         "title": "Saves, in Save State for Windows",
@@ -2181,7 +2181,7 @@
     "metaDescription": "The terms for using Save State, its API and its app for Windows.",
     "title": "Terms of Service",
     "updated": "Last changed {date}",
-    "intro": "These are the terms for using Save State: its site, its API, its MCP server and its app for Windows. Using any of them means you accept them. It is free, young and still changing, so they are short, and say plainly what you can count on and what you can’t.",
+    "intro": "These are the terms for using Save State (“the service”): its site, its API, its MCP server and its app for Windows. Using any of them means you accept them. Save State is free, young and still changing, so they are short, and say plainly what you can count on and what you can’t. Until 23 November 2026 it was called Shelf; these terms changed then only in the name.",
     "sections": {
       "account": {
         "title": "Your account",
@@ -2197,7 +2197,7 @@
       },
       "services": {
         "title": "Other services",
-        "body": "Save State works with services that aren’t its own: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive and Google Drive. Linking or using one is between you and it, under its own terms, and the service answers for none of what it does or stops doing."
+        "body": "Save State works with services that aren’t its own: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive and Google Drive. Linking or using one is between you and it, under its own terms, and Save State answers for none of what that other service does or stops doing."
       },
       "desktop": {
         "title": "Save State for Windows",

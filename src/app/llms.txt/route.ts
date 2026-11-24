@@ -1,7 +1,7 @@
 import { siteUrl } from '@/server/site-url'
 
 /**
- * `/llms.txt`: what Shelf is, for AI tools (architecture, section 16): the
+ * `/llms.txt`: what Save State is, for AI tools (architecture, section 16): the
  * site, the API, both MCP endpoints and the filter language, in the
  * format llmstxt.org proposes. It describes the site, not anyone's shelf,
  * so it is built ahead whole. It is for programs, in English, as the
@@ -11,7 +11,7 @@ export function GET() {
   const site = siteUrl()
   const text = `# Save State
 
-> Save State is a game library: every game a person owns, on one lit shelf, physical and digital, every console. Each account has one shelf at ${site}/en/u/{handle}, public or private. Game information comes from IGDB.com.
+> Save State (formerly Shelf) is a game library: every game a person owns, on one lit shelf, physical and digital, every console. Each account has one shelf at ${site}/en/u/{handle}, public or private. Game information comes from IGDB.com.
 
 Shelves are read by their handle. A public shelf can be read by anyone, with no key; a private one answers 404, as a shelf no account has does. Writing acts on one's own shelf and needs that account's sign-in.
 

@@ -1704,7 +1704,7 @@
       "presets": {
         "violet": {
           "name": "Violeta",
-          "detail": "A do Save State"
+          "detail": "A cor do Save State"
         },
         "ocean": {
           "name": "Oceano",
@@ -2147,11 +2147,11 @@
       },
       "nintendo": {
         "title": "Nintendo",
-        "body": "Se você conectar a Nintendo, o Save State guarda o id e o apelido da sua Conta Nintendo, os jogos que o seu histórico de jogo da Nintendo lista, com as horas jogadas e quando cada um foi jogado pela última vez, e o acesso que a Nintendo dá a ele para lê-los. Esse acesso fica selado: o que está no banco de dados, sozinho, não serve para nada. A página da Nintendo o chama de “Nintendo Store”, porque o serviço lê o histórico que esse app mostra. O serviço lê o histórico quando você conecta a Nintendo ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Nintendo nunca chega ao serviço. Desconectar a Nintendo apaga o acesso e o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
+        "body": "Se você conectar a Nintendo, o Save State guarda o id e o apelido da sua Conta Nintendo, os jogos que o seu histórico de jogo da Nintendo lista, com as horas jogadas e quando cada um foi jogado pela última vez, e o acesso que a Nintendo dá a ele para lê-los. Esse acesso fica selado: o que está no banco de dados, sozinho, não serve para nada. A página da Nintendo o chama de “Nintendo Store”, porque o Save State lê o histórico que esse app mostra: quando você conecta a Nintendo ou aperta Sincronizar agora, e uma vez por dia enquanto a sincronização diária está ligada. Sua senha da Nintendo nunca chega ao Save State. Desconectar a Nintendo apaga o acesso e o que ela listou; os jogos que ela pôs na sua estante ficam, como seus."
       },
       "desktop": {
         "title": "Save State para Windows",
-        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou, com um id aleatório que o app criou para aquele computador, que não diz nada dele, nem o nome dele no Windows. Para o Save State ele envia só isso, e só de jogos que estão na sua estante. O serviço guarda o nome que você dá a cada computador, e só você vê esse nome, ou qual computador jogou o quê. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
+        "body": "Para contar suas horas no PC, o app olha qual programa está na sua frente e se alguma tecla, o mouse ou um controle foi tocado, nunca o que foi apertado. No seu computador ele guarda de qual jogo foi cada trecho de jogatina, quando começou e terminou, e por quanto tempo você jogou, com um id aleatório que o app criou para aquele computador, que não diz nada dele, nem o nome dele no Windows. Para o Save State ele envia só isso, e só de jogos que estão na sua estante. O Save State guarda o nome que você dá a cada computador, e só você vê esse nome, ou qual computador jogou o quê. O nome de nenhum outro programa sai do seu computador, nem o arquivo escolhido para um jogo. Remover um jogo apaga o que foi contado dele."
       },
       "saves": {
         "title": "Saves, no Save State para Windows",
@@ -2181,7 +2181,7 @@
     "metaDescription": "Os termos de uso do Save State, da API dele e do app para Windows.",
     "title": "Termos de Serviço",
     "updated": "Alterados em {date}",
-    "intro": "Estes são os termos para usar o Save State: o site, a API, o servidor MCP e o app para Windows. Usar qualquer um deles significa aceitar estes termos. Ele é gratuito, novo e ainda está mudando; por isso os termos são curtos e dizem com clareza com o que você pode contar e com o que não pode.",
+    "intro": "Estes são os termos para usar o Save State (“o serviço”): o site, a API, o servidor MCP e o app para Windows. Usar qualquer um deles significa aceitar estes termos. O Save State é gratuito, novo e ainda está mudando; por isso os termos são curtos e dizem com clareza com o que você pode contar e com o que não pode. Até 23 de novembro de 2026 ele se chamava Shelf; nesse dia os termos mudaram só no nome.",
     "sections": {
       "account": {
         "title": "Sua conta",
@@ -2197,7 +2197,7 @@
       },
       "services": {
         "title": "Outros serviços",
-        "body": "O Save State funciona com serviços que não são dele: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive e Google Drive. Vincular ou usar um deles é entre você e ele, pelos termos dele, e o serviço não responde pelo que ele faz ou deixa de fazer."
+        "body": "O Save State funciona com serviços que não são dele: Steam, Nintendo, IGDB.com, YouTube, Real-Debrid, OneDrive e Google Drive. Vincular ou usar um deles é entre você e ele, pelos termos dele, e o Save State não responde pelo que esse outro serviço faz ou deixa de fazer."
       },
       "desktop": {
         "title": "Save State para Windows",
