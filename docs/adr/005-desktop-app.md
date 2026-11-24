@@ -2,7 +2,8 @@
 
 - **Status:** accepted, 25 Oct 2026; amended the same day with the window's own title bar,
   Ready to play, updates and the installer in one step (sections 8 to 10), and on 31 Oct 2026
-  with whether a game is running (section 11)
+  with whether a game is running (section 11), and on 23 Nov 2026 with Shelf's own domain
+  (sections 2, 3 and 6)
 - **Date:** 25 Oct 2026
 - **Decides:** how Shelf becomes an app on the owner's computer that starts their games, as
   Hydra does, while the site stays what it is
@@ -70,7 +71,7 @@ there.
 
 ### 2. The app opens the hosted Shelf, not a copy of it
 
-The window opens `https://shelf-ldallacqua.vercel.app`, the same address a browser does. Every
+The window opens `https://www.savestate.gg`, the same address a browser does. Every
 page, every number and every game is the one the site serves, signed in with the same account,
 so the app cannot show different data from the browser: there is only one Shelf. This is what
 meets the owner's condition.
@@ -82,6 +83,16 @@ later step.
 
 A build for development opens the address in `SHELF_URL` instead (`http://localhost:3300`, the
 local server); a release build opens production only.
+
+**Shelf's own domain** (23 Nov 2026). Production moved from `https://shelf-ldallacqua.vercel.app`
+to `https://www.savestate.gg`, the bare `savestate.gg` redirects to it, and Vercel still serves it at
+the old address. A release build opens `www` and takes the other two as Shelf's own too: the bare
+domain, so its redirect stays in the window (and so the app keeps working if the owner ever makes it
+the main address), and the old address, which an app from before the move opens. A link or a
+redirect between them must stay in the window, with the commands (section 3). Exactly those three
+origins: no other host, scheme or port, and no pattern but their paths. Apps from before the
+release keep only the old address, which is why it is not redirected to the domain until they have
+updated ([setup, session G](../setup.md#g-your-own-domain)).
 
 ### 3. A bridge of a few commands, for Shelf's own pages only
 
@@ -102,10 +113,10 @@ a command line. What the app may do is the list below, nothing more:
 | `stop_game` | Asks that game to close, whichever processes are identified as it now |
 | `force_stop_game` | Ends those processes at once. The page has asked the person first |
 
-- **Only Shelf's origin may call them.** Tauri allows a remote page no command unless a
-  capability names its address (`remote.urls`); Shelf's capability names the one address the
-  build opens. Steam's and Nintendo's sign-in pages, which open in the same window, get
-  nothing.
+- **Only Shelf's origins may call them.** Tauri allows a remote page no command unless a
+  capability names its address (`remote.urls`); Shelf's capability names the address the build
+  opens and, in a release build, the one production had before its domain (section 2), each
+  exactly. Steam's and Nintendo's sign-in pages, which open in the same window, get nothing.
 - **A path enters only through the file picker,** which the person sees and answers. A page
   cannot hand the app a path, so a page that went wrong could at worst start a game I chose, or
   Steam.
@@ -113,7 +124,7 @@ a command line. What the app may do is the list below, nothing more:
   `steam://rungameid/{id}` or `steam://install/{id}`.
 - No plugin's own JavaScript API is allowed to the page: no file system, no shell.
 - **The window's own controls** (section 8) are Tauri's window commands, allowed to Shelf's
-  origin as well: minimize, maximize, close, whether it is maximized, and dragging. They act on
+  origins as well: minimize, maximize, close, whether it is maximized, and dragging. They act on
   the window the page is in, and on nothing else.
 
 ### 4. What is the computer's stays on the computer
@@ -142,10 +153,11 @@ added again, or a version separated, is a new entry and asks for its file again.
 
 ### 6. The window keeps to Shelf
 
-Shelf's own pages open in the window, and so do the sign-in pages Settings' Platforms page sends to
-for linking (Steam's OpenID, Nintendo's accounts), whose way back is Shelf. Any other web
-address opens in the default browser. Of the other schemes, only `steam://rungameid/` and
-`steam://install/` are passed to Windows.
+Shelf's own pages open in the window, at either of its addresses (section 2), and so do the
+sign-in pages Settings' Platforms page sends to for linking (Steam's OpenID, Nintendo's accounts),
+whose way back is Shelf. Any other web address opens in the default browser, a lookalike of
+Shelf's among them. Of the other schemes, only `steam://rungameid/` and `steam://install/` are
+passed to Windows.
 
 ### 7. Hours, for the games started from a file
 
