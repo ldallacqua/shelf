@@ -113,7 +113,7 @@ describe('the trophy page’s backlog (issue 68)', () => {
       }),
     ).toHaveAttribute(
       'href',
-      `/en/u/ana?${new URLSearchParams({ q: 'status:backlog,someday genre:adventure (year:<2030)' })}`,
+      `/en/u/ana?${new URLSearchParams({ q: 'genre:adventure status:backlog,someday year:<2030' })}`,
     )
     expect(
       within(section('Waiting, by platform')).getByRole('link', { name: 'PC: 1 game waiting' }),

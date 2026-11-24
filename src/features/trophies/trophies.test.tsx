@@ -116,7 +116,7 @@ describe('the trophy wall', () => {
       name: 'Nintendo Switch: 1 game finished',
     })
     expect(platform.getAttribute('href')).toMatch(/^\/en\/u\/ana\?/)
-    expect(filterOf(platform)).toBe('status:completed owned:switch')
+    expect(filterOf(platform)).toBe('owned:switch status:completed')
   })
 
   it('keeps the records: the first finish, the longest, the quickest, the best rated', () => {

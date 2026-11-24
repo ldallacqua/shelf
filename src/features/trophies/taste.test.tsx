@@ -94,7 +94,7 @@ describe('the ranking (issue 68)', () => {
     // Ranked by the hours, how many were finished stands beside them, under its head.
     expect(rpg).toHaveTextContent('RPG50 h5')
     expect(genres).toHaveTextContent('HoursFinished')
-    expect(addressOf(rpg).searchParams.get('q')).toBe('status:completed genre:rpg')
+    expect(addressOf(rpg).searchParams.get('q')).toBe('genre:rpg status:completed')
     const developers = within(kinds).getByRole('region', { name: 'Developers' })
     expect(within(developers).getByRole('link')).toHaveTextContent('Supergiant')
   })
@@ -131,7 +131,7 @@ describe('what the figures say (issue 68)', () => {
     const developer = within(said)
       .getAllByRole('link', { name: 'See the games' })
       .map((link) => addressOf(link).searchParams.get('q'))
-    expect(developer).toContain('status:completed developer:supergiant')
+    expect(developer).toContain('developer:supergiant status:completed')
   })
 })
 
