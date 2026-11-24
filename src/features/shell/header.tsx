@@ -21,6 +21,11 @@ import { NavLinks } from './nav-links'
  * menu. Signed in, Add, for one's own shelf. In Shelf for Windows it is
  * also the window's bar, with the window's controls at its right end, and
  * says when a newer version is ready to go in.
+ *
+ * On a phone the links and the language fold into the menu, so the name
+ * keeps its place from 22rem, signed in with Add too: below that, the mark
+ * stands for it. One rule for everyone, so the first paint is right before
+ * the account is known.
  */
 export function Header({ add }: { add?: AddActions }) {
   const t = useTranslations('Shell')
@@ -39,9 +44,7 @@ export function Header({ add }: { add?: AddActions }) {
           className="-ml-1 flex items-center gap-2 self-center rounded-control px-1 py-1 title text-lg"
         >
           <LogoMark />
-          <span className="whitespace-nowrap max-[22rem]:hidden hinted:max-[26rem]:hidden">
-            {meta('siteName')}
-          </span>
+          <span className="whitespace-nowrap max-[22rem]:hidden">{meta('siteName')}</span>
         </Link>
 
         <nav aria-label={t('mainNav')} className="ml-4 hidden md:block">
@@ -53,7 +56,7 @@ export function Header({ add }: { add?: AddActions }) {
           <HeaderSearch />
           <InAppHeader />
           <ThemeSwitch />
-          <LanguageSwitch />
+          <LanguageSwitch className="max-md:hidden" />
           <AccountMenu />
           <MobileNav className="md:hidden" />
         </div>

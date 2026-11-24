@@ -142,7 +142,9 @@ Ready to play stays a choice of the device's (spec 7.7), kept apart.
 **Header, on every page:** the name; Library and Trophies of the shelf in the address (or,
 elsewhere, one's own); a search field over it; theme switch, language switch. On the right, a
 visitor's Sign in and Create your shelf, or, signed in, a menu: My shelf, Account, Sign out.
-On one's own shelf, an Add button. **Footer:** credit to IGDB.com, Privacy, and the sign-in link.
+On one's own shelf, an Add button. On a phone (below `md`) the links, a visitor's ways in and the
+language switch fold into one menu, the language last and said in full in that language ("Ler o
+Save State em português"), so the name keeps its place from 22rem, signed in too. **Footer:** credit to IGDB.com, Privacy, and the sign-in link.
 
 **Done when**
 

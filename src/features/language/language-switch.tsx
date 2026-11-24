@@ -9,6 +9,7 @@ import { Link, usePathname } from '@/i18n/navigation'
 import { localeLabels, routing, type Locale, type Pathname } from '@/i18n/routing'
 import { buttonVariants } from '@/ui/button'
 import { cn } from '@/ui/cn'
+import { DropdownMenuItem } from '@/ui/dropdown-menu'
 import { Tip } from '@/ui/tooltip'
 
 function otherLocale(current: Locale): Locale {
@@ -22,7 +23,10 @@ function isPage(pathname: string): pathname is Pathname {
 /** The page's own parts of the address: a shelf's handle, and a game's or smart shelf's slug. */
 type Params = { handle?: string; slug?: string }
 
-type SwitchLinkProps = {
+/** Where the link stands: in the header's row (the default), or as an item of the phone's menu. */
+type Place = { menu?: boolean; className?: string }
+
+type SwitchLinkProps = Place & {
   /** The page to open in the other language. Defaults to the home page. */
   pathname?: Pathname
   params?: Params
@@ -50,22 +54,38 @@ const hrefFor = (
   return { pathname, query }
 }
 
-function SwitchLink({ pathname = '/', params = {}, query }: SwitchLinkProps) {
+function SwitchLink({ pathname = '/', params = {}, query, menu, className }: SwitchLinkProps) {
   const target = otherLocale(useLocale())
   const label = localeLabels[target]
+  const href = hrefFor(pathname, params, query)
+
+  if (menu) {
+    // In a menu the item says it in full, in the language it leads to: its own name, so no tip.
+    return (
+      <DropdownMenuItem asChild>
+        <Link href={href} locale={target} scroll={false} hrefLang={target} lang={target}>
+          {label.switchTo}
+        </Link>
+      </DropdownMenuItem>
+    )
+  }
 
   return (
     // In the language it leads to, for someone who cannot read this one.
     <Tip label={<span lang={target}>{label.switchTo}</span>} side="bottom">
       <Link
-        href={hrefFor(pathname, params, query)}
+        href={href}
         locale={target}
         // Stay where the visitor is on the page.
         scroll={false}
         hrefLang={target}
         lang={target}
         aria-label={`${label.short}: ${label.name}`}
-        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'font-semibold')}
+        className={cn(
+          buttonVariants({ variant: 'ghost', size: 'icon' }),
+          'font-semibold',
+          className,
+        )}
       >
         {label.short}
       </Link>
@@ -74,9 +94,18 @@ function SwitchLink({ pathname = '/', params = {}, query }: SwitchLinkProps) {
 }
 
 /** Knows the page and its filters. */
-function SwitchLinkWithQuery({ pathname, params }: { pathname: Pathname; params: Params }) {
+function SwitchLinkWithQuery({
+  pathname,
+  params,
+  ...place
+}: Place & { pathname: Pathname; params: Params }) {
   return (
-    <SwitchLink pathname={pathname} params={params} query={Object.fromEntries(useSearchParams())} />
+    <SwitchLink
+      pathname={pathname}
+      params={params}
+      query={Object.fromEntries(useSearchParams())}
+      {...place}
+    />
   )
 }
 
@@ -84,15 +113,15 @@ const paramOf = (value: unknown): string | undefined =>
   typeof value === 'string' ? value : undefined
 
 /** Knows the page. On an address that is not a page, it offers the home page. */
-function SwitchLinkForPage() {
+function SwitchLinkForPage(place: Place) {
   const current = usePathname()
   const found = useParams<{ handle?: string; slug?: string }>()
   const pathname = isPage(current) ? current : '/'
   const params = { handle: paramOf(found?.handle), slug: paramOf(found?.slug) }
 
   return (
-    <Suspense fallback={<SwitchLink pathname={pathname} params={params} />}>
-      <SwitchLinkWithQuery pathname={pathname} params={params} />
+    <Suspense fallback={<SwitchLink pathname={pathname} params={params} {...place} />}>
+      <SwitchLinkWithQuery pathname={pathname} params={params} {...place} />
     </Suspense>
   )
 }
@@ -104,11 +133,14 @@ function SwitchLinkForPage() {
  * follow it. What it knows arrives in layers: the page is known when the page
  * is built, the filters only in the browser. Each layer has a plainer link to
  * show until the next one is ready.
+ *
+ * `menu` makes it an item of the phone's menu, which says it in full: the
+ * header's row has no room for it on a phone.
  */
-export function LanguageSwitch() {
+export function LanguageSwitch(place: Place) {
   return (
-    <Suspense fallback={<SwitchLink />}>
-      <SwitchLinkForPage />
+    <Suspense fallback={<SwitchLink {...place} />}>
+      <SwitchLinkForPage {...place} />
     </Suspense>
   )
 }
