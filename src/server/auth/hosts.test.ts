@@ -27,9 +27,9 @@ afterEach(() => vi.unstubAllEnvs())
 
 describe('ownHosts', () => {
   it('keeps the former address in production once the domain is production', () => {
-    onVercel('production', 'www.savestate.gg')
+    onVercel('production', 'savestate.gg')
     expect(ownHosts()).toEqual([
-      'www.savestate.gg',
+      'savestate.gg',
       'shelf-ldallacqua-git-main-dallacqua.vercel.app',
       'shelf-ldallacqua-a1b2c3-dallacqua.vercel.app',
       'shelf-ldallacqua.vercel.app',
@@ -43,7 +43,7 @@ describe('ownHosts', () => {
   })
 
   it('gives a preview no former address, which never leads to one', () => {
-    onVercel('preview', 'www.savestate.gg')
+    onVercel('preview', 'savestate.gg')
     expect(ownHosts()).not.toContain('shelf-ldallacqua.vercel.app')
     expect(ownHosts()).toContain('shelf-ldallacqua-a1b2c3-dallacqua.vercel.app')
   })
