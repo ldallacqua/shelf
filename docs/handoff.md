@@ -4,8 +4,8 @@
 
 ## Moving to savestate.gg (23 Nov 2026)
 
-Production is moving to the owner's own domain, `https://www.savestate.gg` (the bare `savestate.gg`
-redirects to it, as Vercel suggested when the owner added it), with the product's new name, Save State (the
+Production is moving to the owner's own domain, `https://savestate.gg` (`www.savestate.gg` redirects to it; the
+owner first took Vercel's suggestion, the other way round, and turned it the same day), with the product's new name, Save State (the
 name changes in a pull request of its own). Two branches, in this order, and the owner's steps between them:
 [setup, session G](setup.md#g-your-own-domain).
 
@@ -14,10 +14,11 @@ name changes in a pull request of its own). Two branches, in this order, and the
   [architecture, section 21](architecture.md#21-environments-and-settings)); `pnpm desktop:check` refuses
   both addresses. Nothing redirects: both addresses serve the site.
 - **Then the owner** moves the domain off the `save-state` project onto this one, redeploys and reconnects
-  the assistants (session G, steps 1 to 7). Done on 23 Nov 2026: `www.savestate.gg` serves production, and
+  the assistants (session G, steps 1 to 7). Done on 23 Nov 2026: `savestate.gg` serves production, and
   sign-in answers there and on the old address.
-- **Then the app** (`rebrand/desktop-domain`, session G, step 8): release builds open `www.savestate.gg`, and
-  the window keeps, and gives the commands to, that origin, the bare domain and the old address, no others.
+- **Then the app** (`rebrand/desktop-domain`, session G, step 8): release builds open the domain (`www` first, the
+  bare domain since `rebrand/apex-domain`), and the window keeps, and gives the commands to, both domain
+  addresses and the old address, no others.
   Merged once the domain served Save State; a desktop release is the owner's call.
 - **Later:** the old address redirects to the domain (step 10), once the installed apps have updated; until
   then an app from before step 8 would be sent to the browser.

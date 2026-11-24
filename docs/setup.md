@@ -68,7 +68,7 @@ to open.
 ### Either way
 
 - **The address** was `https://shelf-ldallacqua.vercel.app`, free when I checked on 12 Oct 2026.
-  Production moves to your own domain, `https://www.savestate.gg`, in [session G](#g-your-own-domain);
+  Production moves to your own domain, `https://savestate.gg`, in [session G](#g-your-own-domain);
   the `vercel.app` address keeps serving it.
 - **Why "with GitHub" matters.** On the free plan Vercel only deploys commits whose author is
   the account owner, and it checks that through the linked GitHub account. Commits in this
@@ -181,7 +181,7 @@ generate it into the file without displaying it.
 
 **Check it worked:** on production, **Create your shelf** makes an account and opens its empty
 shelf, and the **Add** button appears on it. A wrong password is turned away with a plain
-message. To let an assistant in, add `https://www.savestate.gg/api/mcp/owner` to it as an MCP server
+message. To let an assistant in, add `https://savestate.gg/api/mcp/owner` to it as an MCP server
 (`https://shelf-ldallacqua.vercel.app/api/mcp/owner` until [session G](#g-your-own-domain) is done):
 it sends you to sign in, then asks you to say yes. Only production's own address works, since tokens
 are issued for one.
@@ -296,8 +296,8 @@ the game Save State took it for: say **Cartridge** or **Download**, or answer th
 (`rebrand/domain-transition`) has merged and production runs it. Moving the domain before then
 breaks signing in on `shelf-ldallacqua.vercel.app`.
 
-Production moves from `https://shelf-ldallacqua.vercel.app` to `https://www.savestate.gg`, with the
-bare `savestate.gg` redirecting to it. The domain belonged to another of your Vercel projects,
+Production moves from `https://shelf-ldallacqua.vercel.app` to `https://savestate.gg`, with
+`www.savestate.gg` redirecting to it. The domain belonged to another of your Vercel projects,
 `save-state`, the app before this one. The code needs
 nothing more. The site's address is Vercel's `VERCEL_PROJECT_PRODUCTION_URL`, which Vercel sets
 to "the shortest production custom domain", so the sitemap, `robots.txt`, `llms.txt`, the API's
@@ -314,29 +314,32 @@ sign-in failing.
    address. If Vercel offers to move the domain over when you add it in step 2, that does steps 1
    and 2 at once.
 2. **Give it to this project, as production.** Project `shelf-ldallacqua`, **Settings**,
-   **Domains**, **Add**: `savestate.gg`, for **Production**, and accept what Vercel suggests: add
-   `www.savestate.gg` too, with the bare domain **redirecting to `www`** (308, permanent).
-   `www.savestate.gg` is then the address that serves production and the one Vercel names; the
-   rest of this session says `www`. The other way round (the bare domain serving, `www`
-   redirecting) works as well, since Save State for Windows treats both as its own. The
+   **Domains**, **Add**: `savestate.gg`, for **Production**. Vercel suggests adding
+   `www.savestate.gg` too, with the bare domain redirecting to `www`: add `www`, but the other way
+   round, so the bare domain serves production and `www.savestate.gg` **redirects to `savestate.gg`**
+   (308, permanent). `savestate.gg` is then the address that serves production and the one Vercel
+   names. (On 23 Nov 2026 the owner took Vercel's suggestion first and turned it round the same day;
+   release builds take both addresses as Save State's own, so either way works.) The
    DNS already points at Vercel for `save-state`; if Vercel shows **Invalid Configuration** or asks
    for a TXT record to prove the domain is yours, add exactly what it shows at your DNS provider.
    Leave `shelf-ldallacqua.vercel.app` as it is, with no redirect (step 10 says when).
 3. **Redeploy production.** **Deployments**, the newest production deployment, **⋯**,
    **Redeploy**. A deployment keeps the values it was built with, Vercel's own included, so until
-   a new build the site still believes its address is the old one: `www.savestate.gg` shows pages,
+   a new build the site still believes its address is the old one: `savestate.gg` shows pages,
    but signing in there fails with an error, while the old address works.
 4. **Check that the address moved.** On both addresses, `/robots.txt` has the line
-   `Sitemap: https://www.savestate.gg/sitemap.xml`, and
-   `https://www.savestate.gg/.well-known/oauth-protected-resource/api/mcp/owner` names its resource
-   as `https://www.savestate.gg/api/mcp/owner`. Then sign in on
-   `https://www.savestate.gg/en/sign-in`, and on the old address. Each address keeps its own sign-in
+   `Sitemap: https://savestate.gg/sitemap.xml`, and
+   `https://savestate.gg/.well-known/oauth-protected-resource/api/mcp/owner` names its resource
+   as `https://savestate.gg/api/mcp/owner`. Then sign in on
+   `https://savestate.gg/en/sign-in`, and on the old address. Each address keeps its own sign-in
    (a cookie belongs to the address that set it), so the new one asks once; the old one stays
    signed in.
 5. **Reconnect your assistants.** In each assistant that uses Save State, remove the MCP server
    `https://shelf-ldallacqua.vercel.app/api/mcp/owner` and add
-   `https://www.savestate.gg/api/mcp/owner`: the address that serves, not the bare domain, because
-   an assistant checks that the server's own description names the address it was given.
+   `https://savestate.gg/api/mcp/owner`: the address that serves, not `www`, because an
+   assistant checks that the server's own description names the address it was given. One you
+   connected to `https://www.savestate.gg/api/mcp/owner` while `www` was the main address is replaced the
+   same way.
    It sends you to sign in, then asks you to say yes, as the first time. The old connection stopped
    at step 3: its tokens were issued by the old address, for the old address.
 6. **Steam's key.** Its domain name is for Steam's records: Save State's server calls Steam with the key
@@ -347,24 +350,24 @@ sign-in failing.
    to the redeploy.
 7. **Google Search Console.** At https://search.google.com/search-console, add a **Domain**
    property for `savestate.gg` (it covers `www` too), proved with the TXT record Google gives, at
-   your DNS provider. Under **Sitemaps**, submit `https://www.savestate.gg/sitemap.xml`. Google's Change
+   your DNS provider. Under **Sitemaps**, submit `https://savestate.gg/sitemap.xml`. Google's Change
    of Address tool needs the old site to redirect and to be a property of yours, which a
    `vercel.app` address can't be without a file in the site, so leave it: the redirect of step 10
    moves what Google indexed.
 8. **Save State for Windows.** Installed apps open the old address until a release says otherwise. Once
-   step 4 checks out, merge the pull request that moves the app to `www.savestate.gg`
-   (`rebrand/desktop-domain`), then raise the version and publish a release
+   step 4 checks out, merge the pull requests that move the app to the domain
+   (`rebrand/desktop-domain`, then `rebrand/apex-domain` for the bare domain), then raise the version and publish a release
    ([the desktop guide](desktop.md), `pnpm desktop:release`). Each app updates at its next start
-   and opens `www.savestate.gg`, where it asks for a sign-in once more. Never before step 4: that
-   release gives the app's commands (Play, saves, downloads) to pages on `www.savestate.gg` and
-   `savestate.gg`, which must be this project's by then.
+   and opens `savestate.gg`, where it asks for a sign-in once more. Never before step 4: that
+   release gives the app's commands (Play, saves, downloads) to pages on `savestate.gg` and
+   `www.savestate.gg`, which must be this project's by then.
 9. **Google Drive in the app** can now be published at Google: its branding wants a home page, a
    privacy policy and terms on a domain of Save State's own, which `savestate.gg` is
    ([the desktop guide, step 12](desktop.md)).
 10. **Later, not now: send the old address to the new one.** Once step 8's release has been out a
     while and every PC you use has started on it, redirect `shelf-ldallacqua.vercel.app` to
-    `www.savestate.gg`, permanently: in **Settings**, **Domains**, edit that address to redirect to
-    `www.savestate.gg` (308), or, if Vercel won't redirect its own address, a `redirects()` rule in
+    `savestate.gg`, permanently: in **Settings**, **Domains**, edit that address to redirect to
+    `savestate.gg` (308), or, if Vercel won't redirect its own address, a `redirects()` rule in
     `next.config.ts` matching that host. Search engines, links and bookmarks then all land on the
     domain. **The cost:** an app from before step 8's release that hasn't started since (closed to
     the tray, it runs for days), or couldn't update, still opens the old address, and its window
@@ -372,7 +375,7 @@ sign-in failing.
     downloads stop working in it until it starts again and updates. Once redirected, the old address
     can leave `FORMER_PRODUCTION_HOSTS` (`src/server/auth/hosts.ts`).
 
-**Check it worked:** step 4, then the app of step 8 opening `www.savestate.gg` with Play working.
+**Check it worked:** step 4, then the app of step 8 opening `savestate.gg` with Play working.
 
 ---
 

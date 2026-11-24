@@ -44,15 +44,15 @@ use navigation::Decision;
 use tracker::Tracker;
 
 /// The Shelf a release build opens: the domain's address that serves the site (setup, session G).
-const PRODUCTION: &str = "https://www.savestate.gg";
+const PRODUCTION: &str = "https://savestate.gg";
 
-/// Production's other addresses. The bare domain redirects to `www`, and would serve the site
-/// itself if the owner made it the main address. `vercel.app` is where production answered before
-/// it had a domain, and still does: an app from before the domain opens it. A link or a redirect
-/// may lead from one to another. Their pages are Shelf's own, so a release build's window keeps
-/// them and gives them the commands.
+/// Production's other addresses. `www` redirects to the bare domain, and served the site itself
+/// before the owner made the bare domain the main address. `vercel.app` is where production
+/// answered before it had a domain, and still does: an app from before the domain opens it. A
+/// link or a redirect may lead from one to another. Their pages are Shelf's own, so a release
+/// build's window keeps them and gives them the commands.
 const OTHER_PRODUCTION: &[&str] = &[
-    "https://savestate.gg",
+    "https://www.savestate.gg",
     "https://shelf-ldallacqua.vercel.app",
 ];
 
@@ -669,8 +669,8 @@ mod tests {
         assert_eq!(
             own,
             [
-                "https://www.savestate.gg/",
                 "https://savestate.gg/",
+                "https://www.savestate.gg/",
                 "https://shelf-ldallacqua.vercel.app/",
             ]
         );
@@ -681,9 +681,9 @@ mod tests {
         for address in [
             "http://localhost:3300",
             "https://shelf-ldallacqua.vercel.app",
-            "https://savestate.gg",
-            "http://www.savestate.gg",
-            "https://www.savestate.gg.evil.example",
+            "https://www.savestate.gg",
+            "http://savestate.gg",
+            "https://savestate.gg.evil.example",
         ] {
             let shelf = Url::parse(address).unwrap();
             let own = own_addresses(&shelf);
