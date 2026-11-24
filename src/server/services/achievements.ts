@@ -484,6 +484,24 @@ export const readMyAchievements = (source: unknown) => {
 }
 
 /**
+ * A public library's unlocks, in a language: the one read of every set's
+ * achievements, which is most of what a trophy page reads. Kept apart from
+ * the pages made of it, so a page at an address not seen before (another
+ * year, filter or rarity) reads none of it again: a crawler once spent the
+ * database's month of reads on such addresses (architecture, section 25).
+ * Kept until the library or a read of its achievements changes.
+ */
+const getWallUnlocks = async (
+  libraryId: string,
+  language: AchievementLanguage,
+): Promise<GameUnlocks[]> => {
+  'use cache: remote'
+  cacheTag(libraryTag(libraryId), achievementsTag(libraryId))
+  cacheLife('days')
+  return achievementsFor(libraryId).unlocks(language)
+}
+
+/**
  * A public library's achievements on its trophy page (issue 68), in the
  * visitor's language. Kept until the library changes or a read of its
  * achievements does, and worked out again once a day besides, so "this
@@ -500,7 +518,7 @@ export const getAchievementWall = async (
   cacheLife('days')
   const [library, unlocks] = await Promise.all([
     getLibrary(libraryId),
-    achievementsFor(libraryId).unlocks(language),
+    getWallUnlocks(libraryId, language),
   ])
   return achievementWall(library, unlocks, new Date().getUTCFullYear(), { scope, q, rarity })
 }
