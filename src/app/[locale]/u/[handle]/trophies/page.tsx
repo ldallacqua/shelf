@@ -14,7 +14,7 @@ import { TrophiesSkeleton } from '@/features/trophies/trophies-skeleton'
 import { EmptyTrophies } from '@/features/trophies/empty-trophies'
 import { PublicTrophies } from '@/features/trophies/public-trophies'
 import { TrophyWallView, type CardOf } from '@/features/trophies/trophy-wall'
-import { wallAddress, type Which } from '@/features/trophies/wall-address'
+import { seenAnotherWay, wallAddress, type Which } from '@/features/trophies/wall-address'
 import { getAchievementWall, languageOf } from '@/server/services/achievements'
 import {
   findLibrary,
@@ -94,8 +94,10 @@ export async function generateMetadata({
           twitter: { card: 'summary_large_image', images: [picture] },
         }
       : {}),
-    // An empty wall says nothing a search engine could use.
-    ...(wall.stats.finished === 0 ? { robots: hidden } : {}),
+    // An empty wall says nothing a search engine could use. A filtered one, or one ranked
+    // or kept to a rarity, is the same wall seen another way, and its links lead to more
+    // filters without end: robots.txt keeps crawlers off, and this, those that came anyway.
+    ...(wall.stats.finished === 0 || seenAnotherWay(which) ? { robots: hidden } : {}),
   }
 }
 

@@ -29,3 +29,10 @@ export const wallAddress = (
     ...(isRarity(query.rarity) ? { rarity: query.rarity } : {}),
   }
 }
+
+/**
+ * Whether the address shows the wall another way than its period does: a
+ * filter, a ranking or a rarity. Such a page is not listed (robots.txt).
+ */
+export const seenAnotherWay = ({ q, by, rarity }: Which) =>
+  q !== undefined || by !== undefined || rarity !== undefined
