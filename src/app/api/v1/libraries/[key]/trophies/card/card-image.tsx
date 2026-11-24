@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { getTranslations } from 'next-intl/server'
 
 import type { TrophyCard } from '@/domain/library/trophy-card'
+import { MARK } from '@/ui/logo'
 
 /**
  * The trophy card as `next/og` draws it, 1200 by 630: the latest games
@@ -56,14 +57,12 @@ let fonts: ReturnType<typeof readFonts> | undefined
 /** The fonts the card is drawn in (`ui/fonts/README.md`), read once by each server instance. */
 export const cardFonts = () => (fonts ??= readFonts())
 
-/** The mark: three cases on a lit shelf, as `ui/logo.tsx` draws it. */
+/** The mark, as `ui/logo.tsx` draws it in the dark: the S in the text's color, its shelf lit. */
 function Mark() {
   return (
-    <svg width={30} height={30} viewBox="0 0 24 24">
-      <rect x="2.5" y="4" width="5.5" height="12.5" rx="1" fill={INK.text} />
-      <rect x="9.25" y="6.5" width="5.5" height="10" rx="1" fill={INK.text} opacity="0.7" />
-      <rect x="16" y="5" width="5.5" height="11.5" rx="1" fill={INK.text} opacity="0.45" />
-      <rect x="1.5" y="18.25" width="21" height="2.25" rx="1.125" fill={INK.led} />
+    <svg width={26} height={30} viewBox={MARK.viewBox}>
+      <path d={MARK.letter} fill={INK.text} />
+      <path d={MARK.shelf} fill={INK.led} />
     </svg>
   )
 }

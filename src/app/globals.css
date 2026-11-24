@@ -184,6 +184,18 @@
 }
 
 /* A read-out: small mono capitals for counts, labels and key hints. */
+/*
+ * The mark's lit shelf in the light theme (`ui/logo.tsx`): the accent, which holds 4.5:1 on the
+ * wall in every colorway. A gray accent (graphite's, or one's own) is as dark as the letter beside
+ * it, and the shelf would vanish into the S, so the less color it has, the lighter it may be made:
+ * up to OKLCH lightness 0.55 for a gray, which keeps 3:1 on any light wall and 2.5:1 off the letter.
+ * A colorful accent is drawn as it is. A browser without relative colors drops the rule and draws
+ * the path's own `fill`, the accent as it is (a second declaration here would be minified away).
+ */
+@utility mark-shelf {
+  fill: oklch(from var(--accent) max(l, calc(0.55 * (1 - min(c / 0.08, 1)))) c h);
+}
+
 @utility readout {
   font-family: var(--font-mono);
   font-weight: 500;

@@ -127,7 +127,8 @@ desktop/
                          be reached" with Try again
   installer/             The installer's template: Tauri's, with its pages taken out
                          and its one page drawn as the splash
-  icons/                 Made from src/app/icon.svg by the Tauri CLI's `icon` command, Windows' only
+  icons/                 Made from src/app/icon.svg by `pnpm desktop:icons` (the Tauri CLI's `icon`
+                         command; the 16px frame from icon-16.svg, drawn on whole pixels), Windows' only
   src/
     main.rs, lib.rs      The window, and what the app keeps while it runs
     commands.rs          What Shelf's pages may ask, each checking what it is given
