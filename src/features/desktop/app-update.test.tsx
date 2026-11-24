@@ -8,7 +8,7 @@ import AppUpdate from './app-update'
 import type { Download } from './sources'
 import { setBridgeForTests } from './tauri'
 
-/** A newer Shelf for Windows, offered in the header once the app has it, with its commands faked. */
+/** A newer Save State for Windows, offered in the header once the app has it, with its commands faked. */
 
 const MOVING: Download = {
   id: 'one',
@@ -75,7 +75,7 @@ describe('an update, ready in the app', () => {
 
   it('names the version, and restarts the app only when asked', async () => {
     const user = await opened()
-    expect(screen.getByText('Shelf 0.16.0 is ready')).toBeVisible()
+    expect(screen.getByText('Save State 0.16.0 is ready')).toBeVisible()
     expect(screen.queryByText(/Downloads under way/)).toBeNull()
     expect(app).not.toHaveBeenCalledWith('install_update', {})
     await user.click(screen.getByRole('button', { name: 'Restart and update' }))

@@ -85,7 +85,7 @@ const createAuth = () => {
   const env = authEnv()
 
   return betterAuth({
-    appName: 'Shelf',
+    appName: 'Save State',
     secret: env.secret,
     baseURL: { allowedHosts: ownHosts(), protocol: onVercel() ? 'https' : 'http' },
     database: drizzleAdapter(database(), {

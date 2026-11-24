@@ -121,7 +121,7 @@ describe('a store page as a game', () => {
     expect(data).not.toHaveProperty('releasedOn')
   })
 
-  it('reads its tags and categories as Shelf’s words, with their names', () => {
+  it('reads its tags and categories as Save State’s words, with their names', () => {
     const data = toSteamGame(
       item({
         tagids: [492, 1667, 3839, 999_999],

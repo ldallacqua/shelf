@@ -4,6 +4,7 @@ import { MenuIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Suspense } from 'react'
 
+import { LanguageSwitch } from '@/features/language/language-switch'
 import { useAccount } from '@/features/owner/account'
 import { Link, usePathname } from '@/i18n/navigation'
 import { Button } from '@/ui/button'
@@ -75,6 +76,9 @@ function Menu({ handle, pathname, className }: MenuProps) {
             </DropdownMenuItem>
           </>
         ) : null}
+        {/* Last, a setting: the header's row has no room for it on a phone. */}
+        {handle || waiting !== undefined || visitor ? <DropdownMenuSeparator /> : null}
+        <LanguageSwitch menu />
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -90,8 +94,8 @@ function MenuForAccount({ className }: { className?: string }) {
 
 /**
  * On a phone the main links fold into one menu button, with a visitor's
- * ways in. Until the address is known, the menu shows one's own shelf, with
- * no link marked as current.
+ * ways in and the other language. Until the address is known, the menu shows
+ * one's own shelf, with no link marked as current.
  */
 export function MobileNav({ className }: { className?: string }) {
   return (

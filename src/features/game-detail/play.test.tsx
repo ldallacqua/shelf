@@ -11,7 +11,7 @@ import { renderWithIntl } from '@/test/render'
 import { Play } from './play'
 
 /**
- * Play (spec 7.7), in Shelf for Windows: the app's commands are answered
+ * Play (spec 7.7), in Save State for Windows: the app's commands are answered
  * here, by a stand-in for this computer, which never starts anything.
  */
 
@@ -156,7 +156,7 @@ describe('Play in a browser (spec 7.7)', () => {
   })
 })
 
-describe('Play in Shelf for Windows (spec 7.7)', () => {
+describe('Play in Save State for Windows (spec 7.7)', () => {
   it('starts a game from the file chosen for it, whatever Steam has', async () => {
     computer.launchers.set('entry-1', GRIM_DAWN)
     computer.installed = ['219990']
@@ -407,7 +407,7 @@ describe('Play in Shelf for Windows (spec 7.7)', () => {
   })
 })
 
-describe('Whether the game is running, in Shelf for Windows (issue 102)', () => {
+describe('Whether the game is running, in Save State for Windows (issue 102)', () => {
   const stopped: GameView = { state: 'stopped', unresponsive: false }
   const starting: GameView = { state: 'starting', unresponsive: false }
   const running: GameView = { state: 'running', unresponsive: false }
@@ -473,7 +473,7 @@ describe('Whether the game is running, in Shelf for Windows (issue 102)', () => 
     expect(syncing).toHaveFocus()
     // How long it waits, said where it waits.
     expect((await screen.findAllByRole('tooltip'))[0]).toHaveTextContent(
-      'If the connection stalls for 30 seconds, Shelf stops waiting',
+      'If the connection stalls for 30 seconds, it stops waiting',
     )
     await userEvent.click(syncing)
     expect(invoke).not.toHaveBeenCalledWith('play', expect.anything())
@@ -539,7 +539,7 @@ describe('Whether the game is running, in Shelf for Windows (issue 102)', () => 
     play()
     await userEvent.click(await screen.findByRole('button', { name: 'Stop' }))
     expect(notices.notify).toHaveBeenCalledWith({
-      message: 'Windows did not let Shelf close Grim Dawn. Close it from the game.',
+      message: 'Windows did not let Save State close Grim Dawn. Close it from the game.',
     })
     expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument()
   })
@@ -596,7 +596,7 @@ describe('Whether the game is running, in Shelf for Windows (issue 102)', () => 
     )
     await waitFor(() =>
       expect(notices.notify).toHaveBeenCalledWith({
-        message: 'Windows did not let Shelf close Grim Dawn. Close it from the game.',
+        message: 'Windows did not let Save State close Grim Dawn. Close it from the game.',
       }),
     )
     expect(screen.getByRole('button', { name: 'Force stop' })).toBeInTheDocument()
@@ -605,7 +605,7 @@ describe('Whether the game is running, in Shelf for Windows (issue 102)', () => 
 
   it.each([
     ['steam', 'Running', 'Steam says this game is running'],
-    ['denied', 'Running', 'Windows won’t let Shelf check'],
+    ['denied', 'Running', 'Windows won’t let Save State check'],
     ['open', 'Open', 'still open'],
   ] as const)(
     'explains what it can’t tell (%s), with no Stop and no Play',

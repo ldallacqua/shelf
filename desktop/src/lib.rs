@@ -273,7 +273,7 @@ async fn update(app: &AppHandle, steps: &Channel<Step>) {
 fn open_splash(app: &AppHandle, shelf: Url) -> tauri::Result<()> {
     let own = own_addresses(&shelf);
     let mut splash = WebviewWindowBuilder::new(app, "splash", WebviewUrl::App("index.html".into()))
-        .title("Shelf")
+        .title("Save State")
         .inner_size(320.0, 360.0)
         .resizable(false)
         .maximizable(false)
@@ -303,7 +303,7 @@ pub(crate) fn show_shelf(app: &AppHandle) {
     std::thread::spawn(move || {
         let shelf = app.state::<Shelf>().0.clone();
         if let Err(error) = open_splash(&app, shelf) {
-            eprintln!("could not open Shelf: {error}");
+            eprintln!("could not open Save State: {error}");
         }
     });
 }
@@ -318,7 +318,7 @@ fn open_main(app: &AppHandle, shelf: Url) -> tauri::Result<()> {
     let opening = app.clone();
     let rules = own_addresses(&shelf);
     let mut window = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(shelf))
-        .title("Shelf")
+        .title("Save State")
         .inner_size(1280.0, 800.0)
         .min_inner_size(960.0, 600.0)
         .center()
@@ -631,7 +631,7 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("Shelf for Windows could not start")
+        .expect("Save State for Windows could not start")
         .run(|app, event| match event {
             // The last window closed: it goes on in the tray. Only Quit gives a code.
             RunEvent::ExitRequested {

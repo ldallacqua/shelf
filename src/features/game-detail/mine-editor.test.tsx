@@ -360,7 +360,7 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     await waitFor(() => expect(copies.getAllByRole('listitem')).toHaveLength(2))
   })
 
-  /** Played on a PC, through Steam and with Shelf for Windows counting: the same play. */
+  /** Played on a PC, through Steam and with Save State for Windows counting: the same play. */
   const played = (slug: string, more: Partial<OwnerGame> = {}): OwnerGame => ({
     ...owned(slug),
     copies: [
@@ -385,13 +385,15 @@ describe('MineEditor, what I own and how long I played (spec 7.3)', () => {
     const [steam, app] = rows.getAllByRole('listitem')
     expect(rows.queryByRole('list')).not.toBeInTheDocument()
     expect(steam).toHaveTextContent(/^Steam10 h/)
-    expect(app).toHaveTextContent(/^Shelf for WindowsSame play, not added1 h 30 min/)
+    expect(app).toHaveTextContent(/^Save State for WindowsSame play, not added1 h 30 min/)
     expect(screen.queryByText(/the larger/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Hours played' })).not.toBeInTheDocument()
 
     await userEvent.click(rows.getByRole('button', { name: 'Same play, not added' }))
     expect(
-      await screen.findByText('Shelf for Windows and Steam saw the same play. The larger counts.'),
+      await screen.findByText(
+        'Save State for Windows and Steam saw the same play. The larger counts.',
+      ),
     ).toBeVisible()
   })
 

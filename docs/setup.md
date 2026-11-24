@@ -1,4 +1,4 @@
-# Shelf: setup checklist
+# Save State: setup checklist
 
 - **Date:** 12 Oct 2026
 - **Reads with:** [the architecture](architecture.md)
@@ -105,7 +105,7 @@ deployed previews and for production.
 **Until you do this**, previews still work: each one is built with the sample library inside
 it, and production shows an empty library. That is enough to review steps 2 to 6. It is not
 enough for step 7, because a library added through sign-in has to be kept somewhere, and
-Shelf refuses to save into the built-in sample.
+Save State refuses to save into the built-in sample.
 
 1. Go to [turso.tech](https://turso.tech) and sign up with GitHub. The free plan needs no
    card.
@@ -222,9 +222,9 @@ call, so nothing breaks while it is missing; IGDB's records just are not refresh
 
 | Name | Environment | Value |
 | --- | --- | --- |
-| `STEAM_API_KEY` | Production | Shelf's Steam Web API key |
+| `STEAM_API_KEY` | Production | Save State's Steam Web API key |
 
-The key is Shelf's, not your account's: it reads the games of whoever links Steam on their
+The key is Save State's, not your account's: it reads the games of whoever links Steam on their
 account page, through Steam's own sign-in. It never signs anyone in.
 
 1. Signed in to Steam in your own browser, open https://steamcommunity.com/dev/apikey. For
@@ -261,8 +261,8 @@ Privacy Settings) and press **Sync now**.
 | --- | --- | --- |
 | `PLATFORM_TOKEN_KEY` | Production | 32 random bytes, in base64 |
 
-Linking Nintendo gives Shelf a session that reads the person's play history for about two
-years. Shelf keeps it sealed with this key, so the database alone cannot be used to read
+Linking Nintendo gives Save State a session that reads the person's play history for about two
+years. Save State keeps it sealed with this key, so the database alone cannot be used to read
 anyone's Nintendo account. Nothing else is needed: Nintendo has no key to apply for.
 
 In a terminal of your own, from this folder:
@@ -286,7 +286,7 @@ has to sign in on Nintendo's page again.
 on Nintendo's page**. Sign in there; when Nintendo shows **Select this account**, copy the
 button's link instead of pressing it (right-click, Copy link address; on a phone, press and
 hold), and paste it into the card. Your Switch games arrive under "games need you", each with
-the game Shelf took it for: say **Cartridge** or **Download**, or answer them all at once.
+the game Save State took it for: say **Cartridge** or **Download**, or answer them all at once.
 
 ---
 
@@ -319,7 +319,7 @@ sign-in failing.
    round, so the bare domain serves production and `www.savestate.gg` **redirects to `savestate.gg`**
    (308, permanent). `savestate.gg` is then the address that serves production and the one Vercel
    names. (On 23 Nov 2026 the owner took Vercel's suggestion first and turned it round the same day;
-   release builds take both addresses as Shelf's own, so either way works.) The
+   release builds take both addresses as Save State's own, so either way works.) The
    DNS already points at Vercel for `save-state`; if Vercel shows **Invalid Configuration** or asks
    for a TXT record to prove the domain is yours, add exactly what it shows at your DNS provider.
    Leave `shelf-ldallacqua.vercel.app` as it is, with no redirect (step 10 says when).
@@ -334,7 +334,7 @@ sign-in failing.
    `https://savestate.gg/en/sign-in`, and on the old address. Each address keeps its own sign-in
    (a cookie belongs to the address that set it), so the new one asks once; the old one stays
    signed in.
-5. **Reconnect your assistants.** In each assistant that uses Shelf, remove the MCP server
+5. **Reconnect your assistants.** In each assistant that uses Save State, remove the MCP server
    `https://shelf-ldallacqua.vercel.app/api/mcp/owner` and add
    `https://savestate.gg/api/mcp/owner`: the address that serves, not `www`, because an
    assistant checks that the server's own description names the address it was given. One you
@@ -342,7 +342,7 @@ sign-in failing.
    same way.
    It sends you to sign in, then asks you to say yes, as the first time. The old connection stopped
    at step 3: its tokens were issued by the old address, for the old address.
-6. **Steam's key.** Its domain name is for Steam's records: Shelf's server calls Steam with the key
+6. **Steam's key.** Its domain name is for Steam's records: Save State's server calls Steam with the key
    directly, so the key goes on working after the move. To have it say `savestate.gg`, open
    https://steamcommunity.com/dev/apikey; if the domain can't be edited there, revoke the key,
    register a new one for `savestate.gg`, paste it into Vercel as in [session E](#e-steam-sync)
@@ -354,15 +354,15 @@ sign-in failing.
    of Address tool needs the old site to redirect and to be a property of yours, which a
    `vercel.app` address can't be without a file in the site, so leave it: the redirect of step 10
    moves what Google indexed.
-8. **Shelf for Windows.** Installed apps open the old address until a release says otherwise. Once
+8. **Save State for Windows.** Installed apps open the old address until a release says otherwise. Once
    step 4 checks out, merge the pull requests that move the app to the domain
    (`rebrand/desktop-domain`, then `rebrand/apex-domain` for the bare domain), then raise the version and publish a release
    ([the desktop guide](desktop.md), `pnpm desktop:release`). Each app updates at its next start
    and opens `savestate.gg`, where it asks for a sign-in once more. Never before step 4: that
    release gives the app's commands (Play, saves, downloads) to pages on `savestate.gg` and
-   `www.savestate.gg`, which must be this Shelf's by then.
+   `www.savestate.gg`, which must be this project's by then.
 9. **Google Drive in the app** can now be published at Google: its branding wants a home page, a
-   privacy policy and terms on a domain of Shelf's own, which `savestate.gg` is
+   privacy policy and terms on a domain of Save State's own, which `savestate.gg` is
    ([the desktop guide, step 12](desktop.md)).
 10. **Later, not now: send the old address to the new one.** Once step 8's release has been out a
     while and every PC you use has started on it, redirect `shelf-ldallacqua.vercel.app` to
@@ -384,8 +384,8 @@ sign-in failing.
 - **A changed setting takes effect on the next deployment.** After pasting values, tell me and
   I push, or press **Redeploy** in Vercel.
 - **If a deployment is refused over the commit author,** tell me. The fix is on my side.
-- **A domain of Shelf's own** is more than adding it in Vercel: a deployment learns its address
-  only when it is built, and sign-in, assistants and Shelf for Windows each know the address.
+- **A domain of Save State's own** is more than adding it in Vercel: a deployment learns its address
+  only when it is built, and sign-in, assistants and Save State for Windows each know the address.
   [Session G](#g-your-own-domain) moves production to `savestate.gg`.
 - **Free limits** are in [the architecture, section 3](architecture.md#3-services-and-their-free-limits).
   None of these services can bill you on its free plan as set up here.

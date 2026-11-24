@@ -24,7 +24,7 @@ const draw = async (locale: Locale) => {
 }
 
 describe('Terms', () => {
-  it('says what a person can count on, from their account to what Shelf can’t promise', async () => {
+  it('says what a person can count on, from their account to what Save State can’t promise', async () => {
     await draw('en')
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
@@ -33,17 +33,17 @@ describe('Terms', () => {
       'Your shelf',
       'Using it fairly',
       'Other services',
-      'Shelf for Windows',
+      'Save State for Windows',
       'Downloads',
       'Saves',
       'No promises',
       'Changes',
     ])
-    expect(screen.getByText(/Shelf ships no source, suggests none/)).toBeVisible()
-    expect(screen.getByText(/Last changed November 8, 2026/)).toBeVisible()
+    expect(screen.getByText(/The app ships no source, suggests none/)).toBeVisible()
+    expect(screen.getByText(/Last changed November 23, 2026/)).toBeVisible()
   })
 
-  it('ends with the way to what Shelf keeps', async () => {
+  it('ends with the way to what Save State keeps', async () => {
     await draw('en')
     expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/en/privacy')
   })
@@ -51,7 +51,7 @@ describe('Terms', () => {
   it('says so in Portuguese', async () => {
     await draw('pt-BR')
     expect(screen.getAllByRole('heading', { level: 2 }).at(0)).toHaveTextContent('Sua conta')
-    expect(screen.getByText(/O Shelf não traz nenhuma fonte/)).toBeVisible()
+    expect(screen.getByText(/O app não traz nenhuma fonte/)).toBeVisible()
     expect(screen.getByRole('link', { name: 'Privacidade' })).toBeVisible()
   })
 })

@@ -2,7 +2,7 @@
   "Admin": {
     "metaTitle": "Admin",
     "title": "Admin",
-    "intro": "Run Shelf’s jobs now, on the server, instead of waiting for the night’s run. A long job carries on by itself, a few minutes at a time, until it’s done.",
+    "intro": "Run Save State’s jobs now, on the server, instead of waiting for the night’s run. A long job carries on by itself, a few minutes at a time, until it’s done.",
     "checking": "Opening the admin page",
     "lock": "Lock",
     "locked": {
@@ -27,7 +27,7 @@
       },
       "steam-pages": {
         "name": "Every Steam page",
-        "what": "Reads every game’s store page on Steam again: covers, art, screenshots and descriptions that changed there, and what Shelf reads now that it didn’t before."
+        "what": "Reads every game’s store page on Steam again: covers, art, screenshots and descriptions that changed there, and what Save State reads now that it didn’t before."
       },
       "steam-reviews": {
         "name": "Steam scores",

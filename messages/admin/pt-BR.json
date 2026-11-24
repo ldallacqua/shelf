@@ -2,7 +2,7 @@
   "Admin": {
     "metaTitle": "Admin",
     "title": "Admin",
-    "intro": "Rode as tarefas do Shelf agora, no servidor, em vez de esperar a rodada da noite. Uma tarefa longa segue sozinha, alguns minutos por vez, até terminar.",
+    "intro": "Rode as tarefas do Save State agora, no servidor, em vez de esperar a rodada da noite. Uma tarefa longa segue sozinha, alguns minutos por vez, até terminar.",
     "checking": "Abrindo a página de admin",
     "lock": "Trancar",
     "locked": {
@@ -27,7 +27,7 @@
       },
       "steam-pages": {
         "name": "Todas as páginas da Steam",
-        "what": "Lê de novo a página de cada jogo na loja da Steam: capas, artes, capturas de tela e descrições que mudaram lá, e o que o Shelf passou a ler e não lia antes."
+        "what": "Lê de novo a página de cada jogo na loja da Steam: capas, artes, capturas de tela e descrições que mudaram lá, e o que o Save State passou a ler e não lia antes."
       },
       "steam-reviews": {
         "name": "Notas da Steam",

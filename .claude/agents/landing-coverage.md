@@ -1,6 +1,6 @@
 ---
 name: landing-coverage
-description: Checks that every feature Shelf has is shown on the landing page and offered in setting a shelf up where it helps a new shelf, or deliberately left out of each with a reason. Use after adding or changing a feature, before a pull request, or when asked whether the landing page or onboarding is up to date.
+description: Checks that every feature Save State has is shown on the landing page and offered in setting a shelf up where it helps a new shelf, or deliberately left out of each with a reason. Use after adding or changing a feature, before a pull request, or when asked whether the landing page or onboarding is up to date.
 tools: Read, Grep, Glob, Bash
 ---
 

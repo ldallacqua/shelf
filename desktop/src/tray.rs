@@ -14,13 +14,13 @@ struct Words {
 }
 
 const ENGLISH: Words = Words {
-    open: "Open Shelf",
+    open: "Open Save State",
     start_with_windows: "Start with Windows",
     quit: "Quit, and stop counting hours",
 };
 
 const PORTUGUESE: Words = Words {
-    open: "Abrir o Shelf",
+    open: "Abrir o Save State",
     start_with_windows: "Iniciar com o Windows",
     quit: "Sair e parar de contar horas",
 };
@@ -70,7 +70,7 @@ pub fn add(app: &AppHandle) -> Result<()> {
     app.manage(StartingCheck(starting.clone()));
     let toggled = starting.clone();
     let mut tray = TrayIconBuilder::with_id("shelf")
-        .tooltip("Shelf")
+        .tooltip("Save State")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(move |app, event| match event.id().as_ref() {

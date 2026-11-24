@@ -335,7 +335,7 @@ describe('reading achievements from Steam', () => {
     const steps = await readAll(me, NOW + 2 * HOUR)
     expect(steps).toHaveLength(1)
     expect(steps[0]).toMatchObject({ read: 1, remaining: 0 })
-    // Steam's clock may run ahead of Shelf's: read once, it is not due again.
+    // Steam's clock may run ahead of Save State's: read once, it is not due again.
     expect((await readAll(me, NOW + 2 * HOUR + 1))[0]).toMatchObject({ read: 0 })
   })
 
@@ -395,7 +395,7 @@ describe('reading achievements from Steam', () => {
     expect(progressOf(set)).toBeUndefined()
   })
 
-  it('reads on when Steam keeps one game’s achievements from Shelf, as for a game I no longer own', async () => {
+  it('reads on when Steam keeps one game’s achievements from Save State, as for a game I no longer own', async () => {
     const me = await synced()
     steamState.unownedApps = new Set(['220'])
     const steps = await readAll(me)
@@ -411,7 +411,7 @@ describe('reading achievements from Steam', () => {
     expect(progressOf(hades!.sets[0]!)).toMatchObject({ earned: 3, total: 3 })
   })
 
-  it('reads a game Steam keeps from Shelf for its content from its count, without the moments', async () => {
+  it('reads a game Steam keeps from Save State for its content from its count, without the moments', async () => {
     const me = await synced()
     steamState.withheldApps = new Set(['220'])
     const steps = await readAll(me)

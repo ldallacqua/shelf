@@ -1,6 +1,6 @@
-# Shelf: the API
+# Save State: the API
 
-Shelf's public shelves can be read by other programs: a script, a spreadsheet, another site,
+Save State's public shelves can be read by other programs: a script, a spreadsheet, another site,
 an AI assistant. Each is read by its handle, as in its address `/u/{handle}`. Reading is
 public, needs no key, and answers in JSON; a private shelf answers 404, as a shelf no account
 has does. Writing acts on one's own shelf, signed in ([below](#writing-to-ones-own-shelf)),
@@ -255,7 +255,7 @@ One shelf, as above. A shelf that is not there answers 404:
 
 A public library whole, in one compact file, as the site's own pages use it to filter in the
 browser. `{key}` is the library's own, random, and changes when its shelf goes private; the
-site's pages know it. The file is made for Shelf and its layout may change between versions
+site's pages know it. The file is made for Save State and its layout may change between versions
 of the site (`format` says which); use `/u/{handle}/library` for anything else. An address
 with an old version is sent on to the current one (307).
 
@@ -307,7 +307,7 @@ again on its next visit. Ratings are out of ten and time is in hours, as the rea
 | `GET /me/achievements/{slug}?locale=` | A game's achievements in one's own library, private games among them, as `GET /libraries/{key}/achievements/{slug}` gives a public one's, read fresh |
 | `GET /me/trophies/achievements?locale=&year=&q=&rarity=` | The trophy page's achievements in one's own library, private games among them ([spec 3.9](spec.md#39-trophy-wall-and-stats)): the figures worked out on the server, of all time or of `year`, of the games `q` matches, the vault kept to `rarity` (`ultra`, `very`, `rare`, `uncommon`, `common`, `most`); `hidden` is the same without adult games. Read fresh |
 | `GET /me/unsorted` | One's unsorted games, what the page for placing a sync's games lists ([spec 4.5](spec.md#45-placing-what-a-sync-brought-in)): each with its entry id, cover, the platforms of its copies, its minutes and, on every source that feeds a copy, its minutes there and when it was last played; and how many games stand in each status (`tally`). In the library file's units: a rating out of 100, minutes. |
-| `GET /me/play` | Each of one's games, by its address in the library file, with its entry id and every app on Steam it may be (`steam`: the ones the Steam sync found the account owns, then the ones IGDB lists): what Ready to play in Shelf for Windows matches against what the computer has ([spec 7.7](spec.md#77-playing-a-game)) |
+| `GET /me/play` | Each of one's games, by its address in the library file, with its entry id and every app on Steam it may be (`steam`: the ones the Steam sync found the account owns, then the ones IGDB lists): what Ready to play in Save State for Windows matches against what the computer has ([spec 7.7](spec.md#77-playing-a-game)) |
 | `GET /me/tally` | How many of one's games stand in each status, `{ "version", "tally" }`, and nothing else: what the page that sets a new shelf up reads ([spec 4.6](spec.md#46-setting-a-new-shelf-up)) |
 | `GET /igdb/search?q=` | Up to eight games on IGDB, editions left out, ports folded in, each marked when one's own library has it |
 | `POST /igdb/match` | Up to twenty pasted lines (`{ "lines": ["Hollow Knight (2017) [Switch]"] }`), each with its match, how sure it is (`exact`, `close`, `none`) and up to five alternatives |
@@ -329,11 +329,11 @@ Nintendo lists what was played, so each game waits for an answer saying how it i
 
 | Method and path | Does |
 | --- | --- |
-| `GET /me/platforms` | Every source, whether it is built, and one's link to each: the account there, when it was synced, what went wrong (`private`, `unreachable`, `unset`, `signed-out`: Nintendo ended Shelf's session, sign in again), and how many of its games are on the shelf, need an answer, were left out, or are no longer listed |
+| `GET /me/platforms` | Every source, whether it is built, and one's link to each: the account there, when it was synced, what went wrong (`private`, `unreachable`, `unset`, `signed-out`: Nintendo ended Save State's session, sign in again), and how many of its games are on the shelf, need an answer, were left out, or are no longer listed |
 | `GET /me/platforms/{source}/connect?locale=` | Off to the source's own sign-in. A browser link, not a call: the source's page must be seen. Steam's comes back to `…/return` and then the account page. Nintendo's never comes back: its "Select this account" button links to an address only Nintendo's app opens, which is pasted into `…/link`. |
 | `POST /me/platforms/nintendo/link` | `{ "link" }`, the link copied from Nintendo's button, in the browser that started the sign-in. Answers `{ "outcome" }`: `linked`, `not-the-link`, `another-sign-in`, `code-refused` (each link works once, for a few minutes), `unset` or `unreachable`. Linking keeps Nintendo's session sealed; it is never sent back. |
 | `POST /me/platforms/{source}/sync` | One step: `{ "read": true }` asks the source for its list first. At most twenty games go on the shelf a step; ask again while `remaining` is above 0. Answers the link, `added` and the library's `version`. |
-| `GET /me/platforms/{source}/items?list=` | The games it listed that need an answer (`needs-you`), were left out (`hidden`) or are no longer listed (`not-seen`), with their hours there and what the store says each is (`kind`: `game`, `demo`, `software`, `media`, `part`, `unknown`, or null until asked). A demo, software or media is left out by itself. A game Nintendo saw played that Shelf matched comes with its `match`: the IGDB game, title, year and cover, waiting to be confirmed. |
+| `GET /me/platforms/{source}/items?list=` | The games it listed that need an answer (`needs-you`), were left out (`hidden`) or are no longer listed (`not-seen`), with their hours there and what the store says each is (`kind`: `game`, `demo`, `software`, `media`, `part`, `unknown`, or null until asked). A demo, software or media is left out by itself. A game Nintendo saw played that Save State matched comes with its `match`: the IGDB game, title, year and cover, waiting to be confirmed. |
 | `POST /me/platforms/{source}/items/{id}` | An answer, carried out at once: `{ "kind": "pick", "igdbId" }` puts that game on the shelf (for Nintendo, with `"format": "physical"` or `"digital"`; without, the pick becomes the match, waiting); `{ "kind": "confirm", "format" }` takes the match as the game, owned that way; `{ "kind": "dismiss", "as": "not_a_game" }` or `"not_mine"`; `{ "kind": "again" }` undoes either, and puts back a game taken off the shelf |
 | `POST /me/platforms/{source}/answers` | One answer for many matches: `{ "ids", "answer": { "kind": "confirm", "format" } }`, up to 200 items. Items with no match are left as they are. Answers a step, as `…/sync` does; ask for more while `remaining` is above 0. |
 | `POST /me/platforms/{source}/achievements` | One step of reading the games' achievements there (Steam only), once its games are in: the latest played first, for about 15 seconds, after Steam counts a hundred games' unlocks a question. Answers `read`, `remaining` (ask again while above 0), `counts` (`games`, `known`, `private`) and `problem`: `private` (Steam keeps them private; stop asking) or `unreachable` (some games' answers wait for the next sync). `GET /me/platforms` gives the same `achievements` counts on Steam's link. |

@@ -1,8 +1,10 @@
 import { screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Locale } from '@/i18n/routing'
 import { setPathname } from '@/test/navigation'
 import { renderWithIntl } from '@/test/render'
+import { DropdownMenu, DropdownMenuContent } from '@/ui/dropdown-menu'
 
 import { LanguageSwitch } from './language-switch'
 
@@ -82,5 +84,50 @@ describe('LanguageSwitch', () => {
   it('links to the other home page from the home page', () => {
     renderWithIntl(<LanguageSwitch />, 'en')
     expect(screen.getByRole('link', { name: /Português/ })).toHaveAttribute('href', '/pt-BR')
+  })
+
+  describe('in the phone’s menu', () => {
+    const inMenu = (locale: Locale) =>
+      renderWithIntl(
+        <DropdownMenu open>
+          <DropdownMenuContent>
+            <LanguageSwitch menu />
+          </DropdownMenuContent>
+        </DropdownMenu>,
+        locale,
+      )
+
+    it('says it in full, in the language it leads to, and keeps the page', () => {
+      setPathname('/u/[handle]')
+      query.params = { handle: 'sample' }
+      inMenu('en')
+
+      const item = screen.getByRole('menuitem', { name: 'Ler o Save State em português' })
+      expect(item).toHaveAttribute('href', '/pt-BR/u/sample')
+      expect(item).toHaveAttribute('hreflang', 'pt-BR')
+      expect(item).toHaveAttribute('lang', 'pt-BR')
+    })
+
+    it('on a Portuguese page, leads to English', () => {
+      setPathname('/u/[handle]/trophies', 'pt-BR')
+      query.params = { handle: 'sample' }
+      inMenu('pt-BR')
+
+      const item = screen.getByRole('menuitem', { name: 'Read Save State in English' })
+      expect(item).toHaveAttribute('href', '/en/u/sample/trophies')
+      expect(item).toHaveAttribute('lang', 'en')
+    })
+
+    it('keeps a smart shelf and its filters', () => {
+      setPathname('/u/[handle]/shelves/[slug]')
+      query.params = { handle: 'sample', slug: 'backlog' }
+      query.value = 'sort=-added'
+      inMenu('en')
+
+      expect(screen.getByRole('menuitem', { name: /português/ })).toHaveAttribute(
+        'href',
+        '/pt-BR/u/sample/shelves/backlog?sort=-added',
+      )
+    })
   })
 })

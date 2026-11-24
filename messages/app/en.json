@@ -1,7 +1,7 @@
 {
   "ThisComputer": {
     "title": "This computer",
-    "intro": "Shelf for Windows notes which of your computers each session of play came from. Name this one to tell them apart. Only you see it.",
+    "intro": "Save State for Windows notes which of your computers each session of play came from. Name this one to tell them apart. Only you see it.",
     "name": "Name",
     "unnamed": "Computer {number}",
     "hint": "Left empty, it’s called {unnamed}. Never your computer’s own name in Windows.",
@@ -18,7 +18,7 @@
     "intro": "Lists of games to download, in the format Hydra uses. They stay on this computer and are read again once a day while the app is running, and adding one downloads nothing.",
     "address": "Source address",
     "addressHint": "https://…/source.json",
-    "warning": "Anyone can write a source, and Shelf can’t check where its links lead. A program from one runs with your access to this computer. Add only sources you trust, for games you have the right to download.",
+    "warning": "Anyone can write a source, and Save State can’t check where its links lead. A program from one runs with your access to this computer. Add only sources you trust, for games you have the right to download.",
     "add": "Add source",
     "adding": "Reading…",
     "added": "Added {name}, with {count, plural, one {# download} other {# downloads}}. Nothing was downloaded.",
@@ -28,7 +28,7 @@
     "downloads": "{count, plural, one {# download} other {# downloads}}",
     "links": "{magnets, number} by magnet link, {web, number} by web link",
     "leftOutLabel": "Left out",
-    "leftOut": "{count, plural, one {# left out: nothing in it Shelf can use} other {# left out: nothing in them Shelf can use}}",
+    "leftOut": "{count, plural, one {# left out: nothing in it Save State can use} other {# left out: nothing in them Save State can use}}",
     "readLabel": "Last read",
     "read": "Read {when}",
     "lastReadFailed": "The last reading failed, and the list it has stays. {why}",
@@ -39,7 +39,7 @@
     "readAllHelp": "Those that only answer a browser open in a window, one at a time. If one asks you something, the answer is yours to give. Closing it stops here.",
     "readAllDone": "Read {read, number}.{failed, plural, =0 {} one { # failed: its card says why.} other { # failed: their cards say why.}}",
     "readAllStopped": "Read {read, number}. You closed the window, so the rest stay as they were.",
-    "windowTitle": "Shelf is reading a source. If this asks you something, answer here.",
+    "windowTitle": "Save State is reading a source. If this asks you something, answer here.",
     "chooseAgain": "Choose the file again",
     "addFile": "From a saved file",
     "fileTitle": "A source you saved",
@@ -53,11 +53,11 @@
     "removeConfirm": "Remove source",
     "removeCancel": "Keep it",
     "errors": {
-      "invalid": "That isn’t an https address Shelf can read. Addresses on this computer or its network aren’t read.",
+      "invalid": "That isn’t an https address Save State can read. Addresses on this computer or its network aren’t read.",
       "duplicate": "That source is already here.",
-      "unreachable": "Shelf couldn’t connect to that address. Check it and try again.",
+      "unreachable": "Save State couldn’t connect to that address. Check it and try again.",
       "name": "This computer couldn’t find that address: its name doesn’t lead anywhere from here. Check it for typos.",
-      "secure": "Shelf couldn’t make a secure connection to that address.",
+      "secure": "Save State couldn’t make a secure connection to that address.",
       "slow": "That address took too long to answer. Try again later.",
       "refused": "That address answered without the file. Check it and try again.",
       "browser": "That address only answers a browser. Read all opens a window for it.",
@@ -87,7 +87,7 @@
     "perSecond": "{size}/s",
     "speedAndLeft": "{speed}, about {left} left",
     "finished": "Finished: {size}.",
-    "nothingRuns": "Shelf doesn’t start what it downloads. Look it over first, and open it yourself if you trust it.",
+    "nothingRuns": "Save State doesn’t start what it downloads. Look it over first, and open it yourself if you trust it.",
     "extract": "Extract",
     "extracting": "Extracting",
     "reading": "Reading the archive…",
@@ -95,12 +95,12 @@
     "extractProgress": "How far along extracting {title} is",
     "extractWhy": {
       "interrupted": "The app closed before it finished. Try again starts over.",
-      "password": "This archive needs a password, which Shelf doesn’t ask for. It stays in its folder, to open another way.",
+      "password": "This archive needs a password, which Save State doesn’t ask for. It stays in its folder, to open another way.",
       "unsafe": "Nothing was extracted: this archive has paths that would leave its folder, or links. Be careful with it.",
-      "damaged": "This archive is damaged, incomplete, or packed in a way Shelf can’t read. It stays in its folder.",
+      "damaged": "This archive is damaged, incomplete, or packed in a way Save State can’t read. It stays in its folder.",
       "volume": "A part of this archive is missing. Put all of them in the same folder and try again.",
       "disk": "This disk doesn’t have room for what’s inside.",
-      "write": "Shelf couldn’t write to that folder."
+      "write": "Save State couldn’t write to that folder."
     },
     "stopExtracting": "Stop extracting",
     "stopTitle": "Stop extracting {title}?",
@@ -121,7 +121,7 @@
       "page": "Its links lead to web pages, not files. Those are usually a file host’s, which Real-Debrid may be able to open.",
       "unreachable": "Its link stopped answering. What arrived is kept, so Try again continues if the file hasn’t changed.",
       "disk": "This disk doesn’t have room for it.",
-      "write": "Shelf couldn’t write to that folder.",
+      "write": "Save State couldn’t write to that folder.",
       "signedout": "Real-Debrid isn’t signed in any more. Sign in again on this page, then try again.",
       "premium": "Real-Debrid needs a Premium account for this.",
       "blocked": "Real-Debrid’s filters don’t allow this one.",
@@ -149,7 +149,7 @@
     "open": "Find a download",
     "title": "Find a download for {title}",
     "close": "Close",
-    "warning": "From your own sources, which Shelf can’t check. Download only what you have the right to. Nothing starts by itself.",
+    "warning": "From your own sources, which Save State can’t check. Download only what you have the right to. Nothing starts by itself.",
     "words": "Every one of these words",
     "search": "Search",
     "searching": "Searching your sources",
@@ -173,9 +173,9 @@
   },
   "RealDebrid": {
     "title": "Real-Debrid",
-    "intro": "With a Real-Debrid account of your own, Shelf can download magnet links and links from file hosts. Its terms don’t allow downloading infringing files, and its account is for you alone.",
+    "intro": "With a Real-Debrid account of your own, Save State can download magnet links and links from file hosts. Its terms don’t allow downloading infringing files, and its account is for you alone.",
     "signIn": "Sign in to Real-Debrid",
-    "enterCode": "Enter this code on Real-Debrid’s page. Shelf never sees your password.",
+    "enterCode": "Enter this code on Real-Debrid’s page. Save State never sees your password.",
     "code": "The code to enter",
     "openPage": "Open Real-Debrid’s page",
     "cancel": "Cancel",
@@ -186,7 +186,7 @@
     "notPremium": "This account isn’t Premium, so Real-Debrid won’t take magnet links from it.",
     "signOut": "Sign out of Real-Debrid",
     "signOutTitle": "Sign out of Real-Debrid?",
-    "signOutBody": "Shelf forgets the sign-in and ends it at Real-Debrid. What you downloaded stays.",
+    "signOutBody": "Save State forgets the sign-in and ends it at Real-Debrid. What you downloaded stays.",
     "signOutConfirm": "Sign out of Real-Debrid",
     "signOutCancel": "Stay signed in",
     "errors": {
@@ -195,7 +195,7 @@
     }
   },
   "AppSettings": {
-    "group": "Shelf for Windows",
+    "group": "Save State for Windows",
     "pages": {
       "app": {
         "title": "App",
@@ -216,15 +216,15 @@
     },
     "startWithWindows": {
       "title": "Start with Windows",
-      "label": "Start Shelf for Windows in the tray when Windows starts",
-      "body": "So a game opened from Steam is counted without opening Shelf first. <link>How hours are counted</link>",
-      "unavailable": "Only an installed Shelf for Windows can start with Windows.",
-      "old": "Update Shelf for Windows to change this here. Until then, it is in the menu of Shelf’s icon in the tray.",
+      "label": "Start Save State for Windows in the tray when Windows starts",
+      "body": "So a game opened from Steam is counted without opening Save State first. <link>How hours are counted</link>",
+      "unavailable": "Only an installed Save State for Windows can start with Windows.",
+      "old": "Update Save State for Windows to change this here. Until then, it is in the menu of the tray icon.",
       "failed": "Windows did not take the change. Try again."
     },
     "services": {
       "title": "Services",
-      "intro": "A service downloads from a source’s links for you. Each is connected on this computer alone, and Shelf is only told who is signed in."
+      "intro": "A service downloads from a source’s links for you. Each is connected on this computer alone, and Save State is only told who is signed in."
     }
   },
   "Saves": {
@@ -233,7 +233,7 @@
     "close": "Close",
     "loading": "Looking for this game’s saves",
     "switch": "Back up this game’s saves",
-    "intro": "Shelf for Windows backs them up on this computer, keeps their history, and puts any backup back when you ask. Nothing is sent to Shelf.",
+    "intro": "Save State for Windows backs them up on this computer, keeps their history, and puts any backup back when you ask. Nothing is sent to the site.",
     "cloud": "{stores} keep this game’s saves for copies bought there. If you play one of those, its store already carries them.",
     "stores": {
       "steam": "Steam",
@@ -260,7 +260,7 @@
     "gameFolder": "The game’s folder",
     "changeGameFolder": "Change",
     "gameFolderTitle": "Choose {title}’s own folder",
-    "registry": "This game also keeps saves in Windows’ registry, which Shelf doesn’t copy yet.",
+    "registry": "This game also keeps saves in Windows’ registry, which Save State doesn’t copy yet.",
     "credit": "Where games save comes from <wiki>PCGamingWiki</wiki>, through the <manifest>Ludusavi manifest</manifest>.",
     "history": "History",
     "backUp": "Back up now",
@@ -289,9 +289,9 @@
     "backedUp": "Backed up.",
     "unchanged": "Nothing changed since the last backup.",
     "restored": "Put back the saves from {when}.",
-    "old": "Update Shelf for Windows to keep this game’s saves.",
+    "old": "Update Save State for Windows to keep this game’s saves.",
     "refusal": {
-      "running": "Close {title} first: Shelf never touches its saves while it runs.",
+      "running": "Close {title} first: Save State never touches its saves while it runs.",
       "busy": "A backup or a restore of this game is under way.",
       "empty": "No saves were found to back up. Add the folder this game saves in.",
       "large": "These saves are larger than a backup may be. Raise the limit in Settings, or leave a folder out.",
@@ -324,15 +324,15 @@
       "playTitle": "Choose which saves to play with",
       "keepAndPlay": "Keep and play",
       "later": "Decide later",
-      "laterBody": "Play with what’s on this computer now. Nothing is kept or replaced, and Shelf asks again next time."
+      "laterBody": "Play with what’s on this computer now. Nothing is kept or replaced, and Save State asks again next time."
     },
     "beforePlay": {
       "unreachable": "Where your saves go can’t be reached, so {title} started with this computer’s saves.",
       "damaged": "The latest backup of {title}’s saves is damaged, so the game started with this computer’s saves.",
       "large": "{title}’s saves are larger than a backup may be, so they weren’t looked at before it started.",
-      "failed": "Shelf couldn’t look at {title}’s saves, so it started with this computer’s saves.",
+      "failed": "Save State couldn’t look at {title}’s saves, so it started with this computer’s saves.",
       "busy": "{title}’s saves are still being backed up or put back. Press Play again in a moment.",
-      "signedOut": "Shelf is signed out of where your saves go, so {title} started with this computer’s saves. Sign in again in Settings, under Saves.",
+      "signedOut": "Save State is signed out of where your saves go, so {title} started with this computer’s saves. Sign in again in Settings, under Saves.",
       "full": "Where your saves go is full, so {title} started with this computer’s saves."
     },
     "row": "<time>{when}</time><muted> · {computer}</muted>",
@@ -369,7 +369,7 @@
       "changedFirst": "Not backed up yet.",
       "unreachable": "{place} can’t be reached now, so new backups wait on this computer.",
       "unreachableFolder": "Your folder can’t be reached now, so new backups wait on this computer.",
-      "signedOut": "Shelf is signed out of {place}, so new backups wait on this computer.",
+      "signedOut": "Save State is signed out of {place}, so new backups wait on this computer.",
       "full": "{place} is full, so new backups wait on this computer.",
       "setup": "No saves found for this game yet. Add the folder it saves in, under Where they are.",
       "signIn": "Sign in again in Settings",
@@ -380,7 +380,7 @@
   },
   "SaveSettings": {
     "title": "Backups",
-    "intro": "Turned on from a game’s page, Shelf for Windows keeps backups of that game’s saves on this computer. These limits are the same for every game.",
+    "intro": "Turned on from a game’s page, Save State for Windows keeps backups of that game’s saves on this computer. These limits are the same for every game.",
     "kept": "Backups kept per game",
     "keptHint": "The oldest go first. Never fewer than {fewest}.",
     "most": "Largest backup",
@@ -392,13 +392,13 @@
     "larger": "Larger",
     "saved": "Saved.",
     "failed": "The limit couldn’t be saved. Try again.",
-    "old": "Update Shelf for Windows to keep games’ saves.",
+    "old": "Update Save State for Windows to keep games’ saves.",
     "place": {
       "title": "Where they go",
-      "intro": "Backups stay in the app’s folder on this computer until you choose a folder of your own: one that OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB drive. Choose the same one on each of your computers and each sees the others’ backups there. Shelf never receives them.",
+      "intro": "Backups stay in the app’s folder on this computer until you choose a folder of your own: one that OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB drive. Choose the same one on each of your computers and each sees the others’ backups there. Save State never receives them.",
       "here": "This computer only",
       "hereHint": "In the app’s own folder.",
-      "thereHint": "Shelf keeps its own folder here, Shelf saves, and only ever adds files to it.",
+      "thereHint": "Save State keeps its own folder here, Shelf saves, and only ever adds files to it.",
       "away": "Can’t be reached now. New backups wait on this computer and go there once it can be.",
       "choose": "Choose a folder",
       "change": "Choose another",
@@ -408,13 +408,13 @@
       "forgotten": "Backups stay on this computer now. What’s in the folder stays there.",
       "refused": "Choose a folder of your own, not one of Windows’ or a program’s.",
       "failed": "That folder couldn’t be used. Try again, or choose another.",
-      "old": "Update Shelf for Windows to keep games’ saves.",
-      "introServices": "Backups stay in the app’s folder on this computer until you choose somewhere else: a folder of your own (one a cloud app syncs, a network drive or a USB drive), or your OneDrive or Google Drive, signed in from here. Choose the same on each of your computers and each sees the others’ backups. Shelf’s servers never receive them, nor your sign-in.",
+      "old": "Update Save State for Windows to keep games’ saves.",
+      "introServices": "Backups stay in the app’s folder on this computer until you choose somewhere else: a folder of your own (one a cloud app syncs, a network drive or a USB drive), or your OneDrive or Google Drive, signed in from here. Choose the same on each of your computers and each sees the others’ backups. Save State’s servers never receive them, nor your sign-in.",
       "current": "In use",
       "folder": "A folder of your own",
       "folderHint": "One that OneDrive, Google Drive for desktop or Dropbox syncs, a network drive or a USB drive.",
-      "onedriveHint": "Sign in on Microsoft’s page, in your browser. Shelf can reach only its own folder there, Apps › Shelf.",
-      "googleHint": "Sign in on Google’s page, in your browser. Shelf can reach only what it made there.",
+      "onedriveHint": "Sign in on Microsoft’s page, in your browser. Save State can reach only its own folder there, Apps › Shelf.",
+      "googleHint": "Sign in on Google’s page, in your browser. Save State can reach only what it made there.",
       "onedriveWhere": "In Apps › Shelf, in your OneDrive.",
       "googleWhere": "In Shelf saves, in your Google Drive.",
       "signedOut": "Signed out. New backups wait on this computer until you sign in again.",
@@ -429,17 +429,17 @@
       "signedOutDone": "Signed out of {service} on this computer. Your other computers stay signed in, and what’s there stays there.",
       "signInRefused": "{service} didn’t sign you in. Try again.",
       "signInUnreachable": "{service} couldn’t be reached. Check your connection and try again.",
-      "waitingOnedrive": "Sign in on Microsoft’s page, open in your browser. Shelf is waiting for it.",
-      "waitingGoogle": "Sign in on Google’s page, open in your browser. Shelf is waiting for it."
+      "waitingOnedrive": "Sign in on Microsoft’s page, open in your browser. Save State is waiting for it.",
+      "waitingGoogle": "Sign in on Google’s page, open in your browser. Save State is waiting for it."
     }
   },
   "AppUpdate": {
     "button": "Update",
-    "title": "Shelf {version} is ready",
-    "body": "Shelf closes and opens again, updated, in a few seconds. The hours it is counting are kept.",
+    "title": "Save State {version} is ready",
+    "body": "Save State closes and opens again, updated, in a few seconds. The hours it is counting are kept.",
     "downloads": "Downloads under way pause: resume them from Downloads.",
-    "busy": "Shelf is backing up a game's saves. Try again in a moment.",
-    "failed": "Shelf couldn't update now. It will the next time it opens.",
+    "busy": "Save State is backing up a game's saves. Try again in a moment.",
+    "failed": "Save State couldn't update now. It will the next time it opens.",
     "later": "Later",
     "restart": "Restart and update",
     "restarting": "Restarting…"
@@ -447,8 +447,8 @@
   "PlaceTrouble": {
     "signed-out": {
       "button": "{name} disconnected",
-      "title": "Shelf is signed out of {name}",
-      "body": "{name} no longer takes Shelf’s sign-in. Saves stay on this computer until you sign in again, and your other computers won’t see what you play here meanwhile."
+      "title": "Save State is signed out of {name}",
+      "body": "{name} no longer takes Save State’s sign-in. Saves stay on this computer until you sign in again, and your other computers won’t see what you play here meanwhile."
     },
     "full": {
       "button": "{name} is full",

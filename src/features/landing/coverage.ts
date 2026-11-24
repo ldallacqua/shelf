@@ -37,10 +37,10 @@ export type Coverage =
   { title: string; shown: readonly LandingPart[] } | { title: string; left: string }
 
 export const landingCoverage: Record<string, Coverage> = {
-  '1': { title: 'What Shelf is', shown: ['top', 'features'] },
+  '1': { title: 'What Save State is', shown: ['top', 'features'] },
   '2': {
     title: 'Pages and addresses',
-    left: 'Where each page lives; no visitor chooses Shelf for an address.',
+    left: 'Where each page lives; no visitor chooses Save State for an address.',
   },
   '2.1': { title: 'Settings', shown: ['look', 'privacy', 'sync'] },
   '3': { title: 'The library', shown: ['views', 'top'] },
@@ -60,7 +60,10 @@ export const landingCoverage: Record<string, Coverage> = {
     title: 'Empty, loading and failure',
     left: 'How every page behaves while it waits, not a feature.',
   },
-  '3.11': { title: 'Keyboard', left: 'A quality of every page, not a reason to choose Shelf.' },
+  '3.11': {
+    title: 'Keyboard',
+    left: 'A quality of every page, not a reason to choose Save State.',
+  },
   '3.12': {
     title: 'Someday and Retired',
     left: 'Two quieter statuses, in the status row only once a game has one (decision 15).',

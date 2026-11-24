@@ -308,7 +308,7 @@ export const GameRunning: Story = {
   args: {
     said: {
       tone: 'trouble',
-      text: 'Close Made-up Game first: Shelf never touches its saves while it runs.',
+      text: 'Close Made-up Game first: Save State never touches its saves while it runs.',
     },
   },
 }

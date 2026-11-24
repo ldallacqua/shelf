@@ -233,7 +233,7 @@ describe('the limits on games’ backups', () => {
     caps = 'old'
     renderWithIntl(<SaveSettings />)
     expect(
-      await screen.findAllByText('Update Shelf for Windows to keep games’ saves.'),
+      await screen.findAllByText('Update Save State for Windows to keep games’ saves.'),
     ).toHaveLength(2)
   })
 })

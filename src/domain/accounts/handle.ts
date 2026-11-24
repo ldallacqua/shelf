@@ -40,6 +40,9 @@ export const RESERVED_HANDLES: ReadonlySet<string> = new Set([
   'null',
   'owner',
   'root',
+  // The product's name, written both ways (ADR 011); 'shelf' stays reserved for its old one.
+  'save-state',
+  'savestate',
   'settings',
   'shelf',
   'shelves',

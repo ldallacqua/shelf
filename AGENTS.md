@@ -1,6 +1,6 @@
-# Working on Shelf
+# Working on Save State
 
-Shelf is a game library: add games from IGDB, then browse them on a lit shelf with strong
+Save State is a game library: add games from IGDB, then browse them on a lit shelf with strong
 filters and sorting. Anyone can sign up for a shelf of their own, at `/u/{handle}`, public or
 private ([ADR 004](docs/adr/004-one-library-per-account.md)). This file is for anyone, human or
 AI, about to change the code.
@@ -63,7 +63,7 @@ Read first, in this order: [the spec](docs/spec.md) (what it does),
 | `pnpm db:generate`                      | After changing `src/server/db/schema.ts`: writes the difference as a SQL migration into `drizzle/`                                         |
 | `pnpm db:migrate`                       | Applies migrations without touching the data                                                                                               |
 | `pnpm fixtures:fetch`                   | Re-fetches `fixtures/` from the real IGDB. The only command that reaches IGDB; run by hand, review the diff                                |
-| `pnpm desktop:dev`                      | Shelf for Windows against the local server ([the desktop guide](docs/desktop.md)). Needs Rust                                              |
+| `pnpm desktop:dev`                      | Save State for Windows against the local server ([the desktop guide](docs/desktop.md)). Needs Rust                                         |
 | `pnpm desktop:build`                    | The desktop app's installer, which opens production                                                                                        |
 | `pnpm desktop:test`                     | The desktop app's Rust tests                                                                                                               |
 | `pnpm desktop:release`                  | Publishes the desktop app's version in `tauri.conf.json` as a release, signed; from a clean `main` only                                    |
@@ -79,7 +79,7 @@ the desktop app's Rust tests when `desktop/` changed; a change to docs alone ski
 ([what runs, and why](docs/testing.md#continuous-integration)). The repository is public,
 so its minutes are free. A build step is done when its pull request merges through the gate.
 While working, run what helps: the tests for what you are changing, a type check, `pnpm check`.
-**The browser tests (Playwright) are off while Shelf is an MVP** (the owner's rules, 22 Nov
+**The browser tests (Playwright) are off while Save State is an MVP** (the owner's rules, 22 Nov
 2026): not in CI, too slow for every pull request, and not by hand either, on this machine or
 on GitHub. Don't run them (`pnpm e2e`, `pnpm verify` without `--skip-browser`, the smoke tests
 in `pnpm verify --quick`, the `browsers=true` run), don't wait for them, and don't update their
@@ -170,7 +170,7 @@ fixtures/       Real IGDB records for seeds and tests. See fixtures/README.md.
 drizzle/        Database migrations, as SQL. Generated; reviewed; never edited after merging.
 e2e/            Browser tests and reference screenshots
 scripts/        Seeds, checks and measurements
-desktop/        Shelf for Windows, a Tauri program in Rust (ADR 005): it opens the hosted site
+desktop/        Save State for Windows, a Tauri program in Rust (ADR 005): it opens the hosted site
 ```
 
 Lint enforces these imports, and that three.js is imported only inside
@@ -357,13 +357,13 @@ current address again, which is not always the page the change was made on. Afte
 library fetches its new file and moves to the game. Every write to the library answers with
 its new version for that.
 
-**The landing page.** `/` is where people learn what Shelf does (`src/features/landing`, spec
-15), so it grows with the product: a feature a visitor would choose Shelf for gets its part
+**The landing page.** `/` is where people learn what Save State does (`src/features/landing`, spec
+15), so it grows with the product: a feature a visitor would choose Save State for gets its part
 there, in the same change, shown working on the example shelf, with its question in the FAQ
 if it raises one. A change to something a part shows (a filter key, a view, how copies or
 privacy work) changes that part too, and a feature that is taken away leaves the page. The
 example shelf is `pnpm landing:demo`; a part that needs a game it lacks adds the game there.
-What a link to Shelf shows is a picture of the hero (`public/share/`): after changing the
+What a link to Save State shows is a picture of the hero (`public/share/`): after changing the
 hero, run `pnpm landing:share` against `pnpm serve:test` and look at both pictures.
 
 **Every feature is mapped to the landing page, and a test checks it** (the owner's rule, 12 Nov
@@ -376,9 +376,9 @@ landing page. Before finishing any change that adds or changes something a perso
 
 1. Run `pnpm exec vitest run src/features/landing`. A failure naming a section is the rule
    speaking, not a test to quiet.
-2. If a visitor would choose Shelf for it, build its part (or change the part that already
+2. If a visitor would choose Save State for it, build its part (or change the part that already
    shows it) in the same change, with the FAQ answer it raises, and map the section to it.
-   `left` is only for what no visitor chooses Shelf for: internals, rules of every page, the
+   `left` is only for what no visitor chooses Save State for: internals, rules of every page, the
    owner's tools, experiments behind a switch, and download sources, which are never shown.
    Its reason says which.
 3. A feature that changes inside a section already mapped (a new view, filter, colorway or
@@ -390,7 +390,7 @@ before a pull request. (Claude Code can run it as a subagent, `.claude/agents/la
 only reads that file.)
 
 **Every feature is offered in setup where it helps a new shelf, and a test checks it** (the owner's rule,
-12 Nov 2026). Setting a shelf up (`/account/start`, spec 4.6) is where a new account learns what Shelf can
+12 Nov 2026). Setting a shelf up (`/account/start`, spec 4.6) is where a new account learns what Save State can
 do for it, so it grows with the product as the landing page does. `src/features/start/coverage.ts` names
 every numbered section of the spec with the setup steps that offer it (`play`, `bring`, `look`, `sort`,
 `ready`), or why a new shelf doesn't need it; `coverage.test.ts` fails on a section it doesn't name.
@@ -441,7 +441,7 @@ demos, playtests and software are left out by themselves. A source that lists wh
 played (Nintendo) puts nothing on the shelf by itself: each match waits for me to say how I
 own it (`confirm`, one at a time or many at once). A platform account is linked only through
 the platform's own sign-in; Nintendo's page cannot come back, so its button's link is pasted
-into Settings' Platforms page (`server/sync/connect.ts`). What a sign-in gives Shelf to keep (Nintendo's
+into Settings' Platforms page (`server/sync/connect.ts`). What a sign-in gives Save State to keep (Nintendo's
 session) is stored sealed (`server/sync/sealed.ts`, `PLATFORM_TOKEN_KEY`), opened only to
 read the source, and never sent to a browser. Tests never talk to Steam or Nintendo:
 `fixtures/steam/`, `fixtures/nintendo/` and the doubles in `server/mocks/` answer; with the
@@ -454,7 +454,7 @@ straight from IGDB's image servers, through `src/domain/igdb/images.ts`.
 
 **Steam first on a game's page.** A game IGDB has that has a page on Steam's store is drawn from that page
 first ([ADR 010](docs/adr/010-steam-first-on-a-game-page.md)): its cover wherever a cover is drawn but search,
-Add a game and a row's thumbnail (`thumbnailOf`: IGDB's small file, where Steam has none), and its art, screenshots, summary and long description on its page. The description is read from BBCode into blocks Shelf draws (`domain/steam/description.ts`, `features/game-detail/description.tsx`): never draw a store's markup, and keep its column (`steam_description`) out of anything a library reads. IGDB fills what the store leaves empty, and
+Add a game and a row's thumbnail (`thumbnailOf`: IGDB's small file, where Steam has none), and its art, screenshots, summary and long description on its page. The description is read from BBCode into blocks Save State draws (`domain/steam/description.ts`, `features/game-detail/description.tsx`): never draw a store's markup, and keep its column (`steam_description`) out of anything a library reads. IGDB fills what the store leaves empty, and
 stays the only source of videos, length, storyline, releases and filter values. The store's answer is kept
 apart from IGDB's record (`steam_cover`, `steam_page` and their kin on `games`), read by
 `services/steam-pages.ts` after an add and daily, and laid over IGDB's as it is read: `drawnCover` in
@@ -484,9 +484,9 @@ to the store's own servers. Spec 7.9.
 its own scale, and they are never averaged. `readShelfScore` is the one read across libraries: it gives a sum and a
 count, of public shelves only, and never whose. A new place is one more column, in the same bar.
 
-**Download sources.** Lists of downloads in Hydra's format, read by Shelf for Windows from an address
-the person pastes, and kept on that computer ([ADR 007](docs/adr/007-download-sources.md)). Shelf's server
-never sees one, and Real-Debrid's terms forbid it from reaching that service. Shelf ships, suggests and
+**Download sources.** Lists of downloads in Hydra's format, read by Save State for Windows from an address
+the person pastes, and kept on that computer ([ADR 007](docs/adr/007-download-sources.md)). Save State's server
+never sees one, and Real-Debrid's terms forbid it from reaching that service. Save State ships, suggests and
 links to no source, and no test or check reads a real one. No code that runs a host's script for a
 token, no passwords of cracking sites, and nothing downloaded ever runs by itself. A page gets a
 source's name, counts and titles, never its links, and names a download by its place in a list. Downloads
@@ -497,16 +497,16 @@ only code that knows Real-Debrid's addresses; what its sign-in gives stays in Wi
 a page is only told who is signed in. This is the exception to the landing page's rule: it is not
 shown there.
 
-**Saves.** Shelf for Windows keeps snapshots of a game's saves ([ADR 008](docs/adr/008-save-sync.md)), in
+**Saves.** Save State for Windows keeps snapshots of a game's saves ([ADR 008](docs/adr/008-save-sync.md)), in
 `desktop/src/saves/`: `paths.rs` turns the Ludusavi manifest's placeholders into this computer's folders and
-refuses any folder too wide to be one game's, `manifest.rs` reads the manifest from its own address (Shelf
+refuses any folder too wide to be one game's, `manifest.rs` reads the manifest from its own address (Save State
 ships and serves no copy: its data is PCGamingWiki's), `snapshot.rs` writes a zip and its list and decides
 which copy wins by parents, never clocks, and `restore.rs` checks every path before writing anything.
-Shelf's server never receives a save, a token or a key: no endpoint for them may exist. A command takes
+Save State's server never receives a save, a token or a key: no endpoint for them may exist. A command takes
 entry ids, titles, Steam ids and snapshot ids, never a path; folders come from Windows' picker. A game's
 saves are never read or written while it runs. Tests use `fixtures/saves/manifest.yaml`, temporary folders
 and made-up games, never the real manifest or a real save. A place (a folder of the owner's, chosen per PC)
-only ever gets new files, in a folder of Shelf's own (`Shelf saves`); what can't reach it waits on the PC.
+only ever gets new files, in a folder of Save State's own (`Shelf saves`); what can't reach it waits on the PC.
 Once on, a game's saves are backed up when its sitting ends (`watch.rs` → `commands::after_session`) and
 looked at before Play (`play`'s `check`); a choice is always the person's, and a Windows notification says
 only what needs them. A place can also be OneDrive or Google Drive, signed in on the service's own page
@@ -558,7 +558,7 @@ drawn for what may never come, as the owner's Add button is to a visitor.
 ## Done means
 
 - CI's gate passes on the pull request (`pnpm check`, the build, the budgets, Lighthouse). The browser tests
-  are off while Shelf is an MVP (above): not run, not waited for.
+  are off while Save State is an MVP (above): not run, not waited for.
 - No error in the browser console.
 - Both themes and both languages were looked at, at phone and desktop width, and the layout at every main
   breakpoint, 320 to 1920 (`pnpm ui:capture` takes them all), with nothing scrolling sideways.

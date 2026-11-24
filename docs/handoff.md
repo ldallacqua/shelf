@@ -1,5 +1,7 @@
 # Handoff: 27 October 2026
 
+> **23 Nov 2026: the product is now Save State** (two words; [ADR 011](adr/011-save-state.md)). "Shelf" in the older text below, and in the decision records and reports, means it. A person's shelf, the Shelf view and the code's internal names keep theirs.
+
 ## Moving to savestate.gg (23 Nov 2026)
 
 Production is moving to the owner's own domain, `https://savestate.gg` (`www.savestate.gg` redirects to it; the
@@ -17,7 +19,7 @@ name changes in a pull request of its own). Two branches, in this order, and the
 - **Then the app** (`rebrand/desktop-domain`, session G, step 8): release builds open the domain (`www` first, the
   bare domain since `rebrand/apex-domain`), and the window keeps, and gives the commands to, both domain
   addresses and the old address, no others.
-  Merged once the domain served Shelf; a desktop release is the owner's call.
+  Merged once the domain served Save State; a desktop release is the owner's call.
 - **Later:** the old address redirects to the domain (step 10), once the installed apps have updated; until
   then an app from before step 8 would be sent to the browser.
 

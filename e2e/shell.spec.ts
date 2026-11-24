@@ -79,7 +79,7 @@ test.describe('header and footer', () => {
     }
     await expect(page).toHaveURL(/\/en\/u\/sample$/)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText("Sample's shelf")
-    await expect(page).toHaveTitle("Sample's shelf · Shelf")
+    await expect(page).toHaveTitle("Sample's shelf · Save State")
 
     if (size === 'phone') {
       await page.getByRole('button', { name: 'Menu' }).click()
@@ -99,7 +99,7 @@ test.describe('header and footer', () => {
     await expect(page).toHaveURL(/\/en\/u\/sample\/trophies$/)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Trophies')
 
-    await page.getByRole('link', { name: 'Shelf, home' }).click()
+    await page.getByRole('link', { name: 'Save State, home' }).click()
     await expect(page).toHaveURL(/\/en$/)
   })
 

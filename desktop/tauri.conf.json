@@ -17,8 +17,8 @@
     "active": true,
     "targets": ["nsis"],
     "publisher": "Lucas Dall'Acqua",
-    "shortDescription": "Shelf, with Play",
-    "longDescription": "The Shelf game library in a window of its own, which starts games from their files or through Steam.",
+    "shortDescription": "Save State, with Play",
+    "longDescription": "The Save State game library in a window of its own, which starts games from their files or through Steam.",
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
     "windows": {
       "nsis": {

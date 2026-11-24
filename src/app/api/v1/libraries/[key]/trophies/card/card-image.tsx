@@ -8,9 +8,9 @@ import { MARK } from '@/ui/logo'
 
 /**
  * The trophy card as `next/og` draws it, 1200 by 630: the latest games
- * finished stand face-out on a lit shelf, as the mark draws three cases,
- * each under a lamp of its own color as on the trophy wall; under them, the
- * games finished, large, whose they are, and the figures beside.
+ * finished stand face-out on a lit shelf, each under a lamp of its own color
+ * as on the trophy wall; under them, the games finished, large, whose they
+ * are, and the figures beside.
  */
 
 /** The dark room's own colors (`ui/tokens`). */

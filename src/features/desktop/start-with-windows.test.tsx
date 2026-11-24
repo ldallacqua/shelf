@@ -11,7 +11,7 @@ import { setBridgeForTests } from './tauri'
 
 vi.mock('@/i18n/navigation', () => import('@/test/navigation'))
 
-const LABEL = 'Start Shelf for Windows in the tray when Windows starts'
+const LABEL = 'Start Save State for Windows in the tray when Windows starts'
 
 let starting = { available: true, on: true }
 let refuse: string | undefined
@@ -55,14 +55,14 @@ describe('starting with Windows', () => {
     renderWithIntl(<StartWithWindows />)
     expect(await screen.findByRole('switch', { name: LABEL })).toBeDisabled()
     expect(
-      screen.getByText('Only an installed Shelf for Windows can start with Windows.'),
+      screen.getByText('Only an installed Save State for Windows can start with Windows.'),
     ).toBeInTheDocument()
   })
 
   it('sends an app older than the command to the tray', async () => {
     refuse = 'Command start_with_windows not found'
     renderWithIntl(<StartWithWindows />, 'pt-BR')
-    expect(await screen.findByText(/Atualize o Shelf para Windows/)).toBeInTheDocument()
+    expect(await screen.findByText(/Atualize o Save State para Windows/)).toBeInTheDocument()
     expect(screen.queryByRole('switch')).not.toBeInTheDocument()
   })
 

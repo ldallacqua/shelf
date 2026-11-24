@@ -75,7 +75,7 @@ describe('PlaceTrouble', () => {
     const user = userEvent.setup()
     renderWithIntl(<PlaceTrouble />)
     await user.click(await screen.findByRole('button', { name: 'Google Drive disconnected' }))
-    expect(screen.getByText('Shelf is signed out of Google Drive')).toBeInTheDocument()
+    expect(screen.getByText('Save State is signed out of Google Drive')).toBeInTheDocument()
     expect(
       screen.getByText(/your other computers won’t see what you play here/),
     ).toBeInTheDocument()

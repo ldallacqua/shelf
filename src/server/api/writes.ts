@@ -297,7 +297,7 @@ export const apiOwnerGame = z
       .date()
       .optional()
       .describe(
-        'The day a linked platform or Shelf for Windows last saw it played; absent when none did',
+        'The day a linked platform or Save State for Windows last saw it played; absent when none did',
       ),
     behind: z
       .array(z.enum(syncSources))
@@ -311,7 +311,7 @@ export const apiOwnerGame = z
     hoursTracked: z
       .number()
       .min(0)
-      .describe('Hours Shelf for Windows counted, with no time away in them'),
+      .describe('Hours Save State for Windows counted, with no time away in them'),
     hoursIdle: z
       .number()
       .min(0)
@@ -465,7 +465,7 @@ export const apiPlaySessions = z
             .uuid()
             .optional()
             .describe(
-              'The computer it was played on: Shelf for Windows’ own random id for it, which says nothing of the machine. Absent from an app older than 0.11.0',
+              'The computer it was played on: Save State for Windows’ own random id for it, which says nothing of the machine. Absent from an app older than 0.11.0',
             ),
         }),
       )
@@ -488,13 +488,13 @@ export const apiDevices = z
   .object({
     devices: z.array(
       z.object({
-        id: z.string().describe('Shelf for Windows’ own random id for it'),
+        id: z.string().describe('Save State for Windows’ own random id for it'),
         name: z.string().optional().describe('The name the account gave it; absent until it has'),
         number: z
           .int()
           .min(1)
           .describe(
-            'Its place among the account’s computers, in the order Shelf first heard of them: what to call it until it is named',
+            'Its place among the account’s computers, in the order Save State first heard of them: what to call it until it is named',
           ),
         firstSeenAt: z
           .int()
@@ -549,7 +549,9 @@ export const apiPlayable = z
     games: z.array(
       z.object({
         slug: z.string().describe('Its address, as the library file names it'),
-        entryId: z.string().describe('Its entry: what Shelf for Windows keeps a file chosen by'),
+        entryId: z
+          .string()
+          .describe('Its entry: what Save State for Windows keeps a file chosen by'),
         steam: z
           .array(z.string())
           .describe(
@@ -654,7 +656,7 @@ const STATUS: Record<Refusal['reason'], number> = {
 const MESSAGE: Record<Refusal['reason'], string> = {
   'not-signed-in':
     'Sign in first: an account changes its own library, and the session cookie is the key.',
-  invalid: 'The request is not one Shelf can carry out. See /api/v1/openapi.json.',
+  invalid: 'The request is not one Save State can carry out. See /api/v1/openapi.json.',
   'not-found': 'There is no such game in your library.',
   conflict: 'That is there already.',
   'not-kept': 'This deployment keeps nothing it is given, so nothing was saved.',

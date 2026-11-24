@@ -1,6 +1,6 @@
 ---
 name: design-pass
-description: Shelf's UI/UX and art-direction specialist. Plans how to make a change anyone can see - where it stands, which component, its states, motion and words - before any code is written, as docs/design-pass.md lays out. Use before building any visual change, however small. Give it what was asked (the owner's words), screenshots of the screen as it is now, the files that draw it and the spec's section.
+description: Save State's UI/UX and art-direction specialist. Plans how to make a change anyone can see - where it stands, which component, its states, motion and words - before any code is written, as docs/design-pass.md lays out. Use before building any visual change, however small. Give it what was asked (the owner's words), screenshots of the screen as it is now, the files that draw it and the spec's section.
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, Skill
 ---
 

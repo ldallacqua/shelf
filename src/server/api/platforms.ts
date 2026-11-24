@@ -46,7 +46,7 @@ export const apiLink = z
     counts,
     achievements: achievementCounts
       .optional()
-      .describe('How far its achievements are read, for a source Shelf reads them from'),
+      .describe('How far its achievements are read, for a source Save State reads them from'),
   })
   .meta({ id: 'PlatformLink' })
 
@@ -110,7 +110,7 @@ export const apiSourceItem = z
       })
       .optional()
       .describe(
-        'For a game a source saw played: the game Shelf takes it for, which waits for the owner to confirm it and say how they own it',
+        'For a game a source saw played: the game Save State takes it for, which waits for the owner to confirm it and say how they own it',
       ),
   })
   .meta({ id: 'SourceItem' })

@@ -104,19 +104,19 @@ pub fn came(line: &str, state: &str) -> Came {
 fn page(signed_in: bool) -> String {
     let portuguese = crate::language::portuguese();
     let (title, body) = match (signed_in, portuguese) {
-        (true, false) => ("Signed in", "You can close this tab and go back to Shelf."),
-        (true, true) => ("Pronto", "Você pode fechar esta aba e voltar para o Shelf."),
+        (true, false) => ("Signed in", "You can close this tab and go back to Save State."),
+        (true, true) => ("Pronto", "Você pode fechar esta aba e voltar para o Save State."),
         (false, false) => (
             "Not signed in",
-            "Nothing was changed. You can close this tab and go back to Shelf.",
+            "Nothing was changed. You can close this tab and go back to Save State.",
         ),
         (false, true) => (
             "Nada feito",
-            "Nada mudou. Você pode fechar esta aba e voltar para o Shelf.",
+            "Nada mudou. Você pode fechar esta aba e voltar para o Save State.",
         ),
     };
     format!(
-        "<!doctype html><html lang=\"{}\"><meta charset=\"utf-8\"><title>Shelf</title>\
+        "<!doctype html><html lang=\"{}\"><meta charset=\"utf-8\"><title>Save State</title>\
          <style>body{{font:16px system-ui,sans-serif;margin:15vh auto;max-width:28rem;padding:0 1rem;\
          color:#e8e6f0;background:#14131a}}h1{{font-size:1.5rem}}</style>\
          <h1>{title}</h1><p>{body}</p></html>",
@@ -318,7 +318,7 @@ mod tests {
                 stream.read_to_string(&mut said).await.unwrap();
                 if target.contains("code") {
                     assert!(said.starts_with("HTTP/1.1 200"));
-                    assert!(said.contains("Shelf"));
+                    assert!(said.contains("Save State"));
                 } else {
                     assert!(said.starts_with("HTTP/1.1 404"));
                 }

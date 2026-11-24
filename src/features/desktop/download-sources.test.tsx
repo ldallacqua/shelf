@@ -37,7 +37,7 @@ let picked: Source | null
 let going: { done: number; total: number } | null
 let tooOld: boolean
 let ended: { read: number; failed: number; stopped: boolean }
-const WINDOW = 'Shelf is reading a source. If this asks you something, answer here.'
+const WINDOW = 'Save State is reading a source. If this asks you something, answer here.'
 
 const app = vi.fn(async (command: string, args?: Record<string, unknown>) => {
   if (refuse && command !== 'download_sources') throw refuse
@@ -287,7 +287,9 @@ describe('outside the app', () => {
   it('says whose page it is, and shows nothing of the app’s', () => {
     setBridgeForTests(null)
     const { container } = renderWithIntl(<AppOnly page="download-sources" />)
-    expect(screen.getByRole('heading', { name: 'Part of Shelf for Windows' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Part of Save State for Windows' }),
+    ).toBeInTheDocument()
     // Alive in a browser, nothing holds the app's place: a page is done when its ghosts are gone.
     expect(container.querySelector('.ghost')).toBeNull()
     expect(screen.getByRole('link', { name: 'All settings' })).toHaveAttribute(

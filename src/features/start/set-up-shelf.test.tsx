@@ -357,7 +357,7 @@ describe('SetUpShelf', () => {
     at('/en/account/start#sort')
     renderWithIntl(<SetUpShelf />)
     const alert = await screen.findByRole('alert')
-    expect(alert).toHaveTextContent('Shelf could not read your shelf just now.')
+    expect(alert).toHaveTextContent('Save State could not read your shelf just now.')
 
     tallyFails = false
     standing = { version: 1, tally: { ...EMPTY, backlog: 3 } }

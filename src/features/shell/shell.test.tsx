@@ -60,7 +60,10 @@ describe('Header', () => {
     renderWithIntl(<Header />)
     const header = screen.getByRole('banner')
 
-    expect(within(header).getByRole('link', { name: 'Shelf, home' })).toHaveAttribute('href', '/en')
+    expect(within(header).getByRole('link', { name: 'Save State, home' })).toHaveAttribute(
+      'href',
+      '/en',
+    )
     const nav = within(header).getByRole('navigation', { name: 'Main' })
     expect(within(nav).getByRole('link', { name: 'Library' })).toHaveAttribute(
       'href',
@@ -80,6 +83,20 @@ describe('Header', () => {
       'href',
       '/en/sign-up',
     )
+  })
+
+  it('keeps the name from 22rem for everyone, as the language leaves the row on a phone', () => {
+    who.account = ANA
+    onShelf('/u/[handle]', '/en/u/ana', 'ana')
+    renderWithIntl(<Header />)
+    const header = screen.getByRole('banner')
+
+    // One rule, not one for a browser that has signed in: the first paint is right either way.
+    const name = within(header).getByText('Save State')
+    expect(name).toHaveClass('max-[22rem]:hidden')
+    expect(name.className).not.toMatch(/hinted:/)
+    // The row's link stays in the page on a phone, for crawlers, hidden; the menu has its own.
+    expect(within(header).getByRole('link', { name: /Português/ })).toHaveClass('max-md:hidden')
   })
 
   it('away from any shelf, gives a visitor no shelf links, only the ways in', () => {
@@ -173,7 +190,7 @@ describe('Header', () => {
     onShelf('/u/[handle]', '/pt-BR/u/sample', 'sample', 'pt-BR')
     renderWithIntl(<Header />, 'pt-BR')
 
-    expect(screen.getByRole('link', { name: 'Shelf, início' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Save State, início' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Biblioteca' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Troféus' })).toBeInTheDocument()
@@ -234,6 +251,12 @@ describe('MobileNav', () => {
       'href',
       '/en/sign-in',
     )
+    // Last, after a separator, the other language: the header's row has no room for it.
+    const items = within(menu).getAllByRole('menuitem')
+    const language = items.at(-1)
+    expect(language).toHaveAccessibleName('Ler o Save State em português')
+    expect(language).toHaveAttribute('href', '/pt-BR/u/sample/trophies')
+    expect(language?.previousElementSibling).toHaveAttribute('role', 'separator')
   })
 
   it('has the way to placing one’s games on one’s own shelf, counting them', async () => {
@@ -246,6 +269,19 @@ describe('MobileNav', () => {
         name: 'Organize, 3 games waiting',
       }),
     ).toHaveAttribute('href', '/en/account/unsorted')
+  })
+
+  it('signed in, ends with the other language, in that language', async () => {
+    who.account = ANA
+    onShelf('/u/[handle]', '/pt-BR/u/ana', 'ana', 'pt-BR')
+    renderWithIntl(<MobileNav />, 'pt-BR')
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }))
+
+    const language = within(screen.getByRole('menu')).getAllByRole('menuitem').at(-1)
+    expect(language).toHaveAccessibleName('Read Save State in English')
+    expect(language).toHaveAttribute('lang', 'en')
+    expect(language).toHaveAttribute('href', '/en/u/ana')
+    expect(language?.previousElementSibling).toHaveAttribute('role', 'separator')
   })
 })
 

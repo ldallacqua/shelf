@@ -33,7 +33,7 @@ export function Hero({ games }: { games: readonly DemoGame[] }) {
     <section id="top" aria-labelledby="landing-title" className="overflow-x-clip">
       <Page className="grid min-h-[min(54rem,calc(100svh-4rem))] grid-cols-[minmax(0,1fr)] items-center gap-x-10 gap-y-12 pt-10 pb-16 sm:pt-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:pb-24">
         <div>
-          <Eyebrow>{t('eyebrow')}</Eyebrow>
+          <Eyebrow className="text-balance">{t('eyebrow')}</Eyebrow>
           <h1 id="landing-title" className="mt-4 title text-5xl text-balance sm:text-7xl">
             {t('title')}
           </h1>

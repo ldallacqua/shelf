@@ -62,6 +62,6 @@ export type Pathname = keyof typeof routing.pathnames
  * files.
  */
 export const localeLabels: Record<Locale, { short: string; name: string; switchTo: string }> = {
-  en: { short: 'EN', name: 'English', switchTo: 'Read Shelf in English' },
-  'pt-BR': { short: 'PT', name: 'Português (Brasil)', switchTo: 'Ler o Shelf em português' },
+  en: { short: 'EN', name: 'English', switchTo: 'Read Save State in English' },
+  'pt-BR': { short: 'PT', name: 'Português (Brasil)', switchTo: 'Ler o Save State em português' },
 }

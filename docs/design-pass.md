@@ -38,7 +38,7 @@ on its own; someone has to think about how to do the task before it is done.
   Note what couldn't be opened (a sign-in, a paywall) rather than guess at it.
 - Read guidance on the question at hand (Nielsen Norman Group, WCAG's own pages, the platform's
   guidelines), and say in the spec's section what the design was based on.
-- Look at Shelf as it is now, as the person the change is for (a new account, a visitor, the
+- Look at Save State as it is now, as the person the change is for (a new account, a visitor, the
   owner on a phone), before changing it.
 
 ## 2. Critique
@@ -53,7 +53,7 @@ For the current version and then the new one:
 - **Hierarchy:** one clear reading order, one main action per screen, the right things emphasized,
   space used to group.
 - **Consistency:** built from `src/ui` and the tokens; the same thing looks and behaves the same
-  everywhere; words match the rest of the product (Organize, Settings, Shelf for Windows).
+  everywhere; words match the rest of the product (Organize, Settings, Save State for Windows).
 - **Every state:** empty, loading (ghosts, never words), partly done, done, failed, a phone, both
   themes, both languages, reduced motion.
 
@@ -84,7 +84,7 @@ Write the findings down (what, how bad, the fix) and act on them before calling 
 - **Useful:** a button starts with a verb and names its outcome ("Place my games", not "Go");
   an empty state says what goes there, why it's empty and how to start; an error says what
   happened, why, and what to do.
-- **Shelf's voice:** plain, concrete and calm; no hype, no exclamation marks; the person is "you"
+- **Save State's voice:** plain, concrete and calm; no hype, no exclamation marks; the person is "you"
   on the site and "I" in the spec.
 - **Both languages:** English first, then Brazilian Portuguese with the same meaning, not word
   for word; watch the longer Portuguese in buttons and narrow places.
