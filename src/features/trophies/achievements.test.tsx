@@ -119,7 +119,7 @@ describe('the achievements (issue 68)', () => {
     expect(addressOf(year).searchParams.get('year')).toBe('2025')
     const genre = within(section).getByRole('link', { name: /^RPG:/ })
     expect(addressOf(genre).pathname).toBe('/en/u/ana/trophies')
-    expect(addressOf(genre).searchParams.get('q')).toBe('genre:rpg (status:completed)')
+    expect(addressOf(genre).searchParams.get('q')).toBe('genre:rpg status:completed')
   })
 
   it('are of the unlocks in the year on its page, month by month', () => {

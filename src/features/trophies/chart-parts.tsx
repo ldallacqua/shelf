@@ -3,6 +3,7 @@ import { type CSSProperties, type ReactNode, useId } from 'react'
 
 import type { PicturedGame, Ranked } from '@/domain/library/trophy-stats'
 import type { Measure } from '@/domain/library/trophy-taste'
+import { filterWithin } from '@/domain/query/within'
 import { Cover } from '@/features/library/cover'
 import { hoursOf } from '@/features/library/format'
 import { libraryHref, trophiesHref } from '@/features/library/shelf-address'
@@ -17,9 +18,11 @@ import { Link } from '@/i18n/navigation'
  * a tooltip on hover and focus.
  */
 
-/** A filter in the library's language, kept to the one the page is filtered by. */
-export const withFilter = (filter: string, q?: string) =>
-  q?.trim() ? `${filter} (${q.trim()})` : filter
+/**
+ * A filter in the library's language, kept to the one the page is filtered
+ * by: both, each part once, so following these links ends (`filterWithin`).
+ */
+export const withFilter = (filter: string, q?: string) => filterWithin(filter, q)
 
 /** The address of the trophy page for a year, or for all time, the filter and the ranking kept. */
 export const scopeHref = (handle: string, year: number | undefined, q?: string, by?: Measure) => {
