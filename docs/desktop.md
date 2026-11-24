@@ -98,7 +98,7 @@ to forget the rest.
 | Command | Does |
 | --- | --- |
 | `pnpm desktop:dev` | The app against the local server, `http://localhost:3300`, rebuilt when its Rust changes. Start `pnpm serve:test` (or `pnpm dev`) first. |
-| `pnpm desktop:build` | The installer, a release build that opens production, `https://www.savestate.gg`: `desktop/target/release/bundle/nsis/Shelf_<version>_x64-setup.exe` |
+| `pnpm desktop:build` | The installer, a release build that opens production, `https://savestate.gg`: `desktop/target/release/bundle/nsis/Shelf_<version>_x64-setup.exe` |
 | `pnpm desktop:test` | The Rust side's tests (`cargo test`) |
 | `pnpm desktop:release` | From a clean `main` that is GitHub's: the installer for the version in `tauri.conf.json`, signed with the key in `.env.local`, and `latest.json`, published as the release `desktop-v{version}`, which every installed app finds at its next start ([step 6](#step-6-updates-and-the-installer-in-one-step)) |
 | `pnpm desktop:check` | The app against `pnpm serve:test`, driven through its web view's debugging port: signs in as the made-up owner and checks that the pages show what a browser shows ([section 5](#5-checking-it)) |
@@ -107,9 +107,9 @@ The first build compiles Tauri and its dependencies, about five minutes; later o
 seconds. `desktop/target/` is the build's own and is not committed.
 
 **Another address:** `SHELF_URL=https://… pnpm desktop:dev` opens that one. A release build
-ignores `SHELF_URL` and opens production only, `https://www.savestate.gg`. It takes production's
-other addresses as Shelf's own too (`own_addresses` in `lib.rs`): the bare `https://savestate.gg`,
-which redirects to `www` (and would serve the site if the owner made it the main address), and the
+ignores `SHELF_URL` and opens production only, `https://savestate.gg`. It takes production's
+other addresses as Shelf's own too (`own_addresses` in `lib.rs`): `https://www.savestate.gg`, which
+redirects to the bare domain (and served the site while it was the main address), and the
 address production had before its domain, `https://shelf-ldallacqua.vercel.app`, which an app older
 than the domain opens. A link or a redirect between them stays in the window. A development build's
 address has no such others.
@@ -558,7 +558,7 @@ ADR 008's phase 5; spec 7.12.
       brings it back. Publishing asks, under **Branding**, for a home page, a privacy policy and terms of
       service (`/privacy`, `/terms`) on an authorized domain, which Google doesn't take on `vercel.app`:
       `savestate.gg`, Shelf's own since the owner moved it to this project (setup, session G), with
-      `https://www.savestate.gg`, `https://www.savestate.gg/en/privacy` and `https://www.savestate.gg/en/terms`.
+      `https://savestate.gg`, `https://savestate.gg/en/privacy` and `https://savestate.gg/en/terms`.
       Then **Remove** the logo (a logo makes Google review the app first) and **Publish app** under
       Audience: these scopes need no review.
 - [ ] A release with them (`pnpm desktop:release` reads them, and says which services it built in, never

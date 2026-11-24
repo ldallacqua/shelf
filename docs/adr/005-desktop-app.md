@@ -71,7 +71,7 @@ there.
 
 ### 2. The app opens the hosted Shelf, not a copy of it
 
-The window opens `https://www.savestate.gg`, the same address a browser does. Every
+The window opens `https://savestate.gg`, the same address a browser does. Every
 page, every number and every game is the one the site serves, signed in with the same account,
 so the app cannot show different data from the browser: there is only one Shelf. This is what
 meets the owner's condition.
@@ -85,10 +85,10 @@ A build for development opens the address in `SHELF_URL` instead (`http://localh
 local server); a release build opens production only.
 
 **Shelf's own domain** (23 Nov 2026). Production moved from `https://shelf-ldallacqua.vercel.app`
-to `https://www.savestate.gg`, the bare `savestate.gg` redirects to it, and Vercel still serves it at
-the old address. A release build opens `www` and takes the other two as Shelf's own too: the bare
-domain, so its redirect stays in the window (and so the app keeps working if the owner ever makes it
-the main address), and the old address, which an app from before the move opens. A link or a
+to `https://savestate.gg`, `www.savestate.gg` redirects to it, and Vercel still serves it at the old
+address. A release build opens the bare domain and takes the other two as Shelf's own too: `www`,
+so its redirect stays in the window (it was the main address for the first hours, and a build from
+then opens it), and the old address, which an app from before the move opens. A link or a
 redirect between them must stay in the window, with the commands (section 3). Exactly those three
 origins: no other host, scheme or port, and no pattern but their paths. Apps from before the
 release keep only the old address, which is why it is not redirected to the domain until they have
